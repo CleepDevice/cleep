@@ -474,16 +474,6 @@ class Cleep(BusClient):
         Stop process.
         """
         BusClient.stop(self)
-        self._custom_stop()
-
-    def _custom_stop(self): # pragma: no cover
-        """
-        Stop module. This function is called during module stop.
-
-        Note:
-            Implement this function to stop specific processes like threads during stop process
-        """
-        pass
 
     def is_module_loaded(self, module):
         """

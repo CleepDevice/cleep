@@ -451,6 +451,7 @@ class BusClient(threading.Thread):
         self.__module_join_event = bootstrap[u'module_join_event']
         self.__module_join_event.clear()
         self.__core_join_event = bootstrap['core_join_event']
+        self.__on_start_event = Event()
 
         # subscribe module to bus
         self.__bus.add_subscription(self.__module)
@@ -669,6 +670,15 @@ class BusClient(threading.Thread):
         """
         pass
 
+    def _on_stop(self):
+        """
+        Module stops. This method is called once at end of main process.
+
+        It should be used to stop thread and tasks and to disconnect from
+        external services.
+        """
+        pass
+
     def _event_received(self, event): # pragma: no cover
         """
         Module received an event message
@@ -687,9 +697,31 @@ class BusClient(threading.Thread):
         """
         pass
 
+    def __started_callback(self):
+        """
+        Called when module is started. It releases internal event lock.
+        """
+        self.__on_start_event.set()
+
+    def _wait_is_started(self):
+        """
+        Wait for module is started.
+        Use it if you need to 
+        
+        Warning:
+            As mentionned this function is blocking
+        """
+        self.__on_start_event.wait()
+
     def run(self):
         """
         Bus reading process.
+
+        Process cycle life:
+            - configure module
+            - wait for all modules configured
+            - run async start function
+            - infinite loop on message bus (custom process can run on each loop)
         """
         self.logger.trace(u'BusClient %s started' % self.__module)
 
@@ -697,6 +729,7 @@ class BusClient(threading.Thread):
         try:
             self._configure()
         except:
+            self.__continue = False
             self.logger.exception('Exception during module "%s" configuration:' % self.__module)
             self.crash_report.report_exception({
                 u'message': 'Exception during module "%s" configuration' % self.__module,
@@ -707,7 +740,11 @@ class BusClient(threading.Thread):
 
         # module sync with others
         self.__core_join_event.wait(self.CORE_SYNC_TIMEOUT)
-        self._on_start()
+
+        # run custom on_start function asynchronously to avoid dead locks if
+        # bus message is mutually used between 2 modules
+        start_task = Task(None, self._on_start, self.logger, end_callback = self.__started_callback)
+        start_task.start()
 
         # now run infinite loop on message bus
         while self.__continue:
@@ -840,6 +877,9 @@ class BusClient(threading.Thread):
                     u'module': self.__module
                 })
                 self.stop()
+
+        # custom stop
+        self._on_stop()
 
         # remove subscription
         self.__bus.remove_subscription(self.__module)
