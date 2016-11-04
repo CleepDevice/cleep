@@ -33,7 +33,7 @@ var dashboardDirective = function() {
 var dashboardWidget = function($compile) {
 
     var dashboardWidgetLink = function(scope, element, attr) {
-        var widget = $compile('<div widget-' + scope.type + '-directive device="device"></div>')(scope);
+        var widget = $compile('<div ' + scope.type + '-widget device="device"></div>')(scope);
         element.append(widget);
     };
 
