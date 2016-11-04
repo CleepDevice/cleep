@@ -21,9 +21,9 @@ class CleepBackup:
         """
         Constructor
         """
-        #member
+        # member
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.crash_report = crash_report
         self.cleep_filesystem = cleep_filesystem
 
@@ -39,16 +39,18 @@ class CleepBackup:
     def generate_archive(self):
         """
         Generate backup archive (zip format)
-        /!\ caller is in charge of file deletion
+
+        Warning:
+            Caller is in charge of file deletion !
 
         Returns:
             string: generated archive fullpath
         """
         fd = NamedTemporaryFile(delete=False)
         archive_name = fd.name
-        archive = ZipFile(fd, u'w', ZIP_DEFLATED)
+        archive = ZipFile(fd, 'w', ZIP_DEFLATED)
         for f in os.listdir(self.CLEEP_PATH):
-            #build path
+            # build path
             fullpath = os.path.join(self.CLEEP_PATH, f)
             archive.write(fullpath)
         archive.close()
