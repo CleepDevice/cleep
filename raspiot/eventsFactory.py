@@ -62,21 +62,26 @@ class EventsFactory():
             raise Exception(u'Invalid events path')
             self.crash_report.report_exception()
 
-        for f in os.listdir(path):
-            fpath = os.path.join(path, f)
-            (event, ext) = os.path.splitext(f)
-            if os.path.isfile(fpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
-                event_ = importlib.import_module(u'raspiot.events.%s' % event)
-                class_ = getattr(event_, event.capitalize())
+        try:
+            for f in os.listdir(path):
+                fpath = os.path.join(path, f)
+                (event, ext) = os.path.splitext(f)
+                if os.path.isfile(fpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
+                    event_ = importlib.import_module(u'raspiot.events.%s' % event)
+                    class_ = getattr(event_, event.capitalize())
+    
+                    #save event
+                    self.events_by_event[class_.EVENT_NAME] = {
+                        u'instance': class_,
+                        u'used': False,
+                        u'modules': [],
+                        u'formatters': [],
+                        u'profiles': []
+                    }
 
-                #save event
-                self.events_by_event[class_.EVENT_NAME] = {
-                    u'instance': class_,
-                    u'used': False,
-                    u'modules': [],
-                    u'formatters': [],
-                    u'profiles': []
-                }
+        except AttributeError:
+            self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
+            raise Exception('Invalid event tryed to be loaded')
 
         self.logger.debug('Found %d events' % len(self.events_by_event))
 
