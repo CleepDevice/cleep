@@ -16,7 +16,7 @@ class Event():
     #   * appname is the name of application which sends event
     #   * type is the type of event (monitoring, sms, email, temperature...)
     #   * and action the event action. It is usually a verb (update, change, add...)
-    EVENT_NAME = u''
+    EVENT_NAME = ''
     # is event a core event
     EVENT_CORE = False
     # list of event parameters
@@ -36,18 +36,19 @@ class Event():
         self.formatters_broker = formatters_broker
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
-        if not hasattr(self, u'EVENT_NAME'):
-            raise NotImplementedError(u'EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
+        self.__not_renderable_for = []
+        if not hasattr(self, 'EVENT_NAME'):
+            raise NotImplementedError('EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
         if (not isinstance(self.EVENT_NAME, str) and not isinstance(self.EVENT_NAME, unicode)) or len(self.EVENT_NAME)==0:
-            raise NotImplementedError(u'EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__)
-        if not hasattr(self, u'EVENT_PARAMS'):
-            raise NotImplementedError(u'EVENT_PARAMS class member must be declared in "%s"' % self.__class__.__name__)
+            raise NotImplementedError('EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__)
+        if not hasattr(self, 'EVENT_PARAMS'):
+            raise NotImplementedError('EVENT_PARAMS class member must be declared in "%s"' % self.__class__.__name__)
         if not isinstance(self.EVENT_PARAMS, list):
-            raise NotImplementedError(u'EVENT_PARAMS class member declared in "%s" must be a list' % self.__class__.__name__)
-        if not hasattr(self, u'EVENT_CHARTABLE'):
-            raise NotImplementedError(u'EVENT_CHARTABLE class member must be declared in "%s"' % self.__class__.__name__)
+            raise NotImplementedError('EVENT_PARAMS class member declared in "%s" must be a list' % self.__class__.__name__)
+        if not hasattr(self, 'EVENT_CHARTABLE'):
+            raise NotImplementedError('EVENT_CHARTABLE class member must be declared in "%s"' % self.__class__.__name__)
         if not isinstance(self.EVENT_CHARTABLE, bool):
-            raise NotImplementedError(u'EVENT_CHARTABLE class member declared in "%s" must be a bool' % self.__class__.__name__)
+            raise NotImplementedError('EVENT_CHARTABLE class member declared in "%s" must be a bool' % self.__class__.__name__)
 
     def _check_params(self, params):
         """
@@ -63,6 +64,19 @@ class Event():
             return True
 
         return all(key in self.EVENT_PARAMS for key in params.keys())
+
+    def set_renderable(self, renderer_name, renderable):
+        """
+        Disable event rendering for specified renderer
+
+        Args:
+            renderer_name (string): renderer name
+            renderable (bool): True to render event for specified renderer
+        """
+        if renderable and renderer_name in self.__not_renderable_for:
+            self.__not_renderable_for.remove(renderer_name)
+        elif not renderable and renderer_name not in self.__not_renderable_for:
+            self.__not_renderable_for.append(renderer_name)
 
     def send(self, params=None, device_id=None, to=None, render=True):
         """ 
@@ -105,7 +119,7 @@ class Event():
             return True
 
         else:
-            raise Exception(u'Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
 
     def render(self, params=None):
         """
@@ -129,26 +143,26 @@ class Event():
         result = True
         for profile_name in formatters:
             for renderer_name in formatters[profile_name]:
-                if not formatters[profile_name][renderer_name].can_render_event(self.EVENT_NAME):
-                    self.logger.trace(u'Event "%s" rendering disabled' % self.EVENT_NAME)
+                if renderer_name in self.__not_renderable_for(renderer_name):
+                    self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
                     continue
 
                 # format event params to profile
                 profile = formatters[profile_name][renderer_name].format(params)
                 if profile is None:
-                    self.logger.trace(u'Profile returns None')
+                    self.logger.debug('Profile returns None')
                     continue
 
                 # and post profile to renderer
                 request = MessageRequest()
-                request.command = u'render'
+                request.command = 'render'
                 request.to = renderer_name
-                request.params = {u'profile': profile}
+                request.params = {'profile': profile}
 
-                self.logger.trace(u'Push message to render %s' % request)
+                self.logger.trace('Push message to renderer %s' % request)
                 resp = self.bus.push(request)
-                if resp[u'error']:
-                    self.logger.error(u'Unable to render profile "%s" to "%s": %s' % (profile_name, renderer_name, resp[u'message']))
+                if resp['error']:
+                    self.logger.error('Unable to render profile "%s" to "%s": %s' % (profile_name, renderer_name, resp['message']))
                     result = False
 
         return result
@@ -176,8 +190,8 @@ class Event():
             return None
 
         chart_params = self.EVENT_PARAMS
-        if hasattr(self, u'EVENT_CHART_PARAMS') and self.EVENT_CHART_PARAMS is not None:
+        if hasattr(self, 'EVENT_CHART_PARAMS') and self.EVENT_CHART_PARAMS is not None:
             chart_params = self.EVENT_CHART_PARAMS
 
-        return [{u'field': param, u'value': params.get(param, None)} for param in chart_params]
+        return [{'field': param, 'value': params.get(param, None)} for param in chart_params]
 
