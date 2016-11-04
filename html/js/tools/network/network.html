@@ -6,8 +6,8 @@
             <md-subheader class="md-no-sticky">Wired connections</md-subheader>
             <md-list-item ng-click="networkCtl.showConfig(network, 'wired')" ng-repeat="network in networkCtl.networks | filter: {wifi:false}">
                 <md-icon md-svg-icon="ethernet"></md-icon>
-                <p ng-if="network.connected">Ethernet: connected with ip address {{network.status.ipv4}}</p>
-                <p ng-if="!network.connected">Ethernet: not connected</p>
+                <p ng-if="networkCtl.networkStatus[network.interface].status===2">Ethernet: connected with ip address {{networkCtl.networkStatus[network.interface].ipaddress}}</p>
+                <p ng-if="networkCtl.networkStatus[network.interface].status!==2">Ethernet: not connected</p>
                 <md-button class="md-secondary" ng-click="networkCtl.editWiredConfig(network)" ng-disabled="networkCtl.loading">
                     <md-icon md-svg-icon="pencil"></md-icon>
                     Configure
@@ -22,28 +22,28 @@
             </md-subheader>
             <md-list-item ng-click="networkCtl.showConfig(network, 'wifi')" ng-repeat="network in networkCtl.networks | filter: {wifi:true, interface:interface}">
                 <md-icon md-svg-icon="wifi"></md-icon>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===3 && networkCtl.wifiStatus[network.interface].network===network.network">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===3 && networkCtl.networkStatus[network.interface].network===network.network">
                     {{network.network}}: unable to connect, invalid password
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===3 && networkCtl.wifiStatus[network.interface].network!==network.network">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===3 && networkCtl.networkStatus[network.interface].network!==network.network">
                     {{network.network}}: not connected
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===2 && networkCtl.wifiStatus[network.interface].network===network.network && networkCtl.wifiStatus[network.interface].ipaddress">
-                    {{network.network}}: connected with ip address {{networkCtl.wifiStatus[network.interface].ipaddress}}
+                <p ng-if="networkCtl.networkStatus[network.interface].status===2 && networkCtl.networkStatus[network.interface].network===network.network && networkCtl.networkStatus[network.interface].ipaddress">
+                    {{network.network}}: connected with ip address {{networkCtl.networkStatus[network.interface].ipaddress}}
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===2 && networkCtl.wifiStatus[network.interface].network===network.network && !networkCtl.wifiStatus[network.interface].ipaddress">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===2 && networkCtl.networkStatus[network.interface].network===network.network && !networkCtl.networkStatus[network.interface].ipaddress">
                     {{network.network}}: connected
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===2 && networkCtl.wifiStatus[network.interface].network!==network.network">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===2 && networkCtl.networkStatus[network.interface].network!==network.network">
                     {{network.network}}: not connected
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===1">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===1">
                     {{network.network}}: connecting...
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===0">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===0">
                     {{network.network}}: not connected
                 </p>
-                <p ng-if="networkCtl.wifiStatus[network.interface].status===0 && network.config.disabled">
+                <p ng-if="networkCtl.networkStatus[network.interface].status===0 && network.config.disabled">
                     {{network.network}}: not connected (disabled)
                 </p>
                 <md-button class="md-icon-button" ng-if="network.config.hidden" aria-label="Hidden network" ng-disabled="networkCtl.loading">
@@ -78,16 +78,17 @@
 
             <!-- wifi actions -->
             <md-list-item style="padding-top:10px;">
-                <md-button class="md-raised md-primary" ng-click="networkCtl.addHiddenWifiNetwork()" ng-disabled="networkCtl.loading">
-                    <md-icon md-svg-icon="plus"></md-icon>
-                    Connect to hidden network
-                </md-button>
-                <span flex></span>
-                <md-button class="md-raised md-primary" ng-click="networkCtl.refreshWifiNetworks()" ng-disabled="networkCtl.loading">
-                    <md-icon md-svg-icon="refresh"></md-icon>
-                    <md-tooltip md-direction="left">Last update {{networkCtl.lastWifiScan | hrDatetime}}</md-tooltip>
-                    Update wifi infos
-                </md-button>
+                <div class="md-secondary">
+                    <md-button class="md-raised md-primary" ng-click="networkCtl.addHiddenWifiNetwork()" ng-disabled="networkCtl.loading">
+                        <md-icon md-svg-icon="plus"></md-icon>
+                        Connect to hidden network
+                    </md-button>
+                    <md-button class="md-raised md-primary" ng-click="networkCtl.refreshWifiNetworks()" ng-disabled="networkCtl.loading">
+                        <md-icon md-svg-icon="refresh"></md-icon>
+                        <md-tooltip md-direction="top">Last update {{networkCtl.lastWifiScan | hrDatetime}}</md-tooltip>
+                        Scan wifi networks
+                    </md-button>
+                </div>
             </md-list-item>
 
         </md-list>

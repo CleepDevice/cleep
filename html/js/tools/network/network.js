@@ -14,7 +14,7 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
         self.lastWifiScan = 0;
         self.networks = [];
         self.wifiInterfaces = [];
-        self.wifiStatus = {};
+        self.networkStatus = {};
         self.newConfig = null;
         self.selectedNetwork = null;
         self.wifiPassword = null;
@@ -35,7 +35,7 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
             self.networks = config.networks;
             self.wifiInterfaces = config.wifiinterfaces;
             self.lastWifiScan = config.lastwifiscan;
-            self.wifiStatus = config.wifistatus;
+            self.networkStatus = config.networkstatus;
         };
 
         /**
@@ -90,7 +90,6 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
         self.showConfig = function(item, type)
         {
             self.selectedNetwork = item;
-            console.log(self.selectedNetwork);
 
             $mdDialog.show({
                 controller: function() { return self; },
@@ -490,27 +489,24 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
         };
 
         /**
-         * Handle wifi events
+         * Handle network events
          */
-        $rootScope.$on('system.wifi.status', function(event, uuid, params) {
-            console.log('wifi.status', params);
-
+        $rootScope.$on('network.status.update', function(event, uuid, params)
+        {
             for( var i=0; i<self.networks.length; i++ )
             {
-                if( self.wifiStatus[params.interface]===undefined )
+                if( self.networkStatus[params.interface]===undefined )
                 {
-                    self.wifiStatus[params.interface] = {
+                    self.networkStatus[params.interface] = {
                         network: params.network,
                         status: 0,
                         ipaddress: null
                     };
                 }
-                self.wifiStatus[params.interface].network = params.network;
-                self.wifiStatus[params.interface].status = params.status;
-                self.wifiStatus[params.interface].ipaddress = params.ipaddress;
+                self.networkStatus[params.interface].network = params.network;
+                self.networkStatus[params.interface].status = params.status;
+                self.networkStatus[params.interface].ipaddress = params.ipaddress;
             }
-
-            console.log(self.wifiStatus);
         });
 
     }];

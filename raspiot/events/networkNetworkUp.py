@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Systemnetworkdown(Event):
+class Networknetworkup(Event):
     """
-    System.network.down event
+    Network.network.up event
     """
 
-    EVENT_NAME = u'system.network.down'
+    EVENT_NAME = u'network.network.up'
     EVENT_SYSTEM = True
 
     def __init__(self, bus, formatters_factory, events_factory):

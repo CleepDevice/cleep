@@ -57,9 +57,9 @@ class Network(RaspIotModule):
     MODULE_URLINFO = None
     MODULE_URLBUGS = None
 
-    STATUS_WIFI_DISCONNECTED = 0
-    STATUS_WIFI_CONNECTING = 1
-    STATUS_WIFI_CONNECTED = 2
+    STATUS_DISCONNECTED = 0
+    STATUS_CONNECTING = 1
+    STATUS_CONNECTED = 2
     STATUS_WIFI_INVALID_PASSWORD = 3
 
     def __init__(self, bus, debug_enabled):
@@ -90,15 +90,15 @@ class Network(RaspIotModule):
         self.wifi_network_names = []
         self.wifi_interfaces = {}
         self.wifi_adapters = {}
-        self.wifi_status = {}
+        self.network_status = {}
         self.last_wifi_networks_scan = 0
         self.__network_watchdog_task = None
         self.__network_is_down = True
 
         #events
-        self.network_up_event = self._get_event(u'system.network.up')
-        self.network_down_event = self._get_event(u'system.network.down')
-        self.network_wifi_status = self._get_event(u'system.wifi.status')
+        self.network_up_event = self._get_event(u'network.network.up')
+        self.network_down_event = self._get_event(u'network.network.down')
+        self.network_status_update = self._get_event(u'network.status.update')
 
     def _configure(self):
         """
@@ -212,9 +212,6 @@ class Network(RaspIotModule):
                     #wifi interface
                     configured_interfaces[interface][u'wifi'] = True
 
-                    #refresh wifi status (will be sent at end of this function)
-                    self.__check_wifi_interface(interface)
-
                     if self.wifi_interfaces[interface][u'network'] is not None:
                         #interface is connected
                         configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
@@ -225,13 +222,6 @@ class Network(RaspIotModule):
                     #interface is not wifi
                     configured_interfaces[interface][u'wifi'] = False
                     configured_interfaces[interface][u'wifi_network'] = None
-
-                #add connection status (use wifistatus data)
-                #if interface in current_status.keys():
-                #    configured_interfaces[interface][u'connected'] = True
-                #else:
-                #    configured_interfaces[interface][u'connected'] = False
-                configured_interfaces[interface][u'connected'] = None
 
             self.logger.debug('Configured_interfaces: %s' % configured_interfaces)
 
@@ -264,12 +254,8 @@ class Network(RaspIotModule):
                     configured_interfaces[interface][u'wifi'] = False
                     configured_interfaces[interface][u'wifi_network'] = None
 
-                #add connection status (use wifistatus data)
-                #if interface in current_status.keys():
-                #    configured_interfaces[interface][u'connected'] = True
-                #else:
-                #    configured_interfaces[interface][u'connected'] = False
-                configured_interfaces[interface][u'connected'] = None
+        #check network status (will be sent at end of function)
+        self.__check_network_connection()
 
         #prepare networks list
         networks = []
@@ -279,17 +265,14 @@ class Network(RaspIotModule):
             if not configured_interfaces[interface][u'wifi']:
                 #get interface status
                 network_status = None
-                connected = False
                 if interface in current_status.keys():
                     network_status = current_status[interface]
-                    connected = True
 
                 #save entry
                 networks.append({
                     u'network': interface,
                     u'interface': interface,
                     u'wifi': False,
-                    u'connected': connected,
                     u'config': configured_interfaces[interface],
                     u'status': network_status
                 })
@@ -313,18 +296,11 @@ class Network(RaspIotModule):
                 if interface in current_status.keys():
                     network_status = current_status[interface]
 
-                #get wifi connection
-                #connected = False
-                #if interface in self.wifi_interfaces.keys() and network_name==self.wifi_interfaces[interface][u'network']:
-                #    connected = True
-
                 #save entry
                 networks.append({
                     u'network': network_name,
                     u'interface': interface,
                     u'wifi': True,
-                    #u'connected': connected,
-                    u'connected': None,
                     u'config': wifi_config,
                     u'status': network_status
                 })
@@ -333,7 +309,7 @@ class Network(RaspIotModule):
         output[u'networks'] = networks
         output[u'wifiinterfaces'] = self.wifi_interfaces.keys()
         output[u'lastwifiscan'] = self.last_wifi_networks_scan
-        output[u'wifistatus'] = self.wifi_status
+        output[u'networkstatus'] = self.network_status
 
         return output
 
@@ -343,18 +319,31 @@ class Network(RaspIotModule):
         Send event when network is up and when it is down
         Monitor wifi network status (disconnected/connected/invalid password)
         """
-        #network connection status
+        #init
+        wifi_interfaces = self.iwconfig.get_interfaces()
         connected = False
         interfaces = netifaces.interfaces()
+
+        #check interfaces
         for interface in interfaces:
             #drop local interface
             if interface==u'lo':
                 continue
             
+            #check if at least one interface is connected
             addresses = netifaces.ifaddresses(interface)
             if netifaces.AF_INET in addresses and len(addresses[netifaces.AF_INET])==1 and addresses[netifaces.AF_INET][0]['addr'].strip():
                 connected = True
-                break
+
+            #update interface status
+            if interface in wifi_interfaces:
+                #wifi interface
+                self.__check_wifi_interface(interface, addresses)
+            else:
+                #ethernet interface
+                self.__check_wired_interface(interface, addresses)
+
+        #handle network connection status
         if connected and self.__network_is_down:
             self.__network_is_down = False
             self.network_up_event.send()
@@ -362,14 +351,53 @@ class Network(RaspIotModule):
             self.__network_is_down = True
             self.network_down_event.send()
 
-        #wifi status
-        wifi_interfaces = self.iwconfig.get_interfaces()
-        for interface in wifi_interfaces:
-            self.__check_wifi_interface(interface)
-            
     #----------
     #WIRED AREA
     #----------
+
+    def __check_wired_interface(self, interface, netifaces_infos):
+        """
+        Check wired interface
+
+        Args:
+            interface (string): name of wired interface
+            netifaces_infos (dict): infos from netifaces request
+        """
+        old_status = None
+        if interface not in self.network_status:
+            self.network_status[interface] = {}
+            self.network_status[interface][u'network'] = 'wired'
+            self.network_status[interface][u'status'] = None
+            self.network_status[interface][u'ipaddress'] = None
+
+        try:
+            #get old status to send update event after update if necessary
+            old_status = self.network_status[interface][u'status']
+
+            #update status
+            if netifaces.AF_INET in netifaces_infos:
+                self.network_status[interface][u'status'] = self.STATUS_CONNECTED
+                self.network_status[interface][u'ipaddress'] = netifaces_infos[netifaces.AF_INET][0][u'addr']
+            #TODO ipv6 appears more quickly than ipv4 so event sends status with ipv6. We need to find a way to handle both ipv4 and ipv6
+            #elif netifaces.AF_INET6 in netifaces_infos:
+            #    self.network_status[interface][u'status'] = self.STATUS_CONNECTED
+            #    self.network_status[interface][u'ipaddress'] = netifaces_infos[netifaces.AF_INET6][0][u'addr']
+            else:
+                self.network_status[interface][u'status'] = self.STATUS_DISCONNECTED
+                self.network_status[interface][u'ipaddress'] = None
+
+            #send event
+            if old_status is not None and old_status!=self.network_status[interface][u'status']:
+                self.logger.debug('Wired interface "%s" status %s with ip "%s"' % (interface, self.network_status[interface][u'status'], self.network_status[interface][u'ipaddress']))
+                self.network_status_update.send(params={
+                    u'interface':interface,
+                    u'network': self.network_status[interface][u'network'],
+                    u'status': self.network_status[interface][u'status'],
+                    u'ipaddress': self.network_status[interface][u'ipaddress']
+                })
+
+        except:
+            self.logger.exception(u'Exception occured when trying to get wired interface "%s" status' % interface)
 
     def reconfigure_wired_interface(self, interface):
         """
@@ -392,7 +420,6 @@ class Network(RaspIotModule):
             fallback (bool): is configuration used as fallback
         """
         res = False
-
 
         #then add new one
         if self.dhcpcd.is_installed():
@@ -423,7 +450,7 @@ class Network(RaspIotModule):
             
             #finally add new configuration
             if not self.etcnetworkinterfaces.add_static_interface(interface, EtcNetworkInterfaces.OPTION_HOTPLUG, ip_address, gateway, netmask):
-                self.logger.error('Unable to save wired static configuration (networkÃ/interfaces): unable to add interface %s' % interface)
+                self.logger.error('Unable to save wired static configuration (networkÃ/interfaces): unable to add interface %s' % interface)
                 raise CommandError(u'Unable to save data')
 
         #restart interface
@@ -475,12 +502,13 @@ class Network(RaspIotModule):
     #WIRELESS AREA
     #-------------
 
-    def __check_wifi_interface(self, interface):
+    def __check_wifi_interface(self, interface, netifaces_infos):
         """
-        Check wifi status for specified interface (used in watchdog)
+        Check wifi interface
 
         Args:
-            interface (string): interface name
+            interface (string): name of wired interface
+            netifaces_infos (dict): infos from netifaces request
         """
         #get current status
         network, status, ip_address = self.wpacli.get_status(interface)
@@ -488,36 +516,37 @@ class Network(RaspIotModule):
 
         #convert to network status
         if status==self.wpacli.STATE_COMPLETED:
-            wifi_status = self.STATUS_WIFI_CONNECTED
+            wifi_status = self.STATUS_CONNECTED
         elif status in (self.wpacli.STATE_4WAY_HANDSHAKE, self.wpacli.STATE_GROUP_HANDSHAKE):
             wifi_status = self.STATUS_WIFI_INVALID_PASSWORD
         elif status in (self.wpacli.STATE_SCANNING, self.wpacli.STATE_AUTHENTICATING, self.wpacli.STATE_ASSOCIATING, self.wpacli.STATE_ASSOCIATED):
-            wifi_status = self.STATUS_WIFI_CONNECTING
+            wifi_status = self.STATUS_CONNECTING
         else:
-            wifi_status = self.STATUS_WIFI_DISCONNECTED
+            wifi_status = self.STATUS_DISCONNECTED
 
-        #update wifi_status and send event if necessary
-        if interface in self.wifi_status:
-            if self.wifi_status[interface][u'status']==self.STATUS_WIFI_INVALID_PASSWORD and status!=self.wpacli.STATE_COMPLETED:
-                #drop status update of interface that have already been detected with invalid password
-                return
-            
-            if wifi_status!=self.wifi_status[interface][u'status']:
-                #send event for current status
-                self.network_wifi_status.send(params={u'interface':interface, u'network':network, u'status':wifi_status, u'ipaddress':ip_address})
-
-                #save new status
-                self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
-                self.wifi_status[interface][u'network'] = network
-                self.wifi_status[interface][u'status'] = wifi_status
-        else:
-            #no previous status, store it
+        #no previous status, store it
+        if interface not in self.network_status:
             self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
-            self.wifi_status[interface] = {
+            self.network_status[interface] = {
                 u'network': network,
                 u'status': wifi_status,
                 u'ipaddress': ip_address
             }
+            return
+
+        #drop status update of interface that have already been detected with invalid password
+        if self.network_status[interface][u'status']==self.STATUS_WIFI_INVALID_PASSWORD and status!=self.wpacli.STATE_COMPLETED:
+            return
+            
+        #update wifi_status and send event if necessary
+        if wifi_status!=self.network_status[interface][u'status']:
+            #send event for current status
+            self.network_status_update.send(params={u'interface':interface, u'network':network, u'status':wifi_status, u'ipaddress':ip_address})
+
+            #save new status
+            self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
+            self.network_status[interface][u'network'] = network
+            self.network_status[interface][u'status'] = wifi_status
 
     def __scan_wifi_networks(self, interface):
         """

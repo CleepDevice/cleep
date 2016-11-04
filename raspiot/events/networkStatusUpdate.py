@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Systemwifistatus(Event):
+class Networkstatusupdate(Event):
     """
-    System.wifi.Status event
-    Report wifi status for an interface
+    Network.status.update event
+    Report network interface status
     """
 
-    EVENT_NAME = u'system.wifi.status'
+    EVENT_NAME = u'network.status.update'
     EVENT_SYSTEM = True
 
     def __init__(self, bus, formatters_factory, events_factory):
