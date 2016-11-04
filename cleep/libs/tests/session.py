@@ -32,14 +32,13 @@ class TestSession():
 
         self.__setup_executed = False
         self.__module_class = None
-        self.__debug_enabled = None
+        self.__debug_enabled = False
 
     def __build_bootstrap_objects(self, debug):
         """
         Build bootstrap object with appropriate singleton instances
         All data is pre-configured for tests
         """
-        debug = False
         crash_report = CrashReport(None, u'Test', u'0.0.0', {}, debug, True)
 
         events_broker = EventsBroker(debug)
@@ -71,21 +70,23 @@ class TestSession():
             'drivers': Drivers(debug),
         }
 
-    def setup(self, module_class, debug_enabled=False, bootstrap={}, start_module=True):
+    def setup(self, module_class, bootstrap={}):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
 
         Args:
             module_class (type): module class type
-            debug_enable (bool): enable debug on module
             bootstrap (dict): overwrite default bootstrap by specified one. You dont have to specify
                               all items, only specified ones will be replaced.
-            start_module (bool): start module during setup (default True)
 
         Returns:
             Object: returns module_class instance
         """
+        # logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.__debug_enabled = True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
+
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.bootstrap.update(bootstrap)
@@ -94,18 +95,11 @@ class TestSession():
         self.__module_class = None
         self.__module_instance = None
 
-        # logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-        log_level = logging.getLogger().getEffectiveLevel()
-        self.__debug_enabled = True if log_level <= logging.DEBUG else False
-
         # config
         module_class.CONFIG_DIR = '/tmp'
         
         # instanciate
-        self.__module_instance = module_class(self.bootstrap, debug_enabled)
-        if start_module:
-            self.start_module(self.__module_instance)
+        self.__module_instance = module_class(self.bootstrap, self.__debug_enabled)
 
         self.__setup_executed = True
         return self.__module_instance
@@ -120,8 +114,11 @@ class TestSession():
         # start instace
         module_instance.start()
 
-        # wait for module to be started
+        # wait for module to be configured
         self.bootstrap['module_join_event'].wait()
+
+        # wait for module to be really started
+        module_instance._wait_is_started()
 
     def respawn_module(self):
         """
@@ -159,38 +156,69 @@ class TestSession():
         if os.path.exists(path):
             os.remove(path)
 
-    def mock_command(self, command, handler, fail=False, no_response=False):
+        if self.__module_instance:
+            del self.__module_instance
+            self.__module_instance = None
+
+    def get_handled_commands(self):
+        """
+        Return list of handled commands
+        
+        Returns:
+            list (string): list of commands
+        """
+        return list(self.__bus_command_handlers.keys())
+
+    def make_mock_command(self, command, handler, fail=False, no_response=False):
+        """
+        Help user to make a ready to user command object
+
+        Returns:
+            dict: awaited mocked command object
+        """
+        if not callable(handler):
+            raise Exception('Handler must be callable (you can use Mock)')
+
+        return {
+            'command': command,
+            'handler': handler,
+            'fail': fail,
+            'no_response': no_response
+        }
+
+    def add_mock_command(self, command):
         """
         Mock command handler
 
         Args:
-            command (string): name of command to handle
-            handler (function): function to call when command triggered
-            fail (bool): if True will return error like if the command has failed
-            no_response: if True will simulate no response
+            command (dict): command object as returned by make_mock_command function
         """
-        self.__bus_command_handlers[command] = {
-            u'handler': handler,
+        if command in list(self.__bus_command_handlers.keys()):
+            self.logger.warning('Mock command "%s" already mocked' % command['command'])
+            return
+
+        self.__bus_command_handlers[command['command']] = {
+            u'handler': command['handler'],
             u'calls': 0,
-            u'fail': fail,
-            u'no_response': no_response
+            u'fail': command['fail'],
+            u'no_response': command['no_response'],
         }
 
-    def succeed_command(self, command):
+    def set_mock_command_succeed(self, command):
         """
         Flag command as succeed will return handler output
         """
         if command in self.__bus_command_handlers:
             self.__bus_command_handlers[command][u'fail'] = False
 
-    def fail_command(self, command):
+    def set_mock_command_fail(self, command):
         """
         Flag command as fail will return error when called
         """
         if command in self.__bus_command_handlers:
             self.__bus_command_handlers[command][u'fail'] = True
 
-    def get_command_calls(self, command):
+    def get_mock_command_calls(self, command):
         """
         Return how many times the command handler has been called
 
@@ -233,6 +261,7 @@ class TestSession():
         """
         Mocked message bus push method
         """
+        self.logger.debug('TEST: Process command %s' % request)
         if request and request.command in self.__bus_command_handlers:
             self.logger.debug('TEST: push command "%s"' % request.command)
             self.__bus_command_handlers[request.command][u'calls'] += 1
@@ -248,13 +277,13 @@ class TestSession():
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
                 return None
 
-            res = self.__bus_command_handlers[request.command][u'handler']()
-            return res
+            return self.__bus_command_handlers[request.command][u'handler']()
 
+        self.logger.fatal('TEST: Command "%s" is not handled. Please mock it.' % request.command)
         return {
             'error': True,
             'data': None,
-            'message': 'TEST: Command "%s" not handled. Please mock it.' % request.command
+            'message': 'TEST: Command "%s" is not handled. Please mock it.' % request.command
         }
 
     def _events_broker_get_event_instance_mock(self, event_name):
