@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# !/usr/bin/env python
+#  -*- coding: utf-8 -*-
 
 from cleep.exception import InvalidParameter, MissingParameter
 from configparser import ConfigParser
@@ -28,7 +28,7 @@ class CleepConf():
         },
         u'debug': {
             u'trace_enabled': False,
-            u'debug_system': False,
+            u'debug_core': False,
             u'debug_modules': []
         }
     }
@@ -40,7 +40,7 @@ class CleepConf():
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        #members
+        # members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -54,16 +54,16 @@ class CleepConf():
         Raises:
             Exception: if file doesn't exist
         """
-        #init conf reader
+        # init conf reader
         self.__conf = ConfigParser()
         if not os.path.exists(self.CONF):
-            #create empty file
+            # create empty file
             fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(u'')
             self.cleep_filesystem.close(fd)
             time.sleep(0.10)
         
-        #load conf content
+        # load conf content
         fd = self.cleep_filesystem.open(self.CONF, u'r')
         self.__conf.read_file(fd)
         self.cleep_filesystem.close(fd)
@@ -75,9 +75,8 @@ class CleepConf():
         Close everything and write new content if forced
         """
         if self.__conf and write:
-            #workaround for unicode writing http://bugs.python.org/msg187829
+            # workaround for unicode writing http://bugs.python.org/msg187829
             f = self.cleep_filesystem.open(self.CONF, u'w')
-            # self.logger.info('===> %s' % f.buffer)
             self.__conf.write(f)
             self.cleep_filesystem.close(f)
 
@@ -88,20 +87,20 @@ class CleepConf():
         config = self.__open()
         updated = False
 
-        #merge with default config
+        # merge with default config
         for section in self.DEFAULT_CONFIG.keys():
-            #fix missing section
+            # fix missing section
             if not config.has_section(section):
                 config.add_section(section)
                 updated = True
 
-            #fix missing section keys
+            # fix missing section keys
             for key in self.DEFAULT_CONFIG[section].keys():
                 if not config.has_option(section, key):
                     config.set(section, key, str(self.DEFAULT_CONFIG[section][key]))
                     updated = True
 
-        #write changes to filesystem
+        # write changes to filesystem
         self.__close(updated)
 
     def as_dict(self):
@@ -121,7 +120,7 @@ class CleepConf():
                 try:
                     config[section][option] = ast.literal_eval(val)
                 except:
-                    #unable to eval option, consider it as a string
+                    # unable to eval option, consider it as a string
                     config[section][option] = u'%s' % val
 
         return config
@@ -139,12 +138,12 @@ class CleepConf():
         conf = self.__open()
         self.logger.trace('Conf=%s' % conf)
         
-        #check if module isn't already installed
+        # check if module isn't already installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module in modules:
             return True
 
-        #install module
+        # install module
         modules.append(module)
         conf.set(u'general', u'modules', str(modules))
         self.__close(True)
@@ -163,13 +162,13 @@ class CleepConf():
         """
         conf = self.__open()
         
-        #check if module is installed
+        # check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
             self.logger.warning(u'Trying to uninstall not installed module "%s"' % module)
             return False
 
-        #uninstall module
+        # uninstall module
         modules.remove(module)
         conf.set(u'general', u'modules', str(modules))
         self.__close(True)
@@ -188,18 +187,18 @@ class CleepConf():
         """
         conf = self.__open()
 
-        #check if module installed
+        # check if module installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
             self.logger.warning(u'Trying to update not installed module "%s"' % module)
             return False
 
-        #check if module not already updated
+        # check if module not already updated
         updated = ast.literal_eval(conf.get(u'general', u'updated'))
         if module in updated:
             return True
 
-        #update module
+        # update module
         updated.append(module)
         conf.set(u'general', u'updated', str(updated))
         self.__close(True)
@@ -212,7 +211,7 @@ class CleepConf():
         """
         conf = self.__open()
 
-        #clear list content
+        # clear list content
         updated = ast.literal_eval(conf.get(u'general', u'updated'))
         updated[:] = []
         conf.set(u'general', u'updated', str(updated))
@@ -277,32 +276,32 @@ class CleepConf():
         self.__close()
         return ast.literal_eval(conf.get(u'debug', u'trace_enabled'))
 
-    def enable_system_debug(self):
+    def enable_core_debug(self):
         """
-        Enable system debug
-        """
-        conf = self.__open()
-        conf.set(u'debug', u'debug_system', str(True))
-        self.__close(True)
-
-    def disable_system_debug(self):
-        """
-        Disable system debug
+        Enable core debug
         """
         conf = self.__open()
-        conf.set(u'debug', u'debug_system', str(False))
+        conf.set(u'debug', u'debug_core', str(True))
         self.__close(True)
 
-    def is_system_debugged(self):
+    def disable_core_debug(self):
         """
-        Return system debug status
+        Disable core debug
+        """
+        conf = self.__open()
+        conf.set(u'debug', u'debug_core', str(False))
+        self.__close(True)
+
+    def is_core_debugged(self):
+        """
+        Return core debug status
 
         Returns:
-            bool: True if system debug enabled
+            bool: True if core debug enabled
         """
         conf = self.__open()
         self.__close()
-        return ast.literal_eval(conf.get(u'debug', u'debug_system'))
+        return ast.literal_eval(conf.get(u'debug', u'debug_core'))
 
     def enable_module_debug(self, module):
         """
@@ -316,19 +315,19 @@ class CleepConf():
         """
         conf = self.__open()
 
-        #check if module is installed
+        # check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
             self.logger.warning(u'Trying to enable debug for not installed module "%s"' % module)
             return False
         
-        #check if module is in debug list
+        # check if module is in debug list
         modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         if module in modules:
-            #module already in debug list
+            # module already in debug list
             return True
 
-        #add module to debug list
+        # add module to debug list
         modules.append(module)
         conf.set(u'debug', u'debug_modules', str(modules))
         self.__close(True)
@@ -347,13 +346,13 @@ class CleepConf():
         """
         conf = self.__open()
         
-        #check if module is in debug list
+        # check if module is in debug list
         modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         if module not in modules:
-            #module not in debug list
+            # module not in debug list
             return False
 
-        #remove module from debug list
+        # remove module from debug list
         modules.remove(module)
         conf.set(u'debug', u'debug_modules', str(modules))
         self.__close(True)

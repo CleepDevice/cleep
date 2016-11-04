@@ -41,7 +41,7 @@ class CleepConfTests(unittest.TestCase):
         conf.set('rpc', 'rpc_key', '')
         conf.add_section('debug')
         conf.set('debug', 'trace_enabled', u'False')
-        conf.set('debug', 'debug_system', u'False')
+        conf.set('debug', 'debug_core', u'False')
         conf.set('debug', 'debug_modules', str([]))
         with open(self.FILE_NAME, 'w') as fp:
             conf.write(fp)
@@ -62,13 +62,13 @@ class CleepConfTests(unittest.TestCase):
         self.rc.disable_trace()
         self.assertFalse(self.rc.is_trace_enabled())
 
-    def test_enable_system_debug(self):
-        self.rc.enable_system_debug()
-        self.assertTrue(self.rc.is_system_debugged())
+    def test_enable_core_debug(self):
+        self.rc.enable_core_debug()
+        self.assertTrue(self.rc.is_core_debugged())
 
-    def test_disable_system_debug(self):
-        self.rc.disable_system_debug()
-        self.assertFalse(self.rc.is_system_debugged())
+    def test_disable_core_debug(self):
+        self.rc.disable_core_debug()
+        self.assertFalse(self.rc.is_core_debugged())
 
     def test_check(self):
         self.assertIsNone(self.rc.check())
