@@ -19,6 +19,13 @@ from mock import MagicMock
 
 TRACE = tools.TRACE
 
+class AnyArg(object):
+    """
+    Used to perform a "any" params comparison during an assert_called_with
+    """
+    def __eq__(a, b):
+        return True
+
 class TestSession():
     """
     Create session to be able to run tests on a Cleep module
@@ -33,23 +40,26 @@ class TestSession():
         self.__setup_executed = False
         self.__module_class = None
         self.__debug_enabled = False
+        self.crash_report = None
+        self.cleep_filesystem = None
 
     def __build_bootstrap_objects(self, debug):
         """
         Build bootstrap object with appropriate singleton instances
         All data is pre-configured for tests
         """
-        crash_report = CrashReport(None, u'Test', u'0.0.0', {}, debug, True)
+        self.crash_report = MagicMock()
 
         events_broker = EventsBroker(debug)
         events_broker.get_event_instance = self._events_broker_get_event_instance_mock
 
-        message_bus = bus.MessageBus(crash_report, debug)
+        message_bus = bus.MessageBus(self.crash_report, debug)
         message_bus.push = self._message_bus_push_mock
 
-        cleep_filesystem = CleepFilesystem()
         # enable writings during tests
-        cleep_filesystem.enable_write(True, True)
+        fs = CleepFilesystem()
+        fs.enable_write(True, True)
+        self.cleep_filesystem = MagicMock()
 
         critical_resources = CriticalResources(debug)
         
@@ -60,14 +70,15 @@ class TestSession():
             'message_bus': message_bus,
             'events_broker': events_broker,
             'formatters_broker': EventsBroker(debug),
-            'cleep_filesystem': MagicMock(),
-            'crash_report': crash_report,
+            'cleep_filesystem': self.cleep_filesystem,
+            'crash_report': self.crash_report,
             'module_join_event': Event(),
             'core_join_event': core_join_event,
             'test_mode': True,
             'critical_resources': critical_resources,
             'execution_step': ExecutionStep(),
             'drivers': Drivers(debug),
+            'log_file': '/tmp/cleep.log',
         }
 
     def setup(self, module_class, bootstrap={}):
@@ -142,7 +153,6 @@ class TestSession():
         Clean all stuff.
         Can be called during test tear down.
         """
-
         if not self.__setup_executed:
             return
 
@@ -169,26 +179,29 @@ class TestSession():
         """
         return list(self.__bus_command_handlers.keys())
 
-    def make_mock_command(self, command, handler, fail=False, no_response=False):
+    def make_mock_command(self, command, data=None, fail=False, no_response=False):
         """
         Help user to make a ready to user command object
+
+        Args:
+            command (string): command name
+            data (any): data to return as command result
+            fail (bool): set True to simulate command failure
+            no_response (bool): set True to simulate command no response
 
         Returns:
             dict: awaited mocked command object
         """
-        if not callable(handler):
-            raise Exception('Handler must be callable (you can use Mock)')
-
         return {
             'command': command,
-            'handler': handler,
+            'data': data,
             'fail': fail,
-            'no_response': no_response
+            'noresponse': no_response
         }
 
     def add_mock_command(self, command):
         """
-        Mock command handler
+        Mock command sent to internal message bus
 
         Args:
             command (dict): command object as returned by make_mock_command function
@@ -198,27 +211,39 @@ class TestSession():
             return
 
         self.__bus_command_handlers[command['command']] = {
-            u'handler': command['handler'],
-            u'calls': 0,
-            u'fail': command['fail'],
-            u'no_response': command['no_response'],
+            'data': command['data'],
+            'calls': 0,
+            'fail': command['fail'],
+            'noresponse': command['noresponse'],
+            'lastparams': None,
+            'last_to': None,
         }
 
     def set_mock_command_succeed(self, command):
         """
-        Flag command as succeed will return handler output
+        Flag command as succeed will return specified data
         """
         if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command][u'fail'] = False
+            self.__bus_command_handlers[command]['fail'] = False
+            self.__bus_command_handlers[command]['noresponse'] = False
 
     def set_mock_command_fail(self, command):
         """
         Flag command as fail will return error when called
         """
         if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command][u'fail'] = True
+            self.__bus_command_handlers[command]['fail'] = True
+            self.__bus_command_handlers[command]['noresponse'] = False
 
-    def get_mock_command_calls(self, command):
+    def set_mock_command_no_response(self, command):
+        """
+        Flag command as not responding
+        """
+        if command in self.__bus_command_handlers:
+            self.__bus_command_handlers[command]['fail'] = False
+            self.__bus_command_handlers[command]['noresponse'] = True
+
+    def command_call_count(self, command):
         """
         Return how many times the command handler has been called
 
@@ -229,11 +254,51 @@ class TestSession():
             int: number of times handler has been called
         """
         if command in self.__bus_command_handlers:
-            return self.__bus_command_handlers[command][u'calls']
+            return self.__bus_command_handlers[command]['calls']
 
         return 0
 
-    def get_event_calls(self, event_name):
+    def command_called_with(self, command, params, to=None):
+        """
+        Return True if command is called with specified parameters
+
+        Args:
+            command (string): command name
+            params (dict): command parameters
+            to (string): command recipient. If to is specified, the value is used to check command validity
+
+        Returns:
+            bool: True if command called with params
+        """
+        if command in self.__bus_command_handlers:
+            params_check = self.__bus_command_handlers[command]['lastparams'] == params
+            params_error = ('  Expected params: %s\n  Current params: %s' % (params, self.__bus_command_handlers[command]['lastparams'])
+                            if not params_check else '')
+            to_check = True if to is None else self.__bus_command_handlers[command]['lastto'] == to
+            to_error = ('  Expected to: %s\n  Current to: %s' % (to, self.__bus_command_handlers[command]['lastto'])
+                        if not to_check else '')
+
+            check = params_check and to_check
+            if not check:
+                logging.fatal('TEST: command_called_with failed:\n%s%s%s' % (params_error, ('\n' if params_error else ''), to_error))
+            return check
+
+        logging.fatal('TEST: event_called_with failed: command not mocked. Please use "session.add_mock_command"')
+        return False
+
+    def event_called(self, event_name):
+        """
+        Return True if event was called
+
+        Args:
+            event_name (string): event name
+
+        Returns:
+            bool: True if event called
+        """
+        return True if self.event_call_count(event_name) > 0 else False
+
+    def event_call_count(self, event_name):
         """
         Returns event calls count
 
@@ -241,11 +306,28 @@ class TestSession():
             int: number of event calls count or 0 if event not handled
         """
         if event_name in self.__event_handlers:
-            return self.__event_handlers[event_name][u'sends']
+            return self.__event_handlers[event_name]['sends']
 
         return 0
 
-    def get_event_last_params(self, event_name):
+    def event_called_with(self, event_name, params):
+        """
+        Return True if event was called with specified arguments
+
+        Args:
+            event_name (string): event name
+            params (dict): dict of parameters
+
+        Returns:
+            bool: True if event called with params
+        """
+        last_params = self.get_last_event_params(event_name)
+        check = True if params == last_params else False
+        if not check:
+            logging.fatal('TEST: event_called_with failed:\n  Expected: %s\n  Current:  %s' % (params, last_params))
+        return check
+
+    def get_last_event_params(self, event_name):
         """
         Returns event params of last call
 
@@ -253,7 +335,7 @@ class TestSession():
             dict: last event call params or None if event not handled
         """
         if event_name in self.__event_handlers:
-            return self.__event_handlers[event_name][u'lastparams']
+            return self.__event_handlers[event_name]['lastparams']
 
         return None
 
@@ -264,26 +346,32 @@ class TestSession():
         self.logger.debug('TEST: Process command %s' % request)
         if request and request.command in self.__bus_command_handlers:
             self.logger.debug('TEST: push command "%s"' % request.command)
-            self.__bus_command_handlers[request.command][u'calls'] += 1
+            self.__bus_command_handlers[request.command]['calls'] += 1
+            self.__bus_command_handlers[request.command]['lastparams'] = request.params
+            self.__bus_command_handlers[request.command]['lastto'] = request.to
 
-            if self.__bus_command_handlers[request.command][u'fail']:
+            if self.__bus_command_handlers[request.command]['fail']:
                 self.logger.debug('TEST: command "%s" fails for tests' % request.command)
                 return {
                     'error': True,
                     'data': None,
-                    'message': 'TEST: command fails for tests'
+                    'message': 'TEST: command fails for tests',
                 }
-            elif self.__bus_command_handlers[request.command][u'no_response']:
+            elif self.__bus_command_handlers[request.command]['noresponse']:
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
                 return None
 
-            return self.__bus_command_handlers[request.command][u'handler']()
+            return {
+                'error': False,
+                'data': self.__bus_command_handlers[request.command]['data'],
+                'message': '',
+            }
 
         self.logger.fatal('TEST: Command "%s" is not handled. Please mock it.' % request.command)
         return {
             'error': True,
             'data': None,
-            'message': 'TEST: Command "%s" is not handled. Please mock it.' % request.command
+            'message': 'TEST: Command "%s" is not handled. Please mock it.' % request.command,
         }
 
     def _events_broker_get_event_instance_mock(self, event_name):
@@ -294,17 +382,17 @@ class TestSession():
         e_.EVENT_NAME = event_name
         instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_broker'])
         self.__event_handlers[event_name] = {
-            u'sends': 0,
-            u'lastparams': None,
-            u'lastdeviceid': None,
+            'sends': 0,
+            'lastparams': None,
+            'lastdeviceid': None,
         }
         event_handlers = self.__event_handlers
         # monkey patch new event send() method
         def event_send_mock(self, params=None, device_id=None, to=None, render=True):
             self.logger.debug('TEST: send event "%s"' % event_name)
-            event_handlers[event_name][u'sends'] += 1
-            event_handlers[event_name][u'lastparams'] = params
-            event_handlers[event_name][u'lastdeviceid'] = device_id
+            event_handlers[event_name]['sends'] += 1
+            event_handlers[event_name]['lastparams'] = params
+            event_handlers[event_name]['lastdeviceid'] = device_id
         instance.send = types.MethodType(event_send_mock, instance)
 
         return instance
