@@ -67,10 +67,13 @@ class ConfigException(Exception):
 
 
 def usage():
-    print(u'RaspIot usage: raspiot [-d|--debug] [-s|--stdout [-h|--help]]')
-    print(u' -d|--debug  : enable debug log level')
-    print(u' -s|--stdout : dump log in console instead of log file')
-    print(u' -h|--help   : this help')
+    print(u'RaspIot usage: raspiot [-d <module names>|--debug=<modules names>][-D|--debugsystem] [-t|--trace] [-s|--stdout] [-N|--noro] [-h|--help]]')
+    print(u' -d|--debug        : enable debug for specified module names (coma separated: "network,system")')
+    print(u' -D|--debugsystem  : enable debug for RaspIot core')
+    print(u' -t|--trace        : enable debug for all RaspIot (all modules, all libraries...)')
+    print(u' -s|--stdout       : dump log in console instead of log file')
+    print(u' -N|--noro         : disable completely readonly (so filesystem will always be writable)')
+    print(u' -h|--help         : this help')
 
 
 def load_config(cleep_filesystem):
@@ -268,9 +271,16 @@ if __name__ == u'__main__':
     except getopt.GetoptError:
         #display usage
         usage()
+
+    except SystemExit:
+        #drop
+        pass
  
     except:
-        logger.exception(u'Exception on main:')
+        if logger:
+            logger.exception(u'Exception on main:')
+        else:
+            logging.exception(u'Exception on main:')
 
     #clean all stuff
     if logger:
