@@ -10,10 +10,12 @@ __all__ = [u'Task', u'CountTask']
 
 class Task:
     """
-    Run a task asynchronously
-    If interval is specified task is executed periodically. If interval is None or 0 task is executed immediately and only once
+    Run a task asynchronously.
+
+    If interval is specified task is executed periodically.
+    If interval is None or 0 task is executed immediately and only once
     """
-    def __init__(self, interval, task, logger, task_args=[], task_kwargs={}):
+    def __init__(self, interval, task, logger, task_args=[], task_kwargs={}, end_callback=None):
         """
         Create new task
         
@@ -23,6 +25,7 @@ class Task:
             logger (logger): logger instance used to log message in task
             task_args (list): list of task parameters
             task_kwargs (dict): dict of task parameters
+            end_callback (function): call this function as soon as task is terminated
         """
         self._task = task
         self._args = task_args
@@ -32,6 +35,7 @@ class Task:
         self.__timer = None
         self._run_count = None
         self.__stopped = False
+        self.__end_callback = end_callback
 
     def __run(self):
         """
@@ -69,6 +73,8 @@ class Task:
             self.__timer = Timer(self._interval, self.__run)
             self.__timer.daemon = True
             self.__timer.start()
+        elif self.__end_callback:
+            self.__end_callback()
 
     def wait(self):
         """
