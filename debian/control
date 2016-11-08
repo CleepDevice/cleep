@@ -1,0 +1,12 @@
+Source: raspiot
+Section: misc
+Priority: optional
+Maintainer: Tanguy Bonneau <tanguy.bonneau@gmail.com>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.4
+Homepage: https://github.com/tangb/raspiot
+
+Package: raspiot
+Architecture: armhf
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Transform your raspberry pi in IoT device

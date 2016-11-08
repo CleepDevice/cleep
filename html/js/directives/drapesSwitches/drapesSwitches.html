@@ -1,0 +1,59 @@
+<div block-ui="drapesContainer">
+<form class="form-inline" name="drapesConfigForm" style="margin-top:30px;">
+    <div class="form-group">
+        <label>Name</label>
+        <input type="text" placeholder="Name" style="width:125px;" class="form-control" ng-model="name">
+    </div>
+    <div class="form-group">
+        <label>Open</label>
+        <select class="form-control" ng-model="gpio_open">
+            <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Close</label>
+        <select class="form-control" ng-model="gpio_close">
+            <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Drape</label>
+        <select class="form-control" ng-model="drape">
+            <option ng-repeat="drape in devices | deviceType:'drape'" value="{{drape.name}}">{{drape.name}}</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary" ng-click="addSwitch()">
+        <span class="glyphicon glyphicon-plus-sign"></span>
+    </button>
+
+    <div class="table-responsive" style="margin-top:30px;">
+        <table class="table table-striped table-bordered table-hover">
+        <tr>
+            <th>Name</th>
+            <th>Open</th>
+            <th>Close</th>
+            <th>Drape</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        <tr ng-repeat="device in devices | deviceType:'drapeSwitch'">
+            <td>{{device.name}}</td>
+            <td>{{device.open}}</td>
+            <td>{{device.close}}</td>
+            <td>{{device.drape}}</td>
+            <td></td>
+            <td>
+                <button type="button" class="btn btn-default" ng-click="editSwitch(device)">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                </button>
+                <button type="button" class="btn btn-danger" ng-click="deleteSwitch(device)">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </button>
+            </td>
+        </tr>
+        </table>
+    </div>
+
+</form>
+</div>
+

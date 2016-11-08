@@ -1,0 +1,16 @@
+<div block-ui="dashboardContainer">
+
+    <!-- search toolbar -->
+    <div ng-show="devices.length>devicesThreshold">
+        <span>toolbar</span>
+    </div>
+
+    <!-- widgets panel -->
+    <div class="row">
+        <div ng-repeat="device in devices | orderBy:'name'">
+            <div widget-directive="device"></div>
+        </div>
+    </div>
+
+</div>
+

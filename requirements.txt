@@ -1,0 +1,4 @@
+python-simplejson
+python-gevent
+python-bottle
+python-rpi.gpio

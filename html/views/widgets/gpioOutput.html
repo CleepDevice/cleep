@@ -1,0 +1,20 @@
+<div class="col-sm-2">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span class="widget-header">{{device.name}}</span>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-sm-4">
+                    <span class="widget-icon typcn typcn-equals-outline"></span>
+                </div>
+                <div class="col-sm-8 text-center" style="padding-top:15px;">
+                    <div class="btn-group btn-group-lg">
+                        <button class="btn btn-default" ng-class="{'btn-success':device.on}" ng-click="device.__service.turnOn(device.gpio)">On</button>
+                        <button class="btn btn-default" ng-class="{'btn-success':!device.on}" ng-click="device.__service.turnOff(device.gpio)">Off</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

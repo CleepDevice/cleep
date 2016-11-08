@@ -1,0 +1,13 @@
+<div>
+
+    <!-- tabs -->
+    <ul class="nav nav-tabs nav-justified" ng-if="configs.length>0">
+        <li ng-repeat="(label, config) in configs" ng-class="{active:$index===0}"><a data-toggle="tab" href="{{'#'+config.cleanLabel+'Config'}}">{{label}}</a></li>
+    </ul>
+
+    <!-- contents -->
+    <div id="configTabContent" class="tab-content">
+    </div>
+
+</div>
+

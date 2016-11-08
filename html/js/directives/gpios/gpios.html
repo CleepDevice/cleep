@@ -1,0 +1,57 @@
+<div block-ui="gpiosContainer">
+<form class="form-inline" name="gpiosConfigForm" style="margin-top:30px;">
+    <div class="form-group">
+        <label>Name</label>
+        <input type="text" placeholder="Name" style="width:125px;" class="form-control" ng-model="name">
+    </div>
+    <div class="form-group">
+        <label>Open</label>
+        <select class="form-control" ng-model="gpio">
+            <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Open</label>
+        <select class="form-control" ng-model="mode">
+            <option value="in" class="ng-binding ng-scope">Input</option>
+            <option value="out" class="ng-binding ng-scope">Output</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary" ng-click="addGpio()">
+        <span class="glyphicon glyphicon-plus-sign"></span>
+    </button>
+
+    <div class="table-responsive" style="margin-top:30px;">
+        <table class="table table-striped table-bordered table-hover">
+        <tr>
+            <th>Name</th>
+            <th>Gpio</th>
+            <th>Pin</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        <tr ng-repeat="device in devices | deviceType:'gpios'">
+            <td>{{device.name}}</td>
+            <td>{{device.gpio}}</td>
+            <td>{{device.pin}}</td>
+            <td>{{device.mode==='in' ? 'Input' : 'Output'}}</td>
+            <td>
+                <span ng-if="!device.on">Off</span>
+                <span ng-if="device.on">On</span>
+            </td>
+            <td>
+                <button type="button" class="btn btn-default" ng-click="editGpio(device)">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                </button>
+                <button type="button" class="btn btn-danger" ng-click="deleteGpio(device)">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </button>
+            </td>
+        </tr>
+        </table>
+    </div>
+
+</form>
+</div>
+

@@ -1,0 +1,438 @@
+from __future__ import print_function
+import logging
+import gpios
+from threading import Timer
+
+logger = logging.getLogger(__name__)
+
+
+class Drapes(gpios.Gpios):
+    STATUS_OPENED = 'opened'
+    STATUS_CLOSED = 'closed'
+    STATUS_PARTIAL = 'partial'
+    STATUS_OPENING = 'opening'
+    STATUS_CLOSING = 'closing'
+
+    def __init__(self, bus):
+        gpios.Gpios.__init__(self, bus)
+        self.__timers = {}
+
+    def __del__(self):
+        gpios.Gpios.__del__(self)
+
+    def __get_used_gpios(self, filterDrape=False, filterSwitch=False):
+        """
+        Return list gpios already in used
+        @param filterDrape: True to add gpio used by drapes
+        @param filterSwitch : True to add gpio used by switches
+        """
+        gpios = []
+        for gpio in self.config:
+            if self.config[gpio]['mode']==self.MODE_OUT:
+                if not filterDrape:
+                    gpios.append(gpio)
+            elif self.config[gpio]['mode']==self.MODE_IN:
+                if not filterSwitch:
+                    gpios.append(gpio)
+        return gpios
+
+    def get_switches_names(self):
+        """
+        Return switches names
+        """
+        names = []
+        for gpio in self.config:
+            item = self.config[gpio]
+            if item['mode']==self.MODE_IN and item['data']:
+                names.append(item['data']['name'])
+        return names
+
+    def get_switches(self):
+        """
+        Build dict of switches based on gpios config
+        """
+        switches = {}
+        for gpio in self.config:
+            item = self.config[gpio]
+            if item['mode']==self.MODE_IN and item['data'].has_key('name'):
+                switches[item['data']['name']] = {
+                    'open': item['data']['open'],
+                    'close': item['data']['close'],
+                    'drape': item['data']['drape']
+                }
+        return switches
+
+    def __get_raw_switches(self):
+        """
+        Return raw switches configuration
+        """
+        switches = []
+        for gpio in self.config:
+            item = self.config[gpio]
+            if item['mode']==self.MODE_IN:
+                item['gpio'] = gpio
+                switches.append(item)
+        return switches
+
+    def set_switches(self, switches):
+        """
+        Configure switches
+        @format [{name:<name>, open:<gpio>, close:<gpio>},...]
+        """
+        gpios = self.get_gpios()
+        usedGpios = self.__get_used_gpios(False, True)
+        logger.info('USEDGPIOS=%s' % usedGpios)
+        config = []
+        problems = []
+        index = 0
+        names = []
+
+        #check values
+        for switch in switches:
+            #get name
+            name = None
+            if switch.has_key('name'):
+                name = switch['name']
+
+                #check name
+                for gpio in self.config:
+                    if name in names:
+                        logger.warning('Name %s is already used' % name)
+                        problems.append({'index':index, 'message':'Name %s is already used' % name})
+
+            if not switch.has_key('open') or not switch.has_key('close') or not switch.has_key('name') or len(switch['name'])==0 or \
+                not switch.has_key('drape') or len(switch['drape'])==0:
+                #missing parameter
+                logger.warning('Missing parameter. Switch dropped from list.')
+                problems.append({'index':index, 'message':'Missing parameter'})
+            elif not gpios.has_key(switch['open']):
+                #invalid gpio specified
+                logger.warning('Invalid gpio "%s" specified for switch "%s". Switch dropped' % (switch['open'], name))
+                problems.append({'index':index, 'message':'Invalid open gpio'})
+            elif not gpios.has_key(switch['close']):
+                #invalid gpio specified
+                logger.warning('Invalid gpio "%s" specified for switch "%s". Switch dropped' % (switch['close'], name))
+                problems.append({'index':index, 'message':'Invalid close gpio'})
+            elif switch['open'] in usedGpios:
+                #gpios already used
+                logger.warning('Gpio "%s" specified in switch "%s" is already specified. Switch dropped' % (switch['open'], name))
+                problems.append({'index':index, 'message':'Open gpio already used'})
+            elif switch['close'] in usedGpios:
+                #gpios already used
+                logger.warning('Gpio "%s" specified in switch "%s" is already specified. Switch dropped' % (switch['close'], name))
+                problems.append({'index':index, 'message':'Close gpio already used'})
+            elif switch['close']==switch['open']:
+                #gpios already used
+                logger.warning('Gpios specified in switch "%s" must be different. Switch dropped' % (name))
+                problems.append({'index':index, 'message':'Open and close must be different'})
+            else:
+                #everything's fine, save switch to config
+                #switch config is stored in open gpio
+                names.append(name)
+
+                #append open gpio
+                config.append({
+                    'gpio': switch['open'],
+                    'mode': self.MODE_IN,
+                    'data': {
+                        'name': name,
+                        'open': switch['open'],
+                        'close': switch['close'],
+                        'drape': switch['drape']
+                    }
+                })
+                usedGpios.append(switch['open'])
+
+                #append close gpio
+                config.append({
+                    'gpio': switch['close'],
+                    'mode': self.MODE_IN,
+                    'data': {
+                        'drape': switch['drape'],
+                        'close': switch['close']
+                    }
+                })
+                usedGpios.append(switch['close'])
+
+            #increase index
+            index += 1
+
+        #save it if no problem detected
+        if len(problems)==0:
+            #append drapes to current switches config
+            config += self.__get_raw_drapes()
+            #save config
+            logger.info(config)
+            self.set_gpios(config)
+
+        return problems
+
+    def get_drapes(self):
+        """
+        Build dict of drapes based on gpios config
+        """
+        drapes = {}
+        for gpio in self.config:
+            item = self.config[gpio]
+            if item['mode']==self.MODE_OUT and item['data']:
+                drapes[item['data']['name']] = {
+                    'open': item['data']['open'],
+                    'close': item['data']['close'],
+                    'delay': item['data']['delay'],
+                    'status': item['data']['status']
+                }
+        return drapes
+
+    def __get_raw_drapes(self):
+        """
+        Return raw drapes configuration
+        """
+        drapes = []
+        for gpio in self.config:
+            item = self.config[gpio]
+            if item['mode']==self.MODE_OUT:
+                item['gpio'] = gpio
+                drapes.append(item)
+        return drapes
+
+    def set_drapes(self, drapes):
+        """
+        Configure drapes
+        @format [{name:<name>, open:<gpio>, close:<gpio>, status:<opened|closed|partial|opening|closing>, delay:<delay>},...]
+        """
+        gpios = self.get_gpios()
+        usedGpios = self.__get_used_gpios(True, False)
+        logger.info('USEDGPIOS=%s' % usedGpios)
+        config = []
+        problems = []
+        index = 0
+        names = []
+
+        #check values
+        for drape in drapes:
+            #get name
+            name = None
+            if drape.has_key('name'):
+                name = drape['name']
+
+                #check name
+                for gpio in self.config:
+                    if name in names:
+                        logger.warning('Name %s is already used' % name)
+                        problems.append({'index':index, 'message':'Name %s is already used' % name})
+
+            if not drape.has_key('open') or not drape.has_key('close') or not drape.has_key('delay') or \
+                not drape.has_key('name') or len(drape['name'])==0:
+                #missing parameter
+                logger.warning('Missing parameter. Drape dropped from list.')
+                problems.append({'index':index, 'message':'Missing parameter'})
+            elif not gpios.has_key(drape['open']):
+                #invalid gpio specified
+                logger.warning('Invalid gpio "%s" specified for drape "%s". Drape dropped' % (drape['open'], name))
+                problems.append({'index':index, 'message':'Invalid open gpio'})
+            elif not gpios.has_key(drape['close']):
+                #invalid gpio specified
+                logger.warning('Invalid gpio "%s" specified for drape "%s". Drape dropped' % (drape['close'], name))
+                problems.append({'index':index, 'message':'Invalid close gpio'})
+            elif drape['open'] in usedGpios:
+                #gpios already used
+                logger.warning('Gpio "%s" specified in drape "%s" is already specified. Drape dropped' % (drape['open'], name))
+                problems.append({'index':index, 'message':'Open gpio already used'})
+            elif drape['close'] in usedGpios:
+                #gpios already used
+                logger.warning('Gpio "%s" specified in drape "%s" is already specified. Drape dropped' % (drape['close'], name))
+                problems.append({'index':index, 'message':'Close gpio already used'})
+            elif drape['close']==drape['open']:
+                #gpios already used
+                logger.warning('Gpios specified in drape "%s" must be different. Drape dropped' % (name))
+                problems.append({'index':index, 'message':'Open and close must be different'})
+            else:
+                #everything's fine, save drape to config
+                #drape config is stored in open gpio
+                names.append(name)
+
+                #append open gpio
+                config.append({
+                    'gpio': drape['open'],
+                    'mode': self.MODE_OUT,
+                    'data': {
+                        'name':name,
+                        'open':drape['open'],
+                        'close':drape['close'],
+                        'delay':int(drape['delay']),
+                        'status':self.STATUS_OPENED
+                    }
+                })
+                usedGpios.append(drape['open'])
+
+                #append close gpio
+                config.append({
+                    'gpio': drape['close'],
+                    'mode': self.MODE_OUT,
+                    'data': None
+                })
+                usedGpios.append(drape['close'])
+
+            #increase index
+            index += 1
+
+        #save it if no problem detected
+        if len(problems)==0:
+            #append switches to current drapes config
+            config += self.__get_raw_switches()
+            #save config
+            logger.info(config)
+            self.set_gpios(config)
+
+        return problems
+
+    def gpio_triggered(self, gpio):
+        """
+        Overloaded gpios.py function
+        This function is called when input gpio is triggered
+        """
+        logger.info('switch trigger')
+        gpios = self.get_configured_gpios()
+        if gpios.has_key(gpio):
+            #get configured switches
+            switches = self.__get_raw_switches()
+            logger.info(switches)
+            
+            #get triggered switch
+            foundSwitch = False
+            for switch in switches:
+                if switch['gpio']==gpio:
+                    #triggered switch found, get associated drape
+                    drapeName = switch['data']['drape']
+                    logger.info('drapeName=%s' % drapeName)
+
+                    #determine action is to open or close the drape
+                    if switch['data'].has_key('open'):
+                        logger.info('Opening switch for drape %s is triggered' % drapeName)
+                        self.open_drape(drapeName)
+                    else:
+                        logger.info('Closing switch for drape %s is triggered' % drapeName)
+                        self.close_drape(drapeName)
+
+                    #stop statement
+                    foundSwitch = True
+                    break
+
+            if not foundSwitch:
+                #switch not found, maybe it is not configured yet
+                logger.warning('Triggered gpio %s is not configured' % str(gpio))
+        else:
+            logger.warning('Triggered gpio %s is not configured' % gpio)
+
+
+    def __start_timer(self, timer, gpio, kind):
+        """
+        Store timer into internal dict and start it
+        """
+        #check if structure is valid
+        if not self.__timers.has_key(gpio):
+            #structure isn't exist, set it to default
+            self.__timers[gpio] = {'close':None, 'open':None}
+
+        #check if timer is not already running
+        if self.__timers[gpio][kind]!=None:
+            #timer already running, stop it first
+            self.__timers[gpio][kind].cancel()
+   
+        #store new timer and start it
+        self.__timers[gpio][kind] = timer
+        timer.start()
+
+    def __stop_timer(self, gpio, kind):
+        """
+        Stop timer if exists
+        """
+        if self.__timers.has_key(gpio) and self.__timers[gpio][kind]!=None:
+            logger.info('cancel timer for gpio %s' % gpio)
+            self.__timers[gpio][kind].cancel()
+            self.__timers[gpio][kind] = None
+
+    def open_drape(self, drape):
+        """
+        Open specified drape
+        """
+        drapes = self.get_drapes()
+        if not drape in drapes.keys():
+            #specified drape doesn't exist
+            logger.warning('Trying to open drape %s which doesn\'t exist')
+            return False
+        else:
+            #get gpios
+            open = drapes[drape]['open']
+            close = drapes[drape]['close']
+
+            #process depending on current gpio status
+            if self.is_on(open):
+                #open gpio is already turned on, just stop it
+                logger.info('open drape %s: open gpio %s is already on, turn it off' % (drape, open))
+                self.__stop_timer(open, 'open')
+                self.turn_off(open)
+            elif self.is_on(close):
+                #close gpio is already turned on, just stop it
+                logger.info('open drape %s: close gpio %s is already on, turn it off' % (drape, close))
+                self.__stop_timer(close, 'close')
+                self.turn_off(close)
+            else:
+                #none of gpio is on, process action
+                logger.info('open drape %s: gpio %s' % (drape, open))
+                self.turn_on(open)
+                t = Timer(drapes[drape]['delay'], self.turn_off, [open])
+                self.__start_timer(t, open, 'open')
+            return True
+
+    def close_drape(self, drape):
+        """
+        Close specified drape
+        """
+        drapes = self.get_drapes()
+        if not drape in drapes.keys():
+            #specified drape doesn't exist
+            logger.warning('Trying to close drape %s which doesn\'t exist')
+            return False
+        else:
+            #get gpios
+            open = drapes[drape]['open']
+            close = drapes[drape]['close']
+
+            #process depending on current gpio status
+            if self.is_on(open):
+                #open gpio is already turned on, just stop it
+                logger.info('close drape %s: open gpio %s is already on, turn it off' % (drape, open))
+                self.__stop_timer(open, 'open')
+                self.turn_off(open)
+            elif self.is_on(close):
+                #close gpio is already turned on, just stop it
+                logger.info('close drape %s: close gpio %s is already on, turn it off' % (drape, close))
+                self.__stop_timer(close, 'close')
+                self.turn_off(close)
+            else:
+                #none of gpio is on, process action
+                logger.info('close drape %s: gpio %s' % (drape, close))
+                self.turn_on(close)
+                t = Timer(drapes[drape]['delay'], self.turn_off, [close])
+                self.__start_timer(t, close, 'close')
+            return True
+
+    def stop_drape(self, drape):
+        """
+        Stop specified drape
+        """
+        drapes = self.get_drapes()
+        if not drape in drapes.keys():
+            #specified drape doesn't exist
+            logger.warning('Trying to stop drape %s which doesn\'t exist')
+            return False
+        else:
+            #turn off both close and open gpios
+            if self.is_on(drapes[drape]['open']):
+                self.turn_off(drapes[drape]['open'])
+            if self.is_on(drapes[drape]['close']):
+                self.turn_off(drapes[drape]['close'])
+
+    def force_drape_state(self, drape, status):
+        pass

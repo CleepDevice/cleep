@@ -1,0 +1,18 @@
+<div class="col-sm-2">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span class="widget-header">{{device.name}}</span>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-sm-6 text-center">
+                    <span class="widget-icon typcn typcn-power-outline"></span>
+                </div>
+                <div class="col-sm-6 text-center" style="padding-top:10px;">
+                    <h2 ng-if="device.on"><span class="label label-success">On</span></h2>
+                    <h2 ng-if="!device.on"><span class="label label-default">Off</span></h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

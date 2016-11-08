@@ -1,0 +1,31 @@
+    <div class="container">
+        <div ng-controller="dashboardController as dashboard" class="row" ng-cloak>
+            <div ng-repeat="drape in dashboard.drapes" class="row">
+                <div class="col-sm-4">
+                    <span>{{drape.name}}</span>
+                </div>
+                <div class="col-sm-4">
+                    <div class="row">
+                        <button type="button" class="btn btn-default btn-lg btn-block" ng-click="dashboard.openDrape(drape.name)">
+                            <span class="glyphicon glyphicon-chevron-up"></span>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <button type="button" class="btn btn-default btn-lg btn-block" ng-click="dashboard.stopDrape(drape.name)">
+                            <span class="glyphicon glyphicon-stop"></span>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <button type="button" class="btn btn-default btn-lg btn-block" ng-click="dashboard.closeDrape(drape.name)">
+                            <span class="glyphicon glyphicon-chevron-down"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div ng-if="drape.status=='opened'">opened</div>
+                    <div ng-if="drape.status=='partial'">partial</div>
+                    <div ng-if="drape.status=='closed'">closed</div>
+                </div>
+            </div>
+        </div>
+    </div>

@@ -1,0 +1,2 @@
+bin/raspiot usr/bin
+html/* opt/raspiot/html/
