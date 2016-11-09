@@ -18,7 +18,7 @@ class RaspIot(BusClient):
      - configuration saving
      - message bus access
     """
-    CONFIG_DIR = 'conf/'
+    CONFIG_DIR = '/etc/raspiot/'
 
     def __init__(self, bus):
         BusClient.__init__(self, bus)
