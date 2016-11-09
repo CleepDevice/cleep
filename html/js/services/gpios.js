@@ -55,8 +55,8 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Add new gpio
      */
-    self.addGpio = function(name, gpio, mode) {
-        return rpcService.sendCommand('add_gpio', 'gpios', {'name':name, 'gpio':gpio, 'mode':mode})
+    self.addGpio = function(name, gpio, mode, keep) {
+        return rpcService.sendCommand('add_gpio', 'gpios', {'name':name, 'gpio':gpio, 'mode':mode, 'keep':keep})
         .then(function(resp) {
         }, function(err) {
             console.log('addGpio:', err);

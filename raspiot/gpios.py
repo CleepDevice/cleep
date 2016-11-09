@@ -153,7 +153,7 @@ class Gpios(RaspIot):
         """
         Configure GPIO
         """
-        #logger.info('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
+        logger.info('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
         try:
             #get gpio pin
             gpios = self.get_raspi_gpios()
@@ -264,18 +264,27 @@ class Gpios(RaspIot):
         """
         return self._config
 
-    def add_gpio(self, name, gpio, mode):
+    def add_gpio(self, name, gpio, mode, keep):
         """
         Add new gpio
+        @param name: name of gpio
+        @param gpio: gpio value
+        @param mode: mode (input or output)
+        @param keep: keep state when restarting
         """
+        config = self.get_gpios()
+
         #check values
-        #TODO check if name already used
         if not gpio:
             raise bus.MissingParameter('"gpio" parameter is missing')
         elif not name:
             raise bus.MissingParameter('"name" parameter is missing')
         elif not mode:
             raise bus.MissingParameter('"mode" parameter is missing')
+        elif not keep:
+            raise bus.MissingParameter('"keep" parameter is missing')
+        elif name in config:
+            raise bus.InvalidParameter('Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
             raise bus.InvalidParameter('"gpio" does not exist for this raspberry pi')
         elif mode not in (self.MODE_IN, self.MODE_OUT):
@@ -284,10 +293,13 @@ class Gpios(RaspIot):
             raise bus.InvalidParameter('Gpio "%s" is already configured' % gpio)
         else:
             #gpio is valid, prepare new entry
-            config = self.get_gpios()
-            config[gpio] = {'name':name, 'mode':mode, 'pin':self.get_raspi_gpios()[gpio], 'on': False}
+            config[gpio] = {'name':name, 'mode':mode, 'pin':self.get_raspi_gpios()[gpio], 'keep': keep, 'on': False}
+
             #save config
             self._save_config(config)
+    
+            #configure it
+            self.__configure_gpio(gpio, config[gpio])
         
     def del_gpio(self, gpio):
         """
@@ -323,8 +335,9 @@ class Gpios(RaspIot):
             GPIO.output(gpios[gpio], GPIO.LOW)
 
             #save current state
-            self._config[gpio]['on'] = True
-            self._save_config(self._config)
+            if self._config[gpio]['keep']:
+                self._config[gpio]['on'] = True
+                self._save_config(self._config)
 
             #broadcast event
             req = bus.MessageRequest()
@@ -353,8 +366,9 @@ class Gpios(RaspIot):
             GPIO.output(gpios[gpio], GPIO.HIGH)
 
             #save config
-            self._config[gpio]['on'] = False
-            self._save_config(self._config)
+            if self._config[gpio]['keep']:
+                self._config[gpio]['on'] = False
+                self._save_config(self._config)
 
             #broadcast event
             req = bus.MessageRequest()

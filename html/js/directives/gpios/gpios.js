@@ -11,6 +11,7 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
         $scope.name = '';
         $scope.gpio = 'GPIO3';
         $scope.mode = 'in';
+        $scope.keep = true;
         $scope.list = [];
 
         /**
@@ -35,7 +36,7 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
             else
             {
                 container.start();
-                gpiosService.addGpio($scope.name, $scope.gpio, $scope.mode)
+                gpiosService.addGpio($scope.name, $scope.gpio, $scope.mode, $scope.keep)
                 .then(function(resp) {
                     //reload devices
                     gpiosService.loadDevices();
@@ -71,104 +72,11 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
             $scope.name = device.name;
             $scope.gpio = device.gpio;
             $scope.mode = device.mode;
+            $scope.keep = device.keep;
 
             //remove gpio from list
             $scope.deleteGpio(device);
         };
-
-        /**
-         * Turn on/off specified gpio
-         */
-        /*$scope.turnGpio = function(index) {
-            console.log('turnGpio', $scope.devices[index]);
-            container.start();
-
-            //is gpio an input?
-            if( $scope.devices[index]['mode']!=='out' )
-            {
-                //do not perform action
-                console.log('action no performed');
-                $scope.devices[index]['on'] = !$scope.devices[index]['on'];
-                container.stop();
-                return;
-            }
-
-            if( $scope.devices[index]['on'] )
-            {
-                gpiosService.turnOn($scope.devices[index]['__key'])
-                //.then(function(resp) {
-                //    return getConfiguredGpios();
-                //})
-                .finally(function() {
-                    container.stop();
-                });
-            }
-            else
-            {
-                gpiosService.turnOff($scope.devices[index]['__key'])
-                //.then(function(resp) {
-                //    return getConfiguredGpios();
-                //})
-                .finally(function() {
-                    container.stop();
-                });
-            }
-        };*/
-
-        /**
-         * Output gpio changed by user
-         */
-        /*$scope.onchange = function(index) {
-            //is gpio an input?
-            if( $scope.devices[index]['mode']!=='out' )
-            {
-                //do not perform action
-                //console.log('action performed');
-                //$scope.devices['gpiosService'][index]['on'] = !$scope.devices['gpiosService'][index]['on'];
-                //container.stop();
-                //return;
-            }
-            else
-            {
-                //perform action
-                console.log('onchange');
-                $scope.turnGpio(index);
-            }
-        };*/
-
-        /**
-         * Catch gpios on event
-         */
-        /*$scope.$on('event.gpio.on', function(event, params) {
-            for( var i=0; i<$scope.devices.length; i++ )
-            {
-                if( $scope.devices[i]['__key']===params.gpio )
-                {
-                    if( $scope.devices[i]['on']===false )
-                    {
-                        $scope.devices[i]['on'] = true;
-                    }
-                    break;
-                }
-            }
-        });*/
-
-        /**
-         * Catch gpios off event
-         */
-        /*$scope.$on('event.gpio.off', function(event, params) {
-            for( var i=0; i<$scope.devices.length; i++ )
-            {
-                if( $scope.devices[i]['__key']===params.gpio )
-                {
-                    if( $scope.devices[i]['on']===true )
-                    {
-                        $scope.devices[i]['on'] = false;
-                    }
-                    break;
-                }
-            }
-        });*/
 
         /**
          * Init controller

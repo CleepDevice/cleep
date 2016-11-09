@@ -17,6 +17,11 @@
             <option value="out" class="ng-binding ng-scope">Output</option>
         </select>
     </div>
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" ng-model="keep"> Remember state?
+        </label>
+    </div>
     <button type="submit" class="btn btn-primary" ng-click="addGpio()">
         <span class="glyphicon glyphicon-plus-sign"></span>
     </button>
@@ -28,6 +33,7 @@
             <th>Gpio</th>
             <th>Pin</th>
             <th>Mode</th>
+            <th>Remember</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -36,6 +42,7 @@
             <td>{{device.gpio}}</td>
             <td>{{device.pin}}</td>
             <td>{{device.mode==='in' ? 'Input' : 'Output'}}</td>
+            <td>{{device.keep ? 'True' : 'False'}}</td>
             <td>
                 <span ng-if="!device.on">Off</span>
                 <span ng-if="device.on">On</span>
