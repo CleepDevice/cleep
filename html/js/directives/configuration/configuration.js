@@ -4,6 +4,7 @@ var configurationDirective = function($q, growl, blockUI, objectsService, $compi
     var configurationController = ['$scope','$element', function($scope, $element) {
         $scope.services = objectsService.services;
         $scope.configs = objectsService.configs;
+        $scope.configsCount = objectsService.configsCount;
 
         /**
          * Init controller

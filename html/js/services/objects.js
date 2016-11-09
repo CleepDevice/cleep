@@ -11,6 +11,7 @@ var objectsService = function($rootScope) {
     self.services = {};
     //list of configs
     self.configs = {};
+    self.configsCount = 0;
 
     /**
      * Add service
@@ -31,6 +32,7 @@ var objectsService = function($rootScope) {
                 'cleanLabel': configLabel.replace(' ',''),
                 'directive': configDirectiveName
             }
+            self.configsCount++;
         }
     };
 
