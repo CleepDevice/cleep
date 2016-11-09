@@ -61,7 +61,7 @@ if __name__ == '__main__':
     #clean all stuff
     logger.debug('Stopping user modules:')
     for module in app.config:
-        if module[:3] in ['sys', 'ext', 'int']:
+        if module[:3] in ['sys', 'ext', 'lib']:
             logger.debug(' - %s' % module)
             app.config[module].stop()
     
