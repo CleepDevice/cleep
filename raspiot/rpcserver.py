@@ -14,8 +14,7 @@ from contextlib import contextmanager
 import time
 import uuid
 
-#import jinja2
-#from jinja2.loaders import FileSystemLoader
+#import gevent
 import gevent
 from gevent import queue
 from gevent import monkey; monkey.patch_all()
@@ -28,15 +27,13 @@ __all__ = ['app']
 # This lets us track how many clients are currently connected.
 polling = 0
 
-BASE_DIR = '/var/opt/mythermostat/'
+BASE_DIR = '/opt/raspiot/'
 HTML_DIR = os.path.join(BASE_DIR, 'html')
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 POLL_TIMEOUT = 60
 
 logger = logging.getLogger(__name__)
 
 app = bottle.app()
-#env = jinja2.Environment(loader = FileSystemLoader(TEMPLATE_DIR))
 
 subscribed = False
 

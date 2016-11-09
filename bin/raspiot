@@ -3,9 +3,10 @@
 
 import os
 import logging
-from rpcserver import app
-import bus
+from raspiot.rpcserver import app
+from raspiot import bus
 from raspiot import RaspIot
+import importlib
 
 WEBSERVER_HOST = '0.0.0.0'
 WEBSERVER_PORT = 80
@@ -36,7 +37,7 @@ if __name__ == '__main__':
 
             #create module instance
             logger.debug('   - loading module...')
-            module_ = __import__(module_name)
+            module_ = importlib.import_module('raspiot.%s' % module_name)
             class_ = getattr(module_, module_name.capitalize())
 
             #and run instance
