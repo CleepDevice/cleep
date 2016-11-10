@@ -154,10 +154,11 @@ class MessageBus():
         blocked in "app not configured" state. But in small system like raspiot, it should be fine.
         """
         #first of all unqueue defered messages to preserve order
+        logger.debug('Unqueue defered message')
         while not self.__defered_messages.empty():
             msg = self.__defered_messages.get()
             #msg.startup = True
-            logger.info('defered: %s' % str(msg))
+            logger.debug('Push defered: %s' % str(msg))
             for q in self.__queues:
                 self.__queues[q].append(msg)
 
@@ -189,13 +190,13 @@ class MessageBus():
 
                 #prepare message
                 msg = {'message':request_dict, 'event':event, 'response':None}
-                logger.debug('MessageBus: push to "%s" message %s' % (request.to,str(msg)))
+                logger.debug('MessageBus: push to "%s" message %s' % (request.to, str(msg)))
 
                 #log module activity
                 self.__activities[request.to] = time.time()
 
                 #append message to queue
-                self.__queues[request.to].append(msg)
+                self.__queues[request.to].appendleft(msg)
 
                 #and wait for response or not (if no timeout)
                 if event:
@@ -222,7 +223,7 @@ class MessageBus():
                 if self.__app_configured:
                     #append message to queues
                     for q in self.__queues:
-                        self.__queues[q].append(msg)
+                        self.__queues[q].appendleft(msg)
                 else:
                     #defer message if app not configured yet
                     logger.debug('defer message: %s' % str(msg))
@@ -259,7 +260,7 @@ class MessageBus():
                 #no timeout specified, try to pop a message and return just after
                 try:
                     msg = self.__queues[_module].pop()
-                    logger.debug('MessageBus: pull wo to: %s' % msg)
+                    logger.debug('MessageBus: %s pulled noto: %s' % (_module, msg))
                     return msg
                 except IndexError:
                     #no message available
@@ -274,7 +275,7 @@ class MessageBus():
                 while i<loop:
                     try:
                         msg = self.__queues[_module].pop()
-                        logger.debug('MessageBus: pulled %s' % msg)
+                        logger.debug('MessageBus: %s pulled %s' % (_module, msg))
                         return msg
                     except IndexError:
                         #no message available
@@ -397,7 +398,7 @@ class BusClient(threading.Thread):
             else:
                 #response awaited
                 resp = self.bus.push(request, timeout)
-                return resp['data']
+                return resp
         else:
             raise InvalidParameter('Request parameter must be MessageRequest instance')
 
@@ -412,8 +413,7 @@ class BusClient(threading.Thread):
         #check messages
         while self.__continue:
             try:
-                logger.debug('BusClient: pull message')
-
+                #logger.debug('BusClient: pull message')
                 msg = {}
                 try:
                     #get message
@@ -422,7 +422,7 @@ class BusClient(threading.Thread):
 
                 except NoMessageAvailable:
                     #no message available
-                    logger.debug('BusClient no msg avail')
+                    #logger.debug('BusClient no msg avail')
                     continue
 
                 #create response
