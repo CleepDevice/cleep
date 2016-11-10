@@ -41,20 +41,25 @@ class GpioInputWatcher(Thread):
         self.continu = False
 
     def run(self):
-        last_level = GPIO.LOW
+        last_level = None
         time_on = 0
         while self.continu:
             level = GPIO.input(self.pin)
-            if level!=last_level and level==self.level:
+            if last_level is None:
+                #first run, nothing to do except init values
+                pass
+            elif level!=last_level and level==self.level:
                 logger.debug('input %s on' % str(self.pin))
                 time_on = time.time()
                 self.on_callback(self.pin)
                 time.sleep(self.debounce/1000.0)
+
             elif level!=last_level:
                 logger.debug('input %s off' % str(self.pin))
                 if self.off_callback:
                     self.off_callback(self.pin, time.time()-time_on)
                 time.sleep(.1)
+
             else:
                 time.sleep(.1)
             last_level = level
