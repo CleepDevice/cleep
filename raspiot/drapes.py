@@ -4,7 +4,7 @@
 import os
 import logging
 from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParameter
-from raspiot import RaspIot
+from raspiot import RaspIot, CommandError
 from threading import Timer
 
 __all__ = ['Drapes']
@@ -37,7 +37,7 @@ class Drapes(RaspIot):
         """
         Event received from bus
         """
-        logger.debug('event received: %s' % str(event))
+        logger.debug(' *** event received: %s' % str(event))
         found = False
 
         #drop startup events
@@ -66,6 +66,11 @@ class Drapes(RaspIot):
         #            break
 
         if event['event']=='event.gpio.off':
+            #drop gpio init
+            if event['params']['init']:
+                logger.debug('Drop gpio init event')
+                return
+
             #gpio turned off, get gpio
             gpio = event['params']['gpio']
 
@@ -119,7 +124,10 @@ class Drapes(RaspIot):
         req = MessageRequest()
         req.to = 'gpios'
         req.command = 'reset_gpios'
-        self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            logger.error(resp['message'])
+            return
 
         #and reset drapes
         config = self.get_devices()
@@ -136,7 +144,12 @@ class Drapes(RaspIot):
         req = MessageRequest()
         req.to = 'gpios'
         req.command = 'get_raspi_gpios'
-        return self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            logger.error(resp['message'])
+            return {}
+        else:
+            return resp['data']
 
     def get_used_gpios(self):
         """
@@ -145,7 +158,12 @@ class Drapes(RaspIot):
         req = MessageRequest()
         req.to = 'gpios'
         req.command = 'get_gpios'
-        return self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            logger.error(resp['message'])
+            return {}
+        else:
+            return resp['data']
 
     def get_devices(self):
         """
@@ -195,34 +213,42 @@ class Drapes(RaspIot):
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'add_gpio'
-            req.params = {'name':name+'_drapeopen', 'gpio':drape_open, 'mode':'out'}
-            self.push(req)
-
+            req.params = {'name':name+'_drapeopen', 'gpio':drape_open, 'mode':'out', 'keep':True}
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
+                
             #configure close drape
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'add_gpio'
-            req.params = {'name':name+'_drapeclose', 'gpio':drape_close, 'mode':'out'}
-            self.push(req)
+            req.params = {'name':name+'_drapeclose', 'gpio':drape_close, 'mode':'out', 'keep':True}
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #configure open switch
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'add_gpio'
-            req.params = {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in'}
-            self.push(req)
+            req.params = {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in', 'keep':False}
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #configure close switch
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'add_gpio'
-            req.params = {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in'}
-            self.push(req)
+            req.params = {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in', 'keep':False}
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #drapes is valid, prepare new entry
             drapes = self.get_devices()
-            logger.info('drapes = %s' % str(drapes))
-            logger.info('name=%s delay=%s drape_open=%s drape_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(drape_open), str(drape_close), str(switch_open), str(switch_close)))
+            logger.debug('drapes = %s' % str(drapes))
+            logger.debug('name=%s delay=%s drape_open=%s drape_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(drape_open), str(drape_close), str(switch_open), str(switch_close)))
             config = self.get_devices()
             config[name] = {'name':name, 'delay':delay, 'drape_open':drape_open, 'drape_close':drape_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Drapes.STATUS_OPENED}
             self._save_config(config)
@@ -242,28 +268,36 @@ class Drapes(RaspIot):
             req.to = 'gpios'
             req.command = 'del_gpio'
             req.params = {'gpio':config[name]['drape_open']}
-            self.push(req)
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #unconfigure close drape
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'del_gpio'
             req.params = {'gpio':config[name]['drape_close']}
-            self.push(req)
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #unconfigure open switch
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'del_gpio'
             req.params = {'gpio':config[name]['switch_open']}
-            self.push(req)
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #unconfigure close switch
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'del_gpio'
             req.params = {'gpio':config[name]['switch_close']}
-            self.push(req)
+            resp = self.push(req)
+            if resp['error']:
+                raise CommandError(resp['message'])
 
             #drape is valid, remove it
             del config[name]
@@ -273,7 +307,7 @@ class Drapes(RaspIot):
         """
         Change drape status
         """
-        logger.info('change_status for drape "%s" to "%s"' % (str(drape_name), str(status)))
+        logger.debug('change_status for drape "%s" to "%s"' % (str(drape_name), str(status)))
         config = self.get_devices()
         if not status in [Drapes.STATUS_OPENED, Drapes.STATUS_CLOSED, Drapes.STATUS_PARTIAL, Drapes.STATUS_OPENING, Drapes.STATUS_CLOSING]:
             raise InvalidParameter('Status value is invalid')
@@ -300,7 +334,9 @@ class Drapes(RaspIot):
         req.to = 'gpios'
         req.command = 'turn_off'
         req.params = {'gpio':gpio}
-        self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
 
         #and update status to specified one
         self.change_status(drape_name, new_status)
@@ -309,7 +345,7 @@ class Drapes(RaspIot):
         """
         Open specified drape
         """
-        logger.info('open_drape %s' % str(drape))
+        logger.debug('open_drape %s' % str(drape))
 
         #turn on gpio
         gpio = drape['drape_open']
@@ -317,13 +353,15 @@ class Drapes(RaspIot):
         req.to = 'gpios'
         req.command = 'turn_on'
         req.params = {'gpio':gpio}
-        self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
 
         #change status
         self.change_status(drape['name'], Drapes.STATUS_OPENING)
 
         #launch turn off timer
-        logger.info('Launch timer with duration=%s' % (str(drape['delay'])))
+        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
         self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_OPENED])
         self.__timers[drape['name']].start()
 
@@ -331,7 +369,7 @@ class Drapes(RaspIot):
         """
         Close specified drape
         """
-        logger.info('close_drape %s' % str(drape))
+        logger.debug('close_drape %s' % str(drape))
 
         #turn on gpio
         gpio = drape['drape_close']
@@ -339,13 +377,15 @@ class Drapes(RaspIot):
         req.to = 'gpios'
         req.command = 'turn_on'
         req.params = {'gpio':gpio}
-        self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
 
         #change status
         self.change_status(drape['name'], Drapes.STATUS_CLOSING)
 
         #launch turn off timer
-        logger.info('Launch timer with duration=%s' % (str(drape['delay'])))
+        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
         self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_CLOSED])
         self.__timers[drape['name']].start()
 
@@ -353,7 +393,7 @@ class Drapes(RaspIot):
         """
         Stop specified drape
         """
-        logger.info('stop_drape %s' % str(drape))
+        logger.debug('stop_drape %s' % str(drape))
 
         #first of all cancel timer if necessary
         if self.__timers.has_key(drape['name']):
@@ -363,19 +403,21 @@ class Drapes(RaspIot):
 
         #then get gpio
         if drape['status']==Drapes.STATUS_OPENING:
-            logger.info('opening = %s' % str(drape['drape_open']))
+            logger.debug('opening = %s' % str(drape['drape_open']))
             gpio = drape['drape_open']
         else:
-            logger.info('closing = %s' % str(drape['drape_close']))
+            logger.debug('closing = %s' % str(drape['drape_close']))
             gpio = drape['drape_close']
-        logger.info('stop drape: gpio=%s' % str(gpio))
+        logger.debug('stop drape: gpio=%s' % str(gpio))
 
         #and turn off gpio
         req = MessageRequest()
         req.to = 'gpios'
         req.command = 'turn_off'
         req.params = {'gpio':gpio}
-        self.push(req)
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
 
         #change status
         self.change_status(drape['name'], Drapes.STATUS_PARTIAL)
