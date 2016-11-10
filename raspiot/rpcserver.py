@@ -32,6 +32,7 @@ HTML_DIR = os.path.join(BASE_DIR, 'html')
 POLL_TIMEOUT = 60
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 app = bottle.app()
 
@@ -43,7 +44,7 @@ def subscribe_bus():
     global subscribed
 
     if not subscribed and app.config.has_key('sys.bus'):
-        logger.info('subscribe')
+        logger.debug('subscribe')
         app.config['sys.bus'].add_subscription('json')
         subscribed = True
 
@@ -84,7 +85,7 @@ def command():
     """
     Execute command on system
     """
-    logger.info('COMMAND data [%d]: %s' % (len(bottle.request.params), str(bottle.request.json)))
+    logger.debug('COMMAND data [%d]: %s' % (len(bottle.request.params), str(bottle.request.json)))
 
     #get app bus
     bus = app.config['sys.bus']
@@ -159,7 +160,7 @@ def registerpoll():
     poll_key = str(uuid.uuid4())
     subscriptions[poll_key] = time.time()
     if app.config.has_key('sys.bus'):
-        logger.info('subscribe %s' % poll_key)
+        logger.debug('subscribe %s' % poll_key)
         app.config['sys.bus'].add_subscription('rpc-%s' % poll_key)
     return json.dumps({'pollKey':poll_key})
 
@@ -189,17 +190,17 @@ def poll():
         #process poll
         if not bus:
             #bus not available yet
-            logger.info('polling: bus not available')
+            logger.debug('polling: bus not available')
             message['message'] = 'Bus not available'
             time.sleep(1.0)
         elif not params.has_key('pollKey'):
             #rpc client no registered yet
-            logger.info('polling: registration key must be sent to poll request')
+            logger.debug('polling: registration key must be sent to poll request')
             message['message'] = 'Polling key is missing'
             time.sleep(1.0)
         elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
             #rpc client no registered yet
-            logger.info('polling: rpc client must be registered before polling')
+            logger.debug('polling: rpc client must be registered before polling')
             message['message'] = 'Client not registered'
             time.sleep(1.0)
         else:
