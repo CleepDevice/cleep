@@ -107,6 +107,7 @@ def command():
 
         #send request
         resp = bus.push(request)
+
     except Exception, e:
         logger.exception('webserver.command exception')
         #something went wrong

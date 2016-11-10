@@ -6,10 +6,16 @@ from threading import Lock
 import time
 import copy
 
-__all__ = ['RaspIot']
+__all__ = ['RaspIot', 'CommandError']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+class CommandError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
 class RaspIot(BusClient):
     """
