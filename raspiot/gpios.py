@@ -153,7 +153,7 @@ class Gpios(RaspIot):
         """
         Configure GPIO
         """
-        logger.info('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
+        logger.debug('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
         try:
             #get gpio pin
             gpios = self.get_raspi_gpios()
@@ -169,21 +169,21 @@ class Gpios(RaspIot):
                     initial = GPIO.HIGH
                     #GPIO.output(pin, GPIO.HIGH)
                     event = 'event.gpio.off'
-                logger.debug(conf)
                 logger.debug('event=%s initial=%s' % (str(event), str(initial)))
                 GPIO.setup(pin, GPIO.OUT, initial=initial)
 
-                #and broadcast gpio status
-                logger.debug(event)
+                #and broadcast gpio status at startup
+                logger.debug('broadcast event %s for gpio %s' % (event, gpio))
                 req = bus.MessageRequest()
                 req.event = event
-                req.params = {'gpio':gpio}
+                req.params = {'gpio':gpio, 'init':True}
                 self.push(req)
 
             elif conf['mode']==self.MODE_IN:
                 logger.debug('Configure gpio %s (pin %s) as INPUT' % (gpio, pin))
                 #configure it
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
                 #and launch input watcher
                 w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback)
                 self.__input_watchers.append(w)
@@ -198,6 +198,7 @@ class Gpios(RaspIot):
         """
         Callback when input is turned on
         """
+        logger.debug('on_callback for pin %s triggered' % pin)
         #get triggered gpio
         gpios = self.get_raspi_gpios()
         gpio = None
@@ -212,13 +213,15 @@ class Gpios(RaspIot):
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.on'
-            req.params = {'gpio':gpio}
+            req.params = {'gpio':gpio, 'init':False}
+            logger.debug('broadcast %s' % str(req))
             self.push(req)
 
     def __input_off_callback(self, pin, duration):
         """
         Callback when input is turned off
         """
+        logger.debug('off_callback for pin %s triggered' % pin)
         #get triggered gpio
         gpios = self.get_raspi_gpios()
         gpio = None
@@ -233,7 +236,8 @@ class Gpios(RaspIot):
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.off'
-            req.params = {'gpio':gpio, 'duration':duration}
+            req.params = {'gpio':gpio, 'init':False, 'duration':duration}
+            logger.debug('broadcast %s' % str(req))
             self.push(req)
 
     def get_raspi_gpios(self):
@@ -281,7 +285,7 @@ class Gpios(RaspIot):
             raise bus.MissingParameter('"name" parameter is missing')
         elif not mode:
             raise bus.MissingParameter('"mode" parameter is missing')
-        elif not keep:
+        elif keep is None:
             raise bus.MissingParameter('"keep" parameter is missing')
         elif name in config:
             raise bus.InvalidParameter('Name "%s" already used' % name)
@@ -342,7 +346,7 @@ class Gpios(RaspIot):
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.on'
-            req.params = {'gpio':gpio}
+            req.params = {'gpio':gpio, 'init':False}
             self.push(req)
 
             return True
@@ -373,7 +377,7 @@ class Gpios(RaspIot):
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.off'
-            req.params = {'gpio':gpio}
+            req.params = {'gpio':gpio, 'init':False}
             self.push(req)
 
             return True
