@@ -32,14 +32,24 @@ HTML_DIR = os.path.join(BASE_DIR, 'html')
 POLL_TIMEOUT = 60
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+def bottle_logger(func):
+    def wrapper(*args, **kwargs):
+        req = func(*args, **kwargs)
+        logger.debug('%s %s %s %s' % (
+                     bottle.request.remote_addr, 
+                     bottle.request.method,
+                     bottle.request.url,
+                     bottle.response.status))
+        return req
+    return wrapper
 
 app = bottle.app()
+app.install(bottle_logger)
 
 subscribed = False
-
 subscriptions = {}
-
 def subscribe_bus():
     global subscribed
 
