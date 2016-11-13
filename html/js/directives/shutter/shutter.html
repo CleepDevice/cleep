@@ -1,10 +1,10 @@
-<div block-ui="drapesContainer">
-<form class="form-inline" name="drapesConfigForm" style="margin-top:30px;">
+<div block-ui="shutterContainer">
+<form class="form-inline" name="shutterConfigForm" style="margin-top:30px;">
     <div class="row">
         <div class="col-sm-12">
             <div class="form-group">
                 <label></label>
-                <p class="form-control-static">Drape :</p>
+                <p class="form-control-static">Shutter :</p>
             </div>
             <div class="form-group">
                 <label>Name</label>
@@ -12,13 +12,13 @@
             </div>
             <div class="form-group">
                 <label>Open relay</label>
-                <select class="form-control" ng-model="drape_open">
+                <select class="form-control" ng-model="shutter_open">
                     <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Close relay</label>
-                <select class="form-control" ng-model="drape_close">
+                <select class="form-control" ng-model="shutter_close">
                     <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
                 </select>
             </div>
@@ -46,7 +46,7 @@
                     <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary" ng-click="addDrape()">
+            <button type="submit" class="btn btn-primary" ng-click="addShutter()">
                 <span class="glyphicon glyphicon-plus-sign"></span>
             </button>
         </div>
@@ -56,17 +56,17 @@
         <table class="table table-striped table-bordered table-hover">
         <tr>
             <th>Name</th>
-            <th>Drape</th>
+            <th>Shutter</th>
             <th>Switch</th>
             <th>Delay</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
-        <tr ng-repeat="device in devices | deviceType:'drapes'">
+        <tr ng-repeat="device in devices | deviceType:'shutter'">
             <td>{{device.name}}</td>
             <td>
-                Open: {{device.drape_open}}</br>
-                Close: {{device.drape_close}}</br>
+                Open: {{device.shutter_open}}</br>
+                Close: {{device.shutter_close}}</br>
             </td>
             <td>
                 Open: {{device.switch_open}}</br>
@@ -75,10 +75,10 @@
             <td>{{device.delay}}</td>
             <td>{{device.status}}</td>
             <td>
-                <button type="button" class="btn btn-default" ng-click="editDrape(device)">
+                <button type="button" class="btn btn-default" ng-click="editShutter(device)">
                     <span class="glyphicon glyphicon-pencil"></span>
                 </button>
-                <button type="button" class="btn btn-danger" ng-click="deleteDrape(device)">
+                <button type="button" class="btn btn-danger" ng-click="deleteShutter(device)">
                     <span class="glyphicon glyphicon-trash"></span>
                 </button>
             </td>

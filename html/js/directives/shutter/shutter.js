@@ -1,16 +1,16 @@
 /**
- * Drapes config directive
- * Handle drape and switch configuration
+ * Shutter config directive
+ * Handle shutter configuration
  */
-var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsService) {
+var shutterConfigDirective = function(shutterService, $q, growl, blockUI, objectsService) {
     var container = null;
 
-    var drapesConfigController = ['$rootScope', '$scope', function($rootScope, $scope) {
+    var shutterConfigController = ['$rootScope', '$scope', function($rootScope, $scope) {
         $scope.raspiGpios = [];
         $scope.devices = objectsService.devices;
-        $scope.name = 'drape';
-        $scope.drape_open = 'GPIO2';
-        $scope.drape_close = 'GPIO4';
+        $scope.name = '';
+        $scope.shutter_open = 'GPIO2';
+        $scope.shutter_close = 'GPIO4';
         $scope.switch_open = 'GPIO3';
         $scope.switch_close = 'GPIO17';
         $scope.delay = 30;
@@ -19,7 +19,7 @@ var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsS
          * Return raspberry pi gpios
          */
         function getRaspiGpios() {
-            return drapesService.getRaspiGpios()
+            return shutterService.getRaspiGpios()
             .then(function(resp) {
                 for( var gpio in resp )
                 {
@@ -30,9 +30,9 @@ var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsS
         }
 
         /**
-         * Add new drape
+         * Add new shutter
          */
-        $scope.addDrape = function() {
+        $scope.addShutter = function() {
             //check values
             if( $scope.name.length===0 || $scope.delay.length===0 )
             {
@@ -41,27 +41,27 @@ var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsS
             else
             {
                 container.start();
-            drapesService.addDrape($scope.name, $scope.drape_open, $scope.drape_close, $scope.delay, $scope.switch_open, $scope.switch_close)
-                .then(function(resp) {
-                    //reload devices
-                    drapesService.loadDevices();
-                })
-                .finally(function() {
-                    container.stop();
-                });
+                shutterService.addShutter($scope.name, $scope.shutter_open, $scope.shutter_close, $scope.delay, $scope.switch_open, $scope.switch_close)
+                    .then(function(resp) {
+                        //reload devices
+                        shutterService.loadDevices();
+                    })
+                    .finally(function() {
+                        container.stop();
+                    });
             }
         };
 
         /**
-         * Delete drape
+         * Delete shutter
          */
-        $scope.deleteDrape = function(device) {
+        $scope.deleteShutter = function(device) {
             //TODO add confirm dialog
             container.start();
-            drapesService.delDrape(device.name)
+            shutterService.delShutter(device.name)
                 .then(function(resp) {
                     //reload devices
-                    drapesService.loadDevices();
+                    shutterService.loadDevices();
                 })
                 .finally(function() {
                     container.stop();
@@ -69,19 +69,19 @@ var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsS
         };
 
         /**
-         * Edit selected drape
+         * Edit selected shutter
          */
-        $scope.editDrape = function(device) {
+        $scope.editShutter = function(device) {
             //set editor's value
             $scope.name = device.name;
-            $scope.drape_open = device.drape_open;
-            $scope.drape_close = device.drape_close
+            $scope.shutter_open = device.shutter_open;
+            $scope.shutter_close = device.shutter_close
             $scope.delay = device.delay;
             $scope.switch_open = device.switch_open;
             $scope.switch_close = device.switch_close
 
             //remove gpio from list
-            $scope.deleteDrape(device);
+            $scope.deleteShutter(device);
         };
 
         /**
@@ -155,19 +155,19 @@ var drapesConfigDirective = function(drapesService, $q, growl, blockUI, objectsS
         init();
     }];
 
-    var drapesConfigLink = function(scope, element, attrs) {
-        container = blockUI.instances.get('drapesContainer');
+    var shutterConfigLink = function(scope, element, attrs) {
+        container = blockUI.instances.get('shutterContainer');
         container.reset();
     };
 
     return {
-        templateUrl: 'js/directives/drapes/drapes.html',
+        templateUrl: 'js/directives/shutter/shutter.html',
         replace: true,
         scope: true,
-        controller: drapesConfigController,
-        link: drapesConfigLink
+        controller: shutterConfigController,
+        link: shutterConfigLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('drapesConfigDirective', ['drapesService', '$q', 'growl', 'blockUI', 'objectsService', drapesConfigDirective]);
+RaspIot.directive('shutterConfigDirective', ['shutterService', '$q', 'growl', 'blockUI', 'objectsService', shutterConfigDirective]);

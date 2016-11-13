@@ -1,24 +1,24 @@
 /**
- * Drapes service
- * Handle drapes module requests
+ * Shutter service
+ * Handle shutter module requests
  */
-var drapesService = function($q, $rootScope, rpcService, objectsService) {
+var shutterService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
      * Set configuration directive names
      */
     self.setConfigs = function() {
-        objectsService.addConfig('Drapes', 'drapesConfigDirective');
+        objectsService.addConfig('Shutter', 'shutterConfigDirective');
     };
 
     /**
-     * Load service devices (here drapes)
+     * Load service devices (here shutter)
      */
     self.loadDevices = function() {
-        rpcService.sendCommand('get_devices', 'drapes')
+        rpcService.sendCommand('get_devices', 'shutter')
             .then(function(resp) {
-                objectsService.addDevices('drapes', resp.data);
+                objectsService.addDevices('shutter', resp.data);
             }, function(err) {
                 console.log('loadDevices', err);
             });
@@ -44,74 +44,74 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
     };
 
     /**
-     * Add new drape
+     * Add new shutter
      */
-    self.addDrape = function(name, drape_open, drape_close, delay, switch_open, switch_close) {
-        return rpcService.sendCommand('add_drape', 'drapes', 
-                {'name':name, 'drape_open':drape_open, 'drape_close':drape_close, 'delay':delay, 'switch_open':switch_open, 'switch_close':switch_close})
+    self.addShutter = function(name, shutter_open, shutter_close, delay, switch_open, switch_close) {
+        return rpcService.sendCommand('add_shutter', 'shutter', 
+                {'name':name, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'delay':delay, 'switch_open':switch_open, 'switch_close':switch_close})
         .then(function(resp) {
         }, function(err) {
-            console.log('addDrape:', err);
+            console.log('addShutter:', err);
         })
     };
 
     /**
-     * Delete drape
+     * Delete shutter
      */
-    self.delDrape = function(name) {
-        return rpcService.sendCommand('del_drape', 'drapes', {'name':name})
+    self.delShutter = function(name) {
+        return rpcService.sendCommand('del_shutter', 'shutter', {'name':name})
         .then(function(resp) {
         }, function(err) {
-            console.log('delDrape:', err);
+            console.log('delShutter:', err);
         })
     };
 
     /**
-     * Open drape
+     * Open shutter
      */
-    self.openDrape = function(device) {
-        console.log('open drape', device);
-        return rpcService.sendCommand('open_drape', 'drapes', {'name':device['name']})
+    self.openShutter = function(device) {
+        console.log('open shutter', device);
+        return rpcService.sendCommand('open_shutter', 'shutter', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
         }, function(err) {
-            console.log('openDrape:', err);
+            console.log('openShutter:', err);
         });
     };
 
     /**
-     * Close drape
+     * Close shutter
      */
-    self.closeDrape = function(device) {
-        return rpcService.sendCommand('close_drape', 'drapes', {'name':device['name']})
+    self.closeShutter = function(device) {
+        return rpcService.sendCommand('close_shutter', 'shutter', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
         }, function(err) {
-            console.log('closeDrape:', err);
+            console.log('closeShutter:', err);
         });
     };
 
     /**
-     * Stop drape
+     * Stop shutter
      */
-    self.stopDrape = function(device) {
-        return rpcService.sendCommand('stop_drape', 'drapes', {'name':device['name']})
+    self.stopShutter = function(device) {
+        return rpcService.sendCommand('stop_shutter', 'shutter', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
         }, function(err) {
-            console.log('stopDrape:', err);
+            console.log('stopShutter:', err);
         });
     };
 
     /**
-     * Catch drapes opening event
+     * Catch shutter opening event
      */
-    $rootScope.$on('event.drape.opening', function(event, params) {
+    $rootScope.$on('event.shutter.opening', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='drapes' )
+            if( objectsService.devices[i].__serviceName==='shutter' )
             {
-                if( objectsService.devices[i].name===params.drape )
+                if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opening'
                 }
@@ -119,14 +119,14 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
         }
     });
     /**
-     * Catch drapes closing event
+     * Catch shutter closing event
      */
-    $rootScope.$on('event.drape.closing', function(event, params) {
+    $rootScope.$on('event.shutter.closing', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='drapes' )
+            if( objectsService.devices[i].__serviceName==='shutter' )
             {
-                if( objectsService.devices[i].name===params.drape )
+                if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closing'
                 }
@@ -134,14 +134,14 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
         }
     });
     /**
-     * Catch drapes opened event
+     * Catch shutter opened event
      */
-    $rootScope.$on('event.drape.opened', function(event, params) {
+    $rootScope.$on('event.shutter.opened', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='drapes' )
+            if( objectsService.devices[i].__serviceName==='shutter' )
             {
-                if( objectsService.devices[i].name===params.drape )
+                if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opened'
                 }
@@ -149,14 +149,14 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
         }
     });
     /**
-     * Catch drapes closed event
+     * Catch shutter closed event
      */
-    $rootScope.$on('event.drape.closed', function(event, params) {
+    $rootScope.$on('event.shutter.closed', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='drapes' )
+            if( objectsService.devices[i].__serviceName==='shutter' )
             {
-                if( objectsService.devices[i].name===params.drape )
+                if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closed'
                 }
@@ -164,14 +164,14 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
         }
     });
     /**
-     * Catch drapes partial event
+     * Catch shutter partial event
      */
-    $rootScope.$on('event.drape.partial', function(event, params) {
+    $rootScope.$on('event.shutter.partial', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='drapes' )
+            if( objectsService.devices[i].__serviceName==='shutter' )
             {
-                if( objectsService.devices[i].name===params.drape )
+                if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'partial'
                 }
@@ -181,5 +181,5 @@ var drapesService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('drapesService', ['$q', '$rootScope', 'rpcService', 'objectsService', drapesService]);
+RaspIot.service('shutterService', ['$q', '$rootScope', 'rpcService', 'objectsService', shutterService]);
 
