@@ -16,7 +16,7 @@ __all__ = ['Gpios']
 
 #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO);
+logger.setLevel(logging.DEBUG);
 
 class GpioInputWatcher(Thread):
     """
@@ -43,26 +43,30 @@ class GpioInputWatcher(Thread):
     def run(self):
         last_level = None
         time_on = 0
-        while self.continu:
-            level = GPIO.input(self.pin)
-            if last_level is None:
-                #first run, nothing to do except init values
-                pass
-            elif level!=last_level and level==self.level:
-                logger.debug('input %s on' % str(self.pin))
-                time_on = time.time()
-                self.on_callback(self.pin)
-                time.sleep(self.debounce/1000.0)
+        try:
+            while self.continu:
+                level = GPIO.input(self.pin)
+                if last_level is None:
+                    #first run, nothing to do except init values
+                    pass
+                elif level!=last_level and level==self.level:
+                    logger.debug('input %s on' % str(self.pin))
+                    time_on = time.time()
+                    self.on_callback(self.pin)
+                    time.sleep(self.debounce/1000.0)
 
-            elif level!=last_level:
-                logger.debug('input %s off' % str(self.pin))
-                if self.off_callback:
-                    self.off_callback(self.pin, time.time()-time_on)
-                time.sleep(.1)
+                elif level!=last_level:
+                    logger.debug('input %s off' % str(self.pin))
+                    if self.off_callback:
+                        self.off_callback(self.pin, time.time()-time_on)
+                    time.sleep(.1)
 
-            else:
-                time.sleep(.1)
-            last_level = level
+                else:
+                    time.sleep(.1)
+                last_level = level
+        except:
+            logger.debug('Exception in GpioInputWatcher')
+
 
 
 # RASPI GPIO numbering scheme:

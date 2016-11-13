@@ -497,6 +497,7 @@ class BusClient(threading.Thread):
             except:
                 #error occured
                 logger.exception('BusClient: fatal exception')
+                self.stop()
 
             #logger.debug('----> sleep')
             #time.sleep(1.0)
