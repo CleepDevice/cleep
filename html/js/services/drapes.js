@@ -2,7 +2,7 @@
  * Drapes service
  * Handle drapes module requests
  */
-var drapesService = function($q, rpcService, objectsService) {
+var drapesService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
@@ -25,14 +25,9 @@ var drapesService = function($q, rpcService, objectsService) {
     };
 
     /**
-     * Return template name according to gpio mode
+     * Return template name
      */
     self.getObjectTemplateName = function(object) {
-        /*if( object.mode==='in') 
-        {
-            return 'gpioInput';
-        }
-        return 'gpioOutput';*/
         return object.__type;
     };
 
@@ -74,9 +69,9 @@ var drapesService = function($q, rpcService, objectsService) {
     /**
      * Open drape
      */
-    self.openDrape = function(name) {
-        console.log('open drape', name);
-        return rpcService.sendCommand('open_drape', 'drapes', {'name':name})
+    self.openDrape = function(device) {
+        console.log('open drape', device);
+        return rpcService.sendCommand('open_drape', 'drapes', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
         }, function(err) {
@@ -87,16 +82,104 @@ var drapesService = function($q, rpcService, objectsService) {
     /**
      * Close drape
      */
-    self.closeDrape = function(name) {
-        return rpcService.sendCommand('close_drape', 'drapes', {'name':name})
+    self.closeDrape = function(device) {
+        return rpcService.sendCommand('close_drape', 'drapes', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
         }, function(err) {
             console.log('closeDrape:', err);
         });
     };
+
+    /**
+     * Stop drape
+     */
+    self.stopDrape = function(device) {
+        return rpcService.sendCommand('stop_drape', 'drapes', {'name':device['name']})
+        .then(function(resp) {
+            return resp.data;
+        }, function(err) {
+            console.log('stopDrape:', err);
+        });
+    };
+
+    /**
+     * Catch drapes opening event
+     */
+    $rootScope.$on('event.drape.opening', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='drapes' )
+            {
+                if( objectsService.devices[i].name===params.drape )
+                {
+                    objectsService.devices[i].status = 'opening'
+                }
+            }
+        }
+    });
+    /**
+     * Catch drapes closing event
+     */
+    $rootScope.$on('event.drape.closing', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='drapes' )
+            {
+                if( objectsService.devices[i].name===params.drape )
+                {
+                    objectsService.devices[i].status = 'closing'
+                }
+            }
+        }
+    });
+    /**
+     * Catch drapes opened event
+     */
+    $rootScope.$on('event.drape.opened', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='drapes' )
+            {
+                if( objectsService.devices[i].name===params.drape )
+                {
+                    objectsService.devices[i].status = 'opened'
+                }
+            }
+        }
+    });
+    /**
+     * Catch drapes closed event
+     */
+    $rootScope.$on('event.drape.closed', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='drapes' )
+            {
+                if( objectsService.devices[i].name===params.drape )
+                {
+                    objectsService.devices[i].status = 'closed'
+                }
+            }
+        }
+    });
+    /**
+     * Catch drapes partial event
+     */
+    $rootScope.$on('event.drape.partial', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='drapes' )
+            {
+                if( objectsService.devices[i].name===params.drape )
+                {
+                    objectsService.devices[i].status = 'partial'
+                }
+            }
+        }
+    });
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('drapesService', ['$q', 'rpcService', 'objectsService', drapesService]);
+RaspIot.service('drapesService', ['$q', '$rootScope', 'rpcService', 'objectsService', drapesService]);
 

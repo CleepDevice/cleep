@@ -45,26 +45,7 @@ class Drapes(RaspIot):
             logger.debug('Drop startup event')
             return
 
-        #if event['event']=='event.gpio.on':
-        #    #gpio turned on, get gpio
-        #    gpio = event['params']['gpio']
-        #
-        #    #change drape status or open drape according to gpio triggered
-        #    for drape in self._config:
-        #        if self._config[drape]['drape_open']==gpio:
-        #            #drape is opening
-        #            self.change_status(self._config[drape]['name'], Drapes.STATUS_OPENING)
-        #            found = True
-        #
-        #        elif self._config[drape]['drape_close']==gpio:
-        #            #drape is closing
-        #            self.change_status(self._config[drape]['name'], Drapes.STATUS_CLOSING)
-        #            found = True
-        #        
-        #        #stop statement
-        #        if found:
-        #            break
-
+        #process received event
         if event['event']=='event.gpio.off':
             #drop gpio init
             if event['params']['init']:
@@ -74,46 +55,13 @@ class Drapes(RaspIot):
             #gpio turned off, get gpio
             gpio = event['params']['gpio']
 
-            #change drape status or close drape according to gpio triggered
+            #search frape and execute action
             for drape in self._config:
                 if self._config[drape]['switch_open']==gpio:
-                    #open switch turned off
-                    if self._config[drape]['status'] in [Drapes.STATUS_OPENING, Drapes.STATUS_CLOSING]:
-                        #stop drape
-                        self.stop_drape(self._config[drape])
-                    elif self._config[drape]['status'] in [Drapes.STATUS_CLOSED, Drapes.STATUS_PARTIAL]:
-                        #open drape action
-                        self.open_drape(self._config[drape])
-                    else:
-                        #drape is already opened
-                        logger.debug('Drape %s is already opened' % self._config[drape]['name'])
-                    found = True
-
+                    self.__execute_action(self._config[drape], True)
+                    break
                 elif self._config[drape]['switch_close']==gpio:
-                    #open switch turned on
-                    if self._config[drape]['status'] in [Drapes.STATUS_OPENING, Drapes.STATUS_CLOSING]:
-                        #stop drape
-                        self.stop_drape(self._config[drape])
-                    elif self._config[drape]['status'] in [Drapes.STATUS_OPENED, Drapes.STATUS_PARTIAL]:
-                        #close drape action
-                        self.close_drape(self._config[drape])
-                    else:
-                        #drape is already closed
-                        logger.debug('Drape %s is already closed' % self._config[drape]['name'])
-                    found = True
-
-                #elif self._config[drape]['drape_open']==gpio:
-                #    #drape is opened
-                #    self.change_status(self._config[drape]['name'], Drapes.STATUS_OPENED)
-                #    found = True
-
-                #elif self._config[drape]['drape_close']==gpio:
-                #    #drape is closed
-                #    self.change_status(self._config[drape]['name'], Drapes.STATUS_CLOSED)
-                #    found = True
-                
-                #stop statement
-                if found:
+                    self.__execute_action(self._config[drape], False)
                     break
 
     def reset(self):
@@ -170,6 +118,122 @@ class Drapes(RaspIot):
         Return full config (drapes+switches)
         """
         return self._config
+
+    def __stop_action(self, drape):
+        """
+        Stop specified drape
+        """
+        #first of all cancel timer if necessary
+        if self.__timers.has_key(drape['name']):
+            logger.debug('Cancel timer of drape "%s"' % drape['name'])
+            self.__timers[drape['name']].cancel()
+            del self.__timers[drape['name']]
+
+        #then get gpio
+        if drape['status']==Drapes.STATUS_OPENING:
+            gpio = drape['drape_open']
+        else:
+            gpio = drape['drape_close']
+        logger.debug('stop drape: gpio=%s' % str(gpio))
+
+        #and turn off gpio
+        req = MessageRequest()
+        req.to = 'gpios'
+        req.command = 'turn_off'
+        req.params = {'gpio':gpio}
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
+        
+        #change status
+        self.change_status(drape['name'], Drapes.STATUS_PARTIAL)
+
+    def __open_action(self, drape):
+        """
+        Open specified drape
+        """
+        #turn on gpio
+        gpio = drape['drape_open']
+        req = MessageRequest()
+        req.to = 'gpios'
+        req.command = 'turn_on'
+        req.params = {'gpio':gpio}
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
+
+        #change status
+        self.change_status(drape['name'], Drapes.STATUS_OPENING)
+    
+        #launch turn off timer
+        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
+        self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_OPENED])
+        self.__timers[drape['name']].start()
+
+    def __close_action(self, drape):
+        """
+        Close specified drape
+        """
+        #turn on gpio
+        gpio = drape['drape_close']
+        req = MessageRequest()
+        req.to = 'gpios'
+        req.command = 'turn_on'
+        req.params = {'gpio':gpio}
+        resp = self.push(req)
+        if resp['error']:
+            raise CommandError(resp['message'])
+
+        #change status
+        self.change_status(drape['name'], Drapes.STATUS_CLOSING)
+        
+        #launch turn off timer
+        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
+        self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_CLOSED])
+        self.__timers[drape['name']].start()
+
+    def __execute_action(self, drape, open_action):
+        """
+        Execute action according to parameters
+        Centralize here all process to avoid turning off and on at the same time
+        @param drape: concerned drape 
+        @param open_drape: True if action is to open drape. False if is close action
+        """
+        if not drape:
+            logger.error('__execute_action: Drape is not defined')
+            return
+
+        if open_action:
+            #open action triggered
+            if drape['status'] in [Drapes.STATUS_OPENING, Drapes.STATUS_CLOSING]:
+                #drape is in opening or closing state, stop it
+                #self.stop_drape(drape)
+                self.__stop_action(drape)
+
+            elif drape['status'] in [Drapes.STATUS_CLOSED, Drapes.STATUS_PARTIAL]:
+                #drape is not completely opened or closed, open it
+                #self.open_drape(drape)
+                self.__open_action(drape)
+            else:
+                #drape is already opened, do nothing
+                logger.debug('Drape %s is already opened' % drape['name'])
+
+        else:
+            #close action triggered
+            if drape['status'] in [Drapes.STATUS_OPENING, Drapes.STATUS_CLOSING]:
+                #drape is in opening or closing state, stop it
+                #self.stop_drape(drape)
+                self.__stop_action(drape)
+
+            elif drape['status'] in [Drapes.STATUS_OPENED, Drapes.STATUS_PARTIAL]:
+                #close drape action
+                #self.close_drape(drape)
+                self.__close_action(drape)
+
+            else:
+                #drape is already closed
+                logger.debug('Drape %s is already closed' % drape['name'])
+        
 
     def add_drape(self, name, drape_open, drape_close, delay, switch_open, switch_close):
         #get used gpios
@@ -341,86 +405,32 @@ class Drapes(RaspIot):
         #and update status to specified one
         self.change_status(drape_name, new_status)
 
-    def open_drape(self, drape):
+    def open_drape(self, name):
         """
         Open specified drape
         """
-        logger.debug('open_drape %s' % str(drape))
+        logger.debug('open_drape %s' % str(name))
+        if name not in self._config:
+            raise InvalidParameter('Drape "%s" doesn\'t exist' % name)
+        self.__execute_action(self._config[name], True)
 
-        #turn on gpio
-        gpio = drape['drape_open']
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_on'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
-        if resp['error']:
-            raise CommandError(resp['message'])
-
-        #change status
-        self.change_status(drape['name'], Drapes.STATUS_OPENING)
-
-        #launch turn off timer
-        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
-        self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_OPENED])
-        self.__timers[drape['name']].start()
-
-    def close_drape(self, drape):
+    def close_drape(self, name):
         """
         Close specified drape
         """
-        logger.debug('close_drape %s' % str(drape))
+        logger.debug('close_drape %s' % str(name))
+        if name not in self._config:
+            raise InvalidParameter('Drape "%s" doesn\'t exist' % name)
+        self.__execute_action(self._config[name], False)
 
-        #turn on gpio
-        gpio = drape['drape_close']
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_on'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
-        if resp['error']:
-            raise CommandError(resp['message'])
-
-        #change status
-        self.change_status(drape['name'], Drapes.STATUS_CLOSING)
-
-        #launch turn off timer
-        logger.debug('Launch timer with duration=%s' % (str(drape['delay'])))
-        self.__timers[drape['name']] = Timer(float(drape['delay']), self.__end_of_timer, [drape['name'], gpio, Drapes.STATUS_CLOSED])
-        self.__timers[drape['name']].start()
-
-    def stop_drape(self, drape):
+    def stop_drape(self, name):
         """
         Stop specified drape
         """
-        logger.debug('stop_drape %s' % str(drape))
-
-        #first of all cancel timer if necessary
-        if self.__timers.has_key(drape['name']):
-            logger.debug('Cancel timer of drape "%s"' % drape['name'])
-            self.__timers[drape['name']].cancel()
-            del self.__timers[drape['name']]
-
-        #then get gpio
-        if drape['status']==Drapes.STATUS_OPENING:
-            logger.debug('opening = %s' % str(drape['drape_open']))
-            gpio = drape['drape_open']
-        else:
-            logger.debug('closing = %s' % str(drape['drape_close']))
-            gpio = drape['drape_close']
-        logger.debug('stop drape: gpio=%s' % str(gpio))
-
-        #and turn off gpio
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_off'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
-        if resp['error']:
-            raise CommandError(resp['message'])
-
-        #change status
-        self.change_status(drape['name'], Drapes.STATUS_PARTIAL)
+        logger.debug('stop_drape %s' % str(name))
+        if name not in self._config:
+            raise InvalidParameter('Drape "%s" doesn\'t exist' % name)
+        self.__stop_action(self._config[name])
 
 if __name__ == '__main__':
     #testu
