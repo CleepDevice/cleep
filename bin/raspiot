@@ -53,7 +53,7 @@ if __name__ == '__main__':
         #launch bus and webserver (blocking)
         logger.info('App running...')
         bus.app_configured()
-        app.run(server='gevent', host=WEBSERVER_HOST, port=WEBSERVER_PORT, reloader=False)
+        app.run(server='gevent', host=WEBSERVER_HOST, port=WEBSERVER_PORT, quiet=True, debug=False, reloader=False)
 
     except:
         logger.exception('Exception on main:')

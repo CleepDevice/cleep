@@ -7,31 +7,6 @@ var dashboardDirective = function($rootScope, $q, growl, blockUI) {
         $scope.devicesThreshold = 10;
         //devices
         $scope.devices = objectsService.devices;
-
-        $scope.test = function()
-        {
-            //console.log('test');
-            //$rootScope.$broadcast('event.gpio.on')
-            objectsService.services['gpios'].loadDevices();
-        };
-
-        /**
-         * Get device template path
-         */
-        $scope.getTemplate = function(object)
-        {
-            return 'views/widgets/' + objectsService.getObjectTemplateName(object) + '.html';
-        };
-
-        /**
-         * Init controller
-         */
-        function init()
-        {
-        };
-
-        //init directive
-        init();
     }];
 
     var dashboardLink = function(scope, element, attrs) {
