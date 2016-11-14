@@ -83,10 +83,11 @@ class Wpacli(AdvancedConsole):
         """
         Get configured networks. It returns network ids to manipulate it.
 
-        Result:
+        Results:
             dict: configured networks::
+
                 {
-                    network: {
+                    network (string): {
                         id (int): network id. This id is used to perform other wpacli actions
                         network (string): network name
                         bssid (string): bssid (can be 'any')
@@ -94,6 +95,7 @@ class Wpacli(AdvancedConsole):
                     },
                     ...
                 }
+
         """
         results = self.find(u'%s list_networks' % (self.wpacli), r'^(\d)\s+(.*?)\s+(any|.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s*(?:\[(.*?)\])?$')
         entries = {}

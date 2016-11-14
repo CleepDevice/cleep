@@ -51,6 +51,7 @@ class ConfigTxt(Config):
 
         Returns:
             list: entry informations (empty if nothing found)::
+
                 {
                     <found value for key>: {
                        key (string): <specified key>,
@@ -59,11 +60,14 @@ class ConfigTxt(Config):
                     },
                     ...
                 }
+
         """
         entries = {}
 
-        results = self.find(u'(#?)%s=(.*?)(\s|\Z)' % key)
+        results = self.find(u'(#?)\s*%s=(.*?)(?:\s|\Z)+' % key, remove_none=False)
+        self.logger.trace('Entries for "%s"' % key)
         for group, groups in results:
+            self.logger.trace(groups)
             disabled = False
             if groups[0]==u'#':
                 disabled = True
@@ -75,6 +79,7 @@ class ConfigTxt(Config):
                 u'disabled': disabled
             }
             entries[groups[1]] = entry
+        self.logger.trace('Entries: %s' % entries)
 
         return entries
 
@@ -129,8 +134,6 @@ class ConfigTxt(Config):
             else:
                 #add new dtoverlay entry
                 return self.add_lines([u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay)])
-
-        return False
 
     def is_onewire_enabled(self):
         """
@@ -235,8 +238,6 @@ class ConfigTxt(Config):
             else:
                 #add new dtparam entry
                 return self.add_lines([u'%s=%s' % (self.KEY_DTPARAM, key)])
-
-        return False
 
     def is_spi_enabled(self):
         """

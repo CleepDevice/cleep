@@ -29,20 +29,22 @@ class CleepAudio(Config):
 
         Returns:
             list: entry informations (empty if nothing found)::
+
                 {
-                    <found value for key>: {
-                       group (string): full found string (usefull to replace)
-                       key (string): <specified key>,
-                       value (string): <found value for key>,
+                    found value for key (string): {
+                       group (string): full found string (usefullto replace)
+                       key (string): specified key,
+                       value (string): found value for key,
                     },
                     ...
                 }
+
         """
         entries = []
 
         results = self.find(u'^blacklist (.*?)$', re.UNICODE | re.MULTILINE)
         for group, groups in results:
-            entries.append(groups[0])
+            entries.append(groups[0].replace('_', '-'))
         self.logger.trace(u'Entries: %s' % entries)
 
         return entries

@@ -19,6 +19,8 @@ import types
 
 logging.basicConfig(format=u'%(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s')
 
+TRACE = tools.TRACE
+
 class TestSession():
     """
     Create session to be able to run tests on a Cleep module
@@ -29,7 +31,7 @@ class TestSession():
         Constructor
 
         Args:
-            debug_enabled (bool): set it to True to enable debug log messages
+            log_level (int): set default log level (see logging.ERROR... or use TestSession.TRACE)
         """
         logging.getLogger().setLevel(log_level)
         self.logger = logging.getLogger('TestSession')

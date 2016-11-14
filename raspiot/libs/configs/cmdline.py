@@ -8,6 +8,9 @@ import re
 import time
 
 class Cmdline(Console):
+    """
+    Helper class for /proc/cmdline file reading (only!)
+    """
 
     CACHE_DURATION = 3600.0
 
@@ -21,7 +24,8 @@ class Cmdline(Console):
         self.blkid = Blkid()
         self.lsblk = Lsblk()
         self.timestamp = None
-        self.root_device = None
+        self.root_drive = None
+        self.root_partition = None
 
     def __refresh(self):
         """
@@ -38,23 +42,36 @@ class Cmdline(Console):
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==1:
+                    self.logger.trace('Groups: %s' % groups)
                     if groups[0].startswith(u'UUID='):
                         #get device from uuid
                         uuid = groups[0].replace(u'UUID=', u'')
-                        root_device = self.blkid.get_device_by_uuid(uuid)
+                        device = self.blkid.get_device_by_uuid(uuid)
+                        self.logger.trace('device=%s' % device)
+                        root_device = device[u'device']
+                    elif groups[0].startswith(u'PARTUUID='):
+                        #get device from uuid
+                        partuuid = groups[0].replace(u'PARTUUID=', u'')
+                        self.logger.trace('partuuid=%s' % partuuid)
+                        device = self.blkid.get_device_by_partuuid(partuuid)
+                        self.logger.trace('device=%s' % device)
+                        root_device = device[u'device']
                     else:
                         #get device from path
-                        root_device = groups[0]
+                        uuid = groups[0]
+                        device = self.blkid.get_device_by_uuid(uuid)
+                        self.logger.trace('device=%s' % device)
+                        root_device = device[u'device']
 
                     #get file system infos
                     drives = self.lsblk.get_drives()
 
                     #save data
-                    self.root_partition = root_device.replace(u'/dev/', u'')
-                    self.root_drive = None
-                    for drive in drives:
-                        if self.root_partition.find(drive)!=-1:
-                            self.root_drive = drive
+                    self.root_drive = root_device.replace(u'/dev/', u'')
+                    self.root_partition = None
+                    for drive, partition in drives.items():
+                        if self.root_drive.find(drive)!=-1:
+                            self.root_partition = partition
                             break
 
         self.timestamp = time.time()

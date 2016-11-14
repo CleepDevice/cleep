@@ -45,7 +45,7 @@ class Config():
         #backup original file
         if path is not None and backup:
             self.backup_path = self.__get_backup_path(path)
-            self.__make_backup()
+            self._make_backup()
 
     def __del__(self):
         """
@@ -72,7 +72,7 @@ class Config():
 
         return path
 
-    def __make_backup(self):
+    def _make_backup(self):
         """
         Backup original file if necessary
         """
@@ -84,7 +84,7 @@ class Config():
         Overwrite original config file by backup one
         """
         if not self.backup_path:
-            self.logger.info(u'Backup disabled when path is not specified in class init')
+            self.logger.info(u'Backup disabled')
             return False
 
         if os.path.exists(self.backup_path):
@@ -165,20 +165,23 @@ class Config():
         """
         return os.path.exists(self.__get_path())
 
-    def find(self, pattern, options=re.UNICODE | re.MULTILINE):
+    def find(self, pattern, options=re.UNICODE | re.MULTILINE, remove_none=True):
         """
         Find all pattern matches in config files. Found order is respected.
 
         Args:
             pattern (string): search pattern
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+            remove_none (bool): True to remove None values from result
 
         Returns:
             list: list of matches::
+
                 [
                     (group (string), subgroups (tuple)),
                     ...
                 ]
+
         """
         #check file existence
         if not self.exists():
@@ -198,59 +201,61 @@ class Config():
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
-                #results[group] = match.groups()
-                results.append((group, match.groups()))
+                if remove_none:
+                    groups = filter(None, match.groups())
+                else:
+                    groups = match.groups()
+                results.append((group, groups))
 
         return results
 
-    def find_in_string(self, pattern, content, options=re.UNICODE | re.MULTILINE):
+    def find_in_string(self, pattern, content, options=re.UNICODE | re.MULTILINE, remove_none=True):
         """
         Find all pattern matches in specified string. Found order is respected.
+        Please note only results with subgroups are returned.
 
         Args:
             pattern (string): search pattern
             content (string): string to search in
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+            remove_none (bool): True to remove None values from result
 
         Returns:
             list: list of matches::
+
                 [
                     (group (string), subgroups (tuple)),
                     ...
                 ]
+
         """
         results = []
-
-        #check file existence
-        if not self.exists():
-            self.logger.debug(u'No file found (%s). Return empty result' % self.__get_path())
-            return []
 
         matches = re.finditer(pattern, content, options)
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
-                #results[group] = match.groups()
-                results.append((group, match.groups()))
+                if remove_none:
+                    groups = filter(None, match.groups())
+                else:
+                    groups = match.groups()
+                results.append((group, groups))
 
         return results
-   
 
     def uncomment(self, comment):
         """
         Uncomment specified line
 
         Args:
-            comment (string): full line to search and uncomment
+            comment (string): full line to search (without comment tag) and uncomment
 
         Returns:
             bool: True if line commented
         """
         if self.comment_tag is None:
             #no way to add comment
-            return False
-        if not comment.startswith(self.comment_tag):
-            #line already uncommented
+            self.logger.warn(u'Command tag not set. Unable to add command to config file.')
             return False
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
@@ -282,16 +287,14 @@ class Config():
         Comment specified line
 
         Args:
-            comment (string): full line to search and comment
+            comment (string): full line to search (without comment tag) and comment
 
         Returns:
             bool: True if line commented
         """
         if self.comment_tag is None:
             #no way to add comment
-            return False
-        if comment.startswith(self.comment_tag):
-            #line already commented
+            self.logger.warn(u'Command tag not set. Unable to add command to config file.')
             return False
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
@@ -400,7 +403,7 @@ class Config():
         Args:
             line_regexp (pattern): regexp line pattern
 
-        Return:
+        Returns:
             int: number of lines removed
         """
         if not self.exists():
@@ -439,14 +442,15 @@ class Config():
                 
         return count
 
-    def remove_after(self, header_regexp, line_regexp, lines_to_delete):
+    def remove_after(self, header_pattern, line_pattern, number_lines_to_delete, remove_header=True):
         """
         Remove line matching pattern after header pattern
 
         Args:
             header_pattern (pattern): regexp header pattern
             line_pattern (pattern): regexp line pattern
-            lines_to_delete (int): number of lines to delete
+            number_lines_to_delete (int): number of lines to delete
+            remove_header (bool): remove header (default True)
 
         Returns:
             int: number of lines deleted (blank and commented lines not counted)
@@ -466,22 +470,28 @@ class Config():
         index = 0
         count = 0
         for line in lines:
-            if re.match(header_regexp, line):
+            self.logger.trace('start=%s' % start)
+            self.logger.trace('%s => %s' % (line.strip(), re.match(line_pattern, line)))
+            if re.match(header_pattern, line):
                 #header found, start
-                indexes.append(index)
+                self.logger.trace('Header found')
                 start = True
-                count += 1
-            elif count==lines_to_delete:
+                if remove_header:
+                    indexes.append(index)
+                    count += 1
+            elif count==number_lines_to_delete:
                 #number of line to delete reached, stop
+                self.logger.debug('Number of line reached, stop statement')
                 break
             elif start and self.comment_tag is not None and line.strip().startswith(self.comment_tag):
                 #commented line
                 continue
-            elif start and re.match(line_regexp, line):
+            elif start and re.match(line_pattern, line):
                 #save index of line to delete
                 indexes.append(index)
                 count += 1
             index += 1
+        self.logger.trace('Indexes=%s' % indexes)
 
         #delete lines
         indexes.sort()
@@ -515,8 +525,10 @@ class Config():
             raise Exception(u'Parameter "pattern" must be specified')
         if replace is None:
             raise Exception(u'Parameter "replace" must be specified')
+        if not isinstance(pattern, unicode):
+            raise Exception(u'Parameter "pattern" must be unicode')
         if not isinstance(replace, str) and not isinstance(replace, unicode):
-            raise Exception(u'Parameter "replace" must be a string or unicode (%s)' % type(replace))
+            raise Exception(u'Parameter "replace" must be a string or unicode')
 
         #add new line if necessary
         if replace[len(replace)-1]!='\n':
@@ -555,9 +567,9 @@ class Config():
 
         Args:
             lines (list): list of lines to add
-            end (bool): add lines at end of file (default True)
+            end (bool): add lines at end of file (default True). Otherwise add lines at beginning
 
-        Return:
+        Returns:
             bool: True if succeed
         """
         #check params
@@ -585,6 +597,7 @@ class Config():
 
         else:
             #add lines at beginning of file
+            lines.reverse()
             for line in lines:
                 if line[len(line)-1]!=u'\n':
                     content = [line + u'\n'] + content
@@ -608,7 +621,7 @@ class Config():
         """
         #check params
         if not isinstance(content, unicode):
-            raise Exception('Lines parameter must be list of string')
+            raise Exception('Lines parameter must be unicode string')
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False

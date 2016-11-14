@@ -54,7 +54,7 @@ ctl.!default {
         Args:
             command (string): command to execute
 
-        Return:
+        Returns:
             dict: dict of outputs::
                 {
                     config section: {
@@ -123,7 +123,7 @@ ctl.!default {
         """
         Return current configuration
 
-        Return:
+        Returns:
             dict: current pcm configuration or None if pcm section not found::
                 {
                     section (string),
@@ -149,7 +149,7 @@ ctl.!default {
             card_id (int): card identifier as returned by get_configuration
             device_id (int): device identifier as returned by get_configuration
 
-        Return:
+        Returns:
             bool: True if config saved successfully
         """
         #generate and write new content

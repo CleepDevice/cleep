@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
-from raspiot.libs.internals.config import Config
+from raspiot.libs.configs.config import Config
 import os
 import re
 import io
@@ -35,26 +35,31 @@ class CmdlineTxt(Config):
 
         Returns:
             list: entry informations (empty if nothing found)::
+
                 {
-                    <found value for key>: {
-                       group (string): full found string (usefull to replace)
-                       key (string): <specified key>,
-                       value (string): <found value for key>,
-                    },
+                    key (string): [
+                        value (string),
+                        ...
+                    ],
                     ...
                 }
+
         """
-        entries = {}
+        entries = []
 
         results = self.find(u'(.*?)(?:=(.*?))?(?:\s|\Z)')
         for group, groups in results:
+            self.logger.trace('group=%s' % group)
+            self.logger.trace(groups)
+
             #add new entry
-            entry = {
-                u'group': group,
-                u'key': groups[0],
-                u'value': groups[1]
-            }
-            entries[groups[0]] = entry
+            key = groups[0]
+            value = groups[1] if len(groups)==2 else None
+
+            #if key not in entries.keys():
+            #    entries[key] = []
+            #entries[key].append(value)
+            entries.append((key, value))
 
         return entries
 
@@ -67,16 +72,35 @@ class CmdlineTxt(Config):
         """
         #prepare content
         content = u''
-        for key, entry in entries.iteritems():
-            if entry['value'] is not None:
-                content += u'%s=%s ' % (entry[u'key'], entry[u'value'])
+        #for key, values in entries.items():
+        #    for value in values:
+        #        if value is None:
+        #            content += u'%s ' % key
+        #        else:
+        #            content += u'%s=%s ' % (key, value)
+        for (key, value) in entries:
+            if value is None:
+                content += u'%s ' % key
             else:
-                content += u'%s ' % entry[u'key']
+                content += u'%s=%s ' % (key, value)
 
         #write content
         fd = self._open(self.MODE_WRITE)
         fd.write(content)
         self._close()
+
+    def __key_value_exists(self, key, value, entries):
+        """
+        Check if specified combo key/value exists in entries
+
+        Returns:
+            bool: True if combo exists
+        """
+        for entry in entries:
+            if entry[0]==key and entry[1]==value:
+                return True
+
+        return False
 
     def is_console_enabled(self):
         """
@@ -86,7 +110,9 @@ class CmdlineTxt(Config):
             bool: True if console enabled
         """
         entries = self.__get_entries()
-        return entries.has_key(self.KEY_CONSOLE)
+        #self.logger.trace('console_enabled? %s, %s' % (entries.has_key(self.KEY_CONSOLE), entries[self.KEY_CONSOLE]))
+        #return entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE in entries[self.KEY_CONSOLE]
+        return self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries)
 
     def enable_console(self):
         """
@@ -97,13 +123,11 @@ class CmdlineTxt(Config):
             bool: Return True if serial enabled. False if serial already enabled
         """
         entries = self.__get_entries()
-        if not entries.has_key(self.KEY_CONSOLE):
+        self.logger.trace('entries: %s' % entries)
+        #if not entries.has_key(self.KEY_CONSOLE) or (entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE not in entries[self.KEY_CONSOLE]):
+        if not self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries):
             #add entry
-            entries[self.KEY_CONSOLE] = {
-                u'group': u'%s=%s' % (self.KEY_CONSOLE, self.VALUE_CONSOLE),
-                u'key': self.KEY_CONSOLE,
-                u'value': self.VALUE_CONSOLE
-            }
+            entries.append((self.KEY_CONSOLE, self.VALUE_CONSOLE))
 
             #save changes
             self.__save_entries(entries)
@@ -121,9 +145,19 @@ class CmdlineTxt(Config):
             bool: Return True if serial disabled. False if serial already disabled
         """
         entries = self.__get_entries()
-        if entries.has_key(self.KEY_CONSOLE):
-            #delete entry
-            del entries[self.KEY_CONSOLE]
+        #if entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE in entries[self.KEY_CONSOLE]:
+        if self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries):
+            #remove value from entry values
+            for entry in entries:
+                if entry[0]==self.KEY_CONSOLE and entry[1]==self.VALUE_CONSOLE:
+                    entries.remove(entry)
+                    break
+            #entries[self.KEY_CONSOLE].remove(self.VALUE_CONSOLE)
+
+            #remove complete key if entry holds not more value
+            #if len(entries[self.KEY_CONSOLE])==0:
+            #    del entries[self.KEY_CONSOLE]
+
             #save changes
             self.__save_entries(entries)
 

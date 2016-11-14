@@ -86,13 +86,15 @@ def raspberry_pi_infos():
     infos[u'revision'] = revision
 
     return infos
+
+TRACE = logging.DEBUG - 5
         
 def install_trace_logging_level():
     """ 
     Install custom log level TRACE for library debugging principaly
     Credits https://gist.github.com/numberoverzero/f803ebf29a0677b6980a5a733a10ca71
     """
-    level = logging.TRACE = logging.DEBUG - 5 
+    level = logging.TRACE = TRACE 
 
     def log_logger(self, message, *args, **kwargs):
         if self.isEnabledFor(level):

@@ -5,6 +5,8 @@ import raspiot.libs.internals.tools as tools
 import os
 import logging
 
+TRACE = tools.TRACE
+
 class TestLib():
     """
     Instanciate TestLib to enable some features to be able to run tests on a library for Cleep
@@ -15,3 +17,4 @@ class TestLib():
         Constructor
         """
         tools.install_trace_logging_level()
+

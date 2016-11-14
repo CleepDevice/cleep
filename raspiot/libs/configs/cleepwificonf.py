@@ -12,6 +12,7 @@ class CleepWifiConf():
     """
     Helper class to read /boot/cleepwifi.conf
     Config base class is not used here to avoid using cleep_filesystem
+    We don't need to use cleepfilesystem because we only read file
     """
 
     CONF = u'/boot/cleepwifi.conf'
@@ -20,7 +21,6 @@ class CleepWifiConf():
         """
         Constructor
         """
-
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -82,8 +82,12 @@ class CleepWifiConf():
         Return:
             string: cleepwifi.conf file content
         """
+        if encryption not in (u'wpa', u'wpa2', u'wep', u'unsecured'):
+            self.logger.warn(u'Invalid encryption value specified, set it to wpa2')
+            encryption = 'wpa2'
+
         #encrypt password
-        if encryption in ('wpa', 'wpa2'):
+        if encryption in (u'wpa', u'wpa2'):
             password = Tools.wpa_passphrase(network, password)
         
         config = {
