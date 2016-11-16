@@ -16,7 +16,7 @@ __all__ = ['Gpios']
 
 #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG);
+logger.setLevel(logging.INFO);
 
 class GpioInputWatcher(Thread):
     """
