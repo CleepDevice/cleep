@@ -127,42 +127,7 @@ def command():
         msg.error = True
         resp = msg.to_dict()
 
-    #convert dict to list to have easy to use array in js
-    #if resp['data']!=None and isinstance(resp['data'], dict):
-    #    resp['data'] = dictToList(resp['data'])
-
     return resp
-
-#@contextmanager
-#def wait_for_message():
-#    """
-#    Wait for message to send to client
-#    """
-#    with subscribe_bus() as bus:
-#        message = {'error':True, 'data':None, 'message':''}
-#        if bus:
-#            #wait for event (blocking by default) until end of timeout
-#            try:
-#                msg = bus.pull('json', POLL_TIMEOUT)
-#                #prepare output
-#                message['error'] = False
-#                message['data'] = msg['message']
-#                logger.debug('polling received %s' % message)
-#            except NoMessageAvailable:
-#                message['message'] = 'No message available'
-#                time.sleep(1.0)
-#            except:
-#                logger.exception('poll exception')
-#                message['message'] = 'Internal error'
-#                time.sleep(5.0)
-#        else:
-#            #bus not available yet
-#            logger.info('polling: bus not available')
-#            message['message'] = 'Bus not available'
-#            time.sleep(1.0)
-#
-#    #and return it
-#    return json.dumps(message)
 
 @app.route('/registerpoll', method='POST')
 def registerpoll():
