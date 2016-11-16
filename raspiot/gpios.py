@@ -104,6 +104,8 @@ class GpioInputWatcher(Thread):
 # GPIO21  40
 class Gpios(RaspIot):
     CONFIG_FILE = 'gpios.conf'
+    DEPS = []
+
     GPIOS_REV2 = {'GPIO4' : 7,
                   'GPIO17': 11,
                   'GPIO18': 12,
@@ -145,7 +147,6 @@ class Gpios(RaspIot):
         #configure RasPi
         GPIO.setmode(GPIO.BOARD)
         #GPIO.setwarnings(False)
-        logging.info(self._config)
         for gpio in self._config:
             self.__configure_gpio(gpio, self._config[gpio])
 

@@ -16,6 +16,7 @@ logger.setLevel(logging.DEBUG);
 #Shutter module
 class Shutter(RaspIot):
     CONFIG_FILE = 'shutter.conf'
+    DEPS = ['gpios']
 
     STATUS_OPENED = 'opened'
     STATUS_CLOSED = 'closed'

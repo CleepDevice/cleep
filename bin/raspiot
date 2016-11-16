@@ -31,39 +31,62 @@ if __name__ == '__main__':
 
         #load user modules
         logger.debug('Loading user modules:')
-        for module in config['modules']:
-            (module_flag, module_name) = module.split('.')
-            logger.debug(' - %s (with flag "%s")' % (module_name, module_flag));
+        loaded_modules = []
+        for module_name in config['modules']:
+            logger.debug(' - %s)' % (module_name));
 
-            #create module instance
+            #get module class
             logger.debug('   - loading module...')
             module_ = importlib.import_module('raspiot.%s' % module_name)
             class_ = getattr(module_, module_name.capitalize())
 
+            #load dependencies
+            logger.debug('   - loading module dependencies:')
+            deps = class_.DEPS
+            if deps:
+                for dep in deps:
+                    if dep not in loaded_modules:
+                        logger.debug('     - loading dependency "%s"' % dep)
+                        dep_ = importlib.import_module('raspiot.%s' % dep)
+                        dep_class_ = getattr(dep_, dep.capitalize())
+                        app.config['lib.%s' % dep] = dep_class_(bus)
+                    
+                        logger.debug('     - starting dependency...')
+                        logger.debug('===============BEGIN %s===============', dep)
+                        app.config['lib.%s' % dep] = dep_class_(bus)
+                        app.config['lib.%s' % dep].start()
+                        logger.debug('===============END %s===============', dep)
+                    
             #and run instance
             logger.debug('   - starting module...')
             logger.debug('---------------BEGIN %s---------------', module_name)
-            app.config[module] = class_(bus)
-            app.config[module].start()
+            app.config['mod.%s' % module_name] = class_(bus)
+            app.config['mod.%s' % module_name].start()
             logger.debug('---------------END %s---------------', module_name)
-
-        #check module dependencies
-        #TODO
+            loaded_modules.append(module_name)
 
         #launch bus and webserver (blocking)
-        logger.info('App running...')
+        logger.info('Raspiot running...')
         bus.app_configured()
         app.run(server='gevent', host=WEBSERVER_HOST, port=WEBSERVER_PORT, quiet=True, debug=False, reloader=False)
-
+ 
     except:
         logger.exception('Exception on main:')
 
     #clean all stuff
     logger.debug('Stopping user modules:')
     for module in app.config:
-        if module[:3] in ['sys', 'ext', 'lib']:
+        if module[:3] in ['mod']:
+            logger.debug(' - %s' % module)
+            app.config[module].stop()
+    for module in app.config:
+        if module[:3] in ['lib']:
+            logger.debug(' - %s' % module)
+            app.config[module].stop()
+    for module in app.config:
+        if module[:3] in ['sys']:
             logger.debug(' - %s' % module)
             app.config[module].stop()
     
 
-    logger.info('App stopped')
+    logger.info('Raspiot stopped')

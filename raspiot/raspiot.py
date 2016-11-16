@@ -25,6 +25,7 @@ class RaspIot(BusClient):
      - message bus access
     """
     CONFIG_DIR = '/etc/raspiot/'
+    DEPS = []
 
     def __init__(self, bus):
         BusClient.__init__(self, bus)
@@ -106,7 +107,7 @@ class RaspIot(BusClient):
         """
         Return module dependencies
         """
-        return []
+        return self.DEPS
 
     def stop(self):
         """
