@@ -10,9 +10,9 @@ import threading
 
 __all__ = ['Task']
 
-#logging.basicConfig(filename='agosqueezebox.log', level=logging.INFO, format="%(asctime)s %(levelname)s : %(message)s")
 #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class Task:
     """
@@ -21,6 +21,11 @@ class Task:
     A periodic task is executed at regular interval while a non periodic task is executed once
     """
     def __init__(self, interval, task, task_args=[], task_kwargs={}):
+        """
+        Create new task
+        @param interval : interval to repeat task (in s)
+        @param task: function to call periodically
+        """
         self._task = task
         self._args = task_args
         self._kwargs = task_kwargs
@@ -44,6 +49,7 @@ class Task:
     def set_interval(self, interval):
         """
         Define a task interval to repeat the task
+        @param interval: task interval (in s)
         """
         self._interval = interval
   
