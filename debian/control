@@ -8,5 +8,5 @@ Homepage: https://github.com/tangb/raspiot
 
 Package: raspiot
 Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-simplejson, python-gevent, python-bottle, python-rpi.gpio, python-passlib
 Description: Transform your raspberry pi in IoT device

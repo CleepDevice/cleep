@@ -1,11 +1,20 @@
-var rpcService = function($http, $q, growl) {
+var rpcService = function($http, $q, growl, $base64) {
     var self = this;
     self.uriCommand = window.location.protocol + '//' + window.location.host + '/command';
     self.uriPoll = window.location.protocol + '//' + window.location.host + '/poll';
     self.uriRegisterPoll = window.location.protocol + '//' + window.location.host + '/registerpoll';
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
     self.pollKey = null;
-    
+
+    /**
+     * Make auth string in base64
+     */
+    self.makeBaseAuth = function(username, password) {
+        var token = username + ':' + password;
+        var hash = $base64.encode(token);
+        return "Basic " + hash;
+    };
+
     /**
      * send command
      * @param data: data to send
@@ -35,6 +44,7 @@ var rpcService = function($http, $q, growl) {
             data.to = null;
         }
 
+        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriCommand,
@@ -68,6 +78,7 @@ var rpcService = function($http, $q, growl) {
     self.getModules = function() {
         var d = $q.defer();
 
+        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriModules,
@@ -114,6 +125,7 @@ var rpcService = function($http, $q, growl) {
     {
         var d = $q.defer();
 
+        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             data: {'pollKey': self.pollKey},
@@ -149,6 +161,7 @@ var rpcService = function($http, $q, growl) {
     {
         var d = $q.defer();
 
+        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriRegisterPoll,
@@ -166,5 +179,5 @@ var rpcService = function($http, $q, growl) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('rpcService', ['$http', '$q', 'growl', rpcService]);
+RaspIot.service('rpcService', ['$http', '$q', 'growl', '$base64', rpcService]);
 

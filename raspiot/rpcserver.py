@@ -3,6 +3,7 @@
 
 """
 Based on long poll example from https://github.com/larsks/pubsub_example
+Encryption based on example from XXX
 """
 
 import os
@@ -13,28 +14,31 @@ import json
 from contextlib import contextmanager
 import time
 import uuid
-
-#import gevent
 import gevent
 from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from bus import NoMessageAvailable
 from bus import MessageResponse, MessageRequest
 import bottle
+from bottle import auth_basic
+from passlib.hash import sha256_crypt
 
 __all__ = ['app']
 
-# This lets us track how many clients are currently connected.
-polling = 0
-
+#constants
 BASE_DIR = '/opt/raspiot/'
 HTML_DIR = os.path.join(BASE_DIR, 'html')
+AUTH_FILE = '/etc/raspiot/auth.conf'
 POLL_TIMEOUT = 60
 
+#logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def bottle_logger(func):
+    """
+    Define bottle logging
+    """
     def wrapper(*args, **kwargs):
         req = func(*args, **kwargs)
         logger.debug('%s %s %s %s' % (
@@ -45,11 +49,17 @@ def bottle_logger(func):
         return req
     return wrapper
 
+#main app
 app = bottle.app()
 app.install(bottle_logger)
 
+#globals
+polling = 0
 subscribed = False
 subscriptions = {}
+auth_config_loaded = False
+auth_config = {}
+
 def subscribe_bus():
     global subscribed
 
@@ -89,8 +99,42 @@ def dictToList(d):
         logger.debug('%s = %s' % (type(d), str(d)))
     return l
 
+def check_auth(username, password):
+    """
+    Check auth
+    """
+    global auth_config_loaded, auth_config
+    #load auth file if necessary
+    if not auth_config_loaded:
+        try:
+            execfile(AUTH_FILE, auth_config)
+            logger.debug('auth.conf: %s' % auth_config['accounts'])
+        except:
+            logger.exception('Unable to load auth file. Auth disabled:')
+        auth_config_loaded = True
+
+    #check auth
+    if len(auth_config['accounts'])>0 and auth_config['enabled']:
+        if auth_config['accounts'].has_key(username):
+            if sha256_crypt.verify(password, auth_config['accounts'][username]):
+                #auth is valid
+                return True
+            else:
+                #invalid password
+                logger.warning('Invalid password for user "%s"' % username)
+                return False
+        else:
+            #username doesn't exist
+            logger.warning('Invalid username "%s"' % username)
+            return False
+    else:
+        #auth disabled
+        return True
+        
+    
 
 @app.route('/command', method='POST')
+@auth_basic(check_auth)
 def command():
     """
     Execute command on system
@@ -130,6 +174,7 @@ def command():
     return resp
 
 @app.route('/registerpoll', method='POST')
+@auth_basic(check_auth)
 def registerpoll():
     bottle.response.content_type = 'application/json'
     poll_key = str(uuid.uuid4())
@@ -147,6 +192,7 @@ def pollcounter():
     polling -= 1
 
 @app.route('/poll', method='POST')
+@auth_basic(check_auth)
 def poll():
     """
     This is the endpoint for long poll clients.
@@ -199,6 +245,7 @@ def poll():
     return json.dumps(message)
 
 @app.route('/<path:path>')
+@auth_basic(check_auth)
 def default(path):
     """
     Servers static files from HTML_DIR.
@@ -206,19 +253,21 @@ def default(path):
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/modules', method='POST')
+@auth_basic(check_auth)
 def modules():
     """
     Returns loaded modules in app to inject associated modules in webapp
-    @return ext.XXX modules only
+    @return mod.XXX modules only
     """
     modules = []
     for module in app.config:
-        if module.startswith('ext.'):
+        if module.startswith('mod.'):
             #external module found, return it
-            modules.append(module.replace('ext.',''))
+            modules.append(module.replace('mod.',''))
     return json.dumps(modules)
 
 @app.route('/')
+@auth_basic(check_auth)
 def index():
     """
     Return a default document if no path was specified.
