@@ -227,8 +227,10 @@ def poll():
         else:
             #wait for event (blocking by default) until end of timeout
             try:
+                #wait for message
                 poll_key = 'rpc-%s' % params['pollKey']
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
+
                 #prepare output
                 message['error'] = False
                 message['data'] = msg['message']
