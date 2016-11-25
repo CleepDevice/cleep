@@ -50,14 +50,17 @@ RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcS
                     objectsService.addService(serviceName, $injector.get(angularService));
 
                     //load service devices if possible
-                    if( typeof objectsService.services[serviceName].loadDevices !== undefined )
+                    if( typeof objectsService.services[serviceName].loadDevices !== 'undefined' )
                     {
                         //load service devices
-                        objectsService.services[serviceName].loadDevices()
+                        objectsService.services[serviceName].loadDevices();
 
                         //set service config directives
                         objectsService.services[serviceName].setConfigs();
                     }
+
+                    //set service config directives
+                    objectsService.services[serviceName].setConfigs();
                 }
                 else
                 {
