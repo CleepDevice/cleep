@@ -33,7 +33,7 @@ POLL_TIMEOUT = 60
 
 #logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 def bottle_logger(func):
     """
@@ -131,40 +131,53 @@ def check_auth(username, password):
         #auth disabled
         return True
         
-    
-
 @app.route('/command', method='POST')
+@app.route('/command', method='GET')
 @auth_basic(check_auth)
 def command():
     """
     Execute command on system
     """
     logger.debug('COMMAND data [%d]: %s' % (len(bottle.request.params), str(bottle.request.json)))
+    logger.debug(bottle.request.query.keys())
+    logger.debug('METHOD:%s' % (bottle.request.method))
 
     #get app bus
     bus = app.config['sys.bus']
 
-    #get command params
-    params = bottle.request.json
-
-    #push message to bus
     try:
         #prepare data to push
         request = MessageRequest()
-        if params.has_key('to'):
-            request.to = params['to']
-            del params['to']
-        if params.has_key('command'):
-            request.command = params['command']
-            del params['command']
-        if len(params)>0:
-            request.params = params['params']
+        if bottle.request.method=='GET':
+            #GET request
+            params = bottle.request.query
+            logger.debug('params: %s' % dir(params))
+            if 'to' in params.keys():
+                request.to = params['to']
+                del params['to']
+            if 'command' in params.keys():
+                request.command = params['command']
+                del params['command']
+            if len(params)>0:
+                request.params = params['params']
 
-        #send request
+        else:
+            #POST request (need json)
+            params = bottle.request.json
+            if params.has_key('to'):
+                request.to = params['to']
+                del params['to']
+            if params.has_key('command'):
+                request.command = params['command']
+                del params['command']
+            if len(params)>0:
+                request.params = params['params']
+
+        #push message to bus
         resp = bus.push(request)
 
     except Exception, e:
-        logger.exception('webserver.command exception')
+        logger.exception('rpcserver.command exception')
         #something went wrong
         msg = MessageResponse()
         msg.message = str(e)
