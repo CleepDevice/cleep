@@ -1,5 +1,7 @@
-python-simplejson
-python-gevent
-python-bottle
-python-rpi.gpio
-python-passlib
+simplejson
+gevent
+bottle
+RPi.GPIO
+passlib
+pytz
+astral
