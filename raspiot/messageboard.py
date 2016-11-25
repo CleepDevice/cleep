@@ -36,6 +36,11 @@ class Messageboard(RaspIot):
 
     def __init__(self, bus):
         RaspIot.__init__(self, bus)
+
+        #messages aren't saved in config
+        self.messages = []
+        self.__current_message = None
+
         #init board
         pin_a0 = 15
         pin_a1 = 16
@@ -43,13 +48,11 @@ class Messageboard(RaspIot):
         pin_e3 = 22
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
+
         #init display task
         self.duration = 60.0
         self.__display_task = task.BackgroundTask(self.__display_message, self.duration)
         self.__display_task.start()
-        #messages aren't saved in config
-        self.messages = []
-        self.__current_message = None
 
     def stop(self):
         RaspIot.stop(self)
