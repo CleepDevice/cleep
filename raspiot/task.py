@@ -7,6 +7,7 @@ import glob
 import uuid as moduuid
 import json
 import threading
+import time
 
 __all__ = ['Task']
 
@@ -70,11 +71,45 @@ class Task:
             self.__timer.cancel()
             self.__timer = None
 
+
+class BackgroundTask(threading.Thread):
+    def __init__(self, process, pause=0.25):
+        threading.Thread.__init__(self)
+        self.process = process
+        if pause<=0.25:
+            pause = 0.25
+        self.pause = int(float(pause)/0.25)
+        self.running = True
+
+    def __del__(self):
+        self.stop()
+
+    def run(self):
+        while self.running:
+            self.process()
+            for i in range(self.pause):
+                if not self.running:
+                    break
+                time.sleep(0.25)
+
+    def stop(self):
+        self.running = False
+
+
 if __name__ == '__main__':
     #testu
     def tick(msg):
         print 'msg=%s' % str(msg)
 
-    t = Task(2.0, tick, ['hello'])
+    def tock():
+        print 'tock'
+
+    #t = Task(2.0, tick, ['hello'])
+    #t.start()
+
+    t = BackgroundTask(tock, 1.0)
     t.start()
+    time.sleep(5.0)
+    print '-> stop background task'
+    t.stop()
 
