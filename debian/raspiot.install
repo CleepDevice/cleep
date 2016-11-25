@@ -1,3 +1,3 @@
 bin/raspiot usr/bin
 html/* opt/raspiot/html/
-conf/raspiot.conf etc/raspiot/
+conf/* etc/raspiot/
