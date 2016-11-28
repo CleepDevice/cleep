@@ -8,13 +8,13 @@ from raspiot import RaspIot
 import time
 import task
 from ht1632c import HT1632C
+import uuid
 
 __all__ = ['Messageboard']
 
 #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG);
-
+logger.setLevel(logging.INFO);
 
 class Message():
 
@@ -24,6 +24,19 @@ class Message():
         self.end = end
         self.scroll = scroll
         self.displayed_time = 0
+        self.uuid = str(uuid.uuid4())
+
+    def to_dict(self):
+        """
+        Return message as dict
+        """
+        return {
+            'uuid': self.uuid,
+            'message': self.message,
+            'start': self.start,
+            'end': self.end,
+            'scroll': self.scroll
+        }
 
     def __str__(self):
         return 'Message "%s" [%d:%d] %d' % (self.message, self.start, self.end, self.displayed_time)
@@ -36,11 +49,9 @@ class Messageboard(RaspIot):
 
     def __init__(self, bus):
         RaspIot.__init__(self, bus)
-
         #messages aren't saved in config
         self.messages = []
         self.__current_message = None
-
         #init board
         pin_a0 = 15
         pin_a1 = 16
@@ -48,7 +59,6 @@ class Messageboard(RaspIot):
         pin_e3 = 22
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
-
         #init display task
         self.duration = 60.0
         self.__display_task = task.BackgroundTask(self.__display_message, self.duration)
@@ -101,10 +111,13 @@ class Messageboard(RaspIot):
                 self.board.display_message(msg.message)
                 self.__current_message = msg
                 msg.displayed_time = now
+        else:
+            #no message to display, clear screen
+            self.board.clear()
 
     def set_duration(self, duration):
         """
-        Configure message duration
+        Configure message cycle duration
         """
         #stop current task
         if self.__display_task:
@@ -127,11 +140,28 @@ class Messageboard(RaspIot):
         logger.debug('add new message: %s' % str(msg))
         self.messages.append(msg)
 
+    def del_message(self, uuid):
+        """
+        Delete message which uuid is specified
+        @param uuid: message uuid
+        """
+        deleted = False
+        for msg in self.messages:
+            if msg.uuid==uuid:
+                logger.debug('Message "%s" deleted by user' % msg.message)
+                self.messages.remove(msg)
+                deleted = True
+                break
+        return deleted
+
     def get_messages(self):
         """
         Return all messages
         """
-        return self.messages
+        msgs = []
+        for msg in self.messages:
+            msgs.append(msg.to_dict())
+        return msgs
 
 
 if __name__ == '__main__':

@@ -3,22 +3,82 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
     var container = null;
 
     var messageboardController = ['$scope', function($scope) {
+        var datetimeFormat = 'DD/MM/YYYY HH:mm';
         $scope.message = '';
-        $scope.start = 0;
-        $scope.end = 0;
+        $scope.start = {startDate:moment(), endDate:moment()};
+        $scope.end = {startDate:moment().add(1,'hour'), endDate:moment().add(1,'hour')};
         $scope.scroll = false;
+        $scope.messages = [];
+        $scope.pickerOptions = {
+            singleDatePicker: true,
+            timePicker: true,
+            timePicker24Hour: true,
+            autoApply: true,
+            locale: {
+                format: datetimeFormat
+            }
+        };
 
         /**
          * Init controller
          */
-        function init() {
+        function init()
+        {
+            //load messages
+            loadMessages();
         }
 
-        $scope.addMessage = function(device) {
+        /**
+         * Load messages
+         */
+        function loadMessages()
+        {
+            messageboardService.getMessages()
+                .then(function(messages) {
+                    console.log('MESSAGES', messages.length, messages);
+                    var msgs = [];
+                    for( var i=0; i<messages.length; i++) {
+                        messages[i].startStr = moment.unix(messages[i].start).format(datetimeFormat);
+                        messages[i].endStr = moment.unix(messages[i].end).format(datetimeFormat);
+                        msgs.push(messages[i]);
+                    }
+                    $scope.messages = msgs;
+                });
+        };
+
+        /**
+         * Add new message
+         */
+        $scope.addMessage = function() {
             container.start();
-            messageboardService.addMessage($scope.message, $scope.start, $scope.end, $scope.scroll)
+            messageboardService.addMessage($scope.message, $scope.start.unix(), $scope.end.unix(), $scope.scroll)
                 .then(function(resp) {
+                    growl.success('Message added');
                     //reload messages
+                    loadMessages();
+                })
+                .finally(function() {
+                    container.stop();
+                });
+        };
+
+        /**
+         * Delete message
+         */
+        $scope.delMessage = function(message) {
+            //confirmation
+            if( !confirm('Delete message?') )
+            {
+                return;
+            }
+
+            container.start();
+            //convert moment datetime to timestamp
+            messageboardService.delMessage(message.uuid)
+                .then(function(resp) {
+                    growl.success('Message deleted');
+                    //reload messages
+                    loadMessages();
                 })
                 .finally(function() {
                     container.stop();

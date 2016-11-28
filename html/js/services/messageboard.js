@@ -18,7 +18,6 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     self.addMessage = function(message, start, end, scroll) {
         return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end, 'scroll':scroll})
         .then(function(resp) {
-            console.log(resp);
         }, function(err) {
             console.log('addMessage:', err);
         });
@@ -27,11 +26,23 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Delete message
      */
-    self.delMessage = function(index) {
-        return rpcService.sendCommand('del_message', 'messageboard', {'index':index})
+    self.delMessage = function(uuid) {
+        return rpcService.sendCommand('del_message', 'messageboard', {'uuid':uuid})
         .then(function(resp) {
         }, function(err) {
             console.log('delMessage:', err);
+        });
+    };
+
+    /**
+     * Get messages
+     */
+    self.getMessages = function(index) {
+        return rpcService.sendCommand('get_messages', 'messageboard')
+        .then(function(resp) {
+            return resp.data;
+        }, function(err) {
+            console.log('getMessages:', err);
         });
     };
 
