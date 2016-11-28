@@ -49,6 +49,9 @@ import spidev
 import logging
 import numpy as np
 from scipy.ndimage.interpolation import shift
+from threading import Thread
+from datetime import datetime
+import re
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
@@ -65,6 +68,50 @@ class InvalidBuffer(Exception):
         self.msg = msg
     def __str__(self):
         return repr(self.msg)
+
+class ScrollingMessage(Thread):
+    """
+    Scrolling message thread
+    Use to scroll specified message until end of thread
+    """
+    def __init__(self, board_size, message_length, buf, buf_index, direction, speed, write_pixels_callback):
+        Thread.__init__(self)
+        self.board_size = board_size
+        self.message_length = message_length
+        self.buf = buf
+        self.buf_index = buf_index
+        self.direction = direction
+        self.speed = speed
+        self.write_pixels_callback = write_pixels_callback
+        self.__continu = True
+
+    def stop(self):
+        self.__continu = False
+
+    def run(self):
+        while self.__continu:
+            #make buffer copy
+            self.copy = np.copy(self.buf)
+
+            #compute max scrolling position
+            max_scrolling = self.board_size + self.message_length
+
+            #scroll message to board
+            while max_scrolling>=0 and self.__continu:
+                #display message
+                self.write_pixels_callback(self.copy, self.buf_index)
+                #shift buffer content
+                if self.direction==0:
+                    self.copy = shift(self.copy, 1, cval=0)
+                else:
+                    self.copy = shift(self.copy, -1, cval=0)
+                #decrease number of scroll to process
+                max_scrolling -= 1
+                #pause
+                time.sleep(self.speed)
+
+            logger.debug('new scrolling')
+            
 
 FONT5x7 = [
         [0x00,0x00,0x00,0x00,0x00], #
@@ -196,7 +243,7 @@ LOGOS = {
     'snowy': [0x32,0x4d,0x8a,0x8d,0x8a,0x6d,0x2a,0x2d,0x10],
     'night': [0x3c,0x42,0x99,0xa5,0xc3,0x42]
 }
-LOGOS_REPLACEMENT = '^'
+PATTERNS_REPLACEMENT = '^'
 
 class HT1632C():
 
@@ -244,6 +291,12 @@ class HT1632C():
         self.__pin_a2 = pin_a2
         self.__pin_e3 = pin_e3
         self.__panel_count = panel_count
+        self.__scrolling_thread = None
+        self.speed = 0.05
+        self.direction = HT1632C.SCROLL_LEFT_TO_RIGHT
+        self.unit_days = 'days'
+        self.unit_hours = 'hours'
+        self.unit_minutes = 'mins'
 
         #configure gpios
         GPIO.setmode(GPIO.BOARD)
@@ -270,6 +323,47 @@ class HT1632C():
             self.__write_command_to_panel(panel, HT1632C.HT1632_CMD_PWM | 0x0F)
             #disable blink
             self.__write_command_to_panel(panel, HT1632C.HT1632_CMD_BLOFF)
+
+    def set_scroll_speed(self, speed):
+        """
+        Set default scroll speed
+        """
+        self.speed = speed
+
+    def set_direction(self, direction):
+        """
+        Set default direction
+        """
+        self.direction = direction
+
+    def set_time_units(self, days, hours, minutes):
+        """
+        Set default time units. Used to display time units in your language
+        """
+        self.unit_days = days
+        self.unit_hours = hours
+        self.unit_minutes = minutes
+
+    def cleanup(self):
+        """
+        Clean everything
+        """
+        #stop scrolling thread
+        if self.__scrolling_thread!=None:
+            logger.debug('Stop scrolling thread')
+            self.__scrolling_thread.stop()
+            self.__scrolling_thread.join(1.0)
+            logger.debug('Scrolling thread joined')
+            self.__scrolling_thread = None
+
+        #clear screen
+        logger.debug('Clear board')
+        self.clear()
+        time.sleep(1.0)
+
+        #cleanup gpio
+        logger.debug('Cleanup GPIOs')
+        GPIO.cleanup()
             
     def __select_panel(self, panel):
         """
@@ -375,30 +469,47 @@ class HT1632C():
     def __append_letter(self, buf, letter, position):
         """
         Append letter to specified buffer
-        @param buf: pixels buffer
+        @param buf: pixels buffer. can be None to compute buffer buffer length
         @param letter: letter to write
         @param position: current position in buffer
         @return new position in buffer
         """
-        if letter!=LOGOS_REPLACEMENT:
-            font_size = 5
+        if letter!=PATTERNS_REPLACEMENT:
+            font_letter = FONT5x7[ord(letter)-32]
+            font_size = len(font_letter)
             for col in range(font_size):
-                buf[position] = FONT5x7[ord(letter)-32][col]
+                if buf is not None:
+                    buf[position] = font_letter[col]
                 position += 1
         return position
 
     def __append_logo(self, buf, logo, position):
         """
         Append logo to specified buffer
-        @param buf: pixels buffer
+        @param buf: pixels buffer. Can be None to compute buffer length
         @param logo: logo to write
         @param position: current position in buffer
         @return new position in buffer
         """
         font_size = len(LOGOS[logo])
         for col in range(font_size):
-            buf[position] = LOGOS[logo][col]
+            if buf is not None:
+                buf[position] = LOGOS[logo][col]
             position += 1
+        return position
+
+    def __append_text(self, buf, text, position):
+        """
+        Append text to specified buffer
+        @param buf: pixels buffer. Can be None to compute buffer length
+        @param text: text to write
+        @param position: current position in buffer
+        @return new position in buffer
+        """
+        logger.debug('append text %s @ %d' % (text, position))
+        text_size = len(text)
+        for col in range(text_size):
+            position = self.__append_letter(buf, text[col], position)
         return position
 
     def __get_board_size(self):
@@ -413,28 +524,87 @@ class HT1632C():
         @param size: you can get custom buffer of specified size
         @return empty buffer (filled of zeros)
         """
+        board_size = self.__get_board_size()
         if size is None:
-            return np.zeros((self.__get_board_size(),), dtype=np.uint8)
+            #no size specified, return board size buffer
+            return np.zeros((board_size,), dtype=np.uint8)
+
+        elif size<board_size:
+            #requested buffer size is not larger enought, return board size
+            logger.debug('Requested size is not larger enough, return board size buffer')
+            return np.zeros((board_size,), dtype=np.uint8)
+
         else:
+            #size is larger than board size, allocate buffer as requested
             return np.zeros((size,), dtype=np.uint8)
 
-    def __search_for_logos(self, message):
+    def __human_readable_duration(self, timestamp):
         """
-        Search for logos pattern in message
+        Return human readable duration
+        """
+        if timestamp<3600:
+            return '%d%s' % (int(float(timestamp)/60.0), self.unit_minutes)
+        if timestamp<86400:
+            return '%d%s' % (int(float(timestamp)/3600.0), self.unit_hours)
+        if timestamp<3600:
+            return '%d%s' % (int(float(timestamp)/86400.0), self.unit_days)
+
+    def __search_for_patterns(self, message):
+        """
+        Search for patterns in message (logos, time...)
         @param message: input message
         @return found_logos: dict of found logos (logo index:found logo string)
-        @return message: modifiyed message (logo strings are replaced by constant LOGOS_REPLACEMENT)
+        @return message: modifiyed message (logo strings are replaced by constant PATTERNS_REPLACEMENT)
         """
-        found_logos = {}
+        found_patterns = {}
+
+        #search for logos
         for logo in LOGOS:
             pos = 0
             while pos!=-1:
                 pos = message.find(logo)
                 if pos!=-1:
                     #found logo
-                    message = message.replace(logo, LOGOS_REPLACEMENT*len(logo), 1)
-                    found_logos[pos] = logo
-        return found_logos, message
+                    message = message.replace(logo, PATTERNS_REPLACEMENT*len(logo), 1)
+                    found_patterns[pos] = {'type':'logo', 'value':logo}
+        
+        #search for time pattern
+        now_ts = time.time()
+        now_dt = datetime.fromtimestamp(now_ts)
+        for match in list(re.finditer('(time)(:[0-9]+)?', message)):
+            message = message.replace(match.group(0), PATTERNS_REPLACEMENT*len(match.group(0)), 1)
+            if match.group(2) is not None:
+                #timestamp specified, compute duration
+                ts = int(match.group(2)[1:])
+                if now_ts<=ts:
+                    found_patterns[match.start()] = {'type':'text', 'value':'%s' % self.__human_readable_duration(ts-now_ts)}
+                else:
+                    #timestamp is behind now
+                    found_patterns[match.start()] = {'type':'text', 'value':'[OVER]'}
+            else:
+                #only time tag specified, add current time
+                found_patterns[match.start()] = {'type':'text', 'value':'%0.2d:%0.2d' % (now_dt.hour, now_dt.minute)}
+
+        return found_patterns, message
+
+    def __get_message_length(self, message, patterns):
+        """
+        Compute message length
+        @param message: message with logos replaced (see __search_for_patterns function)
+        @param logos: logos indexes
+        """
+        buffer_position = 0
+
+        for index in range(len(message)):
+            if index in patterns.keys():
+                if patterns[index]['type']=='logo':
+                    buffer_position = self.__append_logo(None, patterns[index]['value'], buffer_position)
+                elif patterns[index]['type']=='text':
+                    buffer_position = self.__append_text(None, patterns[index]['value'], buffer_position)
+            else:
+                buffer_position = self.__append_letter(None, message[index], buffer_position)
+
+        return buffer_position
 
     def clear(self):
         """
@@ -450,27 +620,75 @@ class HT1632C():
         @param message: message to display
         @param position: position of message in board (if message is too long it will be truncated)
         """
-        font_size = 5
         buffer_position = 0
 
-        #search for logos in message
-        logos, message = self.__search_for_logos(message)
+        #search for patterns in message
+        patterns, message = self.__search_for_patterns(message)
 
-        #fill buffer
-        buf = self.__get_buffer()
-        for index in range(len(message)):
-            if index in logos.keys():
-                buffer_position = self.__append_logo(buf, logos[index], buffer_position)
+        #get message length
+        message_length = self.__get_message_length(message, patterns)
+        logger.debug('message length=%d' % message_length)
+
+        #scroll or display message
+        if message_length>self.__get_board_size():
+            #scroll message
+
+            logger.debug('Add scrolling message')
+            #get buffer
+            buf = self.__get_buffer(self.__get_board_size() + message_length)
+
+            #fill buffer
+            buffer_position = 0
+            if self.direction==0:
+                buffer_index = message_length
+                buffer_position = 0
             else:
-                buffer_position = self.__append_letter(buf, message[index], buffer_position)
+                buffer_index = 0
+                buffer_position = len(buf) - message_length
+            for index in range(len(message)):
+                if index in patterns.keys():
+                    if patterns[index]['type']=='logo':
+                        buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
+                    elif patterns[index]['type']=='text':
+                        buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
+                else:
+                    buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
-        #shift buffer if necessary
-        buf = shift(buf, position, cval=0)
+            #stop existing thread
+            if self.__scrolling_thread!=None:
+                logger.debug('Stop already scrolling message')
+                self.__scrolling_thread.stop()
+                self.__scrolling_thread = None
 
-        #write buffer to panels
-        self.__write_pixels(buf)
+            #launch scrolling thread
+            self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels)
+            self.__scrolling_thread.start()
 
-    def scroll_message(self, message, speed=0.025, direction=0):
+        else:
+            #display message
+            logger.debug('Add NOT scrolling  message')
+
+            #get buffer
+            buf = self.__get_buffer(message_length)
+
+            #fill buffer
+            #buf = self.__get_buffer(message_length)
+            for index in range(len(message)):
+                if index in patterns.keys():
+                    if patterns[index]['type']=='logo':
+                        buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
+                    elif patterns[index]['type']=='text':
+                        buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
+                else:
+                    buffer_position = self.__append_letter(buf, message[index], buffer_position)
+
+            #shift buffer if necessary
+            buf = shift(buf, position, cval=0)
+            
+            #write buffer to panels
+            self.__write_pixels(buf)
+
+    def scroll_message_once(self, message, speed=0.05, direction=0):
         """
         Scroll message to board
         @param message: message to display
@@ -480,27 +698,35 @@ class HT1632C():
         font_size = 5
 
         #search for logos in message
-        logos, message = self.__search_for_logos(message)
+        patterns, message = self.__search_for_patterns(message)
+
+        #get message length
+        message_length = self.__get_message_length(message, patterns)
+        logger.debug('message length=%d' % message_length)
 
         #fill buffer
-        text_size = font_size * len(message)
-        buffer_size = self.__get_board_size()+text_size
-        buf = self.__get_buffer(buffer_size)
+        #text_size = font_size * len(message)
+        #buffer_size = self.__get_board_size()+text_size
+        #buf = self.__get_buffer(buffer_size)
+        buf = self.__get_buffer(self.__get_board_size() + message_length)
         buffer_position = 0
         if direction==0:
-            buffer_index = text_size
+            buffer_index = message_length
             buffer_position = 0
         else:
             buffer_index = 0
-            buffer_position = buffer_size - text_size
+            buffer_position = len(buf) - message_length
         for index in range(len(message)):
-            if index in logos.keys():
-                buffer_position = self.__append_logo(buf, logos[index], buffer_position)
+            if index in patterns.keys():
+                if patterns[index]['type']=='logo':
+                    buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
+                elif patterns[index]['type']=='text':
+                    buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
             else:
                 buffer_position = self.__append_letter(buf, message[index], buffer_position)
         
         #scroll message
-        max_scrolling = self.__get_board_size() + text_size
+        max_scrolling = self.__get_board_size() + message_length
         while max_scrolling>=0:
             #display message
             self.__write_pixels(buf, buffer_index)
@@ -545,19 +771,25 @@ class HT1632C():
         #    self.__write_pixels(panel, HT1632C.ALL_LEDS_OFF)
 
         #display message
+        #self.display_message('hello world!')
         #self.display_message('hello world!', 15)
         #self.display_message(':):(:D:):|:[:]:o:O')
         #self.display_message('sunny cloudy rainy stormy snowy foggy night')
         #self.display_message('left right up down')
         #self.display_message('shit skull alien bat cat heart')
+        self.display_message('il est time et midi est dans time:1480417200')
 
-        #scroll message
-        #self.scroll_message('Hello World', direction=self.SCROLL_RIGHT_TO_LEFT)
-        #self.scroll_message('Hello World', direction=self.SCROLL_LEFT_TO_RIGHT)
-        #self.scroll_message('Fucking shit of bat')
+        #display long message (auto scroll)
+        #self.display_message('verrrrryyyyyyyyyyy long message!')
+        #time.sleep(10.0)
+
+        #scroll message once
+        #self.scroll_message_once('Hello World', direction=self.SCROLL_RIGHT_TO_LEFT)
+        #self.scroll_message_once('Hello World', direction=self.SCROLL_LEFT_TO_RIGHT)
+        #self.scroll_message_once('Fucking shit of bat')
   
         #random
-        self.random(5)
+        #self.random(5)
 
         time.sleep(5.0)
         
@@ -570,5 +802,5 @@ if __name__ == '__main__':
     panels = 4
     leds = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
     leds.test()
-    leds.clear()
-    GPIO.cleanup()
+    leds.cleanup()
+    #GPIO.cleanup()
