@@ -1,5 +1,5 @@
 
-var dummyDirective = function($q, growl, blockUI) {
+var dummyConfigDirective = function($q, growl, blockUI) {
     var container = null;
 
     var dummyController = ['$scope', function($scope) {
@@ -7,7 +7,7 @@ var dummyDirective = function($q, growl, blockUI) {
          * Init controller
          */
         function init() {
-        }
+        };
 
         //init directive
         init();
@@ -28,4 +28,4 @@ var dummyDirective = function($q, growl, blockUI) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('dummyDirective', ['$q', 'growl', 'blockUI', dummyDirective]);
+RaspIot.directive('dummyConfigDirective', ['$q', 'growl', 'blockUI', dummyConfigDirective]);
