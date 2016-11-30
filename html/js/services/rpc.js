@@ -44,7 +44,7 @@ var rpcService = function($http, $q, growl, $base64) {
             data.to = null;
         }
 
-        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
+        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriCommand,
@@ -78,7 +78,7 @@ var rpcService = function($http, $q, growl, $base64) {
     self.getModules = function() {
         var d = $q.defer();
 
-        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
+        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriModules,
@@ -125,7 +125,7 @@ var rpcService = function($http, $q, growl, $base64) {
     {
         var d = $q.defer();
 
-        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
+        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             data: {'pollKey': self.pollKey},
@@ -161,7 +161,7 @@ var rpcService = function($http, $q, growl, $base64) {
     {
         var d = $q.defer();
 
-        $http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
+        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriRegisterPoll,
