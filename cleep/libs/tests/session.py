@@ -16,6 +16,7 @@ from threading import Event
 import os
 import logging
 import types
+from mock import MagicMock
 
 TRACE = tools.TRACE
 
@@ -58,7 +59,7 @@ class TestSession():
             'message_bus': message_bus,
             'events_broker': events_broker,
             'formatters_broker': EventsBroker(debug),
-            'cleep_filesystem': cleep_filesystem,
+            'cleep_filesystem': MagicMock(),
             'crash_report': crash_report,
             'join_event': Event(),
             'test_mode': True,
@@ -67,7 +68,7 @@ class TestSession():
             'drivers': Drivers(debug),
         }
 
-    def setup(self, module_class, debug_enabled=False, bootstrap={}):
+    def setup(self, module_class, debug_enabled=False, bootstrap={}, start_module=True):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
@@ -77,6 +78,7 @@ class TestSession():
             debug_enable (bool): enable debug on module
             bootstrap (dict): overwrite default bootstrap by specified one. You dont have to specify
                               all items, only specified ones will be replaced.
+            start_module (bool): start module during setup (default True)
 
         Returns:
             Object: returns module_class instance
@@ -99,13 +101,24 @@ class TestSession():
         
         # instanciate
         self.__module_instance = module_class(self.bootstrap, debug_enabled)
-        self.__module_instance.start()
-
-        # wait for module to be started
-        self.bootstrap['join_event'].wait()
+        if start_module:
+            self.start_module(self.__module_instance)
 
         self.__setup_executed = True
         return self.__module_instance
+
+    def start_module(self, module_instance):
+        """
+        Start module. Use this function if you disable module launch during setup
+
+        Args:
+            module_instance (instance): module instance returned by setup function
+        """
+        # start instace
+        module_instance.start()
+
+        # wait for module to be started
+        self.bootstrap['join_event'].wait()
 
     def respawn_module(self):
         """
