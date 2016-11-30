@@ -38,7 +38,7 @@ class Shutter(RaspIot):
         """
         Event received from bus
         """
-        logger.debug(' *** event received: %s' % str(event))
+        #logger.debug(' *** event received: %s' % str(event))
 
         #drop startup events
         if event['startup']:
