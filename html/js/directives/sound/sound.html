@@ -1,0 +1,63 @@
+<div class="container-fluid" block-ui="soundContainer">
+
+<form class="form-horizontal" name="soundConfigForm" style="padding-top:15px;">
+
+    <div class="form-group">
+        <label class="col-sm-2">Text-to-speech lang</label>
+        <div class="col-sm-6">
+            <select class="form-control" ng-model="lang">
+                <option ng-repeat="(lang,label) in langs" value="{{lang}}">{{label}}</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <button type="submit" class="btn btn-primary" ng-click="setLang()">
+                <span class="glyphicon glyphicon-ok"></span> Save
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-2">Say text</label>
+        <div class="col-sm-6">
+            <input class="form-control" type="text" ng-model="tts">
+        </div>
+        <div class="col-sm-4">
+            <button type="submit" class="btn btn-primary" ng-click="sayText()">
+                <span class="glyphicon glyphicon-bullhorn"></span> Say text
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-2">Add sound file</label>
+        <div class="col-sm-4">
+            <div class="btn btn-primary btn-upload" upload-button url="/upload" on-complete="uploadComplete(response)"
+                 on-upload="uploadStarted()" multiple="false" data="uploadData" param="file">
+                 <span class="glyphicon glyphicon-save"></span> Upload
+        </div>
+    </div>
+
+    <div class="table-responsive" style="margin-top:45px;">
+        <table class="table table-striped table-bordered table-hover">
+        <tr>
+            <th>File</th>
+            <th>Actions</th>
+        </tr>
+        <tr ng-repeat="sound in sounds">
+            <td>{{sound.name}}</td>
+            <td>
+                <button type="button" class="btn btn-default" ng-click="playSound(sound.path)">
+                    <span class="glyphicon glyphicon-play"></span>
+                </button>
+                <button type="button" class="btn btn-danger" ng-click="delSound(sound.path)">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </button>
+            </td>
+        </tr>
+        </table>
+    </div>
+
+</form>
+
+</div>
+

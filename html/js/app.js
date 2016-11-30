@@ -1,7 +1,7 @@
 /**
  * Main application
  */
-var RaspIot = angular.module('RaspIot', ['angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker']);
+var RaspIot = angular.module('RaspIot', ['angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload']);
 
 /**
  * Growl configuration

@@ -5,3 +5,4 @@ RPi.GPIO
 passlib
 pytz
 astral
+pygame
