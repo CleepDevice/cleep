@@ -37,13 +37,13 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
             {
                 container.start();
                 gpiosService.addGpio($scope.name, $scope.gpio, $scope.mode, $scope.keep)
-                .then(function(resp) {
-                    //reload devices
-                    gpiosService.loadDevices();
-                })
-                .finally(function() {
-                    container.stop();
-                });
+                    .then(function(resp) {
+                        //reload devices
+                        gpiosService.loadDevices();
+                    })
+                    .finally(function() {
+                        container.stop();
+                    });
             }
         };
 
@@ -51,9 +51,11 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
          * Delete gpio
          */
         $scope.deleteGpio = function(device) {
-            //TODO add confirm dialog
+            if( !confirm('Delete gpio?') ) {
+                return;
+            }
+
             container.start();
-            console.log('delete '+device);
             gpiosService.delGpio(device.gpio)
                 .then(function(resp) {
                     //reload devices
