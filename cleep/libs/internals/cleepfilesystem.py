@@ -20,17 +20,17 @@ class CleepFilesystem():
     A debounce function waits to switch to readonly mode to reduce number of switches
     """
 
-    #read/write debounce duration
+    # read/write debounce duration
     DEBOUNCE_DURATION = 10.0
 
     def __init__(self):
         """
         Constructor
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        #members
+        # members
         self.crash_report = None
         self.rw = ReadWrite()
         self.__counter_root = 0
@@ -39,7 +39,7 @@ class CleepFilesystem():
         self.__debounce_timer_root = None
         self.__debounce_timer_boot = None
 
-        #check if os is in readonly mode
+        # check if os is in readonly mode
         self.is_readonly_fs = self.__is_readonly_filesystem()
 
     def _get_counters(self): # pragma: no cover
@@ -97,7 +97,7 @@ class CleepFilesystem():
         self.logger.trace(u'fstab content: %s' % lines)
         for line in lines:
             if line.find(u',ro')>=0 or line.find(u'ro,')>=0:
-                #read only configured
+                # read only configured
                 self.logger.trace(u'Readonly filesystem')
                 return True
 
@@ -108,11 +108,11 @@ class CleepFilesystem():
         """
         Function used in debounce timer
         """
-        #acquire lock
+        # acquire lock
         self.logger.trace('Acquire lock in really_disable_write')
         self.__rw_lock.acquire()
 
-        #handle debounce timer canceled (additional protection)
+        # handle debounce timer canceled (additional protection)
         process_root = True
         if root and self.__debounce_timer_root is None: # pragma: no cover
             self.logger.trace(u'Debounce timer for root has already been canceled')
@@ -122,7 +122,7 @@ class CleepFilesystem():
             self.logger.trace(u'Debounce timer for boot has already been canceled')
             process_boot = False
         
-        #reset flag and disable writings
+        # reset flag and disable writings
         if root and process_root:
             self.__debounce_timer_root = None
             self.logger.trace(u'/!\\ Disable writings for root partition')
@@ -132,7 +132,7 @@ class CleepFilesystem():
             self.logger.trace(u'/!\\ Disable writings for boot partition')
             self.rw.disable_write_on_boot(context)
 
-        #release lock
+        # release lock
         self.logger.trace(u'Release lock in really_disable_write')
         self.__rw_lock.release()
 
@@ -148,30 +148,30 @@ class CleepFilesystem():
             self.logger.warning(u'No partition specified, enable write action ignored.')
             return
 
-        #acquire lock
+        # acquire lock
         self.logger.trace(u'Acquire lock in enable_write')
         self.__rw_lock.acquire()
 
         if root and self.__debounce_timer_root is not None:
-            #debounce timer is running and we need to enable write mode, cancel timer
+            # debounce timer is running and we need to enable write mode, cancel timer
             self.logger.trace(u'Stop running debounce timer for root partition')
             self.__debounce_timer_root.cancel()
             self.__debounce_timer_root = None
         if boot and self.__debounce_timer_boot is not None:
-            #debounce timer is running and we need to enable write mode, cancel timer
+            # debounce timer is running and we need to enable write mode, cancel timer
             self.logger.trace(u'Stop running debounce timer for boot partition')
             self.__debounce_timer_boot.cancel()
             self.__debounce_timer_boot = None
 
-        if root and self.__counter_root==0:
-            #first to request writing, enable it
+        if root and self.__counter_root == 0:
+            # first to request writing, enable it
             self.logger.trace('/!\\ Enable writings on root partition')
             self.rw.enable_write_on_root()
-        if boot and self.__counter_boot==0:
+        if boot and self.__counter_boot == 0:
             self.logger.trace('/!\\ Enable writings on boot partition')
             self.rw.enable_write_on_boot()
 
-        #increase usage counter
+        # increase usage counter
         if root:
             self.__counter_root += 1
             self.logger.trace(u'Increase root counter (counter_root=%s)' % self.__counter_root)
@@ -179,7 +179,7 @@ class CleepFilesystem():
             self.__counter_boot += 1
             self.logger.trace(u'Increase boot counter (counter_boot=%s)' % self.__counter_boot)
 
-        #release lock
+        # release lock
         self.logger.trace(u'Release lock in enable_write')
         self.__rw_lock.release()
 
@@ -187,25 +187,25 @@ class CleepFilesystem():
         """
         Disable write mode
         """
-        #acquire lock
+        # acquire lock
         self.__rw_lock.acquire()
         self.logger.trace(u'Acquire lock in disable_write')
 
-        #cancel action if necessary
+        # cancel action if necessary
         process_root = True
-        if root and self.__counter_root==0:
-            #not in writing mode
+        if root and self.__counter_root == 0:
+            # not in writing mode
             self.logger.warning(u'Root partition not in writing mode, a bug surely exist!')
             self.logger.trace(u'Release lock in disable_write')
             process_root = False
         process_boot = True
-        if boot and self.__counter_boot==0:
-            #not in writing mode
+        if boot and self.__counter_boot == 0:
+            # not in writing mode
             self.logger.warning(u'Boot partition not in writing mode, a bug surely exist!')
             self.logger.trace(u'Release lock in disable_write')
             process_boot = False
 
-        #decrease usage counter
+        # decrease usage counter
         if root and process_root:
             self.__counter_root -= 1
             self.logger.trace(u'Decrease root counter (counter_boot=%s)' % self.__counter_root)
@@ -213,17 +213,17 @@ class CleepFilesystem():
             self.__counter_boot -= 1
             self.logger.trace(u'Decrease root counter (counter_root=%s)' % self.__counter_root)
 
-        #disable write after debounce time
-        if root and self.__counter_root==0 and process_root:
+        # disable write after debounce time
+        if root and self.__counter_root == 0 and process_root:
             self.logger.trace('Launch debounce timer for root partition (duration=%s)' % self.DEBOUNCE_DURATION)
             self.__debounce_timer_root = Timer(self.DEBOUNCE_DURATION, self.__really_disable_write, [context, root, boot])
             self.__debounce_timer_root.start()
-        if boot and self.__counter_boot==0 and process_boot:
+        if boot and self.__counter_boot == 0 and process_boot:
             self.logger.trace('Launch debounce timer for boot partition (duration=%s)' % self.DEBOUNCE_DURATION)
             self.__debounce_timer_boot = Timer(self.DEBOUNCE_DURATION, self.__really_disable_write, [context, root, boot])
             self.__debounce_timer_boot.start()
 
-        #release lock
+        # release lock
         self.logger.trace(u'Release lock in disable_write')
         self.__rw_lock.release()
 
@@ -241,13 +241,16 @@ class CleepFilesystem():
         path = os.path.realpath(path)
         parts = path.split(os.sep)
 
-        return u'tmp'==parts[1]
+        return u'tmp' == parts[1]
 
     def enable_write(self, root=True, boot=False):
         """
         Enable write as long as you disable it
-        This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
-        Please make sure to call disable_write after you finished your job!
+
+        Warning:
+            This function must be used in specific cases when you need to disable readonly mode for a while (like system update).
+
+            Please make sure to call disable_write after you finished your job!
 
         Args:
             root (bool): enable write on root partition (default True)
@@ -258,8 +261,11 @@ class CleepFilesystem():
     def disable_write(self, root=True, boot=False):
         """
         Disable write
-        This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
-        Use this function only if you called enable_write function before!
+
+        Warning:
+            This function must be used in specific cases when you need to disable readonly mode for a while (like system update).
+
+            Use this function only if you called enable_write function before!
 
         Args:
             root (bool): disable write on root partition (default True)
@@ -281,21 +287,21 @@ class CleepFilesystem():
         Returns:
             stream: file descriptor
         """
-        #enable writings if necessary
+        # enable writings if necessary
         read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
         self.logger.trace(u'Open %s read_mode=%s rofs=%s' % (path, read_mode, self.is_readonly_fs))
         if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
-        #use system encoding if not specified
+        # use system encoding if not specified
         if not encoding:
             encoding = self.get_default_encoding()
         self.logger.trace(u'Encoding: %s' % encoding)
 
-        #check binary mode
+        # check binary mode
         try:
-            if mode.find(u'b')==-1:
+            if mode.find(u'b') == -1:
                 return io.open(path, mode=mode, encoding=encoding)
             else:
                 return io.open(path, mode=mode)
@@ -303,7 +309,7 @@ class CleepFilesystem():
         except:
             self.logger.exception(u'Error occured opening file "%s"' % path)
 
-            #error occured, disable write and rethrow exception
+            # error occured, disable write and rethrow exception
             read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
             self.logger.trace(u'Open (finally) %s read_mode=%s rofs=%s' % (path, read_mode, self.is_readonly_fs))
             if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(path):
@@ -316,7 +322,7 @@ class CleepFilesystem():
                 context.boot = not root
                 self.__disable_write(context, root=root, boot=not root)
 
-            #raise again exception
+            # raise again exception
             raise
 
     def close(self, fd):
@@ -327,7 +333,7 @@ class CleepFilesystem():
             fd (descriptor): file descriptor
         """
         try:
-            #close file descriptor
+            # close file descriptor
             fd.close()
 
         except:
@@ -335,7 +341,7 @@ class CleepFilesystem():
             raise
 
         finally:
-            #disable writings in all cases
+            # disable writings in all cases
             read_mode = fd.mode.find(u'r')>=0 and not fd.mode.find(u'+')>=0
             self.logger.trace(u'Close (finally) %s read_mode=%s ro=%s' % (fd.name, read_mode, self.is_readonly_fs))
             if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(fd.name):
@@ -447,7 +453,7 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
+        # ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
         json_data = str(json.dumps(data, indent=4, ensure_ascii=False))
 
         return self.write_data(path, json_data, encoding)
@@ -470,13 +476,13 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
             self.__enable_write(root=root, boot=root)
 
-        #move 
+        # move 
         try:
             shutil.move(src, dst)
             return True
@@ -491,7 +497,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
                 context = ReadWriteContext()
                 context.src = src
@@ -513,7 +519,7 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
@@ -534,7 +540,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
                 context = ReadWriteContext()
                 context.src = src
@@ -556,7 +562,7 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
@@ -576,7 +582,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
                 context = ReadWriteContext()
                 context.src = src
@@ -599,7 +605,7 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(link)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(link)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(link)
@@ -607,7 +613,7 @@ class CleepFilesystem():
 
         try:
             delete = False
-            if (os.path.exists(link) or os.path.islink(link)) and force==True:
+            if (os.path.exists(link) or os.path.islink(link)) and force == True:
                 delete = True
 
             if delete:
@@ -626,7 +632,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(link)):
                 context = ReadWriteContext()
                 context.src = src
@@ -659,13 +665,13 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         self.logger.trace(u'is_readonly_fs=%s' % (self.is_readonly_fs))
         if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
-        #remove file
+        # remove file
         try:
             if os.path.exists(path) or os.path.islink(path):
                 os.remove(path)
@@ -680,7 +686,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and not self.__is_on_tmp(path):
                 context = ReadWriteContext()
                 context.src = path
@@ -700,12 +706,12 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
-        #remove dir
+        # remove dir
         try:
             if os.path.exists(path):
                 shutil.rmtree(path, ignore_errors=True)
@@ -720,7 +726,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and not self.__is_on_tmp(path):
                 context = ReadWriteContext()
                 context.src = path
@@ -741,12 +747,12 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
-        #create dir
+        # create dir
         try:
             if not os.path.exists(path):
                 if recursive:
@@ -765,7 +771,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and not self.__is_on_tmp(path):
                 context = ReadWriteContext()
                 context.src = path
@@ -800,7 +806,7 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        #enable writings if necessary
+        # enable writings if necessary
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
@@ -811,7 +817,7 @@ class CleepFilesystem():
             cmd = u'/usr/bin/rsync %s %s %s' % (options, src, dst)
             resp = console.command(cmd)
             self.logger.debug('%s resp: %s' % (cmd, resp))
-            if resp[u'returncode']!=0:
+            if resp[u'returncode'] != 0:
                 self.logger.error(u'Error occured during rsync command execution "%s" (return code %s)' % (cmd, console.get_last_return_code()))
                 return False
             return True
@@ -827,7 +833,7 @@ class CleepFilesystem():
             return False
 
         finally:
-            #disable writings
+            # disable writings
             if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
                 context = ReadWriteContext()
                 context.src = src

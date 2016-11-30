@@ -331,7 +331,7 @@ class Cleep(BusClient):
         for key in keys:
             if key not in config:
                 #fix missing key
-                self.logger.debug('Add missing key "%s" in config file', key)
+                self.logger.trace('Add missing key "%s" in config file', key)
                 config[key] = keys[key]
                 fixed = True
         if fixed:

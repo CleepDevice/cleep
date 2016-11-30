@@ -66,7 +66,7 @@ class ModulesJson():
                 }
     
         Raises:
-            Exception if modules.json does not exist
+            Exception if modules.json does not exist or is invalid
 
         """
         #check

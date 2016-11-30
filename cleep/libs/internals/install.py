@@ -33,8 +33,8 @@ class Install():
 
     STATUS_IDLE = 0
     STATUS_PROCESSING = 1
-    STATUS_ERROR = 2
-    STATUS_DONE = 3
+    STATUS_DONE = 2
+    STATUS_ERROR = 3
     STATUS_CANCELED = 4
 
     def __init__(self, cleep_filesystem, crash_report, status_callback, blocking=False):
@@ -465,6 +465,10 @@ class Install():
         """
         Install specified module
 
+        Warning:
+            This function does not handle filesystem because process could be async.
+            So take care to enable/disable writings before/after calling it.
+
         Args:
             module (string): module name to install
             modules_infos (dict): module infos reported in modules.json
@@ -496,10 +500,6 @@ class Install():
             if install.get_status()==install.STATUS_INSTALLED:
                 return True
             return False
-
-        else:
-            #useless return
-            return None
 
     def __callback_uninstall_module(self, status):
         """
@@ -557,6 +557,10 @@ class Install():
     def uninstall_module(self, module, module_infos, force=False):
         """
         Uninstall specified module
+
+        Warning:
+            This function does not handle filesystem because process could be async.
+            So take care to enable/disable writings before calling it.
 
         Args:
             module (string): module name to uninstall
@@ -663,6 +667,10 @@ class Install():
         """
         Update specified module
         An update executes consecutively uninstall and install action
+
+        Warning:
+            This function does not handle filesystem because process could be async.
+            So take care to enable/disable writings before calling it.
 
         Args:
             module (string): module name

@@ -381,7 +381,7 @@ class MessageBus():
             module (string): module name
         """
         module_lc = module.lower()
-        self.logger.debug(u'Add subscription for module "%s"' % module_lc)
+        self.logger.trace(u'Add subscription for module "%s"' % module_lc)
         self._queues[module_lc] = deque(maxlen=self.DEQUE_MAX_LEN)
         self.__activities[module_lc] = int(uptime.uptime())
 
@@ -396,7 +396,7 @@ class MessageBus():
             InvalidParameter: if module is unknown.
         """
         module_lc = module.lower()
-        self.logger.debug(u'Remove subscription for module "%s"' % module_lc)
+        self.logger.trace(u'Remove subscription for module "%s"' % module_lc)
         if module_lc in self._queues:
             del self._queues[module_lc]
             del self.__activities[module_lc]
@@ -689,7 +689,7 @@ class BusClient(threading.Thread):
         """
         Bus reading process.
         """
-        self.logger.debug(u'BusClient %s started' % self.__module)
+        self.logger.trace(u'BusClient %s started' % self.__module)
 
         # configuration
         try:
@@ -838,5 +838,5 @@ class BusClient(threading.Thread):
 
         # remove subscription
         self.__bus.remove_subscription(self.__module)
-        self.logger.debug(u'BusClient %s stopped' % self.__module)
+        self.logger.trace(u'BusClient %s stopped' % self.__module)
 
