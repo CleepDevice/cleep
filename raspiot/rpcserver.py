@@ -33,7 +33,7 @@ POLL_TIMEOUT = 60
 
 #logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def bottle_logger(func):
     """
@@ -130,54 +130,134 @@ def check_auth(username, password):
     else:
         #auth disabled
         return True
+
+def auth_enabled():
+    """
+    Return auth status
+    @return: True if auth enabled, False if auth disabled
+    """
+    global auth_config_loaded, auth_config
+    return len(auth_config['accounts'])>0 and auth_config['enabled']
+
+def execute_command(command, to, params):
+    """
+    Execute specified command
+    """
+    #get bus
+    bus = app.config['sys.bus']
+
+    #prepare and send command
+    request = MessageRequest()
+    request.command = command
+    request.to = to
+    request.params = params
+    return bus.push(request)
+
+
+@app.route('/upload', method='POST')
+def upload():
+    """
+    Upload file
+    """
+    path = None
+    try:
+        #get form fields
+        command = bottle.request.forms.get('command')
+        logger.debug('command=%s' % str(command))
+        to = bottle.request.forms.get('to')
+        logger.debug('to=%s' % str(to))
+        params = bottle.request.forms.get('params')
+        logger.debug('params=%s' % str(params))
+        if params is None:
+            params = {}
+
+        #check params
+        if command is None or to is None:
+            #not allowed, missing parameters
+            msg = MessageResponse()
+            msg.message = 'Missing parameters'
+            msg.error = True
+            resp = msg.to_dict()
+
+        else:
+            #get file
+            upload = bottle.request.files.get('file')
+            path = os.path.join('/tmp', upload.filename)
+
+            #remove file if already exists
+            if os.path.exists(path):
+                os.remove(path)
+                time.sleep(0.25)
+
+            #save file locally
+            upload.save(path)
+
+            #add filepath in params
+            params['filepath'] = path
+
+            #execute specified command
+            logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
+            resp = execute_command(command, to, params)
+
+    except Exception, e:
+        logger.exception('Exception in upload:')
+        #something went wrong
+        msg = MessageResponse()
+        msg.message = str(e)
+        msg.error = True
+        resp = msg.to_dict()
+
+        #delete uploaded file if possible
+        if path:
+            logger.debug('Delete uploaded file')
+            os.remove(path)
+
+    return resp
+
         
 @app.route('/command', method='POST')
 @app.route('/command', method='GET')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def command():
     """
     Execute command on system
     """
-    logger.debug('COMMAND data [%d]: %s' % (len(bottle.request.params), str(bottle.request.json)))
-    logger.debug(bottle.request.query.keys())
-    logger.debug('METHOD:%s' % (bottle.request.method))
-
-    #get app bus
-    bus = app.config['sys.bus']
+    logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
     try:
         #prepare data to push
-        request = MessageRequest()
         if bottle.request.method=='GET':
             #GET request
-            params = bottle.request.query
+            tmp_params = bottle.request.query
             logger.debug('params: %s' % dir(params))
-            if 'to' in params.keys():
-                request.to = params['to']
-                del params['to']
-            if 'command' in params.keys():
-                request.command = params['command']
-                del params['command']
-            if len(params)>0:
-                request.params = params['params']
+            command = None
+            to = None
+            if 'to' in tmp_params.keys():
+                to = tmp_params['to']
+                del tmp_params['to']
+            if 'command' in tmp_params.keys():
+                command = tmp_params['command']
+                del tmp_params['command']
+            if len(tmp_params)>0:
+                params = tmp_params['params']
 
         else:
             #POST request (need json)
-            params = bottle.request.json
-            if params.has_key('to'):
-                request.to = params['to']
-                del params['to']
-            if params.has_key('command'):
-                request.command = params['command']
-                del params['command']
-            if len(params)>0:
-                request.params = params['params']
+            tmp_params = bottle.request.json
+            if tmp_params.has_key('to'):
+                to = tmp_params['to']
+                del tmp_params['to']
+            if tmp_params.has_key('command'):
+                command = tmp_params['command']
+                del tmp_params['command']
+            if len(tmp_params)>0:
+                params = tmp_params['params']
 
-        #push message to bus
-        resp = bus.push(request)
+        #execute command
+        resp = execute_command(command, to, params)
 
     except Exception, e:
-        logger.exception('rpcserver.command exception')
+        logger.exception('Exception in command:')
         #something went wrong
         msg = MessageResponse()
         msg.message = str(e)
@@ -187,7 +267,7 @@ def command():
     return resp
 
 @app.route('/registerpoll', method='POST')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def registerpoll():
     bottle.response.content_type = 'application/json'
     poll_key = str(uuid.uuid4())
@@ -205,7 +285,7 @@ def pollcounter():
     polling -= 1
 
 @app.route('/poll', method='POST')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def poll():
     """
     This is the endpoint for long poll clients.
@@ -260,7 +340,7 @@ def poll():
     return json.dumps(message)
 
 @app.route('/<path:path>')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def default(path):
     """
     Servers static files from HTML_DIR.
@@ -268,7 +348,7 @@ def default(path):
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/modules', method='POST')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def modules():
     """
     Returns loaded modules in app to inject associated modules in webapp
@@ -282,7 +362,7 @@ def modules():
     return json.dumps(modules)
 
 @app.route('/')
-@auth_basic(check_auth)
+#@auth_basic(check_auth)
 def index():
     """
     Return a default document if no path was specified.
