@@ -30,6 +30,7 @@ BASE_DIR = '/opt/raspiot/'
 HTML_DIR = os.path.join(BASE_DIR, 'html')
 AUTH_FILE = '/etc/raspiot/auth.conf'
 POLL_TIMEOUT = 60
+SESSION_TIMEOUT = 900 #15mins
 
 #logging
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ app.install(bottle_logger)
 #globals
 polling = 0
 subscribed = False
-subscriptions = {}
+sessions = {}
 auth_config_loaded = False
 auth_config = {}
 
@@ -103,8 +104,9 @@ def check_auth(username, password):
     """
     Check auth
     """
-    global auth_config_loaded, auth_config
-    #load auth file if necessary
+    global auth_config_loaded, auth_config, sessions, SESSION_TIMEOUT
+
+    #load auth
     if not auth_config_loaded:
         try:
             execfile(AUTH_FILE, auth_config)
@@ -113,11 +115,20 @@ def check_auth(username, password):
             logger.exception('Unable to load auth file. Auth disabled:')
         auth_config_loaded = True
 
+    #check session
+    ip = bottle.request.environ.get('REMOTE_ADDR')
+    session_key = '%s-%s' % (ip, username)
+    if sessions.has_key(session_key) and sessions[session_key]>=time.time():
+        #user still logged, update session timeout
+        sessions[session_key] = time.time() + SESSION_TIMEOUT
+        return True
+
     #check auth
     if len(auth_config['accounts'])>0 and auth_config['enabled']:
         if auth_config['accounts'].has_key(username):
             if sha256_crypt.verify(password, auth_config['accounts'][username]):
-                #auth is valid
+                #auth is valid, save session
+                sessions[session_key] = time.time() + SESSION_TIMEOUT
                 return True
             else:
                 #invalid password
@@ -130,14 +141,6 @@ def check_auth(username, password):
     else:
         #auth disabled
         return True
-
-def auth_enabled():
-    """
-    Return auth status
-    @return: True if auth enabled, False if auth disabled
-    """
-    global auth_config_loaded, auth_config
-    return len(auth_config['accounts'])>0 and auth_config['enabled']
 
 def execute_command(command, to, params):
     """
@@ -155,6 +158,7 @@ def execute_command(command, to, params):
 
 
 @app.route('/upload', method='POST')
+@auth_basic(check_auth)
 def upload():
     """
     Upload file
@@ -215,9 +219,8 @@ def upload():
     return resp
 
         
-@app.route('/command', method='POST')
-@app.route('/command', method='GET')
-#@auth_basic(check_auth)
+@app.route('/command', method=['POST','GET'])
+@auth_basic(check_auth)
 def command():
     """
     Execute command on system
@@ -267,14 +270,19 @@ def command():
     return resp
 
 @app.route('/registerpoll', method='POST')
-#@auth_basic(check_auth)
+@auth_basic(check_auth)
 def registerpoll():
-    bottle.response.content_type = 'application/json'
+    #get auth infos
+    (username, password) = bottle.parse_auth(bottle.request.get_header('Authorization', ''))
+
+    #subscribe to bus
     poll_key = str(uuid.uuid4())
-    subscriptions[poll_key] = time.time()
     if app.config.has_key('sys.bus'):
         logger.debug('subscribe %s' % poll_key)
         app.config['sys.bus'].add_subscription('rpc-%s' % poll_key)
+
+    #return response
+    bottle.response.content_type = 'application/json'
     return json.dumps({'pollKey':poll_key})
 
 @contextmanager
@@ -285,14 +293,14 @@ def pollcounter():
     polling -= 1
 
 @app.route('/poll', method='POST')
-#@auth_basic(check_auth)
+@auth_basic(check_auth)
 def poll():
     """
     This is the endpoint for long poll clients.
     """
     with pollcounter():
         params = bottle.request.json
-        # Make sure response will have the correct content type.
+        #response content type.
         bottle.response.content_type = 'application/json'
 
         #get message bus
@@ -340,7 +348,7 @@ def poll():
     return json.dumps(message)
 
 @app.route('/<path:path>')
-#@auth_basic(check_auth)
+@auth_basic(check_auth)
 def default(path):
     """
     Servers static files from HTML_DIR.
@@ -348,7 +356,7 @@ def default(path):
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/modules', method='POST')
-#@auth_basic(check_auth)
+@auth_basic(check_auth)
 def modules():
     """
     Returns loaded modules in app to inject associated modules in webapp
@@ -362,7 +370,7 @@ def modules():
     return json.dumps(modules)
 
 @app.route('/')
-#@auth_basic(check_auth)
+@auth_basic(check_auth)
 def index():
     """
     Return a default document if no path was specified.

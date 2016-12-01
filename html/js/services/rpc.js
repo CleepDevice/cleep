@@ -7,15 +7,6 @@ var rpcService = function($http, $q, growl, $base64) {
     self.pollKey = null;
 
     /**
-     * Make auth string in base64
-     */
-    self.makeBaseAuth = function(username, password) {
-        var token = username + ':' + password;
-        var hash = $base64.encode(token);
-        return "Basic " + hash;
-    };
-
-    /**
      * send command
      * @param data: data to send
      * @param to: request destinated to specified module. If not specified
@@ -44,7 +35,6 @@ var rpcService = function($http, $q, growl, $base64) {
             data.to = null;
         }
 
-        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriCommand,
@@ -78,7 +68,6 @@ var rpcService = function($http, $q, growl, $base64) {
     self.getModules = function() {
         var d = $q.defer();
 
-        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriModules,
@@ -125,7 +114,6 @@ var rpcService = function($http, $q, growl, $base64) {
     {
         var d = $q.defer();
 
-        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             data: {'pollKey': self.pollKey},
@@ -161,7 +149,6 @@ var rpcService = function($http, $q, growl, $base64) {
     {
         var d = $q.defer();
 
-        //$http.defaults.headers.common['Authorization'] = self.makeBaseAuth('tang', 'coucou');
         $http({
             method: 'POST',
             url: self.uriRegisterPoll,
