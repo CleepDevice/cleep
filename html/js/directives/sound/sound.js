@@ -11,6 +11,7 @@ var soundConfigDirective = function($q, growl, blockUI, soundService) {
         $scope.tts = '';
         $scope.langs = [];
         $scope.lang = 'en';
+        $scope.volume = 0;
 
         /**
          * Get sounds
@@ -36,7 +37,7 @@ var soundConfigDirective = function($q, growl, blockUI, soundService) {
         function getVolume() {
             soundService.getVolume()
                 .then(function(resp) {
-                    console.log(resp);
+                    $scope.volume = resp;
                 });
         };
 
