@@ -1,3 +1,5 @@
 bin/raspiot usr/bin
 html/* opt/raspiot/html/
 conf/* etc/raspiot/
+scripts/raspiot.service lib/systemd/system/
+scripts/raspiot etc/init.d/

@@ -5,3 +5,4 @@ export PYBUILD_NAME=raspiot
 
 %:
 	dh $@ --with python2
+
