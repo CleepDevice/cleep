@@ -34,7 +34,7 @@ SESSION_TIMEOUT = 900 #15mins
 
 #logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 def bottle_logger(func):
     """

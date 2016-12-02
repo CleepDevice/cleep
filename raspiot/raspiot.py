@@ -9,7 +9,7 @@ import copy
 __all__ = ['RaspIot', 'CommandError']
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+#logger.setLevel(logging.INFO)
 
 class CommandError(Exception):
     def __init__(self, value):

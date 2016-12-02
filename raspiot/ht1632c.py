@@ -53,9 +53,8 @@ from threading import Thread
 from datetime import datetime
 import re
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 class InvalidPanel(Exception):
     def __init__(self, msg):

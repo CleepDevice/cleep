@@ -12,9 +12,8 @@ import uuid
 
 __all__ = ['Messageboard']
 
-#logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO);
+#logger.setLevel(logging.INFO);
 
 class Message():
 

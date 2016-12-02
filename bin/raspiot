@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
+import getopt
 import logging
+from logging.config import dictConfig
 from raspiot.rpcserver import app
 from raspiot import bus
 from raspiot import RaspIot
@@ -11,13 +14,69 @@ import importlib
 WEBSERVER_HOST = '0.0.0.0'
 WEBSERVER_PORT = 80
 CONFIG_FILE = 'raspiot.conf'
+LOG_FILE = '/var/log/raspiot.log'
+LOG_SETTINGS = { 
+    'version': 1,
+    'root': {
+        'level': 'INFO',
+        'handlers': [],
+    },  
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'detailed',
+            'stream': 'ext://sys.stdout',
+        },  
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'detailed',
+            'filename': LOG_FILE,
+            'mode': 'a',
+            'maxBytes': 10485760,
+            'backupCount': 5,
+        }   
+    },  
+    'formatters': {
+        'detailed': {
+            'format': '%(asctime)s %(name)s[%(lineno)d] %(levelname)s : %(message)s'
+        }   
+    },  
+}
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+def usage():
+    print("RaspIot usage: raspiot [-d|--debug] [-s|--stdout [-h|--help]]")
+    print(" -d|--debug  : enable debug log level")
+    print(" -s|--stdout : dump log in console instead of log file")
+    print(" -h|--help   : this help")
 
 if __name__ == '__main__':
+    logger = None
     try:
+        #handle command line parameters
+        log_level = logging.INFO
+        log_stdout = False
+        argv = sys.argv[1:]
+        opts, args = getopt.getopt(argv,"hsd", ['help','stdout','debug'])
+        for opt, arg in opts:
+            if opt in ('-h','--help'):
+                usage()
+                sys.exit(2)
+            elif opt in ('-s','--stdout'):
+                log_stdout = True
+            elif opt in ('-d','--debug'):
+                log_level = logging.DEBUG
+        
+        #configure main logger
+        LOG_SETTINGS['root']['level'] = log_level
+        if not log_stdout:
+            #log to file
+            LOG_SETTINGS['root']['handlers'] = ['file']
+        else:
+            #log to stdout
+            LOG_SETTINGS['root']['handlers'] = ['console']
+        dictConfig(LOG_SETTINGS)
+        logger = logging.getLogger(__name__)
+
         #load config file
         config_path = os.path.join(RaspIot.CONFIG_DIR, CONFIG_FILE)
         logger.debug('Loading configuration file %s' % config_path)
@@ -69,24 +128,32 @@ if __name__ == '__main__':
         logger.info('Raspiot running...')
         bus.app_configured()
         app.run(server='gevent', host=WEBSERVER_HOST, port=WEBSERVER_PORT, quiet=True, debug=False, reloader=False)
+
+    except getopt.GetoptError:
+        #display usage
+        usage()
  
     except:
         logger.exception('Exception on main:')
 
     #clean all stuff
-    logger.debug('Stopping user modules:')
+    if logger:
+        logger.debug('Stopping user modules:')
     for module in app.config:
         if module[:3] in ['mod']:
-            logger.debug(' - %s' % module)
+            if logger:
+                logger.debug(' - %s' % module)
             app.config[module].stop()
     for module in app.config:
         if module[:3] in ['lib']:
-            logger.debug(' - %s' % module)
+            if logger:
+                logger.debug(' - %s' % module)
             app.config[module].stop()
     for module in app.config:
         if module[:3] in ['sys']:
-            logger.debug(' - %s' % module)
+            if logger:
+                logger.debug(' - %s' % module)
             app.config[module].stop()
     
-
-    logger.info('Raspiot stopped')
+    if logger:
+        logger.info('Raspiot stopped')
