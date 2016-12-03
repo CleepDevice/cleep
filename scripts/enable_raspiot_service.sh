@@ -19,6 +19,6 @@ function enable_on_systemctl {
 }
 
 #enable raspiot on systemctl
-[[ `systemctl` =~ -\.mount ]] && enable_on_systemctl
+[[ `systemctl 2> /dev/null` =~ -\.mount ]] && enable_on_systemctl
 #enable raspiot on sysvinit
 [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]] && enable_on_sysvinit

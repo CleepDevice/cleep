@@ -19,6 +19,6 @@ function disable_on_systemctl {
 }
 
 #disable raspiot on systemctl
-[[ `systemctl` =~ -\.mount ]] && disable_on_systemctl
+[[ `systemctl 2> /dev/null` =~ -\.mount ]] && disable_on_systemctl
 #disable raspiot on sysvinit
 [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]] && disable_on_sysvinit

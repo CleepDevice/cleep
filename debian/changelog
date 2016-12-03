@@ -1,3 +1,11 @@
+raspiot (0.0.2) UNRELEASED; urgency=low
+
+  * New release including HT1632C, scheduler modules
+  * Add auth in rpcserver module
+  * Update ui style
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 03 Dec 2016 08:33:24 +0100
+
 raspiot (0.0.1) UNRELEASED; urgency=low
 
   * Initial release. (Closes: #XXXXXX)

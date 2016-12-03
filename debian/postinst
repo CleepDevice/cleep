@@ -1,0 +1,2 @@
+#!/bin/bash
+/etc/raspiot/enable_raspiot_service.sh
