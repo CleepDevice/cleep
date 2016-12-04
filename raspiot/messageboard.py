@@ -17,11 +17,10 @@ logger = logging.getLogger(__name__)
 
 class Message():
 
-    def __init__(self, message=None, start=None, end=None, scroll=False):
+    def __init__(self, message=None, start=None, end=None):
         self.message = message
         self.start = start
         self.end = end
-        self.scroll = scroll
         self.displayed_time = 0
         self.uuid = str(uuid.uuid4())
 
@@ -33,8 +32,7 @@ class Message():
             'uuid': self.uuid,
             'message': self.message,
             'start': self.start,
-            'end': self.end,
-            'scroll': self.scroll
+            'end': self.end
         }
 
     def __str__(self):
@@ -45,12 +43,23 @@ class Messageboard(RaspIot):
 
     CONFIG_FILE = 'messageboard.conf'
     DEPS = []
+    DEFAULT_CONFIG = {
+        'duration': 60,
+        'unit_minutes': 'minutes',
+        'unit_hours': 'hours',
+        'unit_days': 'days'
+    }
 
     def __init__(self, bus):
         RaspIot.__init__(self, bus)
+
+        #check config
+        self._check_config(Messageboard.DEFAULT_CONFIG)
+
         #messages aren't saved in config
         self.messages = []
         self.__current_message = None
+
         #init board
         pin_a0 = 15
         pin_a1 = 16
@@ -58,9 +67,10 @@ class Messageboard(RaspIot):
         pin_e3 = 22
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
+        self.__set_board_units()
+
         #init display task
-        self.duration = 60.0
-        self.__display_task = task.BackgroundTask(self.__display_message, self.duration)
+        self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
         self.__display_task.start()
 
     def stop(self):
@@ -114,30 +124,60 @@ class Messageboard(RaspIot):
             #no message to display, clear screen
             self.board.clear()
 
+    def __set_board_units(self):
+        """
+        Set board units
+        """
+        days = None
+        hours = None
+        minutes = None
+        if self._config.has_key('unit_days') and self._config['unit_days']:
+            days = self._config['unit_days']
+        if self._config.has_key('unit_hours') and self._config['unit_hours']:
+            hours = self._config['unit_hours']
+        if self._config.has_key('unit_minutes') and self._config['unit_minutes']:
+            minutes = self._config['unit_minutes']
+
+        #set board unit
+        self.board.set_time_units(minutes, hours, days)
+
     def set_duration(self, duration):
         """
         Configure message cycle duration
+        @param duration: message cycle duration
         """
+        #save duration
+        config = self._get_config()
+        config['duration'] = duration
+        self._save_config(config)
+
         #stop current task
         if self.__display_task:
             self.__display_task.stop()
         
         #and restart new one
-        self.duration = duration
         self.__display_task = task.BackgroundTask(self.__display_message, float(duration))
         self.__display_task.start()
 
-    def add_message(self, message, start, end, scroll):
+    def get_duration(self):
         """
-        Add advertisment (scrolling message) to display
+        Return message cycle duration
+        @param duration
+        """
+        return self._config['duration']
+
+    def add_message(self, message, start, end):
+        """
+        Add advertisment to display
         @param message: message to display
         @param start: date to start displaying message from
         @param end: date to stop displaying message
-        @param scroll: scroll message
+        @return message uuid
         """
-        msg = Message(message, start, end, scroll)
+        msg = Message(message, start, end)
         logger.debug('add new message: %s' % str(msg))
         self.messages.append(msg)
+        return msg.uuid
 
     def del_message(self, uuid):
         """
@@ -147,11 +187,30 @@ class Messageboard(RaspIot):
         deleted = False
         for msg in self.messages:
             if msg.uuid==uuid:
-                logger.debug('Message "%s" deleted by user' % msg.message)
                 self.messages.remove(msg)
                 deleted = True
+                logger.debug('Message "%s" deleted' % msg.message)
                 break
         return deleted
+
+    def replace_message(self, uuid, message, start, end):
+        """
+        Replace message by new specified infos. Useful to cycle message transparently
+        @param uuid: message uuid to replace content
+        @param message: message to display
+        @param start: date to start displaying message from
+        @param end: date to stop displaying message
+        """
+        #search for message
+        replaced = False
+        for msg in self.messages:
+            if msg.uuid==uuid:
+                #message found, replace infos by new ones
+                msg.message = message
+                msg.start = start
+                msg.end = end
+                replaced = True
+        return replaced
 
     def get_messages(self):
         """
@@ -161,6 +220,32 @@ class Messageboard(RaspIot):
         for msg in self.messages:
             msgs.append(msg.to_dict())
         return msgs
+
+    def get_units(self):
+        """
+        Return time units
+        @return dict {days, hours, minutes}
+        """
+        return {
+            'days': self._config['unit_days'],
+            'hours': self._config['unit_hours'],
+            'minutes': self._config['unit_minutes']
+        }
+
+    def set_units(self, minutes, hours, days):
+        """
+        Set board time units
+        """
+        #save units in config
+        if minutes and hours and days:
+            config = self._get_config()
+            config['unit_days'] = days
+            config['unit_hours'] = hours
+            config['unit_minutes'] = minutes
+            self._save_config(config)
+
+        #set board units
+        self.__set_board_units()
 
 
 if __name__ == '__main__':

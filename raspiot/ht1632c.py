@@ -543,9 +543,9 @@ class HT1632C():
         """
         if timestamp<3600:
             return '%d%s' % (int(float(timestamp)/60.0), self.unit_minutes)
-        if timestamp<86400:
+        elif timestamp<86400:
             return '%d%s' % (int(float(timestamp)/3600.0), self.unit_hours)
-        if timestamp<3600:
+        else:
             return '%d%s' % (int(float(timestamp)/86400.0), self.unit_days)
 
     def __search_for_patterns(self, message):
@@ -755,6 +755,17 @@ class HT1632C():
        @param animation: name of animation
        """
        pass
+
+    def set_time_units(self, minutes, hours, days):
+        """
+        Set time units. Useful to change string according to your lang
+        @param minutes: minutes
+        @param hours: hours
+        @param days: days
+        """
+        self.unit_days = days
+        self.unit_hours = hours
+        self.unit_minutes = minutes
 
     def test(self):
         self.clear()

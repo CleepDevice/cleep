@@ -50,12 +50,35 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
      * Set message duration
      */
     self.setDuration = function(duration) {
-        return rpcService.sendCommand('set_duration', 'messageboard')
+        return rpcService.sendCommand('set_duration', 'messageboard', {'duration':duration});
+    };
+
+    /**
+     * Get duration
+     */
+    self.getDuration = function() {
+        return rpcService.sendCommand('get_duration', 'messageboard')
+            .then(function(resp) {
+                return resp.data;
+            });
+    }
+
+    /**
+     * Set board units
+     */
+    self.setUnits = function(minutes, hours, days) {
+        return rpcService.sendCommand('set_units', 'messageboard', {'minutes':minutes, 'hours':hours, 'days':days});
+    };
+
+    /**
+     * Get board units
+     */
+    self.getUnits = function() {
+        return rpcService.sendCommand('get_units', 'messageboard')
         .then(function(resp) {
             return resp.data;
         });
     };
-
 };
     
 var RaspIot = angular.module('RaspIot');

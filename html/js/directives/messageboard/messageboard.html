@@ -1,7 +1,39 @@
 <div class="container-fluid" block-ui="messageboardContainer">
 <form class="form-horizontal" name="messageboardConfigForm" style="margin-top:30px;">
 
-    <!-- form -->
+    <!-- duration -->
+    <div class="form-group">
+        <label class="col-sm-2">Message duration</label>
+        <div class="col-sm-4">
+            <input type="text" placeholder="Duration" class="form-control" ng-model="duration">
+        </div>
+        <div class="col-sm-6">
+            <button type="submit" class="btn btn-primary" ng-click="setDuration()">
+                <span class="glyphicon glyphicon-ok"></span> Set duration
+            </button>
+        </div>
+    </div>
+
+    <!-- units -->
+    <div class="form-group">
+        <label class="col-sm-2">Time units</label>
+        <div class="col-sm-2">
+            <input type="text" placeholder="Days" class="form-control" ng-model="unitDays">
+        </div>
+        <div class="col-sm-2">
+            <input type="text" placeholder="Hours" class="form-control" ng-model="unitHours">
+        </div>
+        <div class="col-sm-2">
+            <input type="text" placeholder="Minutes" class="form-control" ng-model="unitMinutes">
+        </div>
+        <div class="col-sm-4">
+            <button type="submit" class="btn btn-primary" ng-click="setUnits()">
+                <span class="glyphicon glyphicon-ok"></span> Save
+            </button>
+        </div>
+    </div>
+
+    <!-- message -->
     <div class="form-group">
         <label class="col-sm-2">Message</label>
         <div class="col-sm-10">
@@ -18,15 +50,6 @@
         <label class="col-sm-2">End</label>
         <div class="col-sm-4">
             <input type="text" date-range-picker placeholder="End" class="form-control" ng-model="end" options="pickerOptions">
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-offset-2 col-sm-10">
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" ng-model="scroll"> Force message scrolling?
-                </label>
-            </div>
         </div>
     </div>
     <div class="form-group">

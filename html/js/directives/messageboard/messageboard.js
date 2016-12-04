@@ -18,6 +18,10 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
                 format: datetimeFormat
             }
         };
+        $scope.duration = 60;
+        $scope.unitDays = 'days';
+        $scope.unitHours = 'hours';
+        $scope.unitMinutes = 'minutes';
 
         /**
          * Init controller
@@ -26,6 +30,10 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         {
             //load messages
             loadMessages();
+            //get duration
+            getDuration();
+            //get units
+            getUnits();
         }
 
         /**
@@ -35,7 +43,6 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         {
             messageboardService.getMessages()
                 .then(function(messages) {
-                    console.log('MESSAGES', messages.length, messages);
                     var msgs = [];
                     for( var i=0; i<messages.length; i++) {
                         messages[i].startStr = moment.unix(messages[i].start).format(datetimeFormat);
@@ -43,6 +50,30 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
                         msgs.push(messages[i]);
                     }
                     $scope.messages = msgs;
+                });
+        };
+
+        /**
+         * Get duration
+         */
+        function getDuration()
+        {
+            messageboardService.getDuration()
+                .then(function(resp) {
+                    $scope.duration = resp;
+                });
+        };
+
+        /**
+         * Get units
+         */
+        function getUnits()
+        {
+            messageboardService.getUnits()
+                .then(function(resp) {
+                    $scope.unitMinutes = resp.minutes;
+                    $scope.unitHours = resp.hours;
+                    $scope.unitDays = resp.days;
                 });
         };
 
@@ -73,12 +104,39 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
             }
 
             container.start();
-            //convert moment datetime to timestamp
             messageboardService.delMessage(message.uuid)
                 .then(function(resp) {
                     growl.success('Message deleted');
                     //reload messages
                     loadMessages();
+                })
+                .finally(function() {
+                    container.stop();
+                });
+        };
+
+        /**
+         * Set duration
+         */
+        $scope.setDuration = function() {
+            container.start();
+            messageboardService.setDuration($scope.duration)
+                .then(function(resp) {
+                    growl.success('Duration saved');
+                })
+                .finally(function() {
+                    container.stop();
+                });
+        };
+
+        /**
+         * Set units
+         */
+        $scope.setUnits = function() {
+            container.start();
+            messageboardService.setUnits($scope.unitMinutes, $scope.unitHours, $scope.unitDays)
+                .then(function(resp) {
+                    growl.success('Units saved');
                 })
                 .finally(function() {
                     container.stop();
