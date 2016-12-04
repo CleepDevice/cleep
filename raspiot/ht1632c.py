@@ -554,8 +554,10 @@ class HT1632C():
         @param message: input message
         @return found_logos: dict of found logos (logo index:found logo string)
         @return message: modifiyed message (logo strings are replaced by constant PATTERNS_REPLACEMENT)
+        @return dynamic: True if message contains dynamic fields (like time)
         """
         found_patterns = {}
+        dynamic = False
 
         #search for logos
         for logo in LOGOS:
@@ -572,6 +574,7 @@ class HT1632C():
         now_dt = datetime.fromtimestamp(now_ts)
         for match in list(re.finditer('(time)(:[0-9]+)?', message)):
             message = message.replace(match.group(0), PATTERNS_REPLACEMENT*len(match.group(0)), 1)
+            dynamic = True
             if match.group(2) is not None:
                 #timestamp specified, compute duration
                 ts = int(match.group(2)[1:])
@@ -584,7 +587,7 @@ class HT1632C():
                 #only time tag specified, add current time
                 found_patterns[match.start()] = {'type':'text', 'value':'%0.2d:%0.2d' % (now_dt.hour, now_dt.minute)}
 
-        return found_patterns, message
+        return found_patterns, message, dynamic
 
     def __get_message_length(self, message, patterns):
         """
@@ -618,11 +621,12 @@ class HT1632C():
         Display message to board
         @param message: message to display
         @param position: position of message in board (if message is too long it will be truncated)
+        @return True if message is dynamic (some dynamic patterns (like time) are found
         """
         buffer_position = 0
 
         #search for patterns in message
-        patterns, message = self.__search_for_patterns(message)
+        patterns, message, dynamic = self.__search_for_patterns(message)
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
@@ -687,17 +691,20 @@ class HT1632C():
             #write buffer to panels
             self.__write_pixels(buf)
 
+        return dynamic
+
     def scroll_message_once(self, message, speed=0.05, direction=0):
         """
         Scroll message to board
         @param message: message to display
         @param speed: animation speed
         @param direction: scroll direction
+        @return True if message is dynamic
         """
         font_size = 5
 
         #search for logos in message
-        patterns, message = self.__search_for_patterns(message)
+        patterns, message, dynamic = self.__search_for_patterns(message)
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
@@ -738,6 +745,8 @@ class HT1632C():
             max_scrolling -= 1
             #pause
             time.sleep(speed)
+
+        return dynamic
  
     def random(self, duration, speed=0.025):
         """

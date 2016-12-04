@@ -22,6 +22,7 @@ class Message():
         self.start = start
         self.end = end
         self.displayed_time = 0
+        self.dynamic = False
         self.uuid = str(uuid.uuid4())
 
     def to_dict(self):
@@ -115,9 +116,9 @@ class Messageboard(RaspIot):
         if len(messages_to_display)>0:
             #get first list message
             msg = messages_to_display[0]
-            if msg!=self.__current_message:
+            if msg!=self.__current_message or msg.dynamic==True:
                 logger.debug(' ==> Display message %s' % str(msg))
-                self.board.display_message(msg.message)
+                msg.dynamic = self.board.display_message(msg.message)
                 self.__current_message = msg
                 msg.displayed_time = now
         else:
