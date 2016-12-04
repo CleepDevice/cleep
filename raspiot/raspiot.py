@@ -103,6 +103,23 @@ class RaspIot(BusClient):
         """
         return copy.deepcopy(self._config)
 
+    def _check_config(self, keys):
+        """
+        Check config files looking for specified keys.
+        If key not found, key is added with specified default value
+        @param keys: dict {'key1':'default value1', ...}
+        """
+        config = self._get_config()
+        fixed = False
+        for key in keys:
+            if not config.has_key(key):
+                #fix missing key
+                config[key] = keys[key]
+                fixed = True
+        if fixed:
+            logger.debug('Config file fixed')
+            self._save_config(config)
+
     def _get_dependencies(self):
         """
         Return module dependencies
