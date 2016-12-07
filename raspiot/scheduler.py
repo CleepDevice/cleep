@@ -12,16 +12,24 @@ from astral import Astral, GoogleGeocoder
 
 __all__ = ['Scheduler']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG);
-
 class Scheduler(RaspIot):
 
-    CONFIG_FILE = 'scheduler.conf'
-    DEPS = []
+    MODULE_CONFIG_FILE = 'scheduler.conf'
+    MODULE_DEPS = []
+
+    DEFAULT_CONFIG = {
+        'city': None
+    }
 
     def __init__(self, bus):
+        #init
         RaspIot.__init__(self, bus)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #check config
+        self._check_config(Scheduler.DEFAULT_CONFIG)
+
+        #members
         self.sunset = None
         self.sunrise = None
 
@@ -41,7 +49,7 @@ class Scheduler(RaspIot):
         """
         Compute sunset/sunrise times
         """
-        logger.debug('Compute sunset/sunrise')
+        self.logger.debug('Compute sunset/sunrise')
 
         #compute now
         now = int(time.time())
@@ -54,9 +62,9 @@ class Scheduler(RaspIot):
                 sun = loc.sun()
                 self.sunset = sun['sunset']
                 self.sunrise = sun['sunrise']
-                logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
+                self.logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
             except:
-                logger.exception('Unable to compute sunset/sunrise time:')
+                self.logger.exception('Unable to compute sunset/sunrise time:')
 
     def __format_time(self, now=None):
         """
@@ -97,7 +105,7 @@ class Scheduler(RaspIot):
         Send sunset/sunrise
         """
         now = int(time.time())
-        now_formatted =self.__format_time()
+        now_formatted = self.__format_time()
 
         req = bus.MessageRequest()
         req.event = 'event.time.now'

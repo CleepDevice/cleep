@@ -9,13 +9,9 @@ from threading import Timer
 
 __all__ = ['Shutter']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG);
-
-#Shutter module
 class Shutter(RaspIot):
-    CONFIG_FILE = 'shutter.conf'
-    DEPS = ['gpios']
+    MODULE_CONFIG_FILE = 'shutter.conf'
+    MODULE_DEPS = ['gpios']
 
     STATUS_OPENED = 'opened'
     STATUS_CLOSED = 'closed'
@@ -24,7 +20,10 @@ class Shutter(RaspIot):
     STATUS_CLOSING = 'closing'
 
     def __init__(self, bus):
+        #init
         RaspIot.__init__(self, bus)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         #internal timers
         self.__timers = {}
         #raspi gpios
@@ -37,18 +36,18 @@ class Shutter(RaspIot):
         """
         Event received from bus
         """
-        #logger.debug(' *** event received: %s' % str(event))
+        #self.logger.debug(' *** event received: %s' % str(event))
 
         #drop startup events
         if event['startup']:
-            logger.debug('Drop startup event')
+            self.logger.debug('Drop startup event')
             return
 
         #process received event
         if event['event']=='event.gpio.off':
             #drop gpio init
             if event['params']['init']:
-                logger.debug('Drop gpio init event')
+                self.logger.debug('Drop gpio init event')
                 return
 
             #gpio turned off, get gpio
@@ -73,7 +72,7 @@ class Shutter(RaspIot):
         req.command = 'reset_gpios'
         resp = self.push(req)
         if resp['error']:
-            logger.error(resp['message'])
+            self.logger.error(resp['message'])
             return
 
         #and reset shutter
@@ -93,7 +92,7 @@ class Shutter(RaspIot):
         req.command = 'get_raspi_gpios'
         resp = self.push(req)
         if resp['error']:
-            logger.error(resp['message'])
+            self.logger.error(resp['message'])
             return {}
         else:
             return resp['data']
@@ -107,7 +106,7 @@ class Shutter(RaspIot):
         req.command = 'get_gpios'
         resp = self.push(req)
         if resp['error']:
-            logger.error(resp['message'])
+            self.logger.error(resp['message'])
             return {}
         else:
             return resp['data']
@@ -124,7 +123,7 @@ class Shutter(RaspIot):
         """
         #first of all cancel timer if necessary
         if self.__timers.has_key(shutter['name']):
-            logger.debug('Cancel timer of shutter "%s"' % shutter['name'])
+            self.logger.debug('Cancel timer of shutter "%s"' % shutter['name'])
             self.__timers[shutter['name']].cancel()
             del self.__timers[shutter['name']]
 
@@ -133,7 +132,7 @@ class Shutter(RaspIot):
             gpio = shutter['shutter_open']
         else:
             gpio = shutter['shutter_close']
-        logger.debug('stop shutter: gpio=%s' % str(gpio))
+        self.logger.debug('stop shutter: gpio=%s' % str(gpio))
 
         #and turn off gpio
         req = MessageRequest()
@@ -165,7 +164,7 @@ class Shutter(RaspIot):
         self.change_status(shutter['name'], Shutter.STATUS_OPENING)
     
         #launch turn off timer
-        logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
+        self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
         self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutter.STATUS_OPENED])
         self.__timers[shutter['name']].start()
 
@@ -187,7 +186,7 @@ class Shutter(RaspIot):
         self.change_status(shutter['name'], Shutter.STATUS_CLOSING)
         
         #launch turn off timer
-        logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
+        self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
         self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutter.STATUS_CLOSED])
         self.__timers[shutter['name']].start()
 
@@ -199,7 +198,7 @@ class Shutter(RaspIot):
         @param open_shutter: True if action is to open shutter. False if is close action
         """
         if not shutter:
-            logger.error('__execute_action: shutter is not defined')
+            self.logger.error('__execute_action: shutter is not defined')
             return
 
         if open_action:
@@ -213,7 +212,7 @@ class Shutter(RaspIot):
                 self.__open_action(shutter)
             else:
                 #shutter is already opened, do nothing
-                logger.debug('Shutter %s is already opened' % shutter['name'])
+                self.logger.debug('Shutter %s is already opened' % shutter['name'])
 
         else:
             #close action triggered
@@ -227,7 +226,7 @@ class Shutter(RaspIot):
 
             else:
                 #shutter is already closed
-                logger.debug('Shutter %s is already closed' % shutter['name'])
+                self.logger.debug('Shutter %s is already closed' % shutter['name'])
         
 
     def add_shutter(self, name, shutter_open, shutter_close, delay, switch_open, switch_close):
@@ -305,9 +304,7 @@ class Shutter(RaspIot):
                 raise CommandError(resp['message'])
 
             #shutter is valid, prepare new entry
-            shutter = self.get_devices()
-            logger.debug('shutter = %s' % str(shutter))
-            logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
+            self.logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
             config = self.get_devices()
             config[name] = {'name':name, 'delay':delay, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Shutter.STATUS_OPENED}
             self._save_config(config)
@@ -366,7 +363,7 @@ class Shutter(RaspIot):
         """
         Change shutter status
         """
-        logger.debug('change_status for shutter "%s" to "%s"' % (str(shutter_name), str(status)))
+        self.logger.debug('change_status for shutter "%s" to "%s"' % (str(shutter_name), str(status)))
         config = self.get_devices()
         if not status in [Shutter.STATUS_OPENED, Shutter.STATUS_CLOSED, Shutter.STATUS_PARTIAL, Shutter.STATUS_OPENING, Shutter.STATUS_CLOSING]:
             raise InvalidParameter('Status value is invalid')
@@ -388,7 +385,7 @@ class Shutter(RaspIot):
         Triggered when timer is over
         """
         #turn off specified gpio
-        logger.debug('end_of_timer for gpio:%s' % gpio)
+        self.logger.debug('end_of_timer for gpio:%s' % gpio)
         req = MessageRequest()
         req.to = 'gpios'
         req.command = 'turn_off'
@@ -404,7 +401,7 @@ class Shutter(RaspIot):
         """
         Open specified shutter
         """
-        logger.debug('open_shutter %s' % str(name))
+        self.logger.debug('open_shutter %s' % str(name))
         if name not in self._config:
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % name)
         self.__execute_action(self._config[name], True)
@@ -413,7 +410,7 @@ class Shutter(RaspIot):
         """
         Close specified shutter
         """
-        logger.debug('close_shutter %s' % str(name))
+        self.logger.debug('close_shutter %s' % str(name))
         if name not in self._config:
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % name)
         self.__execute_action(self._config[name], False)
@@ -422,7 +419,7 @@ class Shutter(RaspIot):
         """
         Stop specified shutter
         """
-        logger.debug('stop_shutter %s' % str(name))
+        self.logger.debug('stop_shutter %s' % str(name))
         if name not in self._config:
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % name)
         self.__stop_action(self._config[name])

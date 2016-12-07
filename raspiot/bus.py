@@ -14,9 +14,6 @@ from Queue import Queue
 __all__ = ['NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 'InvalidMessage', 'BusError',
         'MessageRequest', 'MessageResponse', 'MessageBus', 'BusClient']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
-
 class NoResponse(Exception):
     def __str__(self):
         return repr('')
@@ -126,6 +123,9 @@ class MessageBus():
     Only broadcasted messages can be sent before all clients have subscribed (during init phase)
     """
     def __init__(self):
+        #init
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         #module message queues
         self.__queues = {}
         #module queue activities
@@ -153,11 +153,11 @@ class MessageBus():
         blocked in "app not configured" state. But in small system like raspiot, it should be fine.
         """
         #first of all unqueue defered messages to preserve order
-        logger.debug('Unqueue defered message')
+        self.logger.debug('Unqueue defered message')
         while not self.__defered_messages.empty():
             msg = self.__defered_messages.get()
             #msg.startup = True
-            logger.debug('Push defered: %s' % str(msg))
+            self.logger.debug('Push defered: %s' % str(msg))
             for q in self.__queues:
                 self.__queues[q].append(msg)
 
@@ -189,7 +189,7 @@ class MessageBus():
 
                 #prepare message
                 msg = {'message':request_dict, 'event':event, 'response':None}
-                logger.debug('MessageBus: push to "%s" message %s' % (request.to, str(msg)))
+                self.logger.debug('MessageBus: push to "%s" message %s' % (request.to, str(msg)))
 
                 #log module activity
                 self.__activities[request.to] = time.time()
@@ -200,14 +200,14 @@ class MessageBus():
                 #and wait for response or not (if no timeout)
                 if event:
                     #wait for response
-                    logger.debug('MessageBus: push wait for response (%s seconds)....' % str(timeout))
+                    self.logger.debug('MessageBus: push wait for response (%s seconds)....' % str(timeout))
                     if event.wait(timeout):
                         #response received
-                        logger.debug(' - resp received %s' % str(msg))
+                        self.logger.debug(' - resp received %s' % str(msg))
                         return msg['response']
                     else:
                         #no response in time
-                        logger.debug(' - timeout')
+                        self.logger.debug(' - timeout')
                         raise NoResponse()
                 else:
                     #no timeout given, return nothing
@@ -217,7 +217,7 @@ class MessageBus():
                 #broadcast message to every modules, without waiting for a response
                 #prepare message
                 msg = {'message':request_dict, 'event':None, 'response':None}
-                logger.debug('MessageBus: broadcast message %s' % str(msg))
+                self.logger.debug('MessageBus: broadcast message %s' % str(msg))
 
                 if self.__app_configured:
                     #append message to queues
@@ -225,7 +225,7 @@ class MessageBus():
                         self.__queues[q].appendleft(msg)
                 else:
                     #defer message if app not configured yet
-                    logger.debug('defer message: %s' % str(msg))
+                    self.logger.debug('defer message: %s' % str(msg))
                     self.__defered_messages.put(msg)
     
                 return None
@@ -259,13 +259,13 @@ class MessageBus():
                 #no timeout specified, try to pop a message and return just after
                 try:
                     msg = self.__queues[_module].pop()
-                    logger.debug('MessageBus: %s pulled noto: %s' % (_module, msg))
+                    self.logger.debug('MessageBus: %s pulled noto: %s' % (_module, msg))
                     return msg
                 except IndexError:
                     #no message available
                     raise NoMessageAvailable()
                 except:
-                    logger.exception('MessageBus: error when pulling message:')
+                    self.logger.exception('MessageBus: error when pulling message:')
                     raise BusError('Error when pulling message')
             else:
                 #timeout specified, try to read each 0.1 seconds a message until specified timeout
@@ -274,14 +274,14 @@ class MessageBus():
                 while i<loop:
                     try:
                         msg = self.__queues[_module].pop()
-                        logger.debug('MessageBus: %s pulled %s' % (_module, msg))
+                        self.logger.debug('MessageBus: %s pulled %s' % (_module, msg))
                         return msg
                     except IndexError:
                         #no message available
                         pass
                     except:
                         #unhandled error
-                        logger.exception('MessageBus: error when pulling message:')
+                        self.logger.exception('MessageBus: error when pulling message:')
                         raise BusError('Error when pulling message')
                     finally:
                         time.sleep(0.10)
@@ -292,7 +292,7 @@ class MessageBus():
 
         else:
             #subscriber not found
-            logger.error('Module %s not found' % _module)
+            self.logger.error('Module %s not found' % _module)
             raise InvalidParameter('Unknown module name %s, check "module" param' % _module)
 
     def add_subscription(self, module):
@@ -300,7 +300,7 @@ class MessageBus():
         Add new subscription
         """
         _module = module.lower()
-        logger.debug('Add subscription for module %s' % _module)
+        self.logger.debug('Add subscription for module %s' % _module)
         self.__queues[_module] = deque()
         self.__activities[_module] = int(time.time())
 
@@ -310,13 +310,13 @@ class MessageBus():
         @raise InvalidParameter
         """
         _module = module.lower()
-        logger.debug('Remove subscription for module %s' % _module)
+        self.logger.debug('Remove subscription for module %s' % _module)
         if self.__queues.has_key(_module):
             del self.__queues[_module]
             del self.__activities[_module]
         else:
             #uuid does not exists
-            logger.error('Subscriber %s not found' % _module)
+            self.logger.error('Subscriber %s not found' % _module)
             raise InvalidParameter('Unknown module name, check "module" param')
 
     def is_subscribed(self, module):
@@ -334,7 +334,7 @@ class MessageBus():
         for module, last_pull in copy.iteritems():
             if now>last_pull+self.lifetime:
                 #remove inactive subscription
-                logger.debug('Remove obsolete subscription "%s"' % module)
+                self.logger.debug('Remove obsolete subscription "%s"' % module)
                 self.remove_subscription(module)
 
 
@@ -371,7 +371,7 @@ class BusClient(threading.Thread):
             if param=='self':
                 #drop self param
                 pass
-            elif not message.has_key(param):
+            elif message is None or not isinstance(message, dict) or not message.has_key(param):
                 #parameters is not available in message
                 return False, None
             else:
@@ -405,67 +405,68 @@ class BusClient(threading.Thread):
         """
         Bus reading process
         """
-        logger.debug('BusClient %s started' % self.__name)
+        self.logger.debug('BusClient %s started' % self.__name)
         #add subscription
         self.bus.add_subscription(self.__name)
         
         #check messages
         while self.__continue:
             try:
-                #logger.debug('BusClient: pull message')
+                #self.logger.debug('BusClient: pull message')
                 msg = {}
                 try:
                     #get message
                     msg = self.bus.pull(self.__name)
-                    logger.debug('BusClient: %s received %s' % (self.__name, msg))
+                    self.logger.debug('BusClient: %s received %s' % (self.__name, msg))
 
                 except NoMessageAvailable:
                     #no message available
-                    #logger.debug('BusClient no msg avail')
+                    #self.logger.debug('BusClient no msg avail')
                     continue
 
                 #create response
                 resp = MessageResponse()
        
                 #process message
-                logger.debug('BusClient: %s process message' % (self.__name))
+                self.logger.debug('BusClient: %s process message' % (self.__name))
                 if msg.has_key('message'):
                     if msg['message'].has_key('command'):
                         #command received, process it
                         if msg['message'].has_key('command') and msg['message']['command']!=None and len(msg['message']['command'])>0:
                             try:
                                 #get command reference
-                                logger.debug('BusClient: %s get command' % (self.__name))
+                                self.logger.debug('BusClient: %s get command' % (self.__name))
                                 command = getattr(self, msg['message']['command'])
 
                                 #check if command was found
                                 if command is not None:
                                     #check if message contains all command parameters
                                     (ok, args) = self.__check_params(command, msg['message']['params'])
-                                    logger.debug('BusClient: ok=%s args=%s' % (ok, args))
+                                    self.logger.debug('BusClient: ok=%s args=%s' % (ok, args))
                                     if ok:
                                         #execute command
                                         try:
                                             resp.data = command(**args)
                                         except Exception, e:
                                             #command failed
-                                            logger.exception('bus.run exception')
+                                            self.logger.exception('bus.run exception')
                                             resp.error = True
                                             resp.message = 'Command execution failed [%s]' % str(e)
                                     else:
-                                        #logger.error('Some command parameters are missing')
+                                        #self.logger.error('Some command parameters are missing')
                                         resp.error = True
                                         resp.message = 'Some command parameters are missing'
 
                             except AttributeError:
                                 #specified command doesn't exists in this module
-                                logger.error('Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name))
+                                self.logger.exception('++++')
+                                self.logger.error('Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name))
                                 resp.error = True
                                 resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name)
 
                         else:
                             #no command specified
-                            logger.error('BusClient: No command specified in message %s' % msg['message'])
+                            self.logger.error('BusClient: No command specified in message %s' % msg['message'])
                             resp.error = True
                             resp.message = 'No command specified in message'
                                 
@@ -475,7 +476,7 @@ class BusClient(threading.Thread):
                         #unlock event if necessary
                         if msg['event']:
                             #event available, client is waiting for response, unblock it
-                            logger.debug('BusClient: unlock event')
+                            self.logger.debug('BusClient: unlock event')
                             msg['event'].set()
                     
                     elif msg['message'].has_key('event'):
@@ -487,23 +488,23 @@ class BusClient(threading.Thread):
                                 event_received(msg['message'])
                         except AttributeError:
                             #on_event function not implemented, drop received message
-                            logger.debug('event_received not implemented, received message dropped')
+                            self.logger.debug('event_received not implemented, received message dropped')
 
                 else:
                     #received message is badly formatted
-                    logger.warning('Received message is badly formatted, message dropped')
+                    self.logger.warning('Received message is badly formatted, message dropped')
 
             except:
                 #error occured
-                logger.exception('BusClient: fatal exception')
+                self.logger.exception('BusClient: fatal exception')
                 self.stop()
 
-            #logger.debug('----> sleep')
+            #self.logger.debug('----> sleep')
             #time.sleep(1.0)
 
         #remove subscription
         self.bus.remove_subscription(self.__name)
-        logger.debug('BusClient %s stopped' % self.__name)
+        self.logger.debug('BusClient %s stopped' % self.__name)
 
 
 
@@ -526,6 +527,8 @@ class TestPolling(threading.Thread):
             time.sleep(5)
 
 if __name__ == '__main__':
+    logger = logging.getLogger('test')
+
     class TestProcess1(BusClient):
         def __init__(self, bus):
             BusClient.__init__(self, bus)

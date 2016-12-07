@@ -1,4 +1,5 @@
 bin/raspiot usr/bin
+bin/raspiot_auth usr/bin
 html/* opt/raspiot/html/
 conf/* etc/raspiot/
 scripts/raspiot.service lib/systemd/system/

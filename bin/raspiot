@@ -38,7 +38,7 @@ LOG_SETTINGS = {
     },  
     'formatters': {
         'detailed': {
-            'format': '%(asctime)s %(name)s[%(lineno)d] %(levelname)s : %(message)s'
+            'format': '%(asctime)s %(name)-12s[%(lineno)-4d] %(levelname)-5s : %(message)s'
         }   
     },  
 }
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             #log to stdout
             LOG_SETTINGS['root']['handlers'] = ['console']
         dictConfig(LOG_SETTINGS)
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger('Raspiot')
 
         #load config file
         config_path = os.path.join(RaspIot.CONFIG_DIR, CONFIG_FILE)
@@ -88,11 +88,13 @@ if __name__ == '__main__':
         bus = bus.MessageBus()
         app.config['sys.bus'] = bus
 
+        #load rpcserver
+
         #load user modules
         logger.debug('Loading user modules:')
         loaded_modules = []
         for module_name in config['modules']:
-            logger.debug(' - %s)' % (module_name));
+            logger.debug(' - %s:' % (module_name));
 
             #get module class
             logger.debug('   - loading module...')
@@ -101,9 +103,8 @@ if __name__ == '__main__':
 
             #load dependencies
             logger.debug('   - loading module dependencies:')
-            deps = class_.DEPS
-            if deps:
-                for dep in deps:
+            if class_.MODULE_DEPS:
+                for dep in class_.MODULE_DEPS:
                     if dep not in loaded_modules:
                         logger.debug('     - loading dependency "%s"' % dep)
                         dep_ = importlib.import_module('raspiot.%s' % dep)

@@ -11,9 +11,6 @@ import time
 
 __all__ = ['Task', 'BackgroundTask']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG)
-
 class Task:
     """
     Run a task asynchronously

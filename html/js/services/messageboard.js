@@ -37,7 +37,7 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Get messages
      */
-    self.getMessages = function(index) {
+    self.getMessages = function() {
         return rpcService.sendCommand('get_messages', 'messageboard')
         .then(function(resp) {
             return resp.data;

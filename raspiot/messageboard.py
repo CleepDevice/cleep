@@ -13,9 +13,6 @@ import socket
 
 __all__ = ['Messageboard']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO);
-
 class Message():
 
     def __init__(self, message=None, start=None, end=None):
@@ -43,8 +40,9 @@ class Message():
 
 class Messageboard(RaspIot):
 
-    CONFIG_FILE = 'messageboard.conf'
-    DEPS = []
+    MODULE_CONFIG_FILE = 'messageboard.conf'
+    MODULE_DEPS = []
+
     DEFAULT_CONFIG = {
         'duration': 60,
         'unit_minutes': 'minutes',
@@ -53,7 +51,9 @@ class Messageboard(RaspIot):
     }
 
     def __init__(self, bus):
+        #init
         RaspIot.__init__(self, bus)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         #check config
         self._check_config(Messageboard.DEFAULT_CONFIG)
@@ -79,9 +79,17 @@ class Messageboard(RaspIot):
         #@see http://stackoverflow.com/a/1267524
         ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
         self.board.display_message('IP: %s' % str(ip))
+        self.logger.info('Board ip: %s' % str(ip))
 
     def stop(self):
+        """
+        Stop module
+        """
         RaspIot.stop(self)
+
+        #clean board
+        self.board.cleanup()
+
         #stop task
         if self.__display_task:
             self.__display_task.stop()
@@ -92,7 +100,7 @@ class Messageboard(RaspIot):
         """
         #now
         now = time.time()
-        logger.debug('__display_message at %d' % now)
+        self.logger.debug('__display_message at %d' % now)
 
         #TODO add mutex to protect messages member
 
@@ -104,7 +112,7 @@ class Messageboard(RaspIot):
                 messages_to_display.append(msg)
             elif now>msg.end:
                 #remove obsolete message
-                logger.debug('Remove obsolete message %s' % str(msg))
+                self.logger.debug('Remove obsolete message %s' % str(msg))
                 self.messages.remove(msg)
 
         #sort messages to display by date
@@ -113,17 +121,17 @@ class Messageboard(RaspIot):
         #so naturally oldest messages or not already displayed are sorted at top of list
         messages_to_display.sort(key=lambda msg:msg.displayed_time, reverse=False)
 
-        if logger.getEffectiveLevel()==logging.DEBUG:
-            logger.debug('Messages to display:')
+        if self.logger.getEffectiveLevel()==logging.DEBUG:
+            self.logger.debug('Messages to display:')
             for msg in messages_to_display:
-                logger.debug(' - %s' % str(msg))
+                self.logger.debug(' - %s' % str(msg))
 
         #display first list message
         if len(messages_to_display)>0:
             #get first list message
             msg = messages_to_display[0]
             if msg!=self.__current_message or msg.dynamic==True:
-                logger.debug(' ==> Display message %s' % str(msg))
+                self.logger.debug(' ==> Display message %s' % str(msg))
                 msg.dynamic = self.board.display_message(msg.message)
                 self.__current_message = msg
                 msg.displayed_time = now
@@ -182,7 +190,7 @@ class Messageboard(RaspIot):
         @return message uuid
         """
         msg = Message(message, start, end)
-        logger.debug('add new message: %s' % str(msg))
+        self.logger.debug('add new message: %s' % str(msg))
         self.messages.append(msg)
         return msg.uuid
 
@@ -196,7 +204,7 @@ class Messageboard(RaspIot):
             if msg.uuid==uuid:
                 self.messages.remove(msg)
                 deleted = True
-                logger.debug('Message "%s" deleted' % msg.message)
+                self.logger.debug('Message "%s" deleted' % msg.message)
                 break
         return deleted
 

@@ -14,9 +14,6 @@ import time
 
 __all__ = ['Gpios']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO);
-
 class GpioInputWatcher(Thread):
     """
     Object that watches for changes on specified input pin
@@ -25,7 +22,11 @@ class GpioInputWatcher(Thread):
     This object doesn't configure pin!
     """
     def __init__(self, pin, on_callback, off_callback=None, level=GPIO.LOW, debounce=200):
+        #init
         Thread.__init__(self)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #members
         self.continu = True
         self.pin = pin
         self.level = level
@@ -49,13 +50,13 @@ class GpioInputWatcher(Thread):
                     #first run, nothing to do except init values
                     pass
                 elif level!=last_level and level==self.level:
-                    logger.debug('input %s on' % str(self.pin))
+                    self.logger.debug('input %s on' % str(self.pin))
                     time_on = time.time()
                     self.on_callback(self.pin)
                     time.sleep(self.debounce/1000.0)
 
                 elif level!=last_level:
-                    logger.debug('input %s off' % str(self.pin))
+                    self.logger.debug('input %s off' % str(self.pin))
                     if self.off_callback:
                         self.off_callback(self.pin, time.time()-time_on)
                     time.sleep(.1)
@@ -64,7 +65,7 @@ class GpioInputWatcher(Thread):
                     time.sleep(.1)
                 last_level = level
         except:
-            logger.debug('Exception in GpioInputWatcher')
+            self.logger.debug('Exception in GpioInputWatcher')
 
 
 
@@ -102,8 +103,9 @@ class GpioInputWatcher(Thread):
 # GPIO20  38
 # GPIO21  40
 class Gpios(RaspIot):
-    CONFIG_FILE = 'gpios.conf'
-    DEPS = []
+
+    MODULE_CONFIG_FILE = 'gpios.conf'
+    MODULE_DEPS = []
 
     GPIOS_REV2 = {'GPIO4' : 7,
                   'GPIO17': 11,
@@ -145,7 +147,7 @@ class Gpios(RaspIot):
 
         #configure RasPi
         GPIO.setmode(GPIO.BOARD)
-        #GPIO.setwarnings(False)
+        GPIO.setwarnings(False)
         for gpio in self._config:
             self.__configure_gpio(gpio, self._config[gpio])
 
@@ -162,13 +164,13 @@ class Gpios(RaspIot):
         """
         Configure GPIO
         """
-        logger.debug('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
+        self.logger.debug('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
         try:
             #get gpio pin
             gpios = self.get_raspi_gpios()
             pin = gpios[gpio]
             if conf['mode']==self.MODE_OUT:
-                logger.debug('Configure gpio %s (pin %d) as OUTPUT' % (gpio, pin))
+                self.logger.debug('Configure gpio %s (pin %d) as OUTPUT' % (gpio, pin))
                 #configure it
                 if conf['on']:
                     initial = GPIO.LOW
@@ -178,18 +180,18 @@ class Gpios(RaspIot):
                     initial = GPIO.HIGH
                     #GPIO.output(pin, GPIO.HIGH)
                     event = 'event.gpio.off'
-                logger.debug('event=%s initial=%s' % (str(event), str(initial)))
+                self.logger.debug('event=%s initial=%s' % (str(event), str(initial)))
                 GPIO.setup(pin, GPIO.OUT, initial=initial)
 
                 #and broadcast gpio status at startup
-                logger.debug('broadcast event %s for gpio %s' % (event, gpio))
+                self.logger.debug('broadcast event %s for gpio %s' % (event, gpio))
                 req = bus.MessageRequest()
                 req.event = event
                 req.params = {'gpio':gpio, 'init':True}
                 self.push(req)
 
             elif conf['mode']==self.MODE_IN:
-                logger.debug('Configure gpio %s (pin %s) as INPUT' % (gpio, pin))
+                self.logger.debug('Configure gpio %s (pin %s) as INPUT' % (gpio, pin))
                 #configure it
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -200,14 +202,14 @@ class Gpios(RaspIot):
             return True
 
         except:
-            logger.exception('Exception during GPIO configuration:')
+            self.logger.exception('Exception during GPIO configuration:')
             return False
 
     def __input_on_callback(self, pin):
         """
         Callback when input is turned on
         """
-        logger.debug('on_callback for pin %s triggered' % pin)
+        self.logger.debug('on_callback for pin %s triggered' % pin)
         #get triggered gpio
         gpios = self.get_raspi_gpios()
         gpio = None
@@ -217,20 +219,20 @@ class Gpios(RaspIot):
                 break
 
         if gpio==None:
-            logger.error('Triggered gpio for pin #%s was not found' % str(pin))
+            self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.on'
             req.params = {'gpio':gpio, 'init':False}
-            logger.debug('broadcast %s' % str(req))
+            self.logger.debug('broadcast %s' % str(req))
             self.push(req)
 
     def __input_off_callback(self, pin, duration):
         """
         Callback when input is turned off
         """
-        logger.debug('off_callback for pin %s triggered' % pin)
+        self.logger.debug('off_callback for pin %s triggered' % pin)
         #get triggered gpio
         gpios = self.get_raspi_gpios()
         gpio = None
@@ -240,13 +242,13 @@ class Gpios(RaspIot):
                 break
 
         if gpio==None:
-            logger.error('Triggered gpio for pin #%s was not found' % str(pin))
+            self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
             req = bus.MessageRequest()
             req.event = 'event.gpio.off'
             req.params = {'gpio':gpio, 'init':False, 'duration':duration}
-            logger.debug('broadcast %s' % str(req))
+            self.logger.debug('broadcast %s' % str(req))
             self.push(req)
 
     def get_raspi_gpios(self):
@@ -336,7 +338,7 @@ class Gpios(RaspIot):
         """
         Turn on specified gpio
         """
-        logger.debug('turn_on')
+        self.logger.debug('turn_on')
         try:
             #check values
             gpios = self.get_raspi_gpios()
@@ -344,7 +346,7 @@ class Gpios(RaspIot):
                 return 'Specified gpio "%s" not found' % gpio, None
             
             #turn on relay
-            logger.debug('turn on GPIO %s' % gpio)
+            self.logger.debug('turn on GPIO %s' % gpio)
             GPIO.output(gpios[gpio], GPIO.LOW)
 
             #save current state
@@ -360,14 +362,14 @@ class Gpios(RaspIot):
 
             return True
         except:
-            logger.exception('Exception in turn_on:')
+            self.logger.exception('Exception in turn_on:')
             return False
 
     def turn_off(self, gpio):
         """
         Turn off specified gpio
         """
-        logger.debug('turn_off')
+        self.logger.debug('turn_off')
         try:
             #check values
             gpios = self.get_raspi_gpios()
@@ -375,7 +377,7 @@ class Gpios(RaspIot):
                 return 'Specified gpio "%s" not found' % gpio, None
                 
             #turn off relay
-            logger.debug('turn off GPIO %s' % gpio)
+            self.logger.debug('turn off GPIO %s' % gpio)
             GPIO.output(gpios[gpio], GPIO.HIGH)
 
             #save config
@@ -391,7 +393,7 @@ class Gpios(RaspIot):
 
             return True
         except:
-            logger.exception('Exception in turn_off:')
+            self.logger.exception('Exception in turn_off:')
             return False
 
     def is_on(self, gpio):
@@ -407,7 +409,7 @@ class Gpios(RaspIot):
             #return gpio status
             return self._config[gpio]['on']
         except:
-            logger.exception('Exception in is_on:')
+            self.logger.exception('Exception in is_on:')
             return False
 
     def reset_gpios(self):

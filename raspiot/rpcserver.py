@@ -33,7 +33,8 @@ POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900 #15mins
 
 #logging
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
+logger = logging.getLogger('rpcserver')
 #logger.setLevel(logging.DEBUG)
 
 def bottle_logger(func):
@@ -61,44 +62,6 @@ sessions = {}
 auth_config_loaded = False
 auth_config = {}
 
-def subscribe_bus():
-    global subscribed
-
-    if not subscribed and app.config.has_key('sys.bus'):
-        logger.debug('subscribe')
-        app.config['sys.bus'].add_subscription('json')
-        subscribed = True
-
-    #if subscribed:
-    #    return app.config['sys.bus']
-    #else:
-    #    return None
-    return app.config['sys.bus']
-
-def dictToList(d):
-    """
-    convert dict to list
-    dict key is inserted in dict item as id
-    """
-    l = []
-    try:
-        if not isinstance(d, dict):
-            #not a dict!
-            logger.fatal('dictToList: Unable to convert non dict variable')
-            logger.debug('%s = %s' % (type(d), str(d)))
-        else:
-            for key in d:
-                if isinstance(d[key], dict):
-                    tmp = d[key]
-                else:
-                    tmp = {}
-                    tmp['value'] = d[key]
-                tmp['__key'] = key
-                l.append(tmp)
-    except:
-        logger.exception('dictToList exception:')
-        logger.debug('%s = %s' % (type(d), str(d)))
-    return l
 
 def check_auth(username, password):
     """
@@ -145,6 +108,10 @@ def check_auth(username, password):
 def execute_command(command, to, params):
     """
     Execute specified command
+    @param command: command to execute
+    @param to: command recipient
+    @param parmas: command parameters
+    @return command response (None if boardcast message)
     """
     #get bus
     bus = app.config['sys.bus']
@@ -218,12 +185,11 @@ def upload():
 
     return resp
 
-        
 @app.route('/command', method=['POST','GET'])
 @auth_basic(check_auth)
 def command():
     """
-    Execute command on system
+    Execute command on raspiot
     """
     logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
@@ -231,18 +197,26 @@ def command():
         #prepare data to push
         if bottle.request.method=='GET':
             #GET request
-            tmp_params = bottle.request.query
-            logger.debug('params: %s' % dir(params))
-            command = None
-            to = None
-            if 'to' in tmp_params.keys():
-                to = tmp_params['to']
-                del tmp_params['to']
-            if 'command' in tmp_params.keys():
-                command = tmp_params['command']
-                del tmp_params['command']
-            if len(tmp_params)>0:
-                params = tmp_params['params']
+            command = bottle.request.query.command
+            to = bottle.request.query.to
+            params = bottle.request.query.params
+            #handle params: 
+            # - could be specified as params field with json 
+            # - or not specified in which case parameters are directly specified in query string
+            if len(params)==0:
+                #no params value specified, use all query string
+                params = dict(bottle.request.query)
+                #remove useless parameters
+                if params.has_key('command'):
+                    del params['command']
+                if params.has_key('to'):
+                    del params['to']
+            else:
+                #params specified in query string, unjsonify it
+                try:
+                    params = json.loads(params)
+                except:
+                    params = None
 
         else:
             #POST request (need json)
@@ -272,6 +246,9 @@ def command():
 @app.route('/registerpoll', method='POST')
 @auth_basic(check_auth)
 def registerpoll():
+    """
+    Register poll
+    """
     #get auth infos
     (username, password) = bottle.parse_auth(bottle.request.get_header('Authorization', ''))
 
@@ -359,14 +336,16 @@ def default(path):
 @auth_basic(check_auth)
 def modules():
     """
-    Returns loaded modules in app to inject associated modules in webapp
-    @return mod.XXX modules only
+    Return raspiot configuration:
+     - loaded modules (return only mod.XXX modules)
     """
+    #add modules
     modules = []
     for module in app.config:
         if module.startswith('mod.'):
             #external module found, return it
             modules.append(module.replace('mod.',''))
+
     return json.dumps(modules)
 
 @app.route('/')

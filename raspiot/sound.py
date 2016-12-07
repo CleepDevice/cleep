@@ -13,9 +13,6 @@ import time
 
 __all__ = ['Sound']
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG);
-
 class PlaySound(Thread):
     """
     Play sound thread
@@ -26,7 +23,11 @@ class PlaySound(Thread):
         @param filepath: sound filepath
         @param filedesc: file descriptor. Closed at end of playback
         """
+        #init
         Thread.__init__(self)
+        self.logger = logging.getLogger(self.__class_.__name__)
+
+        #members
         self.filepath = filepath
         self.delete = delete
         self.__continu = True
@@ -43,12 +44,12 @@ class PlaySound(Thread):
         """
         try:
             #init player
-            logger.debug('init player')
+            self.logger.debug('init player')
             pygame.mixer.init()
             pygame.mixer.music.load(self.filepath)
 
             #play sound
-            logger.debug('play sound file "%s"' % self.filepath)
+            self.logger.debug('play sound file "%s"' % self.filepath)
             pygame.mixer.music.play()
 
             #wait until end of playback or if user stop thread
@@ -62,15 +63,19 @@ class PlaySound(Thread):
 
             #delete file
             if self.delete:
-                logger.debug('PlaySound: delete sound file "%s"' % self.filepath)
+                self.logger.debug('PlaySound: delete sound file "%s"' % self.filepath)
                 os.remove(self.filepath)
         except:
-            logger.exception('Exception during sound playing:')
+            self.logger.exception('Exception during sound playing:')
 
 class Sound(RaspIot):
 
-    CONFIG_FILE = 'sound.conf'
-    DEPS = []
+    MODULE_CONFIG_FILE = 'sound.conf'
+    MODULE_DEPS = []
+
+    DEFAULT_CONFIG = {
+        'lang': 'en'
+    }
     SOUNDS_PATH = '/var/opt/raspiot/sounds'
     ALLOWED_EXTS = ['mp3', 'wav', 'ogg']
     TTS_LANGS = {
@@ -128,15 +133,15 @@ class Sound(RaspIot):
     }
 
     def __init__(self, bus):
+        #init
         RaspIot.__init__(self, bus)
+        self.logger = logging.getLogger(self.__class__.__name__)    
+
         #members
         self.__sound_thread = None
 
         #init config
-        config = self._get_config()
-        if not config.has_key('lang'):
-            config['lang'] = 'en'
-            self._save_config(config)
+        self._check_config(Sound.DEFAULT_CONFIG)
 
         #make sure sounds path exists
         if not os.path.exists(Sound.SOUNDS_PATH):
@@ -154,6 +159,7 @@ class Sound(RaspIot):
     def set_lang(self, lang):
         """
         Set tts lang
+        @param lang: tts lang (see TTS_LANGS)
         """
         #check params
         if lang not in Sound.TTS_LANGS.keys():
@@ -167,6 +173,7 @@ class Sound(RaspIot):
     def get_volume(self):
         """
         Get volume
+        @return volume value (integer)
         """
         pygame.mixer.init()
         volume = pygame.mixer.music.get_volume()
@@ -176,6 +183,7 @@ class Sound(RaspIot):
     def set_volume(self, volume):
         """
         Set volume
+        @param volume: volume value (int)
         """
         pygame.mixer.init()
         pygame.mixer.music.set_volume(int(volume/100.0))
@@ -184,6 +192,7 @@ class Sound(RaspIot):
     def play_sound(self, filepath):
         """
         Play specified file
+        @param filepath: file path to play
         """
         #check file validity
         if not filepath.startswith(Sound.SOUNDS_PATH) or not os.path.exists(filepath):
@@ -255,7 +264,7 @@ class Sound(RaspIot):
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
-        logger.debug('Add sound of extension: %s' % file_ext[1])
+        self.logger.debug('Add sound of extension: %s' % file_ext[1])
         if file_ext[1][1:] not in Sound.ALLOWED_EXTS:
             raise bus.InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sound.ALLOWED_EXTS))
 
@@ -263,12 +272,12 @@ class Sound(RaspIot):
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
             path = os.path.join(Sound.SOUNDS_PATH, name)
-            logger.debug('Name=%s path=%s' % (name, path))
+            self.logger.debug('Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
-            logger.info('File "%s" uploaded successfully' % name)
+            self.logger.info('File "%s" uploaded successfully' % name)
         else:
             #file doesn't exists
-            logger.error('Sound file "%s" doesn\'t exist' % filepath)
+            self.logger.error('Sound file "%s" doesn\'t exist' % filepath)
             raise Exception('Sound file "%s"  doesn\'t exists' % filepath)
 
         return True

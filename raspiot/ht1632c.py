@@ -53,9 +53,6 @@ from threading import Thread
 from datetime import datetime
 import re
 
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG)
-
 class InvalidPanel(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -74,7 +71,11 @@ class ScrollingMessage(Thread):
     Use to scroll specified message until end of thread
     """
     def __init__(self, board_size, message_length, buf, buf_index, direction, speed, write_pixels_callback):
+        #init
         Thread.__init__(self)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #members
         self.board_size = board_size
         self.message_length = message_length
         self.buf = buf
@@ -109,7 +110,7 @@ class ScrollingMessage(Thread):
                 #pause
                 time.sleep(self.speed)
 
-            logger.debug('new scrolling')
+            self.logger.debug('new scrolling')
             
 
 FONT5x7 = [
@@ -284,7 +285,10 @@ class HT1632C():
     SCROLL_RIGHT_TO_LEFT = 1
 
     def __init__(self, pin_a0, pin_a1, pin_a2, pin_e3, panel_count):
-        #save members
+        #init
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #members
         self.__pin_a0 = pin_a0
         self.__pin_a1 = pin_a1
         self.__pin_a2 = pin_a2
@@ -292,7 +296,7 @@ class HT1632C():
         self.__panel_count = panel_count
         self.__scrolling_thread = None
         self.speed = 0.05
-        self.direction = HT1632C.SCROLL_LEFT_TO_RIGHT
+        self.direction = HT1632C.SCROLL_RIGHT_TO_LEFT
         self.unit_days = 'days'
         self.unit_hours = 'hours'
         self.unit_minutes = 'mins'
@@ -349,19 +353,19 @@ class HT1632C():
         """
         #stop scrolling thread
         if self.__scrolling_thread!=None:
-            logger.debug('Stop scrolling thread')
+            self.logger.debug('Stop scrolling thread')
             self.__scrolling_thread.stop()
             self.__scrolling_thread.join(1.0)
-            logger.debug('Scrolling thread joined')
+            self.logger.debug('Scrolling thread joined')
             self.__scrolling_thread = None
 
         #clear screen
-        logger.debug('Clear board')
+        self.logger.debug('Clear board')
         self.clear()
         time.sleep(1.0)
 
         #cleanup gpio
-        logger.debug('Cleanup GPIOs')
+        self.logger.debug('Cleanup GPIOs')
         GPIO.cleanup()
             
     def __select_panel(self, panel):
@@ -505,7 +509,7 @@ class HT1632C():
         @param position: current position in buffer
         @return new position in buffer
         """
-        logger.debug('append text %s @ %d' % (text, position))
+        self.logger.debug('append text %s @ %d' % (text, position))
         text_size = len(text)
         for col in range(text_size):
             position = self.__append_letter(buf, text[col], position)
@@ -530,7 +534,7 @@ class HT1632C():
 
         elif size<board_size:
             #requested buffer size is not larger enought, return board size
-            logger.debug('Requested size is not larger enough, return board size buffer')
+            self.logger.debug('Requested size is not larger enough, return board size buffer')
             return np.zeros((board_size,), dtype=np.uint8)
 
         else:
@@ -630,13 +634,19 @@ class HT1632C():
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
-        logger.debug('message length=%d' % message_length)
+        self.logger.debug('message length=%d' % message_length)
+
+        #stop existing scrolling thread
+        if self.__scrolling_thread!=None:
+            self.logger.debug('Stop already scrolling message')
+            self.__scrolling_thread.stop()
+            self.__scrolling_thread = None
 
         #scroll or display message
         if message_length>self.__get_board_size():
             #scroll message
 
-            logger.debug('Add scrolling message')
+            self.logger.debug('Add scrolling message')
             #get buffer
             buf = self.__get_buffer(self.__get_board_size() + message_length)
 
@@ -657,19 +667,13 @@ class HT1632C():
                 else:
                     buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
-            #stop existing thread
-            if self.__scrolling_thread!=None:
-                logger.debug('Stop already scrolling message')
-                self.__scrolling_thread.stop()
-                self.__scrolling_thread = None
-
             #launch scrolling thread
             self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels)
             self.__scrolling_thread.start()
 
         else:
             #display message
-            logger.debug('Add NOT scrolling  message')
+            self.logger.debug('Add NOT scrolling  message')
 
             #get buffer
             buf = self.__get_buffer(message_length)
@@ -708,7 +712,7 @@ class HT1632C():
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
-        logger.debug('message length=%d' % message_length)
+        self.logger.debug('message length=%d' % message_length)
 
         #fill buffer
         #text_size = font_size * len(message)

@@ -2,14 +2,11 @@ import logging
 import os
 import json
 from bus import BusClient
-from threading import Lock
+from threading import Lock, Thread
 import time
 import copy
 
 __all__ = ['RaspIot', 'CommandError']
-
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
 
 class CommandError(Exception):
     def __init__(self, value):
@@ -25,10 +22,14 @@ class RaspIot(BusClient):
      - message bus access
     """
     CONFIG_DIR = '/etc/raspiot/'
-    DEPS = []
+    MODULE_DEPS = []
 
     def __init__(self, bus):
+        #init
         BusClient.__init__(self, bus)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #load module configuration
         self.__configLock = Lock()
         self._config = self._load_config()
 
@@ -48,8 +49,8 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         out = None
         try:
-            path = os.path.join(RaspIot.CONFIG_DIR, self.CONFIG_FILE)
-            logger.debug('Loading conf file %s' % path)
+            path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
+            self.logger.debug('Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
                 f = open(path, 'r')
                 raw = f.read()
@@ -65,7 +66,7 @@ class RaspIot(BusClient):
             self._config = json.loads(raw)
             out = self._config
         except:
-            logger.exception('Unable to load config file %s:' % path)
+            self.logger.exception('Unable to load config file %s:' % path)
         self.__configLock.release()
         return out
  
@@ -77,13 +78,13 @@ class RaspIot(BusClient):
         out = False
         force_reload = False
         try:
-            path = os.path.join(RaspIot.CONFIG_DIR, self.CONFIG_FILE)
+            path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             f = open(path, 'w')
             f.write(json.dumps(config))
             f.close()
             force_reload = True
         except:
-            logger.exception('Unable to write config file %s:' % path)
+            self.logger.exception('Unable to write config file %s:' % path)
         self.__configLock.release()
         if force_reload:
             #reload config
@@ -117,7 +118,7 @@ class RaspIot(BusClient):
                 config[key] = keys[key]
                 fixed = True
         if fixed:
-            logger.debug('Config file fixed')
+            self.logger.debug('Config file fixed')
             self._save_config(config)
 
     def _get_dependencies(self):
@@ -131,4 +132,15 @@ class RaspIot(BusClient):
         Stop process
         """
         BusClient.stop(self)
+
+    def __get_public_methods(self, obj):
+        """
+        Return "public" methods of specified object
+        @return array
+        """
+        ms = dir(obj)
+        for m in ms[:]:
+            if m.startswith('_') or not callable(getattr(obj, m)):
+                ms.remove(m)
+        return ms
 
