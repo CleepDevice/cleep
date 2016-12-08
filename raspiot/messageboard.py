@@ -23,6 +23,15 @@ class Message():
         self.dynamic = False
         self.uuid = str(uuid.uuid4())
 
+    def from_dict(self, message):
+        """
+        Load message from dict
+        """
+        self.message = message['message']
+        self.start = message['start']
+        self.end = message['end']
+        self.uuid = message['uuid']
+
     def to_dict(self):
         """
         Return message as dict
@@ -56,12 +65,20 @@ class Messageboard(RaspIot):
         #init
         RaspIot.__init__(self, bus)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         #check config
         self._check_config(Messageboard.DEFAULT_CONFIG)
 
         #members
         self.__current_message = None
+        self.messages = []
+
+        #load messages
+        for msg in self._config['messages']:
+            message = Message()
+            message.from_dict(msg)
+            self.messages.append(message)
 
         #init board
         pin_a0 = 15
@@ -104,23 +121,26 @@ class Messageboard(RaspIot):
         now = time.time()
         self.logger.debug('__display_message at %d' % now)
 
-        #get config
-        config = self._get_config()
 
         #get messages to display
-        message_removed = False
         messages_to_display = []
-        for msg in config['messages'][:]:
+        for msg in self.messages[:]:
             if now>=msg.start and now<=msg.end:
                 #this message could be displayed
                 messages_to_display.append(msg)
+
             elif now>msg.end:
-                #remove obsolete message
                 self.logger.debug('Remove obsolete message %s' % str(msg))
-                message_removed = True
-                config['messages'].remove(msg)
-        if message_removed:
-            self._save_config(config)
+                #remove obsolete message from config
+                config = self._get_config()
+                for msg_conf in config['messages']:
+                    if msg_conf.uuid==msg.uuid:
+                        config['messages'].remove(msg)
+                        self._save_config(config)
+                        break
+
+                #remove message internaly
+                self.messages.remove(msg)
 
         #sort messages to display by date
         #msg's displayed_time is set when message is displayed
@@ -216,11 +236,18 @@ class Messageboard(RaspIot):
         @param end: date to stop displaying message
         @return message uuid
         """
+        #create message object
         msg = Message(message, start, end)
         self.logger.debug('add new message: %s' % str(msg))
+
+        #save it to config
         config = self._get_config()
-        config['messages'].append(msg)
+        config['messages'].append(msg.to_dict())
         self._save_config(config)
+
+        #save it to internaly
+        self.messages.append(msg)
+        
         return msg.uuid
 
     def del_message(self, uuid):
@@ -229,15 +256,24 @@ class Messageboard(RaspIot):
         @param uuid: message uuid
         """
         deleted = False
+        #delete message from config
         config = self._get_config()
         for msg in config['messages']:
-            if msg.uuid==uuid:
+            if msg['uuid']==uuid:
                 config['messages'].remove(msg)
                 deleted = True
-                self.logger.debug('Message "%s" deleted' % msg.message)
                 break
         if deleted:
             self._save_config(config)
+
+        #and delete it internaly
+        for msg in self.messages[:]:
+            if msg.uuid==uuid:
+                self.messages.remove(msg)
+                break
+
+        self.logger.debug('Message "%s" deleted' % msg.message)
+
         return deleted
 
     def replace_message(self, uuid, message, start, end):
@@ -248,11 +284,11 @@ class Messageboard(RaspIot):
         @param start: date to start displaying message from
         @param end: date to stop displaying message
         """
-        #search for message
+        #replace message in config
         replaced = False
         config = self._get_config()
         for msg in config['messages']:
-            if msg.uuid==uuid:
+            if msg['uuid']==uuid:
                 #message found, replace infos by new ones
                 msg.message = message
                 msg.start = start
@@ -260,6 +296,16 @@ class Messageboard(RaspIot):
                 replaced = True
         if replaced:
             self._save_config(config)
+
+        #replace message internaly
+        for msg in self.messages:
+            if msg.uuid==uuid:
+                msg.message = message
+                msg.start = start
+                msg.end = end
+
+        self.logger.debug('Message "%s" replaced' % msg.message)
+
         return replaced
 
     def get_messages(self):
@@ -267,8 +313,7 @@ class Messageboard(RaspIot):
         Return all messages
         """
         msgs = []
-        config = self._get_config()
-        for msg in config['messages']:
+        for msg in self.messages:
             msgs.append(msg.to_dict())
         return msgs
 

@@ -581,7 +581,7 @@ class HT1632C():
         #search for time pattern
         now_ts = time.time()
         now_dt = datetime.fromtimestamp(now_ts)
-        for match in list(re.finditer('(#time)(:[0-9]+)?', message)):
+        for match in list(re.finditer('(:time)(:[0-9]+)?', message)):
             message = message.replace(match.group(0), PATTERN_REPLACEMENT*len(match.group(0)), 1)
             dynamic = True
             if match.group(2) is not None:
