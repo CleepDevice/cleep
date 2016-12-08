@@ -48,7 +48,8 @@ class Messageboard(RaspIot):
         'unit_minutes': 'minutes',
         'unit_hours': 'hours',
         'unit_days': 'days',
-        'messages' : []
+        'messages' : [],
+        'speed': 0.05
     }
 
     def __init__(self, bus):
@@ -70,6 +71,7 @@ class Messageboard(RaspIot):
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
         self.__set_board_units()
+        self.board.set_scroll_speed(self._config['speed'])
 
         #init display task
         self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
@@ -182,9 +184,29 @@ class Messageboard(RaspIot):
     def get_duration(self):
         """
         Return message cycle duration
-        @param duration
+        @return duration
         """
         return self._config['duration']
+
+    def set_speed(self, duration):
+        """
+        Configure scrolling message speed
+        @param speed: message speed
+        """
+        #save speed
+        config = self._get_config()
+        config['speed'] = speed
+        self._save_config(config)
+
+        #set board scroll speed
+        self.board.set_scroll_speed(speed)
+
+    def get_speed(self):
+        """
+        Return scrolling message speed
+        @return speed
+        """
+        return self._config['speed']
 
     def add_message(self, message, start, end):
         """
