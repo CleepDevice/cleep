@@ -301,6 +301,7 @@ class HT1632C():
         self.unit_days = 'days'
         self.unit_hours = 'hours'
         self.unit_minutes = 'mins'
+        self.__turned_on = True
 
         #configure gpios
         GPIO.setmode(GPIO.BOARD)
@@ -630,9 +631,13 @@ class HT1632C():
         Display message to board
         @param message: message to display
         @param position: position of message in board (if message is too long it will be truncated)
-        @return True if message is dynamic (some dynamic patterns (like time) are found
+        @return True if message is dynamic or False if board is off or message not dynamic
         """
         buffer_position = 0
+
+        #drop message if board is off
+        if not self.__turned_on:
+            return False
 
         #search for patterns in message
         patterns, message, dynamic = self.__search_for_patterns(message)
@@ -708,9 +713,13 @@ class HT1632C():
         @param message: message to display
         @param speed: animation speed
         @param direction: scroll direction
-        @return True if message is dynamic
+        @return True if message is dynamic or False if board is off or message not dynamic
         """
         font_size = 5
+
+        #drop message if board is off
+        if not self.__turned_on:
+            return False
 
         #search for logos in message
         patterns, message, dynamic = self.__search_for_patterns(message)
@@ -784,6 +793,18 @@ class HT1632C():
         self.unit_days = days
         self.unit_hours = hours
         self.unit_minutes = minutes
+
+    def turn_on(self):
+        """
+        Turn on board
+        """
+        self.__turned_on = True
+
+    def turn_off(self):
+        """
+        Turn off board
+        """
+        self.__turned_on = False
 
     def test(self):
         self.clear()

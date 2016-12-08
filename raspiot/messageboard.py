@@ -343,6 +343,18 @@ class Messageboard(RaspIot):
         #set board units
         self.__set_board_units()
 
+    def turn_on(self):
+        """
+        Turn on board
+        """
+        self.board.turn_on()
+
+    def turn_off(self):
+        """
+        Turn off board
+        """
+        self.board.turn_off()
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
