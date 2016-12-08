@@ -102,7 +102,10 @@ class RaspIot(BusClient):
         """
         Return copy of config dict
         """
-        return copy.deepcopy(self._config)
+        self.__configLock.acquire(True)
+        copy_ = copy.deepcopy(self._config)
+        self.__configLock.release()
+        return copy_
 
     def _check_config(self, keys):
         """
