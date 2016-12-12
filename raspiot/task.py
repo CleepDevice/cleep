@@ -14,8 +14,7 @@ __all__ = ['Task', 'BackgroundTask']
 class Task:
     """
     Run a task asynchronously
-    A task can be periodic or not
-    A periodic task is executed at regular interval while a non periodic task is executed once
+    If interval specified task is executed periodically. If interval is not specified, task is executed imediately once
     """
     def __init__(self, interval, task, task_args=[], task_kwargs={}):
         """
@@ -26,22 +25,39 @@ class Task:
         self._task = task
         self._args = task_args
         self._kwargs = task_kwargs
-        self._interval = interval 
+        if interval is None:
+            self._interval = 0.0
+        else:
+            self._interval = interval
         self.__timer = None
+        self._run_count = None
 
     def __run(self):
         """
         Run the task
         """
         #execute task
+        self._run_count -= 1
+        run_again = False
         self._task(*self._args, **self._kwargs)
 
         #launch again the timer if periodic task
         if self._interval:
+            if self._run_count is None:
+                #interval specified + run_count is NOT configured
+                run_again = True
+            else:
+                #interval specified + run_count is configured
+                if self._run_count>0:
+                    run_again = True
+        else:
+            #interval not configured, don't run task again
+            self._timer = None
+
+        #run again task?
+        if run_again:
             self.__timer = threading.Timer(self._interval, self.__run)
             self.__timer.start()
-        else:
-            self._timer = None
 
     def set_interval(self, interval):
         """
@@ -68,10 +84,33 @@ class Task:
             self.__timer = None
 
 
+class CountTask(Task):
+    """
+    Run task X times
+    """
+    def __init__(self, interval, task, count=1, task_args=[], task_kwargs={}):
+        """
+        Constructor
+        @param interval : interval to repeat task (in s)
+        @param task: function to call periodically
+        @param count: number of times to run task
+        """
+        Task.init(self, interval, task, task_args, task_kwargs)
+        self._run_count = count
+
+
 class BackgroundTask(threading.Thread):
-    def __init__(self, process, pause=0.25):
+    """
+    Run background task indefinitely (thread helper)
+    """
+    def __init__(self, task, pause=0.25):
+        """
+        Constructor
+        @param task: function to call
+        @param pause: pause between task call
+        """
         threading.Thread.__init__(self)
-        self.process = process
+        self.task = task
         if pause<=0.25:
             pause = 0.25
         self.pause = int(float(pause)/0.25)
@@ -82,7 +121,7 @@ class BackgroundTask(threading.Thread):
 
     def run(self):
         while self.running:
-            self.process()
+            self.task()
             for i in range(self.pause):
                 if not self.running:
                     break
