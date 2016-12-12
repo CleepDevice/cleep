@@ -37,7 +37,8 @@ class Task:
         Run the task
         """
         #execute task
-        self._run_count -= 1
+        if self._run_count is not None:
+            self._run_count -= 1
         run_again = False
         self._task(*self._args, **self._kwargs)
 
@@ -88,7 +89,7 @@ class CountTask(Task):
     """
     Run task X times
     """
-    def __init__(self, interval, task, count=1, task_args=[], task_kwargs={}):
+    def __init__(self, interval, task, count, task_args=[], task_kwargs={}):
         """
         Constructor
         @param interval : interval to repeat task (in s)
