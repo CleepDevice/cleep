@@ -53,7 +53,7 @@ class Shutter(RaspIot):
             #gpio turned off, get gpio
             gpio = event['params']['gpio']
 
-            #search frape and execute action
+            #search drape and execute action
             for shutter in self._config:
                 if self._config[shutter]['switch_open']==gpio:
                     self.__execute_action(self._config[shutter], True)
