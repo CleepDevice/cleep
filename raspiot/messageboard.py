@@ -347,12 +347,16 @@ class Messageboard(RaspIot):
         """
         Turn on board
         """
+        #just turn on display
         self.board.turn_on()
 
     def turn_off(self):
         """
         Turn off board
         """
+        #clear board first
+        self.clear()
+        #and turn off display
         self.board.turn_off()
 
 
