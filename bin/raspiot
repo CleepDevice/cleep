@@ -88,13 +88,16 @@ if __name__ == '__main__':
         bus = bus.MessageBus()
         app.config['sys.bus'] = bus
 
-        #load rpcserver
-
         #load user modules
         logger.debug('Loading user modules:')
         loaded_modules = []
         for module_name in config['modules']:
             logger.debug(' - %s:' % (module_name));
+
+            #check if not already loaded
+            if module_name in loaded_modules:
+                logger.debug('   - Module already loaded')
+                continue
 
             #get module class
             logger.debug('   - loading module...')
@@ -116,6 +119,7 @@ if __name__ == '__main__':
                         app.config['lib.%s' % dep] = dep_class_(bus)
                         app.config['lib.%s' % dep].start()
                         logger.debug('===============END %s===============', dep)
+                        loaded_modules.append(dep)
                     
             #and run instance
             logger.debug('   - starting module...')
