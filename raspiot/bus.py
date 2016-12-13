@@ -366,17 +366,37 @@ class BusClient(threading.Thread):
         @return tuple (True/False, args to pass during command call/None)
         """
         args = {}
-        (params, _, _, _) = inspect.getargspec(function)
+        params_with_default = {}
+
+        #get function parameters
+        (params, _, _, defaults) = inspect.getargspec(function)
+        self.logger.debug('params:%s default:%s' % (params, defaults))
+
+        #check message parameters according to function parameters
+        if message is None or not isinstance(message, dict) and len(params)==0:
+            #no parameter needed
+            return True, args
+
+        #check params with default value
+        if defaults is None:
+            defaults = ()
+        for param in params:
+            params_with_default[param] = False
+        for pos in range(len(params)-len(defaults), len(params)):
+            params_with_default[params[pos]] = True
+
+        #fill parameters list
         for param in params:
             if param=='self':
                 #drop self param
                 pass
-            elif message is None or not isinstance(message, dict) or not message.has_key(param):
-                #parameters is not available in message
+            elif not message.has_key(param) and not params_with_default[param]:
+                #missing parameter
                 return False, None
             else:
                 #update function arguments list
                 args[param] = message[param]
+
         return True, args
 
     def push(self, request, timeout=3.0):
@@ -417,7 +437,7 @@ class BusClient(threading.Thread):
                 try:
                     #get message
                     msg = self.bus.pull(self.__name)
-                    self.logger.debug('BusClient: %s received %s' % (self.__name, msg))
+                    #self.logger.debug('BusClient: %s received %s' % (self.__name, msg))
 
                 except NoMessageAvailable:
                     #no message available
@@ -428,7 +448,7 @@ class BusClient(threading.Thread):
                 resp = MessageResponse()
        
                 #process message
-                self.logger.debug('BusClient: %s process message' % (self.__name))
+                #self.logger.debug('BusClient: %s process message' % (self.__name))
                 if msg.has_key('message'):
                     if msg['message'].has_key('command'):
                         #command received, process it
