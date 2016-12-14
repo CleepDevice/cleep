@@ -111,26 +111,27 @@ class Script(Thread):
                 self.logger.exception('Fatal error in script "%s"' % self.script)
                 self.__exec_script()
         else:
-            else:
-                #loop forever
-                while self.__continu:
-                    if self.__disabled:
-                        #script is disabled
-                        time.sleep(1.0)
-                    elif len(self.__events)>0:
-                        #event in queue, process it
-                        event = self.__events.pop()
-                        self.logger.info('exec script')
+            #loop forever
+            while self.__continu:
+                if self.__disabled:
+                    #script is disabled
+                    time.sleep(1.0)
 
-                        #and execute file
-                        try:
-                            execfile(self.script)
-                            self.last_execution = int(time.time())
-                        except:
-                            self.logger.exception('Fatal error in script "%s"' % self.script)
-                    else:
-                        #no event, pause
-                        time.sleep(0.25)
+                elif len(self.__events)>0:
+                    #event in queue, process it
+                    event = self.__events.pop()
+                    self.logger.info('exec script')
+                    
+                    #and execute file
+                    try:
+                        execfile(self.script)
+                        self.last_execution = int(time.time())
+                    except:
+                        self.logger.exception('Fatal error in script "%s"' % self.script)
+
+                else:
+                    #no event, pause
+                    time.sleep(0.25)
 
 
 class Action(RaspIot):
@@ -148,7 +149,7 @@ class Action(RaspIot):
         #init
         RaspIot.__init__(self, bus)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #check config
         self._check_config(Action.DEFAULT_CONFIG)
@@ -210,7 +211,7 @@ class Action(RaspIot):
         """
         Event received
         """
-        #self.logger.debug('Event received %s' % str(event))
+        self.logger.debug('Event received %s' % str(event))
         #push event to all script threads
         for script in self.__scripts:
             self.__scripts[script].push_event(event)
