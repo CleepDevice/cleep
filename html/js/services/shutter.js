@@ -70,7 +70,6 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Open shutter
      */
     self.openShutter = function(device) {
-        console.log('open shutter', device);
         return rpcService.sendCommand('open_shutter', 'shutter', {'name':device['name']})
         .then(function(resp) {
             return resp.data;
@@ -114,6 +113,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opening'
+                    break;
                 }
             }
         }
@@ -129,6 +129,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closing'
+                    break;
                 }
             }
         }
@@ -144,6 +145,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opened'
+                    break;
                 }
             }
         }
@@ -159,6 +161,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closed'
+                    break;
                 }
             }
         }
@@ -174,6 +177,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'partial'
+                    break;
                 }
             }
         }
