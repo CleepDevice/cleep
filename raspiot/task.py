@@ -96,7 +96,7 @@ class CountTask(Task):
         @param task: function to call periodically
         @param count: number of times to run task
         """
-        Task.init(self, interval, task, task_args, task_kwargs)
+        Task.__init__(self, interval, task, task_args, task_kwargs)
         self._run_count = count
 
 
@@ -143,9 +143,13 @@ if __name__ == '__main__':
     #t = Task(2.0, tick, ['hello'])
     #t.start()
 
-    t = BackgroundTask(tock, 1.0)
+    #t = BackgroundTask(1.0, tock)
+    #t.start()
+
+    t = CountTask(1.0, tick, 1, ['coucou'])
     t.start()
-    time.sleep(5.0)
-    print '-> stop background task'
+
+    time.sleep(10.0)
+    print '-> stop task'
     t.stop()
 
