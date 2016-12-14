@@ -1,3 +1,4 @@
 **/*.bak
 **/*.tmp
 **/*.pyc
+raspiot/test.py

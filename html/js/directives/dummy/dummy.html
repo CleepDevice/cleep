@@ -13,7 +13,7 @@
         <label class="col-sm-2">Open</label>
         <div class="col-sm-6">
             <select class="form-control" ng-model="gpio">
-                <option ng-repeat="option in raspiGpios" value="{{option.key}}">{{option.key}}</option>
+                <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
             </select>
         </div>
     </div>
