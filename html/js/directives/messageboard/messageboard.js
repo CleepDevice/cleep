@@ -19,6 +19,7 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
             }
         };
         $scope.duration = 60;
+        $scope.speed = 0.05;
         $scope.unitDays = 'days';
         $scope.unitHours = 'hours';
         $scope.unitMinutes = 'minutes';
@@ -34,6 +35,8 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
             getDuration();
             //get units
             getUnits();
+            //get speed
+            getSpeed();
         }
 
         /**
@@ -61,6 +64,17 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
             messageboardService.getDuration()
                 .then(function(resp) {
                     $scope.duration = resp;
+                });
+        };
+
+        /**
+         * Get speed
+         */
+        function getSpeed()
+        {
+            messageboardService.getSpeed()
+                .then(function(resp) {
+                    $scope.speed = resp;
                 });
         };
 
@@ -130,6 +144,20 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         };
 
         /**
+         * Set speed
+         */
+        $scope.setSpeed = function() {
+            container.start();
+            messageboardService.setSpeed($scope.speed)
+                .then(function(resp) {
+                    growl.success('Speed saved');
+                })
+                .finally(function() {
+                    container.stop();
+                });
+        };
+
+        /**
          * Set units
          */
         $scope.setUnits = function() {
@@ -141,6 +169,20 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
                 .finally(function() {
                     container.stop();
                 });
+        };
+
+        /**
+         * Turn on/off board
+         */
+        $scope.turnOff = function(off) {
+            if( off )
+            {
+                messageboardService.turnOff();
+            }
+            else
+            {
+                messageboardService.turnOn();
+            }
         };
 
         //init directive
