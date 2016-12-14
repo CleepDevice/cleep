@@ -90,13 +90,20 @@ if __name__ == '__main__':
 
         #load user modules
         logger.debug('Loading user modules:')
-        loaded_modules = []
+        loaded_modules = {}
         for module_name in config['modules']:
             logger.debug(' - %s:' % (module_name));
 
             #check if not already loaded
-            if module_name in loaded_modules:
-                logger.debug('   - Module already loaded')
+            if module_name in loaded_modules.keys():
+                #update module name if necessary
+                if loaded_modules[module_name]:
+                    #module already loaded as library, set loaded as module
+                    logger.debug('   - Module already loaded as library. Set it as module')
+                    app.config['mod.%s' % module_name] = app.config.pop('lib.%s' % module_name)
+                    loaded_modules[module_name] = False
+                else:
+                    logger.debug('   - Module already loaded')
                 continue
 
             #get module class
@@ -108,18 +115,17 @@ if __name__ == '__main__':
             logger.debug('   - loading module dependencies:')
             if class_.MODULE_DEPS:
                 for dep in class_.MODULE_DEPS:
-                    if dep not in loaded_modules:
+                    if dep not in loaded_modules.keys():
                         logger.debug('     - loading dependency "%s"' % dep)
                         dep_ = importlib.import_module('raspiot.%s' % dep)
                         dep_class_ = getattr(dep_, dep.capitalize())
-                        app.config['lib.%s' % dep] = dep_class_(bus)
                     
                         logger.debug('     - starting dependency...')
                         logger.debug('===============BEGIN %s===============', dep)
                         app.config['lib.%s' % dep] = dep_class_(bus)
                         app.config['lib.%s' % dep].start()
                         logger.debug('===============END %s===============', dep)
-                        loaded_modules.append(dep)
+                        loaded_modules[dep] = True
                     
             #and run instance
             logger.debug('   - starting module...')
@@ -127,7 +133,7 @@ if __name__ == '__main__':
             app.config['mod.%s' % module_name] = class_(bus)
             app.config['mod.%s' % module_name].start()
             logger.debug('---------------END %s---------------', module_name)
-            loaded_modules.append(module_name)
+            loaded_modules[module_name] = False
 
         #launch bus and webserver (blocking)
         logger.info('Raspiot running...')
