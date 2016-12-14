@@ -21,16 +21,21 @@ class GpioInputWatcher(Thread):
     callback function
     This object doesn't configure pin!
     """
-    def __init__(self, pin, on_callback, off_callback=None, level=GPIO.LOW, debounce=200):
+
+    DEBOUNCE = 0.25
+
+    def __init__(self, pin, on_callback, off_callback, level=GPIO.LOW):
         #init
         Thread.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
+        self.__debug_pin = 12
 
         #members
         self.continu = True
         self.pin = pin
         self.level = level
-        self.debounce = debounce
+        self.debounce = GpioInputWatcher.DEBOUNCE
         self.on_callback = on_callback
         self.off_callback = off_callback
 
@@ -45,27 +50,36 @@ class GpioInputWatcher(Thread):
         time_on = 0
         try:
             while self.continu:
+                #get level
                 level = GPIO.input(self.pin)
+                if self.pin==self.__debug_pin:
+                    self.logger.debug('thread=%s level=%s last_level=%s' % (str(self.ident), str(level), str(last_level)))
+
                 if last_level is None:
                     #first run, nothing to do except init values
                     pass
+
                 elif level!=last_level and level==self.level:
-                    self.logger.debug('input %s on' % str(self.pin))
+                    if self.pin==self.__debug_pin:
+                        self.logger.debug('input %s on' % str(self.pin))
                     time_on = time.time()
                     self.on_callback(self.pin)
-                    time.sleep(self.debounce/1000.0)
+                    time.sleep(self.debounce)
 
                 elif level!=last_level:
-                    self.logger.debug('input %s off' % str(self.pin))
+                    if self.pin==self.__debug_pin:
+                        self.logger.debug('input %s off' % str(self.pin))
                     if self.off_callback:
                         self.off_callback(self.pin, time.time()-time_on)
-                    time.sleep(.1)
+                    time.sleep(self.debounce)
 
                 else:
-                    time.sleep(.1)
+                    time.sleep(0.25)
+
+                #update last level
                 last_level = level
         except:
-            self.logger.debug('Exception in GpioInputWatcher')
+            self.logger.exception('Exception in GpioInputWatcher')
 
 
 
@@ -140,10 +154,14 @@ class Gpios(RaspIot):
 
     MODE_IN = 'in'
     MODE_OUT = 'out'
+    INPUT_DROP_THRESHOLD = 0.150 #in ms
 
     def __init__(self, bus):
         RaspIot.__init__(self, bus)
+        #members
         self.__input_watchers = []
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
 
         #configure RasPi
         GPIO.setmode(GPIO.BOARD)
@@ -163,6 +181,9 @@ class Gpios(RaspIot):
     def __configure_gpio(self, gpio, conf):
         """
         Configure GPIO
+        @param gpio: gpio to configure
+        @param conf: gpio config
+        @return True if gpio configured False otherwise
         """
         self.logger.debug('configuregpio: gpio=%s, conf=%s' % (gpio,conf))
         try:
@@ -191,12 +212,19 @@ class Gpios(RaspIot):
                 self.push(req)
 
             elif conf['mode']==self.MODE_IN:
-                self.logger.debug('Configure gpio %s (pin %s) as INPUT' % (gpio, pin))
+                if not conf['reverted']:
+                    self.logger.debug('Configure gpio %s (pin %s) as INPUT' % (gpio, pin))
+                else:
+                    self.logger.debug('Configure gpio %s (pin %s) as INPUT reverted' % (gpio, pin))
+
                 #configure it
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
                 #and launch input watcher
-                w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback)
+                if not conf['reverted']:
+                    w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback, GPIO.LOW)
+                else:
+                    w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback, GPIO.HIGH)
                 self.__input_watchers.append(w)
                 w.start()
             return True
@@ -279,13 +307,14 @@ class Gpios(RaspIot):
         """
         return self._config
 
-    def add_gpio(self, name, gpio, mode, keep):
+    def add_gpio(self, name, gpio, mode, keep, reverted=False):
         """
         Add new gpio
         @param name: name of gpio
         @param gpio: gpio value
         @param mode: mode (input or output)
         @param keep: keep state when restarting
+        @param reverted: set on callback as off callback and vice-versa
         """
         config = self.get_gpios()
 
@@ -308,13 +337,30 @@ class Gpios(RaspIot):
             raise bus.InvalidParameter('Gpio "%s" is already configured' % gpio)
         else:
             #gpio is valid, prepare new entry
-            config[gpio] = {'name':name, 'mode':mode, 'pin':self.get_raspi_gpios()[gpio], 'keep': keep, 'on': False}
+            config[gpio] = {
+                'name': name,
+                'mode': mode,
+                'pin': self.get_raspi_gpios()[gpio],
+                'keep': keep,
+                'on': False,
+                'reverted': reverted
+            }
 
             #save config
             self._save_config(config)
     
             #configure it
             self.__configure_gpio(gpio, config[gpio])
+
+    def add_reverted_gpio(self, name, gpio, mode, keep):
+        """
+        Add reverted gpio. It means on event is triggered on off event and vice-versa
+        @param name: name of gpio
+        @param gpio: gpio value
+        @param mode: mode (input or output)
+        @param keep: keep state when restarting
+        """
+        return self.add_gpio(name, gpio, mode, keep, True)
         
     def del_gpio(self, gpio):
         """
