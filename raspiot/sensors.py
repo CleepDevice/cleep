@@ -5,7 +5,7 @@ import os
 import logging
 from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParameter
 from raspiot import RaspIot, CommandError
-from task import CountTask
+from task import Task
 import time
 
 __all__ = ['Sensors']
@@ -16,6 +16,7 @@ class Sensors(RaspIot):
 
     ONEWIRE_PATH = '/sys/bus/w1/devices/'
     ONEWIRE_SLAVE = 'w1_slave'
+    TEMPERATURE_READING = 600 #in seconds
     DEFAULT_CONFIG = {
         'sensors': {}
     }
@@ -32,20 +33,27 @@ class Sensors(RaspIot):
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()
 
-    def __search_by_gpio(self, gpio):
+        #members
+        self.__tasks = {}
+
+        #load sensors
+        for sensor in self._config['sensors'].keys():
+            if self._config['sensors'][sensor]['type']=='motion':
+                #motion sensor
+                #nothing to do
+                pass
+            elif self._config['sensors'][sensor]['type']=='temperature':
+                #temperature sensor
+                self.__launch_temperature_task(self._config['sensors'][sensor])
+
+    def stop(self):
         """
-        Search sensor by gpio
-        @return sensor object or None if nothing found
+        Stop module
         """
-        found_sensor = None
-        sensors = self.get_sensors()
-        for sensor in sensors:
-            for gpio_ in sensors[sensor]['gpios']:
-                if gpio_==gpio:
-                    #found gpio
-                    found_sensor = sensors[sensor]
-                    break
-        return found_sensor
+        RaspIot.stop(self)
+        #stop tasks
+        for t in self.__tasks:
+            self.__tasks[t].stop()
 
     def event_received(self, event):
         """
@@ -77,8 +85,6 @@ class Sensors(RaspIot):
             if sensor:
                 if sensor['type']=='motion':
                     #motion sensor
-                    
-                    #if (event['event']=='event.gpio.on' and sensor['on_state']==1) or (event['event']=='event.gpio.off' and sensor['on_state']==0):
                     if event['event']=='event.gpio.on':
 
                         #check if task already running
@@ -105,6 +111,7 @@ class Sensors(RaspIot):
                             duration = now - sensor['timestamp']
                             sensor['timestamp'] = 0
                             sensor['on'] = False
+                            sensor['last_duration'] = event['params']['duration']
 
                             #new motion event
                             req = MessageRequest()
@@ -115,22 +122,100 @@ class Sensors(RaspIot):
             else:
                 self.logger.debug('No sensor found')
 
-    def __scan_onewire_devices(self):
+    def __search_by_gpio(self, gpio):
+        """
+        Search sensor by gpio
+        @param gpio: gpio to search
+        @return sensor object or None if nothing found
+        """
+        found_sensor = None
+        sensors = self.get_sensors()
+        for sensor in sensors:
+            for gpio_ in sensors[sensor]['gpios']:
+                if gpio_==gpio:
+                    #found gpio
+                    found_sensor = sensors[sensor]
+                    break
+        return found_sensor
+
+    def __scan_onewire_bus(self):
         """
         Scan for devices connected on 1wire bus
+        @return dict of 1wire devices {'device name': 'device full path', ...}
         """
+        out = {}
         devices = glob.glob(os.path.join(Sensors.ONEWIRE_PATH, '28*'))
         for device in devices:
             try:
                 path = os.path.join(device, Sensors.ONEWIRE_SLAVE)
-                f = open(path, 'r')
+                out[device] = path
+            except:
+                self.logger.exception('Error during 1wire bus scan:')
+
+        return out
+
+    def __read_onewire_temperature(self, device):
+        """
+        Read temperature from 1wire device
+        @param device: path to 1wire device
+        @return (temperature celsius, temperature fahrenheit)
+        """
+        tempC = None
+        tempF = None
+        try:
+            if os.path.exists(device):
+                f = open(device, 'r')
                 raw = f.readlines()
                 f.close()
                 equals_pos = raw[1].find('t=')
-                if equals_pos != -1:
-                    pass
-            except:
-                self.logger.exception('')
+                if equals_pos!=-1:
+                    tempString = raw[1][equals_pos+2:]
+                    tempC = float(tempString) / 1000.0
+                    tempF = tempC * 9.0 / 5.0 + 32.0
+        except:
+            self.logger.exception('Unable to read 1wire device file "%s":' % device)
+
+        return (tempC, tempF)
+
+    def __read_temperature(self, sensor):
+        """
+        Read temperature
+        @param sensor: sensor to use
+        """
+        if sensor:
+            #sensor specified, init variables
+            tempC = None
+            tempF = None
+
+            #read temperature according to sensor kind
+            if sensor['kind']=='1wire':
+                (tempC, tempF) = self.__read_onewire_temperature(sensor['device'])
+                if tempC and tempF:
+                    #update sensor
+                    sensor['temperature_c'] = tempC
+                    sensor['temperature_f'] = tempF
+                    sensor['timestamp'] = time.time()
+
+            #broadcast event
+            if tempC and tempF:
+                req = MessageRequest()
+                req.event = 'event.temperature.value'
+                req.params = {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}
+                self.push(req)
+
+    def __launch_temperature_task(self, sensor):
+        """
+        Launch temperature reading task
+        @param sensor: sensor name
+        """
+        if self.__tasks.has_key(sensor):
+            #sensor has already task
+            self.logger.warning('Sensor "%s" has already task running' % sensor)
+            return False
+
+        #launch task
+        self.__tasks[sensor['name']] = Task(sensor['duration'], self.__read_temperature, [sensor])
+        self.__tasks[sensor['name']].start()
 
     def get_raspi_gpios(self):
         """
@@ -166,50 +251,55 @@ class Sensors(RaspIot):
         """
         return self._config['sensors']
 
-    def add_ds18b20(self, name):
+    def get_onewire_devices(self):
         """
-        Add new motion sensor
+        Scan onewire bus and return found devices
+        """
+        return self.__scan_onewire_bus()
+
+    def add_ds18b20(self, name, path, duration):
+        """
+        Add new 1wire temperature sensor (DS18B20)
         @param name: sensor name
-        @param gpio: sensor gpio
+        @param path: onewire device path
+        @param duration: duration between temperature reading
         @return True if sensor added
         """
-        #get used gpios
-        used_gpios = self.get_used_gpios()
-
         #check values
         if not name:
             raise MissingParameter('Name parameter is missing')
-        elif not gpio:
-            raise MissingParameter('Gpio parameter is missing')
-        elif gpio in used_gpios:
-            raise InvalidParameter('Gpio is already used')
+        elif not path:
+            raise MissingParameter('Path parameter is missing')
+        elif not duration:
+            raise MissingParameter('Duration parameter is missing')
         elif name in self.get_sensors():
             raise InvalidParameter('Name is already used')
-        elif shutter_open not in self.raspi_gpios:
-            raise InvalidParameter('Gpio does not exist for this raspberry pi')
         else:
-            #configure gpio
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {'name':name+'_motion', 'gpio':gpio, 'mode':'in', 'keep':False}
-            resp = self.push(req)
-            if resp['error']:
-                raise CommandError(resp['message'])
-                
+            #try to read temperature
+            (tempC, tempF) = self.__read_onewire_temperature(path)
+
             #sensor is valid, save new entry
-            self.logger.debug('MOTION name=%s gpio=%s' % (str(name), str(gpio)))
             config = self._get_config()
             config['sensors'][name] = {
-                'name':name,
-                'gpios':[gpio],
-                'type':'motion'
+                'name': name,
+                'device': path,
+                'type': 'temperature',
+                'kind': '1wire',
+                'duration': duration,
+                'timestamp': time.time(),
+                'temperature_c': tempC,
+                'temperature_f': tempF
             }
             self._save_config(config)
+
+            #launch temperature reading task
+            self.__launch_temperature_task(config['sensors'][name])
+
             return True
+
         return False
 
-    def add_motion(self, name, gpio, on_duration, on_state):
+    def add_motion(self, name, gpio, reverted):
         """
         Add new motion sensor
         @param name: sensor name
@@ -226,18 +316,14 @@ class Sensors(RaspIot):
             raise MissingParameter('Name parameter is missing')
         elif not gpio:
             raise MissingParameter('Gpio parameter is missing')
-        elif not on_duration:
-            raise MissingParameter('On duration parameter is missing')
-        elif not on_state:
-            raise MissingParameter('On state parameter is missing')
+        elif not reverted:
+            raise MissingParameter('Reverted parameter is missing')
         elif gpio in used_gpios:
             raise InvalidParameter('Gpio is already used')
         elif name in self.get_sensors():
             raise InvalidParameter('Name is already used')
         elif gpio not in self.raspi_gpios:
             raise InvalidParameter('Gpio does not exist for this raspberry pi')
-        elif on_duration <= 0:
-            raise InvalidParameter('On duration must be positive value')
         else:
             #configure gpio
             req = MessageRequest()
@@ -249,16 +335,15 @@ class Sensors(RaspIot):
                 raise CommandError(resp['message'])
                 
             #sensor is valid, save new entry
-            self.logger.debug('MOTION name=%s gpio=%s' % (str(name), str(gpio)))
             config = self._get_config()
             config['sensors'][name] = {
                 'name': name,
                 'gpios': [gpio],
                 'type': 'motion',
                 'on': False,
-                'on_duration': 30.0,
-                'on_state': on_state,
-                'timestamp': 0
+                'reverted': reverted,
+                'timestamp': 0,
+                'last_duration': 0
             }
             self._save_config(config)
 

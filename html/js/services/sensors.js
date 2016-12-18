@@ -65,10 +65,8 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
         console.log('motion received', event, params);
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
-            console.log(''+objectsService.devices[i].__serviceName+'===sensors');
             if( objectsService.devices[i].__serviceName==='sensors' )
             {   
-                console.log(''+objectsService.devices[i].name+'==='+params.sensor);
                 if( objectsService.devices[i].name===params.sensor )
                 {   
                     objectsService.devices[i]['on'] = true;
