@@ -29,7 +29,7 @@ class GpioInputWatcher(Thread):
         Thread.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
-        self.__debug_pin = 12
+        #self.__debug_pin = 12
 
         #members
         self.continu = True
