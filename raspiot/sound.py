@@ -25,7 +25,7 @@ class PlaySound(Thread):
         """
         #init
         Thread.__init__(self)
-        self.logger = logging.getLogger(self.__class_.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         #members
         self.filepath = filepath
