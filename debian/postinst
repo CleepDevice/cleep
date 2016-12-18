@@ -1,2 +1,11 @@
 #!/bin/bash
+echo "Enabling raspiot at startup"
 /etc/raspiot/enable_raspiot_service.sh
+echo "Done"
+echo ""
+
+#install python dependencies
+echo "Installing dependencies..."
+pip install -r /etc/raspiot/requirements.txt
+rm -f /etc/raspiot/requirements.txt
+echo "Done"
