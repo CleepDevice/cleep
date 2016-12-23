@@ -316,7 +316,7 @@ class Sensors(RaspIot):
             raise MissingParameter('Name parameter is missing')
         elif not gpio:
             raise MissingParameter('Gpio parameter is missing')
-        elif not reverted:
+        elif reverted is None:
             raise MissingParameter('Reverted parameter is missing')
         elif gpio in used_gpios:
             raise InvalidParameter('Gpio is already used')
