@@ -1,9 +1,6 @@
-simplejson
 gevent
 bottle
 RPi.GPIO
 passlib
-pytz
 astral
 gTTS
-pygame

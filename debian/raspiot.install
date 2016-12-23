@@ -6,4 +6,4 @@ scripts/raspiot.service lib/systemd/system/
 scripts/raspiot etc/init.d/
 scripts/disable_raspiot_service.sh etc/raspiot/
 scripts/enable_raspiot_service.sh etc/raspiot/
-requirements.txt etc/raspiot/
+requirements.txt etc/raspiot/.requirements.txt

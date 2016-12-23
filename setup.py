@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 import raspiot
  
 setup(
-    name = 'raspiot',
+    name = 'pyraspiot',
     version = raspiot.__version__,
     packages = find_packages(),
     author = 'Tanguy Bonneau',
@@ -15,6 +15,6 @@ setup(
     long_description = open('README.md').read(),
     install_requires = open('requirements.txt').readlines(),
     include_package_data = True,
-    url = 'http://www.github.com'
+    url = 'http://www.github.com/tangb/raspiot'
 )
 

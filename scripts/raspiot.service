@@ -1,5 +1,6 @@
 [Unit]
 Description=RaspIot
+After=network.target
 [Service]
 ExecStart=/usr/bin/raspiot
 WorkingDirectory=/usr/bin
