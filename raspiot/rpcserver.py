@@ -37,6 +37,13 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelnam
 logger = logging.getLogger('rpcserver')
 #logger.setLevel(logging.DEBUG)
 
+#globals
+polling = 0
+subscribed = False
+sessions = {}
+auth_config = {}
+auth_enabled = False
+
 def bottle_logger(func):
     """
     Define bottle logging
@@ -51,32 +58,43 @@ def bottle_logger(func):
         return req
     return wrapper
 
+def load_auth():
+    """
+    Load auth and enable auth if necessary
+    """
+    global AUTH_FILE, auth_enabled, auth_config
+    try:
+        execfile(AUTH_FILE, auth_config)
+        logger.debug('auth.conf: %s' % auth_config['accounts'])
+
+        if len(auth_config['accounts'])>0 and auth_config['enabled']:
+            auth_enabled = True
+        else:
+            auth_enabled = False
+        logger.debug('Auth enabled: %s' % auth_enabled)
+    except:
+        logger.exception('Unable to load auth file. Auth disabled:')
+
 #main app
 app = bottle.app()
 app.install(bottle_logger)
+load_auth()
 
-#globals
-polling = 0
-subscribed = False
-sessions = {}
-auth_config_loaded = False
-auth_config = {}
-
+def maybe_decorated(condition, decorator):
+    """
+    Return specified decorator if condition is true
+    Otherwise return empty decorator
+    """
+    if condition:
+        return decorator
+    else:
+        return lambda x: x
 
 def check_auth(username, password):
     """
     Check auth
     """
     global auth_config_loaded, auth_config, sessions, SESSION_TIMEOUT
-
-    #load auth
-    if not auth_config_loaded:
-        try:
-            execfile(AUTH_FILE, auth_config)
-            logger.debug('auth.conf: %s' % auth_config['accounts'])
-        except:
-            logger.exception('Unable to load auth file. Auth disabled:')
-        auth_config_loaded = True
 
     #check session
     ip = bottle.request.environ.get('REMOTE_ADDR')
@@ -87,23 +105,19 @@ def check_auth(username, password):
         return True
 
     #check auth
-    if len(auth_config['accounts'])>0 and auth_config['enabled']:
-        if auth_config['accounts'].has_key(username):
-            if sha256_crypt.verify(password, auth_config['accounts'][username]):
-                #auth is valid, save session
-                sessions[session_key] = time.time() + SESSION_TIMEOUT
-                return True
-            else:
-                #invalid password
-                logger.warning('Invalid password for user "%s"' % username)
-                return False
+    if auth_config['accounts'].has_key(username):
+        if sha256_crypt.verify(password, auth_config['accounts'][username]):
+            #auth is valid, save session
+            sessions[session_key] = time.time() + SESSION_TIMEOUT
+            return True
         else:
-            #username doesn't exist
-            logger.warning('Invalid username "%s"' % username)
+            #invalid password
+            logger.warning('Invalid password for user "%s"' % username)
             return False
     else:
-        #auth disabled
-        return True
+        #username doesn't exist
+        logger.warning('Invalid username "%s"' % username)
+        return False
 
 def execute_command(command, to, params):
     """
@@ -125,7 +139,7 @@ def execute_command(command, to, params):
 
 
 @app.route('/upload', method='POST')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def upload():
     """
     Upload file
@@ -186,7 +200,7 @@ def upload():
     return resp
 
 @app.route('/command', method=['POST','GET'])
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def command():
     """
     Execute command on raspiot
@@ -244,13 +258,13 @@ def command():
     return resp
 
 @app.route('/registerpoll', method='POST')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def registerpoll():
     """
     Register poll
     """
     #get auth infos
-    (username, password) = bottle.parse_auth(bottle.request.get_header('Authorization', ''))
+    #(username, password) = bottle.parse_auth(bottle.request.get_header('Authorization', ''))
 
     #subscribe to bus
     poll_key = str(uuid.uuid4())
@@ -270,7 +284,7 @@ def pollcounter():
     polling -= 1
 
 @app.route('/poll', method='POST')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def poll():
     """
     This is the endpoint for long poll clients.
@@ -325,7 +339,7 @@ def poll():
     return json.dumps(message)
 
 @app.route('/<path:path>')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def default(path):
     """
     Servers static files from HTML_DIR.
@@ -333,7 +347,7 @@ def default(path):
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/modules', method='POST')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def modules():
     """
     Return raspiot configuration:
@@ -349,7 +363,7 @@ def modules():
     return json.dumps(modules)
 
 @app.route('/')
-@auth_basic(check_auth)
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
 def index():
     """
     Return a default document if no path was specified.
