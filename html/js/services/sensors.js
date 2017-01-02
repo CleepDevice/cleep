@@ -44,9 +44,9 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Add new motion sensor
      */
-    self.addMotion = function(name, gpio, onDuration) {
+    self.addMotion = function(name, gpio, reverted) {
         return rpcService.sendCommand('add_motion', 'sensors', 
-                {'name':name, 'gpio':gpio, 'on_duration':onDuration});
+                {'name':name, 'gpio':gpio, 'reverted':reverted});
     };
 
     /**

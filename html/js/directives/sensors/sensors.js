@@ -7,6 +7,7 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
         $scope.devices = objectsService.devices;
         $scope.name = '';
         $scope.gpio = 'GPIO2';
+        $scope.reverted = false;
 
         /**
          * Return raspberry pi gpios
@@ -31,7 +32,7 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
         };
 
         $scope.addMotion = function() {
-            sensorsService.addMotion($scope.name, $scope.gpio, 5)
+            sensorsService.addMotion($scope.name, $scope.gpio, $scope.reverted)
                 .then(function(resp) {
                     growl.success('Motion sensor added');
                 })

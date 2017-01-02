@@ -16,6 +16,15 @@
                 <option ng-repeat="(gpio, pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
             </select>
         </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-8">
+            <div class="checkbox">
+                <label> 
+                    <input type="checkbox" ng-model="reverted"> State is reverted?
+                </label>
+            </div>
+        </div>
         <div class="col-sm-2">
             <button type="submit" class="btn btn-primary" ng-click="addMotion()">
                 <span class="glyphicon glyphicon-plus-sign"></span> Add motion
@@ -27,17 +36,17 @@
         <table class="table table-striped table-bordered table-hover">
         <tr>
             <th>Name</th>
-            <th>Gpio</th>
+            <th>Gpios</th>
             <th>Type</th>
-            <th>On duration</th>
+            <th>Last time</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
         <tr ng-repeat="device in devices | deviceType:'sensors'">
             <td>{{device.name}}</td>
-            <td>{{device.gpio}}</td>
+            <td>{{device.gpios.join(',')}}</td>
             <td>{{device.type}}</td>
-            <td>{{device.on_duration}}</td>
+            <td>{{device.timestamp}}</td>
             <td>{{device.status}}</td>
             <td>
                 <button type="button" class="btn btn-default" ng-click="editDevice(device)">
