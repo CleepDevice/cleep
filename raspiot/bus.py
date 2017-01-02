@@ -16,11 +16,11 @@ __all__ = ['NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParam
 
 class NoResponse(Exception):
     def __str__(self):
-        return repr('')
+        return repr('No response')
 
 class NoMessageAvailable(Exception):
     def __str__(self):
-        return repr('')
+        return repr('No message available')
 
 class InvalidParameter(Exception):
     def __init__(self, value):
@@ -367,10 +367,11 @@ class BusClient(threading.Thread):
         """
         args = {}
         params_with_default = {}
+        #self.logger.debug('message params:%s' % (message))
 
         #get function parameters
         (params, _, _, defaults) = inspect.getargspec(function)
-        self.logger.debug('params:%s default:%s' % (params, defaults))
+        #self.logger.debug('params:%s default:%s' % (params, defaults))
 
         #check message parameters according to function parameters
         if message is None or not isinstance(message, dict) and len(params)==0:
@@ -395,7 +396,8 @@ class BusClient(threading.Thread):
                 return False, None
             else:
                 #update function arguments list
-                args[param] = message[param]
+                if message.has_key(param):
+                    args[param] = message[param]
 
         return True, args
 
