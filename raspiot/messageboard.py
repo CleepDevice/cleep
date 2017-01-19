@@ -65,7 +65,7 @@ class Messageboard(RaspIot):
         #init
         RaspIot.__init__(self, bus)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #check config
         self._check_config(Messageboard.DEFAULT_CONFIG)
@@ -117,54 +117,57 @@ class Messageboard(RaspIot):
         """
         Display messages. Called every seconds by task
         """
-        #now
-        now = time.time()
-        self.logger.debug('__display_message at %d' % now)
+        try:
+            #now
+            now = time.time()
+            self.logger.debug('__display_message at %d' % now)
 
+            #get messages to display
+            messages_to_display = []
+            for msg in self.messages[:]:
+                if now>=msg.start and now<=msg.end:
+                    #this message could be displayed
+                    messages_to_display.append(msg)
 
-        #get messages to display
-        messages_to_display = []
-        for msg in self.messages[:]:
-            if now>=msg.start and now<=msg.end:
-                #this message could be displayed
-                messages_to_display.append(msg)
+                elif now>msg.end:
+                    self.logger.debug('Remove obsolete message %s' % str(msg))
+                    #remove obsolete message from config
+                    config = self._get_config()
+                    for msg_conf in config['messages']:
+                        if msg_conf['uuid']==msg.uuid:
+                            config['messages'].remove(msg_conf)
+                            self._save_config(config)
+                            break
 
-            elif now>msg.end:
-                self.logger.debug('Remove obsolete message %s' % str(msg))
-                #remove obsolete message from config
-                config = self._get_config()
-                for msg_conf in config['messages']:
-                    if msg_conf.uuid==msg.uuid:
-                        config['messages'].remove(msg)
-                        self._save_config(config)
-                        break
+                    #remove message internaly
+                    self.messages.remove(msg)
 
-                #remove message internaly
-                self.messages.remove(msg)
+            #sort messages to display by date
+            #msg's displayed_time is set when message is displayed
+            #message not displayed yet has displayed_time set to 0
+            #so naturally oldest messages or not already displayed are sorted at top of list
+            messages_to_display.sort(key=lambda msg:msg.displayed_time, reverse=False)
 
-        #sort messages to display by date
-        #msg's displayed_time is set when message is displayed
-        #message not displayed yet has displayed_time set to 0
-        #so naturally oldest messages or not already displayed are sorted at top of list
-        messages_to_display.sort(key=lambda msg:msg.displayed_time, reverse=False)
+            if self.logger.getEffectiveLevel()==logging.DEBUG:
+                self.logger.debug('Messages to display:')
+                for msg in messages_to_display:
+                    self.logger.debug(' - %s' % str(msg))
 
-        if self.logger.getEffectiveLevel()==logging.DEBUG:
-            self.logger.debug('Messages to display:')
-            for msg in messages_to_display:
-                self.logger.debug(' - %s' % str(msg))
+            #display first list message
+            if len(messages_to_display)>0:
+                #get first list message
+                msg = messages_to_display[0]
+                if msg!=self.__current_message or msg.dynamic==True:
+                    self.logger.debug(' ==> Display message %s' % str(msg))
+                    msg.dynamic = self.board.display_message(msg.message)
+                    self.__current_message = msg
+                    msg.displayed_time = now
+            else:
+                #no message to display, clear screen
+                self.board.clear()
 
-        #display first list message
-        if len(messages_to_display)>0:
-            #get first list message
-            msg = messages_to_display[0]
-            if msg!=self.__current_message or msg.dynamic==True:
-                self.logger.debug(' ==> Display message %s' % str(msg))
-                msg.dynamic = self.board.display_message(msg.message)
-                self.__current_message = msg
-                msg.displayed_time = now
-        else:
-            #no message to display, clear screen
-            self.board.clear()
+        except:
+            self.logger.exception('Exception on message displaying:')
 
     def __set_board_units(self):
         """
@@ -208,7 +211,7 @@ class Messageboard(RaspIot):
         """
         return self._config['duration']
 
-    def set_speed(self, duration):
+    def set_speed(self, speed):
         """
         Configure scrolling message speed
         @param speed: message speed
