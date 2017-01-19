@@ -14,9 +14,10 @@ import json
 from contextlib import contextmanager
 import time
 import uuid
-import gevent
 from gevent import queue
 from gevent import monkey; monkey.patch_all()
+from gevent import pywsgi 
+from gevent.pywsgi import LoggingLogAdapter
 from bus import NoMessageAvailable
 from bus import MessageResponse, MessageRequest
 import bottle
@@ -32,10 +33,6 @@ AUTH_FILE = '/etc/raspiot/auth.conf'
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900 #15mins
 
-#logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
-logger = logging.getLogger('rpcserver')
-#logger.setLevel(logging.DEBUG)
 
 #globals
 polling = 0
@@ -43,6 +40,9 @@ subscribed = False
 sessions = {}
 auth_config = {}
 auth_enabled = False
+logger = None
+app = bottle.app()
+server = None
 
 def bottle_logger(func):
     """
@@ -75,10 +75,44 @@ def load_auth():
     except:
         logger.exception('Unable to load auth file. Auth disabled:')
 
-#main app
-app = bottle.app()
-app.install(bottle_logger)
-load_auth()
+def get_app():
+    """
+    Return web server
+    @return bottle instance
+    """
+    global logger, app
+
+    #logging
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
+    logger = logging.getLogger('RpcServer')
+    #logger.setLevel(logging.DEBUG)
+
+    #load auth
+    load_auth()
+
+    return app
+
+def start(host='0.0.0.0', port=80, key=None, cert=None):
+    """
+    Start RPC server
+    Start by default unsecure web server
+    You can configure SSL server specifying key and cert parameters
+    @param host: host (default computer is accessible on localt network)
+    @param port: port to listen to (by default is standart HTTP port 80)
+    @param key: SSL key file
+    @param cert: SSL certificate file
+    """
+    global server, app
+    if key is not None and len(key)>0 and cert is not None and len(cert)>0:
+        #start HTTPS server
+        logger.info('Starting HTTPS server on %s:%d' % (host, port))
+        server_logger = LoggingLogAdapter(logger, logging.DEBUG)
+        server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
+        server.serve_forever()
+    else:
+        #start HTTP server
+        logger.info('Starting HTTP server on %s:%d' % (host, port))
+        app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
 
 def maybe_decorated(condition, decorator):
     """

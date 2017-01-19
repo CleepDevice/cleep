@@ -6,13 +6,15 @@ import sys
 import getopt
 import logging
 from logging.config import dictConfig
-from raspiot.rpcserver import app
+from raspiot import rpcserver
 from raspiot import bus
 from raspiot import RaspIot
 import importlib
 
 WEBSERVER_HOST = '0.0.0.0'
-WEBSERVER_PORT = 80
+WEBSERVER_PORT = 443
+WEBSERVER_KEY = '/etc/raspiot/cert/raspiot.key'
+WEBSERVER_CERT = '/etc/raspiot/cert/raspiot.crt'
 CONFIG_FILE = 'raspiot.conf'
 LOG_FILE = '/var/log/raspiot.log'
 LOG_SETTINGS = { 
@@ -83,6 +85,9 @@ if __name__ == '__main__':
         config = {}
         execfile(config_path, config)
 
+        #get webserver app (used to store application objects)
+        app = rpcserver.get_app()
+
         #create message bus
         logger.debug('Creating message bus')
         bus = bus.MessageBus()
@@ -138,7 +143,7 @@ if __name__ == '__main__':
         #launch bus and webserver (blocking)
         logger.info('Raspiot running...')
         bus.app_configured()
-        app.run(server='gevent', host=WEBSERVER_HOST, port=WEBSERVER_PORT, quiet=True, debug=False, reloader=False)
+        rpcserver.start(WEBSERVER_HOST, WEBSERVER_PORT, WEBSERVER_KEY, WEBSERVER_CERT)
 
     except getopt.GetoptError:
         #display usage
