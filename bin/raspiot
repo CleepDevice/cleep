@@ -11,10 +11,6 @@ from raspiot import bus
 from raspiot import RaspIot
 import importlib
 
-WEBSERVER_HOST = '0.0.0.0'
-WEBSERVER_PORT = 443
-WEBSERVER_KEY = '/etc/raspiot/cert/raspiot.key'
-WEBSERVER_CERT = '/etc/raspiot/cert/raspiot.crt'
 CONFIG_FILE = 'raspiot.conf'
 LOG_FILE = '/var/log/raspiot.log'
 LOG_SETTINGS = { 
@@ -45,14 +41,44 @@ LOG_SETTINGS = {
     },  
 }
 
+class ConfigException(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
 def usage():
     print("RaspIot usage: raspiot [-d|--debug] [-s|--stdout [-h|--help]]")
     print(" -d|--debug  : enable debug log level")
     print(" -s|--stdout : dump log in console instead of log file")
     print(" -h|--help   : this help")
 
+
+def load_config():
+    """
+    Load and check configuration file
+    @return loaded config
+    @raise ConfigException when error occured
+    """
+    #load config
+    config_path = os.path.join(RaspIot.CONFIG_DIR, CONFIG_FILE)
+    logger.debug('Loading configuration file %s' % config_path)
+    config = {}
+    execfile(config_path, config)
+
+    #check config
+    keys = ['modules', 'webserver_host', 'webserver_port', 'webserver_key', 'webserver_cert']
+    for key in keys:
+        if not config.has_key(key):
+            raise ConfigException('Missing "%s" parameter in %s' % (key, config_path))
+
+    return config
+
+
 if __name__ == '__main__':
     logger = None
+    app = None
     try:
         #handle command line parameters
         log_level = logging.INFO
@@ -79,11 +105,8 @@ if __name__ == '__main__':
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger('Raspiot')
 
-        #load config file
-        config_path = os.path.join(RaspIot.CONFIG_DIR, CONFIG_FILE)
-        logger.debug('Loading configuration file %s' % config_path)
-        config = {}
-        execfile(config_path, config)
+        #load and check config file
+        config = load_config()
 
         #get webserver app (used to store application objects)
         app = rpcserver.get_app()
@@ -143,7 +166,7 @@ if __name__ == '__main__':
         #launch bus and webserver (blocking)
         logger.info('Raspiot running...')
         bus.app_configured()
-        rpcserver.start(WEBSERVER_HOST, WEBSERVER_PORT, WEBSERVER_KEY, WEBSERVER_CERT)
+        rpcserver.start(config['webserver_host'], config['webserver_port'], config['webserver_key'], config['webserver_cert'])
 
     except getopt.GetoptError:
         #display usage
@@ -155,21 +178,22 @@ if __name__ == '__main__':
     #clean all stuff
     if logger:
         logger.debug('Stopping user modules:')
-    for module in app.config:
-        if module[:3] in ['mod']:
-            if logger:
-                logger.debug(' - %s' % module)
-            app.config[module].stop()
-    for module in app.config:
-        if module[:3] in ['lib']:
-            if logger:
-                logger.debug(' - %s' % module)
-            app.config[module].stop()
-    for module in app.config:
-        if module[:3] in ['sys']:
-            if logger:
-                logger.debug(' - %s' % module)
-            app.config[module].stop()
+    if app:
+        for module in app.config:
+            if module[:3] in ['mod']:
+                if logger:
+                    logger.debug(' - %s' % module)
+                app.config[module].stop()
+        for module in app.config:
+            if module[:3] in ['lib']:
+                if logger:
+                    logger.debug(' - %s' % module)
+                app.config[module].stop()
+        for module in app.config:
+            if module[:3] in ['sys']:
+                if logger:
+                    logger.debug(' - %s' % module)
+                app.config[module].stop()
     
     if logger:
         logger.info('Raspiot stopped')
