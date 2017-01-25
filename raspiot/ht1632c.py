@@ -49,7 +49,7 @@ import spidev
 import logging
 import numpy as np
 from scipy.ndimage.interpolation import shift
-from threading import Thread
+from threading import Thread, Lock
 from datetime import datetime
 import re
 
@@ -70,10 +70,11 @@ class ScrollingMessage(Thread):
     Scrolling message thread
     Use to scroll specified message until end of thread
     """
-    def __init__(self, board_size, message_length, buf, buf_index, direction, speed, write_pixels_callback):
+    def __init__(self, board_size, message_length, buf, buf_index, direction, speed, write_pixels_callback, reset_callback):
         #init
         Thread.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.board_size = board_size
@@ -82,7 +83,8 @@ class ScrollingMessage(Thread):
         self.buf_index = buf_index
         self.direction = direction
         self.speed = speed
-        self.write_pixels_callback = write_pixels_callback
+        self.write_pixels = write_pixels_callback
+        self.reset = reset_callback
         self.__continu = True
 
     def stop(self):
@@ -90,27 +92,32 @@ class ScrollingMessage(Thread):
 
     def run(self):
         while self.__continu:
-            #make buffer copy
-            self.copy = np.copy(self.buf)
+            try:
+                #make buffer copy
+                self.copy = np.copy(self.buf)
 
-            #compute max scrolling position
-            max_scrolling = self.board_size + self.message_length
+                #compute max scrolling position
+                max_scrolling = self.board_size + self.message_length
 
-            #scroll message to board
-            while max_scrolling>=0 and self.__continu:
-                #display message
-                self.write_pixels_callback(self.copy, self.buf_index)
-                #shift buffer content
-                if self.direction==0:
-                    self.copy = shift(self.copy, 1, cval=0)
-                else:
-                    self.copy = shift(self.copy, -1, cval=0)
-                #decrease number of scroll to process
-                max_scrolling -= 1
-                #pause
-                time.sleep(self.speed)
+                #scroll message to board
+                while max_scrolling>=0 and self.__continu:
+                    #display message
+                    self.write_pixels(self.copy, self.buf_index)
 
-            self.logger.debug('new scrolling')
+                    #shift buffer content
+                    if self.direction==0:
+                        self.copy = shift(self.copy, 1, cval=0)
+                    else:
+                        self.copy = shift(self.copy, -1, cval=0)
+
+                    #decrease number of scroll to process
+                    max_scrolling -= 1
+
+                    #pause
+                    time.sleep(float(self.speed))
+
+            except:
+                self.logger.exception('Exception in scrolling message:')
             
 
 FONT5x7 = [
@@ -285,11 +292,15 @@ class HT1632C():
     SCROLL_LEFT_TO_RIGHT = 0
     SCROLL_RIGHT_TO_LEFT = 1
 
+    RESET_SPI_DELAY = 7200
+
     def __init__(self, pin_a0, pin_a1, pin_a2, pin_e3, panel_count):
         #init
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.__lock = Lock()
         self.__pin_a0 = pin_a0
         self.__pin_a1 = pin_a1
         self.__pin_a2 = pin_a2
@@ -302,6 +313,8 @@ class HT1632C():
         self.unit_hours = 'hours'
         self.unit_minutes = 'mins'
         self.__turned_on = True
+        self.__last_spi_reset = None
+        self.__panel_cleared = {}
 
         #configure gpios
         GPIO.setmode(GPIO.BOARD)
@@ -312,12 +325,12 @@ class HT1632C():
         GPIO.setup(self.__pin_e3, GPIO.OUT, initial=GPIO.HIGH)
 
         #configure spi
-        self.__spi = spidev.SpiDev(0, 0)
-        self.__spi.max_speed_hz = 976000
-        self.__spi.mode = 3
+        self.__init_spi()
 
         #configure panels
         for panel in range(self.__panel_count):
+            #flag panel is not cleared
+            self.__panel_cleared[panel] = False
             #enable master mode
             self.__write_command_to_panel(panel, HT1632C.HT1632_CMD_RCCLK)
             #enable system oscillator
@@ -354,12 +367,7 @@ class HT1632C():
         Clean everything
         """
         #stop scrolling thread
-        if self.__scrolling_thread!=None:
-            self.logger.debug('Stop scrolling thread')
-            self.__scrolling_thread.stop()
-            self.__scrolling_thread.join(1.0)
-            self.logger.debug('Scrolling thread joined')
-            self.__scrolling_thread = None
+        self.__stop_scrolling_thread()
 
         #clear screen
         self.logger.debug('Clear board')
@@ -369,32 +377,73 @@ class HT1632C():
         #cleanup gpio
         self.logger.debug('Cleanup GPIOs')
         GPIO.cleanup()
+
+        #close spi
+        if self.__spi:
+            self.__spi.close()
+
+    def __init_spi(self):
+        """
+        Init SPI
+        """
+        self.__spi = spidev.SpiDev(0, 0)
+        self.__spi.max_speed_hz = 976000
+        self.__spi.mode = 3
+        self.__last_spi_reset = time.time()
+
+    def __reset_spi(self):
+        """
+        Reset SPI
+        """
+        if time.time()>(self.__last_spi_reset+HT1632C.RESET_SPI_DELAY):
+            self.logger.debug('Reset SPI')
+            if self.__spi:
+                self.__spi.close()
+            time.sleep(0.25)
+            self.__init_spi()
+
+    def __stop_scrolling_thread(self):
+        """
+        Stop scrolling thread if necessary
+        """
+        if self.__scrolling_thread!=None:
+            self.logger.debug('Stop scrolling thread')
+            self.__scrolling_thread.stop()
+            self.__scrolling_thread.join(1.0)
+            self.__scrolling_thread = None
             
     def __select_panel(self, panel):
         """
         Select specified panel number
+        A small pause is executed to make sure GPIO are updated before sending data to SPI
         @param panel: panel number
         """
         if panel==0:
             GPIO.output(self.__pin_a0, GPIO.LOW)
             GPIO.output(self.__pin_a1, GPIO.LOW)
             GPIO.output(self.__pin_a2, GPIO.LOW)
+            time.sleep(0.01)
         elif panel==1:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.LOW)
             GPIO.output(self.__pin_a2, GPIO.LOW)
+            time.sleep(0.01)
         elif panel==2:
             GPIO.output(self.__pin_a0, GPIO.LOW)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
             GPIO.output(self.__pin_a2, GPIO.LOW)
+            time.sleep(0.01)
         elif panel==3:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
             GPIO.output(self.__pin_a2, GPIO.LOW)
+            time.sleep(0.01)
         else:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
             GPIO.output(self.__pin_a2, GPIO.HIGH)
+            #panel unselect doesn't need to pause system
+            #because we don't need to sync gpio and spi
 
     def __write_command_to_panel(self, panel, command):
         """
@@ -406,13 +455,15 @@ class HT1632C():
         buf = [(HT1632C.HT1632_ID_CMD << 5) | (command >> 3), (command << 5)]
         
         #select panel to send command to
+        self.__lock.acquire(True)
         self.__select_panel(panel)
 
         #write command and read result
-        res = self.__spi.xfer2(buf)
-
+        res = self.__spi.writebytes(buf)
+        
         #unselect panel
         self.__select_panel(None)
+        self.__lock.release()
         
         return res
 
@@ -431,14 +482,29 @@ class HT1632C():
         for i in range(32):
             buf[i+2] = ((pixels[i] << 6) & 0xC0) | ((pixels[(i+1) % 32] >> 2) & 0x3F)
 
+        #check buffer
+        non_zeros = np.count_nonzero(buf[2:])
+        if non_zeros==0:
+            #buffer is empty
+            if not self.__panel_cleared[panel]:
+                #panel not empty yet, let's process this time
+                self.__panel_cleared[panel] = True
+            else:
+                #panel already cleared, stop now
+                return 0
+        else:
+            self.__panel_cleared[panel] = False
+
         #select panel to send command to
+        self.__lock.acquire(True)
         self.__select_panel(panel)
 
         #write buffer and read result
-        res = self.__spi.xfer2(buf)
+        res = self.__spi.writebytes(buf)
 
         #unselect panel
         self.__select_panel(None)
+        self.__lock.release()
         
         return res
 
@@ -564,10 +630,10 @@ class HT1632C():
         @param message: input message
         @return found_logos: dict of found logos (logo index:found logo string)
         @return message: modifiyed message (logo strings are replaced by constant PATTERN_REPLACEMENT)
-        @return dynamic: True if message contains dynamic fields (like time)
+        @return evolutive: True if message contains evolutive fields (like time)
         """
         found_patterns = {}
-        dynamic = False
+        evolutive = False
 
         #search for logos
         for logo in LOGOS:
@@ -584,7 +650,7 @@ class HT1632C():
         now_dt = datetime.fromtimestamp(now_ts)
         for match in list(re.finditer('(:time)(:[0-9]+)?', message)):
             message = message.replace(match.group(0), PATTERN_REPLACEMENT*len(match.group(0)), 1)
-            dynamic = True
+            evolutive = True
             if match.group(2) is not None:
                 #timestamp specified, compute duration
                 ts = int(match.group(2)[1:])
@@ -597,7 +663,7 @@ class HT1632C():
                 #only time tag specified, add current time
                 found_patterns[match.start()] = {'type':'text', 'value':'%0.2d:%0.2d' % (now_dt.hour, now_dt.minute)}
 
-        return found_patterns, message, dynamic
+        return found_patterns, message, evolutive
 
     def __get_message_length(self, message, patterns):
         """
@@ -622,6 +688,10 @@ class HT1632C():
         """
         Clear board (all pixels turned off)
         """
+        #stop scrolling thread if necessary
+        self.__stop_scrolling_thread()
+
+        #and display empty message
         for panel in range(self.__panel_count):
             #turn all leds on
             self.__write_pixels_to_panel(panel, HT1632C.ALL_LEDS_OFF)
@@ -631,32 +701,33 @@ class HT1632C():
         Display message to board
         @param message: message to display
         @param position: position of message in board (if message is too long it will be truncated)
-        @return True if message is dynamic or False if board is off or message not dynamic
+        @return True if message is evolutive or False if board is off or message not evolutive
         """
         buffer_position = 0
 
+        #auto reset SPI if needed
+        self.__reset_spi()
+
         #drop message if board is off
         if not self.__turned_on:
+            self.logger.debug('Board is turned off')
             return False
 
         #search for patterns in message
-        patterns, message, dynamic = self.__search_for_patterns(message)
+        patterns, message, evolutive = self.__search_for_patterns(message)
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
         self.logger.debug('message length=%d' % message_length)
 
         #stop existing scrolling thread
-        if self.__scrolling_thread!=None:
-            self.logger.debug('Stop already scrolling message')
-            self.__scrolling_thread.stop()
-            self.__scrolling_thread = None
+        self.__stop_scrolling_thread()
 
         #scroll or display message
         if message_length>self.__get_board_size():
             #scroll message
-
             self.logger.debug('Add scrolling message')
+
             #get buffer
             buf = self.__get_buffer(self.__get_board_size() + message_length)
 
@@ -678,7 +749,7 @@ class HT1632C():
                     buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
             #launch scrolling thread
-            self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels)
+            self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels, self.__reset_spi)
             self.__scrolling_thread.start()
 
         else:
@@ -705,7 +776,7 @@ class HT1632C():
             #write buffer to panels
             self.__write_pixels(buf)
 
-        return dynamic
+        return evolutive
 
     def scroll_message_once(self, message, speed=0.05, direction=0):
         """
@@ -713,7 +784,7 @@ class HT1632C():
         @param message: message to display
         @param speed: animation speed
         @param direction: scroll direction
-        @return True if message is dynamic or False if board is off or message not dynamic
+        @return True if message is evolutive or False if board is off or message not evolutive
         """
         font_size = 5
 
@@ -722,16 +793,13 @@ class HT1632C():
             return False
 
         #search for logos in message
-        patterns, message, dynamic = self.__search_for_patterns(message)
+        patterns, message, evolutive = self.__search_for_patterns(message)
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
         self.logger.debug('message length=%d' % message_length)
 
         #fill buffer
-        #text_size = font_size * len(message)
-        #buffer_size = self.__get_board_size()+text_size
-        #buf = self.__get_buffer(buffer_size)
         buf = self.__get_buffer(self.__get_board_size() + message_length)
         buffer_position = 0
         if direction==0:
@@ -764,7 +832,7 @@ class HT1632C():
             #pause
             time.sleep(speed)
 
-        return dynamic
+        return evolutive
  
     def random(self, duration, speed=0.025):
         """
@@ -798,13 +866,27 @@ class HT1632C():
         """
         Turn on board
         """
+        self.logger.debug('Turn on display')
+        #enable display
         self.__turned_on = True
 
     def turn_off(self):
         """
         Turn off board
         """
+        self.logger.debug('Turn off display')
+        #disable display
         self.__turned_on = False
+
+        #and clear board
+        self.clear()
+
+    def is_on(self):
+        """
+        Return display state
+        @return True if display is on
+        """
+        return self.__turned_on
 
     def test(self):
         self.clear()
@@ -844,6 +926,7 @@ class HT1632C():
         
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
     pin_a0 = 15
     pin_a1 = 16
     pin_a2 = 18
