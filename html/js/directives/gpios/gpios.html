@@ -1,76 +1,144 @@
-<div class="container-fluid" block-ui="gpiosContainer">
-<form class="form-horizontal" name="gpiosConfigForm" style="padding-top:15px;">
-    <div class="form-group">
-        <label class="col-sm-2">Name</label>
-        <div class="col-sm-10">
-            <input type="text" placeholder="Name" class="form-control" ng-model="name">
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-offset-2 col-sm-10">
-            <div class="checkbox">
-                <label> 
-                    <input type="checkbox" ng-model="keep"> Save state? (restore state after reboot)
-                </label>
+<md-content ng-cloak>
+
+    <!-- add panel -->
+    <md-content ng-show="gpiosCtl.showAddPanel" md-theme="dark" class="slide-panel">
+        <md-content layout-padding>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Name</label>
+                <input ng-model="gpiosCtl.name">
+            </md-input-container>
+            <div layout-gt-sm="row">
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Gpio</label>
+                    <md-select ng-model="gpiosCtl.gpio">
+                        <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Mode</label>
+                    <md-select ng-model="gpiosCtl.mode">
+                        <md-option value="in">Input</md-option>
+                        <md-option value="out">Output</md-option>
+                    </md-select>
+                </md-input-container>
             </div>
-        </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-2">Gpio</label>
-        <div class="col-sm-4">
-            <select class="form-control" ng-model="gpio">
-                <option ng-repeat="(gpio,pin) in raspiGpios" value="{{gpio}}">{{gpio}}</option>
-            </select>
-        </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-2">Mode</label>
-        <div class="col-sm-4">
-            <select class="form-control" ng-model="mode">
-                <option value="in" class="ng-binding ng-scope">Input</option>
-                <option value="out" class="ng-binding ng-scope">Output</option>
-            </select>
-        </div>
-        <div class="col-sm-6">
-            <button type="submit" class="btn btn-primary" ng-click="addGpio()">
-                <span class="glyphicon glyphicon-plus-sign"></span> Add gpio
-            </button>
-        </div>
-    </div>
+            <md-input-container class="md-block" flex-gt-sm>
+                <md-checkbox ng-model="gpiosCtl.keep" aria-label="save_state">
+                    Save state?<br/>(restore state after reboot)
+                </md-checkbox>
+            </md-input-container>
+            <section layout="row">
+                <md-button class="md-raised md-primary" ng-click="gpiosCtl.addGpio()" aria-label="Ok">
+                    <span ng-if="gpiosCtl.currentDevice===null">Add gpio</span>
+                    <span ng-if="gpiosCtl.currentDevice!==null">Update gpio</span>
+                </md-button>
+                <md-button class="md-raised" ng-click="gpiosCtl.closeAddPanel()" aria-label="Cancel">Cancel</md-button>
+            </section>
+        </md-content>
+    </md-content>
 
-    <div class="table-responsive" style="margin-top:30px;">
-        <table class="table table-striped table-bordered table-hover">
-        <tr>
-            <th>Name</th>
-            <th>Gpio</th>
-            <th>Pin</th>
-            <th>Mode</th>
-            <th>Remember</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-        <tr ng-repeat="device in devices | deviceType:'gpios'">
-            <td>{{device.name}}</td>
-            <td>{{device.gpio}}</td>
-            <td>{{device.pin}}</td>
-            <td>{{device.mode==='in' ? 'Input' : 'Output'}}</td>
-            <td>{{device.keep ? 'True' : 'False'}}</td>
-            <td>
-                <span ng-if="!device.on">Off</span>
-                <span ng-if="device.on">On</span>
-            </td>
-            <td>
-                <button type="button" class="btn btn-default" ng-click="editGpio(device)">
-                    <span class="glyphicon glyphicon-pencil"></span>
-                </button>
-                <button type="button" class="btn btn-danger" ng-click="deleteGpio(device)">
-                    <span class="glyphicon glyphicon-trash"></span>
-                </button>
-            </td>
-        </tr>
+    <!-- advanced panel -->
+    <md-content ng-show="gpiosCtl.showAdvancedPanel" md-theme="alt-dark" class="slide-panel">
+            <md-content layout-padding>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Name</label>
+                    <input ng-model="gpiosCtl.name">
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Gpio</label>
+                    <md-select ng-model="gpiosCtl.gpio">
+                        <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Mode</label>
+                    <md-select ng-model="gpiosCtl.mode">
+                        <md-option value="in">Input</md-option>
+                        <md-option value="out">Output</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-checkbox ng-model="gpiosCtl.keep" aria-label="save_state">
+                        Save state?<br/>(restore state after reboot)
+                    </md-checkbox>
+                </md-input-container>
+                <section layout="row">
+                    <md-button class="md-raised md-primary" ng-click="gpiosCtl.addGpio()" aria-label="Ok">
+                        <span ng-if="gpiosCtl.currentDevice===null">Add gpio</span>
+                        <span ng-if="gpiosCtl.currentDevice!==null">Update gpio</span>
+                    </md-button>
+                    <md-button class="md-raised" ng-click="gpiosCtl.closeNewGpioPanel()" aria-label="Cancel">Cancel</md-button>
+                </section>
+            </md-content>
+    </md-content>
+
+    <!-- items list -->
+    <md-table-container>
+        <table md-table>
+        <thead md-head md-order="columnOrder">
+            <tr md-row>
+                <th md-column md-order-by="name">Name</th>
+                <th md-column md-order-by="gpio">Gpio</th>
+                <th md-column md-order-by="pin">Pin</th>
+                <th md-column md-order-by="mode">Mode</th>
+                <th md-column>State saved</th>
+                <th md-column>Status</th>
+                <th md-column>Actions</th>
+            </tr>
+        </thead>
+        <tbody md-body>
+            <tr md-row md-auto-select ng-repeat="device in gpiosCtl.devices | deviceType:'gpios' | orderBy:columnOrder">
+                <td md-cell>{{device.name}}</td>
+                <td md-cell>{{device.gpio}}</td>
+                <td md-cell>{{device.pin}}</td>
+                <td md-cell>{{device.mode==='in'?'Input':'Output'}}</td>
+                <td md-cell>
+                    <md-checkbox ng-disabled="true" ng-model="device.keep" aria-label="keep"></md-checkbox>
+                </td>
+                <td md-cell>
+                    <md-button ng-if="!device.on" class="md-icon-button md-primary cursor-default" aria-label="Off">
+                        <span class="material-icons">fiber_manual_record</span>
+                    </md-button>
+                    <md-button ng-if="device.on" class="md-icon-button md-accent cursor-default" aria-label="On">
+                        <span class="material-icons">fiber_manual_record</span>
+                    </md-button>
+                </td>
+                <td md-cell>
+                    <md-button class="md-icon-button" ng-click="gpiosCtl.editGpio(device)" aria-label="Edit">
+                        <md-tooltip md-direction="bottom">Edit gpio</md-tooltip>
+                        <md-icon md-font-set="material-icons">mode_edit</md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" ng-click="gpiosCtl.deleteGpio(device)" aria-label="Delete">
+                        <md-tooltip md-direction="bottom">Delete gpio</md-tooltip>
+                        <md-icon md-font-set="material-icons">delete</md-icon>
+                    </md-button>
+                </td>
+            </tr>
+        </tbody>
+        <tfoot md-foot>
+            <tr md-row></tr>
+        </tfoot>
         </table>
-    </div>
+    </md-table-container>
 
-</form>
-</div>
+    <!-- toolbar -->
+    <md-fab-speed-dial md-direction="up" class="md-scale md-fab-bottom-right">
+        <md-fab-trigger>
+            <md-button class="md-fab md-primary" aria-label="Main actions">
+                <md-icon md-font-set="material-icons">more_vert</md-icon>
+            </md-button>
+        </md-fab-trigger>
+        <md-fab-actions>
+            <md-button ng-click="gpiosCtl.toggleAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
+                <md-tooltip md-direction="left">Advanced configuration</md-tooltip>
+                <md-icon md-font-set="material-icons">build</md-icon>
+            </md-button>
+            <md-button ng-click="gpiosCtl.openAddPanel()" class="md-fab md-mini md-primary" aria-label="Add gpio">
+                <md-tooltip md-direction="left">Add gpio</md-tooltip>
+                <md-icon md-font-set="material-icons">add_circle</md-icon>
+            </md-button>
+        </md-fab-actions>
+        </md-fab-actions>
+    </md-fab-speed-dial>
 
+</md-content>

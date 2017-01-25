@@ -2,56 +2,115 @@
  * Gpios config directive
  * Handle gpios configuration
  */
-var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsService) {
+var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, toastService, $mdPanel, $mdSidenav, $mdBottomSheet) {
     var container = null;
 
-    var gpiosConfigController = ['$rootScope', '$scope', function($rootScope, $scope) {
-        $scope.raspiGpios = [];
-        $scope.devices = objectsService.devices;
-        $scope.name = '';
-        $scope.gpio = 'GPIO3';
-        $scope.mode = 'in';
-        $scope.keep = true;
-        $scope.list = [];
+    var gpiosConfigController = function() {
+        var self = this;
+        self.raspiGpios = [];
+        self.devices = objectsService.devices;
+        self.name = '';
+        self.gpio = 'GPIO3';
+        self.mode = 'in';
+        self.keep = true;
+        self.list = [];
+        self.currentDevice = null;
+        self.showAddPanel = false;
+        self.showAdvancedPanel = false;
+
+        /**
+         * Open adding panel
+         */
+        self.openAddPanel = function() {
+            self.showAddPanel = true;
+        };
+
+        /**
+         * Close adding panel and reset current device
+         */
+        self.closeAddPanel = function() {
+            self.currentDevice = null;
+            self.showAddPanel = false;
+        };
+
+        /**
+         * Open advanced config panel
+         */
+        self.openAdvancedPanel = function() {
+            self.showAdvancedPanel = true;
+        };
+
+        /**
+         * Close advanced config panel
+         */
+        self.closeAdvancedPanel = function() {
+            self.showAdvancedPanel = false;
+        };
 
         /**
          * Return raspberry pi gpios
          */
-        function getRaspiGpios() {
+        self.getRaspiGpios = function() {
             return gpiosService.getRaspiGpios()
             .then(function(resp) {
-                $scope.raspiGpios = resp;
+                self.raspiGpios = resp;
             });
         }
 
         /**
          * Add new gpio
          */
-        $scope.addGpio = function() {
+        self.addGpio = function() {
             //check values
-            if( $scope.name.length==0 )
+            if( self.name.length==0 )
             {
-                growl.error('All fields are required');
+                toastService.error('All fields are required');
             }
             else
             {
                 container.start();
-                gpiosService.addGpio($scope.name, $scope.gpio, $scope.mode, $scope.keep)
-                    .then(function(resp) {
-                        //reload devices
-                        gpiosService.loadDevices();
-                    })
-                    .finally(function() {
-                        container.stop();
-                    });
+
+                if( self.currentDevice )
+                {
+                    //edition mode: first of all delete current device if edition
+                    gpiosService.delGpio(self.currentDevice.gpio)
+                        .then(function() {
+                            self.currentDevice = null;
+                            gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
+                                .then(function(resp) {
+                                    //reload devices
+                                    gpiosService.loadDevices();
+                                })
+                                .finally(function() {
+                                    self.closeAddPanel();
+                                    container.stop();
+                                });
+                        })
+                        .finally(function() {
+                            container.stop();
+                        });
+                }
+                else
+                {
+                    //adding mode
+                    gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
+                        .then(function(resp) {
+                            //reload devices
+                            gpiosService.loadDevices();
+                        })
+                        .finally(function() {
+                            self.closeAddPanel();
+                            container.stop();
+                        });
+                }
             }
         };
 
         /**
          * Delete gpio
          */
-        $scope.deleteGpio = function(device) {
-            if( !confirm('Delete gpio?') ) {
+        self.deleteGpio = function(device, warning) {
+            if( (warning===undefined || warning===true) && !confirm('Delete gpio?') ) {
                 return;
             }
 
@@ -69,32 +128,49 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
         /**
          * Edit selected gpios
          */
-        $scope.editGpio = function(device) {
+        self.editGpio = function(device) {
+            //save current device
+            self.currentDevice = device;
+            
             //set editor's value
-            $scope.name = device.name;
-            $scope.gpio = device.gpio;
-            $scope.mode = device.mode;
-            $scope.keep = device.keep;
+            self.name = device.name;
+            self.gpio = device.gpio;
+            self.mode = device.mode;
+            self.keep = device.keep;
 
-            //remove gpio from list
-            $scope.deleteGpio(device);
+            //open adding panel
+            self.openAddPanel();
+        };
+
+        /**
+         * Show advanced configuration panel
+         */
+        self.showAdvanced = function() {
+            toastService.success('successful message');
+            $mdBottomSheet.show({
+                templateUrl: 'js/directives/gpios/gpiosAdvanced.html',
+                parent: angular.element('#GpiosConfig'),
+                controller: function($scope, $mdBottomSheet) {
+                }
+            });
         };
 
         /**
          * Init controller
          */
-        function init() {
+        self.init = function() {
             //get list of raspberry pi gpios
-            getRaspiGpios();
+            self.getRaspiGpios();
         }
+    };
 
-        //init directive
-        init();
-    }];
-
-    var gpiosConfigLink = function(scope, element, attrs) {
+    var gpiosConfigLink = function(scope, element, attrs, controller) {
+        //init blockui
         container = blockUI.instances.get('gpiosContainer');
         container.reset();
+
+        //init controller
+        controller.init();
     };
 
     return {
@@ -102,9 +178,10 @@ var gpiosConfigDirective = function(gpiosService, $q, growl, blockUI, objectsSer
         replace: true,
         scope: true,
         controller: gpiosConfigController,
+        controllerAs: 'gpiosCtl',
         link: gpiosConfigLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'growl', 'blockUI', 'objectsService', gpiosConfigDirective]);
+RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'blockUI', 'objectsService', 'toastService', '$mdPanel', '$mdSidenav', '$mdBottomSheet', gpiosConfigDirective]);

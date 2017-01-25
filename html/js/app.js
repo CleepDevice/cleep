@@ -1,7 +1,26 @@
 /**
  * Main application
  */
-var RaspIot = angular.module('RaspIot', ['angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload']);
+var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload', 'md.data.table']);
+
+/**
+ * Materiel configuration
+ */
+RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
+    $mdThemingProvider.theme('default')
+        .primaryPalette('teal')
+        .accentPalette('deep-orange')
+        .warnPalette('red')
+        .backgroundPalette('grey');
+    $mdThemingProvider.theme('dark')
+        .primaryPalette('teal')
+        .dark();
+    $mdThemingProvider.theme('alt')
+        .primaryPalette('deep-orange');
+    $mdThemingProvider.theme('alt-dark')
+        .primaryPalette('deep-orange')
+        .dark();
+}]);
 
 /**
  * Growl configuration

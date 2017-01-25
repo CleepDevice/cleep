@@ -1,13 +1,7 @@
 <div>
-
-    <!-- tabs -->
-    <ul class="nav nav-tabs nav-justified" ng-if="configsCount>1">
-        <li ng-repeat="(label, config) in configs" ng-class="{active:$index===0}"><a data-toggle="tab" href="{{'#'+config.cleanLabel+'Config'}}">{{label}}</a></li>
-    </ul>
-
-    <!-- contents -->
-    <div id="configTabContent" class="tab-content">
-    </div>
-
+    <md-tabs md-dynamic-height md-border-bottom>
+        <md-tab ng-repeat="(label, config) in configs" label="{{label}}" element-ready>
+            <div flex id="{{config.cleanLabel+'Config'}}"></div>
+        </md-tab>
+    </md-tabs>
 </div>
-

@@ -4,7 +4,39 @@ var RaspIot = angular.module('RaspIot');
  * Define main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', function($rootScope, $scope, $injector, rpcService, objectsService) {
+RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', '$mdDialog', function($rootScope, $scope, $injector, rpcService, objectsService, $mdDialog) {
+
+    /**
+     * Open configuration dialog
+     */
+    this.openConfig = function(ev) {
+        $mdDialog.show({
+            controller: function($scope, $mdDialog) {
+                this.close = function() {
+                    $mdDialog.cancel();
+                }
+            },
+            controllerAs: 'configDialog',
+            template: '<md-dialog flex="75" aria-label="Configuration"><md-toolbar><div class="md-toolbar-tools"><h2>Configuration</h2><span flex></span><md-button ng-click="configDialog.close()" class="md-icon-button" aria-label="Close"><md-icon md-font-set="material-icons">clear</md-icon></md-button></div></md-toolbar><md-dialog-content><div flex configuration-directive></div></md-dialog-content></md-dialog>',
+            targetEvent: ev,
+            fullscreen: true
+        });
+    };
+
+    this.openTest = function(ev) {
+        $mdDialog.show({
+            controller: function($scope, $mdDialog) {
+                this.close = function() {
+                    $mdDialog.cancel();
+                }
+            },
+            controllerAs: 'configDialog',
+            template: '<md-dialog flex="70" aria-label="Configuration"><md-toolbar><div class="md-toolbar-tools"><h2>Configuration</h2><span flex></span><md-button ng-click="configDialog.close()" class="md-icon-button" aria-label="Close"><i class="material-icons">clear</i></md-button></div></md-toolbar><md-dialog-content style="height:75%; background-color:yellow;"></md-dialog-content></md-dialog>',
+            targetEvent: ev,
+            fullscreen: true
+        });
+    };
+
     //handle polling
     var pollingTimeout = 0;
     var nextPollingTimeout = 1;

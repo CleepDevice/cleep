@@ -1,13 +1,24 @@
 
-var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensorsService) {
+var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensorsService, $mdBottomSheet) {
     var container = null;
 
-    var sensorsController = ['$scope', function($scope) {
-        $scope.raspiGpios = [];
-        $scope.devices = objectsService.devices;
-        $scope.name = '';
-        $scope.gpio = 'GPIO2';
-        $scope.reverted = false;
+    var sensorsController = [function() {
+        var self = this;
+        self.raspiGpios = [];
+        self.devices = objectsService.devices;
+        self.name = '';
+        self.gpio = 'GPIO2';
+        self.reverted = false;
+        self.showAddPanel = false;
+        self.currentDevice = null;
+
+        self.openAddPanel = function(ev) {
+            self.showAddPanel = true;
+        };
+
+        self.closeAddPanel = function(ev) {
+            self.showAddPanel = false;
+        };
 
         /**
          * Return raspberry pi gpios
@@ -19,44 +30,48 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
                 {
                     resp[gpio].gpio = gpio;
                 }
-                $scope.raspiGpios = resp;
+                self.raspiGpios = resp;
             });
         };
 
         /**
          * Init controller
          */
-        function init() {
+        self.init = function() {
             //get gpios
             getRaspiGpios();
         };
 
-        $scope.addMotion = function() {
-            sensorsService.addMotion($scope.name, $scope.gpio, $scope.reverted)
+        /**
+         * Add motion
+         */
+        self.addMotion = function() {
+            sensorsService.addMotion(self.name, self.gpio, self.reverted)
                 .then(function(resp) {
                     growl.success('Motion sensor added');
-                })
+                });
         };
 
         /**
          * Edit specified device
          */
-        $scope.editDevice = function(device) {
+        self.editDevice = function(device) {
+            self.currentDevice = device;
         };
 
         /**
          * Delete specified device
          */
-        $scope.deleteDevice = function(device) {
+        self.deleteDevice = function(device) {
         };
 
-        //init directive
-        init();
     }];
 
-    var sensorsLink = function(scope, element, attrs) {
+    var sensorsLink = function(scope, element, attrs, controller) {
         container = blockUI.instances.get('sensorsContainer');
         container.reset();
+
+        controller.init();
     };
 
     return {
@@ -64,9 +79,10 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
         replace: true,
         scope: true,
         controller: sensorsController,
+        controllerAs: 'sensorsCtl',
         link: sensorsLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['$q', 'growl', 'blockUI', 'objectsService', 'sensorsService', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['$q', 'growl', 'blockUI', 'objectsService', 'sensorsService', '$mdBottomSheet', sensorsConfigDirective]);

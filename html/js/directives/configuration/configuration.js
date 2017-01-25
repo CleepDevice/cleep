@@ -1,34 +1,40 @@
 
-var configurationDirective = function($q, growl, blockUI, objectsService, $compile) {
+var configurationDirective = function($q, growl, blockUI, objectsService, $compile, $timeout) {
 
     var configurationController = ['$scope','$element', function($scope, $element) {
         $scope.services = objectsService.services;
         $scope.configs = objectsService.configs;
         $scope.configsCount = objectsService.configsCount;
 
+        $scope.newInit = function() {
+            var el = $element.find('#sensorsconfig');
+            console.log('new init', el.length);
+        };
+
         /**
          * Init controller
          */
         function init() {
-            //dynamically generate configuration panel according to load modules
-            var active = 'in active';
-            var container = $element.find('#configTabContent');
-            for( var label in $scope.configs )
-            {
-                //prepare template to inject
-                var template = '<div id="'+$scope.configs[label].cleanLabel+'Config" class="tab-pane fade '+active+'">';
-                template += '    <div '+$scope.configs[label].directive.toDash()+'></div>';
-                template += '</div>';
+            //wait for ng-repeat digest call
+            $timeout(function() {
+                //dynamically generate configuration panel according to load modules
+                var container = $element.find('#configTabContent');
+                for( var label in $scope.configs )
+                {
+                    //get container
+                    var id = $scope.configs[label].cleanLabel+'Config';
+                    var container = $element.find('#'+id);
 
-                //compile directive
-                var directive = $compile(template)($scope);
+                    //prepare template to inject
+                    var template = '<div '+$scope.configs[label].directive.toDash()+'></div>';
 
-                //append directive to DOM
-                container.append(directive);
+                    //compile directive
+                    var directive = $compile(template)($scope);
 
-                //disable active tab on next tab (only first tab)
-                active = '';
-            }
+                    //append directive to container
+                    container.append(directive);
+                }
+            });
         }
 
         //init directive
@@ -44,4 +50,4 @@ var configurationDirective = function($q, growl, blockUI, objectsService, $compi
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('configurationDirective', ['$q', 'growl', 'blockUI', 'objectsService', '$compile', configurationDirective]);
+RaspIot.directive('configurationDirective', ['$q', 'growl', 'blockUI', 'objectsService', '$compile', '$timeout', configurationDirective]);
