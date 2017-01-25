@@ -1,17 +1,16 @@
-    <div class="modal fade" id="configurationModal" ng-cloak>
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                    <h4 class="modal-title">Configuration</h4>
-                </div>
-
-                <div class="modal-body">
-                    <div configuration-directive></div>
-                </div>
-            </div>
+<md-dialog flex="80" aria-label="Configuration" class="config-dialog">
+    <!-- title -->
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Configuration</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="close()" aria-label="close">
+                <span class="glyphicon glyphicon-remove"></span>
+            </md-button>
         </div>
-    </div>
+    </md-toolbar>
+    <md-dialog-content>
+        <div configuration-directive></div>
+    </md-dialog-content>
+</md-dialog>
 

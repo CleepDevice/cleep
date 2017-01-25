@@ -1,5 +1,5 @@
 
-var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensorsService, $mdBottomSheet) {
+var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensorsService, $mdBottomSheet) {
     var container = null;
 
     var sensorsController = [function() {
@@ -48,7 +48,7 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
         self.addMotion = function() {
             sensorsService.addMotion(self.name, self.gpio, self.reverted)
                 .then(function(resp) {
-                    growl.success('Motion sensor added');
+                    toast.success('Motion sensor added');
                 });
         };
 
@@ -85,4 +85,4 @@ var sensorsConfigDirective = function($q, growl, blockUI, objectsService, sensor
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['$q', 'growl', 'blockUI', 'objectsService', 'sensorsService', '$mdBottomSheet', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'blockUI', 'objectsService', 'sensorsService', '$mdBottomSheet', sensorsConfigDirective]);

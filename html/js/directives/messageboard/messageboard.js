@@ -1,48 +1,69 @@
 
-var messageboardDirective = function($q, growl, blockUI, messageboardService) {
+var messageboardDirective = function($q, toast, blockUI, messageboardService) {
     var container = null;
 
     var messageboardController = ['$scope', function($scope) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm';
-        $scope.message = '';
-        $scope.start = {startDate:moment(), endDate:moment()};
-        $scope.end = {startDate:moment().add(1,'hour'), endDate:moment().add(1,'hour')};
-        $scope.scroll = false;
-        $scope.messages = [];
-        $scope.pickerOptions = {
-            singleDatePicker: true,
-            timePicker: true,
-            timePicker24Hour: true,
-            autoApply: true,
-            locale: {
-                format: datetimeFormat
-            }
-        };
-        $scope.duration = 60;
-        $scope.speed = 0.05;
-        $scope.unitDays = 'days';
-        $scope.unitHours = 'hours';
-        $scope.unitMinutes = 'minutes';
+        var self = this;
+        self.message = '';
+        self.start = moment();
+        self.end = moment().add(1,'hour')
+        self.messages = [];
+        self.duration = 60;
+        self.speed = 50;
+        self.unitDays = 'days';
+        self.unitHours = 'hours';
+        self.unitMinutes = 'minutes';
+        self.showAddPanel = false;
+        self.showAdvancedPanel = false;
 
         /**
          * Init controller
          */
-        function init()
+        self.init = function()
         {
             //load messages
-            loadMessages();
+            self.loadMessages();
             //get duration
-            getDuration();
+            self.getDuration();
             //get units
-            getUnits();
+            self.getUnits();
             //get speed
-            getSpeed();
-        }
+            self.getSpeed();
+        };
+
+        /**
+         * Open add panel
+         */
+        self.openAddPanel = function() {
+            self.showAddPanel = true;
+        };
+
+        /**
+         * Close add panel
+         */
+        self.closeAddPanel = function() {
+            self.showAddPanel = false;
+        };
+
+        /**
+         * Open advanced panel
+         */
+        self.openAdvancedPanel = function() {
+            self.showAdvancedPanel = true;
+        };
+
+        /**
+         * Close advanced panel
+         */
+        self.closeAdvancedPanel = function() {
+            self.showAdvancedPanel = false;
+        };
 
         /**
          * Load messages
          */
-        function loadMessages()
+        self.loadMessages = function()
         {
             messageboardService.getMessages()
                 .then(function(messages) {
@@ -52,53 +73,53 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
                         messages[i].endStr = moment.unix(messages[i].end).format(datetimeFormat);
                         msgs.push(messages[i]);
                     }
-                    $scope.messages = msgs;
+                    self.messages = msgs;
                 });
         };
 
         /**
          * Get duration
          */
-        function getDuration()
+        self.duration = function()
         {
             messageboardService.getDuration()
                 .then(function(resp) {
-                    $scope.duration = resp;
+                    self.duration = resp;
                 });
         };
 
         /**
          * Get speed
          */
-        function getSpeed()
+        self.getSpeed = function()
         {
             messageboardService.getSpeed()
                 .then(function(resp) {
-                    $scope.speed = resp;
+                    self.speed = resp;
                 });
         };
 
         /**
          * Get units
          */
-        function getUnits()
+        self.getUnits = function()
         {
             messageboardService.getUnits()
                 .then(function(resp) {
-                    $scope.unitMinutes = resp.minutes;
-                    $scope.unitHours = resp.hours;
-                    $scope.unitDays = resp.days;
+                    self.unitMinutes = resp.minutes;
+                    self.unitHours = resp.hours;
+                    self.unitDays = resp.days;
                 });
         };
 
         /**
          * Add new message
          */
-        $scope.addMessage = function() {
+        self.addMessage = function() {
             container.start();
-            messageboardService.addMessage($scope.message, $scope.start.unix(), $scope.end.unix(), $scope.scroll)
+            messageboardService.addMessage(self.message, self.start.unix(), self.end.unix(), self.scroll)
                 .then(function(resp) {
-                    growl.success('Message added');
+                    toast.success('Message added');
                     //reload messages
                     loadMessages();
                 })
@@ -110,7 +131,7 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         /**
          * Delete message
          */
-        $scope.delMessage = function(message) {
+        self.deleteMessage = function(message) {
             //confirmation
             if( !confirm('Delete message?') )
             {
@@ -118,9 +139,9 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
             }
 
             container.start();
-            messageboardService.delMessage(message.uuid)
+            messageboardService.deleteMessage(message.uuid)
                 .then(function(resp) {
-                    growl.success('Message deleted');
+                    toast.success('Message deleted');
                     //reload messages
                     loadMessages();
                 })
@@ -132,11 +153,11 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         /**
          * Set duration
          */
-        $scope.setDuration = function() {
+        self.setDuration = function() {
             container.start();
-            messageboardService.setDuration($scope.duration)
+            messageboardService.setDuration(self.duration)
                 .then(function(resp) {
-                    growl.success('Duration saved');
+                    toast.success('Duration saved');
                 })
                 .finally(function() {
                     container.stop();
@@ -146,11 +167,11 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         /**
          * Set speed
          */
-        $scope.setSpeed = function() {
+        self.setSpeed = function() {
             container.start();
-            messageboardService.setSpeed($scope.speed)
+            messageboardService.setSpeed(self.speed)
                 .then(function(resp) {
-                    growl.success('Speed saved');
+                    toast.success('Speed saved');
                 })
                 .finally(function() {
                     container.stop();
@@ -160,11 +181,11 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         /**
          * Set units
          */
-        $scope.setUnits = function() {
+        self.setUnits = function() {
             container.start();
-            messageboardService.setUnits($scope.unitMinutes, $scope.unitHours, $scope.unitDays)
+            messageboardService.setUnits(self.unitMinutes, self.unitHours, self.unitDays)
                 .then(function(resp) {
-                    growl.success('Units saved');
+                    toast.success('Units saved');
                 })
                 .finally(function() {
                     container.stop();
@@ -174,7 +195,7 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         /**
          * Turn on/off board
          */
-        $scope.turnOff = function(off) {
+        self.turnOff = function(off) {
             if( off )
             {
                 messageboardService.turnOff();
@@ -189,9 +210,11 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         init();
     }];
 
-    var messageboardLink = function(scope, element, attrs) {
+    var messageboardLink = function(scope, element, attrs, controller) {
         container = blockUI.instances.get('messageboardContainer');
         container.reset();
+
+        controller.init();
     };
 
     return {
@@ -199,9 +222,11 @@ var messageboardDirective = function($q, growl, blockUI, messageboardService) {
         replace: true,
         scope: true,
         controller: messageboardController,
+        controllerAs: 'msgboardCtl',
         link: messageboardLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('messageboardConfigDirective', ['$q', 'growl', 'blockUI', 'messageboardService', messageboardDirective]);
+RaspIot.directive('messageboardConfigDirective', ['$q', 'toastService', 'blockUI', 'messageboardService', messageboardDirective]);
+

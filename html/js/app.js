@@ -1,7 +1,7 @@
 /**
  * Main application
  */
-var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload', 'md.data.table']);
+var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload', 'md.data.table', 'ngMaterialDatePicker']);
 
 /**
  * Materiel configuration
@@ -23,20 +23,12 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
 }]);
 
 /**
- * Growl configuration
- */
-RaspIot.config(['growlProvider', function(growlProvider) {
-    growlProvider.globalPosition('bottom-right');
-    growlProvider.globalTimeToLive(5000);
-    growlProvider.globalDisableCountDown(true);
-}]);
-
-/**
  * BlockUI configuration
  */
 RaspIot.config(['blockUIConfig', function(blockUIConfig) {
     blockUIConfig.autoBlock = false;
     blockUIConfig.autoInjectBodyBlock = false;
+    blockUIConfig.template = '<div flex><md-progress-circular md-mode="indeterminate" class="md-primary"></md-progress-circular></div>';
 }]);
 
 /**

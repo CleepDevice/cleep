@@ -26,11 +26,11 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Delete message
      */
-    self.delMessage = function(uuid) {
+    self.deleteMessage = function(uuid) {
         return rpcService.sendCommand('del_message', 'messageboard', {'uuid':uuid})
         .then(function(resp) {
         }, function(err) {
-            console.log('delMessage:', err);
+            console.log('deleteMessage:', err);
         });
     };
 

@@ -1,29 +1,49 @@
-<html ng-app="RaspIot">
+<html>
 <head>
     <title>RaspIot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/angular-material.min.css"/>
+    <link rel="stylesheet" href="css/md-data-table.min.css"/>
+    <link rel="stylesheet" href="css/typicons.min.css"/>
+    <link rel="stylesheet" href="css/materialicons.css"/>
+    <link rel="stylesheet" href="css/raspiot2.css"/>
 </head>
-<body ng-controller="mainController">
+<body ng-app="RaspIot" layout="column" ng-cloak>
 
-    <!-- NOTIF -->
-    <div growl></div>
+    <div ng-controller="mainController as mainCtl">
 
-    <!-- TOP MENU -->
-    <div ng-include="'views/menu.html'"></div>
+        <!-- menu -->
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>
+                    RaspIot
+                </h2>
+                <span flex></span>
+                <md-button ng-click="mainCtl.openTest($event)" class="md-icon-button" aria-label="Settings">
+                    <md-icon md-font-set="material-icons">help</md-icon>
+                </md-button>
+                <md-button ng-click="mainCtl.openConfig($event)" class="md-icon-button" aria-label="Settings">
+                    <md-icon md-font-set="material-icons">settings</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
 
-    <!-- DASHBOARD -->
-    <div ng-include="'views/dashboard.html'"></div>
+        <!-- dashboard -->
+        <div>
+        </div>
 
-    <!-- CONFIGURATION -->
-    <div ng-include="'views/configuration.html'"></div>
+    </div>
 
     <!-- system -->
     <script src="js/libs/jquery.min.js"></script>
     <script src="js/libs/angular.min.js"></script>
-    <script src="js/libs/bootstrap.min.js"></script>
+    <script src="js/libs/angular-animate.min.js"></script>
+    <script src="js/libs/angular-messages.min.js"></script>
+    <script src="js/libs/angular-aria.min.js"></script>
+    <script src="js/libs/md-data-table.min.js"></script>
+    <script src="js/libs/angular-material.min.js"></script>
 
     <!-- plugins -->
-    <!--<script src="js/libs/bootstrap-switch.min.js"></script>-->
-    <!--<script src="js/libs/angular-bootstrap-switch.min.js"></script>-->
     <script src="js/libs/moment.min.js"></script>
     <script src="js/libs/ui-bootstrap-tpls-2.3.0.min.js"></script>
     <script src="js/libs/angular-growl.min.js"></script>
@@ -32,9 +52,11 @@
     <script src="js/libs/daterangepicker.js"></script>
     <script src="js/libs/angular-daterangepicker.min.js"></script>
     <script src="js/libs/angular-upload.min.js"></script>
+    <script src="js/libs/angular-material-datetimepicker.min.js"></script>
 
     <!-- application -->
     <script src="js/app.js"></script>
+    <script src="js/services/toast.js"></script>
     <script src="js/services/rpc.js"></script>
     <script src="js/services/objects.js"></script>
     <script src="js/services/gpios.js"></script>
@@ -45,6 +67,7 @@
     <script src="js/services/action.js"></script>
     <script src="js/services/sensors.js"></script>
     <script src="js/controllers/main.js"></script>
+    <script src="js/controllers/configuration.js"></script>
     <script src="js/directives/gpios/gpios.js"></script>
     <script src="js/directives/shutter/shutter.js"></script>
     <script src="js/directives/sound/sound.js"></script>
@@ -57,13 +80,20 @@
     <script src="js/directives/configuration/configuration.js"></script>
 
     <!-- style -->
-    <link rel="stylesheet" href="css/raspiot.css"/>
-    <link rel="stylesheet" href="css/typicons.min.css"/>
-    <link rel="stylesheet" href="css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
-    <link rel="stylesheet" href="css/bootstrap-switch.min.css"/>
-    <link rel="stylesheet" href="css/angular-growl.min.css"/>
-    <link rel="stylesheet" href="css/angular-block-ui.min.css"/>
-    <link rel="stylesheet" href="css/daterangepicker.css"/>
+    <script type="text/javascript">    
+        /*var app = angular.module('BlankApp', ['ngMaterial']);
+        app.controller('controller', ['$scope', '$mdDialog', function($scope, $mdDialog) {
+            $scope.showAdvanced = function(ev) {
+                $mdDialog.show({
+                    //controller: DialogController,
+                    template: '<md-button class="md-fab md-primary">coucou</md-button>',
+                    parent: angular.element(document.body),
+                    targetEvent: ev,
+                    clickOutsideToClose:true,
+                    fullscreen:true
+                });
+            };
+        }]);*/
+    </script>
 </body>
 </html>
