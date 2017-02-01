@@ -23,7 +23,7 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
         /**
          * Return raspberry pi gpios
          */
-        function getRaspiGpios() {
+        self.getRaspiGpios = function() {
             return sensorsService.getRaspiGpios()
             .then(function(resp) {
                 for( var gpio in resp )
@@ -39,7 +39,7 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
          */
         self.init = function() {
             //get gpios
-            getRaspiGpios();
+            self.getRaspiGpios();
         };
 
         /**
@@ -63,6 +63,14 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
          * Delete specified device
          */
         self.deleteDevice = function(device) {
+            if( !confirm('Delete sensor?') ) {
+                return;
+            }
+
+            sensorsService.deleteSensor(device.name)
+                .then(function(resp) {
+                    sensorsService.loadDevices();
+                });
         };
 
     }];

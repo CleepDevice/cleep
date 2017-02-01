@@ -1,83 +1,130 @@
 
-var soundConfigDirective = function($q, growl, blockUI, soundService) {
+var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile) {
     var container = null;
 
     var soundController = ['$scope', function($scope) {
-        $scope.sounds = [];
-        $scope.uploadData = {
+        var self = this;
+        self.sounds = [];
+        self.uploadData = {
             'command': 'add_sound',
             'to': 'sound'
         };
-        $scope.tts = '';
-        $scope.langs = [];
-        $scope.lang = 'en';
-        $scope.volume = 0;
+        self.ttsConfig = '';
+        self.ttsLang = 'en';
+        self.tts = '';
+        self.langs = [];
+        self.lang = 'en';
+        self.volume = 0;
+        self.showAddPanel = false;
+        self.showAdvancedPanel = false;
+        self.uploadFile = null;
+
+        $scope.$watch(function() {
+            return self.uploadFile;
+        }, function(file) {
+            if( file )
+            {
+                //launch upload
+                toast.loading('Uploading file');
+                uploadFile.upload('/upload', file, {
+                    'command': 'add_sound',
+                    'to': 'sound'
+                }, self.onUploadSuccess, self.onUploadFailure);
+            }
+        });
+
+        self.openAddPanel = function() {
+            self.showAddPanel = true;
+            self.closeAdvancedPanel();
+        };
+
+        self.closeAddPanel = function() {
+            self.showAddPanel = false;
+        };
+
+        self.openAdvancedPanel = function() {
+            self.showAdvancedPanel = true;
+            self.closeAddPanel();
+        };
+
+        self.closeAdvancedPanel = function() {
+            self.showAdvancedPanel = false;
+        };
 
         /**
          * Get sounds
          */
-        function getSounds() {
+        self.getSounds = function() {
             soundService.getSounds()
                 .then(function(resp) {
-                    $scope.sounds = resp;
+                    self.sounds = resp;
                 });
         };
 
         /**
          * Get langs and selected lang
          */
-        function getLangs() {
+        self.getLangs = function() {
             soundService.getLangs()
                 .then(function(resp) {
-                    $scope.langs = resp.langs;
-                    $scope.lang = resp.lang;
+                    var temp = [];
+                    angular.forEach(resp.langs, function(label, lang) {
+                        temp.push({'lang':lang, 'label':label});
+                    });
+                    self.langs = temp;
+                    self.lang = resp.lang;
+                    self.ttsLang = resp.lang;
                 });
         };
 
-        function getVolume() {
+        /**
+         * Return current volume (pygame mixer not system volume)
+         */
+        self.getVolume = function() {
             soundService.getVolume()
                 .then(function(resp) {
-                    $scope.volume = resp;
+                    self.volume = resp;
                 });
         };
 
         /**
          * Init controller
          */
-        function init() {
-            getLangs();
-            getSounds();
-            getVolume();
+        self.init = function() {
+            self.getLangs();
+            self.getSounds();
+            self.getVolume();
         };
 
         /**
-         * Upload started
+         * Upload successful
          */
-        $scope.uploadStarted = function() {
-            container.start();
-        };
-
-        /**
-         * Upload complete callback
-         */
-        $scope.uploadComplete = function(resp) {
-            console.log('updcomplete', resp);
+        self.onUploadSuccess = function(resp) {
+            toast.hide();
             if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
             {
-                growl.success('Sound file uploaded');
-                getSounds();
+                self.getSounds();
+                toast.success('Sound file uploaded');
+                self.closeAddPanel();
             }
             else
             {
-                growl.error(resp.data.message);
+                toast.error(resp.data.message);
             }
-            container.stop();
+        };
+
+        /**
+         * Upload failed
+         */
+        self.onUploadFailure = function(err) {
+            toast.hide();
+            toast.error('Upload failed: '+err);
         };
 
         /**
          * Delete specified sound
          */
-        $scope.delSound = function(path) {
+        self.deleteSound = function(path) {
             //confirmation
             if( !confirm('Delete sound?') )
             {
@@ -88,8 +135,8 @@ var soundConfigDirective = function($q, growl, blockUI, soundService) {
             container.start();
             soundService.delSound(path)
                 .then(function() {
-                    growl.success('Sound file deleted');
-                    getSounds();
+                    toast.success('Sound file deleted');
+                    self.getSounds();
                 })
                 .finally(function() {
                     container.stop();
@@ -99,45 +146,62 @@ var soundConfigDirective = function($q, growl, blockUI, soundService) {
         /**
          * Play sound
          */
-        $scope.playSound = function(path) {
+        self.playSound = function(path) {
             soundService.playSound(path);
         };
 
         /**
-         * Say text
+         * Speak message from config
          */
-        $scope.sayText = function() {
-            if( $scope.tts.length>0 )
+        self.speakMessageConfig = function() {
+            if( self.ttsConfig.length>0 )
             {
-                soundService.sayText($scope.tts, 'fr');
+                toast.loading('Playing sound...');
+                soundService.speakMessage(self.ttsConfig, self.ttsLang)
+                    .then(function() {
+                        toast.hide();
+                    });
             }
             else
             {
-                growl.error('Please specify');
+                toast.error('Please set message to speak');
+            }
+        };
+
+        /**
+         * Speak message from main
+         */
+        self.speakMessage = function() {
+            if( self.tts.length>0 )
+            {
+                soundService.speakMessage(self.tts, self.lang);
+            }
+            else
+            {
+                toast.error('Please set message to speak');
             }
         };
 
         /**
          * Set lang
          */
-        $scope.setLang = function() {
+        self.setLang = function() {
             container.start();
-            soundService.setLang($scope.lang)
+            soundService.setLang(self.lang)
                 .then(function() {
-                    growl.success('Lang saved');
+                    toast.success('Lang saved');
                 })
                 .finally(function() {
                     container.stop();
                 });
         };
-
-        //init directive
-        init();
     }];
 
-    var soundLink = function(scope, element, attrs) {
+    var soundLink = function(scope, element, attrs, controller) {
         container = blockUI.instances.get('soundContainer');
         container.reset();
+
+        controller.init();
     };
 
     return {
@@ -145,9 +209,10 @@ var soundConfigDirective = function($q, growl, blockUI, soundService) {
         replace: true,
         scope: true,
         controller: soundController,
+        controllerAs: 'soundCtl',
         link: soundLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('soundConfigDirective', ['$q', 'growl', 'blockUI', 'soundService', soundConfigDirective]);
+RaspIot.directive('soundConfigDirective', ['$q', 'toastService', 'blockUI', 'soundService', 'uploadFileService', soundConfigDirective]);

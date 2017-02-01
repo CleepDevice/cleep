@@ -2,15 +2,17 @@
 var messageboardDirective = function($q, toast, blockUI, messageboardService) {
     var container = null;
 
-    var messageboardController = ['$scope', function($scope) {
+    var messageboardController = ['$scope', '$filter', function($scope, $filter) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm';
         var self = this;
         self.message = '';
-        self.start = moment();
-        self.end = moment().add(1,'hour')
+        self.startDate = moment().toDate();
+        self.startTime = moment().format('HH:mm');
+        self.endDate = moment().add(2, 'hours').toDate();
+        self.endTime = moment().add(2, 'hours').format('HH:mm');
         self.messages = [];
-        self.duration = 60;
-        self.speed = 50;
+        self.duration = 30;
+        self.speed = 0.005;
         self.unitDays = 'days';
         self.unitHours = 'hours';
         self.unitMinutes = 'minutes';
@@ -37,6 +39,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          */
         self.openAddPanel = function() {
             self.showAddPanel = true;
+            self.closeAdvancedPanel();
         };
 
         /**
@@ -51,6 +54,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          */
         self.openAdvancedPanel = function() {
             self.showAdvancedPanel = true;
+            self.closeAddPanel();
         };
 
         /**
@@ -67,6 +71,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
         {
             messageboardService.getMessages()
                 .then(function(messages) {
+                    console.log('MESSAGES', messages);
                     var msgs = [];
                     for( var i=0; i<messages.length; i++) {
                         messages[i].startStr = moment.unix(messages[i].start).format(datetimeFormat);
@@ -80,7 +85,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
         /**
          * Get duration
          */
-        self.duration = function()
+        self.getDuration = function()
         {
             messageboardService.getDuration()
                 .then(function(resp) {
@@ -116,12 +121,20 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          * Add new message
          */
         self.addMessage = function() {
-            container.start();
-            messageboardService.addMessage(self.message, self.start.unix(), self.end.unix(), self.scroll)
+            //get unix timestamp
+            var temp = self.startTime.split(':');
+            var start = moment(self.startDate).hours(temp[0]).minutes(temp[1]);
+            var temp = self.endTime.split(':');
+            var end = moment(self.endDate).hours(temp[0]).minutes(temp[1]);
+
+            //send command
+            messageboardService.addMessage(self.message, start.unix(), end.unix())
                 .then(function(resp) {
                     toast.success('Message added');
                     //reload messages
-                    loadMessages();
+                    self.loadMessages();
+                    //close panel
+                    self.closeAddPanel();
                 })
                 .finally(function() {
                     container.stop();
@@ -143,7 +156,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
                 .then(function(resp) {
                     toast.success('Message deleted');
                     //reload messages
-                    loadMessages();
+                    self.loadMessages();
                 })
                 .finally(function() {
                     container.stop();
@@ -205,9 +218,6 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
                 messageboardService.turnOn();
             }
         };
-
-        //init directive
-        init();
     }];
 
     var messageboardLink = function(scope, element, attrs, controller) {

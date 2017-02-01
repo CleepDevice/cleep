@@ -1,63 +1,128 @@
-<div class="container-fluid" block-ui="soundContainer">
+<md-content ng-cloak>
 
-<form class="form-horizontal" name="soundConfigForm" style="padding-top:15px;">
+    <!-- add panel -->
+    <md-content ng-show="soundCtl.showAddPanel" md-theme="dark" class="slide-panel">
+        <!-- upload new sound -->
+        <div layout-gt-sm="row">
+            <md-input-container class="md-block" flex-gt-sm>
+                <div upload-file selected-file="soundCtl.uploadFile" label="Select sound file"></div>
+            </md-input-container>
+            <md-input-container class="md-block" layout-align="center" flex-gt-sm>
+                <md-button href="http://www.universal-soundbank.com/" target="_blank">
+                    <md-icon md-font-set="material-icons">link</md-icon>
+                    <span>Universal-soundbank</span>
+                </md-button>
+            </md-input-container>
+        </div>
 
-    <div class="form-group">
-        <label class="col-sm-2">Text-to-speech lang</label>
-        <div class="col-sm-6">
-            <select class="form-control" ng-model="lang">
-                <option ng-repeat="(lang,label) in langs" value="{{lang}}">{{label}}</option>
-            </select>
-        </div>
-        <div class="col-sm-4">
-            <button type="submit" class="btn btn-primary" ng-click="setLang()">
-                <span class="glyphicon glyphicon-ok"></span> Save
-            </button>
-        </div>
-    </div>
+        <!-- close -->
+        <section layout="row">
+            <md-button class="md-raised" ng-click="soundCtl.closeAddPanel()" aria-label="Close">Close</md-button>
+        </section>
+    </md-content>
 
-    <div class="form-group">
-        <label class="col-sm-2">Say text</label>
-        <div class="col-sm-6">
-            <input class="form-control" type="text" ng-model="tts">
+    <!-- advanced panel -->
+    <md-content ng-show="soundCtl.showAdvancedPanel" md-theme="alt-dark" class="slide-panel" layout-padding>
+        <!-- set language -->
+        <div layout-gt-sm="row" flex>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Text-to-speech language</label>
+                <md-select ng-model="soundCtl.lang">
+                    <md-option ng-repeat="lang in soundCtl.langs | orderBy:'label'" ng-value="lang.lang">{{lang.label}}</md-option>
+                </md-select>
+            </md-input-container>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="soundCtl.setLang()" aria-label="Set lang">Set lang</md-button>
+            </div>
         </div>
-        <div class="col-sm-4">
-            <button type="submit" class="btn btn-primary" ng-click="sayText()">
-                <span class="glyphicon glyphicon-bullhorn"></span> Say text
-            </button>
-        </div>
-    </div>
 
-    <div class="form-group">
-        <label class="col-sm-2">Add sound file</label>
-        <div class="col-sm-4">
-            <div class="btn btn-primary btn-upload" upload-button url="/upload" on-complete="uploadComplete(response)"
-                 on-upload="uploadStarted()" multiple="false" data="uploadData" param="file">
-                 <span class="glyphicon glyphicon-save"></span> Upload
+        <!-- speak message -->
+        <div layout-gt-sm="row" flex>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Message to speak</label>
+                <input ng-model="soundCtl.ttsConfig">
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Text-to-speech language</label>
+                <md-select ng-model="soundCtl.ttsLang">
+                    <md-option ng-repeat="lang in soundCtl.langs | orderBy:'label'" ng-value="lang.lang">{{lang.label}}</md-option>
+                </md-select>
+            </md-input-container>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="soundCtl.speakMessageConfig()" aria-label="Speak message">Speak message</md-button>
+            </div>
         </div>
-    </div>
 
-    <div class="table-responsive" style="margin-top:45px;">
-        <table class="table table-striped table-bordered table-hover">
-        <tr>
-            <th>File</th>
-            <th>Actions</th>
-        </tr>
-        <tr ng-repeat="sound in sounds">
-            <td>{{sound.name}}</td>
-            <td>
-                <button type="button" class="btn btn-default" ng-click="playSound(sound.path)">
-                    <span class="glyphicon glyphicon-play"></span>
-                </button>
-                <button type="button" class="btn btn-danger" ng-click="delSound(sound.path)">
-                    <span class="glyphicon glyphicon-trash"></span>
-                </button>
-            </td>
-        </tr>
+        <!-- close -->
+        <section layout="row">
+            <md-button class="md-raised" ng-click="soundCtl.closeAdvancedPanel()" aria-label="Close">Close</md-button>
+        </section>
+    </md-content>
+
+    <!-- list -->
+    <md-table-container>
+        <table md-table>
+        <thead md-head md-order="columnOrder">
+            <tr md-row>
+                <th md-column md-order-by="name">Sound file</th>
+                <th md-column>Actions</th>
+            </tr>
+        </thead>
+        <tbody md-body>
+            <tr md-row md-auto-select ng-repeat="sound in soundCtl.sounds | orderBy:columnOrder">
+                <td md-cell>{{sound.name}}</td>
+                <td md-cell>
+                   <md-button class="md-icon-button" ng-click="soundCtl.playSound(sound.path)" aria-label="Play sound">
+                        <md-tooltip md-direction="bottom">Play sound</md-tooltip>
+                        <md-icon md-font-set="material-icons">play_circle_outline</md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" ng-click="soundCtl.deleteSOund(sound.path)" aria-label="Delete">
+                        <md-tooltip md-direction="bottom">Delete sound</md-tooltip>
+                        <md-icon md-font-set="material-icons">delete</md-icon>
+                    </md-button> 
+                </td>
+            </tr>
+        </tbody>
+        <tfoot md-foot>
+            <tr md-row>
+                <td md-cell colspan="2">
+                    <div layout-gt-sm="row" flex>
+                        <md-input-container class="md-block" flex-gt-sm>
+                            <label>Message to speak</label>
+                            <input ng-model="soundCtl.tts">
+                        </md-input-container>
+                        <div>
+                            <md-button class="md-raised md-primary" ng-click="soundCtl.speakMessage()" aria-label="Speak message">Speak message</md-button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr md-row></tr>
+        </tfoot>
         </table>
-    </div>
+    </md-table-container>
 
-</form>
+    <!-- toolbar -->
+    <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">
+        <md-fab-trigger>
+            <md-button class="md-fab md-primary" aria-label="Main actions">
+                <md-icon md-font-set="material-icons">more_vert</md-icon>
+            </md-button>
+        </md-fab-trigger>
+        <md-fab-actions>
+            <md-button ng-click="soundCtl.openAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
+                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
+                <md-icon md-font-set="material-icons">build</md-icon>
+            </md-button>
+            <md-button ng-click="soundCtl.openAddPanel()" class="md-fab md-mini md-primary" aria-label="Add sound">
+                <md-tooltip md-direction="top">Add sound</md-tooltip>
+                <md-icon md-font-set="material-icons">add_circle</md-icon>
+            </md-button>
+        </md-fab-actions>
+    </md-fab-speed-dial>
 
-</div>
+</md-content>
+
+
+
 

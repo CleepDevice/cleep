@@ -1,7 +1,7 @@
 /**
  * Main application
  */
-var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'angular-growl', 'ui.bootstrap', 'blockUI', 'base64', 'daterangepicker', 'lr.upload', 'md.data.table', 'ngMaterialDatePicker']);
+var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'ngMessages', 'angular-growl', /*'ui.bootstrap',*/ 'blockUI', 'base64', /*'daterangepicker', 'lr.upload',*/ 'md.data.table']);
 
 /**
  * Materiel configuration
@@ -20,6 +20,14 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider.theme('alt-dark')
         .primaryPalette('deep-orange')
         .dark();
+}]);
+
+/**
+ * Fix issue with md-datepicker with angular 1.6 and angular-material 1.1.1
+ * @see https://github.com/angular/material/issues/10280
+ */
+RaspIot.config(['$compileProvider', function($compileProvider) {
+    $compileProvider.preAssignBindingsEnabled(true);
 }]);
 
 /**

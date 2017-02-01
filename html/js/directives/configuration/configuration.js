@@ -1,53 +1,57 @@
 
-var configurationDirective = function($q, growl, blockUI, objectsService, $compile, $timeout) {
+var configurationDirective = function($q, objectsService, $compile, $timeout) {
 
     var configurationController = ['$scope','$element', function($scope, $element) {
-        $scope.services = objectsService.services;
-        $scope.configs = objectsService.configs;
-        $scope.configsCount = objectsService.configsCount;
-
-        $scope.newInit = function() {
-            var el = $element.find('#sensorsconfig');
-            console.log('new init', el.length);
-        };
+        var self = this;
+        self.services = objectsService.services;
+        self.configs = [];
+        self.configsCount = objectsService.configsCount;
 
         /**
          * Init controller
          */
-        function init() {
+        self.init = function() {
+            //flatten configs to allow sorting
+            angular.forEach(objectsService.configs, function(config, label) {
+                config.__label = label;
+                self.configs.push(config);
+            });
+
             //wait for ng-repeat digest call
             $timeout(function() {
-                //dynamically generate configuration panel according to load modules
+                //dynamically generate configuration panel according to loaded modules
                 var container = $element.find('#configTabContent');
-                for( var label in $scope.configs )
-                {
+                angular.forEach(self.configs, function(config) {
                     //get container
-                    var id = $scope.configs[label].cleanLabel+'Config';
+                    var id = config.cleanLabel+'Config';
                     var container = $element.find('#'+id);
 
                     //prepare template to inject
-                    var template = '<div '+$scope.configs[label].directive.toDash()+'></div>';
+                    var template = '<div '+config.directive.toDash()+'></div>';
 
                     //compile directive
                     var directive = $compile(template)($scope);
 
                     //append directive to container
                     container.append(directive);
-                }
+                });
             });
         }
-
-        //init directive
-        init();
     }];
+
+    var configurationLink = function(scope, element, attrs, controller) {
+        controller.init();
+    };
 
     return {
         templateUrl: 'js/directives/configuration/configuration.html',
         replace: true,
-        scope: true,
-        controller: configurationController
+        //scope: false,
+        controller: configurationController,
+        controllerAs: 'configCtl',
+        link: configurationLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('configurationDirective', ['$q', 'growl', 'blockUI', 'objectsService', '$compile', '$timeout', configurationDirective]);
+RaspIot.directive('configurationDirective', ['$q', 'objectsService', '$compile', '$timeout', configurationDirective]);

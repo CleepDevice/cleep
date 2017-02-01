@@ -22,8 +22,13 @@ md-toast.success .md-toast-content {
     color: #FFFFFF;
 }
 
+md-toast.info .md-toast-content {
+    background: #2196F3;
+    color: #FFFFFF;
+}
+
 .slide-panel {
-    height: 50%;
+    height: 300px;;
     -webkit-transition: all 0.45s cubic-bezier(0.35, 0, 0.25, 1);
     transition: all 0.45s cubic-bezier(0.35, 0, 0.25, 1);
 }

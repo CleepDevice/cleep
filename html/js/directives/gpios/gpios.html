@@ -122,7 +122,7 @@
     </md-table-container>
 
     <!-- toolbar -->
-    <md-fab-speed-dial md-direction="up" class="md-scale md-fab-bottom-right">
+    <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">
         <md-fab-trigger>
             <md-button class="md-fab md-primary" aria-label="Main actions">
                 <md-icon md-font-set="material-icons">more_vert</md-icon>
@@ -130,11 +130,11 @@
         </md-fab-trigger>
         <md-fab-actions>
             <md-button ng-click="gpiosCtl.toggleAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
-                <md-tooltip md-direction="left">Advanced configuration</md-tooltip>
+                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
                 <md-icon md-font-set="material-icons">build</md-icon>
             </md-button>
             <md-button ng-click="gpiosCtl.openAddPanel()" class="md-fab md-mini md-primary" aria-label="Add gpio">
-                <md-tooltip md-direction="left">Add gpio</md-tooltip>
+                <md-tooltip md-direction="top">Add gpio</md-tooltip>
                 <md-icon md-font-set="material-icons">add_circle</md-icon>
             </md-button>
         </md-fab-actions>

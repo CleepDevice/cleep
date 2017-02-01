@@ -1,0 +1,9 @@
+<input id="fileInput" type="file" class="ng-hide" aria-label="hidden">
+<md-button id="uploadButton"
+           class="md-raised md-primary"
+           aria-label="attach_file">
+    {{label}}
+</md-button>
+<md-input-container md-no-float>
+    <input id="textInput" ng-model="filename" type="text" placeholder="No file chosen" ng-readonly="true">
+</md-input-container>

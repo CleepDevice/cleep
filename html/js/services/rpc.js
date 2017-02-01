@@ -1,4 +1,4 @@
-var rpcService = function($http, $q, growl, $base64) {
+var rpcService = function($http, $q, toast, $base64) {
     var self = this;
     self.uriCommand = window.location.protocol + '//' + window.location.host + '/command';
     self.uriPoll = window.location.protocol + '//' + window.location.host + '/poll';
@@ -44,13 +44,13 @@ var rpcService = function($http, $q, growl, $base64) {
         .then(function(resp) {
             if( resp.data.error ) {
                 console.error('Request failed: '+resp.data.message);
-                growl.error(resp.data.message);
+                toast.error(resp.data.message);
                 d.reject('request failed');
             }
             else {
                 //display message if provided
                 if( resp.data.message ) {
-                    growl.succes(resp.data.message);
+                    toast.succes(resp.data.message);
                 }
                 d.resolve(resp.data);
             }
@@ -76,7 +76,7 @@ var rpcService = function($http, $q, growl, $base64) {
         .then(function(resp) {
             if( resp.data.error ) {
                 console.error('Request failed: '+resp.data.message);
-                growl.error(resp.data.message);
+                toast.error(resp.data.message);
                 d.reject('request failed');
             }
             else {
@@ -166,5 +166,5 @@ var rpcService = function($http, $q, growl, $base64) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('rpcService', ['$http', '$q', 'growl', '$base64', rpcService]);
+RaspIot.service('rpcService', ['$http', '$q', 'toastService', '$base64', rpcService]);
 

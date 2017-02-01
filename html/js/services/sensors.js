@@ -52,7 +52,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Delete sensor
      */
-    self.delSensor = function(name) {
+    self.deleteSensor = function(name) {
         return rpcService.sendCommand('del_sensor', 'sensors', {'name':name})
         .then(function(resp) {
         });

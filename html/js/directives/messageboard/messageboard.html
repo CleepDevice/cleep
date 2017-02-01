@@ -1,59 +1,99 @@
 <md-content ng-cloak>
 
     <!-- add panel -->
-    <md-content ng-show="msgboardCtl.showAddPanel" layout-padding md-theme="dark" class="slide-panel">
+    <md-content ng-show="msgboardCtl.showAddPanel" layout-padding md-theme="dark" class="slide-panel" ng-cloak>
+    <form name="addForm">
+        <!-- message -->
         <md-input-container class="md-block" flex-gt-sm>
             <label>Message</label>
-            <input ng-model="msgboardCtl.message">
+            <input ng-model="msgboardCtl.message" name="message" required>
+            <div ng-messages="addForm.message.$error">
+                <div ng-message="required">Message cannot be empty</div>
+            </div>
         </md-input-container>
+
+        <!-- start datetime -->
         <div layout-gt-sm="row">
             <md-input-container class="md-block" flex-gt-sm>
-                <label>Start</label>
-                <input mdc-datetime-picker ng-model="msgboard.start" short-time="false">
+                <label>Start time</label>
+                <input ng-model="msgboardCtl.startTime" name="startTime" placeholder="00:00" ng-pattern="/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/" required></md-input>
+                <div ng-messages="addForm.startTime.$error">
+                    <div ng-message="pattern">Invalid time specified</div>
+                    <div ng-message="required">Start time is required</div>
+                </div>
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
-                <label>End</label>
-                <input ng-model="msgboardCtl.end" short-time="false">
+                <label>Start date</label>
+                <md-datepicker ng-model="msgboardCtl.startDate" md-hide-icons="calendar" name="startDate" md-placeholder="Start date" required></md-datepicker>
+                <div ng-messages="addForm.startDate.$error">
+                    <div ng-message="required">Start date is required</div>
+                </div>
             </md-input-container>
         </div>
-        <section layout="row">
-            <md-button class="md-raised md-primary" ng-click="msgboardCtl.addMessage()" aria-label="Ok">
+
+        <!-- end datetime -->
+        <div layout-gt-sm="row">
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>End time</label>
+                <input ng-model="msgboardCtl.endTime" name="endTime" placeholder="00:00" ng-pattern="/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/" required></md-input>
+                <div ng-messages="addForm.endTime.$error">
+                    <div ng-message="pattern">Invalid time specified</div>
+                    <div ng-message="required">End time is required</div>
+                </div>
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <md-datepicker ng-model="msgboardCtl.endDate" md-hide-icons="calendar" name="endDate" md-placeholder="End date" required></md-datepicker>
+                <div ng-messages="addForm.endDate.$error">
+                    <div ng-message="required">End date is required</div>
+                </div>
+            </md-input-container>
+        </div>
+
+        <!-- buttons -->
+        <div layout="row">
+            <md-button type="submit" ng-disabled="addForm.$invalid" class="md-raised md-primary" ng-click="msgboardCtl.addMessage()" aria-label="Ok">
                 Add message
             </md-button>
             <md-button class="md-raised" ng-click="msgboardCtl.closeAddPanel()" aria-label="Cancel">Cancel</md-button>
-        </section>
+        </div>
+    </form>
     </md-content>
 
     <!-- advanced panel -->
-    <md-content ng-show="msgboardCtl.showAdvancedPanel" layout-padding md-theme="alt-dark" class="slide-panel">
+    <md-content ng-show="msgboardCtl.showAdvancedPanel" layout-padding md-theme="alt-dark" class="slide-panel" ng-cloak>
         <!-- display -->
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Display on/off</label>
-            <md-switch ng-model="msgboardCtl.on">
-        </md-input-container>
+        <md-switch ng-model="msgboardCtl.on" aria-label="Turn on/off">
+            <span ng-if="msgboardCtl.on">Turn off display</span>
+            <span ng-if="!msgboardCtl.on">Turn on display</span>
+        </md-switch>
 
         <!-- duration -->
-        <md-divider></md-divider>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Message duration</label>
-            <input type="number" step="1" ng-model="msgboardCtl.duration">
-        </md-input-container>
-        <md-button class="md-raised md-primary" ng-click="msgboardCtl.setDuration()" aria-label="Set duration">Set duration</md-button>
+        <div layout-gt-sm="row" flex>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Message display duration</label>
+                <input ng-model="msgboardCtl.duration">
+            </md-input-container>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="msgboardCtl.setDuration()" aria-label="Set duration">Set duration</md-button>
+            </div>
+        </div>
 
         <!-- speed -->
-        <md-divider></md-divider>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Scrolling message speed</label>
-            <md-select ng-model="msgboardCtl.speed">
-                <md-option value="25">Slow</md-option>
-                <md-option value="50">Normal</md-option>
-                <md-option value="75">Fast</md-option>
-            </md-select>
-        </md-input-container>
-        <md-button class="md-raised md-primary" ng-click="msgboardCtl.setSpeed()" aria-label="Set speed">Set speed</md-button>
+        <div layout-gt-sm="row" flex>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Scrolling message speed</label>
+                <md-select ng-model="msgboardCtl.speed">
+                    <md-option value="0.0025">Fast</md-option>
+                    <md-option value="0.005">Normal</md-option>
+                    <md-option value="0.0075">Slow</md-option>
+                </md-select>
+            </md-input-container>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="msgboardCtl.setSpeed()" aria-label="Set speed">Set speed</md-button>
+            </div>
+        </div>
 
         <!-- units -->
-        <md-divider></md-divider>
         <div layout-gt-sm="row">
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Unit days</label>
@@ -67,10 +107,11 @@
                 <label>Unit minutes</label>
                 <input ng-model="msgboardCtl.unitMinutes">
             </md-input-container>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="msgboardCtl.setUnits()" aria-label="Set duration">Set units</md-button>
+            </div>
         </div>
-        <md-button class="md-raised md-primary" ng-click="msgboardCtl.setUnits()" aria-label="Set duration">Set units</md-button>
 
-        <br/>
         <section layout="row">
             <md-button class="md-raised" ng-click="msgboardCtl.closeAdvancedPanel()" aria-label="Close">Close</md-button>
         </section>
@@ -108,19 +149,19 @@
     </md-table-container>
 
     <!-- toolbar -->
-    <md-fab-speed-dial md-direction="up" class="md-scale md-fab-bottom-right">
+    <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">
         <md-fab-trigger>
             <md-button class="md-fab md-primary" aria-label="Main actions">
                 <md-icon md-font-set="material-icons">more_vert</md-icon>
             </md-button>
         </md-fab-trigger>
         <md-fab-actions>
-            <md-button ng-click="msgboardCtl.toggleAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
-                <md-tooltip md-direction="left">Advanced configuration</md-tooltip>
+            <md-button ng-click="msgboardCtl.openAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
+                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
                 <md-icon md-font-set="material-icons">build</md-icon>
             </md-button>
             <md-button ng-click="msgboardCtl.openAddPanel()" class="md-fab md-mini md-primary" aria-label="Add message">
-                <md-tooltip md-direction="left">Add message</md-tooltip>
+                <md-tooltip md-direction="top">Add message</md-tooltip>
                 <md-icon md-font-set="material-icons">add_circle</md-icon>
             </md-button>
         </md-fab-actions>

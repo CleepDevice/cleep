@@ -15,8 +15,8 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Add new message
      */
-    self.addMessage = function(message, start, end, scroll) {
-        return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end, 'scroll':scroll})
+    self.addMessage = function(message, start, end) {
+        return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end})
         .then(function(resp) {
         }, function(err) {
             console.log('addMessage:', err);
