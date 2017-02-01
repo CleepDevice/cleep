@@ -94,10 +94,11 @@ class Messageboard(RaspIot):
         self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
         self.__display_task.start()
 
-        #display ip
+        #display ip at startup during 1 minute
         #@see http://stackoverflow.com/a/1267524
         ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
-        self.board.display_message('IP: %s' % str(ip))
+        now = int(time.time())
+        #self.add_message('IP: %s' % str(ip), now, now+60)
         self.logger.info('Board ip: %s' % str(ip))
 
     def stop(self):
@@ -130,7 +131,7 @@ class Messageboard(RaspIot):
                     messages_to_display.append(msg)
 
                 elif now>msg.end:
-                    self.logger.debug('Remove obsolete message %s' % str(msg))
+                    self.logger.debug('Remove obsolete message %s' % unicode(msg))
                     #remove obsolete message from config
                     config = self._get_config()
                     for msg_conf in config['messages']:
@@ -241,7 +242,7 @@ class Messageboard(RaspIot):
         """
         #create message object
         msg = Message(message, start, end)
-        self.logger.debug('add new message: %s' % str(msg))
+        self.logger.debug('add new message: %s' % unicode(msg))
 
         #save it to config
         config = self._get_config()

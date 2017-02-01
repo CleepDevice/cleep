@@ -94,7 +94,7 @@ class ScrollingMessage(Thread):
         while self.__continu:
             try:
                 #make buffer copy
-                self.copy = np.copy(self.buf)
+                copy = np.copy(self.buf)
 
                 #compute max scrolling position
                 max_scrolling = self.board_size + self.message_length
@@ -102,19 +102,26 @@ class ScrollingMessage(Thread):
                 #scroll message to board
                 while max_scrolling>=0 and self.__continu:
                     #display message
-                    self.write_pixels(self.copy, self.buf_index)
+                    self.write_pixels(copy, self.buf_index)
 
                     #shift buffer content
                     if self.direction==0:
-                        self.copy = shift(self.copy, 1, cval=0)
+                        copy = shift(copy, 1, cval=0)
                     else:
-                        self.copy = shift(self.copy, -1, cval=0)
+                        copy = shift(copy, -1, cval=0)
 
                     #decrease number of scroll to process
                     max_scrolling -= 1
 
                     #pause
                     time.sleep(float(self.speed))
+
+                #force buffer deletion
+                del copy
+                copy = None
+
+                #auto reset hardware if needed
+                self.reset()
 
             except:
                 self.logger.exception('Exception in scrolling message:')
@@ -292,7 +299,7 @@ class HT1632C():
     SCROLL_LEFT_TO_RIGHT = 0
     SCROLL_RIGHT_TO_LEFT = 1
 
-    RESET_SPI_DELAY = 7200
+    RESET_HW_DELAY = 60
 
     def __init__(self, pin_a0, pin_a1, pin_a2, pin_e3, panel_count):
         #init
@@ -313,7 +320,7 @@ class HT1632C():
         self.unit_hours = 'hours'
         self.unit_minutes = 'mins'
         self.__turned_on = True
-        self.__last_spi_reset = None
+        self.__last_hw_reset = None
         self.__panel_cleared = {}
 
         #configure gpios
@@ -324,8 +331,17 @@ class HT1632C():
         #e3 is always on
         GPIO.setup(self.__pin_e3, GPIO.OUT, initial=GPIO.HIGH)
 
+        #init hardware
+        self.__init_hardware()
+
+    def __init_hardware(self):
+        """
+        Init hardware (GPIO, SPI, HT1632C)
+        """
         #configure spi
-        self.__init_spi()
+        self.__spi = spidev.SpiDev(0, 0)
+        self.__spi.max_speed_hz = 976000
+        self.__spi.mode = 3
 
         #configure panels
         for panel in range(self.__panel_count):
@@ -341,6 +357,24 @@ class HT1632C():
             self.__write_command_to_panel(panel, HT1632C.HT1632_CMD_PWM | 0x0F)
             #disable blink
             self.__write_command_to_panel(panel, HT1632C.HT1632_CMD_BLOFF)
+
+        #update last hardware reset
+        self.__last_hw_reset = time.time()
+
+    def __reset_hardware(self):
+        """
+        Reset hardware
+        """
+        if time.time()>(self.__last_hw_reset+HT1632C.RESET_HW_DELAY):
+            self.logger.info('Reset hardware')
+            #clean everything
+            #self.cleanup()
+            #close spi
+            if self.__spi:
+                self.__spi.close()
+
+            #init hardware again
+            self.__init_hardware()
 
     def set_scroll_speed(self, speed):
         """
@@ -372,35 +406,16 @@ class HT1632C():
         #clear screen
         self.logger.debug('Clear board')
         self.clear()
-        time.sleep(1.0)
+        time.sleep(0.25)
 
         #cleanup gpio
         self.logger.debug('Cleanup GPIOs')
         GPIO.cleanup()
+        time.sleep(0.25)
 
         #close spi
         if self.__spi:
             self.__spi.close()
-
-    def __init_spi(self):
-        """
-        Init SPI
-        """
-        self.__spi = spidev.SpiDev(0, 0)
-        self.__spi.max_speed_hz = 976000
-        self.__spi.mode = 3
-        self.__last_spi_reset = time.time()
-
-    def __reset_spi(self):
-        """
-        Reset SPI
-        """
-        if time.time()>(self.__last_spi_reset+HT1632C.RESET_SPI_DELAY):
-            self.logger.debug('Reset SPI')
-            if self.__spi:
-                self.__spi.close()
-            time.sleep(0.25)
-            self.__init_spi()
 
     def __stop_scrolling_thread(self):
         """
@@ -409,7 +424,8 @@ class HT1632C():
         if self.__scrolling_thread!=None:
             self.logger.debug('Stop scrolling thread')
             self.__scrolling_thread.stop()
-            self.__scrolling_thread.join(1.0)
+            #self.__scrolling_thread.join(1.0)
+            time.sleep(0.25)
             self.__scrolling_thread = None
             
     def __select_panel(self, panel):
@@ -422,22 +438,22 @@ class HT1632C():
             GPIO.output(self.__pin_a0, GPIO.LOW)
             GPIO.output(self.__pin_a1, GPIO.LOW)
             GPIO.output(self.__pin_a2, GPIO.LOW)
-            time.sleep(0.01)
+            #time.sleep(0.001)
         elif panel==1:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.LOW)
             GPIO.output(self.__pin_a2, GPIO.LOW)
-            time.sleep(0.01)
+            #time.sleep(0.001)
         elif panel==2:
             GPIO.output(self.__pin_a0, GPIO.LOW)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
             GPIO.output(self.__pin_a2, GPIO.LOW)
-            time.sleep(0.01)
+            #time.sleep(0.001)
         elif panel==3:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
             GPIO.output(self.__pin_a2, GPIO.LOW)
-            time.sleep(0.01)
+            #time.sleep(0.001)
         else:
             GPIO.output(self.__pin_a0, GPIO.HIGH)
             GPIO.output(self.__pin_a1, GPIO.HIGH)
@@ -705,8 +721,8 @@ class HT1632C():
         """
         buffer_position = 0
 
-        #auto reset SPI if needed
-        self.__reset_spi()
+        #auto reset hardware if needed
+        self.__reset_hardware()
 
         #drop message if board is off
         if not self.__turned_on:
@@ -749,7 +765,7 @@ class HT1632C():
                     buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
             #launch scrolling thread
-            self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels, self.__reset_spi)
+            self.__scrolling_thread = ScrollingMessage(self.__get_board_size(), message_length, buf, buffer_index, self.direction, self.speed, self.__write_pixels, self.__reset_hardware)
             self.__scrolling_thread.start()
 
         else:

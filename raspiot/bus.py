@@ -473,7 +473,7 @@ class BusClient(threading.Thread):
                                             #command failed
                                             self.logger.exception('bus.run exception')
                                             resp.error = True
-                                            resp.message = 'Command execution failed [%s]' % str(e)
+                                            resp.message = '%s' % str(e)
                                     else:
                                         #self.logger.error('Some command parameters are missing')
                                         resp.error = True

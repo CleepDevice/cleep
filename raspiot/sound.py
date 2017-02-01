@@ -208,9 +208,9 @@ class Sound(RaspIot):
         self.__sound_thread = PlaySound(filepath)
         self.__sound_thread.start()
 
-    def say_text(self, text, lang):
+    def speak_message(self, text, lang):
         """
-        Say specified text
+        Speak specified message
         @param text: text to say
         @param lang: spoken lang
         """
@@ -224,7 +224,7 @@ class Sound(RaspIot):
             raise Exception('A sound is already playing')
 
         #text to speech
-        tts = gTTS(text=text, lang=self._config['lang'])
+        tts = gTTS(text=text, lang=lang)
         path = '/tmp/sound_%d.mp3' % int(time.time())
         tts.save(path)
         
