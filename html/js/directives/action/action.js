@@ -1,65 +1,85 @@
 
-var actionConfigDirective = function($q, growl, blockUI, actionService) {
+var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFile) {
     var container = null;
 
     var actionController = ['$scope', function($scope) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm:ss';
-        $scope.scripts = [];
-        $scope.uploadData = {
-            'command': 'add_script',
-            'to': 'action'
+        var self = this;
+        self.scripts = [];
+        self.uploadFile = null;
+        self.showAddPanel = false;
+
+        $scope.$watch(function() {
+            return self.uploadFile;
+        }, function(file) {
+            if( file )
+            {
+                //launch upload
+                toast.loading('Uploading script...');
+                uploadFile.upload('/upload', file, {
+                    'command': 'add_script',
+                    'to': 'action'
+                }, self.onUploadSuccess, self.onUploadFailure);
+            }
+        });
+
+        /**
+         * Open add panel
+         */
+        self.openAddPanel = function() {
+            self.showAddPanel = true;
+        };
+
+        self.closeAddPanel = function() {
+            self.showAddPanel = false;
         };
 
         /**
          * Get scripts
          */
-        function getScripts() {
+        self.getScripts = function() {
             actionService.getScripts()
                 .then(function(resp) {
-                    var scripts = [];
-                    for(var i=0; i<resp.length; i++) {
-                        resp[i].last = moment.unix(resp[i].last_execution).format(datetimeFormat);
-                        scripts.push(resp[i]);
-                    }
-                    $scope.scripts = resp;
+                    self.scripts = resp;
                 });
         };
 
         /**
          * Init controller
          */
-        function init() {
+        self.init = function() {
             //load scripts
-            getScripts();
-        };
-
-        /**
-         * Upload started
-         */
-        $scope.uploadStarted = function() {
-            container.start();
+            self.getScripts();
         };
 
         /**
          * Upload complete callback
          */
-        $scope.uploadComplete = function(resp) {
+        self.onUploadSuccess = function(resp) {
+            //toast.hide();
             if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
             {
-                growl.success('Script uploaded');
-                getScripts();
+                toast.success('Script uploaded');
+                self.getScripts();
+                self.closeAddPanel();
             }
             else
             {
-                growl.error(resp.data.message);
+                toast.error(resp.data.message);
             }
-            container.stop();
+        };
+
+        /**
+         * Upload failure
+         */
+        self.onUploadFailure = function(err) {
+            toast.error('Upload failed: '+err);
         };
 
         /**
          * Delete specified script
          */
-        $scope.delScript = function(script) {
+        self.deleteScript = function(script) {
             //confirmation
             if( !confirm('Delete script?') )
             {
@@ -67,59 +87,52 @@ var actionConfigDirective = function($q, growl, blockUI, actionService) {
             }
 
             //delete script
-            container.start();
-            actionService.delScript(script)
+            actionService.deleteScript(script)
                 .then(function() {
                     //message
-                    growl.success('Script deleted');
+                    toast.success('Script deleted');
 
                     //refresh scripts
-                    getScripts();
-                })
-                .finally(function() {
-                    container.stop();
+                    self.getScripts();
                 });
         };
 
         /**
          * Disable/enable specified script
          */
-        $scope.disableScript = function(script, disabled) {
-            container.start();
+        self.disableScript = function(script, disabled) {
             actionService.disableScript(script, disabled)
                 .then(function(resp) {
                     //message info
                     if( disabled ) {
-                        growl.success('Script is disabled');
+                        toast.success('Script is disabled');
                     } else {
-                        growl.success('Script is enabled');
+                        toast.success('Script is enabled');
                     }
 
                     //refresh scripts
-                    getScripts();
+                    self.getScripts();
                 })
                 .finally(function() {
-                    container.stop();
+                    //container.stop();
                 });
         };
 
-        //init directive
-        init();
     }];
 
-    var actionLink = function(scope, element, attrs) {
-        container = blockUI.instances.get('actionContainer');
-        container.reset();
+    var actionLink = function(scope, element, attrs, controller) {
+        controller.init();
     };
 
     return {
         templateUrl: 'js/directives/action/action.html',
         replace: true,
-        scope: true,
+        //scope: true,
         controller: actionController,
+        controllerAs: 'actionCtl',
         link: actionLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionConfigDirective', ['$q', 'growl', 'blockUI', 'actionService', actionConfigDirective]);
+RaspIot.directive('actionConfigDirective', ['$q', 'toastService', 'blockUI', 'actionService', 'uploadFileService', actionConfigDirective]);

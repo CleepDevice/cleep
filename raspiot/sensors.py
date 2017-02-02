@@ -93,13 +93,14 @@ class Sensors(RaspIot):
                             self.logger.debug(' +++ Motion sensor "%s" turned on' % sensor['name'])
 
                             #motion sensor triggered
-                            sensor['timestamp'] = now
+                            sensor['lastupdate'] = now
                             sensor['on'] = True
+                            self.__save_config()
 
                             #new motion event
                             req = MessageRequest()
                             req.event = 'event.motion.on'
-                            req.params = {'sensor': sensor['name']}
+                            req.params = {'sensor':sensor['name'], 'lastupdate':now}
                             self.push(req)
 
                     elif event['event']=='event.gpio.off':
@@ -108,19 +109,26 @@ class Sensors(RaspIot):
                             self.logger.debug(' --- Motion sensor "%s" turned off' % sensor['name'])
 
                             #motion sensor triggered
-                            duration = now - sensor['timestamp']
-                            sensor['timestamp'] = 0
+                            #duration = now - sensor['']
+                            sensor['lastupdate'] = now
                             sensor['on'] = False
-                            sensor['last_duration'] = event['params']['duration']
+                            sensor['lastduration'] = event['params']['duration']
+                            self.__save_config()
 
                             #new motion event
                             req = MessageRequest()
                             req.event = 'event.motion.off'
-                            req.params = {'sensor': sensor['name'], 'duration':duration}
+                            req.params = {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}
                             self.push(req)
                         
             else:
                 self.logger.debug('No sensor found')
+
+    def __save_config(self):
+        """
+        Save current config
+        """
+        self._save_config(self._get_config())
 
     def __search_by_gpio(self, gpio):
         """
@@ -194,7 +202,7 @@ class Sensors(RaspIot):
                     #update sensor
                     sensor['temperature_c'] = tempC
                     sensor['temperature_f'] = tempF
-                    sensor['timestamp'] = time.time()
+                    sensor['lastupdate'] = time.time()
 
             #broadcast event
             if tempC and tempF:
@@ -286,7 +294,7 @@ class Sensors(RaspIot):
                 'type': 'temperature',
                 'kind': '1wire',
                 'duration': duration,
-                'timestamp': time.time(),
+                'lastupdate': time.time(),
                 'temperature_c': tempC,
                 'temperature_f': tempF
             }
@@ -342,8 +350,8 @@ class Sensors(RaspIot):
                 'type': 'motion',
                 'on': False,
                 'reverted': reverted,
-                'timestamp': 0,
-                'last_duration': 0
+                'lastupdate': 0,
+                'lastduration': 0
             }
             self._save_config(config)
 
@@ -351,9 +359,9 @@ class Sensors(RaspIot):
 
         return False
 
-    def del_sensor(self, name):
+    def delete_sensor(self, name):
         """
-        Del specified sensor
+        Delete specified sensor
         @param name: sensor name
         @return True if deletion succeed
         """

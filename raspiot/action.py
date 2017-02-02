@@ -3,13 +3,15 @@
     
 import os
 import logging
-from bus import MessageRequest, MessageResponse, InvalidParameter
+from bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
 from raspiot import RaspIot
 import time
 from threading import Thread
 from collections import deque
 import time
 from task import Task
+import shutil
+import bus
 
 __all__ = ['Action']
 
@@ -77,10 +79,12 @@ class Script(Thread):
         """
         Execute script
         """
+        pass
 
     def run(self):
         #configure logger
         self.logger.setLevel(self.logger_level)
+        self.logger.debug('Thread started')
 
         #push message helper
         def action(command, to, params=None):
@@ -88,8 +92,13 @@ class Script(Thread):
             request.command = command
             request.to = to
             request.params = params
-            #push message and reduce timeout to 1 sec
-            resp = self.__bus_push(request, timeout=1.0)
+            #push message
+            resp = None
+            try:
+                resp = self.__bus_push(request)
+            except NoResponse:
+                #handle long response
+                resp = None
             if resp!=None and isinstance(resp, MessageResponse):
                 return resp.to_dict()
             else:
@@ -100,8 +109,8 @@ class Script(Thread):
 
         if self.__test:
             #event in queue, get event
-            event = self.__events.pop()
-            self.logger.info('exec script')
+            current_event = self.__events.pop()
+            self.logger.debug('Script execution')
 
             #and execute file
             try:
@@ -109,20 +118,31 @@ class Script(Thread):
                 self.last_execution = int(time.time())
             except:
                 self.logger.exception('Fatal error in script "%s"' % self.script)
-                self.__exec_script()
+                #self.__exec_script()
         else:
             #loop forever
             while self.__continu:
-                if self.__disabled:
-                    #script is disabled
-                    time.sleep(1.0)
+                if len(self.__events)>0:
+                    #check if file exists
+                    if not os.path.exists(self.script):
+                        self.logger.error('Script does not exist. Stop thread')
+                        break
 
-                elif len(self.__events)>0:
                     #event in queue, process it
-                    event = self.__events.pop()
-                    self.logger.info('exec script')
+                    current_event = self.__events.pop()
+
+                    #drop script execution if script disabled
+                    if self.__disabled:
+                        #script is disabled
+                        self.logger.debug('Script is disabled. Drop execution')
+                        continue
+
+                    #event helpers
+                    event = current_event['event']
+                    event_values = current_event['params']
                     
                     #and execute file
+                    self.logger.debug('Script execution')
                     try:
                         execfile(self.script)
                         self.last_execution = int(time.time())
@@ -132,6 +152,8 @@ class Script(Thread):
                 else:
                     #no event, pause
                     time.sleep(0.25)
+
+        self.logger.debug('Thread is stopped')
 
 
 class Action(RaspIot):
@@ -158,6 +180,10 @@ class Action(RaspIot):
         self.__scripts = {}
         self.__load_scripts()
 
+        #make sure sounds path exists
+        if not os.path.exists(Action.SCRIPTS_PATH):
+            os.makedirs(Action.SCRIPTS_PATH)
+
         #refresh scripts task
         self.__refresh_thread = Task(60.0, self.__load_scripts)
         self.__refresh_thread.start()
@@ -175,23 +201,38 @@ class Action(RaspIot):
 
     def __load_scripts(self):
         """
-        Launch dedicated thread for each found script
+        Launch dedicated thread for each script found
         """
         #remove stopped threads (script was removed?)
         for script in self.__scripts.keys():
-            if not self.__scripts[script].is_alive():
-                self.logger.debug('Thread for script "%s" is dead. Purge it' % script)
-                del self.__scripts[script]
-                config = self._get_config()
-                if config['scripts'].has_key(script):
-                    del config['scripts'][script]
-                    self._save_config(config)
+            #check file existance
+            if not os.path.exists(os.path.join(Action.SCRIPTS_PATH, script)):
+                #file doesn't exist from filesystem, clear config entry
+                self.logger.info('Delete infos from removed script "%s"' % script)
 
+                if self.__scripts.has_key(script):
+                    #stop running thread if necessary
+                    if self.__scripts[script].is_alive():
+                        self.__scripts[script].stop()
+
+                    #clear config entry
+                    del self.__scripts[script]
+                    config = self._get_config()
+                    if config['scripts'].has_key(script):
+                        del config['scripts'][script]
+                        self._save_config(config)
+                    
         #launch thread for new script
         for root, dirs, scripts in os.walk(Action.SCRIPTS_PATH):
             for script in scripts:
+                #drop files that aren't python script
+                ext = os.path.splitext(script)[1]
+                if ext!='.py':
+                    self.logger.debug('Drop bad extension file "%s"' % script)
+                    continue
+
                 if not self.__scripts.has_key(script):
-                    self.logger.debug('Discover new script "%s"' % script)
+                    self.logger.info('Discover new script "%s"' % script)
                     #get disable status
                     disabled = False
                     if self._config['scripts'].has_key(script):
@@ -248,7 +289,7 @@ class Action(RaspIot):
 
         return True
 
-    def del_script(self, script):
+    def delete_script(self, script):
         """
         Delete specified script
         """
@@ -268,19 +309,23 @@ class Action(RaspIot):
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
-        if file_ext[1][1:]=='py':
+        self.logger.info('uploaded file extension: %s - %s' % (str(file_ext), str(file_ext[1][1:])))
+        if file_ext[1][1:]=='.py':
+            self.logger.info('uploaded file extension: %s' % str(file_ext[1][1:]))
             raise bus.InvalidParameter('Invalid script file uploaded (only python script are supported)')
 
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
             path = os.path.join(Action.SCRIPTS_PATH, name)
-            logger.debug('Name=%s path=%s' % (name, path))
+            self.logger.info('Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
-            logger.info('File "%s" uploaded successfully' % name)
+            self.logger.info('File "%s" uploaded successfully' % name)
+            #reload scripts
+            self.__load_scripts()
         else:
             #file doesn't exists
-            logger.error('Script file "%s" doesn\'t exist' % filepath)
+            self.logger.error('Script file "%s" doesn\'t exist' % filepath)
             raise Exception('Script file "%s"  doesn\'t exists' % filepath)
 
         return True 

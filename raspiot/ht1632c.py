@@ -304,7 +304,7 @@ class HT1632C():
     def __init__(self, pin_a0, pin_a1, pin_a2, pin_e3, panel_count):
         #init
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #members
         self.__lock = Lock()

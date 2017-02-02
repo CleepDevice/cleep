@@ -73,6 +73,16 @@ RaspIot.filter('deviceType', function($filter) {
 });
 
 /**
+ * Timestamp to human readable datetime
+ */
+RaspIot.filter('hrDatetime', function($filter) {
+    return function(ts) {
+        console.log('timestamp='+ts);
+        return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+    };
+});
+
+/**
  * http://jamesroberts.name/blog/2010/02/22/string-functions-for-javascript-trim-to-camel-case-to-dashed-and-to-underscore/
  * String functions
  */

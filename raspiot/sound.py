@@ -135,7 +135,10 @@ class Sound(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)    
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        #disable urllib info logs
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
 
         #members
         self.__sound_thread = None
@@ -231,6 +234,8 @@ class Sound(RaspIot):
         #play sound
         self.__sound_thread = PlaySound(path, True)
         self.__sound_thread.start()
+
+        return True
 
     def del_sound(self, filepath):
         """

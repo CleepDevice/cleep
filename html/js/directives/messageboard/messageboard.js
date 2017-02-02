@@ -71,14 +71,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
         {
             messageboardService.getMessages()
                 .then(function(messages) {
-                    console.log('MESSAGES', messages);
-                    var msgs = [];
-                    for( var i=0; i<messages.length; i++) {
-                        messages[i].startStr = moment.unix(messages[i].start).format(datetimeFormat);
-                        messages[i].endStr = moment.unix(messages[i].end).format(datetimeFormat);
-                        msgs.push(messages[i]);
-                    }
-                    self.messages = msgs;
+                    self.messages = messages;
                 });
         };
 

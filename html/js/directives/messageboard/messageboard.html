@@ -125,16 +125,14 @@
                 <th md-column md-order-by="message">Message</th>
                 <th md-column md-order-by="message">Start</th>
                 <th md-column md-order-by="message">End</th>
-                <th md-column md-order-by="message">Last timestamp</th>
                 <th md-column md-order-by="message">Actions</th>
             </tr>
         </thead>
         <tbody md-body>
             <tr md-row md-auto-select ng-repeat="msg in msgboardCtl.messages | orderBy:columnOrder">
                 <td md-cell>{{msg.message}}</td>
-                <td md-cell>{{msg.startStr}}</td>
-                <td md-cell>{{msg.endStr}}</td>
-                <td md-cell>{{msg.timestamp}}</td>
+                <td md-cell>{{msg.start | hrDatetime}}</td>
+                <td md-cell>{{msg.end | hrDatetime}}</td>
                 <td md-cell>
                     <md-button class="md-icon-button" ng-click="msgboardCtl.deleteMessage(msg)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete message</md-tooltip>

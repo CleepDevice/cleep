@@ -36,7 +36,7 @@
                 <th md-column md-order-by="name">Name</th>
                 <th md-column>Gpios</th>
                 <th md-column md-order-by="type">Type</th>
-                <th md-column md-order-by="timestamp">Last time</th>
+                <th md-column md-order-by="timestamp">Last update</th>
                 <th md-column>Status</th>
                 <th md-column>Actions</th>
             </tr>
@@ -46,12 +46,12 @@
                 <td md-cell>{{device.name}}</td>
                 <td md-cell>{{device.gpios.join(',')}}</td>
                 <td md-cell>{{device.type}}</td>
-                <td md-cell>{{device.timestamp}}</td>
+                <td md-cell>{{device.lastupdate | hrDatetime}}</td>
                 <td md-cell>
-                    <md-button ng-if="!device.status" class="md-icon-button md-primary default-cursor" aria-label="Off">
+                    <md-button ng-if="!device.on" class="md-icon-button md-primary default-cursor" aria-label="Off">
                         <span class="material-icons">fiber_manual_record</span>
                     </md-button>
-                    <md-button ng-if="device.status" class="md-icon-button md-accent default-cursor" aria-label="On">
+                    <md-button ng-if="device.on" class="md-icon-button md-accent default-cursor" aria-label="On">
                         <span class="material-icons">fiber_manual_record</span>
                     </md-button>
                 </td>

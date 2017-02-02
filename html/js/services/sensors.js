@@ -36,9 +36,9 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getRaspiGpios = function() {
         return rpcService.sendCommand('get_raspi_gpios', 'sensors')
-        .then(function(resp) {
-            return resp.data;
-        });
+            .then(function(resp) {
+                return resp.data;
+            });
     };
 
     /**
@@ -54,21 +54,21 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.deleteSensor = function(name) {
         return rpcService.sendCommand('del_sensor', 'sensors', {'name':name})
-        .then(function(resp) {
-        });
+            .then(function(resp) {
+            });
     };
 
     /**
      * Catch motion on event
      */
     $rootScope.$on('event.motion.on', function(event, params) {
-        console.log('motion received', event, params);
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
             if( objectsService.devices[i].__serviceName==='sensors' )
             {   
                 if( objectsService.devices[i].name===params.sensor )
                 {   
+                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
                     objectsService.devices[i]['on'] = true;
                     break;
                 }   
@@ -86,6 +86,8 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
             {   
                 if( objectsService.devices[i].name===params.sensor )
                 {   
+                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
+                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
                     objectsService.devices[i]['on'] = false;
                     break;
                 }   

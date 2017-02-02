@@ -15,8 +15,8 @@ var actionService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Delete script
      */
-    self.delScript = function(script) {
-        return rpcService.sendCommand('del_script', 'action', {'script':script});
+    self.deleteScript = function(script) {
+        return rpcService.sendCommand('delete_script', 'action', {'script':script});
     };
 
     /**
