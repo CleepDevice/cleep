@@ -375,7 +375,7 @@ class Sensors(RaspIot):
             for gpio in config['sensors'][name]['gpios']:
                 req = MessageRequest()
                 req.to = 'gpios'
-                req.command = 'del_gpio'
+                req.command = 'delete_gpio'
                 req.params = {'gpio':gpio}
                 resp = self.push(req)
                 if resp['error']:

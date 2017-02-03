@@ -237,7 +237,7 @@ class Sound(RaspIot):
 
         return True
 
-    def del_sound(self, filepath):
+    def delete_sound(self, filepath):
         """
         Delete sound
         """

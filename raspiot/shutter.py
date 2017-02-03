@@ -309,7 +309,7 @@ class Shutter(RaspIot):
             config[name] = {'name':name, 'delay':delay, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Shutter.STATUS_OPENED}
             self._save_config(config)
 
-    def del_shutter(self, name):
+    def delete_shutter(self, name):
         """
         Del specified shutter
         """
@@ -322,7 +322,7 @@ class Shutter(RaspIot):
             #unconfigure open shutter
             req = MessageRequest()
             req.to = 'gpios'
-            req.command = 'del_gpio'
+            req.command = 'delete_gpio'
             req.params = {'gpio':config[name]['shutter_open']}
             resp = self.push(req)
             if resp['error']:
@@ -331,7 +331,7 @@ class Shutter(RaspIot):
             #unconfigure close shutter
             req = MessageRequest()
             req.to = 'gpios'
-            req.command = 'del_gpio'
+            req.command = 'delete_gpio'
             req.params = {'gpio':config[name]['shutter_close']}
             resp = self.push(req)
             if resp['error']:
@@ -340,7 +340,7 @@ class Shutter(RaspIot):
             #unconfigure open switch
             req = MessageRequest()
             req.to = 'gpios'
-            req.command = 'del_gpio'
+            req.command = 'delete_gpio'
             req.params = {'gpio':config[name]['switch_open']}
             resp = self.push(req)
             if resp['error']:
@@ -349,7 +349,7 @@ class Shutter(RaspIot):
             #unconfigure close switch
             req = MessageRequest()
             req.to = 'gpios'
-            req.command = 'del_gpio'
+            req.command = 'delete_gpio'
             req.params = {'gpio':config[name]['switch_close']}
             resp = self.push(req)
             if resp['error']:

@@ -362,7 +362,7 @@ class Gpios(RaspIot):
         """
         return self.add_gpio(name, gpio, mode, keep, True)
         
-    def del_gpio(self, gpio):
+    def delete_gpio(self, gpio):
         """
         Delete gpio
         """

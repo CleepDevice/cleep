@@ -253,7 +253,7 @@ class Messageboard(RaspIot):
         
         return msg.uuid
 
-    def del_message(self, uuid):
+    def delete_message(self, uuid):
         """
         Delete message which uuid is specified
         @param uuid: message uuid
