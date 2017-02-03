@@ -45,11 +45,11 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getRaspiGpios = function() {
         return rpcService.sendCommand('get_raspi_gpios', 'gpios')
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('getRaspiGpios:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('getRaspiGpios:', err);
+            });
     };
 
     /**
@@ -57,35 +57,34 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.addGpio = function(name, gpio, mode, keep) {
         return rpcService.sendCommand('add_gpio', 'gpios', {'name':name, 'gpio':gpio, 'mode':mode, 'keep':keep})
-        .then(function(resp) {
-        }, function(err) {
-            console.log('addGpio:', err);
-        })
+            .then(function(resp) {
+            }, function(err) {
+                console.log('addGpio:', err);
+            });
     };
 
     /**
      * Delete gpio
      */
-    self.delGpio = function(gpio) {
+    self.deleteGpio = function(gpio) {
         console.log('delete '+gpio);
-        return rpcService.sendCommand('del_gpio', 'gpios', {'gpio':gpio})
-        .then(function(resp) {
-        }, function(err) {
-            console.log('delGpio:', err);
-        })
+        return rpcService.sendCommand('delete_gpio', 'gpios', {'gpio':gpio})
+            .then(function(resp) {
+            }, function(err) {
+                console.log('deleteGpio:', err);
+            });
     };
 
     /**
      * Turn on specified gpio
      */
     self.turnOn = function(gpio) {
-        console.log('turn on', gpio);
         return rpcService.sendCommand('turn_on', 'gpios', {'gpio':gpio})
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('turnOn:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('turnOn:', err);
+            });
     };
 
     /**
@@ -93,11 +92,11 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.turnOff = function(gpio) {
         return rpcService.sendCommand('turn_off', 'gpios', {'gpio':gpio})
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('turnOff:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('turnOff:', err);
+            });
     };
 
     /**

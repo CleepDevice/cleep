@@ -24,9 +24,9 @@ var actionService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getScripts = function() {
         return rpcService.sendCommand('get_scripts', 'action')
-        .then(function(resp) {
-            return resp.data;
-        });
+            .then(function(resp) {
+                return resp.data;
+            });
     };
 
     /**

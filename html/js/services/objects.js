@@ -5,7 +5,6 @@
 var objectsService = function($rootScope) {
     var self = this;
     //list of devices stored by service
-    //self.devices = {};
     self.devices = [];
     //list of services
     self.services = {};

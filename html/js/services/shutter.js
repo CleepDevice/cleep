@@ -52,18 +52,18 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
         .then(function(resp) {
         }, function(err) {
             console.log('addShutter:', err);
-        })
+        });
     };
 
     /**
      * Delete shutter
      */
-    self.delShutter = function(name) {
+    self.deleteShutter = function(name) {
         return rpcService.sendCommand('del_shutter', 'shutter', {'name':name})
-        .then(function(resp) {
-        }, function(err) {
-            console.log('delShutter:', err);
-        })
+            .then(function(resp) {
+            }, function(err) {
+                console.log('deleteShutter:', err);
+            });
     };
 
     /**
@@ -71,11 +71,11 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.openShutter = function(device) {
         return rpcService.sendCommand('open_shutter', 'shutter', {'name':device['name']})
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('openShutter:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('openShutter:', err);
+            });
     };
 
     /**
@@ -83,11 +83,11 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.closeShutter = function(device) {
         return rpcService.sendCommand('close_shutter', 'shutter', {'name':device['name']})
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('closeShutter:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('closeShutter:', err);
+            });
     };
 
     /**
@@ -95,11 +95,11 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.stopShutter = function(device) {
         return rpcService.sendCommand('stop_shutter', 'shutter', {'name':device['name']})
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('stopShutter:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('stopShutter:', err);
+            });
     };
 
     /**

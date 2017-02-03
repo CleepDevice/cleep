@@ -87,7 +87,6 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
                 if( objectsService.devices[i].name===params.sensor )
                 {   
                     objectsService.devices[i]['lastupdate'] = params.lastupdate;
-                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
                     objectsService.devices[i]['on'] = false;
                     break;
                 }   

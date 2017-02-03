@@ -17,11 +17,11 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.setCity = function(city) {
         return rpcService.sendCommand('set_city', 'scheduler', {'city':city})
-        .then(function(resp) {
-            return resp.data
-        }, function(err) {
-            console.log('setCity:', err);
-        });
+            .then(function(resp) {
+                return resp.data
+            }, function(err) {
+                console.log('setCity:', err);
+            });
     };
 
     /**
@@ -29,11 +29,11 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getCity = function() {
         return rpcService.sendCommand('get_city', 'scheduler')
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('getCity:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('getCity:', err);
+            });
     };
 
     /**
@@ -41,11 +41,11 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getSun = function() {
         return rpcService.sendCommand('get_sun', 'scheduler')
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('getSun:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('getSun:', err);
+            });
     };
 
     /**
@@ -53,11 +53,11 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getTime = function() {
         return rpcService.sendCommand('get_time', 'scheduler')
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('getMessages:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('getMessages:', err);
+            });
     };
 
 };

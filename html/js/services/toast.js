@@ -1,22 +1,48 @@
 var toastService = function($mdToast) {
     var self = this;
 
+    /**
+     * Error message
+     * @param message: message to display
+     * @param duration: message duration
+     */
     self.error = function(message, duration) {
         self.__toast(message, 5000, 'error');
     };
 
+    /**
+     * Warning message
+     * @param message: message to display
+     * @param duration: message duration
+     */
     self.warning = function(message, duration) {
         self.__toast(message, 3000, 'warning');
     };
 
+    /**
+     * Success message
+     * @param message: message to display
+     * @param duration: message duration
+     */
     self.success = function(message, duration) {
         self.__toast(message, 3000, 'success');
     };
 
+    /**
+     * Info message
+     * @param message: message to display
+     * @param duration: message duration
+     */
     self.info = function(message, duration) {
         self.__toast(message, 3000, 'info');
     };
 
+    /**
+     * Toast message (internal use)
+     * @param message: message to display
+     * @param duration: message duration
+     * @param class_: bubble class (success, error, warning or info). If not specified setted to info
+     */
     self.__toast = function(message, duration, class_) {
         $mdToast.show(
             $mdToast.simple()
@@ -27,6 +53,11 @@ var toastService = function($mdToast) {
         );
     };
 
+    /**
+     * Loading message. Add a spinner near message
+     * @param message: message to display
+     * @param class_: bubble class (success, error, warning or info). If not specified setted to info
+     */
     self.loading = function(message, class_) {
         if( angular.isUndefined(class_) )
         {
@@ -41,6 +72,10 @@ var toastService = function($mdToast) {
         });
     };
 
+    /**
+     * Hide current toast message
+     * Useful to hide loading message
+     */
     self.hide = function() {
         $mdToast.hide();
     };

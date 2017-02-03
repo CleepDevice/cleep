@@ -51,10 +51,10 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Delete sound
      */
     self.deleteSound = function(path) {
-        return rpcService.sendCommand('del_sound', 'sound', {'filepath':path})
+        return rpcService.sendCommand('delete_sound', 'sound', {'filepath':path})
             .then(function(resp) {
             }, function(err) {
-                console.error('delSound:', err);
+                console.error('deleteSound:', err);
             });
     };
 

@@ -17,21 +17,21 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.addMessage = function(message, start, end) {
         return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end})
-        .then(function(resp) {
-        }, function(err) {
-            console.log('addMessage:', err);
-        });
+            .then(function(resp) {
+            }, function(err) {
+                console.log('addMessage:', err);
+            });
     };
 
     /**
      * Delete message
      */
     self.deleteMessage = function(uuid) {
-        return rpcService.sendCommand('del_message', 'messageboard', {'uuid':uuid})
-        .then(function(resp) {
-        }, function(err) {
-            console.log('deleteMessage:', err);
-        });
+        return rpcService.sendCommand('delete_message', 'messageboard', {'uuid':uuid})
+            .then(function(resp) {
+            }, function(err) {
+                console.log('deleteMessage:', err);
+            });
     };
 
     /**
@@ -39,11 +39,11 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getMessages = function() {
         return rpcService.sendCommand('get_messages', 'messageboard')
-        .then(function(resp) {
-            return resp.data;
-        }, function(err) {
-            console.log('getMessages:', err);
-        });
+            .then(function(resp) {
+                return resp.data;
+            }, function(err) {
+                console.log('getMessages:', err);
+            });
     };
 
     /**
@@ -92,9 +92,9 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
      */
     self.getUnits = function() {
         return rpcService.sendCommand('get_units', 'messageboard')
-        .then(function(resp) {
-            return resp.data;
-        });
+            .then(function(resp) {
+                return resp.data;
+            });
     };
 
     /**
