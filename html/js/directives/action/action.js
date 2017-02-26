@@ -1,5 +1,5 @@
 
-var actionConfigDirective = function($q, toast, actionService, uploadFile, confirm) {
+var actionConfigDirective = function($q, toast, actionService, confirm) {
 
     var actionController = ['$scope', function($scope) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm:ss';
@@ -15,10 +15,11 @@ var actionConfigDirective = function($q, toast, actionService, uploadFile, confi
             {
                 //launch upload
                 toast.loading('Uploading script...');
-                uploadFile.upload('/upload', file, {
+                actionService.uploadScript(file, self.onUploadSuccess, self.onUploadFailure);
+                /*uploadFile.upload('/upload', file, {
                     'command': 'add_script',
                     'to': 'action'
-                }, self.onUploadSuccess, self.onUploadFailure);
+                }, self.onUploadSuccess, self.onUploadFailure);*/
             }
         });
 
@@ -110,6 +111,19 @@ var actionConfigDirective = function($q, toast, actionService, uploadFile, confi
                 });
         };
 
+        /**
+         * Download script
+         */
+        self.downloadScript = function(script) {
+            actionService.downloadScript(script);
+                /*.then(function(resp) {
+                    //nothing to do
+                    console.log('DOWNLOAD OK', resp);
+                }, function(err) {
+                    console.log('ERROR DOWNLOADING FILE', err);
+                });*/
+        };
+
     }];
 
     var actionLink = function(scope, element, attrs, controller) {
@@ -126,4 +140,4 @@ var actionConfigDirective = function($q, toast, actionService, uploadFile, confi
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionConfigDirective', ['$q', 'toastService', 'actionService', 'uploadFileService', 'confirmService', actionConfigDirective]);
+RaspIot.directive('actionConfigDirective', ['$q', 'toastService', 'actionService', 'confirmService', actionConfigDirective]);

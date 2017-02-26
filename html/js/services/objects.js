@@ -55,7 +55,6 @@ var objectsService = function($rootScope) {
         }
         else
         {
-            console.log('add devices for service '+service, devices);
             //force devices type
             if( angular.isUndefined(type) || type===null )
             {
@@ -81,7 +80,6 @@ var objectsService = function($rootScope) {
                     delCount++;
                 }
             }
-            console.log(delCount+' objects deleted');
 
             //flatten devices and append some stuff:
             // - __service: to easily access to service functions
@@ -105,23 +103,6 @@ var objectsService = function($rootScope) {
             }
         }
     };
-
-    /**
-     * Delete specified device
-     */
-    self.delDevice = function(device)
-    {
-        if( device )
-        {
-            for( var i=0; i<self.devices.length; i++ )
-            {
-                if( self.devices[i]===device )
-                {
-                    console.log('device found');
-                }
-            }
-        }
-    }
 
     /**
      * Return object template name (without path and file extention)

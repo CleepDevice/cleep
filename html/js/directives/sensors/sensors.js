@@ -84,6 +84,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
                 sensorsService.addMotion(self.name, self.gpio, self.reverted)
                     .then(function(resp) {
                         toast.success('Sensor added');
+                        sensorsService.loadDevices();
                     });
             }
         };

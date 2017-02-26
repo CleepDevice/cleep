@@ -330,5 +330,17 @@ class Action(RaspIot):
 
         return True 
 
+    def download_script(self, script):
+        """
+        Download specified script
+        """
+        filepath = os.path.join(Action.SCRIPTS_PATH, script)
+        if os.path.exists(filepath):
+            #script is valid, return full filepath
+            return filepath
+        else:
+            #script doesn't exist, raise exception
+            raise Exception('Script "%s" doesn\'t exist' % script)
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")

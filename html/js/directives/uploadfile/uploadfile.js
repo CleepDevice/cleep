@@ -3,7 +3,7 @@
  * Inject a hidden file input and material type input (button + text input)
  * Directive code adapted from http://codepen.io/juniper/pen/LGEOVb
  */
-var uploadFileDirective = function(uploadFileService) {
+var uploadFileDirective = function(rpcService) {
 
     var uploadFileLink = function(scope, element, attrs, controller) {
         var input = $(element[0].querySelector('#fileInput'));
@@ -30,7 +30,7 @@ var uploadFileDirective = function(uploadFileService) {
 
         //define event
         input.on('change', function (e) {
-            if( uploadFileService.uploading===false )
+            if( rpcService.uploading===false )
             {
                 var files = e.target.files;
                 if( files[0] )
@@ -51,7 +51,7 @@ var uploadFileDirective = function(uploadFileService) {
 
         //handle end of upload to reset directive content
         scope.$watch(function() {
-            return uploadFileService.uploading;
+            return rpcService.uploading;
         }, function(newVal, oldVal) {
             if( newVal===false && oldVal===true ) {
                 input.val('');
@@ -82,7 +82,7 @@ var uploadFileDirective = function(uploadFileService) {
  * @param onSuccess: on success callback (function)
  * @param onError: on error callback (function)
  */
-function uploadFileService($http) {
+/*function uploadFileService($http) {
     var self = this;
     self.uploading = false;
 
@@ -125,9 +125,9 @@ function uploadFileService($http) {
             self.uploading = false;
         });
     };
-}
+}*/
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('uploadFileService', ['$http', uploadFileService]);
-RaspIot.directive('uploadFile', ['uploadFileService', uploadFileDirective]);
+//RaspIot.service('uploadFileService', ['$http', uploadFileService]);
+RaspIot.directive('uploadFile', ['rpcService', uploadFileDirective]);
 

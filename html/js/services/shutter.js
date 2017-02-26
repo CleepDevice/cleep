@@ -59,7 +59,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Delete shutter
      */
     self.deleteShutter = function(name) {
-        return rpcService.sendCommand('del_shutter', 'shutter', {'name':name})
+        return rpcService.sendCommand('delete_shutter', 'shutter', {'name':name})
             .then(function(resp) {
             }, function(err) {
                 console.log('deleteShutter:', err);

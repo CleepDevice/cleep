@@ -41,8 +41,8 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
                         temperatures.push(device);
                     }
                 }
-                objectsService.addDevices('sensors', motions);
-                objectsService.addDevices('sensors', temperatures);
+                objectsService.addDevices('sensors', motions, 'motion');
+                objectsService.addDevices('sensors', temperatures, 'temperature');
             }, function(err) {
                 console.log('loadDevices', err);
             });
@@ -77,7 +77,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      * Delete sensor
      */
     self.deleteSensor = function(name) {
-        return rpcService.sendCommand('del_sensor', 'sensors', {'name':name})
+        return rpcService.sendCommand('delete_sensor', 'sensors', {'name':name})
             .then(function(resp) {
             });
     };

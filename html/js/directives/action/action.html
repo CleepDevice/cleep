@@ -42,6 +42,10 @@
                         <md-tooltip md-direction="bottom">Enable script</md-tooltip>
                         <md-icon md-font-set="material-icons">lock_open</md-icon>
                     </md-button>
+                    <md-button class="md-icon-button" ng-click="actionCtl.downloadScript(script.name)" aria-label="Download script">
+                        <md-tooltip md-direction="bottom">Download script</md-tooltip>
+                        <md-icon md-font-set="material-icons">file_download</md-icon>
+                    </md-button>
                     <md-button class="md-icon-button" ng-click="actionCtl.deleteScript(script.name)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete script</md-tooltip>
                         <md-icon md-font-set="material-icons">delete</md-icon>

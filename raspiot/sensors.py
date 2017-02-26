@@ -368,7 +368,7 @@ class Sensors(RaspIot):
         config = self._get_config()
         if not name:
             raise MissingParameter('"name" parameter is missing')
-        elif name not in config:
+        elif name not in config['sensors'].keys():
             raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
         else:
             #unconfigure gpios

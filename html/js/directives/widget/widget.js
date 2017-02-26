@@ -10,7 +10,7 @@ var widgetDirective = function() {
          */
         self.init = function()
         {
-            console.log('device=', self.device);
+            //nothing to init yet
         };
     }];
 

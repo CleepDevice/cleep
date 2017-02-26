@@ -1,5 +1,7 @@
-
-var soundConfigDirective = function($q, toast, soundService, uploadFile, confirm) {
+/**
+ *
+ */
+var soundConfigDirective = function($q, toast, soundService, confirm) {
 
     var soundController = ['$scope', function($scope) {
         var self = this;
@@ -28,10 +30,11 @@ var soundConfigDirective = function($q, toast, soundService, uploadFile, confirm
             {
                 //launch upload
                 toast.loading('Uploading file');
-                uploadFile.upload('/upload', file, {
+                soundService.uploadSound(file, self.onUploadSuccess, self.onUploadFailure);
+                /*uploadFile.upload('/upload', file, {
                     'command': 'add_sound',
                     'to': 'sound'
-                }, self.onUploadSuccess, self.onUploadFailure);
+                }, self.onUploadSuccess, self.onUploadFailure);*/
             }
         });
 
@@ -216,4 +219,4 @@ var soundConfigDirective = function($q, toast, soundService, uploadFile, confirm
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('soundConfigDirective', ['$q', 'toastService', 'soundService', 'uploadFileService', 'confirmService', soundConfigDirective]);
+RaspIot.directive('soundConfigDirective', ['$q', 'toastService', 'soundService', 'confirmService', soundConfigDirective]);

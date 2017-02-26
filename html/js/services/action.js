@@ -35,6 +35,17 @@ var actionService = function($q, $rootScope, rpcService, objectsService) {
     self.disableScript = function(script, disabled) {
         return rpcService.sendCommand('disable_script', 'action', {'script':script, 'disabled':disabled});
     };
+
+    /**
+     * Download script
+     */
+    self.downloadScript = function(script) {
+        rpcService.download('download_script', 'action', {'script': script});
+    };
+
+    self.uploadScript = function(file, onSuccess, onError) {
+        return rpcService.upload('add_script', 'action', file, onSuccess, onError);
+    };
 };
     
 var RaspIot = angular.module('RaspIot');

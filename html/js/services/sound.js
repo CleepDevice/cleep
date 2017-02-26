@@ -102,6 +102,13 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
                 console.error('getVolume:', err);
             });
     };
+
+    /**
+     * Upload sound
+     */
+    self.uploadSound = function(file, onSuccess, onError) {
+        return rpcService.upload('add_sound', 'sound', file, onSuccess, onError);
+    };
 };
     
 var RaspIot = angular.module('RaspIot');

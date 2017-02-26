@@ -1,5 +1,11 @@
 <md-content layout-fill ng-cloak>
 
+    <!-- close panel button -->
+    <md-button ng-show="msgboardCtl.showAddPanel" ng-click="msgboardCtl.closeAddPanel()" class="md-primary md-fab md-fab-top-right fab-panel">
+        <md-tooltip md-direction="bottom">Close</md-tooltip>
+        <md-icon md-font-set="material-icons">close</md-icon>
+    </md-button>
+
     <!-- add panel -->
     <md-content ng-show="msgboardCtl.showAddPanel" layout-padding md-theme="dark" class="slide-panel" ng-cloak>
     <form name="addForm">
@@ -54,10 +60,15 @@
             <md-button type="submit" ng-disabled="addForm.$invalid" class="md-raised md-primary" ng-click="msgboardCtl.addMessage()" aria-label="Ok">
                 Add message
             </md-button>
-            <md-button class="md-raised" ng-click="msgboardCtl.closeAddPanel()" aria-label="Cancel">Cancel</md-button>
         </div>
     </form>
     </md-content>
+
+    <!-- close panel button -->
+    <md-button ng-show="msgboardCtl.showAdvancedPanel" ng-click="msgboardCtl.closeAdvancedPanel()" class="md-primary md-fab md-fab-top-right fab-panel">
+        <md-tooltip md-direction="bottom">Close</md-tooltip>
+        <md-icon md-font-set="material-icons">close</md-icon>
+    </md-button>
 
     <!-- advanced panel -->
     <md-content ng-show="msgboardCtl.showAdvancedPanel" layout-padding md-theme="alt-dark" class="slide-panel" ng-cloak>
@@ -111,10 +122,6 @@
                 <md-button class="md-raised md-primary" ng-click="msgboardCtl.setUnits()" aria-label="Set duration">Set units</md-button>
             </div>
         </div>
-
-        <section layout="row">
-            <md-button class="md-raised" ng-click="msgboardCtl.closeAdvancedPanel()" aria-label="Close">Close</md-button>
-        </section>
     </md-content>
 
     <!-- items list -->

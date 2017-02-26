@@ -218,7 +218,7 @@ def upload():
             logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
             resp = execute_command(command, to, params)
 
-    except Exception, e:
+    except Exception as e:
         logger.exception('Exception in upload:')
         #something went wrong
         msg = MessageResponse()
@@ -230,6 +230,52 @@ def upload():
         if path:
             logger.debug('Delete uploaded file')
             os.remove(path)
+
+    return resp
+
+@app.route('/download', method='GET')
+@maybe_decorated(auth_enabled, auth_basic(check_auth))
+def download():
+    """
+    Download file
+    @info: need to have command, to and params values on uri:
+    """
+    try:
+        #prepare params
+        command = bottle.request.query.command
+        to = bottle.request.query.to
+        params = {}
+        logger.debug('Download params: command=%s to=%s params=%s' % (command, to, params))
+
+        try:
+            params = dict(bottle.request.query)
+            #remove useless parameters
+            if params.has_key('command'):
+                del params['command']
+            if params.has_key('to'):
+                del params['to']
+        except:
+            params = {}
+
+        #request full filepath from module (string format)
+        resp = execute_command(command, to, params)
+        logger.debug('response: %s' % resp)
+        if not resp['error']:
+            filename = os.path.basename(resp['data'])
+            root = os.path.dirname(resp['data'])
+            logger.debug('Download file root=%s filename=%s' % (root, filename))
+            return bottle.static_file(filename=filename, root=root, download=True)
+        else:
+            #error during filepath retrieving
+            raise Exception(resp['message'])
+
+    except Exception as e:
+        logger.exception('Exception in download:')
+        #something went wrong
+        msg = MessageResponse()
+        msg.message = str(e)
+        msg.error = True
+        resp = msg.to_dict()
 
     return resp
 
@@ -281,7 +327,7 @@ def command():
         #execute command
         resp = execute_command(command, to, params)
 
-    except Exception, e:
+    except Exception as e:
         logger.exception('Exception in command:')
         #something went wrong
         msg = MessageResponse()
