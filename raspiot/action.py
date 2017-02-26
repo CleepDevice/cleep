@@ -309,8 +309,8 @@ class Action(RaspIot):
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
-        self.logger.info('uploaded file extension: %s - %s' % (str(file_ext), str(file_ext[1][1:])))
-        if file_ext[1][1:]=='.py':
+        self.logger.info('uploaded file extension: %s - %s' % (str(file_ext), str(file_ext[1])))
+        if file_ext[1]!='.py':
             self.logger.info('uploaded file extension: %s' % str(file_ext[1][1:]))
             raise bus.InvalidParameter('Invalid script file uploaded (only python script are supported)')
 

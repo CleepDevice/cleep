@@ -396,8 +396,8 @@ class Gpios(RaspIot):
             GPIO.output(gpios[gpio], GPIO.LOW)
 
             #save current state
+            self._config[gpio]['on'] = True
             if self._config[gpio]['keep']:
-                self._config[gpio]['on'] = True
                 self._save_config(self._config)
 
             #broadcast event
@@ -426,9 +426,9 @@ class Gpios(RaspIot):
             self.logger.debug('turn off GPIO %s' % gpio)
             GPIO.output(gpios[gpio], GPIO.HIGH)
 
-            #save config
+            #save current state
+            self._config[gpio]['on'] = False
             if self._config[gpio]['keep']:
-                self._config[gpio]['on'] = False
                 self._save_config(self._config)
 
             #broadcast event
@@ -460,7 +460,7 @@ class Gpios(RaspIot):
 
     def reset_gpios(self):
         """
-        Reset all gpios setting turning them off
+        Reset all gpios turning them off
         """
         config = self.get_gpios()
         for gpio in config:

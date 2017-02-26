@@ -192,15 +192,18 @@ class Sound(RaspIot):
         pygame.mixer.music.set_volume(int(volume/100.0))
         pygame.quit()
 
-    def play_sound(self, filepath):
+    def play_sound(self, filename):
         """
         Play specified file
         @param filepath: file path to play
         """
+        #build filepath
+        filepath = os.path.join(Sound.SOUNDS_PATH, filename)
+
         #check file validity
-        if not filepath.startswith(Sound.SOUNDS_PATH) or not os.path.exists(filepath):
+        if not os.path.exists(filepath):
             #invalid file specified
-            raise bus.InvalidParameter('Specified file "%s" is invalid' % name)
+            raise bus.InvalidParameter('Specified file "%s" is invalid' % filename)
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
@@ -237,35 +240,38 @@ class Sound(RaspIot):
 
         return True
 
-    def delete_sound(self, filepath):
+    def delete_sound(self, filename):
         """
         Delete sound
         """
-        for root, dirs, sounds in os.walk(Sound.SOUNDS_PATH):
-            for sound in sounds:
-                if os.path.join(root, sound)==filepath:
-                    os.remove(filepath)
-                    return True
+        #build filepath
+        filepath = os.path.join(Sound.SOUNDS_PATH, filename)
+    
+        #delete file
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return True
 
-        raise bus.InvalidParameter('Sound file not found')
+        raise bus.InvalidParameter('Invalid sound file')
 
     def get_sounds(self):
         """
         Get sounds
+        @return: array of sounds {'name':<name>}
         """
         out = []
         for root, dirs, sounds in os.walk(Sound.SOUNDS_PATH):
             for sound in sounds:
                 out.append({
-                    'name': os.path.basename(sound),
-                    'path': os.path.join(root, sound)
+                    'name': os.path.basename(sound)
                 })
         return out
 
     def add_sound(self, filepath):
         """
         Add new sound
-        @param sound: local sound file path
+        @param filepath: uploaded filepath
+        @return: True if file uploaded successfully, raise error otherwise
         """
         #check parameters
         file_ext = os.path.splitext(filepath)

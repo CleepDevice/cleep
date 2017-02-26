@@ -40,7 +40,8 @@ class Message():
             'uuid': self.uuid,
             'message': self.message,
             'start': self.start,
-            'end': self.end
+            'end': self.end,
+            'displayed_time': self.displayed_time
         }
 
     def __str__(self):
@@ -160,10 +161,18 @@ class Messageboard(RaspIot):
                 if msg!=self.__current_message or msg.dynamic==True:
                     self.logger.debug(' ==> Display message %s' % str(msg))
                     msg.dynamic = self.board.display_message(msg.message)
-                    self.__current_message = msg
                     msg.displayed_time = now
+                    self.__current_message = msg
+
+                    #push event
+                    req = bus.MessageRequest()
+                    req.event = 'messageboard.message.update'
+                    req.params = self.get_current_message()
+                    self.push(req)
+
             else:
                 #no message to display, clear screen
+                self.__current_message = None
                 self.board.clear()
 
         except:
@@ -320,6 +329,28 @@ class Messageboard(RaspIot):
             msgs.append(msg.to_dict())
         return msgs
 
+    def get_current_message(self):
+        """
+        Return current displayed message
+        """
+        out = {
+            'nomessage': False,
+            'off': False,
+            'message': None
+        }
+
+        if self.__current_message is None:
+            #no message displayed for now, return empty string
+            out['nomessage'] = True
+        elif not self.board.is_on():
+            #board is off
+            out['off'] = True
+        else:
+            #send message
+            out['message'] = self.__current_message.to_dict()
+
+        return out
+
     def get_units(self):
         """
         Return time units
@@ -353,14 +384,33 @@ class Messageboard(RaspIot):
         #just turn on display
         self.board.turn_on()
 
+        #push event
+        req = bus.MessageRequest()
+        req.event = 'messageboard.message.update'
+        req.params = self.get_current_message()
+        self.push(req)
+
     def turn_off(self):
         """
         Turn off board
         """
         #clear board first
-        self.clear()
+        self.board.clear()
+
         #and turn off display
         self.board.turn_off()
+
+        #push event
+        req = bus.MessageRequest()
+        req.event = 'messageboard.message.update'
+        req.params = self.get_current_message()
+        self.push(req)
+
+    def is_on(self):
+        """
+        Return board status (on/off)
+        """
+        return self.board.is_on()
 
 
 if __name__ == '__main__':

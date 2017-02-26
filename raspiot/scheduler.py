@@ -8,7 +8,7 @@ from raspiot import RaspIot
 from datetime import datetime
 import time
 import task
-from astral import Astral, GoogleGeocoder
+from astral import Astral, GoogleGeocoder, AstralError
 
 __all__ = ['Scheduler']
 
@@ -30,8 +30,8 @@ class Scheduler(RaspIot):
         self._check_config(Scheduler.DEFAULT_CONFIG)
 
         #members
-        self.sunset = None
-        self.sunrise = None
+        self.sunset = time.mktime(datetime.min.timetuple())
+        self.sunrise = time.mktime(datetime.min.timetuple())
 
         #launch time task
         self.time_task = task.Task(60.0, self.__send_time_event)
@@ -45,31 +45,51 @@ class Scheduler(RaspIot):
         if self.time_task:
             self.time_task.stop()
 
-    def __compute_sun(self):
+    def __search_city(self, city):
+        """
+        Search for specified city
+        @return astral location (from geocoder function)
+        """
+        try:
+            a = Astral(GoogleGeocoder)
+            return a.geocoder[city]
+        except AstralError as e:
+            if e.message and e.message.find('Unable to locate')>=0:
+                raise Exception('Unable to find city. Please specify a bigger city.')
+            else:
+                raise Exception(e.message)
+
+    def __compute_sun(self, city=None):
         """
         Compute sunset/sunrise times
         """
         self.logger.debug('Compute sunset/sunrise')
 
-        #compute now
-        now = int(time.time())
-        dt = datetime.fromtimestamp(now)
-
-        if self._config.has_key('city'):
-            try:
-                a = Astral(GoogleGeocoder)
-                loc = a.geocoder[self._config['city']]
-                sun = loc.sun()
-                self.sunset = sun['sunset']
-                self.sunrise = sun['sunrise']
-                self.logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
-            except:
-                self.logger.exception('Unable to compute sunset/sunrise time:')
+        #force city from configurated one if city not specified
+        if not city:
+            if self._config.has_key('city') and self._config['city'] is not None:
+                city = self._config['city']
+            else:
+                #no city available
+                city = None
+                
+        if city:
+            loc = self.__search_city(city)
+            sun = loc.sun()
+            self.sunset = sun['sunset']
+            self.sunrise = sun['sunrise']
+            self.logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
+            
+        else:
+            self.sunset = None
+            self.sunrise = None
+            self.logger.warning('No city configured, scheduler will only return current timestamp')
 
     def __format_time(self, now=None):
         """
         Return current time object
         """
+        #current time
         if not now:
             now = int(time.time())
         dt = datetime.fromtimestamp(now)
@@ -88,6 +108,15 @@ class Scheduler(RaspIot):
             weekday_literal = 'saturday'
         elif weekday==6:
             weekday_literal = 'sunday'
+
+        #sunset and sunrise
+        sunset = None
+        if self.sunset:
+            sunset = time.mktime(self.sunset.timetuple())
+        sunrise = None
+        if self.sunrise:
+            sunrise = time.mktime(self.sunrise.timetuple())
+
         return {
             'time': now,
             'year': dt.year,
@@ -96,7 +125,9 @@ class Scheduler(RaspIot):
             'hour': dt.hour,
             'minute': dt.minute,
             'weekday': weekday,
-            'weekday_literal': weekday_literal
+            'weekday_literal': weekday_literal,
+            'sunset': sunset,
+            'sunrise': sunrise
         }
 
     def __send_time_event(self):
@@ -142,9 +173,15 @@ class Scheduler(RaspIot):
         """
         Return sunset and sunrise timestamps
         """
+        sunset = None
+        if self.sunset:
+            sunset = int(time.mktime(self.sunset.timetuple()))
+        sunrise = None
+        if self.sunrise:
+            sunrise = int(time.mktime(self.sunrise.timetuple()))
         return {
-            'sunset': int(time.mktime(self.sunset.timetuple())),
-            'sunrise': int(time.mktime(self.sunrise.timetuple()))
+            'sunset': sunset,
+            'sunrise': sunrise
         }
 
     def get_city(self):
@@ -158,13 +195,13 @@ class Scheduler(RaspIot):
         Set city name
         @param city: closest city name
         """
-        #save city
+        #compute sunset/sunrise
+        self.__compute_sun(city)
+        
+        #save city (exception raised before if error occured)
         config = self._get_config()
         config['city'] = city
         self._save_config(config)
-
-        #compute sunset/sunrise
-        self.__compute_sun()
 
         return self.get_sun()
 
