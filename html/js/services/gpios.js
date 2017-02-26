@@ -18,12 +18,22 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     self.loadDevices = function() {
         rpcService.sendCommand('get_gpios', 'gpios')
             .then(function(resp) {
-                //add key to device structure
+                //add missing stuff to gpio object
                 for( var gpio in resp.data )
                 {
+                    //set gpio value
                     resp.data[gpio].gpio = gpio;
+
+                    //set widget props
+                    resp.data[gpio].widget = {
+                        mdcolors: '{background:"default-primary-300"}'
+                    };
+                    if( resp.data[gpio].on )
+                    {
+                        resp.data[gpio].widget.mdcolors = '{background:"default-accent-400"}';
+                    }
                 }
-                objectsService.addDevices('gpios', resp.data);
+                objectsService.addDevices('gpios', resp.data, 'gpios');
             }, function(err) {
                 console.error('loadDevices', err);
             });
@@ -105,14 +115,12 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('event.gpio.on', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='gpios' )
+            if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )
             {
-                if( objectsService.devices[i].gpio===params.gpio )
+                if( objectsService.devices[i].on===false )
                 {
-                    if( objectsService.devices[i]['on']===false )
-                    {
-                        objectsService.devices[i]['on'] = true;
-                    }
+                    objectsService.devices[i].on = true;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
                     break;
                 }
             }
@@ -125,14 +133,12 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('event.gpio.off', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='gpios' )
+            if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )
             {
-                if( objectsService.devices[i].gpio===params.gpio )
+                if( objectsService.devices[i]['on']===true )
                 {
-                    if( objectsService.devices[i]['on']===true )
-                    {
-                        objectsService.devices[i]['on'] = false;
-                    }
+                    objectsService.devices[i]['on'] = false;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }
             }

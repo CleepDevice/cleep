@@ -13,6 +13,19 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
     };
 
     /**
+     * Load service devices (here add static device such as clock)
+     */
+    self.loadDevices = function() {
+        rpcService.sendCommand('get_time', 'scheduler')
+            .then(function(resp) {
+                resp.data.name = 'Clock';
+                objectsService.addDevices('scheduler', {'clock':resp.data}, 'clock');
+            }, function(err) {
+                console.error('loadDevices', err);
+            });
+    };
+
+    /**
      * Change city
      */
     self.setCity = function(city) {
@@ -60,6 +73,21 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
             });
     };
 
+    /**
+     * Catch scheduler time event
+     */
+    $rootScope.$on('event.time.now', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='scheduler' && objectsService.devices[i].__type=='clock' )
+            {
+                objectsService.devices[i].time = params.time;
+                objectsService.devices[i].sunset = params.sunset;
+                objectsService.devices[i].sunrise = params.sunrise;
+                break;
+            }
+        }
+    });
 };
     
 var RaspIot = angular.module('RaspIot');

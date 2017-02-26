@@ -2,8 +2,7 @@
  * Gpios config directive
  * Handle gpios configuration
  */
-var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, toast) {
-    //var container = null;
+var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, confirm) {
 
     var gpiosConfigController = function() {
         var self = this;
@@ -16,35 +15,27 @@ var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, t
         self.list = [];
         self.currentDevice = null;
         self.showAddPanel = false;
-        self.showAdvancedPanel = false;
 
         /**
-         * Open adding panel
+         * Open add panel
          */
         self.openAddPanel = function() {
             self.showAddPanel = true;
         };
 
         /**
-         * Close adding panel and reset current device
+         * Close add panel and reset current device
          */
         self.closeAddPanel = function() {
-            self.currentDevice = null;
+            //hide panel
             self.showAddPanel = false;
-        };
 
-        /**
-         * Open advanced config panel
-         */
-        self.openAdvancedPanel = function() {
-            self.showAdvancedPanel = true;
-        };
-
-        /**
-         * Close advanced config panel
-         */
-        self.closeAdvancedPanel = function() {
-            self.showAdvancedPanel = false;
+            //reset field content
+            self.name = '';
+            self.gpio = 'GPIO3';
+            self.mode = 'in';
+            self.keep = true;
+            self.currentDevice = null;
         };
 
         /**
@@ -58,70 +49,57 @@ var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, t
         }
 
         /**
-         * Add new gpio
+         * Add/update gpio
          */
         self.addGpio = function() {
             //check values
             if( self.name.length==0 )
             {
                 toast.error('All fields are required');
+                return;
+            }
+
+            if( self.currentDevice )
+            {
+                //edition mode: first of all delete current device if edition
+                gpiosService.deleteGpio(self.currentDevice.gpio)
+                    .then(function() {
+                            self.currentDevice = null;
+                            return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
+                            .then(function(resp) {
+                                toast.success('Gpio updated');
+                                gpiosService.loadDevices();
+                             })
+                            .finally(function() {
+                                self.closeAddPanel();
+                                });
+                            });
             }
             else
             {
-                //container.start();
-
-                if( self.currentDevice )
-                {
-                    //edition mode: first of all delete current device if edition
-                    gpiosService.delGpio(self.currentDevice.gpio)
-                        .then(function() {
-                            self.currentDevice = null;
-                            return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
-                                .then(function(resp) {
-                                    //reload devices
-                                    gpiosService.loadDevices();
-                                });
-                                /*.finally(function() {
-                                    self.closeAddPanel();
-                                    container.stop();
-                                });*/
-                        })
-                        .finally(function() {
-                            //container.stop();
-                        });
-                }
-                else
-                {
-                    //adding mode
-                    gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
-                        .then(function(resp) {
-                            //reload devices
-                            gpiosService.loadDevices();
-                        })
-                        .finally(function() {
-                            self.closeAddPanel();
-                            //container.stop();
-                        });
-                }
+                //adding mode
+                gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
+                    .then(function(resp) {
+                        //reload devices
+                        gpiosService.loadDevices();
+                    })
+                    .finally(function() {
+                        self.closeAddPanel();
+                    });
             }
         };
 
         /**
          * Delete gpio
          */
-        self.deleteGpio = function(device, warning) {
-            if( (warning===undefined || warning===true) && !confirm('Delete gpio?') ) {
-                return;
-            }
-
-            //container.start();
-            gpiosService.delGpio(device.gpio)
-                .then(function(resp) {
-                    //reload devices
-                    gpiosService.loadDevices();
-                })
-                .finally(function() {
-                    //container.stop();
+        self.deleteGpio = function(device) {
+            confirm.dialog('Delete gpio ?', null, 'Delete')
+                .then(function() {
+                    gpiosService.deleteGpio(device.gpio)
+                        .then(function(resp) {
+                            //reload devices
+                            gpiosService.loadDevices();
+                        });
                 });
         };
 
@@ -152,10 +130,6 @@ var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, t
     };
 
     var gpiosConfigLink = function(scope, element, attrs, controller) {
-        //init blockui
-        //container = blockUI.instances.get('gpiosContainer');
-        //container.reset();
-
         //init controller
         controller.init();
     };
@@ -171,4 +145,4 @@ var gpiosConfigDirective = function(gpiosService, $q, blockUI, objectsService, t
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'blockUI', 'objectsService', 'toastService', gpiosConfigDirective]);
+RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'objectsService', 'toastService', 'confirmService', gpiosConfigDirective]);

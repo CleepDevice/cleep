@@ -1,6 +1,5 @@
 
-var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFile) {
-    var container = null;
+var actionConfigDirective = function($q, toast, actionService, uploadFile, confirm) {
 
     var actionController = ['$scope', function($scope) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm:ss';
@@ -80,20 +79,16 @@ var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFi
          * Delete specified script
          */
         self.deleteScript = function(script) {
-            //confirmation
-            if( !confirm('Delete script?') )
-            {
-                return;
-            }
-
-            //delete script
-            actionService.deleteScript(script)
+            confirm.dialog('Delete script ?')
                 .then(function() {
-                    //message
-                    toast.success('Script deleted');
-
-                    //refresh scripts
-                    self.getScripts();
+                    //delete script
+                    actionService.deleteScript(script)
+                        .then(function() {
+                            //message
+                            toast.success('Script deleted');
+                            //refresh scripts list
+                            self.getScripts();
+                        });
                 });
         };
 
@@ -112,9 +107,6 @@ var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFi
 
                     //refresh scripts
                     self.getScripts();
-                })
-                .finally(function() {
-                    //container.stop();
                 });
         };
 
@@ -127,7 +119,6 @@ var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFi
     return {
         templateUrl: 'js/directives/action/action.html',
         replace: true,
-        //scope: true,
         controller: actionController,
         controllerAs: 'actionCtl',
         link: actionLink
@@ -135,4 +126,4 @@ var actionConfigDirective = function($q, toast, blockUI, actionService, uploadFi
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionConfigDirective', ['$q', 'toastService', 'blockUI', 'actionService', 'uploadFileService', actionConfigDirective]);
+RaspIot.directive('actionConfigDirective', ['$q', 'toastService', 'actionService', 'uploadFileService', 'confirmService', actionConfigDirective]);

@@ -1,33 +1,36 @@
 
-var widgetDirective = function($rootScope, $q, growl, blockUI) {
+var widgetDirective = function() {
 
-    var widgetController = ['$scope', '$injector', 'rpcService', 'objectsService', function($scope, $injector, rpcService, objectsService) {
+    var widgetController = ['$scope', function($scope) {
+        var self = this;
+        self.device = $scope.device;
+
         /**
          * Init controller
          */
-        function init()
+        self.init = function()
         {
+            console.log('device=', self.device);
         };
-
-        $scope.getTemplate = function()
-        {
-            return 'views/widgets/' + objectsService.getObjectTemplateName($scope.device) + '.html';
-        };
-
-        //init directive
-        init();
     }];
+
+    var widgetLink = function(scope, element, attrs, controller) {
+        //init controller
+        controller.init();
+    };
 
     return {
         restrict: 'EA',
         templateUrl: 'js/directives/widget/widget.html',
         replace: true,
+        link: widgetLink,
         scope: {
             'device': '=widgetDirective'
         },
-        controller: widgetController
+        controller: widgetController,
+        controllerAs: 'widgetCtl'
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetDirective', ['$rootScope', '$q', 'growl', 'blockUI', widgetDirective]);
+RaspIot.directive('widgetDirective', [widgetDirective]);

@@ -3,15 +3,14 @@ var dashboardDirective = function($rootScope, $q, growl, blockUI) {
     var container = null;
 
     var dashboardController = ['$scope', '$injector', 'rpcService', 'objectsService', function($scope, $injector, rpcService, objectsService) {
+        var self = this;
         //threshold to display search toolbar
-        $scope.devicesThreshold = 10;
+        self.devicesThreshold = 10;
         //devices
-        $scope.devices = objectsService.devices;
+        self.devices = objectsService.devices;
     }];
 
-    var dashboardLink = function(scope, element, attrs) {
-        container = blockUI.instances.get('dashboardContainer');
-        container.reset();
+    var dashboardLink = function(scope, element, attrs, controller) {
     };
 
     return {
@@ -19,6 +18,7 @@ var dashboardDirective = function($rootScope, $q, growl, blockUI) {
         replace: true,
         scope: true,
         controller: dashboardController,
+        controllerAs: 'dashboardCtl',
         link: dashboardLink
     };
 };

@@ -1,4 +1,10 @@
-<md-content ng-cloak>
+<md-content layout-fill ng-cloak>
+
+    <!-- close panel button -->
+    <md-button ng-show="sensorsCtl.showAddPanel" ng-click="sensorsCtl.closeAddPanel()" class="md-primary md-fab md-fab-top-right fab-panel">
+        <md-tooltip md-direction="bottom">Close</md-tooltip>
+        <md-icon md-font-set="material-icons">close</md-icon>
+    </md-button>
 
     <!-- add panel -->
     <md-content ng-show="sensorsCtl.showAddPanel" md-theme="dark" class="slide-panel">
@@ -19,11 +25,10 @@
                 </md-checkbox>
             </md-input-container>
             <section layout="row">
-                <md-button class="md-raised md-primary" ng-click="sensorsCtl.addMotion()">
+                <md-button class="md-raised md-primary" ng-click="sensorsCtl.addMotion()" aria-label="Add motion">
                     <span ng-if="sensorsCtl.currentDevice===null">Add gpio</span>
                     <span ng-if="sensorsCtl.currentDevice!==null">Update gpio</span>
                 </md-button>
-                <md-button class="md-raised" ng-click="sensorsCtl.closeAddPanel()" aria-label="Cancel">Cancel</md-button>
             </section>
         </md-content>
     </md-content>
@@ -42,7 +47,7 @@
             </tr>
         </thead>
         <tbody md-body>
-            <tr md-row md-auto-select ng-repeat="device in sensorsCtl.devices | deviceType:'sensors' | orderBy:columnOrder">
+            <tr md-row md-auto-select ng-repeat="device in sensorsCtl.devices | deviceService:'sensors' | orderBy:columnOrder">
                 <td md-cell>{{device.name}}</td>
                 <td md-cell>{{device.gpios.join(',')}}</td>
                 <td md-cell>{{device.type}}</td>
@@ -67,9 +72,6 @@
                 </td>
             </tr>
         </tbody>
-        <tfoot md-foot>
-            <tr md-row></tr>
-        </tfoot>
         </table>
     </md-table-container>
 

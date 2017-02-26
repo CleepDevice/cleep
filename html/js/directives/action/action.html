@@ -1,4 +1,10 @@
-<md-content ng-cloak>
+<md-content layout-fill ng-cloak>
+
+    <!-- close panel -->
+    <md-button ng-show="actionCtl.showAddPanel" ng-click="actionCtl.closeAddPanel()" class="md-fab md-primary md-fab-top-right fab-panel" aria-label="Close">
+        <md-tooltip md-direction="bottom">Close</md-tooltip>
+        <md-icon md-font-set="material-icons">close</md-icon>
+    </md-button>
 
     <!-- add panel -->
     <md-content ng-show="actionCtl.showAddPanel" md-theme="dark" class="slide-panel">
@@ -8,11 +14,6 @@
                 <div upload-file selected-file="actionCtl.uploadFile" label="Upload script"></div>
             </md-input-container>
         </div>
-
-        <!-- close -->
-        <section layout="row">
-            <md-button class="md-raised" ng-click="actionCtl.closeAddPanel()" aria-label="Close">Close</md-button>
-        </section>
     </md-content>
 
     <!-- list -->

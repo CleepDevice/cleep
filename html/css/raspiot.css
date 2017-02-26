@@ -3,10 +3,17 @@
     padding: 0px;
 }
 
+/* disable padding */
+.no-padding {
+    padding: 0px;
+}
+
+/* default cursor */
 .default-cursor {
     cursor: default;
 }
 
+/* toast */
 md-toast.error .md-toast-content {
     background: #E53935;
     color: #FFFFFF;
@@ -27,6 +34,7 @@ md-toast.info .md-toast-content {
     color: #FFFFFF;
 }
 
+/* slide panel */
 .slide-panel {
     height: 300px;;
     -webkit-transition: all 0.45s cubic-bezier(0.35, 0, 0.25, 1);
@@ -36,4 +44,33 @@ md-toast.info .md-toast-content {
 .slide-panel.ng-hide {
     min-height: 0;
     height: 0;
+}
+
+/* panel fab button */
+.fab-panel {
+    transform: scale(1);
+    transition: transform 0.3s linear;
+}
+
+.fab-panel.ng-hide {
+    transform: scale(0);
+    transition: transform 0.3s linear;
+}
+
+/* widget */
+.widget-bg-color {
+    background-color: #EEEEEE;
+}
+
+/* icon */
+.icon-xl {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+}
+
+.icon-xxl {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
 }

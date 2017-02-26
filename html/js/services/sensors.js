@@ -18,7 +18,31 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     self.loadDevices = function() {
         rpcService.sendCommand('get_sensors', 'sensors')
             .then(function(resp) {
-                objectsService.addDevices('sensors', resp.data);
+                var motions = [];
+                var temperatures = [];
+                var device = null;
+                for( var name in resp.data )
+                {
+                    device = resp.data[name];
+                    if( device.type==='motion' )
+                    {
+                        //add widget properties
+                        device.widget = {
+                            mdcolors: '{background:"default-primary-300"}'
+                        };
+                        if( device.on )
+                        {
+                            device.widget.mdcolors = '{background:"default-accent-400"}';
+                        }
+                        motions.push(device);
+                    }
+                    else if( device.type==='temperature' )
+                    {
+                        temperatures.push(device);
+                    }
+                }
+                objectsService.addDevices('sensors', motions);
+                objectsService.addDevices('sensors', temperatures);
             }, function(err) {
                 console.log('loadDevices', err);
             });
@@ -68,8 +92,9 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
             {   
                 if( objectsService.devices[i].name===params.sensor )
                 {   
-                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
-                    objectsService.devices[i]['on'] = true;
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].on = true;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
                     break;
                 }   
             }   
@@ -86,8 +111,9 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
             {   
                 if( objectsService.devices[i].name===params.sensor )
                 {   
-                    objectsService.devices[i]['lastupdate'] = params.lastupdate;
-                    objectsService.devices[i]['on'] = false;
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].on = false;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }   
             }   

@@ -1,6 +1,5 @@
 
-var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile) {
-    var container = null;
+var soundConfigDirective = function($q, toast, soundService, uploadFile, confirm) {
 
     var soundController = ['$scope', function($scope) {
         var self = this;
@@ -19,6 +18,9 @@ var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile
         self.showAdvancedPanel = false;
         self.uploadFile = null;
 
+        /**
+         * Trigger upload when file selected
+         */
         $scope.$watch(function() {
             return self.uploadFile;
         }, function(file) {
@@ -33,20 +35,32 @@ var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile
             }
         });
 
+        /**
+         * Open add panel
+         */
         self.openAddPanel = function() {
             self.showAddPanel = true;
             self.closeAdvancedPanel();
         };
 
+        /**
+         * Close add panel
+         */
         self.closeAddPanel = function() {
             self.showAddPanel = false;
         };
 
+        /**
+         * Open advanced panel
+         */
         self.openAdvancedPanel = function() {
             self.showAdvancedPanel = true;
             self.closeAddPanel();
         };
 
+        /**
+         * Close advanced panel
+         */
         self.closeAdvancedPanel = function() {
             self.showAdvancedPanel = false;
         };
@@ -124,30 +138,23 @@ var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile
         /**
          * Delete specified sound
          */
-        self.deleteSound = function(path) {
-            //confirmation
-            if( !confirm('Delete sound?') )
-            {
-                return;
-            }
-
-            //delete sound
-            container.start();
-            soundService.delSound(path)
+        self.deleteSound = function(filename) {
+            confirm.dialog('Delete sound ?', null, 'Delete')
                 .then(function() {
-                    toast.success('Sound file deleted');
-                    self.getSounds();
-                })
-                .finally(function() {
-                    container.stop();
+                    //delete sound
+                    soundService.deleteSound(filename)
+                        .then(function() {
+                            toast.success('Sound file deleted');
+                            self.getSounds();
+                        });
                 });
         };
 
         /**
          * Play sound
          */
-        self.playSound = function(path) {
-            soundService.playSound(path);
+        self.playSound = function(filename) {
+            soundService.playSound(filename);
         };
 
         /**
@@ -186,21 +193,15 @@ var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile
          * Set lang
          */
         self.setLang = function() {
-            container.start();
             soundService.setLang(self.lang)
                 .then(function() {
                     toast.success('Lang saved');
-                })
-                .finally(function() {
-                    container.stop();
                 });
         };
     }];
 
     var soundLink = function(scope, element, attrs, controller) {
-        container = blockUI.instances.get('soundContainer');
-        container.reset();
-
+        //init controller
         controller.init();
     };
 
@@ -215,4 +216,4 @@ var soundConfigDirective = function($q, toast, blockUI, soundService, uploadFile
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('soundConfigDirective', ['$q', 'toastService', 'blockUI', 'soundService', 'uploadFileService', soundConfigDirective]);
+RaspIot.directive('soundConfigDirective', ['$q', 'toastService', 'soundService', 'uploadFileService', 'confirmService', soundConfigDirective]);

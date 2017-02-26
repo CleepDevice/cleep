@@ -1,4 +1,10 @@
-<md-content ng-cloak>
+<md-content layout-fill ng-cloak>
+
+    <!-- close panel button -->
+    <md-button ng-show="soundCtl.showAddPanel || soundCtl.showAdvancedPanel" ng-click="soundCtl.closeAdvancedPanel(); soundCtl.closeAddPanel()" class="md-primary md-fab md-fab-top-right fab-panel" aria-label="Close">
+        <md-tooltip md-direction="bottom">Close</md-tooltip>
+        <md-icon md-font-set="material-icons">close</md-icon>
+    </md-button>
 
     <!-- add panel -->
     <md-content ng-show="soundCtl.showAddPanel" md-theme="dark" class="slide-panel">
@@ -14,11 +20,6 @@
                 </md-button>
             </md-input-container>
         </div>
-
-        <!-- close -->
-        <section layout="row">
-            <md-button class="md-raised" ng-click="soundCtl.closeAddPanel()" aria-label="Close">Close</md-button>
-        </section>
     </md-content>
 
     <!-- advanced panel -->
@@ -52,11 +53,6 @@
                 <md-button class="md-raised md-primary" ng-click="soundCtl.speakMessageConfig()" aria-label="Speak message">Speak message</md-button>
             </div>
         </div>
-
-        <!-- close -->
-        <section layout="row">
-            <md-button class="md-raised" ng-click="soundCtl.closeAdvancedPanel()" aria-label="Close">Close</md-button>
-        </section>
     </md-content>
 
     <!-- list -->
@@ -72,35 +68,28 @@
             <tr md-row md-auto-select ng-repeat="sound in soundCtl.sounds | orderBy:columnOrder">
                 <td md-cell>{{sound.name}}</td>
                 <td md-cell>
-                   <md-button class="md-icon-button" ng-click="soundCtl.playSound(sound.path)" aria-label="Play sound">
+                   <md-button class="md-icon-button" ng-click="soundCtl.playSound(sound.name)" aria-label="Play sound">
                         <md-tooltip md-direction="bottom">Play sound</md-tooltip>
                         <md-icon md-font-set="material-icons">play_circle_outline</md-icon>
                     </md-button>
-                    <md-button class="md-icon-button" ng-click="soundCtl.deleteSOund(sound.path)" aria-label="Delete">
+                    <md-button class="md-icon-button" ng-click="soundCtl.deleteSound(sound.name)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete sound</md-tooltip>
                         <md-icon md-font-set="material-icons">delete</md-icon>
                     </md-button> 
                 </td>
             </tr>
         </tbody>
-        <tfoot md-foot>
-            <tr md-row>
-                <td md-cell colspan="2">
-                    <div layout-gt-sm="row" flex>
-                        <md-input-container class="md-block" flex-gt-sm>
-                            <label>Message to speak</label>
-                            <input ng-model="soundCtl.tts">
-                        </md-input-container>
-                        <div>
-                            <md-button class="md-raised md-primary" ng-click="soundCtl.speakMessage()" aria-label="Speak message">Speak message</md-button>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-            <tr md-row></tr>
-        </tfoot>
         </table>
     </md-table-container>
+    <div layout="row" layout-padding flex>
+        <md-input-container class="md-block" flex="75">
+            <label>Message to speak</label>
+            <input ng-model="soundCtl.tts">
+        </md-input-container>
+        <div flex="25">
+            <md-button class="md-raised md-primary" ng-click="soundCtl.speakMessage()" aria-label="Speak message">Speak message</md-button>
+        </div>
+    </div>
 
     <!-- toolbar -->
     <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">

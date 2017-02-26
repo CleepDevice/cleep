@@ -50,8 +50,8 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Delete sound
      */
-    self.deleteSound = function(path) {
-        return rpcService.sendCommand('delete_sound', 'sound', {'filepath':path})
+    self.deleteSound = function(name) {
+        return rpcService.sendCommand('delete_sound', 'sound', {'filename':name})
             .then(function(resp) {
             }, function(err) {
                 console.error('deleteSound:', err);
@@ -61,8 +61,8 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Play sound
      */
-    self.playSound = function(path) {
-        return rpcService.sendCommand('play_sound', 'sound', {'filepath':path})
+    self.playSound = function(name) {
+        return rpcService.sendCommand('play_sound', 'sound', {'filename':name})
             .then(function(resp) {
             }, function(err) {
                 console.error('playSound', err);

@@ -1,26 +1,57 @@
 /**
  * Main application
  */
-var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'ngMessages', 'angular-growl', /*'ui.bootstrap',*/ 'blockUI', 'base64', /*'daterangepicker', 'lr.upload',*/ 'md.data.table']);
+var RaspIot = angular.module('RaspIot', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'angular-growl', /*'ui.bootstrap',*/ 'blockUI', 'base64', /*'daterangepicker', 'lr.upload',*/ 'md.data.table']);
 
 /**
- * Materiel configuration
+ * Routes configuration
+ */
+RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+    $locationProvider.hashPrefix('!');
+    $routeProvider
+        .when('/dashboard', {
+            template: '<div dashboard-directive></div>'
+        })
+        .when('/configuration', {
+            template: '<div configuration-directive></div>'
+        })
+        .otherwise({
+            redirectTo: '/dashboard'
+        });
+    //$locationProvider.html5Mode(true);
+}]);
+
+/**
+ * Theme configuration
  */
 RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
-    $mdThemingProvider.theme('default')
+    $mdThemingProvider
+        .theme('default')
         .primaryPalette('teal')
         .accentPalette('deep-orange')
-        .warnPalette('red')
+        //.warnPalette('red')
         .backgroundPalette('grey');
-    $mdThemingProvider.theme('dark')
+    $mdThemingProvider
+        .theme('dark')
         .primaryPalette('teal')
         .dark();
-    $mdThemingProvider.theme('alt')
+    $mdThemingProvider
+        .theme('alt')
         .primaryPalette('deep-orange');
-    $mdThemingProvider.theme('alt-dark')
+    $mdThemingProvider
+        .theme('alt-dark')
         .primaryPalette('deep-orange')
         .dark();
 }]);
+
+/**
+ * Font configuration
+ * Disabled for now, ligatures are not supported by typicons
+ */
+/*RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
+    $mdIconProvider
+        .iconSet('typicons', 'fonts/typicons.svg', 24)
+}]);*/
 
 /**
  * Fix issue with md-datepicker with angular 1.6 and angular-material 1.1.1
@@ -73,12 +104,48 @@ RaspIot.filter('deviceType', function($filter) {
 });
 
 /**
+ * Device service filter
+ */
+RaspIot.filter('deviceService', function($filter) {
+    return function(devices, service) {
+        if( service ) {
+            return $filter("filter")(devices, function(device) {
+                return device.__serviceName==service;
+            });
+        }
+    };
+});
+
+/**
  * Timestamp to human readable datetime
  */
 RaspIot.filter('hrDatetime', function($filter) {
     return function(ts) {
-        console.log('timestamp='+ts);
-        return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+        if( angular.isUndefined(ts) || ts===null )
+        {
+            return '-';
+        }
+        else
+        {
+            return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+        }
+    };
+});
+
+RaspIot.filter('hrTime', function($filter) {
+    return function(ts, withSeconds) {
+        if( angular.isUndefined(ts) || ts===null )
+        {
+            return '-';
+        }
+        else
+        {
+            if( withSeconds ) {
+                return moment.unix(ts).format('HH:mm:ss');
+            } else {
+                return moment.unix(ts).format('HH:mm');
+            }
+        }
     };
 });
 

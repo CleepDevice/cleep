@@ -1,4 +1,4 @@
-<md-content ng-cloak>
+<md-content layout-fill ng-cloak>
 
     <!-- add panel -->
     <md-content ng-show="msgboardCtl.showAddPanel" layout-padding md-theme="dark" class="slide-panel" ng-cloak>
@@ -62,9 +62,9 @@
     <!-- advanced panel -->
     <md-content ng-show="msgboardCtl.showAdvancedPanel" layout-padding md-theme="alt-dark" class="slide-panel" ng-cloak>
         <!-- display -->
-        <md-switch ng-model="msgboardCtl.on" aria-label="Turn on/off">
-            <span ng-if="msgboardCtl.on">Turn off display</span>
-            <span ng-if="!msgboardCtl.on">Turn on display</span>
+        <md-switch ng-model="msgboardCtl.boardIsOn" aria-label="Turn on/off" ng-change="msgboardCtl.turnOff()">
+            <span ng-if="msgboardCtl.boardIsOn">Turn off display</span>
+            <span ng-if="!msgboardCtl.boardIsOn">Turn on display</span>
         </md-switch>
 
         <!-- duration -->
@@ -154,13 +154,13 @@
             </md-button>
         </md-fab-trigger>
         <md-fab-actions>
-            <md-button ng-click="msgboardCtl.openAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
-                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
-                <md-icon md-font-set="material-icons">build</md-icon>
-            </md-button>
             <md-button ng-click="msgboardCtl.openAddPanel()" class="md-fab md-mini md-primary" aria-label="Add message">
                 <md-tooltip md-direction="top">Add message</md-tooltip>
                 <md-icon md-font-set="material-icons">add_circle</md-icon>
+            </md-button>
+            <md-button ng-click="msgboardCtl.openAdvancedPanel()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
+                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
+                <md-icon md-font-set="material-icons">build</md-icon>
             </md-button>
         </md-fab-actions>
     </md-fab-speed-dial>

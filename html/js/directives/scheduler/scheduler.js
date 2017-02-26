@@ -1,66 +1,62 @@
 
-var schedulerDirective = function($q, growl, blockUI, schedulerService) {
+var schedulerDirective = function($q, toast, schedulerService) {
     var container = null;
 
-    var schedulerController = ['$scope', function($scope) {
-        $scope.sunset = null;
-        $scope.sunrise = null;
-        $scope.city = null;
+    var schedulerController = function() {
+        var self = this;
+        self.sunset = null;
+        self.sunrise = null;
+        self.city = null;
 
         /**
          * Init controller
          */
-        function init() {
-            getSun();
-            getCity();
+        self.init = function()
+        {
+            self.getSun();
+            self.getCity();
         };
 
         /**
          * Get configured sunset and sunrise
          */
-        function getSun()
+        self.getSun = function()
         {
             schedulerService.getSun()
-            .then(function(res) {
-                $scope.sunset = moment.unix(res.sunset).format('HH:mm');
-                $scope.sunrise = moment.unix(res.sunrise).format('HH:mm');
-            });
+                .then(function(res) {
+                    self.sunset = moment.unix(res.sunset).format('HH:mm');
+                    self.sunrise = moment.unix(res.sunrise).format('HH:mm');
+                });
         };
 
         /**
          * Get configured city
          */
-        function getCity()
+        self.getCity = function()
         {
             schedulerService.getCity()
-            .then(function(res) {
-                $scope.city = res;
-            });
+                .then(function(res) {
+                    self.city = res;
+                });
         }
 
         /**
          * Set city
          */
-        $scope.setCity = function()
+        self.setCity = function()
         {
-            container.start();
-            schedulerService.setCity($scope.city)
-            .then(function(res) {
-                $scope.sunset = moment.unix(res.sunset).format('HH:mm');
-                $scope.sunrise = moment.unix(res.sunrise).format('HH:mm');
-            })
-            .finally(function() {
-                container.stop();
-            });
+            toast.loading('Updating city...');
+            schedulerService.setCity(self.city)
+                .then(function(res) {
+                    toast.success('City updated');
+                    self.sunset = moment.unix(res.sunset).format('HH:mm');
+                    self.sunrise = moment.unix(res.sunrise).format('HH:mm');
+                });
         };
+    };
 
-        //init directive
-        init();
-    }];
-
-    var schedulerLink = function(scope, element, attrs) {
-        container = blockUI.instances.get('schedulerContainer');
-        container.reset();
+    var schedulerLink = function(scope, element, attrs, controller) {
+        controller.init();
     };
 
     return {
@@ -68,9 +64,10 @@ var schedulerDirective = function($q, growl, blockUI, schedulerService) {
         replace: true,
         scope: true,
         controller: schedulerController,
+        controllerAs: 'schedulerCtl',
         link: schedulerLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('schedulerDirective', ['$q', 'growl', 'blockUI', 'schedulerService', schedulerDirective]);
+RaspIot.directive('schedulerDirective', ['$q', 'toastService', 'schedulerService', schedulerDirective]);

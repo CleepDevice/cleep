@@ -9,7 +9,7 @@ RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcS
     /**
      * Open configuration dialog
      */
-    this.openConfig = function(ev) {
+    /*this.openConfig = function(ev) {
         $mdDialog.show({
             controller: function($scope, $mdDialog) {
                 this.close = function() {
@@ -19,11 +19,12 @@ RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcS
             controllerAs: 'configDialog',
             template: '<md-dialog flex="75" aria-label="Configuration"><md-toolbar><div class="md-toolbar-tools"><h2>Configuration</h2><span flex></span><md-button ng-click="configDialog.close()" class="md-icon-button" aria-label="Close"><md-icon md-font-set="material-icons">clear</md-icon></md-button></div></md-toolbar><md-dialog-content><div flex configuration-directive></div></md-dialog-content></md-dialog>',
             targetEvent: ev,
-            fullscreen: true
+            fullscreen: true,
+            multiple: true
         });
-    };
+    };*/
 
-    this.openTest = function(ev) {
+    /*this.openTest = function(ev) {
         $mdDialog.show({
             controller: function($scope, $mdDialog) {
                 this.close = function() {
@@ -35,7 +36,7 @@ RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcS
             targetEvent: ev,
             fullscreen: true
         });
-    };
+    };*/
 
     //handle polling
     var pollingTimeout = 0;

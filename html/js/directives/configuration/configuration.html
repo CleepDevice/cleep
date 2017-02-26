@@ -1,7 +1,7 @@
-<div ng-cloak>
-    <md-tabs md-dynamic-height md-border-bottom>
-        <md-tab ng-repeat="config in configCtl.configs | orderBy:'__label'" label="{{config.__label}}" element-ready>
-            <div flex id="{{config.cleanLabel+'Config'}}"></div>
+<md-content layout="column">
+    <md-tabs flex="90" md-border-bottom>
+        <md-tab ng-repeat="config in configCtl.configs | orderBy:'__label'" label="{{config.__label}}">
+            <div id="{{config.cleanLabel+'Config'}}"></div>
         </md-tab>
     </md-tabs>
-</div>
+</md-content>

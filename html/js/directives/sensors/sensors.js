@@ -1,6 +1,5 @@
 
-var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensorsService, $mdBottomSheet) {
-    var container = null;
+var sensorsConfigDirective = function($q, toast, objectsService, sensorsService, confirm) {
 
     var sensorsController = [function() {
         var self = this;
@@ -12,12 +11,25 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
         self.showAddPanel = false;
         self.currentDevice = null;
 
+        /**
+         * Open add panel
+         */
         self.openAddPanel = function(ev) {
             self.showAddPanel = true;
         };
 
+        /**
+         * Close add panel
+         */
         self.closeAddPanel = function(ev) {
+            //close panel
             self.showAddPanel = false;
+
+            //reset fields
+            self.name = '';
+            self.gpio = 'GPIO2';
+            self.reverted = false;
+            self.currentDevice = null;
         };
 
         /**
@@ -43,13 +55,37 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
         };
 
         /**
-         * Add motion
+         * Add/update motion sensor
          */
         self.addMotion = function() {
-            sensorsService.addMotion(self.name, self.gpio, self.reverted)
-                .then(function(resp) {
-                    toast.success('Motion sensor added');
-                });
+            //check parameters
+            if( self.name.length===0 )
+            {
+                toast.error('All fields are required');
+                return;
+            }
+
+            if( self.currentDevice!==null )
+            {
+                //update device, first of all delete existing sensor
+                sensorsService.deleteSensor(device.name)
+                    .then(function(resp) {
+                        //then add updated one
+                        sensorsService.addSensor(self.name, self.gpio, self.reverted)
+                            .then(function(resp) {
+                                toast.success('Sensor updated');
+                                sensorsService.loadDevices();
+                            });
+                    });
+            }
+            else
+            {
+                //add new device
+                sensorsService.addMotion(self.name, self.gpio, self.reverted)
+                    .then(function(resp) {
+                        toast.success('Sensor added');
+                    });
+            }
         };
 
         /**
@@ -63,22 +99,19 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
          * Delete specified device
          */
         self.deleteDevice = function(device) {
-            if( !confirm('Delete sensor?') ) {
-                return;
-            }
-
-            sensorsService.deleteSensor(device.name)
-                .then(function(resp) {
-                    sensorsService.loadDevices();
+            confirm.dialog('Delete sensor ?', null, 'Delete')
+                .then(function() {
+                    sensorsService.deleteSensor(device.name)
+                        .then(function(resp) {
+                            sensorsService.loadDevices();
+                        });
                 });
         };
 
     }];
 
     var sensorsLink = function(scope, element, attrs, controller) {
-        container = blockUI.instances.get('sensorsContainer');
-        container.reset();
-
+        //init controller
         controller.init();
     };
 
@@ -93,4 +126,4 @@ var sensorsConfigDirective = function($q, toast, blockUI, objectsService, sensor
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'blockUI', 'objectsService', 'sensorsService', '$mdBottomSheet', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'objectsService', 'sensorsService', 'confirmService', sensorsConfigDirective]);

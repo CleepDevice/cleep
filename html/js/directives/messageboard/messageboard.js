@@ -18,6 +18,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
         self.unitMinutes = 'minutes';
         self.showAddPanel = false;
         self.showAdvancedPanel = false;
+        self.boardIsOn = true;
 
         /**
          * Init controller
@@ -32,6 +33,8 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
             self.getUnits();
             //get speed
             self.getSpeed();
+            //get board status
+            self.getBoardStatus();
         };
 
         /**
@@ -107,6 +110,17 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
                     self.unitMinutes = resp.minutes;
                     self.unitHours = resp.hours;
                     self.unitDays = resp.days;
+                });
+        };
+
+        /**
+         * Get board status (off/on)
+         */
+        self.getBoardStatus = function()
+        {
+            messageboardService.isOn()
+                .then(function(resp) {
+                    self.boardIsOn = resp.data;
                 });
         };
 
@@ -201,8 +215,8 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
         /**
          * Turn on/off board
          */
-        self.turnOff = function(off) {
-            if( off )
+        self.turnOff = function() {
+            if( !self.boardIsOn )
             {
                 messageboardService.turnOff();
             }

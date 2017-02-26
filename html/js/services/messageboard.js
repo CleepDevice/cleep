@@ -12,6 +12,43 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
         objectsService.addConfig('MessageBoard', 'messageboardConfigDirective');
     };
 
+    /** 
+     * Load service device (here single messageboard)
+     */
+    self.loadDevices = function() {
+        rpcService.sendCommand('get_current_message', 'messageboard')
+            .then(function(resp) {
+                objectsService.addDevices('messageboard', {'messageboard':self._parseMessageData(resp.data)});
+            }, function(err) {
+                console.error('loadDevices', err);
+            }); 
+    };
+
+    /**
+     * Parse data and return message
+     * @param data: input data from rpc command
+     * @return message as dict format {message:<?>, lastupdate:<>}
+     */
+    self._parseMessageData = function(data) {
+        var message = {};
+        if( data.nomessage )
+        {
+            message.message = '<no message>';
+            message.lastupdate = null;
+        }
+        else if( data.off )
+        {
+            message = '<board is off>';
+            message.lastupdate = null;
+        }
+        else
+        {
+            message.message = data.message.message;
+            message.lastupdate = data.message.displayed_time;
+        }
+        return message;
+    };
+
     /**
      * Add new message
      */
@@ -110,6 +147,22 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     self.turnOn = function() {
         return rpcService.sendCommand('turn_on', 'messageboard');
     };
+
+    /**
+     * Catch message updated
+     */
+    $rootScope.$on('messageboard.message.update', function(event, params) {
+        for( var i=0; i<objectsService.devices.length; i++ )
+        {
+            if( objectsService.devices[i].__serviceName==='messageboard' && objectsService.devices[i].__type=='message' )
+            {
+                var message = self._formatMessageData(params);
+                objectsService.devices[i].message = message.message;
+                objectsService.devices[i].lastupdate = message.lastupdate;
+            }
+        }
+    });
+
 };
     
 var RaspIot = angular.module('RaspIot');
