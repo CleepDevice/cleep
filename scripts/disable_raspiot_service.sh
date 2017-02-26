@@ -1,5 +1,5 @@
 #!/bin/bash
-#Enable raspiot daemon at raspi startup
+#Disable raspiot daemon at raspi startup
 #@see https://debian-administration.org/article/28/Making_scripts_run_at_boot_time_with_Debian
 #@see http://unix.stackexchange.com/a/164092
 #@see http://unix.stackexchange.com/a/106674
