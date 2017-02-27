@@ -28,19 +28,21 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
         .primaryPalette('teal')
-        .accentPalette('deep-orange')
-        //.warnPalette('red')
+        .accentPalette('yellow')
         .backgroundPalette('grey');
     $mdThemingProvider
         .theme('dark')
         .primaryPalette('teal')
+        .accentPalette('yellow')
         .dark();
     $mdThemingProvider
         .theme('alt')
-        .primaryPalette('deep-orange');
+        .primaryPalette('blue-grey');
+        .accentPalette('amber');
     $mdThemingProvider
         .theme('alt-dark')
-        .primaryPalette('deep-orange')
+        .primaryPalette('blue-grey')
+        .accentPalette('amber')
         .dark();
 }]);
 
