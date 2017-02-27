@@ -149,6 +149,13 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
     };
 
     /**
+     * Get board status (on/off)
+     */
+    self.isOn = function() {
+        return rpcService.sendCommand('is_on', 'messagebpard');
+    };
+
+    /**
      * Catch message updated
      */
     $rootScope.$on('messageboard.message.update', function(event, params) {
