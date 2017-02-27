@@ -3,12 +3,15 @@ raspiot (0.0.3) UNRELEASED; urgency=low
   * Improve HT1632C reliability
   * Migrate web ui from bootstrap to material
   * Add HTTPS support on webserver
+  * Add upload and download features to webserver
   * Improve rpcserver (auth, session)
   * Fix issues in core (bus, raspiot, rpcserver)
   * Improve log system
   * Add action module to execute custom python scripts
   * Add sensors module to handle motion sensors (with untested ds18b20)
   * Add sound module to add capacity to play sound files
+  * Add scheduler module to handle time (sunset, sunrise and current time)
+  * Improve installation process (service restarting, dependecies installation)
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 03 Dec 2016 08:33:24 +0100
 
