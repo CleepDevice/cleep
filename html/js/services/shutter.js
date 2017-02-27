@@ -105,7 +105,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch shutter opening event
      */
-    $rootScope.$on('event.shutter.opening', function(event, params) {
+    $rootScope.$on('shutters.shutter.opening', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='shutter' )
@@ -121,7 +121,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch shutter closing event
      */
-    $rootScope.$on('event.shutter.closing', function(event, params) {
+    $rootScope.$on('shutters.shutter.closing', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='shutter' )
@@ -137,7 +137,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch shutter opened event
      */
-    $rootScope.$on('event.shutter.opened', function(event, params) {
+    $rootScope.$on('shutters.shutter.opened', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='shutter' )
@@ -153,7 +153,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch shutter closed event
      */
-    $rootScope.$on('event.shutter.closed', function(event, params) {
+    $rootScope.$on('shutters.shutter.closed', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='shutter' )
@@ -169,7 +169,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch shutter partial event
      */
-    $rootScope.$on('event.shutter.partial', function(event, params) {
+    $rootScope.$on('shutters.shutter.partial', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='shutter' )

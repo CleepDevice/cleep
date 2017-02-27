@@ -112,7 +112,7 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch gpio on events
      */
-    $rootScope.$on('event.gpio.on', function(event, params) {
+    $rootScope.$on('gpios.gpio.on', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )
@@ -130,7 +130,7 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch gpio off events
      */
-    $rootScope.$on('event.gpio.off', function(event, params) {
+    $rootScope.$on('gpios.gpio.off', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )

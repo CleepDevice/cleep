@@ -65,7 +65,7 @@ class Sensors(RaspIot):
             self.logger.debug('Drop startup event')
             return 
 
-        if event['event'] in ('event.gpio.on', 'event.gpio.off'):
+        if event['event'] in ('gpios.gpio.on', 'gpios.gpio.off'):
             #drop gpio init
             if event['params']['init']:
                 self.logger.debug('Drop gpio init event')
@@ -85,7 +85,7 @@ class Sensors(RaspIot):
             if sensor:
                 if sensor['type']=='motion':
                     #motion sensor
-                    if event['event']=='event.gpio.on':
+                    if event['event']=='gpios.gpio.on':
 
                         #check if task already running
                         if not sensor['on']:
@@ -99,11 +99,11 @@ class Sensors(RaspIot):
 
                             #new motion event
                             req = MessageRequest()
-                            req.event = 'event.motion.on'
+                            req.event = 'sensors.motion.on'
                             req.params = {'sensor':sensor['name'], 'lastupdate':now}
                             self.push(req)
 
-                    elif event['event']=='event.gpio.off':
+                    elif event['event']=='gpios.gpio.off':
                         if sensor['on']:
                             #sensor is triggered, need to stop it
                             self.logger.debug(' --- Motion sensor "%s" turned off' % sensor['name'])
@@ -117,7 +117,7 @@ class Sensors(RaspIot):
 
                             #new motion event
                             req = MessageRequest()
-                            req.event = 'event.motion.off'
+                            req.event = 'sensors.motion.off'
                             req.params = {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}
                             self.push(req)
                         
@@ -207,7 +207,7 @@ class Sensors(RaspIot):
             #broadcast event
             if tempC and tempF:
                 req = MessageRequest()
-                req.event = 'event.temperature.value'
+                req.event = 'sensors.temperature.value'
                 req.params = {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}
                 self.push(req)
 

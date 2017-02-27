@@ -85,7 +85,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch motion on event
      */
-    $rootScope.$on('event.motion.on', function(event, params) {
+    $rootScope.$on('sensors.motion.on', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
             if( objectsService.devices[i].__serviceName==='sensors' )
@@ -104,7 +104,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch motion off event
      */
-    $rootScope.$on('event.motion.off', function(event, params) {
+    $rootScope.$on('sensors.motion.off', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
             if( objectsService.devices[i].__serviceName==='sensors' )

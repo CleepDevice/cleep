@@ -44,7 +44,7 @@ class Shutter(RaspIot):
             return
 
         #process received event
-        if event['event']=='event.gpio.off':
+        if event['event']=='gpios.gpio.off':
             #drop gpio init
             if event['params']['init']:
                 self.logger.debug('Drop gpio init event')
@@ -376,7 +376,7 @@ class Shutter(RaspIot):
 
             #and broadcast new shutter status
             req = MessageRequest()
-            req.event = 'event.shutter.%s' % status
+            req.event = 'shutters.shutter.%s' % status
             req.params = {'shutter': shutter_name}
             self.push(req)
 

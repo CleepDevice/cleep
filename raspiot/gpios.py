@@ -196,11 +196,11 @@ class Gpios(RaspIot):
                 if conf['on']:
                     initial = GPIO.LOW
                     #GPIO.output(pin, GPIO.LOW)
-                    event = 'event.gpio.on'
+                    event = 'gpios.gpio.on'
                 else:
                     initial = GPIO.HIGH
                     #GPIO.output(pin, GPIO.HIGH)
-                    event = 'event.gpio.off'
+                    event = 'gpios.gpio.off'
                 self.logger.debug('event=%s initial=%s' % (str(event), str(initial)))
                 GPIO.setup(pin, GPIO.OUT, initial=initial)
 
@@ -251,7 +251,7 @@ class Gpios(RaspIot):
         else:
             #broadcast event
             req = bus.MessageRequest()
-            req.event = 'event.gpio.on'
+            req.event = 'gpios.gpio.on'
             req.params = {'gpio':gpio, 'init':False}
             self.logger.debug('broadcast %s' % str(req))
             self.push(req)
@@ -274,7 +274,7 @@ class Gpios(RaspIot):
         else:
             #broadcast event
             req = bus.MessageRequest()
-            req.event = 'event.gpio.off'
+            req.event = 'gpios.gpio.off'
             req.params = {'gpio':gpio, 'init':False, 'duration':duration}
             self.logger.debug('broadcast %s' % str(req))
             self.push(req)
@@ -402,7 +402,7 @@ class Gpios(RaspIot):
 
             #broadcast event
             req = bus.MessageRequest()
-            req.event = 'event.gpio.on'
+            req.event = 'gpios.gpio.on'
             req.params = {'gpio':gpio, 'init':False}
             self.push(req)
 
@@ -433,7 +433,7 @@ class Gpios(RaspIot):
 
             #broadcast event
             req = bus.MessageRequest()
-            req.event = 'event.gpio.off'
+            req.event = 'gpios.gpio.off'
             req.params = {'gpio':gpio, 'init':False}
             self.push(req)
 

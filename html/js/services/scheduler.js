@@ -76,7 +76,7 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch scheduler time event
      */
-    $rootScope.$on('event.time.now', function(event, params) {
+    $rootScope.$on('scheduler.time.now', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
             if( objectsService.devices[i].__serviceName==='scheduler' && objectsService.devices[i].__type=='clock' )

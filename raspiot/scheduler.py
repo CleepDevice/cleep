@@ -139,7 +139,7 @@ class Scheduler(RaspIot):
         now_formatted = self.__format_time()
 
         req = bus.MessageRequest()
-        req.event = 'event.time.now'
+        req.event = 'scheduler.time.now'
         req.params = now_formatted
         self.push(req)
 
@@ -148,7 +148,7 @@ class Scheduler(RaspIot):
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
                 req = bus.MessageRequest()
-                req.event = 'event.time.sunset'
+                req.event = 'scheduler.time.sunset'
                 self.push(req)
 
         #handle sunrise
@@ -156,7 +156,7 @@ class Scheduler(RaspIot):
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
                 req = bus.MessageRequest()
-                req.event = 'event.time.sunrise'
+                req.event = 'scheduler.time.sunrise'
                 self.push(req)
 
         #compute sunset/sunrise at midnight
