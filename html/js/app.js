@@ -37,7 +37,7 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
         .dark();
     $mdThemingProvider
         .theme('alt')
-        .primaryPalette('blue-grey');
+        .primaryPalette('blue-grey')
         .accentPalette('amber');
     $mdThemingProvider
         .theme('alt-dark')
