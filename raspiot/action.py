@@ -86,8 +86,8 @@ class Script(Thread):
         self.logger.setLevel(self.logger_level)
         self.logger.debug('Thread started')
 
-        #push message helper
-        def action(command, to, params=None):
+        #send command helper
+        def command(command, to, params=None):
             request = MessageRequest()
             request.command = command
             request.to = to
