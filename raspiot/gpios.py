@@ -27,6 +27,7 @@ class GpioInputWatcher(Thread):
     def __init__(self, pin, on_callback, off_callback, level=GPIO.LOW):
         #init
         Thread.__init__(self)
+        Thread.daemon = True
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.__debug_pin = None
