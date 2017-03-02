@@ -143,24 +143,27 @@ def check_auth(username, password):
         logger.warning('Invalid username "%s"' % username)
         return False
 
-def authenticate(f):
-    """
+def authenticate():
+    """ 
     Authentication process
     If authentication is enabled, check credentials
     """
-    def wrapper(*args, **kwargs):
-        global auth_enabled, logger
-        if auth_enabled:
-            username = None
-            password = None
-            if bottle.request.auth:
-                username = bottle.request.auth[0]
-                password = bottle.request.auth[1]
+    def decorator(func):
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            username, password = bottle.request.auth or (None, None)
             logger.debug('username=%s password=%s' % (username, password))
-            if not check_auth(username, password):
-                return Response('Login!', 401, {'WWW-Authenticate': 'Basic realm="raspiot"'})
-        return f(*args, **kwargs)
-    return wrapper
+            if username is None or not check_auth(username, password):
+                err = bottle.HTTPError(401, 'Access denied')
+                err.add_header('WWW-Authenticate', 'Basic realm="private"')
+                return err 
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
 
 def execute_command(command, to, params):
     """
@@ -182,7 +185,7 @@ def execute_command(command, to, params):
 
 
 @app.route('/upload', method='POST')
-@authenticate
+@authenticate()
 def upload():
     """
     Upload file
@@ -243,7 +246,7 @@ def upload():
     return resp
 
 @app.route('/download', method='GET')
-@authenticate
+@authenticate()
 def download():
     """
     Download file
@@ -289,7 +292,7 @@ def download():
     return resp
 
 @app.route('/command', method=['POST','GET'])
-@authenticate
+@authenticate()
 def command():
     """
     Execute command on raspiot
@@ -347,7 +350,7 @@ def command():
     return resp
 
 @app.route('/registerpoll', method='POST')
-@authenticate
+@authenticate()
 def registerpoll():
     """
     Register poll
@@ -373,7 +376,7 @@ def pollcounter():
     polling -= 1
 
 @app.route('/poll', method='POST')
-@authenticate
+@authenticate()
 def poll():
     """
     This is the endpoint for long poll clients.
@@ -428,7 +431,7 @@ def poll():
     return json.dumps(message)
 
 @app.route('/<path:path>')
-@authenticate
+@authenticate()
 def default(path):
     """
     Servers static files from HTML_DIR.
@@ -436,7 +439,7 @@ def default(path):
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/modules', method='POST')
-@authenticate
+@authenticate()
 def modules():
     """
     Return raspiot configuration:
@@ -452,7 +455,7 @@ def modules():
     return json.dumps(modules)
 
 @app.route('/')
-@authenticate
+@authenticate()
 def index():
     """
     Return a default document if no path was specified.
