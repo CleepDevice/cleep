@@ -1,3 +1,10 @@
+raspiot (0.0.4) UNRELEASED; urgency=low
+
+  * Fix bug in authentication in rpcserver
+  * Fix bug in gpios that prevent raspiot from stopping
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 01 Mar 2017 12:00:00 +0100
+
 raspiot (0.0.3) UNRELEASED; urgency=low
 
   * Improve HT1632C reliability
@@ -13,7 +20,7 @@ raspiot (0.0.3) UNRELEASED; urgency=low
   * Add scheduler module to handle time (sunset, sunrise and current time)
   * Improve installation process (service restarting, dependecies installation)
 
- -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 03 Dec 2016 08:33:24 +0100
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 27 Feb 2017 12:00:00 +0100
 
 raspiot (0.0.2) UNRELEASED; urgency=low
 
