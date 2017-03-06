@@ -23,6 +23,7 @@ from bus import MessageResponse, MessageRequest
 import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt
+import functools
 
 __all__ = ['app']
 
