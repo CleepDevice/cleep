@@ -24,24 +24,27 @@ class Scheduler(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
-
-        #check config
-        self._check_config(Scheduler.DEFAULT_CONFIG)
 
         #members
+        self.time_task = None
         self.sunset = time.mktime(datetime.min.timetuple())
         self.sunrise = time.mktime(datetime.min.timetuple())
+
+    def _start(self):
+        """
+        Start module
+        """
+        #compute sun times
+        self.__compute_sun()
 
         #launch time task
         self.time_task = task.Task(60.0, self.__send_time_event)
         self.time_task.start()
 
-        #compute sun times
-        self.__compute_sun()
-
-    def stop(self):
-        RaspIot.stop(self)
+    def _stop(self):
+        """
+        Stop module
+        """
         if self.time_task:
             self.time_task.stop()
 

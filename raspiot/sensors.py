@@ -24,17 +24,17 @@ class Sensors(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
-
-        #check config
-        self._check_config(Sensors.DEFAULT_CONFIG)
-
-        #raspi gpios
-        self.raspi_gpios = self.get_raspi_gpios()
 
         #members
         self.__tasks = {}
+        self.raspi_gpios = {}
+
+    def _start(self):
+        """
+        Start module
+        """
+        #raspi gpios
+        self.raspi_gpios = self.get_raspi_gpios()
 
         #load sensors
         for sensor in self._config['sensors'].keys():
@@ -46,11 +46,10 @@ class Sensors(RaspIot):
                 #temperature sensor
                 self.__launch_temperature_task(self._config['sensors'][sensor])
 
-    def stop(self):
+    def _stop(self):
         """
         Stop module
         """
-        RaspIot.stop(self)
         #stop tasks
         for t in self.__tasks:
             self.__tasks[t].stop()

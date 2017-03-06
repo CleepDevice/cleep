@@ -168,30 +168,30 @@ class Action(RaspIot):
     }
 
     def __init__(self, bus):
-        #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
-
-        #check config
-        self._check_config(Action.DEFAULT_CONFIG)
-
-        #scripts threads
-        self.__scripts = {}
-        self.__load_scripts()
 
         #make sure sounds path exists
         if not os.path.exists(Action.SCRIPTS_PATH):
             os.makedirs(Action.SCRIPTS_PATH)
 
+        #init members
+        self.__scripts = {}
+
+    def _start(self):
+        """
+        Start module
+        """
+        #launch scripts threads
+        self.__load_scripts()
+
         #refresh scripts task
         self.__refresh_thread = Task(60.0, self.__load_scripts)
         self.__refresh_thread.start()
 
-    def stop(self):
-        #stop raspiot
-        RaspIot.stop(self)
-
+    def _stop(self):
+        """
+        Stop module
+        """
         #stop refresh thread
         self.__refresh_thread.stop()
 

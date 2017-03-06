@@ -7,10 +7,10 @@ from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParame
 from raspiot import RaspIot, CommandError
 from threading import Timer
 
-__all__ = ['Shutter']
+__all__ = ['Shutters']
 
-class Shutter(RaspIot):
-    MODULE_CONFIG_FILE = 'shutter.conf'
+class Shutters(RaspIot):
+    MODULE_CONFIG_FILE = 'shutters.conf'
     MODULE_DEPS = ['gpios']
 
     STATUS_OPENED = 'opened'
@@ -22,22 +22,25 @@ class Shutter(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         #internal timers
         self.__timers = {}
+        self.raspi_gpios = {}
+
+    def _start(self):
+        """
+        Start module
+        """
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()
 
-        #reset all stuff
+        #reset gpios and shutters
         self.reset()
 
     def event_received(self, event):
         """
         Event received from bus
         """
-        #self.logger.debug(' *** event received: %s' % str(event))
-
         #drop startup events
         if event['startup']:
             self.logger.debug('Drop startup event')
@@ -64,7 +67,9 @@ class Shutter(RaspIot):
 
     def reset(self):
         """
-        Reset all stuff
+        Reset all that need to be resetted:
+        - gpios are resetted
+        - shutters that are opening/closing are set to opened/closed
         """
         #reset gpios
         req = MessageRequest()
@@ -78,10 +83,10 @@ class Shutter(RaspIot):
         #and reset shutter
         config = self.get_devices()
         for shutter in config:
-            if config[shutter]['status']==Shutter.STATUS_OPENING:
-                self.change_status(shutter, Shutter.STATUS_OPENED)
-            if config[shutter]['status']==Shutter.STATUS_CLOSING:
-                self.change_status(shutter, Shutter.STATUS_CLOSED)
+            if config[shutter]['status']==Shutters.STATUS_OPENING:
+                self.change_status(shutter, Shutters.STATUS_OPENED)
+            if config[shutter]['status']==Shutters.STATUS_CLOSING:
+                self.change_status(shutter, Shutters.STATUS_CLOSED)
 
     def get_raspi_gpios(self):
         """
@@ -113,7 +118,7 @@ class Shutter(RaspIot):
 
     def get_devices(self):
         """
-        Return full config (shutter)
+        Return full config
         """
         return self._config
 
@@ -128,7 +133,7 @@ class Shutter(RaspIot):
             del self.__timers[shutter['name']]
 
         #then get gpio
-        if shutter['status']==Shutter.STATUS_OPENING:
+        if shutter['status']==Shutters.STATUS_OPENING:
             gpio = shutter['shutter_open']
         else:
             gpio = shutter['shutter_close']
@@ -144,7 +149,7 @@ class Shutter(RaspIot):
             raise CommandError(resp['message'])
         
         #change status
-        self.change_status(shutter['name'], Shutter.STATUS_PARTIAL)
+        self.change_status(shutter['name'], Shutters.STATUS_PARTIAL)
 
     def __open_action(self, shutter):
         """
@@ -161,11 +166,11 @@ class Shutter(RaspIot):
             raise CommandError(resp['message'])
 
         #change status
-        self.change_status(shutter['name'], Shutter.STATUS_OPENING)
+        self.change_status(shutter['name'], Shutters.STATUS_OPENING)
     
         #launch turn off timer
         self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
-        self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutter.STATUS_OPENED])
+        self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutters.STATUS_OPENED])
         self.__timers[shutter['name']].start()
 
     def __close_action(self, shutter):
@@ -183,11 +188,11 @@ class Shutter(RaspIot):
             raise CommandError(resp['message'])
 
         #change status
-        self.change_status(shutter['name'], Shutter.STATUS_CLOSING)
+        self.change_status(shutter['name'], Shutters.STATUS_CLOSING)
         
         #launch turn off timer
         self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
-        self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutter.STATUS_CLOSED])
+        self.__timers[shutter['name']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['name'], gpio, Shutters.STATUS_CLOSED])
         self.__timers[shutter['name']].start()
 
     def __execute_action(self, shutter, open_action):
@@ -203,11 +208,11 @@ class Shutter(RaspIot):
 
         if open_action:
             #open action triggered
-            if shutter['status'] in [Shutter.STATUS_OPENING, Shutter.STATUS_CLOSING]:
+            if shutter['status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
                 #shutter is in opening or closing state, stop it
                 self.__stop_action(shutter)
 
-            elif shutter['status'] in [Shutter.STATUS_CLOSED, Shutter.STATUS_PARTIAL]:
+            elif shutter['status'] in [Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL]:
                 #shutter is not completely opened or closed, open it
                 self.__open_action(shutter)
             else:
@@ -216,11 +221,11 @@ class Shutter(RaspIot):
 
         else:
             #close action triggered
-            if shutter['status'] in [Shutter.STATUS_OPENING, Shutter.STATUS_CLOSING]:
+            if shutter['status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
                 #shutter is in opening or closing state, stop it
                 self.__stop_action(shutter)
 
-            elif shutter['status'] in [Shutter.STATUS_OPENED, Shutter.STATUS_PARTIAL]:
+            elif shutter['status'] in [Shutters.STATUS_OPENED, Shutters.STATUS_PARTIAL]:
                 #close shutter action
                 self.__close_action(shutter)
 
@@ -306,7 +311,7 @@ class Shutter(RaspIot):
             #shutter is valid, prepare new entry
             self.logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
             config = self.get_devices()
-            config[name] = {'name':name, 'delay':delay, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Shutter.STATUS_OPENED}
+            config[name] = {'name':name, 'delay':delay, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Shutters.STATUS_OPENED}
             self._save_config(config)
 
     def delete_shutter(self, name):
@@ -365,7 +370,7 @@ class Shutter(RaspIot):
         """
         self.logger.debug('change_status for shutter "%s" to "%s"' % (str(shutter_name), str(status)))
         config = self.get_devices()
-        if not status in [Shutter.STATUS_OPENED, Shutter.STATUS_CLOSED, Shutter.STATUS_PARTIAL, Shutter.STATUS_OPENING, Shutter.STATUS_CLOSING]:
+        if not status in [Shutters.STATUS_OPENED, Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL, Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
             raise InvalidParameter('Status value is invalid')
         elif shutter_name not in config:
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % str(shutter_name))
@@ -426,5 +431,5 @@ class Shutter(RaspIot):
 
 if __name__ == '__main__':
     #testu
-    o = Shutter()
+    o = Shutters()
     print o.get_raspi_gpios()

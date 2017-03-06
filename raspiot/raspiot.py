@@ -25,13 +25,21 @@ class RaspIot(BusClient):
     MODULE_DEPS = []
 
     def __init__(self, bus):
-        #init
+        """
+        Constructor
+        """
+        #init bus
         BusClient.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
 
-        #load module configuration
+        #init logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
+
+        #load and check configuration
         self.__configLock = Lock()
         self._config = self._load_config()
+        if getattr(self, 'DEFAULT_CONFIG', None) is not None:
+            self._check_config(self.DEFAULT_CONFIG)
 
     def __del__(self):
         self.stop()
@@ -130,11 +138,34 @@ class RaspIot(BusClient):
         """
         return self.DEPS
 
+    def start(self):
+        """
+        Start module
+        """
+        BusClient.start(self)
+        self._start()
+
+    def _start(self):
+        """
+        Post start: called when module is started
+        This function is used to launch processes that requests cpu time and cannot be launched during init
+        At this time, all modules are loaded and the system is completely operational
+        """
+        pass
+
     def stop(self):
         """
         Stop process
         """
         BusClient.stop(self)
+        self._stop()
+
+    def _stop(self):
+        """
+        Post stop: called when module is stopped
+        This function is used to stop specific processes like threads
+        """
+        pass
 
     def __get_public_methods(self, obj):
         """

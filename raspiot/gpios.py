@@ -159,23 +159,30 @@ class Gpios(RaspIot):
 
     def __init__(self, bus):
         RaspIot.__init__(self, bus)
+
         #members
         self.__input_watchers = []
-        self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
 
-        #configure RasPi
+        #configure raspberry pi
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
+
+    def _start(self):
+        """
+        Start module
+        """
+        #configure gpios
         for gpio in self._config:
             self.__configure_gpio(gpio, self._config[gpio])
 
-    def stop(self):
-        RaspIot.stop(self)
-
+    def _stop(self):
+        """
+        Stop module
+        """
         #stop input watchers
         for w in self.__input_watchers:
             w.stop()
+
         #cleanup gpios
         GPIO.cleanup()
 

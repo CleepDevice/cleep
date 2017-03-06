@@ -135,16 +135,14 @@ class Sound(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         #disable urllib info logs
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        url_log = logging.getLogger("urllib3")
+        if url_log:
+            url_log.setLevel(logging.WARNING)
 
         #members
         self.__sound_thread = None
-
-        #init config
-        self._check_config(Sound.DEFAULT_CONFIG)
 
         #make sure sounds path exists
         if not os.path.exists(Sound.SOUNDS_PATH):

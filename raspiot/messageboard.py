@@ -65,21 +65,10 @@ class Messageboard(RaspIot):
     def __init__(self, bus):
         #init
         RaspIot.__init__(self, bus)
-        self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
-
-        #check config
-        self._check_config(Messageboard.DEFAULT_CONFIG)
 
         #members
         self.__current_message = None
         self.messages = []
-
-        #load messages
-        for msg in self._config['messages']:
-            message = Message()
-            message.from_dict(msg)
-            self.messages.append(message)
 
         #init board
         pin_a0 = 15
@@ -91,6 +80,16 @@ class Messageboard(RaspIot):
         self.__set_board_units()
         self.board.set_scroll_speed(self._config['speed'])
 
+    def _start(self):
+        """
+        Start module
+        """
+        #load messages
+        for msg in self._config['messages']:
+            message = Message()
+            message.from_dict(msg)
+            self.messages.append(message)
+
         #init display task
         self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
         self.__display_task.start()
@@ -101,12 +100,10 @@ class Messageboard(RaspIot):
         now = int(time.time())
         self.add_message('IP: %s' % str(ip), now, now+60)
 
-    def stop(self):
+    def _stop(self):
         """
         Stop module
         """
-        RaspIot.stop(self)
-
         #clean board
         self.board.cleanup()
 
