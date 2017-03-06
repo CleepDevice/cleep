@@ -62,9 +62,9 @@ class Messageboard(RaspIot):
         'speed': 0.05
     }
 
-    def __init__(self, bus):
+    def __init__(self, bus, debug_enabled):
         #init
-        RaspIot.__init__(self, bus)
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None

@@ -24,7 +24,7 @@ class RaspIot(BusClient):
     CONFIG_DIR = '/etc/raspiot/'
     MODULE_DEPS = []
 
-    def __init__(self, bus):
+    def __init__(self, bus, debug_enabled):
         """
         Constructor
         """
@@ -33,7 +33,8 @@ class RaspIot(BusClient):
 
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
 
         #load and check configuration
         self.__configLock = Lock()

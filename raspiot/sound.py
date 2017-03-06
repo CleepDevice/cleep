@@ -132,9 +132,9 @@ class Sound(RaspIot):
         'cy' : 'Welsh'
     }
 
-    def __init__(self, bus):
+    def __init__(self, bus, debug_enabled):
         #init
-        RaspIot.__init__(self, bus)
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #disable urllib info logs
         url_log = logging.getLogger("urllib3")

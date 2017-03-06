@@ -122,9 +122,11 @@ class MessageBus():
     A message without recipient is broadcasted to all subscribers. No response is awaited.
     Only broadcasted messages can be sent before all clients have subscribed (during init phase)
     """
-    def __init__(self):
+    def __init__(self, debug_enabled):
         #init
         self.logger = logging.getLogger(self.__class__.__name__)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
 
         #module message queues
         self.__queues = {}

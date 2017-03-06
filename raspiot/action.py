@@ -167,8 +167,8 @@ class Action(RaspIot):
         'scripts': {}
     }
 
-    def __init__(self, bus):
-        RaspIot.__init__(self, bus)
+    def __init__(self, bus, debug_enabled):
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #make sure sounds path exists
         if not os.path.exists(Action.SCRIPTS_PATH):

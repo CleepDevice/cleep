@@ -157,8 +157,8 @@ class Gpios(RaspIot):
     MODE_OUT = 'out'
     INPUT_DROP_THRESHOLD = 0.150 #in ms
 
-    def __init__(self, bus):
-        RaspIot.__init__(self, bus)
+    def __init__(self, bus, debug_enabled):
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #members
         self.__input_watchers = []

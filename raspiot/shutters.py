@@ -19,9 +19,9 @@ class Shutters(RaspIot):
     STATUS_OPENING = 'opening'
     STATUS_CLOSING = 'closing'
 
-    def __init__(self, bus):
+    def __init__(self, bus, debug_enabled):
         #init
-        RaspIot.__init__(self, bus)
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #internal timers
         self.__timers = {}

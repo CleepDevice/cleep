@@ -21,9 +21,9 @@ class Sensors(RaspIot):
         'sensors': {}
     }
 
-    def __init__(self, bus):
+    def __init__(self, bus, debug_enabled):
         #init
-        RaspIot.__init__(self, bus)
+        RaspIot.__init__(self, bus, debug_enabled)
 
         #members
         self.__tasks = {}
