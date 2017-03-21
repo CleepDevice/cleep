@@ -103,7 +103,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param onError: on error callback (can be null)
      * @param data: more data to embed during upload
      */
-    self.upload = function(command, to, file, onSuccess, onError, data)
+    self.upload = function(command, to, file, data)
     {
         //check input file
         if( !file ) {
@@ -128,22 +128,21 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         self.uploading = true;
 
         //post data
+        var deferred = $q.defer();
         $http.post(self.uriUpload, formData, {
             transformRequest: angular.identity,
             headers: {'Content-Type': undefined}
         }).then(function(response) {
-            if( angular.isFunction(onSuccess) ) {
-                onSuccess(response);
-            }
+            deferred.resolve(response);
         }, function(err) {
-            if( angular.isFunction(onError) ) {
-                onError(response);
-            }
+            deferred.reject(response);
         })
         .finally(function() {
             //reset
             self.uploading = false;
         });
+
+        return deferred.promise;
     };
 
     /**

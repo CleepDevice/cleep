@@ -33,7 +33,7 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
                         resp.data[gpio].widget.mdcolors = '{background:"default-accent-400"}';
                     }
                 }
-                objectsService.addDevices('gpios', resp.data, 'gpios');
+                objectsService.addDevices('gpios', resp.data, 'gpio');
             }, function(err) {
                 console.error('loadDevices', err);
             });

@@ -1,0 +1,34 @@
+<div>
+
+<md-card class="widget-bg-color" style="width: 250px;">
+    <md-card-header>
+        <md-card-avatar>
+            <md-icon class="typcn typcn-watch"></md-icon>
+        </md-card-avatar>
+        <md-card-header-text>
+            <span class="md-title">{{widgetCtl.device.name}}</span>
+            <span class="md-subhead">{{widgetCtl.device.__type}}</span>
+        </md-card-header-text>
+    </md-card-header>
+    <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.widget.mdcolors}}">
+        <div layout="row" layout-align="center center">
+            <span class="md-display-1">{{widgetCtl.device.time | hrTime}}</span>
+        </div>
+    </md-card-content>
+    <md-card-footer layout="row">
+        <div flex="50">
+            <md-icon class="typcn typcn-weather-sunny">
+                <md-tooltip md-direction="top">Sunrise</md-tooltip>
+            </md-icon>
+            <span>{{widgetCtl.device.sunrise | hrTime}}</span>
+        </div>
+        <div flex="50">
+            <md-icon class="typcn typcn-weather-night">
+                <md-tooltip md-direction="top">Sunset</md-tooltip>
+            </md-icon>
+            <span>{{widgetCtl.device.sunset | hrTime}}</span>
+        </div>
+    </md-card-footer>
+</md-card>
+
+</div>

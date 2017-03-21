@@ -1,6 +1,7 @@
-
-var messageboardDirective = function($q, toast, blockUI, messageboardService) {
-    var container = null;
+/**
+ * Message board config directive
+ */
+var messageboardDirective = function($q, toast, messageboardService, confirm) {
 
     var messageboardController = ['$scope', '$filter', function($scope, $filter) {
         var datetimeFormat = 'DD/MM/YYYY HH:mm';
@@ -142,9 +143,6 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
                     self.loadMessages();
                     //close panel
                     self.closeAddPanel();
-                })
-                .finally(function() {
-                    container.stop();
                 });
         };
 
@@ -152,21 +150,14 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          * Delete message
          */
         self.deleteMessage = function(message) {
-            //confirmation
-            if( !confirm('Delete message?') )
-            {
-                return;
-            }
-
-            container.start();
-            messageboardService.deleteMessage(message.uuid)
-                .then(function(resp) {
-                    toast.success('Message deleted');
-                    //reload messages
-                    self.loadMessages();
-                })
-                .finally(function() {
-                    container.stop();
+            confirm.open('Delete message ?', null, 'Delete')
+                .then(function() {
+                    messageboardService.deleteMessage(message.uuid)
+                        .then(function(resp) {
+                            toast.success('Message deleted');
+                            //reload messages
+                            self.loadMessages();
+                        }); 
                 });
         };
 
@@ -174,13 +165,9 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          * Set duration
          */
         self.setDuration = function() {
-            container.start();
             messageboardService.setDuration(self.duration)
                 .then(function(resp) {
                     toast.success('Duration saved');
-                })
-                .finally(function() {
-                    container.stop();
                 });
         };
 
@@ -188,13 +175,9 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          * Set speed
          */
         self.setSpeed = function() {
-            container.start();
             messageboardService.setSpeed(self.speed)
                 .then(function(resp) {
                     toast.success('Speed saved');
-                })
-                .finally(function() {
-                    container.stop();
                 });
         };
 
@@ -202,13 +185,9 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
          * Set units
          */
         self.setUnits = function() {
-            container.start();
             messageboardService.setUnits(self.unitMinutes, self.unitHours, self.unitDays)
                 .then(function(resp) {
                     toast.success('Units saved');
-                })
-                .finally(function() {
-                    container.stop();
                 });
         };
 
@@ -228,9 +207,7 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
     }];
 
     var messageboardLink = function(scope, element, attrs, controller) {
-        container = blockUI.instances.get('messageboardContainer');
-        container.reset();
-
+        //configure controller
         controller.init();
     };
 
@@ -245,5 +222,5 @@ var messageboardDirective = function($q, toast, blockUI, messageboardService) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('messageboardConfigDirective', ['$q', 'toastService', 'blockUI', 'messageboardService', messageboardDirective]);
+RaspIot.directive('messageboardConfigDirective', ['$q', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
 

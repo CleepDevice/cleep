@@ -1,22 +1,22 @@
 /**
- * Sound service
+ * Sounds service
  * Handle sound module requests
  */
-var soundService = function($q, $rootScope, rpcService, objectsService) {
+var soundsService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
      * Set configuration directive names
      */
     self.setConfigs = function() {
-        objectsService.addConfig('Sound', 'soundConfigDirective');
+        objectsService.addConfig('Sounds', 'soundsConfigDirective');
     };
 
     /**
      * Get sounds
      */
     self.getSounds = function() {
-        return rpcService.sendCommand('get_sounds', 'sound')
+        return rpcService.sendCommand('get_sounds', 'sounds')
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -28,7 +28,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Get langs
      */
     self.getLangs = function() {
-        return rpcService.sendCommand('get_langs', 'sound')
+        return rpcService.sendCommand('get_langs', 'sounds')
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -40,7 +40,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Set lang
      */
     self.setLang = function(lang) {
-        return rpcService.sendCommand('set_lang', 'sound', {'lang':lang})
+        return rpcService.sendCommand('set_lang', 'sounds', {'lang':lang})
             .then(function(resp) {
             }, function(err)  {
                 console.error('setLang', err);
@@ -51,7 +51,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Delete sound
      */
     self.deleteSound = function(name) {
-        return rpcService.sendCommand('delete_sound', 'sound', {'filename':name})
+        return rpcService.sendCommand('delete_sound', 'sounds', {'filename':name})
             .then(function(resp) {
             }, function(err) {
                 console.error('deleteSound:', err);
@@ -62,7 +62,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Play sound
      */
     self.playSound = function(name) {
-        return rpcService.sendCommand('play_sound', 'sound', {'filename':name})
+        return rpcService.sendCommand('play_sound', 'sounds', {'filename':name})
             .then(function(resp) {
             }, function(err) {
                 console.error('playSound', err);
@@ -73,7 +73,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Speak message
      */
     self.speakMessage = function(text, lang) {
-        return rpcService.sendCommand('speak_message', 'sound', {'text':text, 'lang':lang})
+        return rpcService.sendCommand('speak_message', 'sounds', {'text':text, 'lang':lang})
             .then(function(resp) {
             }, function(err) {
                 console.error('sayText:', err);
@@ -84,7 +84,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Get volume
      */
     self.getVolume = function() {
-        return rpcService.sendCommand('get_volume', 'sound')
+        return rpcService.sendCommand('get_volume', 'sounds')
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -96,7 +96,7 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
      * Set volume
      */
     self.setVolume = function() {
-        return rpcService.sendCommand('set_volume', 'sound', {'volume':volume})
+        return rpcService.sendCommand('set_volume', 'sounds', {'volume':volume})
             .then(function(resp) {
             }, function(err) {
                 console.error('getVolume:', err);
@@ -106,11 +106,11 @@ var soundService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Upload sound
      */
-    self.uploadSound = function(file, onSuccess, onError) {
-        return rpcService.upload('add_sound', 'sound', file, onSuccess, onError);
+    self.uploadSound = function(file) {
+        return rpcService.upload('add_sound', 'sounds', file)
     };
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('soundService', ['$q', '$rootScope', 'rpcService', 'objectsService', soundService]);
+RaspIot.service('soundsService', ['$q', '$rootScope', 'rpcService', 'objectsService', soundsService]);
 

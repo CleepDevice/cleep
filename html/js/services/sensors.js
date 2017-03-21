@@ -66,11 +66,11 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     };
 
     /**
-     * Add new motion sensor
+     * Add new sensor
      */
-    self.addMotion = function(name, gpio, reverted) {
-        return rpcService.sendCommand('add_motion', 'sensors', 
-                {'name':name, 'gpio':gpio, 'reverted':reverted});
+    self.addSensor = function(name, gpio, reverted, type) {
+        return rpcService.sendCommand('add_sensor', 'sensors', 
+            {'name':name, 'gpio':gpio, 'reverted':reverted, 'type':type});
     };
 
     /**

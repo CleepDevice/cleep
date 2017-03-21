@@ -1,0 +1,52 @@
+<md-content layout-fill ng-cloak>
+
+    <!-- items list -->
+    <md-table-container>
+       <table md-table>
+        <thead md-head md-order="columnOrder">
+            <tr md-row>
+                <th md-column md-order-by="name">Name</th>
+                <th md-column>Shutter</th>
+                <th md-column>Switch</th>
+                <th md-column>Delay</th>
+                <th md-column>Status</th>
+            </tr>
+        </thead> 
+        <tbody md-body>
+            <tr md-row md-auto-select ng-repeat="device in shuttersCtl.devices | filterDeviceByService:'shutters' | orderBy:columnOrder">
+                <td md-cell>{{device.name}}</td>
+                <td md-cell>
+                    <span>Open: {{device.shutter_open}}</span>
+                    <br/>
+                    <span>Close: {{device.shutter_close}}</span>
+                </td>
+                <td md-cell>
+                    <span>Open: {{device.switch_open}}</span>
+                    <br/>
+                    <span>Close: {{device.switch_close}}</span>
+                </td>
+                <td md-cell>{{device.delay}}</td>
+                <td md-cell>{{device.status}}</td>
+                <td md-cell>
+                    <md-button class="md-icon-button" ng-click="shuttersCtl.openUpdateDialog(device)" aria-label="Edit shutter">
+                        <md-tooltip md-direction="bottom">Edit shutter</md-tooltip>
+                        <md-icon md-font-set="material-icons">mode_edit</md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" ng-click="shuttersCtl.openDeleteDialog(device)" aria-label="Delete shutter">
+                        <md-tooltip md-direction="bottom">Delete shutter</md-tooltip>
+                        <md-icon md-font-set="material-icons">delete</md-icon>
+                    </md-button>
+                </td>
+            </tr>
+        </tbody>
+        </table>
+    </md-table-container>
+
+    <!-- buttons -->
+    <md-button ng-click="shuttersCtl.openAddDialog()" class="md-primary md-fab md-fab-bottom-right" aria-label="Add shutter">
+        <md-tooltip md-direction="top">Add shutter</md-tooltip>
+        <md-icon md-font-set="material-icons">add_circle</md-icon>
+    </md-button>
+
+</md-content>
+

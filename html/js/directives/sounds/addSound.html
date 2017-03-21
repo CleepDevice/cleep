@@ -1,0 +1,34 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Add new sound</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="soundsCtl.cancelDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+        <md-content layout-padding>
+            <div layout-gt-sm="row"> 
+                <md-input-container class="md-block" flex-gt-sm>
+                    <div upload-file selected-file="soundsCtl.uploadFile" label="Select sound file"></div>
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-button href="http://www.universal-soundbank.com/" target="_blank">
+                        <md-icon md-font-set="material-icons">link</md-icon>
+                        <span>Upload new sound from Universal-soundbank</span>
+                    </md-button>
+                </md-input-container>
+            </div>
+        </md-content>
+        </md-dialog-content>
+
+    </form>
+
+</md-dialog>
+

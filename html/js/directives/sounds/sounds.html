@@ -1,0 +1,64 @@
+<md-content layout-fill ng-cloak>
+
+    <!-- list -->
+    <md-table-container>
+        <table md-table>
+        <thead md-head md-order="columnOrder">
+            <tr md-row>
+                <th md-column md-order-by="name">Sound file</th>
+                <th md-column>Actions</th>
+            </tr>
+        </thead>
+        <tbody md-body>
+            <tr md-row md-auto-select ng-repeat="sound in soundsCtl.sounds | orderBy:columnOrder">
+                <td md-cell>{{sound.name}}</td>
+                <td md-cell>
+                   <md-button class="md-icon-button" ng-click="soundsCtl.playSound(sound.name)" aria-label="Play sound">
+                        <md-tooltip md-direction="bottom">Play sound</md-tooltip>
+                        <md-icon md-font-set="material-icons">play_circle_outline</md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" ng-click="soundsCtl.openDeleteDialog(sound.name)" aria-label="Delete">
+                        <md-tooltip md-direction="bottom">Delete sound</md-tooltip>
+                        <md-icon md-font-set="material-icons">delete</md-icon>
+                    </md-button> 
+                </td>
+            </tr>
+        </tbody>
+        </table>
+    </md-table-container>
+
+    <!-- speak message -->
+    <div layout="row" layout-padding flex>
+        <md-input-container class="md-block" flex-offset-gt-xs="25" flex-gt-xs="50">
+            <label>Message to speak</label>
+            <input ng-model="soundsCtl.tts">
+        </md-input-container>
+        <div flex="25">
+            <md-button class="md-raised md-primary" ng-click="soundsCtl.speakMessage(soundsCtl.tts)" aria-label="Speak message">Speak message</md-button>
+        </div>
+    </div>
+
+    <!-- toolbar -->
+    <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">
+        <md-fab-trigger>
+            <md-button class="md-fab md-primary" aria-label="Actions">
+                <md-icon md-font-set="material-icons">more_vert</md-icon>
+            </md-button>
+        </md-fab-trigger>
+        <md-fab-actions>
+            <md-button ng-click="soundsCtl.openConfigDialog()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
+                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
+                <md-icon md-font-set="material-icons">build</md-icon>
+            </md-button>
+            <md-button ng-click="soundsCtl.openAddDialog()" class="md-fab md-mini md-primary" aria-label="Add sound">
+                <md-tooltip md-direction="top">Add sound</md-tooltip>
+                <md-icon md-font-set="material-icons">add_circle</md-icon>
+            </md-button>
+        </md-fab-actions>
+    </md-fab-speed-dial>
+
+</md-content>
+
+
+
+

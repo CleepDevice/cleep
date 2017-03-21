@@ -85,12 +85,14 @@ var objectsService = function($rootScope) {
             // - __service: to easily access to service functions
             // - __serviceName: service name (used internally)
             // - __type: set it to service name if not alreay exist (used to filter devices)
+            // - __widgetCtlName: set name of device widget controller (based on device type)
             // - widget: set object to store user widget customization
             for( var key in devices )
             {
                 devices[key].__type = type;
                 devices[key].__service = self.services[service];
                 devices[key].__serviceName = service;
+                devices[key].__widgetCtlName = type + 'Ctl';
                 //add widget properties if necessary
                 if( angular.isUndefined(devices[key].widget) || devices[key].widget===null )
                 {

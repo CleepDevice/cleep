@@ -22,7 +22,7 @@ class GpioInputWatcher(Thread):
     This object doesn't configure pin!
     """
 
-    DEBOUNCE = 0.25
+    DEBOUNCE = 0.20
 
     def __init__(self, pin, on_callback, off_callback, level=GPIO.LOW):
         #init
@@ -75,7 +75,7 @@ class GpioInputWatcher(Thread):
                     time.sleep(self.debounce)
 
                 else:
-                    time.sleep(0.25)
+                    time.sleep(0.125)
 
                 #update last level
                 last_level = level

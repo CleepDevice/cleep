@@ -66,6 +66,7 @@ RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcS
                 else
                 {
                     //module has no associated service
+                    console.warn('Module "'+serviceName+'" has no angular service');
                 }
             }
 

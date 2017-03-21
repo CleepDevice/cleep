@@ -1,16 +1,17 @@
+/**
+ * Dashboard directive
+ * Used to display device widgets dashboard
+ */
+var dashboardDirective = function() {
 
-var dashboardDirective = function($rootScope, $q, growl, blockUI) {
-    var container = null;
-
-    var dashboardController = ['$scope', '$injector', 'rpcService', 'objectsService', function($scope, $injector, rpcService, objectsService) {
+    var dashboardController = function($scope, $injector, rpcService, objectsService) {
         var self = this;
+
         //threshold to display search toolbar
         self.devicesThreshold = 10;
         //devices
         self.devices = objectsService.devices;
-    }];
-
-    var dashboardLink = function(scope, element, attrs, controller) {
+        console.log('DEVICES', self.devices);
     };
 
     return {
@@ -18,10 +19,9 @@ var dashboardDirective = function($rootScope, $q, growl, blockUI) {
         replace: true,
         scope: true,
         controller: dashboardController,
-        controllerAs: 'dashboardCtl',
-        link: dashboardLink
+        controllerAs: 'dashboardCtl'
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('dashboardDirective', ['$rootScope', '$q', 'growl', 'blockUI', dashboardDirective]);
+RaspIot.directive('dashboardDirective', [dashboardDirective]);

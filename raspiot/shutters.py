@@ -6,6 +6,7 @@ import logging
 from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParameter
 from raspiot import RaspIot, CommandError
 from threading import Timer
+import time
 
 __all__ = ['Shutters']
 
@@ -135,8 +136,12 @@ class Shutters(RaspIot):
         #then get gpio
         if shutter['status']==Shutters.STATUS_OPENING:
             gpio = shutter['shutter_open']
-        else:
+        elif shutter['status']==Shutters.STATUS_CLOSING:
             gpio = shutter['shutter_close']
+        else:
+            #shutter is already stopped, nothing to do
+            self.logger.info('Shutter already stopped. Stop action dropped')
+            return
         self.logger.debug('stop shutter: gpio=%s' % str(gpio))
 
         #and turn off gpio
@@ -311,7 +316,16 @@ class Shutters(RaspIot):
             #shutter is valid, prepare new entry
             self.logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
             config = self.get_devices()
-            config[name] = {'name':name, 'delay':delay, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'switch_open':switch_open, 'switch_close':switch_close, 'status':Shutters.STATUS_OPENED}
+            config[name] = {
+                'name': name,
+                'delay': delay,
+                'shutter_open': shutter_open,
+                'shutter_close': shutter_close,
+                'switch_open': switch_open,
+                'switch_close': switch_close,
+                'status': Shutters.STATUS_OPENED,
+                'lastupdate': int(time.time())
+            }
             self._save_config(config)
 
     def delete_shutter(self, name):
@@ -375,14 +389,16 @@ class Shutters(RaspIot):
         elif shutter_name not in config:
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % str(shutter_name))
         else:
+            now = int(time.time())
             #save new status
             config[shutter_name]['status'] = status
+            config[shutter_name]['lastupdate'] = now
             self._save_config(config)
 
             #and broadcast new shutter status
             req = MessageRequest()
             req.event = 'shutters.shutter.%s' % status
-            req.params = {'shutter': shutter_name}
+            req.params = {'shutter': shutter_name, 'lastupdate':now}
             self.push(req)
 
     def __end_of_timer(self, shutter_name, gpio, new_status):

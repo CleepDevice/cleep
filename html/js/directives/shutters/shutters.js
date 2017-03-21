@@ -1,51 +1,54 @@
 /**
- * Sensors config directive
- * Handle sensors configuration
+ * Shutters config directive
+ * Handle shutter configuration
  */
-var sensorsConfigDirective = function($q, toast, objectsService, sensorsService, confirm, $mdDialog) {
+var shuttersConfigDirective = function(shuttersService, toast, objectsService, $mdDialog, confirm) {
 
-    var sensorsController = [function() {
+    var shuttersConfigController = function() {
         var self = this;
         self.raspiGpios = [];
         self.devices = objectsService.devices;
         self.name = '';
-        self.gpio = 'GPIO2';
-        self.reverted = false;
-        self.type = 'motion';
+        self.shutter_open = 'GPIO2';
+        self.shutter_close = 'GPIO4';
+        self.switch_open = 'GPIO3';
+        self.switch_close = 'GPIO17';
+        self.delay = 30;
         self.updateDevice = false;
-        self.types = ['motion'];
 
-        /** 
+        /**
          * Reset editor's values
          */
         self._resetValues = function() {
-            self.name = ''; 
-            self.gpio = 'GPIO2';
-            self.reverted = false;
-            self.type = 'motion';
-        };  
+            self.name = '';
+            self.shutter_open = 'GPIO2';
+            self.shutter_close = 'GPIO4';
+            self.switch_open = 'GPIO3';
+            self.switch_close = 'GPIO17';
+            self.delay = 30;
+        };
 
-        /** 
+        /**
          * Close dialog
          */
         self.closeDialog = function() {
             //check values
-            if( self.name.length===0 )
-            {   
+            if( self.name.length===0 || self.delay.length===0 )
+            {
                 toast.error('All fields are required');
-            }   
+            }
             else
-            {   
+            {
                 $mdDialog.hide();
-            }   
+            }
         };
 
-        /** 
+        /**
          * Cancel dialog
          */
         self.cancelDialog = function() {
             $mdDialog.cancel();
-        };  
+        };
 
         /**
          * Open dialog (internal use)
@@ -53,8 +56,8 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         self._openDialog = function() {
             return $mdDialog.show({
                 controller: function() { return self; },
-                controllerAs: 'sensorsCtl',
-                templateUrl: 'js/directives/sensors/addSensor.html',
+                controllerAs: 'shuttersCtl',
+                templateUrl: 'js/directives/shutters/addShutter.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false
             });
@@ -67,56 +70,58 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    self._addSensor();
-                    sensorsService.loadDevices();
-                    toast.success('Sensor added');
+                    self._addShutter();
+                    shuttersService.loadDevices();
+                    toast.success('Shutter added');
                  }, function() {})
                 .finally(function() {
                     self._resetValues();
                 });
         };
 
-        /** 
+        /**
          * Open update dialog
          */
         self.openUpdateDialog = function(device) {
             //set editor's value
             self.name = device.name;
-            self.gpio = device.gpio;
-            self.reverted = device.reverted;
-            self.type = device.type;
+            self.shutter_open = device.shutter_open;
+            self.shutter_close = device.shutter_close
+            self.delay = device.delay;
+            self.switch_open = device.switch_open;
+            self.switch_close = device.switch_close
 
             //open dialog
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    self._deleteSensor(device);
-                    self._addSensor();
-                    toast.success('Sensor updated');
-                }, function() {}) 
+                    self._deleteShutter(device);
+                    self._addShutter();
+                    toast.success('Shutter updated');
+                }, function() {})
                 .finally(function() {
                     self._resetValues();
-                }); 
-        }; 
+                });
+        };
 
-        /** 
-         * Delete sensor
+        /**
+         * Delete shutter
          */
         self.openDeleteDialog = function(device) {
-            confirm.open('Delete sensor?', null, 'Delete')
+            confirm.open('Delete shutter?', null, 'Delete')
                 .then(function() {
-                    self._deleteSensor();
-                    toast.success('Sensor deleted');
-                }); 
-        };  
+                    self._deleteShutter();
+                    toast.success('Shutter deleted');
+                });
+        };
 
-        /** 
-         * Add sensor (internal use)
+        /**
+         * Add shutter (internal use)
          */
-        self._addSensor = function() {
-            return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type)
+        self._addShutter = function() {
+            return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close)
                 .then(function(resp) {
-                    sensorsService.loadDevices();
+                    shuttersService.loadDevices();
                 });
         };
 
@@ -134,7 +139,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
          * Return raspberry pi gpios
          */
         self.getRaspiGpios = function() {
-            return sensorsService.getRaspiGpios()
+            return shuttersService.getRaspiGpios()
                 .then(function(resp) {
                     for( var gpio in resp )
                     {
@@ -145,27 +150,27 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         };
 
         /**
-         * Init controller
+         * Controller init
          */
         self.init = function() {
             self.getRaspiGpios();
         };
 
-    }];
+    };
 
-    var sensorsLink = function(scope, element, attrs, controller) {
+    var shuttersConfigLink = function(scope, element, attrs, controller) {
         controller.init();
     };
 
     return {
-        templateUrl: 'js/directives/sensors/sensors.html',
+        templateUrl: 'js/directives/shutters/shutters.html',
         replace: true,
         scope: true,
-        controller: sensorsController,
-        controllerAs: 'sensorsCtl',
-        link: sensorsLink
+        controller: shuttersConfigController,
+        controllerAs: 'shuttersCtl',
+        link: shuttersConfigLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'objectsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'toastService', 'objectsService', '$mdDialog', 'confirmService', shuttersConfigDirective]);

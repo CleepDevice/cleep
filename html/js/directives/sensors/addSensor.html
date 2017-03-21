@@ -1,0 +1,53 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2 ng-if="!sensorsCtl.updateDevice">Add new sensor</h2>
+                <h2 ng-if="sensorsCtl.updateDevice">Update sensor</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="sensorsCtl.cancelDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+        <md-content layout-padding>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Name</label>
+                <input ng-model="sensorsCtl.name">
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Type</label>
+                <md-select ng-model="sensorsCtl.type">
+                    <md-option ng-repeat="type in sensorsCtl.types" ng-value="type">{{type}}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Gpio</label>
+                <md-select ng-model="sensorsCtl.gpio">
+                    <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <md-checkbox ng-model="sensorsCtl.reverted" aria-label="Revert state">
+                    State is reverted?
+                </md-checkbox>
+            </md-input-container>
+        </md-content>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="sensorsCtl.closeDialog()" aria-label="Close dialog">
+                <span ng-if="!sensorsCtl.updateDevice">Add</span>
+                <span ng-if="sensorsCtl.updateDevice">Update</span>
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+
+</md-dialog>
+

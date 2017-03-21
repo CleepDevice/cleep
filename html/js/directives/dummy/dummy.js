@@ -1,21 +1,21 @@
 
-var dummyConfigDirective = function($q, growl, blockUI) {
-    var container = null;
+var dummyConfigDirective = function(objectsService) {
 
-    var dummyController = ['$scope', function($scope) {
+    var dummyController = function() {
+        var self = this;
+
         /**
          * Init controller
          */
-        function init() {
+        self.init = function() {
         };
 
         //init directive
         init();
     }];
 
-    var dummyLink = function(scope, element, attrs) {
-        container = blockUI.instances.get('dummyContainer');
-        container.reset();
+    var dummyLink = function(scope, element, attrs, controller) {
+        controller.init();
     };
 
     return {
@@ -28,4 +28,4 @@ var dummyConfigDirective = function($q, growl, blockUI) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('dummyConfigDirective', ['$q', 'growl', 'blockUI', dummyConfigDirective]);
+RaspIot.directive('dummyConfigDirective', ['objectsService', dummyConfigDirective]);

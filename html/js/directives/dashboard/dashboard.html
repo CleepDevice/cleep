@@ -1,33 +1,11 @@
 <div layout="row" layout-wrap layout-padding>
 
-    <div ng-repeat="device in dashboardCtl.devices" class="no-padding">
-        <div widget-directive="device">
+    <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
+        <div ng-if="device.__type=='gpio'" widget-gpio-directive device="device"></div>
+        <div ng-if="device.__type=='clock'" widget-clock-directive device="device"></div>
+        <div ng-if="device.__type==='motion'" widget-motion-directive device="device"></div>
+        <div ng-if="device.__type==='shutter'" widget-shutter-directive device="device"></div>
     </div>
 
 </div>
-
-<!--<div>
-    <md-grid-list md-cols="4" md-cols-sm="6" md-cols-md="8" md-cols-gt-md="10" md-row-height-gt-md="1:1" md-row-height="4:4" md-gutter="1em" md-gutter-gt-sm="1em">
-
-        <md-grid-tile md-rowspan="{{device.__widget.row}}" md-colspan="{{device.__widget.col}}" class="{{device.__widget.class}}" md-colors="{{device.__widget.mdcolors}}" ng-repeat="device in dashboardCtl.devices">
-            <div widget-directive="device" layout="row" layout-fill></div>
-        </md-grid-tile>
-
-    </md-grid-list>
-</div>-->
-
-<!--<md-content class="md-padding" layout-xs="column" layout="row" style="background-color:red;">
-    <div layout="column" style="background-color:blue;">
-        <div ng-repeat="device in dashboardCtl.devices" widget-directive="device" layout="row" layout-fill></div>
-    </div>
-</md-content>-->
-
-<!--<div class='md-padding' layout="row" flex>
-    <div layout="row" flex>
-        <div class="parent" layout="column" ng-repeat="device in dashboardCtl.devices" flex>
-            <div widget-directive="device" layout="row" layout-fill></div>
-        </div>
-    </div>
-</div>-->
-
 

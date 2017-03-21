@@ -27,15 +27,16 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
 RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
-        .primaryPalette('teal')
-        .accentPalette('yellow')
-        .backgroundPalette('grey');
+        .primaryPalette('blue-grey')
+        .accentPalette('orange');
+        //.backgroundPalette('grey')
+        //.dark();
     $mdThemingProvider
         .theme('dark')
-        .primaryPalette('teal')
-        .accentPalette('yellow')
+        .primaryPalette('blue-grey')
+        .accentPalette('orange')
         .dark();
-    $mdThemingProvider
+    /*$mdThemingProvider
         .theme('alt')
         .primaryPalette('blue-grey')
         .accentPalette('amber');
@@ -43,7 +44,7 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
         .theme('alt-dark')
         .primaryPalette('blue-grey')
         .accentPalette('amber')
-        .dark();
+        .dark();*/
 }]);
 
 /**
@@ -108,7 +109,7 @@ RaspIot.filter('deviceType', function($filter) {
 /**
  * Device service filter
  */
-RaspIot.filter('deviceService', function($filter) {
+RaspIot.filter('filterDeviceByService', function($filter) {
     return function(devices, service) {
         if( service ) {
             return $filter("filter")(devices, function(device) {

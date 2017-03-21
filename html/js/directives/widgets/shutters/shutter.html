@@ -1,0 +1,58 @@
+<div>
+
+<md-card class="widget-bg-color" style="width: 350px;">
+    <md-card-header>
+        <md-card-avatar>
+            <md-icon class="typcn typcn-th-menu-outline"></md-icon>
+        </md-card-avatar>
+        <md-card-header-text>
+            <span class="md-title">{{widgetCtl.device.name}}</span>
+            <span class="md-subhead">{{widgetCtl.device.__type}}</span>
+        </md-card-header-text>
+    </md-card-header>
+    <md-card-content layout="row" layout-align="center center" md-colors="{{widgetCtl.device.widget.mdcolors}}">
+        <div flex="50">
+            <md-icon ng-if="widgetCtl.device.status==='closed'" class="typcn typcn-th-menu-outline icon-xxl" style="padding-left:30px;">
+                <md-tooltip md-direction="right">Closed</md-tooltip>
+            </md-icon>
+            <md-icon ng-if="widgetCtl.device.status==='partial'" class="typcn typcn-equals-outline icon-xxl" style="padding-left:30px;">
+                <md-tooltip md-direction="right">Partial</md-tooltip>
+            </md-icon>
+            <md-icon ng-if="widgetCtl.device.status==='opened'" class="typcn typcn-minus-outline icon-xxl" style="padding-left:30px;">
+                <md-tooltip md-direction="right">Opened</md-tooltip>
+            </md-icon>
+            <md-icon ng-if="widgetCtl.device.status==='opening'" class="typcn typcn-arrow-sorted-up icon-xxl" style="padding-left:30px;">
+                <md-tooltip md-direction="right">Opening</md-tooltip>
+            </md-icon>
+            <md-icon ng-if="widgetCtl.device.status==='closing'" class="typcn typcn-arrow-sorted-down icon-xxl" style="padding-left:30px;">
+                <md-tooltip md-direction="right">Closing</md-tooltip>
+            </md-icon>
+        </div>
+        <div flex="50">
+            <div layout="column" layout-align="center center">
+                <div>
+                    <md-button class="md-raised" aria-label="Open shutter" ng-click="widgetCtl.openShutter()">
+                        <md-icon class="typcn typcn typcn-arrow-sorted-up"></md-icon>
+                    </md-button>
+                </div>
+                <div>
+                    <md-button class="md-raised" aria-label="Stop shutter" ng-click="widgetCtl.stopShutter()">
+                        <md-icon class="typcn typcn typcn-media-stop"></md-icon>
+                    </md-button></div>
+                <div>
+                    <md-button class="md-raised" aria-label="Close shutter" ng-click="widgetCtl.closeShutter()">
+                        <md-icon class="typcn typcn typcn-arrow-sorted-down"></md-icon>
+                    </md-button>
+                </div>
+            </div>
+        </div>
+    </md-card-content>
+    <md-card-footer>
+        <md-icon class="typcn typcn-time">
+            <md-tooltip md-direction="top">Last update</md-tooltip>
+        </md-icon>
+        <span>{{widgetCtl.device.lastupdate | hrDatetime}}</span>
+    </md-card-footer>
+</md-card>
+
+</div>

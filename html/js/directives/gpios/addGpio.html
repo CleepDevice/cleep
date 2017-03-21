@@ -1,0 +1,54 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2 ng-if="!gpiosCtl.updateDevice">Add new gpio</h2>
+                <h2 ng-if="gpiosCtl.updateDevice">Update gpio</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="gpiosCtl.cancelDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+        <md-content layout-padding>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Name</label>
+                <input ng-model="gpiosCtl.name">
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Gpio</label>
+                <md-select ng-model="gpiosCtl.gpio">
+                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Mode</label>
+                <md-select ng-model="gpiosCtl.mode">
+                    <md-option value="in">Input</md-option>
+                    <md-option value="out">Output</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <md-checkbox ng-model="gpiosCtl.keep" aria-label="save_state">
+                    Save state?<br/>(restore state after reboot)
+                </md-checkbox>
+            </md-input-container>
+        </md-content>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="gpiosCtl.closeDialog()" aria-label="Close dialog">
+                <span ng-if="!gpiosCtl.updateDevice">Add</span>
+                <span ng-if="gpiosCtl.updateDevice">Update</span>
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+
+</md-dialog>
+

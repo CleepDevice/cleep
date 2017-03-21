@@ -1,24 +1,24 @@
 /**
- * Shutter service
- * Handle shutter module requests
+ * Shutters service
+ * Handle shutters module requests
  */
-var shutterService = function($q, $rootScope, rpcService, objectsService) {
+var shuttersService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
      * Set configuration directive names
      */
     self.setConfigs = function() {
-        objectsService.addConfig('Shutter', 'shutterConfigDirective');
+        objectsService.addConfig('Shutters', 'shuttersConfigDirective');
     };
 
     /**
      * Load service devices (here shutter)
      */
     self.loadDevices = function() {
-        rpcService.sendCommand('get_devices', 'shutter')
+        rpcService.sendCommand('get_devices', 'shutters')
             .then(function(resp) {
-                objectsService.addDevices('shutter', resp.data);
+                objectsService.addDevices('shutters', resp.data, 'shutter');
             }, function(err) {
                 console.log('loadDevices', err);
             });
@@ -47,7 +47,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Add new shutter
      */
     self.addShutter = function(name, shutter_open, shutter_close, delay, switch_open, switch_close) {
-        return rpcService.sendCommand('add_shutter', 'shutter', 
+        return rpcService.sendCommand('add_shutter', 'shutters', 
                 {'name':name, 'shutter_open':shutter_open, 'shutter_close':shutter_close, 'delay':delay, 'switch_open':switch_open, 'switch_close':switch_close})
         .then(function(resp) {
         }, function(err) {
@@ -59,7 +59,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Delete shutter
      */
     self.deleteShutter = function(name) {
-        return rpcService.sendCommand('delete_shutter', 'shutter', {'name':name})
+        return rpcService.sendCommand('delete_shutter', 'shutters', {'name':name})
             .then(function(resp) {
             }, function(err) {
                 console.log('deleteShutter:', err);
@@ -70,7 +70,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Open shutter
      */
     self.openShutter = function(device) {
-        return rpcService.sendCommand('open_shutter', 'shutter', {'name':device['name']})
+        return rpcService.sendCommand('open_shutter', 'shutters', {'name':device['name']})
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -82,7 +82,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Close shutter
      */
     self.closeShutter = function(device) {
-        return rpcService.sendCommand('close_shutter', 'shutter', {'name':device['name']})
+        return rpcService.sendCommand('close_shutter', 'shutters', {'name':device['name']})
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -94,7 +94,7 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
      * Stop shutter
      */
     self.stopShutter = function(device) {
-        return rpcService.sendCommand('stop_shutter', 'shutter', {'name':device['name']})
+        return rpcService.sendCommand('stop_shutter', 'shutters', {'name':device['name']})
             .then(function(resp) {
                 return resp.data;
             }, function(err) {
@@ -108,11 +108,13 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('shutters.shutter.opening', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='shutter' )
+            if( objectsService.devices[i].__serviceName==='shutters' )
             {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opening'
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
                     break;
                 }
             }
@@ -124,11 +126,13 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('shutters.shutter.closing', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='shutter' )
+            if( objectsService.devices[i].__serviceName==='shutters' )
             {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closing'
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
                     break;
                 }
             }
@@ -140,11 +144,13 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('shutters.shutter.opened', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='shutter' )
+            if( objectsService.devices[i].__serviceName==='shutters' )
             {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'opened'
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }
             }
@@ -156,11 +162,13 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('shutters.shutter.closed', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='shutter' )
+            if( objectsService.devices[i].__serviceName==='shutters' )
             {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'closed'
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }
             }
@@ -172,11 +180,13 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
     $rootScope.$on('shutters.shutter.partial', function(event, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='shutter' )
+            if( objectsService.devices[i].__serviceName==='shutters' )
             {
                 if( objectsService.devices[i].name===params.shutter )
                 {
                     objectsService.devices[i].status = 'partial'
+                    objectsService.devices[i].lastupdate = params.lastupdate;
+                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }
             }
@@ -185,5 +195,5 @@ var shutterService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('shutterService', ['$q', '$rootScope', 'rpcService', 'objectsService', shutterService]);
+RaspIot.service('shuttersService', ['$q', '$rootScope', 'rpcService', 'objectsService', shuttersService]);
 

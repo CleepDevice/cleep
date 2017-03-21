@@ -1,47 +1,5 @@
 <md-content layout-fill ng-cloak>
 
-    <!-- close panel -->
-    <md-button ng-show="gpiosCtl.showAddPanel" ng-click="gpiosCtl.closeAddPanel()" class="md-fab md-primary md-fab-top-right fab-panel" aria-label="Close">
-        <md-tooltip md-direction="bottom">Close</md-tooltip>
-        <md-icon md-font-set="material-icons">close</md-icon>
-    </md-button>
-
-    <!-- add panel -->
-    <md-content ng-show="gpiosCtl.showAddPanel" md-theme="dark" class="slide-panel">
-        <md-content layout-padding>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Name</label>
-                <input ng-model="gpiosCtl.name">
-            </md-input-container>
-            <div layout-gt-sm="row">
-                <md-input-container class="md-block" flex-gt-sm>
-                    <label>Gpio</label>
-                    <md-select ng-model="gpiosCtl.gpio">
-                        <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
-                    </md-select>
-                </md-input-container>
-                <md-input-container class="md-block" flex-gt-sm>
-                    <label>Mode</label>
-                    <md-select ng-model="gpiosCtl.mode">
-                        <md-option value="in">Input</md-option>
-                        <md-option value="out">Output</md-option>
-                    </md-select>
-                </md-input-container>
-                <md-input-container class="md-block" flex-gt-sm>
-                    <md-checkbox ng-model="gpiosCtl.keep" aria-label="save_state">
-                        Save state?<br/>(restore state after reboot)
-                    </md-checkbox>
-                </md-input-container>
-            </div>
-            <section layout="row">
-                <md-button class="md-raised md-primary" ng-click="gpiosCtl.addGpio()" aria-label="Ok">
-                    <span ng-if="gpiosCtl.currentDevice===null">Add gpio</span>
-                    <span ng-if="gpiosCtl.currentDevice!==null">Update gpio</span>
-                </md-button>
-            </section>
-        </md-content>
-    </md-content>
-
     <!-- items list -->
     <md-table-container>
         <table md-table>
@@ -57,7 +15,7 @@
             </tr>
         </thead>
         <tbody md-body>
-            <tr md-row md-auto-select ng-repeat="device in gpiosCtl.devices | deviceService:'gpios' | orderBy:columnOrder">
+            <tr md-row md-auto-select ng-repeat="device in gpiosCtl.devices | filterDeviceByService:'gpios' | orderBy:columnOrder">
                 <td md-cell>{{device.name}}</td>
                 <td md-cell>{{device.gpio}}</td>
                 <td md-cell>{{device.pin}}</td>
@@ -74,11 +32,11 @@
                     </md-button>
                 </td>
                 <td md-cell>
-                    <md-button class="md-icon-button" ng-click="gpiosCtl.editGpio(device)" aria-label="Edit">
+                    <md-button class="md-icon-button" ng-click="gpiosCtl.openUpdateDialog(device)" aria-label="Edit">
                         <md-tooltip md-direction="bottom">Edit gpio</md-tooltip>
                         <md-icon md-font-set="material-icons">mode_edit</md-icon>
                     </md-button>
-                    <md-button class="md-icon-button" ng-click="gpiosCtl.deleteGpio(device)" aria-label="Delete">
+                    <md-button class="md-icon-button" ng-click="gpiosCtl.openDeleteDialog(device)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete gpio</md-tooltip>
                         <md-icon md-font-set="material-icons">delete</md-icon>
                     </md-button>
@@ -89,7 +47,7 @@
     </md-table-container>
 
     <!-- toolbar -->
-    <md-button ng-click="gpiosCtl.openAddPanel()" class="md-primary md-fab md-fab-bottom-right" aria-label="Add gpio">
+    <md-button ng-click="gpiosCtl.openAddDialog()" class="md-primary md-fab md-fab-bottom-right" aria-label="Add gpio">
         <md-tooltip md-direction="top">Add gpio</md-tooltip>
         <md-icon md-font-set="material-icons">add_circle</md-icon>
     </md-button>

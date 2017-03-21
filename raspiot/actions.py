@@ -6,14 +6,14 @@ import logging
 from bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
 from raspiot import RaspIot
 import time
-from threading import Thread
+from threading import Thread, Lock
 from collections import deque
 import time
 from task import Task
 import shutil
 import bus
 
-__all__ = ['Action']
+__all__ = ['Actions']
 
 class Script(Thread):
     def __init__(self, script, bus_push, disabled, test=False):
@@ -156,9 +156,9 @@ class Script(Thread):
         self.logger.debug('Thread is stopped')
 
 
-class Action(RaspIot):
+class Actions(RaspIot):
 
-    MODULE_CONFIG_FILE = 'action.conf'
+    MODULE_CONFIG_FILE = 'actions.conf'
     MODULE_DEPS = []
 
     SCRIPTS_PATH = '/var/opt/raspiot/scripts'
@@ -171,11 +171,12 @@ class Action(RaspIot):
         RaspIot.__init__(self, bus, debug_enabled)
 
         #make sure sounds path exists
-        if not os.path.exists(Action.SCRIPTS_PATH):
-            os.makedirs(Action.SCRIPTS_PATH)
+        if not os.path.exists(Actions.SCRIPTS_PATH):
+            os.makedirs(Actions.SCRIPTS_PATH)
 
         #init members
         self.__scripts = {}
+        self.__load_scripts_lock = Lock()
 
     def _start(self):
         """
@@ -203,10 +204,12 @@ class Action(RaspIot):
         """
         Launch dedicated thread for each script found
         """
+        self.__load_scripts_lock.acquire()
+
         #remove stopped threads (script was removed?)
         for script in self.__scripts.keys():
             #check file existance
-            if not os.path.exists(os.path.join(Action.SCRIPTS_PATH, script)):
+            if not os.path.exists(os.path.join(Actions.SCRIPTS_PATH, script)):
                 #file doesn't exist from filesystem, clear config entry
                 self.logger.info('Delete infos from removed script "%s"' % script)
 
@@ -223,7 +226,7 @@ class Action(RaspIot):
                         self._save_config(config)
                     
         #launch thread for new script
-        for root, dirs, scripts in os.walk(Action.SCRIPTS_PATH):
+        for root, dirs, scripts in os.walk(Actions.SCRIPTS_PATH):
             for script in scripts:
                 #drop files that aren't python script
                 ext = os.path.splitext(script)[1]
@@ -247,6 +250,8 @@ class Action(RaspIot):
                     #start new thread
                     self.__scripts[script] = Script(os.path.join(root, script), self.push, disabled)
                     self.__scripts[script].start()
+
+        self.__load_scripts_lock.release()
 
     def event_received(self, event):
         """
@@ -293,12 +298,13 @@ class Action(RaspIot):
         """
         Delete specified script
         """
-        for root, dirs, scripts in os.walk(Action.SCRIPTS_PATH):
+        for root, dirs, scripts in os.walk(Actions.SCRIPTS_PATH):
             for script_ in scripts:
                 if script==script_:
                     #script found, remove from filesystem
-                    os.remove(os.path.join(Action.SCRIPTS_PATH, script))
-                    #no need to del config entry, it will be deleted automatically with __load_scripts
+                    os.remove(os.path.join(Actions.SCRIPTS_PATH, script))
+                    #force script loading
+                    self.__load_scripts()
                     return True
 
         return False
@@ -317,7 +323,7 @@ class Action(RaspIot):
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
-            path = os.path.join(Action.SCRIPTS_PATH, name)
+            path = os.path.join(Actions.SCRIPTS_PATH, name)
             self.logger.info('Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
             self.logger.info('File "%s" uploaded successfully' % name)
@@ -334,7 +340,7 @@ class Action(RaspIot):
         """
         Download specified script
         """
-        filepath = os.path.join(Action.SCRIPTS_PATH, script)
+        filepath = os.path.join(Actions.SCRIPTS_PATH, script)
         if os.path.exists(filepath):
             #script is valid, return full filepath
             return filepath

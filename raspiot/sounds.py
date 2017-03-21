@@ -11,7 +11,7 @@ from threading import Thread
 from gtts import gTTS
 import time
 
-__all__ = ['Sound']
+__all__ = ['Sounds']
 
 class PlaySound(Thread):
     """
@@ -25,6 +25,7 @@ class PlaySound(Thread):
         """
         #init
         Thread.__init__(self)
+        Thread.daemon = True
         self.logger = logging.getLogger(self.__class__.__name__)
 
         #members
@@ -68,9 +69,9 @@ class PlaySound(Thread):
         except:
             self.logger.exception('Exception during sound playing:')
 
-class Sound(RaspIot):
+class Sounds(RaspIot):
 
-    MODULE_CONFIG_FILE = 'sound.conf'
+    MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
 
     DEFAULT_CONFIG = {
@@ -145,15 +146,15 @@ class Sound(RaspIot):
         self.__sound_thread = None
 
         #make sure sounds path exists
-        if not os.path.exists(Sound.SOUNDS_PATH):
-            os.makedirs(Sound.SOUNDS_PATH)
+        if not os.path.exists(Sounds.SOUNDS_PATH):
+            os.makedirs(Sounds.SOUNDS_PATH)
 
     def get_langs(self):
         """
         Return all langs
         """
         return {
-            'langs': Sound.TTS_LANGS,
+            'langs': Sounds.TTS_LANGS,
             'lang': self._config['lang']
         }
 
@@ -163,7 +164,7 @@ class Sound(RaspIot):
         @param lang: tts lang (see TTS_LANGS)
         """
         #check params
-        if lang not in Sound.TTS_LANGS.keys():
+        if lang not in Sounds.TTS_LANGS.keys():
             raise bus.InvalidParameter('Specified lang "%s" is invalid' % lang)
 
         #save lang
@@ -196,7 +197,7 @@ class Sound(RaspIot):
         @param filepath: file path to play
         """
         #build filepath
-        filepath = os.path.join(Sound.SOUNDS_PATH, filename)
+        filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
 
         #check file validity
         if not os.path.exists(filepath):
@@ -228,22 +229,26 @@ class Sound(RaspIot):
             raise Exception('A sound is already playing')
 
         #text to speech
-        tts = gTTS(text=text, lang=lang)
-        path = '/tmp/sound_%d.mp3' % int(time.time())
-        tts.save(path)
+        try:
+            tts = gTTS(text=text, lang=lang)
+            path = '/tmp/sound_%d.mp3' % int(time.time())
+            tts.save(path)
         
-        #play sound
-        self.__sound_thread = PlaySound(path, True)
-        self.__sound_thread.start()
+            #play sound
+            self.__sound_thread = PlaySound(path, True)
+            self.__sound_thread.start()
+            return True
+        except:
+            self.logger.exception('Exception when TTSing text "%s":' % text)
 
-        return True
+        return False
 
     def delete_sound(self, filename):
         """
         Delete sound
         """
         #build filepath
-        filepath = os.path.join(Sound.SOUNDS_PATH, filename)
+        filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
     
         #delete file
         if os.path.exists(filepath):
@@ -258,7 +263,7 @@ class Sound(RaspIot):
         @return: array of sounds {'name':<name>}
         """
         out = []
-        for root, dirs, sounds in os.walk(Sound.SOUNDS_PATH):
+        for root, dirs, sounds in os.walk(Sounds.SOUNDS_PATH):
             for sound in sounds:
                 out.append({
                     'name': os.path.basename(sound)
@@ -274,13 +279,13 @@ class Sound(RaspIot):
         #check parameters
         file_ext = os.path.splitext(filepath)
         self.logger.debug('Add sound of extension: %s' % file_ext[1])
-        if file_ext[1][1:] not in Sound.ALLOWED_EXTS:
-            raise bus.InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sound.ALLOWED_EXTS))
+        if file_ext[1][1:] not in Sounds.ALLOWED_EXTS:
+            raise bus.InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
 
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
-            path = os.path.join(Sound.SOUNDS_PATH, name)
+            path = os.path.join(Sounds.SOUNDS_PATH, name)
             self.logger.debug('Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
             self.logger.info('File "%s" uploaded successfully' % name)

@@ -1,38 +1,5 @@
 <md-content layout-fill ng-cloak>
 
-    <!-- close panel button -->
-    <md-button ng-show="sensorsCtl.showAddPanel" ng-click="sensorsCtl.closeAddPanel()" class="md-primary md-fab md-fab-top-right fab-panel">
-        <md-tooltip md-direction="bottom">Close</md-tooltip>
-        <md-icon md-font-set="material-icons">close</md-icon>
-    </md-button>
-
-    <!-- add panel -->
-    <md-content ng-show="sensorsCtl.showAddPanel" md-theme="dark" class="slide-panel">
-        <md-content layout-padding>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Name</label>
-                <input ng-model="sensorsCtl.name">
-            </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Gpio</label>
-                <md-select ng-model="sensorsCtl.gpio">
-                    <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
-                </md-select>
-            </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <md-checkbox ng-model="sensorsCtl.reverted" aria-label="reverted">
-                    State is reverted?
-                </md-checkbox>
-            </md-input-container>
-            <section layout="row">
-                <md-button class="md-raised md-primary" ng-click="sensorsCtl.addMotion()" aria-label="Add motion">
-                    <span ng-if="sensorsCtl.currentDevice===null">Add gpio</span>
-                    <span ng-if="sensorsCtl.currentDevice!==null">Update gpio</span>
-                </md-button>
-            </section>
-        </md-content>
-    </md-content>
-
     <!-- items list -->
     <md-table-container>
         <table md-table>
@@ -47,7 +14,7 @@
             </tr>
         </thead>
         <tbody md-body>
-            <tr md-row md-auto-select ng-repeat="device in sensorsCtl.devices | deviceService:'sensors' | orderBy:columnOrder">
+            <tr md-row md-auto-select ng-repeat="device in sensorsCtl.devices | filterDeviceByService:'sensors' | orderBy:columnOrder">
                 <td md-cell>{{device.name}}</td>
                 <td md-cell>{{device.gpios.join(',')}}</td>
                 <td md-cell>{{device.type}}</td>
@@ -61,11 +28,11 @@
                     </md-button>
                 </td>
                 <td md-cell>
-                    <md-button class="md-icon-button" ng-click="sensorsCtl.editDevice(device)" aria-label="Edit">
+                    <md-button class="md-icon-button" ng-click="sensorsCtl.openUpdateDialog(device)" aria-label="Edit">
                         <md-tooltip md-direction="bottom">Edit sensor</md-tooltip>
                         <md-icon md-font-set="material-icons">mode_edit</md-icon>
                     </md-button>
-                    <md-button class="md-icon-button" ng-click="sensorsCtl.deleteDevice(device)" aria-label="Delete">
+                    <md-button class="md-icon-button" ng-click="sensorsCtl.openDeleteDialog(device)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete sensor</md-tooltip>
                         <md-icon md-font-set="material-icons">delete</md-icon>
                     </md-button>
@@ -76,7 +43,7 @@
     </md-table-container>
 
     <!-- toolbar -->
-    <md-button ng-click="sensorsCtl.openAddPanel()" class="md-primary md-fab md-fab-bottom-right">
+    <md-button ng-click="sensorsCtl.openAddDialog()" class="md-primary md-fab md-fab-bottom-right">
         <md-tooltip md-direction="top">Add sensor</md-tooltip>
         <md-icon md-font-set="material-icons">add_circle</md-icon>
     </md-button>

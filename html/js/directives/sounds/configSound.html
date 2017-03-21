@@ -1,0 +1,52 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Advanced configuration</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="soundsCtl.cancelDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+        <md-content layout-padding>
+            <!-- set language -->
+            <div layout-gt-sm="row" flex>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Text-to-speech language</label>
+                    <md-select ng-model="soundsCtl.lang">
+                        <md-option ng-repeat="lang in soundsCtl.langs | orderBy:'label'" ng-value="lang.lang">{{lang.label}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <div>
+                    <md-button class="md-raised md-primary" ng-click="soundsCtl.setLang()" aria-label="Set lang">Set lang</md-button>
+                </div>
+            </div>
+
+            <!-- speak message -->
+            <div layout-gt-sm="row" flex>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Speak at specified lang</label>
+                    <input ng-model="soundsCtl.tts">
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Text-to-speech language</label>
+                    <md-select ng-model="soundsCtl.ttsLang">
+                        <md-option ng-repeat="lang in soundsCtl.langs | orderBy:'label'" ng-value="lang.lang">{{lang.label}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <div>
+                    <md-button class="md-raised md-primary" ng-click="soundsCtl.speakMessage(soundsCtl.tts, soundsCtl.ttsLang)" aria-label="Speak message">Speak message</md-button>
+                </div>
+            </div>
+        </md-content>
+        </md-dialog-content>
+
+    </form>
+
+</md-dialog>
+

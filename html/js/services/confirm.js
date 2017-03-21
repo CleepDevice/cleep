@@ -1,3 +1,7 @@
+/**
+ * Confirm dialog service
+ * Used to open a material confirm dialog
+ */
 var confirmService = function($mdDialog) {
     var self = this;
 
@@ -5,10 +9,10 @@ var confirmService = function($mdDialog) {
      * Confirm dialog helper
      * @param title: dialog title
      * @param message: dialog message
-     * @param ok: ok message (default 'Ok')
-     * @param cancel: ok message (default 'Cancel')
+     * @param okLabel: ok message (default 'Ok')
+     * @param cancelLabel: ok message (default 'Cancel')
      */
-    self.dialog = function(title, message, ok, cancel, container) {
+    self.open = function(title, message, okLabel, cancelLabel, container) {
         //container
         var container_ = angular.element(document.body);
         if( !angular.isUndefined(container) )
@@ -21,19 +25,19 @@ var confirmService = function($mdDialog) {
         }
 
         //check strings
-        if( angular.isUndefined(ok) || ok===null ) {
-            ok = 'Ok';
+        if( angular.isUndefined(okLabel) || okLabel===null ) {
+            okLabel = 'Ok';
         }
-        if( angular.isUndefined(cancel) || cancel===null ) {
-            cancel = 'Cancel';
+        if( angular.isUndefined(cancelLabel) || cancelLabel===null ) {
+            cancelLabel = 'Cancel';
         }
 
         var confirm_ = $mdDialog.confirm()
             .title(title)
             .textContent(message)
             .ariaLabel('Confirm dialog')
-            .ok(ok)
-            .cancel(cancel);
+            .ok(okLabel)
+            .cancel(cancelLabel);
 
         return $mdDialog.show(confirm_);
     };
