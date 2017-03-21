@@ -82,9 +82,12 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         self.openUpdateDialog = function(device) {
             //set editor's value
             self.name = device.name;
-            self.gpio = device.gpio;
-            self.reverted = device.reverted;
             self.type = device.type;
+            self.reverted = device.reverted;
+            if( device.type==='motion' )
+            {
+                self.gpio = device.gpios[0];
+            }
 
             //open dialog
             self.updateDevice = true;
