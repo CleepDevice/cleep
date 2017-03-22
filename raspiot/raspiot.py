@@ -20,6 +20,7 @@ class RaspIot(BusClient):
     It implements :
      - configuration saving
      - message bus access
+     - logger with log level configured
     """
     CONFIG_DIR = '/etc/raspiot/'
     MODULE_DEPS = []

@@ -134,9 +134,6 @@ class MessageBus():
         self.__activities = {}
         #subscription lifetime (in seconds)
         self.lifetime = 600
-        #purge task
-        self.__purge = Task(60.0, self.purge_subscriptions)
-        self.__purge.start()
         #configured flag
         self.__app_configured = False
         self.__defered_messages = Queue()
@@ -165,6 +162,10 @@ class MessageBus():
 
         #then set app is configured
         self.__app_configured = True
+
+        #and finally launch purge task
+        self.__purge = Task(60.0, self.purge_subscriptions)
+        self.__purge.start()
 
         #now push function will handle new messages
 
@@ -354,6 +355,9 @@ class BusClient(threading.Thread):
         self.bus = bus
         self.__name = self.__class__.__name__
 
+        #add subscription
+        self.bus.add_subscription(self.__name)
+
     def __del__(self):
         self.stop()
 
@@ -430,8 +434,6 @@ class BusClient(threading.Thread):
         Bus reading process
         """
         self.logger.debug('BusClient %s started' % self.__name)
-        #add subscription
-        self.bus.add_subscription(self.__name)
         
         #check messages
         while self.__continue:
