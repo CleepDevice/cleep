@@ -3,9 +3,9 @@
     
 import os
 import logging
-from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParameter
-from raspiot import RaspIot, CommandError
-from task import Task
+from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
+from raspiot import RaspIot
+from raspiot.libs.task import Task
 import time
 
 __all__ = ['Sensors']
@@ -339,7 +339,7 @@ class Sensors(RaspIot):
             req.params = {'name':name+'_motion', 'gpio':gpio, 'mode':'in', 'keep':False}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
                 
             #sensor is valid, save new entry
             config = self._get_config()
@@ -378,7 +378,7 @@ class Sensors(RaspIot):
                 req.params = {'gpio':gpio}
                 resp = self.push(req)
                 if resp['error']:
-                    raise CommandError(resp['message'])
+                    raise RaspIot.CommandError(resp['message'])
 
             #sensor is valid, remove it
             del config['sensors'][name]

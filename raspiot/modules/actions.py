@@ -3,15 +3,14 @@
     
 import os
 import logging
-from bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
+from raspiot.bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
 from raspiot import RaspIot
 import time
 from threading import Thread, Lock
 from collections import deque
 import time
-from task import Task
+from raspiot.libs.task import Task
 import shutil
-import bus
 
 __all__ = ['Actions']
 
@@ -318,7 +317,7 @@ class Actions(RaspIot):
         self.logger.info('uploaded file extension: %s - %s' % (str(file_ext), str(file_ext[1])))
         if file_ext[1]!='.py':
             self.logger.info('uploaded file extension: %s' % str(file_ext[1][1:]))
-            raise bus.InvalidParameter('Invalid script file uploaded (only python script are supported)')
+            raise InvalidParameter('Invalid script file uploaded (only python script are supported)')
 
         #move file to valid dir
         if os.path.exists(filepath):

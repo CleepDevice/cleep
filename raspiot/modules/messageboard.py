@@ -3,11 +3,11 @@
     
 import os
 import logging
-import bus
+from raspiot.bus import MessageRequest
 from raspiot import RaspIot
 import time
-import task
-from ht1632c import HT1632C
+import raspiot.libs.task
+from raspiot.libs.ht1632c import HT1632C
 import uuid
 import socket
 
@@ -162,7 +162,7 @@ class Messageboard(RaspIot):
                     self.__current_message = msg
 
                     #push event
-                    req = bus.MessageRequest()
+                    req = MessageRequest()
                     req.event = 'messageboard.message.update'
                     req.params = self.get_current_message()
                     self.push(req)
@@ -382,7 +382,7 @@ class Messageboard(RaspIot):
         self.board.turn_on()
 
         #push event
-        req = bus.MessageRequest()
+        req = MessageRequest()
         req.event = 'messageboard.message.update'
         req.params = self.get_current_message()
         self.push(req)
@@ -398,7 +398,7 @@ class Messageboard(RaspIot):
         self.board.turn_off()
 
         #push event
-        req = bus.MessageRequest()
+        req = MessageRequest()
         req.event = 'messageboard.message.update'
         req.params = self.get_current_message()
         self.push(req)

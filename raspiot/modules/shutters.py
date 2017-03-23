@@ -3,8 +3,8 @@
     
 import os
 import logging
-from bus import MessageRequest, MessageResponse, MissingParameter, InvalidParameter
-from raspiot import RaspIot, CommandError
+from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
+from raspiot import RaspIot
 from threading import Timer
 import time
 
@@ -151,7 +151,7 @@ class Shutters(RaspIot):
         req.params = {'gpio':gpio}
         resp = self.push(req)
         if resp['error']:
-            raise CommandError(resp['message'])
+            raise RaspIot.CommandError(resp['message'])
         
         #change status
         self.change_status(shutter['name'], Shutters.STATUS_PARTIAL)
@@ -168,7 +168,7 @@ class Shutters(RaspIot):
         req.params = {'gpio':gpio}
         resp = self.push(req)
         if resp['error']:
-            raise CommandError(resp['message'])
+            raise RaspIot.CommandError(resp['message'])
 
         #change status
         self.change_status(shutter['name'], Shutters.STATUS_OPENING)
@@ -190,7 +190,7 @@ class Shutters(RaspIot):
         req.params = {'gpio':gpio}
         resp = self.push(req)
         if resp['error']:
-            raise CommandError(resp['message'])
+            raise RaspIot.CommandError(resp['message'])
 
         #change status
         self.change_status(shutter['name'], Shutters.STATUS_CLOSING)
@@ -284,7 +284,7 @@ class Shutters(RaspIot):
             req.params = {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':True}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
                 
             #configure close shutter
             req = MessageRequest()
@@ -293,7 +293,7 @@ class Shutters(RaspIot):
             req.params = {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':True}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #configure open switch
             req = MessageRequest()
@@ -302,7 +302,7 @@ class Shutters(RaspIot):
             req.params = {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in', 'keep':False}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #configure close switch
             req = MessageRequest()
@@ -311,7 +311,7 @@ class Shutters(RaspIot):
             req.params = {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in', 'keep':False}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #shutter is valid, prepare new entry
             self.logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
@@ -345,7 +345,7 @@ class Shutters(RaspIot):
             req.params = {'gpio':config[name]['shutter_open']}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #unconfigure close shutter
             req = MessageRequest()
@@ -354,7 +354,7 @@ class Shutters(RaspIot):
             req.params = {'gpio':config[name]['shutter_close']}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #unconfigure open switch
             req = MessageRequest()
@@ -363,7 +363,7 @@ class Shutters(RaspIot):
             req.params = {'gpio':config[name]['switch_open']}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #unconfigure close switch
             req = MessageRequest()
@@ -372,7 +372,7 @@ class Shutters(RaspIot):
             req.params = {'gpio':config[name]['switch_close']}
             resp = self.push(req)
             if resp['error']:
-                raise CommandError(resp['message'])
+                raise RaspIot.CommandError(resp['message'])
 
             #shutter is valid, remove it
             del config[name]
@@ -413,7 +413,7 @@ class Shutters(RaspIot):
         req.params = {'gpio':gpio}
         resp = self.push(req)
         if resp['error']:
-            raise CommandError(resp['message'])
+            raise RaspIot.CommandError(resp['message'])
 
         #and update status to specified one
         self.change_status(shutter_name, new_status)

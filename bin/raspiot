@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/python
 # -*- coding: utf-8 -*-
 
 import os
@@ -6,9 +6,9 @@ import sys
 import getopt
 import logging
 from logging.config import dictConfig
+from raspiot.raspiot import RaspIot
 from raspiot import rpcserver
 from raspiot import bus
-from raspiot import RaspIot
 import importlib
 
 CONFIG_FILE = 'raspiot.conf'
@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
             #get module class
             logger.debug('   - loading module...')
-            module_ = importlib.import_module('raspiot.%s' % module_name)
+            module_ = importlib.import_module('raspiot.modules.%s' % module_name)
             class_ = getattr(module_, module_name.capitalize())
 
             #load dependencies
@@ -152,7 +152,7 @@ if __name__ == '__main__':
                 for dep in class_.MODULE_DEPS:
                     if dep not in loaded_modules.keys():
                         logger.debug('     - loading dependency "%s"' % dep)
-                        dep_ = importlib.import_module('raspiot.%s' % dep)
+                        dep_ = importlib.import_module('raspiot.modules.%s' % dep)
                         dep_class_ = getattr(dep_, dep.capitalize())
                     
                         logger.debug('     - starting dependency...')

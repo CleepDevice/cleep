@@ -8,7 +8,7 @@ import math
 import inspect
 from collections import deque
 from threading import Event
-from task import Task
+from libs.task import Task
 from Queue import Queue
 
 __all__ = ['NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 'InvalidMessage', 'BusError',
@@ -134,6 +134,8 @@ class MessageBus():
         self.__activities = {}
         #subscription lifetime (in seconds)
         self.lifetime = 600
+        #purge task
+        self.__purge = None
         #configured flag
         self.__app_configured = False
         self.__defered_messages = Queue()
@@ -142,7 +144,8 @@ class MessageBus():
         """
         Stop bus
         """
-        self.__purge.stop()
+        if self.__purge:
+            self.__purge.stop()
 
     def app_configured(self):
         """

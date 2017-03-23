@@ -3,11 +3,11 @@
     
 import os
 import logging
-import bus
+from raspiot.bus import MessageRequest, InvalidParameter
 from raspiot import RaspIot
 from datetime import datetime
 import time
-import task
+from raspiot.libs.task import Task
 from astral import Astral, GoogleGeocoder, AstralError
 
 __all__ = ['Scheduler']
@@ -38,7 +38,7 @@ class Scheduler(RaspIot):
         self.__compute_sun()
 
         #launch time task
-        self.time_task = task.Task(60.0, self.__send_time_event)
+        self.time_task = Task(60.0, self.__send_time_event)
         self.time_task.start()
 
     def _stop(self):
@@ -141,7 +141,7 @@ class Scheduler(RaspIot):
         now = int(time.time())
         now_formatted = self.__format_time()
 
-        req = bus.MessageRequest()
+        req = MessageRequest()
         req.event = 'scheduler.time.now'
         req.params = now_formatted
         self.push(req)
@@ -150,7 +150,7 @@ class Scheduler(RaspIot):
         if self.sunset:
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
-                req = bus.MessageRequest()
+                req = MessageRequest()
                 req.event = 'scheduler.time.sunset'
                 self.push(req)
 
@@ -158,7 +158,7 @@ class Scheduler(RaspIot):
         if self.sunrise:
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
-                req = bus.MessageRequest()
+                req = MessageRequest()
                 req.event = 'scheduler.time.sunrise'
                 self.push(req)
 

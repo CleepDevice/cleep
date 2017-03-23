@@ -4,7 +4,7 @@
 import os
 import shutil
 import logging
-import bus
+from raspiot.bus import InvalidParameter
 from raspiot import RaspIot
 import pygame
 from threading import Thread
@@ -165,7 +165,7 @@ class Sounds(RaspIot):
         """
         #check params
         if lang not in Sounds.TTS_LANGS.keys():
-            raise bus.InvalidParameter('Specified lang "%s" is invalid' % lang)
+            raise InvalidParameter('Specified lang "%s" is invalid' % lang)
 
         #save lang
         config = self._get_config()
@@ -202,7 +202,7 @@ class Sounds(RaspIot):
         #check file validity
         if not os.path.exists(filepath):
             #invalid file specified
-            raise bus.InvalidParameter('Specified file "%s" is invalid' % filename)
+            raise InvalidParameter('Specified file "%s" is invalid' % filename)
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
@@ -221,7 +221,7 @@ class Sounds(RaspIot):
         """
         #check parameters
         if not text or not lang:
-            raise bus.InvalidParameter('Some parameters are invalid')
+            raise InvalidParameter('Some parameters are invalid')
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
@@ -255,7 +255,7 @@ class Sounds(RaspIot):
             os.remove(filepath)
             return True
 
-        raise bus.InvalidParameter('Invalid sound file')
+        raise InvalidParameter('Invalid sound file')
 
     def get_sounds(self):
         """
@@ -280,7 +280,7 @@ class Sounds(RaspIot):
         file_ext = os.path.splitext(filepath)
         self.logger.debug('Add sound of extension: %s' % file_ext[1])
         if file_ext[1][1:] not in Sounds.ALLOWED_EXTS:
-            raise bus.InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
+            raise InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
 
         #move file to valid dir
         if os.path.exists(filepath):

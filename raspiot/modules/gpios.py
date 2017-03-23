@@ -8,7 +8,7 @@ import uuid as moduuid
 import json
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
-import bus
+from raspiot.bus import MessageRequest, InvalidParameter
 from raspiot import RaspIot
 import time
 
@@ -214,7 +214,7 @@ class Gpios(RaspIot):
 
                 #and broadcast gpio status at startup
                 self.logger.debug('broadcast event %s for gpio %s' % (event, gpio))
-                req = bus.MessageRequest()
+                req = MessageRequest()
                 req.event = event
                 req.params = {'gpio':gpio, 'init':True}
                 self.push(req)
@@ -258,7 +258,7 @@ class Gpios(RaspIot):
             self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
-            req = bus.MessageRequest()
+            req = MessageRequest()
             req.event = 'gpios.gpio.on'
             req.params = {'gpio':gpio, 'init':False}
             self.logger.debug('broadcast %s' % str(req))
@@ -281,7 +281,7 @@ class Gpios(RaspIot):
             self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
-            req = bus.MessageRequest()
+            req = MessageRequest()
             req.event = 'gpios.gpio.off'
             req.params = {'gpio':gpio, 'init':False, 'duration':duration}
             self.logger.debug('broadcast %s' % str(req))
@@ -328,21 +328,21 @@ class Gpios(RaspIot):
 
         #check values
         if not gpio:
-            raise bus.MissingParameter('"gpio" parameter is missing')
+            raise MissingParameter('"gpio" parameter is missing')
         elif not name:
-            raise bus.MissingParameter('"name" parameter is missing')
+            raise MissingParameter('"name" parameter is missing')
         elif not mode:
-            raise bus.MissingParameter('"mode" parameter is missing')
+            raise MissingParameter('"mode" parameter is missing')
         elif keep is None:
-            raise bus.MissingParameter('"keep" parameter is missing')
+            raise MissingParameter('"keep" parameter is missing')
         elif name in config:
-            raise bus.InvalidParameter('Name "%s" already used' % name)
+            raise InvalidParameter('Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
-            raise bus.InvalidParameter('"gpio" does not exist for this raspberry pi')
+            raise InvalidParameter('"gpio" does not exist for this raspberry pi')
         elif mode not in (self.MODE_IN, self.MODE_OUT):
-            raise bus.InvalidParameter('Mode "%s" is invalid' % mode)
+            raise InvalidParameter('Mode "%s" is invalid' % mode)
         elif self.get_gpio(gpio) is not None:
-            raise bus.InvalidParameter('Gpio "%s" is already configured' % gpio)
+            raise InvalidParameter('Gpio "%s" is already configured' % gpio)
         else:
             #gpio is valid, prepare new entry
             config[gpio] = {
@@ -376,11 +376,11 @@ class Gpios(RaspIot):
         """
         #check values
         if not gpio:
-            raise bus.MissingParameter('"gpio" parameter is missing')
+            raise MissingParameter('"gpio" parameter is missing')
         elif gpio not in self.get_raspi_gpios().keys():
-            raise bus.InvalidParameter('"gpio" doesn\'t exists for this raspberry pi')
+            raise InvalidParameter('"gpio" doesn\'t exists for this raspberry pi')
         elif self.get_gpio(gpio) is None:
-            raise bus.InvalidParameter('Gpio "%s" is not configured yet' % gpio)
+            raise InvalidParameter('Gpio "%s" is not configured yet' % gpio)
         else:
             #gpio is valid, remove entry
             config = self._get_config()
@@ -409,7 +409,7 @@ class Gpios(RaspIot):
                 self._save_config(self._config)
 
             #broadcast event
-            req = bus.MessageRequest()
+            req = MessageRequest()
             req.event = 'gpios.gpio.on'
             req.params = {'gpio':gpio, 'init':False}
             self.push(req)
@@ -440,7 +440,7 @@ class Gpios(RaspIot):
                 self._save_config(self._config)
 
             #broadcast event
-            req = bus.MessageRequest()
+            req = MessageRequest()
             req.event = 'gpios.gpio.off'
             req.params = {'gpio':gpio, 'init':False}
             self.push(req)
