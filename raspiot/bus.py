@@ -453,6 +453,10 @@ class BusClient(threading.Thread):
                     #self.logger.debug('BusClient no msg avail')
                     continue
 
+                except KeyboardInterrupt:
+                    #user stop raspiot
+                    break
+
                 #create response
                 resp = MessageResponse()
        
