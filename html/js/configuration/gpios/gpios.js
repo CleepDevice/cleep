@@ -153,7 +153,7 @@ var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, con
     };
 
     return {
-        templateUrl: 'js/directives/gpios/gpios.html',
+        templateUrl: 'js/configuration/gpios/gpios.html',
         replace: true,
         scope: true,
         controller: gpiosConfigController,
@@ -164,3 +164,4 @@ var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, con
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'objectsService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
+

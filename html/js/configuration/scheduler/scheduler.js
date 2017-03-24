@@ -1,4 +1,7 @@
-
+/**
+ * Scheduler config directive
+ * Handle scheduler configuration
+ */
 var schedulerDirective = function($q, toast, schedulerService) {
     var container = null;
 
@@ -60,7 +63,7 @@ var schedulerDirective = function($q, toast, schedulerService) {
     };
 
     return {
-        templateUrl: 'js/directives/scheduler/scheduler.html',
+        templateUrl: 'js/configuration/scheduler/scheduler.html',
         replace: true,
         scope: true,
         controller: schedulerController,
@@ -71,3 +74,4 @@ var schedulerDirective = function($q, toast, schedulerService) {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('schedulerDirective', ['$q', 'toastService', 'schedulerService', schedulerDirective]);
+

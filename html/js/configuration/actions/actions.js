@@ -10,6 +10,13 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
         self.uploadFile = null;
 
         /**
+         * Cancel dialog
+         */
+        self.cancelDialog = function() {
+            $mdDialog.cancel();
+        };
+
+        /**
          * Delete dialog
          */
         self.openDeleteDialog = function(script) {
@@ -114,7 +121,7 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
     };
 
     return {
-        templateUrl: 'js/directives/actions/actions.html',
+        templateUrl: 'js/configuration/actions/actions.html',
         replace: true,
         controller: actionController,
         controllerAs: 'actionsCtl',
@@ -124,3 +131,4 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('actionsConfigDirective', ['$q', 'toastService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
+

@@ -124,12 +124,12 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         };
 
         /**
-         * Delete shutter (internal use)
+         * Delete sensor (internal use)
          */
-        self._deleteShutter = function(device) {
-            shuttersService.deleteShutter(device.name)
+        self._deleteSensor = function(device) {
+            sensorsService.deleteSensor(device.name)
                 .then(function(resp) {
-                    shuttersService.loadDevices();
+                    sensorsService.loadDevices();
                 });
         };
 
@@ -161,7 +161,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
     };
 
     return {
-        templateUrl: 'js/directives/sensors/sensors.html',
+        templateUrl: 'js/configuration/sensors/sensors.html',
         replace: true,
         scope: true,
         controller: sensorsController,
@@ -172,3 +172,4 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'objectsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+

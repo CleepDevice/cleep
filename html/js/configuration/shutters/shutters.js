@@ -163,7 +163,7 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
     };
 
     return {
-        templateUrl: 'js/directives/shutters/shutters.html',
+        templateUrl: 'js/configuration/shutters/shutters.html',
         replace: true,
         scope: true,
         controller: shuttersConfigController,
@@ -174,3 +174,4 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'toastService', 'objectsService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
+

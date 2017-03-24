@@ -212,7 +212,7 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
     };
 
     return {
-        templateUrl: 'js/directives/messageboard/messageboard.html',
+        templateUrl: 'js/configuration/messageboard/messageboard.html',
         replace: true,
         scope: true,
         controller: messageboardController,

@@ -181,7 +181,7 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
     };
 
     return {
-        templateUrl: 'js/directives/sounds/sounds.html',
+        templateUrl: 'js/configuration/sounds/sounds.html',
         replace: true,
         scope: true,
         controller: soundsController,
@@ -192,3 +192,4 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('soundsConfigDirective', ['$q', 'toastService', 'soundsService', 'confirmService', '$mdDialog', soundsConfigDirective]);
+

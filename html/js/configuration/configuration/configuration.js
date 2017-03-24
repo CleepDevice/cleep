@@ -44,7 +44,7 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
     };
 
     return {
-        templateUrl: 'js/directives/configuration/configuration.html',
+        templateUrl: 'js/configuration/configuration/configuration.html',
         replace: true,
         //scope: false,
         controller: configurationController,
