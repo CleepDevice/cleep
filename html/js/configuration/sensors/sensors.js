@@ -81,6 +81,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
          */
         self.openUpdateDialog = function(device) {
             //set editor's value
+            var oldName = device.name;
             self.name = device.name;
             self.type = device.type;
             self.reverted = device.reverted;
@@ -93,7 +94,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    self._deleteSensor(device);
+                    self._deleteSensor({'name': oldName});
                     self._addSensor();
                     toast.success('Sensor updated');
                 }, function() {}) 
@@ -108,7 +109,7 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         self.openDeleteDialog = function(device) {
             confirm.open('Delete sensor?', null, 'Delete')
                 .then(function() {
-                    self._deleteSensor();
+                    self._deleteSensor(device);
                     toast.success('Sensor deleted');
                 }); 
         };  

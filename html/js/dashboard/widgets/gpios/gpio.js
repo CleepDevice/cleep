@@ -11,7 +11,7 @@ var widgetGpioDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/directives/widgets/gpios/gpio.html',
+        templateUrl: 'js/dashboard/widgets/gpios/gpio.html',
         replace: true,
         scope: {
             'device': '='
@@ -23,3 +23,4 @@ var widgetGpioDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetGpioDirective', [widgetGpioDirective]);
+

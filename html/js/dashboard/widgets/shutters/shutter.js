@@ -35,7 +35,7 @@ var widgetShutterDirective = function(shuttersService) {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/directives/widgets/shutters/shutter.html',
+        templateUrl: 'js/dashboard/widgets/shutters/shutter.html',
         replace: true,
         scope: {
             'device': '='
@@ -47,3 +47,4 @@ var widgetShutterDirective = function(shuttersService) {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetShutterDirective', ['shuttersService', widgetShutterDirective]);
+

@@ -11,7 +11,7 @@ var widgetMotionDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/directives/widgets/sensors/motion.html',
+        templateUrl: 'js/dashboard/widgets/sensors/motion.html',
         replace: true,
         scope: {
             'device': '='
@@ -23,3 +23,4 @@ var widgetMotionDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetMotionDirective', [widgetMotionDirective]);
+

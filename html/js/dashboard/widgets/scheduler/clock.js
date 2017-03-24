@@ -11,7 +11,7 @@ var widgetClockDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/directives/widgets/scheduler/clock.html',
+        templateUrl: 'js/dashboard/widgets/scheduler/clock.html',
         replace: true,
         scope: {
             'device': '='
@@ -23,3 +23,4 @@ var widgetClockDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetClockDirective', [widgetClockDirective]);
+

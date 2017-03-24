@@ -58,3 +58,4 @@ var widgetDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetDirective', [widgetDirective]);
+

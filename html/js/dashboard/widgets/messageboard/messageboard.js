@@ -11,7 +11,7 @@ var widgetMessageboardDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/directives/widgets/messageboard/messageboard.html',
+        templateUrl: 'js/dashboard/widgets/messageboard/messageboard.html',
         replace: true,
         scope: {
             'device': '='
@@ -23,3 +23,4 @@ var widgetMessageboardDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('widgetMessageboardDirective', [widgetMessageboardDirective]);
+

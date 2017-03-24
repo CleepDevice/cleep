@@ -15,7 +15,7 @@ var dashboardDirective = function() {
     };
 
     return {
-        templateUrl: 'js/directives/dashboard/dashboard.html',
+        templateUrl: 'js/dashboard/dashboard/dashboard.html',
         replace: true,
         scope: true,
         controller: dashboardController,
@@ -25,3 +25,4 @@ var dashboardDirective = function() {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('dashboardDirective', [dashboardDirective]);
+

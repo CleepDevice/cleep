@@ -69,8 +69,15 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      * Add new sensor
      */
     self.addSensor = function(name, gpio, reverted, type) {
-        return rpcService.sendCommand('add_sensor', 'sensors', 
-            {'name':name, 'gpio':gpio, 'reverted':reverted, 'type':type});
+        if( type==='motion' )
+        {
+            return rpcService.sendCommand('add_motion', 'sensors', 
+                {'name':name, 'gpio':gpio, 'reverted':reverted});
+        }
+        else
+        {
+            toast.error('Unknown sensor type "' + type + '". No sensor added');
+        }
     };
 
     /**
