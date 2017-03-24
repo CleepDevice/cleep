@@ -517,7 +517,8 @@ class BusClient(threading.Thread):
                                 event_received(msg['message'])
                         except AttributeError:
                             #on_event function not implemented, drop received message
-                            self.logger.debug('event_received not implemented, received message dropped')
+                            #self.logger.debug('event_received not implemented, received message dropped')
+                            pass
 
                 else:
                     #received message is badly formatted
