@@ -203,11 +203,9 @@ class Gpios(RaspIot):
                 #configure it
                 if conf['on']:
                     initial = GPIO.LOW
-                    #GPIO.output(pin, GPIO.LOW)
                     event = 'gpios.gpio.on'
                 else:
                     initial = GPIO.HIGH
-                    #GPIO.output(pin, GPIO.HIGH)
                     event = 'gpios.gpio.off'
                 self.logger.debug('event=%s initial=%s' % (str(event), str(initial)))
                 GPIO.setup(pin, GPIO.OUT, initial=initial)

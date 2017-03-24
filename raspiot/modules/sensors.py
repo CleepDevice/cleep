@@ -336,7 +336,13 @@ class Sensors(RaspIot):
             req = MessageRequest()
             req.to = 'gpios'
             req.command = 'add_gpio'
-            req.params = {'name':name+'_motion', 'gpio':gpio, 'mode':'in', 'keep':False}
+            req.params = {
+                'name': name+'_motion',
+                'gpio': gpio,
+                'mode': 'in',
+                'keep': False,
+                'reverted':reverted
+            }
             resp = self.push(req)
             if resp['error']:
                 raise RaspIot.CommandError(resp['message'])
