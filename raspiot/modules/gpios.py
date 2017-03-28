@@ -321,14 +321,15 @@ class Gpios(RaspIot):
         """
         return self._config
 
-    def add_gpio(self, name, gpio, mode, keep, reverted=False):
+    def add_gpio(self, name, gpio, mode, keep, command_sender, reverted=False):
         """
         Add new gpio
         @param name: name of gpio
         @param gpio: gpio value
         @param mode: mode (input or output)
         @param keep: keep state when restarting
-        @param reverted: set on callback as off callback and vice-versa
+        @param command_sender: command request sender (used to set gpio in readonly mode)
+        @param reverted: if true on callback will be triggered on gpio low level instead of high level
         """
         config = self.get_gpios()
 
@@ -366,16 +367,16 @@ class Gpios(RaspIot):
             #configure it
             self.__configure_gpio(gpio, config[gpio])
 
-    def add_reverted_gpio(self, name, gpio, mode, keep):
+    def add_reverted_gpio(self, name, gpio, mode, keep, command_sender):
         """
-        Add reverted gpio. It means on event is triggered on off event and vice-versa
+        Add reverted gpio. It means "on" event is triggered on gpio low level
         @param name: name of gpio
         @param gpio: gpio value
         @param mode: mode (input or output)
         @param keep: keep state when restarting
         """
-        return self.add_gpio(name, gpio, mode, keep, True)
-        
+        return self.add_gpio(name, gpio, mode, keep, command_sender, True)
+
     def delete_gpio(self, gpio):
         """
         Delete gpio

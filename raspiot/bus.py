@@ -49,17 +49,22 @@ class BusError(Exception):
 class MessageRequest():
     """
     Object that holds message request
-    A request is composed of:
-     - a command
-     - some command parameters (could be empty dict)
-     - a recipient (could be None to broadcat request)
-     - a startup flag that indicates it is a startup event
+    A message request is composed of:
+     - in case of a command:
+       - a command name
+       - command parameters
+       - the command sender
+     - in case of an event:
+       - an event name
+       - event parameters
+       - a startup flag that indicates this event was sent during raspiot startup
     """
     def __init__(self):
         self.command = None
         self.event = None
         self.params = {}
         self.to = None
+        self.from_ = None
 
     def __str__(self):
         if self.command:
@@ -85,7 +90,7 @@ class MessageRequest():
         @raise InvalidMessage if message is not valid
         """
         if self.command:
-            return {'command':self.command, 'params':self.params}
+            return {'command':self.command, 'params':self.params, 'from':self.from_}
         elif self.event:
             return {'event':self.event, 'params':self.params, 'startup':startup}
         else:
@@ -367,11 +372,12 @@ class BusClient(threading.Thread):
     def stop(self):
         self.__continue = False
 
-    def __check_params(self, function, message):
+    def __check_params(self, function, message, sender):
         """
-        Check if message contains all necessary functions parameters
+        Check if message contains all necessary function parameters
         @param function: function reference
         @param message: current message content (contains all command parameters)
+        @param sender: message sender ("from" item from MessageRequest)
         @return tuple (True/False, args to pass during command call/None)
         """
         args = {}
@@ -400,6 +406,9 @@ class BusClient(threading.Thread):
             if param=='self':
                 #drop self param
                 pass
+            elif param=='command_sender':
+                #function needs request sender value
+                args['command_sender'] = sender
             elif not message.has_key(param) and not params_with_default[param]:
                 #missing parameter
                 return False, None
@@ -421,6 +430,8 @@ class BusClient(threading.Thread):
         @raise InvalidParameter, NoResponse
         """
         if isinstance(request, MessageRequest):
+            #fill sender
+            request.from_ = self.__name
             if request.is_broadcast() or timeout==0.0:
                 #broadcast message or no timeout, so no response
                 self.bus.push(request, timeout)
@@ -474,7 +485,7 @@ class BusClient(threading.Thread):
                                 #check if command was found
                                 if command is not None:
                                     #check if message contains all command parameters
-                                    (ok, args) = self.__check_params(command, msg['message']['params'])
+                                    (ok, args) = self.__check_params(command, msg['message']['params'], msg['message']['from'])
                                     self.logger.debug('BusClient: ok=%s args=%s' % (ok, args))
                                     if ok:
                                         #execute command

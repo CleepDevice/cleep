@@ -182,6 +182,7 @@ def execute_command(command, to, params):
     request = MessageRequest()
     request.command = command
     request.to = to
+    request.from_ = 'rpcserver'
     request.params = params
     return bus.push(request)
 
