@@ -76,17 +76,18 @@ def load_auth():
     except:
         logger.exception('Unable to load auth file. Auth disabled:')
 
-def get_app():
+def get_app(debug_enabled):
     """
     Return web server
     @return bottle instance
     """
     global logger, app
 
-    #logging
+    #logging (in raspiot.conf file, module name is 'rpcserver')
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
     logger = logging.getLogger('RpcServer')
-    #logger.setLevel(logging.DEBUG)
+    if debug_enabled:
+        logger.setLevel(logging.DEBUG)
 
     #load auth
     load_auth()
@@ -153,18 +154,18 @@ def authenticate():
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            username, password = bottle.request.auth or (None, None)
-            logger.debug('username=%s password=%s' % (username, password))
-            if username is None or not check_auth(username, password):
-                err = bottle.HTTPError(401, 'Access denied')
-                err.add_header('WWW-Authenticate', 'Basic realm="private"')
-                return err 
+            if auth_enabled:
+                username, password = bottle.request.auth or (None, None)
+                logger.debug('username=%s password=%s' % (username, password))
+                if username is None or not check_auth(username, password):
+                    err = bottle.HTTPError(401, 'Access denied')
+                    err.add_header('WWW-Authenticate', 'Basic realm="private"')
+                    return err 
             return func(*args, **kwargs)
 
         return wrapper
 
     return decorator
-
 
 def execute_command(command, to, params):
     """
@@ -172,7 +173,7 @@ def execute_command(command, to, params):
     @param command: command to execute
     @param to: command recipient
     @param parmas: command parameters
-    @return command response (None if boardcast message)
+    @return command response (None if broadcasted message)
     """
     #get bus
     bus = app.config['sys.bus']
@@ -350,15 +351,33 @@ def command():
 
     return resp
 
+@app.route('/modules', method='POST')
+@authenticate()
+def modules():
+    """
+    Return configurations for all loaded modules
+    """
+    #request each loaded module for its config
+    configs = {}
+    for module in app.config:
+        if module.startswith('mod.'):
+            _module = module.replace('mod.', '')
+            logger.debug('Request "%s" config' % _module)
+            response = execute_command('get_module_config', _module, {})
+            if not response['error']:
+                configs[_module] = response['data']
+            else:
+                configs[_module] = None
+    logger.debug('Configs: %s' % configs)
+
+    return json.dumps(configs)
+
 @app.route('/registerpoll', method='POST')
 @authenticate()
 def registerpoll():
     """
     Register poll
     """
-    #get auth infos
-    #(username, password) = bottle.parse_auth(bottle.request.get_header('Authorization', ''))
-
     #subscribe to bus
     poll_key = str(uuid.uuid4())
     if app.config.has_key('sys.bus'):
@@ -438,22 +457,6 @@ def default(path):
     Servers static files from HTML_DIR.
     """
     return bottle.static_file(path, HTML_DIR)
-
-@app.route('/modules', method='POST')
-@authenticate()
-def modules():
-    """
-    Return raspiot configuration:
-     - loaded modules (return only mod.XXX modules)
-    """
-    #add modules
-    modules = []
-    for module in app.config:
-        if module.startswith('mod.'):
-            #external module found, return it
-            modules.append(module.replace('mod.',''))
-
-    return json.dumps(modules)
 
 @app.route('/')
 @authenticate()

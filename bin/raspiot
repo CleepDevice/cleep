@@ -116,7 +116,10 @@ if __name__ == '__main__':
             logger.setLevel(logging.DEBUG)
 
         #get webserver app (used to store application objects)
-        app = rpcserver.get_app()
+        debug = False
+        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('rpcserver')==1):
+            debug = True
+        app = rpcserver.get_app(debug)
 
         #create message bus
         logger.debug('Creating message bus')
