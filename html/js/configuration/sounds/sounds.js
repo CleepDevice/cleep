@@ -2,7 +2,7 @@
  * Sounds configuration directive
  * Handle sounds module configuration
  */
-var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialog) {
+var soundsConfigDirective = function($q, toast, configsService, soundsService, confirm, $mdDialog) {
 
     var soundsController = ['$scope', function($scope) {
         var self = this;
@@ -61,9 +61,12 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
                     .then(function(resp) {
                         if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
                         {
-                            $mdDialog.hide();
-                            self.getSounds();
-                            toast.success('Sound file uploaded');
+                            configsService.reloadConfig('sounds')
+                                .then(function(config) {
+                                    $mdDialog.hide();
+                                    self.sounds = config.sounds;
+                                    toast.success('Sound file uploaded');
+                                });
                         }
                         else
                         {
@@ -83,45 +86,12 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
                 .then(function() {
                     soundsService.deleteSound(soundfile)
                         .then(function() {
+                            return configsService.reloadConfig('sounds');
+                        })
+                        .then(function(config) {
+                            self.sounds = config.sounds;
                             toast.success('Sound file deleted');
-                            self.getSounds();
                         });
-                });
-        };
-
-        /**
-         * Get sounds
-         */
-        self.getSounds = function() {
-            soundsService.getSounds()
-                .then(function(resp) {
-                    self.sounds = resp;
-                });
-        };
-
-        /**
-         * Get langs and selected lang
-         */
-        self.getLangs = function() {
-            soundsService.getLangs()
-                .then(function(resp) {
-                    var temp = [];
-                    angular.forEach(resp.langs, function(label, lang) {
-                        temp.push({'lang':lang, 'label':label});
-                    });
-                    self.langs = temp;
-                    self.lang = resp.lang;
-                    self.ttsLang = resp.lang;
-                });
-        };
-
-        /**
-         * Return current volume (pygame mixer not system volume)
-         */
-        self.getVolume = function() {
-            soundsService.getVolume()
-                .then(function(resp) {
-                    self.volume = resp;
                 });
         };
 
@@ -169,9 +139,16 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
          * Init controller
          */
         self.init = function() {
-            self.getLangs();
-            self.getSounds();
-            self.getVolume();
+            var config = configsService.getConfig('sounds');
+            var langs = [];
+            angular.forEach(config.langs.langs, function(label, lang) {
+                langs.push({'lang':lang, 'label':label});
+            });
+            self.langs = langs;
+            self.lang = config.langs.lang;
+            self.ttsLang = config.langs.lang;
+            self.volume = config.volume;
+            self.sounds = config.sounds;
         };
 
     }];
@@ -191,5 +168,5 @@ var soundsConfigDirective = function($q, toast, soundsService, confirm, $mdDialo
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('soundsConfigDirective', ['$q', 'toastService', 'soundsService', 'confirmService', '$mdDialog', soundsConfigDirective]);
+RaspIot.directive('soundsConfigDirective', ['$q', 'toastService', 'configsService', 'soundsService', 'confirmService', '$mdDialog', soundsConfigDirective]);
 

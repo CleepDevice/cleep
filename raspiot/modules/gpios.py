@@ -285,6 +285,14 @@ class Gpios(RaspIot):
             self.logger.debug('broadcast %s' % str(req))
             self.push(req)
 
+    def get_module_config(self):
+        """
+        Return module full config
+        """
+        config = {}
+        config['raspi_gpios'] = self.get_raspi_gpios();
+        return config
+
     def get_raspi_gpios(self):
         """
         Return available GPIO pins according to board revision

@@ -210,6 +210,18 @@ class Messageboard(RaspIot):
         self.__display_task = task.BackgroundTask(self.__display_message, float(duration))
         self.__display_task.start()
 
+    def get_module_config(self):
+        """
+        Return module full configuration
+        """
+        config = {}
+        config['messages'] = self.get_messages()
+        config['duration'] = self.get_duration()
+        config['units'] = self.get_units()
+        config['speed'] = self.get_speed()
+        config['status'] = self.get_current_message()
+        return config;
+
     def get_duration(self):
         """
         Return message cycle duration

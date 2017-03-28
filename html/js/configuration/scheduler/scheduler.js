@@ -2,7 +2,7 @@
  * Scheduler config directive
  * Handle scheduler configuration
  */
-var schedulerDirective = function($q, toast, schedulerService) {
+var schedulerConfigDirective = function($filter, toast, schedulerService, configsService) {
     var container = null;
 
     var schedulerController = function() {
@@ -16,32 +16,11 @@ var schedulerDirective = function($q, toast, schedulerService) {
          */
         self.init = function()
         {
-            self.getSun();
-            self.getCity();
+            var config = configsService.getConfig('scheduler');
+            self.city = config.city;
+            self.sunset = $filter('hrTime')(config.sun.sunset);
+            self.sunrise = $filter('hrTime')(config.sun.sunrise);
         };
-
-        /**
-         * Get configured sunset and sunrise
-         */
-        self.getSun = function()
-        {
-            schedulerService.getSun()
-                .then(function(res) {
-                    self.sunset = moment.unix(res.sunset).format('HH:mm');
-                    self.sunrise = moment.unix(res.sunrise).format('HH:mm');
-                });
-        };
-
-        /**
-         * Get configured city
-         */
-        self.getCity = function()
-        {
-            schedulerService.getCity()
-                .then(function(res) {
-                    self.city = res;
-                });
-        }
 
         /**
          * Set city
@@ -50,10 +29,13 @@ var schedulerDirective = function($q, toast, schedulerService) {
         {
             toast.loading('Updating city...');
             schedulerService.setCity(self.city)
-                .then(function(res) {
+                .then(function(resp) {
+                    return configsService.reloadConfig('scheduler');
+                })
+                .then(function(resp) {
                     toast.success('City updated');
-                    self.sunset = moment.unix(res.sunset).format('HH:mm');
-                    self.sunrise = moment.unix(res.sunrise).format('HH:mm');
+                    self.sunset = $filter('hrTime')(resp.sun.sunset);
+                    self.sunrise = $filter('hrTime')(resp.sun.sunrise);
                 });
         };
     };
@@ -73,5 +55,5 @@ var schedulerDirective = function($q, toast, schedulerService) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('schedulerDirective', ['$q', 'toastService', 'schedulerService', schedulerDirective]);
+RaspIot.directive('schedulerConfigDirective', ['$filter', 'toastService', 'schedulerService', 'configsService', schedulerConfigDirective]);
 

@@ -2,7 +2,7 @@
  * Sensors config directive
  * Handle sensors configuration
  */
-var sensorsConfigDirective = function($q, toast, objectsService, sensorsService, confirm, $mdDialog) {
+var sensorsConfigDirective = function(toast, objectsService, configsService, sensorsService, confirm, $mdDialog) {
 
     var sensorsController = [function() {
         var self = this;
@@ -135,24 +135,11 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
         };
 
         /**
-         * Return raspberry pi gpios
-         */
-        self.getRaspiGpios = function() {
-            return sensorsService.getRaspiGpios()
-                .then(function(resp) {
-                    for( var gpio in resp )
-                    {
-                        resp[gpio].gpio = gpio;
-                    }
-                    self.raspiGpios = resp;
-                });
-        };
-
-        /**
          * Init controller
          */
         self.init = function() {
-            self.getRaspiGpios();
+            var config = configsService.getConfig('sensors');
+            self.raspiGpios = config.raspi_gpios;
         };
 
     }];
@@ -172,5 +159,5 @@ var sensorsConfigDirective = function($q, toast, objectsService, sensorsService,
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['$q', 'toastService', 'objectsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['toastService', 'objectsService', 'configsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
 

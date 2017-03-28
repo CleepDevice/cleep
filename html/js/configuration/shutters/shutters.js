@@ -2,7 +2,7 @@
  * Shutters config directive
  * Handle shutter configuration
  */
-var shuttersConfigDirective = function(shuttersService, toast, objectsService, $mdDialog, confirm) {
+var shuttersConfigDirective = function(shuttersService, configsService, toast, objectsService, $mdDialog, confirm) {
 
     var shuttersConfigController = function() {
         var self = this;
@@ -57,7 +57,7 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'shuttersCtl',
-                templateUrl: 'js/directives/shutters/addShutter.html',
+                templateUrl: 'js/configuration/shutters/addShutter.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false
             });
@@ -138,7 +138,7 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
         /**
          * Return raspberry pi gpios
          */
-        self.getRaspiGpios = function() {
+        /*self.getRaspiGpios = function() {
             return shuttersService.getRaspiGpios()
                 .then(function(resp) {
                     for( var gpio in resp )
@@ -147,13 +147,14 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
                     }
                     self.raspiGpios = resp;
                 });
-        };
+        };*/
 
         /**
          * Controller init
          */
         self.init = function() {
-            self.getRaspiGpios();
+            var config = configsService.getConfig('shutters');
+            self.raspiGpios = config.raspi_gpios;
         };
 
     };
@@ -173,5 +174,5 @@ var shuttersConfigDirective = function(shuttersService, toast, objectsService, $
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'toastService', 'objectsService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
+RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'configsService', 'toastService', 'objectsService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
 

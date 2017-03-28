@@ -38,6 +38,14 @@ class Shutters(RaspIot):
         #reset gpios and shutters
         self.reset()
 
+    def get_module_config(self):
+        """
+        Get full module configuration
+        """
+        config = {}
+        config['raspi_gpios'] = self.get_raspi_gpios()
+        return config
+
     def event_received(self, event):
         """
         Event received from bus

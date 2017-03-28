@@ -4,30 +4,27 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
     var configurationController = ['$scope','$element', function($scope, $element) {
         var self = this;
         self.services = objectsService.services;
-        self.configs = [];
-        self.configsCount = objectsService.configsCount;
+        self.directives = [];
 
         /**
          * Init controller
          */
-        self.init = function() {
-            //flatten configs to allow sorting
-            angular.forEach(objectsService.configs, function(config, label) {
-                config.__label = label;
-                self.configs.push(config);
-            });
+        self.init = function()
+        {
+            //save directives
+            self.directives = objectsService.directives;
 
             //wait for ng-repeat digest call
             $timeout(function() {
                 //dynamically generate configuration panel according to loaded modules
                 var container = $element.find('#configTabContent');
-                angular.forEach(self.configs, function(config) {
+                angular.forEach(self.directives, function(item) {
                     //get container
-                    var id = config.cleanLabel+'Config';
+                    var id = item.cleanLabel+'Config';
                     var container = $element.find('#'+id);
 
                     //prepare template to inject
-                    var template = '<div '+config.directive.toDash()+'></div>';
+                    var template = '<div '+item.directive.toDash()+'></div>';
 
                     //compile directive
                     var directive = $compile(template)($scope);
@@ -36,17 +33,27 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
                     container.append(directive);
                 });
             });
-        }
+        };
+
+        //refresh configuration directives as soon as modules are loaded (see mainController)
+        $scope.$watchCollection(
+            function() {
+                return objectsService.directives;
+            },
+            function(newValue, oldValue) {
+                console.log('init configuration panel');
+                self.init();
+            }
+        );
     }];
 
     var configurationLink = function(scope, element, attrs, controller) {
-        controller.init();
+        //controller.init();
     };
 
     return {
         templateUrl: 'js/configuration/configuration/configuration.html',
         replace: true,
-        //scope: false,
         controller: configurationController,
         controllerAs: 'configCtl',
         link: configurationLink

@@ -224,6 +224,14 @@ class Sensors(RaspIot):
         self.__tasks[sensor['name']] = Task(sensor['duration'], self.__read_temperature, [sensor])
         self.__tasks[sensor['name']].start()
 
+    def get_module_config(self):
+        """
+        Get full module configuration
+        """
+        config = {}
+        config['raspi_gpios'] = self.get_raspi_gpios()
+        return config
+
     def get_raspi_gpios(self):
         """
         Get raspi gpios

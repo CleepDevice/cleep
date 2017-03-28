@@ -166,6 +166,15 @@ class Scheduler(RaspIot):
         if now_formatted['hour']==0 and now_formatted['minute']==0:
             self.__compute_sun()
 
+    def get_module_config(self):
+        """
+        Return full module configuration
+        """
+        config = {}
+        config['sun'] = self.get_sun()
+        config['city'] = self.get_city()
+        return config
+
     def get_time(self):
         """
         Return current time
@@ -198,6 +207,9 @@ class Scheduler(RaspIot):
         Set city name
         @param city: closest city name
         """
+        if city is None:
+            raise InvalidParameter('City parameter is missing')
+
         #compute sunset/sunrise
         self.__compute_sun(city)
         

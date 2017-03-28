@@ -2,7 +2,7 @@
  * Actions configuration directive
  * Handle actions module configuration
  */
-var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDialog) {
+var actionsConfigDirective = function(toast, configsService, actionsService, confirm, $mdDialog) {
 
     var actionController = ['$scope', function($scope) {
         var self = this;
@@ -24,8 +24,11 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
                 .then(function() {
                     actionsService.deleteScript(script)
                         .then(function() {
+                            return configsService.reloadConfig('actions')
+                        })
+                        .then(function(config) {
+                            self.scripts = config.scripts;
                             toast.success('Script deleted');
-                            self.getScripts();
                         });
                 });
         };
@@ -57,9 +60,12 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
                     .then(function(resp) {
                         if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
                         {
-                            toast.success('Script uploaded');
-                            $mdDialog.hide();
-                            self.getScripts();
+                            configsService.reloadConfig('actions')
+                                .then(function(config) {
+                                    self.scripts = config.scripts;
+                                    toast.success('Script uploaded');
+                                    $mdDialog.hide();
+                                });
                         }
                         else
                         {
@@ -72,30 +78,22 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
         });
 
         /**
-         * Get scripts
-         */
-        self.getScripts = function() {
-            actionsService.getScripts()
-                .then(function(resp) {
-                    self.scripts = resp;
-                });
-        };
-
-        /**
          * Disable/enable specified script
          */
         self.disableScript = function(script, disabled) {
             actionsService.disableScript(script, disabled)
                 .then(function(resp) {
+                    return configsService.reloadConfig('actions')
+                })
+                .then(function(config) {
+                    self.scripts = config.scripts;
+
                     //message info
                     if( disabled ) {
                         toast.success('Script is disabled');
                     } else {
                         toast.success('Script is enabled');
                     }
-
-                    //refresh scripts
-                    self.getScripts();
                 });
         };
 
@@ -110,8 +108,8 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
          * Init controller
          */
         self.init = function() {
-            //load scripts
-            self.getScripts();
+            var config = configsService.getConfig('actions');
+            self.scripts = config['scripts'];
         };
 
     }];
@@ -130,5 +128,5 @@ var actionsConfigDirective = function($q, toast, actionsService, confirm, $mdDia
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionsConfigDirective', ['$q', 'toastService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
+RaspIot.directive('actionsConfigDirective', ['toastService', 'configsService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
 

@@ -2,14 +2,17 @@
  * MessageBoard service
  * Handle messageboard module requests
  */
-var messageboardService = function($q, $rootScope, rpcService, objectsService) {
+var messageboardService = function($q, $rootScope, rpcService) {
     var self = this;
     
     /**
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('MessageBoard', 'messageboardConfigDirective');
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'MessageBoard',
+            name: 'messageboardConfigDirective'
+        };
     };
 
     /** 
@@ -173,5 +176,5 @@ var messageboardService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('messageboardService', ['$q', '$rootScope', 'rpcService', 'objectsService', messageboardService]);
+RaspIot.service('messageboardService', ['$q', '$rootScope', 'rpcService', messageboardService]);
 

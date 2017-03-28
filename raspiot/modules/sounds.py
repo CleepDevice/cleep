@@ -149,6 +149,16 @@ class Sounds(RaspIot):
         if not os.path.exists(Sounds.SOUNDS_PATH):
             os.makedirs(Sounds.SOUNDS_PATH)
 
+    def get_module_config(self):
+        """
+        Get full module configuration
+        """
+        config = {}
+        config['langs'] = self.get_langs()
+        config['volume'] = self.get_volume()
+        config['sounds'] = self.get_sounds()
+        return config
+
     def get_langs(self):
         """
         Return all langs

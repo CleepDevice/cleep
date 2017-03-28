@@ -117,6 +117,12 @@ class RaspIot(BusClient):
         self.__configLock.release()
         return copy_
 
+    def get_module_config(self):
+        """
+        Return module configuration (should be overwritten by module!)
+        """
+        raise Exception('Module "%s" must implements get_module_config function !' % self.__class__.__name__)
+
     def _check_config(self, keys):
         """
         Check config files looking for specified keys.

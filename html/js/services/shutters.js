@@ -6,11 +6,14 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Shutters', 'shuttersConfigDirective');
-    };
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Shutters',
+            name: 'shuttersConfigDirective'
+        };  
+    }; 
 
     /**
      * Load service devices (here shutter)

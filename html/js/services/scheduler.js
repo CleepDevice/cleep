@@ -6,11 +6,14 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /**
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Scheduler', 'schedulerDirective');
-    };
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Scheduler',
+            name: 'schedulerConfigDirective'
+        };  
+    }; 
 
     /**
      * Load service devices (here add static device such as clock)

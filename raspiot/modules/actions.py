@@ -252,6 +252,14 @@ class Actions(RaspIot):
 
         self.__load_scripts_lock.release()
 
+    def get_module_config(self):
+        """
+        Return full module configuration
+        """
+        config = {}
+        config['scripts'] = self.get_scripts()
+        return config
+
     def event_received(self, event):
         """
         Event received

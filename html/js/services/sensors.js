@@ -6,11 +6,14 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /** 
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Sensors', 'sensorsConfigDirective');
-    };
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Sensors',
+            name: 'sensorsConfigDirective'
+        };  
+    }; 
 
     /**
      * Load service devices (here sensors)

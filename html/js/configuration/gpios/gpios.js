@@ -2,7 +2,7 @@
  * Gpios config directive
  * Handle gpios configuration
  */
-var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, confirm, $mdDialog) {
+var gpiosConfigDirective = function(gpiosService, objectsService, configsService, toast, confirm, $mdDialog) {
 
     var gpiosConfigController = function() {
         var self = this;
@@ -11,7 +11,7 @@ var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, con
         self.name = '';
         self.gpio = 'GPIO3';
         self.mode = 'in';
-        self.keep = true;
+        self.keep = false;
         self.updateDevice = false;
 
         /**
@@ -130,25 +130,15 @@ var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, con
         };
 
         /**
-         * Return raspberry pi gpios
-         */
-        self.getRaspiGpios = function() {
-            return gpiosService.getRaspiGpios()
-                .then(function(resp) {
-                    self.raspiGpios = resp;
-                });
-        }
-
-        /**
          * Init controller
          */
         self.init = function() {
-            self.getRaspiGpios();
-        }
+            var config = configsService.getConfig('gpios');
+            self.raspiGpios = config.raspi_gpios;
+        };
     };
 
     var gpiosConfigLink = function(scope, element, attrs, controller) {
-        //init controller
         controller.init();
     };
 
@@ -163,5 +153,5 @@ var gpiosConfigDirective = function(gpiosService, $q, objectsService, toast, con
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('gpiosConfigDirective', ['gpiosService', '$q', 'objectsService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
+RaspIot.directive('gpiosConfigDirective', ['gpiosService', 'objectsService', 'configsService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
 

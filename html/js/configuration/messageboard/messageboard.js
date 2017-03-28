@@ -1,10 +1,9 @@
 /**
  * Message board config directive
  */
-var messageboardDirective = function($q, toast, messageboardService, confirm) {
+var messageboardDirective = function(configsService, toast, messageboardService, confirm) {
 
-    var messageboardController = ['$scope', '$filter', function($scope, $filter) {
-        var datetimeFormat = 'DD/MM/YYYY HH:mm';
+    var messageboardController = ['$scope', function($scope) {
         var self = this;
         self.message = '';
         self.startDate = moment().toDate();
@@ -24,18 +23,15 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
         /**
          * Init controller
          */
-        self.init = function()
-        {
-            //load messages
-            self.loadMessages();
-            //get duration
-            self.getDuration();
-            //get units
-            self.getUnits();
-            //get speed
-            self.getSpeed();
-            //get board status
-            self.getBoardStatus();
+        self.init = function() {
+            var config = configsService.getConfig('messageboard');
+            self.duration = config.duration;
+            self.unitMinutes = config.units.minutes;
+            self.unitHours = config.units.hours;
+            self.unitDays = config.units.days;
+            self.speed = config.speed;
+            self.boardIsOn = !config.status.off;
+            self.messages = config.messages;
         };
 
         /**
@@ -69,63 +65,6 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
         };
 
         /**
-         * Load messages
-         */
-        self.loadMessages = function()
-        {
-            messageboardService.getMessages()
-                .then(function(messages) {
-                    self.messages = messages;
-                });
-        };
-
-        /**
-         * Get duration
-         */
-        self.getDuration = function()
-        {
-            messageboardService.getDuration()
-                .then(function(resp) {
-                    self.duration = resp;
-                });
-        };
-
-        /**
-         * Get speed
-         */
-        self.getSpeed = function()
-        {
-            messageboardService.getSpeed()
-                .then(function(resp) {
-                    self.speed = resp;
-                });
-        };
-
-        /**
-         * Get units
-         */
-        self.getUnits = function()
-        {
-            messageboardService.getUnits()
-                .then(function(resp) {
-                    self.unitMinutes = resp.minutes;
-                    self.unitHours = resp.hours;
-                    self.unitDays = resp.days;
-                });
-        };
-
-        /**
-         * Get board status (off/on)
-         */
-        self.getBoardStatus = function()
-        {
-            messageboardService.isOn()
-                .then(function(resp) {
-                    self.boardIsOn = resp.data;
-                });
-        };
-
-        /**
          * Add new message
          */
         self.addMessage = function() {
@@ -138,10 +77,11 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
             //send command
             messageboardService.addMessage(self.message, start.unix(), end.unix())
                 .then(function(resp) {
+                    return configsService.reloadConfig('messageboard');
+                })
+                .then(function(config) {
+                    self.messages = config.messages;
                     toast.success('Message added');
-                    //reload messages
-                    self.loadMessages();
-                    //close panel
                     self.closeAddPanel();
                 });
         };
@@ -152,13 +92,15 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
         self.deleteMessage = function(message) {
             confirm.open('Delete message ?', null, 'Delete')
                 .then(function() {
-                    messageboardService.deleteMessage(message.uuid)
-                        .then(function(resp) {
-                            toast.success('Message deleted');
-                            //reload messages
-                            self.loadMessages();
-                        }); 
-                });
+                    return messageboardService.deleteMessage(message.uuid)
+                })
+                .then(function(resp) {
+                    return configsService.reloadConfig('messageboard');
+                })
+                .then(function(config) {
+                    self.messages = config.messages;
+                    toast.success('Message deleted');
+                }); 
         };
 
         /**
@@ -207,7 +149,6 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
     }];
 
     var messageboardLink = function(scope, element, attrs, controller) {
-        //configure controller
         controller.init();
     };
 
@@ -222,5 +163,5 @@ var messageboardDirective = function($q, toast, messageboardService, confirm) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('messageboardConfigDirective', ['$q', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
+RaspIot.directive('messageboardConfigDirective', ['configsService', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
 

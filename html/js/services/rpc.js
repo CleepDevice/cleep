@@ -6,6 +6,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.uriPoll = window.location.protocol + '//' + window.location.host + '/poll';
     self.uriRegisterPoll = window.location.protocol + '//' + window.location.host + '/registerpoll';
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
+    self.uriConfigs = window.location.protocol + '//' + window.location.host + '/configs';
     self.pollKey = null;
     self.uploading = false;
 
@@ -88,6 +89,34 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             }
         }, function(err) {
             console.error('Request failed: '+err);
+            d.reject('request failed');
+        });
+
+        return d.promise;
+    };
+
+    /**
+     * Get configurations for all loaded modules
+     */
+    self.getModulesConfigs = function() {
+        var d = $q.defer();
+
+        $http({
+            method: 'POST',
+            url: self.uriConfigs,
+            responseType: 'json'
+        })
+        .then(function(resp) {
+            if( resp.data.error ) {
+                console.error('Request failed: '+resp.data.message);
+                toast.error(resp.data.message);
+                d.reject('request failed');
+            }
+            else {
+                d.resolve(resp.data);
+            }
+        }, function(err) {
+            console.error('Request failed:' +err);
             d.reject('request failed');
         });
 

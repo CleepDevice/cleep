@@ -77,7 +77,7 @@ RaspIot.filter('hrTime', function($filter) {
         }
         else
         {
-            if( withSeconds ) {
+            if( !angular.isUndefined(withSeconds) ) {
                 return moment.unix(ts).format('HH:mm:ss');
             } else {
                 return moment.unix(ts).format('HH:mm');

@@ -1,37 +1,117 @@
 /**
- * Objects factory
- * Share all needed objects
+ * Objects service
+ * Share all needed objects:
+ *  - angular services
+ *  - angular directives
+ *  - devices
  */
-var objectsService = function($rootScope) {
+var objectsService = function($q, rpcService, toast) {
     var self = this;
-    //list of devices stored by service
+    self._initPromise = null;
+    //list of devices
     self.devices = [];
-    //list of services
+    //list of angular services
     self.services = {};
-    //list of configs
-    self.configs = {};
-    self.configsCount = 0;
+    //list of angular directives
+    self.directives = [];
 
     /**
-     * Add service
+     * Init service objects
+     * Internal usage, do not use
      */
-    self.addService = function(serviceName, service)
+    self._init = function()
+    {
+
+        if( self._initPromise!==null )
+        {
+            //promise already exists, return it
+            return self._initPromise;
+        }
+
+        self._initPromise = $q.defer();
+
+        //get server modules and inject services. Finally load devices
+        rpcService.getModules()
+        .then(function(resp) {
+            //for(var i=0; i<modules.length; i++)
+            for( var module in resp)
+            {   
+                //prepare angular service and directive
+                var serviceName = module; //modules[i];
+                var angularService = module + 'Service'; //modules[i]+'Service';
+                if( $injector.has(angularService) )
+                {   
+                    //module has service, inject it then add it
+                    objectsService._addService(serviceName, $injector.get(angularService));
+
+                    //load service devices if possible
+                    if( typeof objectsService.services[serviceName].loadDevices !== 'undefined' )
+                    {   
+                        //load service devices
+                        objectsService.services[serviceName].loadDevices();
+                    }   
+     
+                    //add module config directives
+                    directive = objectsService.services[serviceName].getDirectiveInfos();
+                    objectsService._addDirective( directive['label'], directive['name'] );
+                }   
+                else
+                {   
+                    //module has no associated service
+                    console.warn('Module "'+serviceName+'" has no angular service');
+                }  
+            }   
+
+            //save modules configurations
+            configsService._setConfigs(resp);
+
+            //console.log("DEVICES", objectsService.devices);
+            //console.log("SERVICES", objectsService.services);
+            //console.log("DIRECTIVES", objectsService.directives);
+
+            self._initPromise.resolve('objects loaded');
+        }, function(err) {
+            toast.error('Fatal error: unable to load system');
+            self._initPromise.reject('');
+        }); 
+
+        return self._initPromise;
+    };
+
+    /**
+     * Add angular service to factory
+     * Internal usage, do not use
+     */
+    self._addService = function(serviceName, service)
     {
         self.services[serviceName] = service;
     };
 
     /**
-     * Add config
+     * Add angular directive to factory
+     * Internal usage, do not use
+     * @param directiveLabel: label that will be displayed on configuration tab
+     * @param directiveName: angular directive name
      */
-    self.addConfig = function(configLabel, configDirectiveName)
+    self._addDirective = function(directiveLabel, directiveName)
     {
-        if( !self.configs[configLabel] )
+        var found = false;
+        for( var i=0; i<self.directives.length; i++ )
         {
-            self.configs[configLabel] = {
-                'cleanLabel': configLabel.replace(' ',''),
-                'directive': configDirectiveName
+            if( self.directives[i].directive===directive )
+            {
+                found = true;
+                break;
             }
-            self.configsCount++;
+        }
+
+        if( !found )
+        {
+            self.directives.push({
+                label: directiveLabel,
+                cleanLabel: directiveLabel.replace(' ',''),
+                directive: directiveName
+            });
         }
     };
 
@@ -106,37 +186,15 @@ var objectsService = function($rootScope) {
         }
     };
 
-    /**
-     * Return object template name (without path and file extention)
-     */
-    self.getObjectTemplateName = function(object)
-    {
-        if( object )
-        {
-            //check object service
-            if( !object.__serviceName || !self.services[object.__serviceName] )
-            {
-                //object is not configured properly, return default
-                return 'default';
-            }
+    /*return {
+        _initPromise: self._initPromise,
+        _addService: self._addService,
+        _addDirective: self._addDirective,
+        addDevice: self.addDevice
+    };*/
 
-            //var service = object.__service;
-            if( typeof self.services[object.__serviceName].getObjectTemplateName==='undefined' )
-            {
-                //no method to get object template specified in service, return default
-                return 'default';
-            }
-
-            return self.services[object.__serviceName].getObjectTemplateName(object);
-        }
-        else
-        {
-            console.error('Unable to get object template, missing parameter');
-            return 'default';
-        }
-    }
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('objectsService', ['$rootScope', objectsService]);
+RaspIot.service('objectsService', ['$q', 'rpcService', 'toastService', objectsService]);
 

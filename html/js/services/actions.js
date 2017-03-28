@@ -2,14 +2,17 @@
  * Actions service
  * Handle action module requests
  */
-var actionsService = function($q, $rootScope, rpcService, objectsService) {
+var actionsService = function($q, $rootScope, rpcService) {
     var self = this;
     
     /**
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Actions', 'actionsConfigDirective');
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Actions',
+            name: 'actionsConfigDirective'
+        };
     };
 
     /**
@@ -20,10 +23,10 @@ var actionsService = function($q, $rootScope, rpcService, objectsService) {
     };
 
     /**
-     * Get scripts
+     * Get config
      */
-    self.getScripts = function() {
-        return rpcService.sendCommand('get_scripts', 'actions')
+    self.getConfig = function() {
+        return rpcService.sendCommand('get_module_config', 'actions')
             .then(function(resp) {
                 return resp.data;
             });
@@ -52,5 +55,5 @@ var actionsService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('actionsService', ['$q', '$rootScope', 'rpcService', 'objectsService', actionsService]);
+RaspIot.service('actionsService', ['$q', '$rootScope', 'rpcService', actionsService]);
 

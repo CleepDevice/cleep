@@ -2,15 +2,18 @@
  * Sounds service
  * Handle sound module requests
  */
-var soundsService = function($q, $rootScope, rpcService, objectsService) {
+var soundsService = function($q, $rootScope, rpcService) {
     var self = this;
     
     /** 
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Sounds', 'soundsConfigDirective');
-    };
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Sounds',
+            name: 'soundsConfigDirective'
+        };  
+    }; 
 
     /**
      * Get sounds
@@ -112,5 +115,5 @@ var soundsService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('soundsService', ['$q', '$rootScope', 'rpcService', 'objectsService', soundsService]);
+RaspIot.service('soundsService', ['$q', '$rootScope', 'rpcService', soundsService]);
 

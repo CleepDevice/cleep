@@ -21,13 +21,13 @@
             </md-input-container>
             <div layout-gt-sm="row">
                 <md-input-container class="md-block" flex-gt-sm>
-                    <label>Open relay</label>
+                    <label>Shutter open relay</label>
                     <md-select ng-model="shuttersCtl.shutter_open">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>
                 <md-input-container class="md-block" flex-gt-sm>
-                    <label>Close relay</label>
+                    <label>Shutter close relay</label>
                     <md-select ng-model="shuttersCtl.shutter_close">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
@@ -35,13 +35,13 @@
             </div>
             <div layout-gt-sm="row">
                 <md-input-container class="md-block" flex-gt-sm>
-                    <label>Open relay</label>
+                    <label>Switch open</label>
                     <md-select ng-model="shuttersCtl.switch_open">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>
                 <md-input-container class="md-block" flex-gt-sm>
-                    <label>Close relay</label>
+                    <label>Switch close</label>
                     <md-select ng-model="shuttersCtl.switch_close">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>

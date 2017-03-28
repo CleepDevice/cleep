@@ -6,10 +6,13 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     var self = this;
     
     /**
-     * Set configuration directive names
+     * Return directive infos
      */
-    self.setConfigs = function() {
-        objectsService.addConfig('Gpios', 'gpiosConfigDirective');
+    self.getDirectiveInfos = function() {
+        return {
+            label: 'Gpios',
+            name: 'gpiosConfigDirective'
+        };
     };
 
     /**
@@ -48,6 +51,16 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
             return 'gpioInput';
         }
         return 'gpioOutput';
+    };
+
+    /** 
+     * Get config
+     */
+    self.getConfig = function() {
+        return rpcService.sendCommand('get_module_config', 'actions')
+            .then(function(resp) {
+                return resp.data;
+            }); 
     };
 
     /**

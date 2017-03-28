@@ -22,7 +22,7 @@
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Gpio</label>
                 <md-select ng-model="gpiosCtl.gpio">
-                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspi_gpios" ng-value="gpio">{{gpio}}</md-option>
                 </md-select>
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
@@ -49,6 +49,8 @@
         </md-dialog-actions>
 
     </form>
+
+    <span>{{gpiosCtl.config.raspi_gpios}}</span>
 
 </md-dialog>
 

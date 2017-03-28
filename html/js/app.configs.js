@@ -23,7 +23,6 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
         .otherwise({
             redirectTo: '/dashboard'
         });
-    //$locationProvider.html5Mode(true);
 }]);
 
 /**
