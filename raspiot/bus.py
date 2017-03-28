@@ -492,10 +492,15 @@ class BusClient(threading.Thread):
 
                             except AttributeError:
                                 #specified command doesn't exists in this module
-                                self.logger.exception('++++')
-                                self.logger.error('Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name))
+                                self.logger.exception('Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name))
                                 resp.error = True
                                 resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__name)
+
+                            except:
+                                #specified command is malformed
+                                self.logger.exception('Command is malformed:')
+                                resp.error = True
+                                resp.message = 'Received command was malformed'
 
                         else:
                             #no command specified
