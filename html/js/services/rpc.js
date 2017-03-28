@@ -6,9 +6,8 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.uriPoll = window.location.protocol + '//' + window.location.host + '/poll';
     self.uriRegisterPoll = window.location.protocol + '//' + window.location.host + '/registerpoll';
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
-    self.uriConfigs = window.location.protocol + '//' + window.location.host + '/configs';
     self.pollKey = null;
-    self.uploading = false;
+    self._uploading = false;
 
     /**
      * send command
@@ -96,34 +95,6 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     };
 
     /**
-     * Get configurations for all loaded modules
-     */
-    self.getModulesConfigs = function() {
-        var d = $q.defer();
-
-        $http({
-            method: 'POST',
-            url: self.uriConfigs,
-            responseType: 'json'
-        })
-        .then(function(resp) {
-            if( resp.data.error ) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject('request failed');
-            }
-            else {
-                d.resolve(resp.data);
-            }
-        }, function(err) {
-            console.error('Request failed:' +err);
-            d.reject('request failed');
-        });
-
-        return d.promise;
-    };
-
-    /**
      * Upload file
      * @param command: command that handles upload function
      * @param to: module that handles upload
@@ -154,21 +125,34 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         }
 
         //flag to reset upload directive
-        self.uploading = true;
+        self._uploading = true;
 
         //post data
         var deferred = $q.defer();
         $http.post(self.uriUpload, formData, {
             transformRequest: angular.identity,
             headers: {'Content-Type': undefined}
-        }).then(function(response) {
-            deferred.resolve(response);
+        }).then(function(resp) {
+            if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
+            {
+                deferred.resolve(resp.data);
+            }
+            else if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===true )
+            {
+                deferred.reject(resp.data.message);
+                toast.error('Upload failed: ' + resp.data.message);
+            }
+            else
+            {
+                deferred.reject('Unknown error');
+                toast.error('Upload failed: unknown error');
+            }
         }, function(err) {
-            deferred.reject(response);
+            deferred.reject(err);
         })
         .finally(function() {
             //reset
-            self.uploading = false;
+            self._uploading = false;
         });
 
         return deferred.promise;

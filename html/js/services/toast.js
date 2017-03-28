@@ -48,7 +48,7 @@ var toastService = function($mdToast) {
             $mdToast.simple()
                 .textContent(message)
                 .toastClass(class_)
-                .position('top right')
+                .position('bottom left')
                 .hideDelay(duration)
         );
     };

@@ -40,6 +40,12 @@ class InvalidMessage(Exception):
     def __str__(self):
         return repr(self.value)
 
+class Unauthorized(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 class BusError(Exception):
     def __init__(self, value):
         self.value = value
@@ -362,6 +368,7 @@ class BusClient(threading.Thread):
         self.__continue = True
         self.bus = bus
         self.__name = self.__class__.__name__
+        self.__module = self.__name.lower()
 
         #add subscription
         self.bus.add_subscription(self.__name)
@@ -431,7 +438,8 @@ class BusClient(threading.Thread):
         """
         if isinstance(request, MessageRequest):
             #fill sender
-            request.from_ = self.__name
+            request.from_ = self.__module
+
             if request.is_broadcast() or timeout==0.0:
                 #broadcast message or no timeout, so no response
                 self.bus.push(request, timeout)

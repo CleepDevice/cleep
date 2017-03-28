@@ -41,7 +41,6 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
                 return objectsService.directives;
             },
             function(newValue, oldValue) {
-                console.log('init configuration panel');
                 self.init();
             }
         );

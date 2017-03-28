@@ -66,10 +66,12 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    self._addGpio();
+                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep);
+                })
+                .then(function() {
                     gpiosService.loadDevices();
                     toast.success('Gpio added');
-                 }, function() {})
+                })
                 .finally(function() {
                     self._resetValues();
                 });
@@ -89,10 +91,15 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    self._deleteGpio(device);
-                    self._addGpio();
+                    return gpiosService.deleteGpio(device.gpio);
+                })
+                .then(function(resp) {
+                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep);
+                })
+                .then(function(resp) {
+                    gpiosService.loadDevices();
                     toast.success('Gpio updated');
-                }, function() {})
+                })
                 .finally(function() {
                     self._resetValues();
                 });
@@ -104,28 +111,11 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
         self.openDeleteDialog = function(device) {
             confirm.open('Delete gpio?', null, 'Delete')
                 .then(function() {
-                    self._deleteGpio();
+                    return gpiosService.deleteGpio(device.gpio);
+                })
+                .then(function() {
+                    gpiosService.loadDevices();
                     toast.success('Gpio deleted');
-                });
-        };
-
-        /**
-         * Add gpio (internal use)
-         */
-        self._addGpio = function() {
-            return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep)
-                .then(function(resp) {
-                    gpiosService.loadDevices();
-                });
-        };
-
-        /**
-         * Delete gpio (internal use)
-         */
-        self._deleteShutter = function(device) {
-            gpiosService.deleteGpio(device.gpio)
-                .then(function(resp) {
-                    gpiosService.loadDevices();
                 });
         };
 

@@ -70,10 +70,14 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    self._addShutter();
-                    shuttersService.loadDevices();
+                    return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close);
+                })
+                .then(function() {
+                    return shuttersService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Shutter added');
-                 }, function() {})
+                })
                 .finally(function() {
                     self._resetValues();
                 });
@@ -95,10 +99,17 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    self._deleteShutter(device);
-                    self._addShutter();
+                    return shuttersService.deleteShutter(device.name);
+                })
+                .then(function() {
+                    return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close);
+                })
+                .then(function() {
+                    return shuttersService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Shutter updated');
-                }, function() {})
+                })
                 .finally(function() {
                     self._resetValues();
                 });
@@ -110,44 +121,15 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
         self.openDeleteDialog = function(device) {
             confirm.open('Delete shutter?', null, 'Delete')
                 .then(function() {
-                    self._deleteShutter();
+                    return shuttersService.deleteShutter(device.name);
+                })
+                .then(function() {
+                    return shuttersService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Shutter deleted');
                 });
         };
-
-        /**
-         * Add shutter (internal use)
-         */
-        self._addShutter = function() {
-            return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close)
-                .then(function(resp) {
-                    shuttersService.loadDevices();
-                });
-        };
-
-        /**
-         * Delete shutter (internal use)
-         */
-        self._deleteShutter = function(device) {
-            shuttersService.deleteShutter(device.name)
-                .then(function(resp) {
-                    shuttersService.loadDevices();
-                });
-        };
-
-        /**
-         * Return raspberry pi gpios
-         */
-        /*self.getRaspiGpios = function() {
-            return shuttersService.getRaspiGpios()
-                .then(function(resp) {
-                    for( var gpio in resp )
-                    {
-                        resp[gpio].gpio = gpio;
-                    }
-                    self.raspiGpios = resp;
-                });
-        };*/
 
         /**
          * Controller init

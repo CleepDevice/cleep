@@ -22,14 +22,14 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
         self.openDeleteDialog = function(script) {
             confirm.open('Delete script?', null, 'Delete')
                 .then(function() {
-                    actionsService.deleteScript(script)
-                        .then(function() {
-                            return configsService.reloadConfig('actions')
-                        })
-                        .then(function(config) {
-                            self.scripts = config.scripts;
-                            toast.success('Script deleted');
-                        });
+                    return actionsService.deleteScript(script);
+                })
+                .then(function() {
+                    return configsService.reloadConfig('actions');
+                })
+                .then(function(config) {
+                    self.scripts = config.scripts;
+                    toast.success('Script deleted');
                 });
         };
 
@@ -58,21 +58,12 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
                 toast.loading('Uploading script...');
                 actionsService.uploadScript(file)
                     .then(function(resp) {
-                        if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
-                        {
-                            configsService.reloadConfig('actions')
-                                .then(function(config) {
-                                    self.scripts = config.scripts;
-                                    toast.success('Script uploaded');
-                                    $mdDialog.hide();
-                                });
-                        }
-                        else
-                        {
-                            toast.error(resp.data.message);
-                        }
-                    }, function(err) {
-                        toast.error('Upload failed: '+err);
+                        return configsService.reloadConfig('actions');
+                    })
+                    .then(function(config) {
+                        $mdDialog.hide();
+                        self.scripts = config.scripts;
+                        toast.success('Script uploaded');
                     });
             }
         });

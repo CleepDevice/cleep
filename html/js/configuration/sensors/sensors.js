@@ -67,10 +67,14 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    self._addSensor();
-                    sensorsService.loadDevices();
+                    return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type);
+                })
+                .then(function() {
+                    return sensorsService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Sensor added');
-                 }, function() {})
+                })
                 .finally(function() {
                     self._resetValues();
                 });
@@ -95,9 +99,16 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
             self._openDialog()
                 .then(function() {
                     self._deleteSensor({'name': oldName});
-                    self._addSensor();
+                })
+                .then(function() {
+                    return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type);
+                })
+                .then(function() {
+                    return sensorsService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Sensor updated');
-                }, function() {}) 
+                }) 
                 .finally(function() {
                     self._resetValues();
                 }); 
@@ -109,30 +120,15 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
         self.openDeleteDialog = function(device) {
             confirm.open('Delete sensor?', null, 'Delete')
                 .then(function() {
-                    self._deleteSensor(device);
+                    return sensorsService.deleteSensor(device.name);
+                })
+                .then(function() {
+                    return sensorsService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Sensor deleted');
                 }); 
         };  
-
-        /** 
-         * Add sensor (internal use)
-         */
-        self._addSensor = function() {
-            return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type)
-                .then(function(resp) {
-                    sensorsService.loadDevices();
-                });
-        };
-
-        /**
-         * Delete sensor (internal use)
-         */
-        self._deleteSensor = function(device) {
-            sensorsService.deleteSensor(device.name)
-                .then(function(resp) {
-                    sensorsService.loadDevices();
-                });
-        };
 
         /**
          * Init controller

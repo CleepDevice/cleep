@@ -59,21 +59,12 @@ var soundsConfigDirective = function($q, toast, configsService, soundsService, c
                 toast.loading('Uploading file');
                 soundsService.uploadSound(file)
                     .then(function(resp) {
-                        if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
-                        {
-                            configsService.reloadConfig('sounds')
-                                .then(function(config) {
-                                    $mdDialog.hide();
-                                    self.sounds = config.sounds;
-                                    toast.success('Sound file uploaded');
-                                });
-                        }
-                        else
-                        {
-                            toast.error(resp.data.message);
-                        }
-                    }, function(err) {
-                        toast.error('Upload failed: '+err);
+                        return configsService.reloadConfig('sounds');
+                    })
+                    .then(function(config) {
+                        $mdDialog.hide();
+                        self.sounds = config.sounds;
+                        toast.success('Sound file uploaded');
                     });
             }
         });
@@ -84,14 +75,14 @@ var soundsConfigDirective = function($q, toast, configsService, soundsService, c
         self.openDeleteDialog = function(soundfile) {
             confirm.open('Delete sound?', null, 'Delete')
                 .then(function() {
-                    soundsService.deleteSound(soundfile)
-                        .then(function() {
-                            return configsService.reloadConfig('sounds');
-                        })
-                        .then(function(config) {
-                            self.sounds = config.sounds;
-                            toast.success('Sound file deleted');
-                        });
+                    return soundsService.deleteSound(soundfile);
+                })
+                .then(function() {
+                    return configsService.reloadConfig('sounds');
+                })
+                .then(function(config) {
+                    self.sounds = config.sounds;
+                    toast.success('Sound file deleted');
                 });
         };
 

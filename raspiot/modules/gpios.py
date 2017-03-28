@@ -8,7 +8,7 @@ import uuid as moduuid
 import json
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
-from raspiot.bus import MessageRequest, InvalidParameter
+from raspiot.bus import MessageRequest, InvalidParameter, Unauthorized
 from raspiot import RaspIot
 import time
 
@@ -321,17 +321,21 @@ class Gpios(RaspIot):
         """
         return self._config
 
-    def add_gpio(self, name, gpio, mode, keep, command_sender, reverted=False):
+    def add_gpio(self, name, gpio, mode, keep, reverted, command_sender):
         """
         Add new gpio
         @param name: name of gpio
         @param gpio: gpio value
         @param mode: mode (input or output)
         @param keep: keep state when restarting
-        @param command_sender: command request sender (used to set gpio in readonly mode)
         @param reverted: if true on callback will be triggered on gpio low level instead of high level
+        @param command_sender: command request sender (used to set gpio in readonly mode)
         """
         config = self.get_gpios()
+
+        #fix command_sender: rpcserver is the default gpio entry point
+        if command_sender=='rpcserver':
+            command_sender = 'gpios'
 
         #check values
         if not gpio:
@@ -358,7 +362,8 @@ class Gpios(RaspIot):
                 'pin': self.get_raspi_gpios()[gpio],
                 'keep': keep,
                 'on': False,
-                'reverted': reverted
+                'reverted': reverted,
+                'owner': command_sender
             }
 
             #save config
@@ -367,20 +372,16 @@ class Gpios(RaspIot):
             #configure it
             self.__configure_gpio(gpio, config[gpio])
 
-    def add_reverted_gpio(self, name, gpio, mode, keep, command_sender):
-        """
-        Add reverted gpio. It means "on" event is triggered on gpio low level
-        @param name: name of gpio
-        @param gpio: gpio value
-        @param mode: mode (input or output)
-        @param keep: keep state when restarting
-        """
-        return self.add_gpio(name, gpio, mode, keep, command_sender, True)
-
-    def delete_gpio(self, gpio):
+    def delete_gpio(self, gpio, command_sender):
         """
         Delete gpio
         """
+        config = self._get_config()
+
+        #fix command_sender: rpcserver is the default gpio entry point
+        if command_sender=='rpcserver':
+            command_sender = 'gpios'
+
         #check values
         if not gpio:
             raise MissingParameter('"gpio" parameter is missing')
@@ -388,9 +389,10 @@ class Gpios(RaspIot):
             raise InvalidParameter('"gpio" doesn\'t exists for this raspberry pi')
         elif self.get_gpio(gpio) is None:
             raise InvalidParameter('Gpio "%s" is not configured yet' % gpio)
+        elif config[gpio]['owner']!=command_sender:
+            raise Unauthorized('Gpio "%s" can only be deleted by module that created it' % gpio)
         else:
             #gpio is valid, remove entry
-            config = self._get_config()
             del config[gpio]
             #save config
             self._save_config(config)
