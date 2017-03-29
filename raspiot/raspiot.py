@@ -5,6 +5,7 @@ from bus import BusClient
 from threading import Lock, Thread
 import time
 import copy
+import uuid
 
 __all__ = ['RaspIot', 'CommandError']
 
@@ -117,12 +118,6 @@ class RaspIot(BusClient):
         self.__configLock.release()
         return copy_
 
-    def get_module_config(self):
-        """
-        Return module configuration (should be overwritten by module!)
-        """
-        raise Exception('Module "%s" must implements get_module_config function !' % self.__class__.__name__)
-
     def _check_config(self, keys):
         """
         Check config files looking for specified keys.
@@ -145,6 +140,18 @@ class RaspIot(BusClient):
         Return module dependencies
         """
         return self.DEPS
+
+    def _get_unique_id(self):
+        """
+        Return unique id. Useful to get unique device identifier
+        """
+        return str(uuid.uuid4())
+
+    def get_module_config(self):
+        """
+        Return module configuration (should be overwritten by module!)
+        """
+        return self._get_config()
 
     def start(self):
         """
