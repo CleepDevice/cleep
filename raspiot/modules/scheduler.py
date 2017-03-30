@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MessageRequest, InvalidParameter
-from raspiot import RaspIot
+from raspiot.raspiot import RaspIot
 from datetime import datetime
 import time
 from raspiot.libs.task import Task

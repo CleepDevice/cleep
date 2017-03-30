@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
-from raspiot import RaspIot
+from raspiot.raspiot import RaspIot
 import time
 from threading import Thread, Lock
 from collections import deque

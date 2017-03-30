@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MessageRequest
-from raspiot import RaspIot
+from raspiot.raspiot import RaspIot
 import time
 import raspiot.libs.task
 from raspiot.libs.ht1632c import HT1632C

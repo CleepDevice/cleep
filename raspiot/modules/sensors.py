@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
-from raspiot import RaspIot
+from raspiot.raspiot import RaspIot
 from raspiot.libs.task import Task
 import time
 
@@ -272,7 +272,7 @@ class Sensors(RaspIot):
         """
         return self.__scan_onewire_bus()
 
-    def add_ds18b20(self, name, path, duration):
+    def add_ds18b20(self, name, path, duration, offset):
         """
         Add new 1wire temperature sensor (DS18B20)
         @param name: sensor name
@@ -295,12 +295,22 @@ class Sensors(RaspIot):
 
             #sensor is valid, save new entry
             config = self._get_config()
+            #config['sensors'][name] = {
+            #    'name': name,
+            #    'gpios': [gpio],
+            #    'type': 'motion',
+            #    'on': False,
+            #    'reverted': reverted,
+            #    'lastupdate': 0,
+            #    'lastduration': 0
+            #}
             config['sensors'][name] = {
                 'name': name,
                 'device': path,
                 'type': 'temperature',
-                'kind': '1wire',
+                'subtype': '1wire',
                 'duration': duration,
+                'offset': offset,
                 'lastupdate': time.time(),
                 'temperature_c': tempC,
                 'temperature_f': tempF
@@ -310,9 +320,7 @@ class Sensors(RaspIot):
             #launch temperature reading task
             self.__launch_temperature_task(config['sensors'][name])
 
-            return True
-
-        return False
+        return True
 
     def add_motion(self, name, gpio, reverted):
         """
@@ -368,9 +376,7 @@ class Sensors(RaspIot):
             }
             self._save_config(config)
 
-            return True
-
-        return False
+        return True
 
     def delete_sensor(self, name):
         """

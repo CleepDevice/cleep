@@ -8,8 +8,8 @@ import uuid as moduuid
 import json
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
-from raspiot.bus import MessageRequest, InvalidParameter, Unauthorized
-from raspiot import RaspIot
+from raspiot.bus import MessageRequest, InvalidParameter, Unauthorized, MissingParameter
+from raspiot.raspiot import RaspIot
 import time
 
 __all__ = ['Gpios']

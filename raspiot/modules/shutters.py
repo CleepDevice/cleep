@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
-from raspiot import RaspIot, CommandError
+from raspiot.raspiot import RaspIot, CommandError
 from threading import Timer
 import time
 

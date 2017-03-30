@@ -7,8 +7,7 @@ import getopt
 import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
-from raspiot import rpcserver
-from raspiot import bus
+from raspiot import rpcserver, bus, database
 import importlib
 
 CONFIG_FILE = 'raspiot.conf'
@@ -122,12 +121,21 @@ if __name__ == '__main__':
         app = rpcserver.get_app(debug)
 
         #create message bus
-        logger.debug('Creating message bus')
+        logger.debug('Initializing message bus')
         debug = False
         if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('bus')==1):
             debug = True
         bus = bus.MessageBus(debug)
         app.config['sys.bus'] = bus
+
+        #create database
+        logger.debug('Initializing database')
+        debug = False
+        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('database')==1):
+            debug = True
+        db = database.Database(bus, debug)
+        app.config['sys.db'] = db
+        db.start()
 
         #load user modules
         logger.debug('Loading user modules:')
