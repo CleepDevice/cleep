@@ -8,7 +8,7 @@ import uuid as moduuid
 import json
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
-from raspiot.bus import MessageRequest, InvalidParameter, Unauthorized, MissingParameter
+from raspiot.bus import InvalidParameter, Unauthorized, MissingParameter
 from raspiot.raspiot import RaspIot
 import time
 
@@ -24,13 +24,14 @@ class GpioInputWatcher(Thread):
 
     DEBOUNCE = 0.20
 
-    def __init__(self, pin, on_callback, off_callback, level=GPIO.LOW):
+    def __init__(self, pin, device_id, on_callback, off_callback, level=GPIO.LOW):
         #init
         Thread.__init__(self)
         Thread.daemon = True
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.__debug_pin = None
+        self.device_id = device_id
 
         #members
         self.continu = True
@@ -64,14 +65,14 @@ class GpioInputWatcher(Thread):
                     if self.pin==self.__debug_pin:
                         self.logger.debug('input %s on' % str(self.pin))
                     time_on = time.time()
-                    self.on_callback(self.pin)
+                    self.on_callback(self.pin, self.device_id)
                     time.sleep(self.debounce)
 
                 elif level!=last_level:
                     if self.pin==self.__debug_pin:
                         self.logger.debug('input %s off' % str(self.pin))
                     if self.off_callback:
-                        self.off_callback(self.pin, time.time()-time_on)
+                        self.off_callback(self.pin, self.device_id, time.time()-time_on)
                     time.sleep(self.debounce)
 
                 else:
@@ -212,10 +213,7 @@ class Gpios(RaspIot):
 
                 #and broadcast gpio status at startup
                 self.logger.debug('broadcast event %s for gpio %s' % (event, gpio))
-                req = MessageRequest()
-                req.event = event
-                req.params = {'gpio':gpio, 'init':True}
-                self.push(req)
+                self.send_event(event, {'gpio':'gpio', 'init':True}, conf['device_id'])
 
             elif conf['mode']==self.MODE_IN:
                 if not conf['reverted']:
@@ -228,9 +226,9 @@ class Gpios(RaspIot):
 
                 #and launch input watcher
                 if not conf['reverted']:
-                    w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback, GPIO.LOW)
+                    w = GpioInputWatcher(pin, conf['device_id'], self.__input_on_callback, self.__input_off_callback, GPIO.LOW)
                 else:
-                    w = GpioInputWatcher(pin, self.__input_on_callback, self.__input_off_callback, GPIO.HIGH)
+                    w = GpioInputWatcher(pin, conf['device_id'], self.__input_on_callback, self.__input_off_callback, GPIO.HIGH)
                 self.__input_watchers.append(w)
                 w.start()
             return True
@@ -239,7 +237,7 @@ class Gpios(RaspIot):
             self.logger.exception('Exception during GPIO configuration:')
             return False
 
-    def __input_on_callback(self, pin):
+    def __input_on_callback(self, pin, device_id):
         """
         Callback when input is turned on
         """
@@ -256,13 +254,10 @@ class Gpios(RaspIot):
             self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
-            req = MessageRequest()
-            req.event = 'gpios.gpio.on'
-            req.params = {'gpio':gpio, 'init':False}
-            self.logger.debug('broadcast %s' % str(req))
-            self.push(req)
+            self.logger.debug('broadcast event "gpios.gpio.on" for gpio "%s"' % gpio)
+            self.send_event('gpios.gpio.on', {'gpio':gpio, 'init':False}, device_id)
 
-    def __input_off_callback(self, pin, duration):
+    def __input_off_callback(self, pin, device_id, duration):
         """
         Callback when input is turned off
         """
@@ -279,11 +274,8 @@ class Gpios(RaspIot):
             self.logger.error('Triggered gpio for pin #%s was not found' % str(pin))
         else:
             #broadcast event
-            req = MessageRequest()
-            req.event = 'gpios.gpio.off'
-            req.params = {'gpio':gpio, 'init':False, 'duration':duration}
-            self.logger.debug('broadcast %s' % str(req))
-            self.push(req)
+            self.logger.debug('broadcast event "gpios.gpio.off" for gpio "%s"' % gpio)
+            self.send_event('gpios.gpio.off', {'gpio':gpio, 'init':False, 'duration':duration}, device_id)
 
     def get_module_config(self):
         """
@@ -334,8 +326,10 @@ class Gpios(RaspIot):
         config = self.get_gpios()
 
         #fix command_sender: rpcserver is the default gpio entry point
+        device_id = None
         if command_sender=='rpcserver':
             command_sender = 'gpios'
+            device_id = self._get_unique_id()
 
         #check values
         if not gpio:
@@ -363,7 +357,8 @@ class Gpios(RaspIot):
                 'keep': keep,
                 'on': False,
                 'reverted': reverted,
-                'owner': command_sender
+                'owner': command_sender,
+                'device_id': device_id
             }
 
             #save config
@@ -418,10 +413,7 @@ class Gpios(RaspIot):
                 self._save_config(self._config)
 
             #broadcast event
-            req = MessageRequest()
-            req.event = 'gpios.gpio.on'
-            req.params = {'gpio':gpio, 'init':False}
-            self.push(req)
+            self.send_event('gpios.gpio.on', {'gpio':gpio, 'init':False}, self._config[gpio]['device_id'])
 
             return True
         except:
@@ -449,10 +441,7 @@ class Gpios(RaspIot):
                 self._save_config(self._config)
 
             #broadcast event
-            req = MessageRequest()
-            req.event = 'gpios.gpio.off'
-            req.params = {'gpio':gpio, 'init':False}
-            self.push(req)
+            self.send_event('gpios.gpio.off', {'gpio':gpio, 'init':False}, self._config[gpio]['device_id'])
 
             return True
         except:

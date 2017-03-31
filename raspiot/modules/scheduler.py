@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.bus import MessageRequest, InvalidParameter
+from raspiot.bus import InvalidParameter
 from raspiot.raspiot import RaspIot
 from datetime import datetime
 import time
@@ -141,26 +141,20 @@ class Scheduler(RaspIot):
         now = int(time.time())
         now_formatted = self.__format_time()
 
-        req = MessageRequest()
-        req.event = 'scheduler.time.now'
-        req.params = now_formatted
-        self.push(req)
+        #push now event
+        self.send_event('scheduler.time.now', now_formatted)
 
         #handle sunset
         if self.sunset:
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
-                req = MessageRequest()
-                req.event = 'scheduler.time.sunset'
-                self.push(req)
+                self.send_event('scheduler.time.sunset')
 
         #handle sunrise
         if self.sunrise:
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
-                req = MessageRequest()
-                req.event = 'scheduler.time.sunrise'
-                self.push(req)
+                self.send_event('scheduler.time.sunrise')
 
         #compute sunset/sunrise at midnight
         if now_formatted['hour']==0 and now_formatted['minute']==0:

@@ -3,7 +3,6 @@
     
 import os
 import logging
-from raspiot.bus import MessageRequest
 from raspiot.raspiot import RaspIot
 import time
 import raspiot.libs.task
@@ -162,10 +161,7 @@ class Messageboard(RaspIot):
                     self.__current_message = msg
 
                     #push event
-                    req = MessageRequest()
-                    req.event = 'messageboard.message.update'
-                    req.params = self.get_current_message()
-                    self.push(req)
+                    self.send_event('messageboard.message.update', self.get_current_message())
 
             else:
                 #no message to display, clear screen
@@ -394,10 +390,7 @@ class Messageboard(RaspIot):
         self.board.turn_on()
 
         #push event
-        req = MessageRequest()
-        req.event = 'messageboard.message.update'
-        req.params = self.get_current_message()
-        self.push(req)
+        self.send_event('messageboard.message.update', self.get_current_message())
 
     def turn_off(self):
         """
@@ -410,10 +403,7 @@ class Messageboard(RaspIot):
         self.board.turn_off()
 
         #push event
-        req = MessageRequest()
-        req.event = 'messageboard.message.update'
-        req.params = self.get_current_message()
-        self.push(req)
+        self.send_event('messageboard.message.update', self.get_current_message())
 
     def is_on(self):
         """

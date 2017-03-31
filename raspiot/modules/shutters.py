@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
+from raspiot.bus import MissingParameter, InvalidParameter
 from raspiot.raspiot import RaspIot, CommandError
 from threading import Timer
 import time
@@ -81,10 +81,7 @@ class Shutters(RaspIot):
         - shutters that are opening/closing are set to opened/closed
         """
         #reset gpios
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'reset_gpios'
-        resp = self.push(req)
+        resp = self.send_command('reset_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return
@@ -101,10 +98,7 @@ class Shutters(RaspIot):
         """
         Get raspi gpios
         """
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'get_raspi_gpios'
-        resp = self.push(req)
+        resp = self.send_command('get_raspi_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return {}
@@ -115,10 +109,7 @@ class Shutters(RaspIot):
         """
         Return used gpios
         """
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'get_gpios'
-        resp = self.push(req)
+        resp = self.send_command('get_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return {}
@@ -153,11 +144,7 @@ class Shutters(RaspIot):
         self.logger.debug('stop shutter: gpio=%s' % str(gpio))
 
         #and turn off gpio
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_off'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
+        resp = self.send_command('turn_off', 'gpios', {'gpio':gpio})
         if resp['error']:
             raise CommandError(resp['message'])
         
@@ -170,11 +157,7 @@ class Shutters(RaspIot):
         """
         #turn on gpio
         gpio = shutter['shutter_open']
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_on'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
+        resp = self.send_command('turn_on', 'gpios', {'gpio':gpio})
         if resp['error']:
             raise CommandError(resp['message'])
 
@@ -192,11 +175,7 @@ class Shutters(RaspIot):
         """
         #turn on gpio
         gpio = shutter['shutter_close']
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_on'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
+        resp = self.send_command('turn_on', 'gpios', {'gpio':gpio})
         if resp['error']:
             raise CommandError(resp['message'])
 
@@ -286,38 +265,22 @@ class Shutters(RaspIot):
             raise InvalidParameter('Close switch does not exist for this raspberry pi')
         else:
             #configure open shutter
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':True, 'reverted':False}
-            resp = self.push(req)
+            resp = self.send_command('add_gpio', 'gpios', {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':True, 'reverted':False})
             if resp['error']:
                 raise CommandError(resp['message'])
                 
             #configure close shutter
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':True, 'reverted':False}
-            resp = self.push(req)
+            resp = self.send_command('add_gpio', 'gpios', {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':True, 'reverted':False})
             if resp['error']:
                 raise CommandError(resp['message'])
 
             #configure open switch
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in', 'keep':False, 'reverted':False}
-            resp = self.push(req)
+            resp = self.send_command('add_gpio', 'gpios', {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in', 'keep':False, 'reverted':False})
             if resp['error']:
                 raise CommandError(resp['message'])
 
             #configure close switch
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in', 'keep':False, 'reverted':False}
-            resp = self.push(req)
+            resp = self.send_command('add_gpio', 'gpios', {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in', 'keep':False, 'reverted':False})
             if resp['error']:
                 raise CommandError(resp['message'])
 
@@ -347,38 +310,22 @@ class Shutters(RaspIot):
             raise InvalidParameter('Shutter "%s" doesn\'t exist' % name)
         else:
             #unconfigure open shutter
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'delete_gpio'
-            req.params = {'gpio':config[name]['shutter_open']}
-            resp = self.push(req)
+            resp = self.send_command('delete_gpio', 'gpios', {'gpio':config[name]['shutter_open']})
             if resp['error']:
                 raise CommandError(resp['message'])
 
             #unconfigure close shutter
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'delete_gpio'
-            req.params = {'gpio':config[name]['shutter_close']}
-            resp = self.push(req)
+            resp = self.send_command('delete_gpio', 'gpios', {'gpio':config[name]['shutter_close']})
             if resp['error']:
                 raise CommandError(resp['message'])
 
             #unconfigure open switch
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'delete_gpio'
-            req.params = {'gpio':config[name]['switch_open']}
-            resp = self.push(req)
+            resp = self.send_command('delete_gpio', 'gpios', {'gpio':config[name]['switch_open']})
             if resp['error']:
                 raise CommandError(resp['message'])
 
             #unconfigure close switch
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'delete_gpio'
-            req.params = {'gpio':config[name]['switch_close']}
-            resp = self.push(req)
+            resp = self.send_command('delete_gpio', 'gpios', {'gpio':config[name]['switch_close']})
             if resp['error']:
                 raise CommandError(resp['message'])
 
@@ -404,10 +351,7 @@ class Shutters(RaspIot):
             self._save_config(config)
 
             #and broadcast new shutter status
-            req = MessageRequest()
-            req.event = 'shutters.shutter.%s' % status
-            req.params = {'shutter': shutter_name, 'lastupdate':now}
-            self.push(req)
+            self.send_event('shutters.shutter.%s' % status, {'shutter': shutter_name, 'lastupdate':now}, config[shutter_name]['device_id'])
 
     def __end_of_timer(self, shutter_name, gpio, new_status):
         """
@@ -415,11 +359,7 @@ class Shutters(RaspIot):
         """
         #turn off specified gpio
         self.logger.debug('end_of_timer for gpio:%s' % gpio)
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'turn_off'
-        req.params = {'gpio':gpio}
-        resp = self.push(req)
+        resp = self.send_command('turn_off', 'gpios', {'gpio':gpio})
         if resp['error']:
             raise CommandError(resp['message'])
 

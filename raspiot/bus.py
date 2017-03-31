@@ -63,6 +63,7 @@ class MessageRequest():
      - in case of an event:
        - an event name
        - event parameters
+       - a device id
        - a startup flag that indicates this event was sent during raspiot startup
     """
     def __init__(self):
@@ -71,6 +72,7 @@ class MessageRequest():
         self.params = {}
         self.to = None
         self.from_ = None
+        self.device = None
 
     def __str__(self):
         if self.command:
@@ -98,7 +100,7 @@ class MessageRequest():
         if self.command:
             return {'command':self.command, 'params':self.params, 'from':self.from_}
         elif self.event:
-            return {'event':self.event, 'params':self.params, 'startup':startup}
+            return {'event':self.event, 'params':self.params, 'startup':startup, 'device':self.device}
         else:
             raise InvalidMessage()
 
@@ -450,6 +452,37 @@ class BusClient(threading.Thread):
                 return resp
         else:
             raise InvalidParameter('Request parameter must be MessageRequest instance')
+
+    def send_event(self, event, params=None, device=None, to=None):
+        """
+        Helper function to push event message to bus
+        @param event: event name
+        @param params: event parameters
+        @param device: device id. If not specified event cannot be monitored
+        @param to: event recipient. If not specified, event will be broadcasted
+        """
+        request = MessageRequest()
+        request.to = to
+        request.event = event
+        request.device = device
+        request.params = params
+
+        return self.push(request, None)
+
+    def send_command(self, command, to, params=None, timeout=3.0):
+        """
+        Helper function to push command message to bus
+        @param command: command name
+        @param to: command recipient. If None the command is broadcasted but you'll get no reponse in return
+        @param params: command parameters
+        @param timeout: change default timeout if you wish. Default is 3 seconds
+        """
+        request = MessageRequest()
+        request.to = to
+        request.command = command
+        request.params = params
+
+        return self.push(request, timeout)
 
     def run(self):
         """

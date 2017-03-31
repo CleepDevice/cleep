@@ -91,6 +91,7 @@ class Script(Thread):
             request.command = command
             request.to = to
             request.params = params
+
             #push message
             resp = None
             try:
@@ -98,6 +99,7 @@ class Script(Thread):
             except NoResponse:
                 #handle long response
                 resp = None
+
             if resp!=None and isinstance(resp, MessageResponse):
                 return resp.to_dict()
             else:

@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.bus import MessageRequest, MissingParameter, InvalidParameter
+from raspiot.bus import MissingParameter, InvalidParameter
 from raspiot.raspiot import RaspIot
 from raspiot.libs.task import Task
 import time
@@ -97,10 +97,7 @@ class Sensors(RaspIot):
                             self.__save_config()
 
                             #new motion event
-                            req = MessageRequest()
-                            req.event = 'sensors.motion.on'
-                            req.params = {'sensor':sensor['name'], 'lastupdate':now}
-                            self.push(req)
+                            self.send_event('sensors.motion.on', {'sensor':sensor['name'], 'lastupdate':now}, sensor['device_id'])
 
                     elif event['event']=='gpios.gpio.off':
                         if sensor['on']:
@@ -115,10 +112,7 @@ class Sensors(RaspIot):
                             self.__save_config()
 
                             #new motion event
-                            req = MessageRequest()
-                            req.event = 'sensors.motion.off'
-                            req.params = {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}
-                            self.push(req)
+                            self.send_event('sensors.motion.off', {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}, sensor['device_id'])
                         
             else:
                 self.logger.debug('No sensor found')
@@ -205,10 +199,7 @@ class Sensors(RaspIot):
 
             #broadcast event
             if tempC and tempF:
-                req = MessageRequest()
-                req.event = 'sensors.temperature.value'
-                req.params = {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}
-                self.push(req)
+                self.send_event('sensors.temperature.value', {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}, sensor['device_id'])
 
     def __launch_temperature_task(self, sensor):
         """
@@ -236,10 +227,7 @@ class Sensors(RaspIot):
         """
         Get raspi gpios
         """
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'get_raspi_gpios'
-        resp = self.push(req)
+        resp = self.send_command('get_raspi_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return {}
@@ -250,10 +238,7 @@ class Sensors(RaspIot):
         """
         Return used gpios
         """
-        req = MessageRequest()
-        req.to = 'gpios'
-        req.command = 'get_gpios'
-        resp = self.push(req)
+        resp = self.send_command('get_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return {}
@@ -349,17 +334,15 @@ class Sensors(RaspIot):
             raise InvalidParameter('Gpio does not exist for this raspberry pi')
         else:
             #configure gpio
-            req = MessageRequest()
-            req.to = 'gpios'
-            req.command = 'add_gpio'
-            req.params = {
+            params = {
                 'name': name+'_motion',
                 'gpio': gpio,
                 'mode': 'in',
                 'keep': False,
                 'reverted':reverted
             }
-            resp = self.push(req)
+            #resp = self.push(req)
+            resp = self.send_command('add_gpio', 'gpios', params)
             if resp['error']:
                 raise RaspIot.CommandError(resp['message'])
                 
@@ -372,7 +355,8 @@ class Sensors(RaspIot):
                 'on': False,
                 'reverted': reverted,
                 'lastupdate': 0,
-                'lastduration': 0
+                'lastduration': 0,
+                'device_id': self._get_unique_id()
             }
             self._save_config(config)
 
@@ -392,11 +376,7 @@ class Sensors(RaspIot):
         else:
             #unconfigure gpios
             for gpio in config['sensors'][name]['gpios']:
-                req = MessageRequest()
-                req.to = 'gpios'
-                req.command = 'delete_gpio'
-                req.params = {'gpio':gpio}
-                resp = self.push(req)
+                resp = self.send_command('delete_gpio', 'gpios', {'gpio':gpio})
                 if resp['error']:
                     raise RaspIot.CommandError(resp['message'])
 
