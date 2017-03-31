@@ -5,7 +5,7 @@ import os
 import sqlite3
 import logging
 from raspiot import RaspIot, CommandError
-from bus import MissingParameter
+from bus import MissingParameter, InvalidParameter
 
 __all__ = ['Database']
 
@@ -85,19 +85,39 @@ class Database(RaspIot):
         """
         pass
 
-    def set_data(self, device, event, values):
+    def save_data(self, device, event, values):
         """
         Save data into database
-
+        @param device: device id
+        @param event: event name
+        @param values: values to save (must be a tuple)
         """
+        self.logger.debug('set_data device=%s event=%s values=%s' % (device, event, str(values)))
         if device is None or len(device)==0:
             raise MissingParameter('"device" parameter is missing')
         if event is None or len(event)==0:
             raise MissingParameter('"event" parameter is missing')
         if values is None:
             raise MissingParameter('"event" parameter is missing')
-        if not isinstance(values, dict):
-            raise InvalidParameter('"values" parameter must be a dict')
+        if not isinstance(values, tuple):
+            raise InvalidParameter('"values" parameter must be a tuple')
+        if len(values)==0:
+            raise InvalidParameter('No value to save')
+        if len(values)>2:
+            raise InvalidParameter('Too many values to save. It is limited to 2 values for now.')
+
+        #save device infos at first insert
+        self.__cur.execute('SELECT * FROM devices WHERE device=?', (device,))
+        row = self.__cur.fetchone()
+        if row is None:
+            #no infos yet, insert new entry for this device
+            self.__cur.execute('INSERT INTO devices(device, event, valuescount) VALUES(?,?,?)', (device, event, len(values),))
+
+        #save values
+        if len(values)==1:
+            self.__cur.execute('INSERT INTO data1(timestamp, device, value) values(?,?,?)', (int(time.time()), device, values[0]))
+        elif len(values)==2:
+            self.__cur.execute('INSERT INTO data1(timestamp, device, value1, value2) values(?,?,?,?)', (int(time.time()), device, values[0], values[1],))
         
         return True
 
@@ -135,5 +155,11 @@ class Database(RaspIot):
     def event_received(self, event):
         """
         Event received
+        @param event object
         """
+        #if event['device'] is not None:
+        #    #automatically save event data
+        #    self.set_data(event['device'], event['event'], event['params'])
         pass
+            
+        
