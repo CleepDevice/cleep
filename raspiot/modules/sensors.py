@@ -137,8 +137,6 @@ class Sensors(RaspIot):
                 if sensor['type']=='motion':
                     #motion sensor
                     self.__process_motion_sensor(event, sensor)
-            else:
-                raise Exception('Sensor using gpio %s was not found!' % gpio_uuid)
 
     def __scan_onewire_bus(self):
         """
