@@ -6,6 +6,7 @@ import sqlite3
 import logging
 from raspiot import RaspIot, CommandError
 from bus import MissingParameter, InvalidParameter
+import time
 
 __all__ = ['Database']
 
@@ -62,16 +63,16 @@ class Database(RaspIot):
         cur = cnx.cursor()
 
         #create device table (handle number of values associated to device)
-        cur.execute('CREATE TABLE devices(device TEXT PRIMARY KEY UNIQUE, event TEXT, valuescount INTEGER);')
+        cur.execute('CREATE TABLE devices(uuid TEXT PRIMARY KEY UNIQUE, event TEXT, valuescount INTEGER);')
 
-        #create data1 table (contains 1 field to store value, typically temp/light/... sensors)
-        cur.execute('CREATE TABLE data1(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, device TEXT, value TEXT);')
-        cur.execute('CREATE INDEX data1_device_index ON data1(device);')
+        #create data1 table (contains 1 field to store value, typically light/humidity... sensors)
+        cur.execute('CREATE TABLE data1(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value TEXT);')
+        cur.execute('CREATE INDEX data1_device_index ON data1(uuid);')
         cur.execute('CREATE INDEX data1_timestamp_index ON data1(timestamp);')
 
-        #create data2 table (contains 2 fields to store values, typically gps positions)
-        cur.execute('CREATE TABLE data2(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, device TEXT, value1 TEXT, value2 TEXT);')
-        cur.execute('CREATE INDEX data2_device_index ON data2(device);')
+        #create data2 table (contains 2 fields to store values, typically gps positions, temperature (C° and F°))
+        cur.execute('CREATE TABLE data2(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 TEXT, value2 TEXT);')
+        cur.execute('CREATE INDEX data2_device_index ON data2(uuid);')
         cur.execute('CREATE INDEX data2_timestamp_index ON data2(timestamp);')
 
         cnx.commit()
@@ -83,16 +84,16 @@ class Database(RaspIot):
         """
         pass
 
-    def save_data(self, device, event, values):
+    def save_data(self, uuid, event, values):
         """
         Save data into database
-        @param device: device id
+        @param uuid: device uuid
         @param event: event name
         @param values: values to save (must be a tuple)
         """
-        self.logger.debug('set_data device=%s event=%s values=%s' % (device, event, str(values)))
-        if device is None or len(device)==0:
-            raise MissingParameter('"device" parameter is missing')
+        self.logger.debug('set_data uuid=%s event=%s values=%s' % (uuid, event, str(values)))
+        if uuid is None or len(uuid)==0:
+            raise MissingParameter('Uuid parameter is missing')
         if event is None or len(event)==0:
             raise MissingParameter('"event" parameter is missing')
         if values is None:
@@ -104,48 +105,58 @@ class Database(RaspIot):
         if len(values)>2:
             raise InvalidParameter('Too many values to save. It is limited to 2 values for now.')
 
-        #save device infos at first insert
-        self.__cur.execute('SELECT * FROM devices WHERE device=?', (device,))
+        #save uuid infos at first insert
+        self.__cur.execute('SELECT * FROM devices WHERE uuid=?', (uuid,))
         row = self.__cur.fetchone()
         if row is None:
             #no infos yet, insert new entry for this device
-            self.__cur.execute('INSERT INTO devices(device, event, valuescount) VALUES(?,?,?)', (device, event, len(values),))
+            self.__cur.execute('INSERT INTO devices(uuid, event, valuescount) VALUES(?,?,?)', (uuid, event, len(values),))
+        else:
+            #entry exists, check it
+            infos = dict((self.__cur.description[i][0], value) for i, value in enumerate(row))
+            if infos['event']!=event:
+                raise CommandError('Device %s cannot store values from event %s' % (uuid, event))
+            if infos['valuescount']!=len(values):
+                raise CommandError('Event %s is supposed to store %d values not %d' % (event, infos['valuescount'], len(values)))
 
         #save values
         if len(values)==1:
-            self.__cur.execute('INSERT INTO data1(timestamp, device, value) values(?,?,?)', (int(time.time()), device, values[0]))
+            self.__cur.execute('INSERT INTO data1(timestamp, uuid, value) values(?,?,?)', (int(time.time()), uuid, values[0]))
         elif len(values)==2:
-            self.__cur.execute('INSERT INTO data1(timestamp, device, value1, value2) values(?,?,?,?)', (int(time.time()), device, values[0], values[1],))
+            self.__cur.execute('INSERT INTO data1(timestamp, uuid, value1, value2) values(?,?,?,?)', (int(time.time()), uuid, values[0], values[1],))
+
+        #commit changes
+        self.__cnx.commit()
         
         return True
 
-    def get_data(self, device):
+    def get_data(self, uuid):
         """
         Return data from data table
-        @param device: device id
+        @param uuid: device uuid
         @return dict of rows
         """
-        if device is None or len(device)==0:
-            raise MissingParameter('"device" parameter is missing')
+        if uuid is None or len(uuid)==0:
+            raise MissingParameter('Uuid parameter is missing')
 
         #get device infos
-        self.__cur.execute('SELECT event, valuescount FROM devices WHERE device=?', (device,))
+        self.__cur.execute('SELECT event, valuescount FROM devices WHERE uuid=?', (uuid,))
         row = self.__cur.fetchone()
         if row is None:
-            raise CommandError('Device not found!')
+            raise CommandError('Device %s not found!' % uuid)
         infos = dict((self.__cur.description[i][0], value) for i, value in enumerate(row))
 
         if infos['valuescount']==1:
-            self.__cur.execute('SELECT timestamp, value FROM data1 WHERE device=? ORDER BY timestamp ASC', (device,))
+            self.__cur.execute('SELECT timestamp, value FROM data1 WHERE uuid=? ORDER BY timestamp ASC', (uuid,))
         elif infos['valuescount']==2:
-            self.__cur.execute('SELECT timestamp, value1, value2 FROM data2 WHERE device=? ORDER BY timestamp ASC', (device,))
+            self.__cur.execute('SELECT timestamp, value1, value2 FROM data2 WHERE uuid=? ORDER BY timestamp ASC', (uuid,))
         else:
             raise CommandError('Unable to get data, unknown data source')
         #code from http://stackoverflow.com/a/3287775
         rows = [dict((self.__cur.description[i][0], value) for i, value in enumerate(row)) for row in self.__cur.fetchall()]
 
         return {
-            'device': device,
+            'uuid': uuid,
             'event': infos['event'],
             'data': rows
         }
@@ -153,11 +164,21 @@ class Database(RaspIot):
     def event_received(self, event):
         """
         Event received
-        @param event object
+        @param event: event object
         """
-        #if event['device'] is not None:
-        #    #automatically save event data
-        #    self.set_data(event['device'], event['event'], event['params'])
-        pass
-            
+        self.logger.debug('Event received %s' % event)
+        if event['uuid'] is not None:
+            #split event
+            (event_module, event_type, event_action) = event['event'].split('.')
+
+            if event_type=='temperature':
+                #save temperature event
+                self.save_data(event['uuid'], event_type, (event['params']['celsius'], event['params']['fahrenheit']))
+            elif event_type=='motion':
+                #save motion event
+                if event_action=='on':
+                    self.save_data(event['uuid'], event_type, (1,))
+                else:
+                    self.save_data(event['uuid'], event_type, (0,))
+
         
