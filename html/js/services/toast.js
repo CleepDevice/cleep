@@ -66,7 +66,7 @@ var toastService = function($mdToast) {
 
         $mdToast.show({
             template: '<md-toast><span class="md-toast-text">'+message+'</span><md-progress-circular md-mode="indeterminate" md-diameter="30" class="md-accent"></md-progress-circular></md-toast>',
-            position: 'top right',
+            position: 'bottom left',
             toastClass: class_,
             hideDelay: 0
         });
