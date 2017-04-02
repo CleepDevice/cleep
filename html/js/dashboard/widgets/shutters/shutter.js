@@ -13,7 +13,7 @@ var widgetShutterDirective = function(shuttersService) {
          */
         self.openShutter = function()
         {
-            shuttersService.openShutter(self.device);
+            shuttersService.openShutter(self.device.uuid);
         };
 
         /**
@@ -21,7 +21,7 @@ var widgetShutterDirective = function(shuttersService) {
          */
         self.closeShutter = function()
         {
-            shuttersService.closeShutter(self.device);
+            shuttersService.closeShutter(self.device.uuid);
         };
 
         /**
@@ -29,7 +29,7 @@ var widgetShutterDirective = function(shuttersService) {
          */
         self.stopShutter = function()
         {
-            shuttersService.stopShutter(self.device);
+            shuttersService.stopShutter(self.device.uuid);
         };
     }];
 

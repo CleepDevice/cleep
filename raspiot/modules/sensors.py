@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.bus import MissingParameter, InvalidParameter
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIot, CommandError
 from raspiot.libs.task import Task
 import time
 
@@ -36,15 +36,18 @@ class Sensors(RaspIot):
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()
 
-        #load sensors
-        for sensor in self._config['sensors'].keys():
-            if self._config['sensors'][sensor]['type']=='motion':
-                #motion sensor
-                #nothing to do
-                pass
-            elif self._config['sensors'][sensor]['type']=='temperature':
-                #temperature sensor
-                self.__launch_temperature_task(self._config['sensors'][sensor])
+        #launch temperature reading task
+        devices = self.get_module_devices()
+        for uuid in devices:
+            if devices[uuid]['type']=='temperature':
+                self.__launch_temperature_task(devices[uuid])
+        #for sensor in self._config['sensors'].keys():
+        #    if self._config['sensors'][sensor]['type']=='motion':
+        #        #motion sensor, nothing to do
+        #        pass
+        #    elif self._config['sensors'][sensor]['type']=='temperature':
+        #        #temperature sensor
+        #        self.__launch_temperature_task(self._config['sensors'][sensor])
 
     def _stop(self):
         """
@@ -53,6 +56,57 @@ class Sensors(RaspIot):
         #stop tasks
         for t in self.__tasks:
             self.__tasks[t].stop()
+
+    def __search_by_gpio(self, gpio_uuid):
+        """
+        Search sensor connected to specified gpio_uuid
+        @param gpio_uuid: gpio uuid to search
+        @return Sensor data or None if nothing found
+        """
+        devices = self.get_module_devices()
+        for uuid in devices:
+            for gpio in devices[uuid]['gpios']:
+                if gpio['gpio_uuid']==gpio_uuid:
+                    #sensor found
+                    return devices[uuid]
+
+        #nothing found
+        return None
+
+    def __process_motion_sensor(self, event, sensor):
+        """
+        Process motion event
+        """
+        #get current time
+        now = int(time.time())
+
+        if event['event']=='gpios.gpio.on':
+            #check if task already running
+            if not sensor['on']:
+                #sensor not yet triggered, trigger it
+                self.logger.debug(' +++ Motion sensor "%s" turned on' % sensor['name'])
+
+                #motion sensor triggered
+                sensor['lastupdate'] = now
+                sensor['on'] = True
+                self._update_device(sensor['uuid'], sensor)
+
+                #new motion event
+                self.send_event('sensors.motion.on', {'sensor':sensor['name'], 'lastupdate':now}, sensor['uuid'])
+
+        elif event['event']=='gpios.gpio.off':
+            if sensor['on']:
+                #sensor is triggered, need to stop it
+                self.logger.debug(' --- Motion sensor "%s" turned off' % sensor['name'])
+
+                #motion sensor triggered
+                sensor['lastupdate'] = now
+                sensor['on'] = False
+                sensor['lastduration'] = event['params']['duration']
+                self._update_device(sensor['uuid'], sensor)
+
+                #new motion event
+                self.send_event('sensors.motion.off', {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}, sensor['uuid'])
 
     def event_received(self, event):
         """
@@ -70,74 +124,21 @@ class Sensors(RaspIot):
                 self.logger.debug('Drop gpio init event')
                 return
 
-            #get current time
-            now = int(time.time())
-
-            #get event gpio
-            gpio = event['params']['gpio']
+            #get uuid event
+            #gpio = event['params']['gpio']
+            gpio_uuid = event['uuid']
 
             #search sensor
-            sensor = self.__search_by_gpio(gpio)
-            #self.logger.debug('Found sensor: %s' % sensor)
+            sensor = self.__search_by_gpio(gpio_uuid)
+            self.logger.debug('Found sensor: %s' % sensor)
 
             #process event
             if sensor:
                 if sensor['type']=='motion':
                     #motion sensor
-                    if event['event']=='gpios.gpio.on':
-
-                        #check if task already running
-                        if not sensor['on']:
-                            #sensor not yet triggered, trigger it
-                            self.logger.debug(' +++ Motion sensor "%s" turned on' % sensor['name'])
-
-                            #motion sensor triggered
-                            sensor['lastupdate'] = now
-                            sensor['on'] = True
-                            self.__save_config()
-
-                            #new motion event
-                            self.send_event('sensors.motion.on', {'sensor':sensor['name'], 'lastupdate':now}, sensor['device_id'])
-
-                    elif event['event']=='gpios.gpio.off':
-                        if sensor['on']:
-                            #sensor is triggered, need to stop it
-                            self.logger.debug(' --- Motion sensor "%s" turned off' % sensor['name'])
-
-                            #motion sensor triggered
-                            #duration = now - sensor['']
-                            sensor['lastupdate'] = now
-                            sensor['on'] = False
-                            sensor['lastduration'] = event['params']['duration']
-                            self.__save_config()
-
-                            #new motion event
-                            self.send_event('sensors.motion.off', {'sensor': sensor['name'], 'duration':sensor['lastduration'], 'lastupdate':now}, sensor['device_id'])
-                        
+                    self.__process_motion_sensor(event, sensor)
             else:
-                self.logger.debug('No sensor found')
-
-    def __save_config(self):
-        """
-        Save current config
-        """
-        self._save_config(self._get_config())
-
-    def __search_by_gpio(self, gpio):
-        """
-        Search sensor by gpio
-        @param gpio: gpio to search
-        @return sensor object or None if nothing found
-        """
-        found_sensor = None
-        sensors = self.get_sensors()
-        for sensor in sensors:
-            for gpio_ in sensors[sensor]['gpios']:
-                if gpio_==gpio:
-                    #found gpio
-                    found_sensor = sensors[sensor]
-                    break
-        return found_sensor
+                raise Exception('Sensor using gpio %s was not found!' % gpio_uuid)
 
     def __scan_onewire_bus(self):
         """
@@ -199,7 +200,7 @@ class Sensors(RaspIot):
 
             #broadcast event
             if tempC and tempF:
-                self.send_event('sensors.temperature.value', {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}, sensor['device_id'])
+                self.send_event('sensors.temperature.value', {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}, sensor['uuid'])
 
     def __launch_temperature_task(self, sensor):
         """
@@ -234,22 +235,16 @@ class Sensors(RaspIot):
         else:
             return resp['data']
 
-    def get_used_gpios(self):
+    def get_assigned_gpios(self):
         """
-        Return used gpios
+        Return assigned gpios
         """
-        resp = self.send_command('get_gpios', 'gpios')
+        resp = self.send_command('get_assigned_gpios', 'gpios')
         if resp['error']:
             self.logger.error(resp['message'])
             return {}
         else:
             return resp['data']
-
-    def get_sensors(self):
-        """
-        Return full config (shutter)
-        """
-        return self._config['sensors']
 
     def get_onewire_devices(self):
         """
@@ -312,12 +307,11 @@ class Sensors(RaspIot):
         Add new motion sensor
         @param name: sensor name
         @param gpio: sensor gpio
-        @param on_duration: time to stay on (in sec)
-        @param on_state: set gpio state when on (0 for LOW, 1 fo HIGH)
-        @return True if sensor added
+        @param reverted: set if gpio is reverted or not (bool)
+        @return True if sensor added successfully
         """
-        #get used gpios
-        used_gpios = self.get_used_gpios()
+        #get assigned gpios
+        assigned_gpios = self.get_assigned_gpios()
 
         #check values
         if not name:
@@ -326,9 +320,9 @@ class Sensors(RaspIot):
             raise MissingParameter('Gpio parameter is missing')
         elif reverted is None:
             raise MissingParameter('Reverted parameter is missing')
-        elif gpio in used_gpios:
+        elif gpio in assigned_gpios:
             raise InvalidParameter('Gpio is already used')
-        elif name in self.get_sensors():
+        elif self._search_device('name', name) is not None:
             raise InvalidParameter('Name is already used')
         elif gpio not in self.raspi_gpios:
             raise InvalidParameter('Gpio does not exist for this raspberry pi')
@@ -342,47 +336,77 @@ class Sensors(RaspIot):
                 'reverted':reverted
             }
             #resp = self.push(req)
-            resp = self.send_command('add_gpio', 'gpios', params)
-            if resp['error']:
+            resp_gpio = self.send_command('add_gpio', 'gpios', params)
+            if resp_gpio['error']:
                 raise RaspIot.CommandError(resp['message'])
+            resp_gpio = resp_gpio['data']
                 
-            #sensor is valid, save new entry
-            config = self._get_config()
-            config['sensors'][name] = {
+            #gpio was added and sensor is valid, add new sensor
+            data = {
                 'name': name,
-                'gpios': [gpio],
+                'gpios': [{'gpio':gpio, 'gpio_uuid':resp_gpio['uuid']}],
                 'type': 'motion',
                 'on': False,
                 'reverted': reverted,
                 'lastupdate': 0,
                 'lastduration': 0,
-                'device_id': self._get_unique_id()
             }
-            self._save_config(config)
+            if self._add_device(data) is None:
+                raise CommandError('Unable to add sensor')
 
         return True
 
-    def delete_sensor(self, name):
+    def delete_sensor(self, uuid):
         """
         Delete specified sensor
-        @param name: sensor name
+        @param uuid: sensor identifier
         @return True if deletion succeed
         """
-        config = self._get_config()
-        if not name:
-            raise MissingParameter('"name" parameter is missing')
-        elif name not in config['sensors'].keys():
+        device = self._get_device(uuid)
+        if not uuid:
+            raise MissingParameter('Uuid parameter is missing')
+        elif device is None:
             raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
         else:
             #unconfigure gpios
-            for gpio in config['sensors'][name]['gpios']:
-                resp = self.send_command('delete_gpio', 'gpios', {'gpio':gpio})
+            for gpio in device['gpios']:
+                resp = self.send_command('delete_gpio', 'gpios', {'uuid':gpio['gpio_uuid']})
                 if resp['error']:
                     raise RaspIot.CommandError(resp['message'])
 
             #sensor is valid, remove it
-            del config['sensors'][name]
-            self._save_config(config)
+            if not self._delete_device(device['uuid']):
+                raise CommandError('Unable to delete sensor')
+
+        return True
+
+    def update_sensor(self, uuid, name, reverted):
+        """
+        Update specified sensor
+        @param uuid: sensor identifier
+        @param name: sensor name
+        @param reverted: set if gpio is reverted or not (bool)
+        @return True if device update is successful
+        """
+        device = self._get_device(uuid)
+        if not uuid:
+            raise MissingParameter('Uuid parameter is missing')
+        elif device is None:
+            raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
+        if not name:
+            raise MissingParameter('Name parameter is missing')
+        elif reverted is None:
+            raise MissingParameter('Reverted parameter is missing')
+        elif self._search_device('name', name) is not None:
+            raise InvalidParameter('Name is already used')
+        else:
+            #update sensor
+            device['name'] = name
+            device['reverted'] = reverted
+            if not self._update_device(uuid, device):
+                raise CommandError('Unable to update sensor')
+
+        return True
 
 if __name__ == '__main__':
     #testu

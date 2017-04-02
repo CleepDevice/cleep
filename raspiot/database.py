@@ -42,8 +42,6 @@ class Database(RaspIot):
         self.__cnx = sqlite3.connect(os.path.join(Database.DATABASE_PATH, Database.DATABASE_NAME))
         self.__cur = self.__cnx.cursor()
 
-        self.logger.debug( self.get_data('deviceid') )
-
     def _stop(self):
         """
         Stop module

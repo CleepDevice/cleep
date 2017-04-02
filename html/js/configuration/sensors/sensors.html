@@ -16,7 +16,7 @@
         <tbody md-body>
             <tr md-row md-auto-select ng-repeat="device in sensorsCtl.devices | filterDeviceByService:'sensors' | orderBy:columnOrder">
                 <td md-cell>{{device.name}}</td>
-                <td md-cell>{{device.gpios.join(',')}}</td>
+                <td md-cell>{{device.gpios | displayGpios}}</td>
                 <td md-cell>{{device.type}}</td>
                 <td md-cell>{{device.lastupdate | hrDatetime}}</td>
                 <td md-cell>

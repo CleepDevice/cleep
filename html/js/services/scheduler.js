@@ -32,57 +32,37 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      * Change city
      */
     self.setCity = function(city) {
-        return rpcService.sendCommand('set_city', 'scheduler', {'city':city})
-            .then(function(resp) {
-                return resp.data
-            }, function(err) {
-                console.log('setCity:', err);
-            });
+        return rpcService.sendCommand('set_city', 'scheduler', {'city':city});
     };
 
     /**
      * Get city
      */
     self.getCity = function() {
-        return rpcService.sendCommand('get_city', 'scheduler')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('getCity:', err);
-            });
+        return rpcService.sendCommand('get_city', 'scheduler');
     };
 
     /**
      * Get sunset/sunrise
      */
     self.getSun = function() {
-        return rpcService.sendCommand('get_sun', 'scheduler')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('getSun:', err);
-            });
+        return rpcService.sendCommand('get_sun', 'scheduler');
     };
 
     /**
      * Get messages
      */
     self.getTime = function() {
-        return rpcService.sendCommand('get_time', 'scheduler')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('getMessages:', err);
-            });
+        return rpcService.sendCommand('get_time', 'scheduler');
     };
 
     /**
      * Catch scheduler time event
      */
-    $rootScope.$on('scheduler.time.now', function(event, params) {
+    $rootScope.$on('scheduler.time.now', function(event, uuid, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='scheduler' && objectsService.devices[i].__type=='clock' )
+            if( objectsService.devices[i].uuid==uuid )
             {
                 objectsService.devices[i].time = params.time;
                 objectsService.devices[i].sunset = params.sunset;

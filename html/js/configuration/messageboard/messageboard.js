@@ -92,7 +92,7 @@ var messageboardDirective = function(configsService, toast, messageboardService,
         self.deleteMessage = function(message) {
             confirm.open('Delete message ?', null, 'Delete')
                 .then(function() {
-                    return messageboardService.deleteMessage(message.uuid)
+                    return messageboardService.deleteMessage(message.uuid);
                 })
                 .then(function(resp) {
                     return configsService.reloadConfig('messageboard');

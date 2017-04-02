@@ -33,7 +33,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
          */
         self.closeDialog = function() {
             //check values
-            if( self.name.length===0 || self.delay.length===0 )
+            if( self.name.length===0 || self.delay===null || self.delay.length===0 )
             {
                 toast.error('All fields are required');
             }
@@ -64,7 +64,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
         };
 
         /**
-         * Open add dialog
+         * Add device
          */
         self.openAddDialog = function() {
             self.updateDevice = false;
@@ -84,7 +84,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
         };
 
         /**
-         * Open update dialog
+         * Update device
          */
         self.openUpdateDialog = function(device) {
             //set editor's value
@@ -99,10 +99,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    return shuttersService.deleteShutter(device.name);
-                })
-                .then(function() {
-                    return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close);
+                    return shuttersService.updateShutter(device.uuid, self.name, self.delay);
                 })
                 .then(function() {
                     return shuttersService.loadDevices();
@@ -116,12 +113,12 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
         };
 
         /**
-         * Delete shutter
+         * Delete device
          */
         self.openDeleteDialog = function(device) {
             confirm.open('Delete shutter?', null, 'Delete')
                 .then(function() {
-                    return shuttersService.deleteShutter(device.name);
+                    return shuttersService.deleteShutter(device.uuid);
                 })
                 .then(function() {
                     return shuttersService.loadDevices();

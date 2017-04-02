@@ -19,7 +19,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      * Load service devices (here sensors)
      */
     self.loadDevices = function() {
-        rpcService.sendCommand('get_sensors', 'sensors')
+        rpcService.sendCommand('get_module_devices', 'sensors')
             .then(function(resp) {
                 var motions = [];
                 var temperatures = [];
@@ -62,10 +62,7 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      * Return raspi gpios (according to board version)
      */
     self.getRaspiGpios = function() {
-        return rpcService.sendCommand('get_raspi_gpios', 'sensors')
-            .then(function(resp) {
-                return resp.data;
-            });
+        return rpcService.sendCommand('get_raspi_gpios', 'gpios');
     };
 
     /**
@@ -74,39 +71,43 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     self.addSensor = function(name, gpio, reverted, type) {
         if( type==='motion' )
         {
-            return rpcService.sendCommand('add_motion', 'sensors', 
-                {'name':name, 'gpio':gpio, 'reverted':reverted});
+            return rpcService.sendCommand('add_motion', 'sensors', {'name':name, 'gpio':gpio, 'reverted':reverted});
         }
         else
         {
             toast.error('Unknown sensor type "' + type + '". No sensor added');
+            var defered = $q.defer();
+            defered.reject('bad sensor type');
+            return defered.promise;
         }
     };
 
     /**
      * Delete sensor
      */
-    self.deleteSensor = function(name) {
-        return rpcService.sendCommand('delete_sensor', 'sensors', {'name':name})
-            .then(function(resp) {
-            });
+    self.deleteSensor = function(uuid) {
+        return rpcService.sendCommand('delete_sensor', 'sensors', {'uuid':uuid});
+    };
+
+    /**
+     * Update sensor
+     */
+    self.updateSensor = function(uuid, name, reverted) {
+        return rpcService.sendCommand('update_sensor', 'sensors', {'uuid':uuid, 'name':name, 'reverted':reverted});
     };
 
     /**
      * Catch motion on event
      */
-    $rootScope.$on('sensors.motion.on', function(event, params) {
+    $rootScope.$on('sensors.motion.on', function(event, uuid, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
-            if( objectsService.devices[i].__serviceName==='sensors' )
+            if( objectsService.devices[i].uuid===uuid )
             {   
-                if( objectsService.devices[i].name===params.sensor )
-                {   
-                    objectsService.devices[i].lastupdate = params.lastupdate;
-                    objectsService.devices[i].on = true;
-                    objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
-                    break;
-                }   
+                objectsService.devices[i].lastupdate = params.lastupdate;
+                objectsService.devices[i].on = true;
+                objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
+                break;
             }   
         }   
     });
@@ -114,18 +115,16 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch motion off event
      */
-    $rootScope.$on('sensors.motion.off', function(event, params) {
+    $rootScope.$on('sensors.motion.off', function(event, uuid, params) {
+
         for( var i=0; i<objectsService.devices.length; i++ )
         {   
-            if( objectsService.devices[i].__serviceName==='sensors' )
+            if( objectsService.devices[i].uuid===uuid )
             {   
-                if( objectsService.devices[i].name===params.sensor )
-                {   
-                    objectsService.devices[i].lastupdate = params.lastupdate;
-                    objectsService.devices[i].on = false;
-                    objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
-                    break;
-                }   
+                objectsService.devices[i].lastupdate = params.lastupdate;
+                objectsService.devices[i].on = false;
+                objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
+                break;
             }   
         }   
     });

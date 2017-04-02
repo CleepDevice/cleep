@@ -100,7 +100,10 @@ var soundsConfigDirective = function($q, toast, configsService, soundsService, c
          * Play sound
          */
         self.playSound = function(filename) {
-            soundsService.playSound(filename);
+            soundsService.playSound(filename)
+                .then(function() {
+                    toast.success('Sounds is playing');
+                });
         };
 
         /**

@@ -19,27 +19,27 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
      * Load service devices (here gpios)
      */
     self.loadDevices = function() {
-        rpcService.sendCommand('get_gpios', 'gpios')
+        var defered = $q.defer();
+        rpcService.sendCommand('get_module_devices', 'gpios')
             .then(function(resp) {
-                //add missing stuff to gpio object
-                for( var gpio in resp.data )
+                for( var deviceId in resp.data )
                 {
-                    //set gpio value
-                    resp.data[gpio].gpio = gpio;
-
                     //set widget props
-                    resp.data[gpio].widget = {
+                    resp.data[deviceId].widget = {
                         mdcolors: '{background:"default-primary-300"}'
                     };
-                    if( resp.data[gpio].on )
+                    if( resp.data[deviceId].on )
                     {
                         resp.data[gpio].widget.mdcolors = '{background:"default-accent-400"}';
                     }
                 }
                 objectsService.addDevices('gpios', resp.data, 'gpio');
+                defered.resolve('devices loaded');
             }, function(err) {
                 console.error('loadDevices', err);
+                defered.reject('Unable to load devices');
             });
+        return defered.promise;
     };
 
     /**
@@ -57,78 +57,58 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
      * Get config
      */
     self.getConfig = function() {
-        return rpcService.sendCommand('get_module_config', 'actions')
-            .then(function(resp) {
-                return resp.data;
-            }); 
+        return rpcService.sendCommand('get_module_config', 'actions');
     };
 
     /**
      * Return raspi gpios (according to board version)
      */
     self.getRaspiGpios = function() {
-        return rpcService.sendCommand('get_raspi_gpios', 'gpios')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('getRaspiGpios:', err);
-            });
+        return rpcService.sendCommand('get_raspi_gpios', 'gpios');
     };
 
     /**
      * Add new gpio
      */
-    self.addGpio = function(name, gpio, mode, keep) {
-        return rpcService.sendCommand('add_gpio', 'gpios', {'name':name, 'gpio':gpio, 'mode':mode, 'keep':keep})
-            .then(function(resp) {
-            }, function(err) {
-                console.log('addGpio:', err);
-            });
+    self.addGpio = function(name, gpio, mode, keep, reverted) {
+        return rpcService.sendCommand('add_gpio', 'gpios', {'name':name, 'gpio':gpio, 'mode':mode, 'keep':keep, 'reverted':reverted});
     };
 
     /**
      * Delete gpio
      */
-    self.deleteGpio = function(gpio) {
-        console.log('delete '+gpio);
-        return rpcService.sendCommand('delete_gpio', 'gpios', {'gpio':gpio})
-            .then(function(resp) {
-            }, function(err) {
-                console.log('deleteGpio:', err);
-            });
+    self.deleteGpio = function(uuid) {
+        return rpcService.sendCommand('delete_gpio', 'gpios', {'uuid':uuid});
+    };
+
+    /**
+     * Update device
+     */
+    self.updateGpio = function(uuid, name, keep, reverted) {
+        return rpcService.sendCommand('update_gpio', 'gpios', {'uuid':uuid, 'name':name, 'keep':keep, 'reverted':reverted});
     };
 
     /**
      * Turn on specified gpio
      */
-    self.turnOn = function(gpio) {
-        return rpcService.sendCommand('turn_on', 'gpios', {'gpio':gpio})
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('turnOn:', err);
-            });
+    self.turnOn = function(uuid) {
+        return rpcService.sendCommand('turn_on', 'gpios', {'uuid':uuid});
     };
 
     /**
      * Turn off specified gpio
      */
-    self.turnOff = function(gpio) {
-        return rpcService.sendCommand('turn_off', 'gpios', {'gpio':gpio})
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('turnOff:', err);
-            });
+    self.turnOff = function(uuid) {
+        return rpcService.sendCommand('turn_off', 'gpios', {'uuid':uuid});
     };
 
     /**
      * Catch gpio on events
      */
-    $rootScope.$on('gpios.gpio.on', function(event, params) {
+    $rootScope.$on('gpios.gpio.on', function(event, uuid, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )
+            if( objectsService.devices[i].uuid==uuid )
             {
                 if( objectsService.devices[i].on===false )
                 {
@@ -143,10 +123,10 @@ var gpiosService = function($q, $rootScope, rpcService, objectsService) {
     /**
      * Catch gpio off events
      */
-    $rootScope.$on('gpios.gpio.off', function(event, params) {
+    $rootScope.$on('gpios.gpio.off', function(event, uuid, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='gpios' && objectsService.devices[i].gpio===params.gpio )
+            if( objectsService.devices[i].uuid==uuid )
             {
                 if( objectsService.devices[i]['on']===true )
                 {

@@ -63,7 +63,7 @@ class MessageRequest():
      - in case of an event:
        - an event name
        - event parameters
-       - a device id
+       - a device uuid
        - a startup flag that indicates this event was sent during raspiot startup
     """
     def __init__(self):
@@ -72,7 +72,7 @@ class MessageRequest():
         self.params = {}
         self.to = None
         self.from_ = None
-        self.device = None
+        self.uuid = None
 
     def __str__(self):
         if self.command:
@@ -100,7 +100,7 @@ class MessageRequest():
         if self.command:
             return {'command':self.command, 'params':self.params, 'from':self.from_}
         elif self.event:
-            return {'event':self.event, 'params':self.params, 'startup':startup, 'device':self.device}
+            return {'event':self.event, 'params':self.params, 'startup':startup, 'uuid':self.uuid}
         else:
             raise InvalidMessage()
 
@@ -453,18 +453,18 @@ class BusClient(threading.Thread):
         else:
             raise InvalidParameter('Request parameter must be MessageRequest instance')
 
-    def send_event(self, event, params=None, device=None, to=None):
+    def send_event(self, event, params=None, uuid=None, to=None):
         """
         Helper function to push event message to bus
         @param event: event name
         @param params: event parameters
-        @param device: device id. If not specified event cannot be monitored
+        @param uuid: device uuid that send event. If not specified event cannot be monitored
         @param to: event recipient. If not specified, event will be broadcasted
         """
         request = MessageRequest()
         request.to = to
         request.event = event
-        request.device = device
+        request.uuid = uuid
         request.params = params
 
         return self.push(request, None)

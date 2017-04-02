@@ -12,6 +12,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
         self.gpio = 'GPIO3';
         self.mode = 'in';
         self.keep = false;
+        self.reverted = false;
         self.updateDevice = false;
 
         /**
@@ -21,7 +22,8 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
             self.name = '';
             self.gpio = 'GPIO3';
             self.mode = 'in';
-            self.keep = true;
+            self.keep = false;
+            self.reverted = false;
         };
 
         /**
@@ -53,23 +55,25 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'gpiosCtl',
-                templateUrl: 'js/directives/gpios/addGpio.html',
+                templateUrl: 'js/configuration/gpios/addGpio.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false
             });
         };
         
         /**
-         * Open add dialog
+         * Add device
          */
         self.openAddDialog = function() {
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep);
+                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep, self.reverted);
                 })
                 .then(function() {
-                    gpiosService.loadDevices();
+                    return gpiosService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Gpio added');
                 })
                 .finally(function() {
@@ -78,7 +82,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
         }; 
 
         /**
-         * Open update dialog
+         * Update device
          */
         self.openUpdateDialog = function(device) {
             //set editor's value
@@ -91,13 +95,12 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    return gpiosService.deleteGpio(device.gpio);
+                    return gpiosService.updateGpio(device.uuid, self.name, self.keep, self.reverted);
                 })
                 .then(function(resp) {
-                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep);
+                    return gpiosService.loadDevices();
                 })
-                .then(function(resp) {
-                    gpiosService.loadDevices();
+                .then(function() {
                     toast.success('Gpio updated');
                 })
                 .finally(function() {
@@ -111,10 +114,12 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
         self.openDeleteDialog = function(device) {
             confirm.open('Delete gpio?', null, 'Delete')
                 .then(function() {
-                    return gpiosService.deleteGpio(device.gpio);
+                    return gpiosService.deleteGpio(device.uuid);
                 })
                 .then(function() {
-                    gpiosService.loadDevices();
+                    return gpiosService.loadDevices();
+                })
+                .then(function() {
                     toast.success('Gpio deleted');
                 });
         };

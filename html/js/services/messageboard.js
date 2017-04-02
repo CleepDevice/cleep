@@ -114,10 +114,7 @@ var messageboardService = function($q, $rootScope, rpcService) {
      * Get speed
      */
     self.getSpeed = function() {
-        return rpcService.sendCommand('get_speed', 'messageboard')
-            .then(function(resp) {
-                return resp.data;
-            });
+        return rpcService.sendCommand('get_speed', 'messageboard');
     };
 
     /**
@@ -161,10 +158,10 @@ var messageboardService = function($q, $rootScope, rpcService) {
     /**
      * Catch message updated
      */
-    $rootScope.$on('messageboard.message.update', function(event, params) {
+    $rootScope.$on('messageboard.message.update', function(event, uuid, params) {
         for( var i=0; i<objectsService.devices.length; i++ )
         {
-            if( objectsService.devices[i].__serviceName==='messageboard' && objectsService.devices[i].__type=='message' )
+            if( objectsService.devices[i].uuid==uuid )
             {
                 var message = self._formatMessageData(params);
                 objectsService.devices[i].message = message.message;

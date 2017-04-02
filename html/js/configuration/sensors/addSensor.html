@@ -21,13 +21,13 @@
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Type</label>
-                <md-select ng-model="sensorsCtl.type">
+                <md-select ng-model="sensorsCtl.type" ng-disabled="sensorsCtl.updateDevice">
                     <md-option ng-repeat="type in sensorsCtl.types" ng-value="type">{{type}}</md-option>
                 </md-select>
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Gpio</label>
-                <md-select ng-model="sensorsCtl.gpio">
+                <md-select ng-model="sensorsCtl.gpio" ng-disabled="sensorsCtl.updateDevice">
                     <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                 </md-select>
             </md-input-container>

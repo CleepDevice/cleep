@@ -21,22 +21,29 @@
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Gpio</label>
-                <md-select ng-model="gpiosCtl.gpio">
-                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspi_gpios" ng-value="gpio">{{gpio}}</md-option>
+                <md-select ng-model="gpiosCtl.gpio" ng-disabled="gpiosCtl.updateDevice">
+                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                 </md-select>
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Mode</label>
-                <md-select ng-model="gpiosCtl.mode">
+                <md-select ng-model="gpiosCtl.mode" ng-disabled="gpiosCtl.updateDevice">
                     <md-option value="in">Input</md-option>
                     <md-option value="out">Output</md-option>
                 </md-select>
             </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <md-checkbox ng-model="gpiosCtl.keep" aria-label="save_state">
-                    Save state?<br/>(restore state after reboot)
-                </md-checkbox>
-            </md-input-container>
+            <div layout-gt-sm="row">
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-checkbox ng-model="gpiosCtl.keep" aria-label="Save state">
+                        Save state?<br/>(restore state after reboot)
+                    </md-checkbox>
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-checkbox ng-model="gpiosCtl.reverted" aria-label="Reverted state">
+                        Reverted state?
+                    </md-checkbox>
+                </md-input-container>
+            </div>
         </md-content>
         </md-dialog-content>
 

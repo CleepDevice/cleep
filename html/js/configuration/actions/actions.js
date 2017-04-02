@@ -16,8 +16,21 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
             $mdDialog.cancel();
         };
 
+        /** 
+         * Open add dialog
+         */
+        self.openAddDialog = function() {
+            return $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'actionsCtl',
+                templateUrl: 'js/directives/actions/addAction.html',
+                parent: angular.element(document.body),
+                clickOutsideToClose: false
+            }); 
+        }; 
+
         /**
-         * Delete dialog
+         * Delete script
          */
         self.openDeleteDialog = function(script) {
             confirm.open('Delete script?', null, 'Delete')
@@ -32,19 +45,6 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
                     toast.success('Script deleted');
                 });
         };
-
-        /** 
-         * Open add dialog
-         */
-        self.openAddDialog = function() {
-            return $mdDialog.show({
-                controller: function() { return self; },
-                controllerAs: 'actionsCtl',
-                templateUrl: 'js/directives/actions/addAction.html',
-                parent: angular.element(document.body),
-                clickOutsideToClose: false
-            }); 
-        }; 
 
         /**
          * Watch upload variable to trigger upload

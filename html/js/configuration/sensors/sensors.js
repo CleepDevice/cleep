@@ -54,14 +54,14 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'sensorsCtl',
-                templateUrl: 'js/directives/sensors/addSensor.html',
+                templateUrl: 'js/configuration/sensors/addSensor.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false
             });
         };
 
         /**
-         * Open add dialog
+         * Add device
          */
         self.openAddDialog = function() {
             self.updateDevice = false;
@@ -81,7 +81,7 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
         };
 
         /** 
-         * Open update dialog
+         * Update device
          */
         self.openUpdateDialog = function(device) {
             //set editor's value
@@ -91,17 +91,14 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
             self.reverted = device.reverted;
             if( device.type==='motion' )
             {
-                self.gpio = device.gpios[0];
+                self.gpio = device.gpios[0].gpio;
             }
 
             //open dialog
             self.updateDevice = true;
             self._openDialog()
                 .then(function() {
-                    self._deleteSensor({'name': oldName});
-                })
-                .then(function() {
-                    return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type);
+                    return sensorsService.updateSensor(device.uuid, self.name, self.reverted);
                 })
                 .then(function() {
                     return sensorsService.loadDevices();
@@ -115,12 +112,12 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
         }; 
 
         /** 
-         * Delete sensor
+         * Delete device
          */
         self.openDeleteDialog = function(device) {
             confirm.open('Delete sensor?', null, 'Delete')
                 .then(function() {
-                    return sensorsService.deleteSensor(device.name);
+                    return sensorsService.deleteSensor(device.uuid);
                 })
                 .then(function() {
                     return sensorsService.loadDevices();
@@ -154,6 +151,21 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
     };
 };
 
+var sensorGpiosFilter = function($filter) {
+    return function(gpios) {
+        if( gpios && angular.isArray(gpios) )
+        {
+            names = [];
+            for( var i=0; i<gpios.length; i++)
+            {
+                names.push(gpios[i].gpio);
+            }
+            return names.join(',');
+        }
+    };
+}
+
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('sensorsConfigDirective', ['toastService', 'objectsService', 'configsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+RaspIot.filter('displayGpios', sensorGpiosFilter);
 

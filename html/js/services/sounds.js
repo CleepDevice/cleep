@@ -19,98 +19,63 @@ var soundsService = function($q, $rootScope, rpcService) {
      * Get sounds
      */
     self.getSounds = function() {
-        return rpcService.sendCommand('get_sounds', 'sounds')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.error('getSounds:', err);
-            });
+        return rpcService.sendCommand('get_sounds', 'sounds');
     };
 
     /**
      * Get langs
      */
     self.getLangs = function() {
-        return rpcService.sendCommand('get_langs', 'sounds')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.error('getLangs:', err);
-            });
+        return rpcService.sendCommand('get_langs', 'sounds');
     };
 
     /**
      * Set lang
      */
     self.setLang = function(lang) {
-        return rpcService.sendCommand('set_lang', 'sounds', {'lang':lang})
-            .then(function(resp) {
-            }, function(err)  {
-                console.error('setLang', err);
-            });
+        return rpcService.sendCommand('set_lang', 'sounds', {'lang':lang});
     };
 
     /**
      * Delete sound
      */
     self.deleteSound = function(name) {
-        return rpcService.sendCommand('delete_sound', 'sounds', {'filename':name})
-            .then(function(resp) {
-            }, function(err) {
-                console.error('deleteSound:', err);
-            });
+        return rpcService.sendCommand('delete_sound', 'sounds', {'filename':name});
     };
 
     /**
      * Play sound
      */
     self.playSound = function(name) {
-        return rpcService.sendCommand('play_sound', 'sounds', {'filename':name})
-            .then(function(resp) {
-            }, function(err) {
-                console.error('playSound', err);
-            });
+        return rpcService.sendCommand('play_sound', 'sounds', {'filename':name});
     };
 
     /**
      * Speak message
      */
     self.speakMessage = function(text, lang) {
-        return rpcService.sendCommand('speak_message', 'sounds', {'text':text, 'lang':lang})
-            .then(function(resp) {
-            }, function(err) {
-                console.error('sayText:', err);
-            });
+        return rpcService.sendCommand('speak_message', 'sounds', {'text':text, 'lang':lang});
     };
 
     /**
      * Get volume
      */
     self.getVolume = function() {
-        return rpcService.sendCommand('get_volume', 'sounds')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.error('getVolume:', err);
-            });
+        return rpcService.sendCommand('get_volume', 'sounds');
     };
 
     /**
      * Set volume
      */
     self.setVolume = function() {
-        return rpcService.sendCommand('set_volume', 'sounds', {'volume':volume})
-            .then(function(resp) {
-            }, function(err) {
-                console.error('getVolume:', err);
-            });
+        return rpcService.sendCommand('set_volume', 'sounds', {'volume':volume});
     };
 
     /**
      * Upload sound
      */
     self.uploadSound = function(file) {
-        return rpcService.upload('add_sound', 'sounds', file)
+        return rpcService.upload('add_sound', 'sounds', file);
     };
 };
     

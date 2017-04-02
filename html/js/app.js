@@ -21,7 +21,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 if( response && response.data && !response.error )
                 {
                     //broadcast received message
-                    $rootScope.$broadcast(response.data.event, response.data.params);
+                    $rootScope.$broadcast(response.data.event, response.data.uuid, response.data.params);
                 }
 
                 //reset next polling timeout

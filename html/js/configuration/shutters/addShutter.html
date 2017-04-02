@@ -22,13 +22,13 @@
             <div layout-gt-sm="row">
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Shutter open relay</label>
-                    <md-select ng-model="shuttersCtl.shutter_open">
+                    <md-select ng-model="shuttersCtl.shutter_open" ng-disabled="shuttersCtl.updateDevice">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Shutter close relay</label>
-                    <md-select ng-model="shuttersCtl.shutter_close">
+                    <md-select ng-model="shuttersCtl.shutter_close" ng-disabled="shuttersCtl.updateDevice">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>
@@ -36,13 +36,13 @@
             <div layout-gt-sm="row">
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Switch open</label>
-                    <md-select ng-model="shuttersCtl.switch_open">
+                    <md-select ng-model="shuttersCtl.switch_open" ng-disabled="shuttersCtl.updateDevice">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Switch close</label>
-                    <md-select ng-model="shuttersCtl.switch_close">
+                    <md-select ng-model="shuttersCtl.switch_close" ng-disabled="shuttersCtl.updateDevice">
                         <md-option ng-repeat="(gpio,pin) in shuttersCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
                 </md-input-container>

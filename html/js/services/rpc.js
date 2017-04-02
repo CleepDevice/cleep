@@ -48,7 +48,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             if( resp.data.error ) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
-                d.reject('request failed');
+                d.reject(resp.data.message);
             }
             else {
                 //display message if provided
@@ -60,7 +60,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         }, function(err) {
             console.error('Request failed: '+err);
             toast.error(err.statusText);
-            d.reject('request failed');
+            d.reject(err.statusText);
         });
 
         return d.promise;
