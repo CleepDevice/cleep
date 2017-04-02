@@ -23,18 +23,23 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
 
         //prepare data
         data.command = command;
-        if( params!==undefined && params!==null ) {
+        if( params!==undefined && params!==null )
+        {
             data.params = params;
         }
-        else {
+        else
+        {
             //no params
             data.params = {}
         }
-        if( to!==undefined && to!==null ) {
+
+        if( to!==undefined && to!==null )
+        {
             //push command
             data.to = to;
         }
-        else {
+        else
+        {
             //broadcast command
             data.to = null;
         }
@@ -46,15 +51,18 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType:'json'
         })
         .then(function(resp) {
-            if( resp.data.error ) {
+            if( resp.data.error )
+            {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject(resp.data.message);
             }
-            else {
+            else
+            {
                 //display message if provided
-                if( resp.data.message ) {
-                    toast.succes(resp.data.message);
+                if( resp.data.message )
+                {
+                    toast.success(resp.data.message);
                 }
                 d.resolve(resp.data);
             }
@@ -79,12 +87,14 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error ) {
+            if( resp.data.error )
+            {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
             }
-            else {
+            else
+            {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -107,12 +117,14 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error ) {
+            if( resp.data.error )
+            {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
             }
-            else {
+            else
+            {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -135,7 +147,8 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.upload = function(command, to, file, data)
     {
         //check input file
-        if( !file ) {
+        if( !file )
+        {
             return;
         }
 

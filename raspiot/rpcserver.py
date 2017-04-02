@@ -18,8 +18,7 @@ from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
-from bus import NoMessageAvailable
-from bus import MessageResponse, MessageRequest
+from .utils import NoMessageAvailable, MessageResponse, MessageRequest
 import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt

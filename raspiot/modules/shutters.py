@@ -3,8 +3,8 @@
     
 import os
 import logging
-from raspiot.bus import MissingParameter, InvalidParameter
-from raspiot.raspiot import RaspIot, CommandError
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CommandInfo
+from raspiot.raspiot import RaspIot
 from threading import Timer
 import time
 
@@ -121,6 +121,7 @@ class Shutters(RaspIot):
     def __stop_action(self, shutter):
         """
         Stop specified shutter
+        @param shutter: shutter object
         """
         #first of all cancel timer if necessary
         if self.__timers.has_key(shutter['uuid']):
@@ -150,6 +151,7 @@ class Shutters(RaspIot):
     def __open_action(self, shutter):
         """
         Open specified shutter
+        @param shutter: shutter object
         """
         #turn on gpio
         gpio_uuid = shutter['shutter_open_uuid']
@@ -168,6 +170,7 @@ class Shutters(RaspIot):
     def __close_action(self, shutter):
         """
         Close specified shutter
+        @param shutter: shutter object
         """
         #turn on gpio
         gpio_uuid = shutter['shutter_close_uuid']
@@ -206,6 +209,7 @@ class Shutters(RaspIot):
             else:
                 #shutter is already opened, do nothing
                 self.logger.debug('Shutter %s is already opened' % shutter['uuid'])
+                raise CommandInfo('Shutter is already opened');
 
         else:
             #close action triggered
@@ -220,9 +224,20 @@ class Shutters(RaspIot):
             else:
                 #shutter is already closed
                 self.logger.debug('Shutter %s is already closed' % shutter['uuid'])
+                raise CommandInfo('Shutter is already closed');
         
 
     def add_shutter(self, name, shutter_open, shutter_close, delay, switch_open, switch_close):
+        """
+        Add shutter
+        @param name: shutter name
+        @param shutter_open: shutter_open gpio
+        @param shutter_close: shutter_close gpio
+        @param delay: shutter delay
+        @param switch_open: switch_open gpio
+        @param switch_close: switch_close gpio
+        @return True if shutter added
+        """
         #get used gpios
         assigned_gpios = self.get_assigned_gpios()
 

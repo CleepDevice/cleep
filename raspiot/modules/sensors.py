@@ -3,8 +3,8 @@
     
 import os
 import logging
-from raspiot.bus import MissingParameter, InvalidParameter
-from raspiot.raspiot import RaspIot, CommandError
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError
+from raspiot.raspiot import RaspIot
 from raspiot.libs.task import Task
 import time
 

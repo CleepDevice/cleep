@@ -4,8 +4,8 @@
 import os
 import sqlite3
 import logging
-from raspiot import RaspIot, CommandError
-from bus import MissingParameter, InvalidParameter
+from raspiot import RaspIot
+from utils import CommandError, MissingParameter, InvalidParameter
 import time
 
 __all__ = ['Database']

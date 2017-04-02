@@ -2,18 +2,14 @@ import logging
 import os
 import json
 from bus import BusClient
+import utils
 from threading import Lock, Thread
 import time
 import copy
 import uuid
 
-__all__ = ['RaspIot', 'CommandError']
+__all__ = ['RaspIot', 'CommandError', 'CommandInfo']
 
-class CommandError(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
 
 class RaspIot(BusClient):
     """

@@ -4,7 +4,7 @@
 import os
 import shutil
 import logging
-from raspiot.bus import InvalidParameter
+from raspiot.utils import InvalidParameter
 from raspiot.raspiot import RaspIot
 import pygame
 from threading import Thread

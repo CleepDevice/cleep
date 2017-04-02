@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.bus import MessageRequest, MessageResponse, InvalidParameter, NoResponse
+from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse
 from raspiot.raspiot import RaspIot
 import time
 from threading import Thread, Lock
