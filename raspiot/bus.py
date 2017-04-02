@@ -582,7 +582,7 @@ class BusClient(threading.Thread):
                             pass
                         except:
                             #do not crash module
-                            pass
+                            self.logger.exception('event_received exception:')
 
                 else:
                     #received message is badly formatted
