@@ -560,7 +560,7 @@ if __name__ == '__main__':
         logger.info('TEST1: send command to non existing module')
         try:
             bus.push(msg0, 'TestProcess')
-        except InvalidParameter, e:
+        except InvalidParameter as e:
             if e.value.lower().find('unknown destination')!=-1:
                 logger.info(' -> ok')
             else:
