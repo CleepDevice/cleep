@@ -23,16 +23,6 @@ var actionsService = function($q, $rootScope, rpcService) {
     };
 
     /**
-     * Get config
-     */
-    self.getConfig = function() {
-        return rpcService.sendCommand('get_module_config', 'actions')
-            .then(function(resp) {
-                return resp.data;
-            });
-    };
-
-    /**
      * Disable script
      */
     self.disableScript = function(script, disabled) {

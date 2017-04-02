@@ -89,6 +89,14 @@ class Messageboard(RaspIot):
             message.from_dict(msg)
             self.messages.append(message)
 
+        #create device if necessary
+        if self._get_device_count()==0:
+            #add default device to get a valid uuid
+            self._add_device({
+                'name': 'MessageBoard',
+                'type': 'messageboard'
+            })
+
         #init display task
         self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
         self.__display_task.start()
@@ -216,7 +224,18 @@ class Messageboard(RaspIot):
         config['units'] = self.get_units()
         config['speed'] = self.get_speed()
         config['status'] = self.get_current_message()
+
         return config;
+
+    def get_module_devices():
+        """
+        Return updated messageboard device
+        """
+        devices = super(Messageboard, self).get_module_devices()
+        uuid = devices.keys()[0]
+        data = self.get_current_message()
+        devices[uuid].update(data)
+        return devices
 
     def get_duration(self):
         """

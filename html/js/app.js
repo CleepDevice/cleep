@@ -10,7 +10,7 @@ var RaspIot = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, configsService) {
+var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService) {
 
     //handle polling
     var pollingTimeout = 0;
@@ -48,29 +48,21 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         .then(function(resp) {
             //save modules configurations as soon as possible to make sure
             //configurations directives can access their own configs when they start
-            configsService._setConfigs(resp);
+            raspiotService._setConfigs(resp);
 
             //now inject configurations directives
             for( var module in resp)
             {
                 //prepare angular service and directive
-                var serviceName = module; //modules[i];
-                var angularService = module + 'Service'; //modules[i]+'Service';
+                var angularService = module + 'Service';
                 if( $injector.has(angularService) )
                 {
                     //module has service, inject it then add it
-                    objectsService._addService(serviceName, $injector.get(angularService));
+                    objectsService._addService(module, $injector.get(angularService));
 
-                    //load service devices if possible
-                    if( typeof objectsService.services[serviceName].loadDevices !== 'undefined' )
-                    {
-                        //load service devices
-                        objectsService.services[serviceName].loadDevices();
-                    }
-                    
-                    //add module config directives
-                    directive = objectsService.services[serviceName].getDirectiveInfos();
-                    objectsService._addDirective( directive['label'], directive['name'] );
+                    //add module directive
+                    directive = objectsService.services[module].getDirectiveInfos();
+                    objectsService._addModuleDirective(module, directive['label'], directive['name'] );
                 }
                 else
                 {
@@ -79,13 +71,16 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 }
             }
 
-
-            //console.log("DEVICES", objectsService.devices);
-            //console.log("SERVICES", objectsService.services);
-            //console.log("DIRECTIVES", objectsService.directives);
+            //load devices
+            return raspiotService.reloadDevices();
+        })
+        .finally(function() {
+            console.log("DEVICES", raspiotService.devices);
+            console.log("SERVICES", objectsService.services);
+            console.log("MODULE DIRECTIVES", objectsService.moduleDirectives);
         });
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'configsService', mainController]);
+RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', mainController]);
 

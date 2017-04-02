@@ -1,7 +1,9 @@
 <md-content layout="column">
+
     <md-tabs flex="90" md-border-bottom>
-        <md-tab ng-repeat="directive in configCtl.directives | orderBy:'label'" label="{{directive.label}}">
+        <md-tab ng-repeat="(module, directive) in configCtl.directives | orderBy:'label'" label="{{directive.label}}">
             <div id="{{directive.cleanLabel+'Config'}}"></div>
         </md-tab>
     </md-tabs>
+
 </md-content>

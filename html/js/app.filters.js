@@ -44,7 +44,7 @@ RaspIot.filter('filterDeviceByService', function($filter) {
     return function(devices, service) {
         if( service ) {
             return $filter("filter")(devices, function(device) {
-                return device.__serviceName==service;
+                return device.__service==service;
             });
         }
     };

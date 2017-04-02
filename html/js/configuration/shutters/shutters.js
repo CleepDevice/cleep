@@ -2,12 +2,12 @@
  * Shutters config directive
  * Handle shutter configuration
  */
-var shuttersConfigDirective = function(shuttersService, configsService, toast, objectsService, $mdDialog, confirm) {
+var shuttersConfigDirective = function(shuttersService, raspiotService, toast, $mdDialog, confirm) {
 
     var shuttersConfigController = function() {
         var self = this;
         self.raspiGpios = [];
-        self.devices = objectsService.devices;
+        self.devices = raspiotService.devices;
         self.name = '';
         self.shutter_open = 'GPIO2';
         self.shutter_close = 'GPIO4';
@@ -73,7 +73,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
                     return shuttersService.addShutter(self.name, self.shutter_open, self.shutter_close, self.delay, self.switch_open, self.switch_close);
                 })
                 .then(function() {
-                    return shuttersService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Shutter added');
@@ -102,7 +102,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
                     return shuttersService.updateShutter(device.uuid, self.name, self.delay);
                 })
                 .then(function() {
-                    return shuttersService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Shutter updated');
@@ -121,7 +121,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
                     return shuttersService.deleteShutter(device.uuid);
                 })
                 .then(function() {
-                    return shuttersService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Shutter deleted');
@@ -132,7 +132,7 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
          * Controller init
          */
         self.init = function() {
-            var config = configsService.getConfig('shutters');
+            var config = raspiotService.getConfig('shutters');
             self.raspiGpios = config.raspi_gpios;
         };
 
@@ -153,5 +153,5 @@ var shuttersConfigDirective = function(shuttersService, configsService, toast, o
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'configsService', 'toastService', 'objectsService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
+RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'raspiotService', 'toastService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
 

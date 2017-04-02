@@ -2,7 +2,7 @@
  * Scheduler service
  * Handle scheduler module requests
  */
-var schedulerService = function($q, $rootScope, rpcService, objectsService) {
+var schedulerService = function($rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
@@ -14,19 +14,6 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
             name: 'schedulerConfigDirective'
         };  
     }; 
-
-    /**
-     * Load service devices (here add static device such as clock)
-     */
-    self.loadDevices = function() {
-        rpcService.sendCommand('get_time', 'scheduler')
-            .then(function(resp) {
-                resp.data.name = 'Clock';
-                objectsService.addDevices('scheduler', {'clock':resp.data}, 'clock');
-            }, function(err) {
-                console.error('loadDevices', err);
-            });
-    };
 
     /**
      * Change city
@@ -60,13 +47,13 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
      * Catch scheduler time event
      */
     $rootScope.$on('scheduler.time.now', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].time = params.time;
-                objectsService.devices[i].sunset = params.sunset;
-                objectsService.devices[i].sunrise = params.sunrise;
+                raspiotService.devices[i].time = params.time;
+                raspiotService.devices[i].sunset = params.sunset;
+                raspiotService.devices[i].sunrise = params.sunrise;
                 break;
             }
         }
@@ -74,5 +61,5 @@ var schedulerService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('schedulerService', ['$q', '$rootScope', 'rpcService', 'objectsService', schedulerService]);
+RaspIot.service('schedulerService', ['$rootScope', 'rpcService', 'raspiotService', schedulerService]);
 

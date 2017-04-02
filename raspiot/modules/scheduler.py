@@ -41,6 +41,16 @@ class Scheduler(RaspIot):
         self.time_task = Task(60.0, self.__send_time_event)
         self.time_task.start()
 
+        #add clock device if not already added
+        if self._get_device_count()==0:
+            #add fake device to have valid uuid, device content will be sent in get_module_devices
+            self.logger.debug('Add default clock device')
+            clock = {
+                'type': 'clock',
+                'name': 'Clock'
+            }
+            self._add_device(clock)
+
     def _stop(self):
         """
         Stop module
@@ -168,6 +178,16 @@ class Scheduler(RaspIot):
         config['sun'] = self.get_sun()
         config['city'] = self.get_city()
         return config
+
+    def get_module_devices(self):
+        """
+        Return clock as scheduler device
+        """
+        devices = super(Scheduler, self).get_module_devices()
+        uuid = devices.keys()[0]
+        data = self.get_time()
+        devices[uuid].update(data)
+        return devices
 
     def get_time(self):
         """

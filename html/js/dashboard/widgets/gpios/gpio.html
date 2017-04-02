@@ -10,7 +10,7 @@
             <span class="md-subhead">{{widgetCtl.device.__type}}</span>
         </md-card-header-text>
     </md-card-header>
-    <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.widget.mdcolors}}">
+    <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
         <div>
             <md-icon ng-if="widgetCtl.device.on" class="typcn typcn-media-record icon-xl"></md-icon>
             <md-icon ng-if="!widgetCtl.device.on" class="typcn typcn-media-record-outline icon-xl"></md-icon>

@@ -4,21 +4,16 @@
  */
 var dashboardDirective = function() {
 
-    var dashboardController = function($scope, $injector, rpcService, objectsService) {
+    var dashboardController = function($scope, raspiotService) {
         var self = this;
-
-        //threshold to display search toolbar
-        self.devicesThreshold = 10;
-        //devices
-        self.devices = objectsService.devices;
-        console.log('DEVICES', self.devices);
+        self.devices = raspiotService.devices;
     };
 
     return {
         templateUrl: 'js/dashboard/dashboard/dashboard.html',
         replace: true,
         scope: true,
-        controller: dashboardController,
+        controller: ['$scope', 'raspiotService', dashboardController],
         controllerAs: 'dashboardCtl'
     };
 };

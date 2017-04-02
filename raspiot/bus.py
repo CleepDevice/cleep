@@ -580,6 +580,9 @@ class BusClient(threading.Thread):
                             #on_event function not implemented, drop received message
                             #self.logger.debug('event_received not implemented, received message dropped')
                             pass
+                        except:
+                            #do not crash module
+                            pass
 
                 else:
                     #received message is badly formatted

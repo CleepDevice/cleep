@@ -327,6 +327,7 @@ class Gpios(RaspIot):
             raise InvalidParameter('Gpio "%s" is already configured' % gpio)
         else:
             #gpio is valid, prepare new entry
+            #TODO change type by input/output
             data = {
                 'name': name,
                 'mode': mode,
@@ -335,7 +336,8 @@ class Gpios(RaspIot):
                 'keep': keep,
                 'on': False,
                 'reverted': reverted,
-                'owner': command_sender
+                'owner': command_sender,
+                'type': 'gpio'
             }
 
             #add device

@@ -2,7 +2,7 @@
  * MessageBoard service
  * Handle messageboard module requests
  */
-var messageboardService = function($q, $rootScope, rpcService) {
+var messageboardService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
@@ -13,18 +13,6 @@ var messageboardService = function($q, $rootScope, rpcService) {
             label: 'MessageBoard',
             name: 'messageboardConfigDirective'
         };
-    };
-
-    /** 
-     * Load service device (here single messageboard)
-     */
-    self.loadDevices = function() {
-        rpcService.sendCommand('get_current_message', 'messageboard')
-            .then(function(resp) {
-                objectsService.addDevices('messageboard', {'messageboard':self._parseMessageData(resp.data)});
-            }, function(err) {
-                console.error('loadDevices', err);
-            }); 
     };
 
     /**
@@ -159,13 +147,13 @@ var messageboardService = function($q, $rootScope, rpcService) {
      * Catch message updated
      */
     $rootScope.$on('messageboard.message.update', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
                 var message = self._formatMessageData(params);
-                objectsService.devices[i].message = message.message;
-                objectsService.devices[i].lastupdate = message.lastupdate;
+                raspiotService.devices[i].message = message.message;
+                raspiotService.devices[i].lastupdate = message.lastupdate;
             }
         }
     });
@@ -173,5 +161,5 @@ var messageboardService = function($q, $rootScope, rpcService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('messageboardService', ['$q', '$rootScope', 'rpcService', messageboardService]);
+RaspIot.service('messageboardService', ['$q', '$rootScope', 'rpcService', 'raspiotService', messageboardService]);
 

@@ -2,7 +2,7 @@
  * Sensors service
  * Handle sensors module requests
  */
-var sensorsService = function($q, $rootScope, rpcService, objectsService) {
+var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
     
     /** 
@@ -16,46 +16,23 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
     }; 
 
     /**
-     * Load service devices (here sensors)
+     * Init module devices
      */
-    self.loadDevices = function() {
-        rpcService.sendCommand('get_module_devices', 'sensors')
-            .then(function(resp) {
-                var motions = [];
-                var temperatures = [];
-                var device = null;
-                for( var name in resp.data )
-                {
-                    device = resp.data[name];
-                    if( device.type==='motion' )
-                    {
-                        //add widget properties
-                        device.widget = {
-                            mdcolors: '{background:"default-primary-300"}'
-                        };
-                        if( device.on )
-                        {
-                            device.widget.mdcolors = '{background:"default-accent-400"}';
-                        }
-                        motions.push(device);
-                    }
-                    else if( device.type==='temperature' )
-                    {
-                        temperatures.push(device);
-                    }
-                }
-                objectsService.addDevices('sensors', motions, 'motion');
-                objectsService.addDevices('sensors', temperatures, 'temperature');
-            }, function(err) {
-                console.log('loadDevices', err);
-            });
-    };
+    self.initDevices = function(devices)
+    {   
+        for( uuid in devices )
+        {   
+            if( devices[uuid].type==='motion' )
+            {
+                //change current color if gpio is on
+                if( devices[uuid].on )
+                {   
+                    devices[uuid].__widget.mdcolors = '{background:"default-accent-400"}';
+                }   
+            }
+        }
 
-    /**
-     * Return template name
-     */
-    self.getObjectTemplateName = function(object) {
-        return object.type;
+        return devices;
     };
 
     /**
@@ -100,13 +77,13 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      * Catch motion on event
      */
     $rootScope.$on('sensors.motion.on', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {   
-            if( objectsService.devices[i].uuid===uuid )
+            if( raspiotService.devices[i].uuid===uuid )
             {   
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].on = true;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].on = true;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-accent-400"}';
                 break;
             }   
         }   
@@ -117,13 +94,13 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
      */
     $rootScope.$on('sensors.motion.off', function(event, uuid, params) {
 
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {   
-            if( objectsService.devices[i].uuid===uuid )
+            if( raspiotService.devices[i].uuid===uuid )
             {   
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].on = false;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].on = false;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
             }   
         }   
@@ -131,5 +108,5 @@ var sensorsService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('sensorsService', ['$q', '$rootScope', 'rpcService', 'objectsService', sensorsService]);
+RaspIot.service('sensorsService', ['$q', '$rootScope', 'rpcService', 'raspiotService', sensorsService]);
 

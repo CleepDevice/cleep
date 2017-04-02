@@ -1,7 +1,7 @@
 /**
  * Message board config directive
  */
-var messageboardDirective = function(configsService, toast, messageboardService, confirm) {
+var messageboardDirective = function(raspiotService, toast, messageboardService, confirm) {
 
     var messageboardController = ['$scope', function($scope) {
         var self = this;
@@ -24,7 +24,7 @@ var messageboardDirective = function(configsService, toast, messageboardService,
          * Init controller
          */
         self.init = function() {
-            var config = configsService.getConfig('messageboard');
+            var config = raspiotService.getConfig('messageboard');
             self.duration = config.duration;
             self.unitMinutes = config.units.minutes;
             self.unitHours = config.units.hours;
@@ -77,7 +77,7 @@ var messageboardDirective = function(configsService, toast, messageboardService,
             //send command
             messageboardService.addMessage(self.message, start.unix(), end.unix())
                 .then(function(resp) {
-                    return configsService.reloadConfig('messageboard');
+                    return raspiotService.reloadConfig('messageboard');
                 })
                 .then(function(config) {
                     self.messages = config.messages;
@@ -95,7 +95,7 @@ var messageboardDirective = function(configsService, toast, messageboardService,
                     return messageboardService.deleteMessage(message.uuid);
                 })
                 .then(function(resp) {
-                    return configsService.reloadConfig('messageboard');
+                    return raspiotService.reloadConfig('messageboard');
                 })
                 .then(function(config) {
                     self.messages = config.messages;
@@ -163,5 +163,5 @@ var messageboardDirective = function(configsService, toast, messageboardService,
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('messageboardConfigDirective', ['configsService', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
+RaspIot.directive('messageboardConfigDirective', ['raspiotService', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
 

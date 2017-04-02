@@ -300,7 +300,8 @@ class Shutters(RaspIot):
                 'switch_close': switch_close,
                 'switch_close_uuid': resp_switch_close['uuid'],
                 'status': Shutters.STATUS_OPENED,
-                'lastupdate': int(time.time())
+                'lastupdate': int(time.time()),
+                'type': 'shutter'
             }
     
             #add device

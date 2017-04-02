@@ -6,6 +6,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.uriPoll = window.location.protocol + '//' + window.location.host + '/poll';
     self.uriRegisterPoll = window.location.protocol + '//' + window.location.host + '/registerpoll';
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
+    self.uriDevices = window.location.protocol + '//' + window.location.host + '/devices';
     self.pollKey = null;
     self._uploading = false;
 
@@ -75,6 +76,34 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         $http({
             method: 'POST',
             url: self.uriModules,
+            responseType: 'json'
+        })
+        .then(function(resp) {
+            if( resp.data.error ) {
+                console.error('Request failed: '+resp.data.message);
+                toast.error(resp.data.message);
+                d.reject('request failed');
+            }
+            else {
+                d.resolve(resp.data);
+            }
+        }, function(err) {
+            console.error('Request failed: '+err);
+            d.reject('request failed');
+        });
+
+        return d.promise;
+    };
+
+    /**
+     * Get all devices
+     */
+    self.getDevices = function() {
+        var d = $q.defer();
+
+        $http({
+            method: 'POST',
+            url: self.uriDevices,
             responseType: 'json'
         })
         .then(function(resp) {

@@ -2,7 +2,7 @@
  * Shutters service
  * Handle shutters module requests
  */
-var shuttersService = function($q, $rootScope, rpcService, objectsService) {
+var shuttersService = function($rootScope, rpcService, raspiotService) {
     var self = this;
     
     /** 
@@ -14,29 +14,6 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
             name: 'shuttersConfigDirective'
         };  
     }; 
-
-    /**
-     * Load service devices (here shutter)
-     */
-    self.loadDevices = function() {
-        var defered = $q.defer();
-        rpcService.sendCommand('get_module_devices', 'shutters')
-            .then(function(resp) {
-                objectsService.addDevices('shutters', resp.data, 'shutter');
-                defered.resolve('devices loaded');
-            }, function(err) {
-                console.log('loadDevices', err);
-                defered.reject('Unable to load devices');
-            });
-        return defered.promise;
-    };
-
-    /**
-     * Return template name
-     */
-    self.getObjectTemplateName = function(object) {
-        return object.__type;
-    };
 
     /**
      * Return raspi gpios (according to board version)
@@ -91,13 +68,13 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
      * Catch shutter opening event
      */
     $rootScope.$on('shutters.shutter.opening', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].status = 'opening'
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
+                raspiotService.devices[i].status = 'opening'
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-accent-400"}';
                 break;
             }
         }
@@ -107,13 +84,13 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
      * Catch shutter closing event
      */
     $rootScope.$on('shutters.shutter.closing', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].status = 'closing'
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-accent-400"}';
+                raspiotService.devices[i].status = 'closing'
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-accent-400"}';
                 break;
             }
         }
@@ -122,13 +99,13 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
      * Catch shutter opened event
      */
     $rootScope.$on('shutters.shutter.opened', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].status = 'opened'
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
+                raspiotService.devices[i].status = 'opened'
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
             }
         }
@@ -137,13 +114,13 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
      * Catch shutter closed event
      */
     $rootScope.$on('shutters.shutter.closed', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].status = 'closed'
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
+                raspiotService.devices[i].status = 'closed'
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
             }
         }
@@ -152,13 +129,13 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
      * Catch shutter partial event
      */
     $rootScope.$on('shutters.shutter.partial', function(event, uuid, params) {
-        for( var i=0; i<objectsService.devices.length; i++ )
+        for( var i=0; i<raspiotService.devices.length; i++ )
         {
-            if( objectsService.devices[i].uuid==uuid )
+            if( raspiotService.devices[i].uuid==uuid )
             {
-                objectsService.devices[i].status = 'partial'
-                objectsService.devices[i].lastupdate = params.lastupdate;
-                objectsService.devices[i].widget.mdcolors = '{background:"default-primary-300"}';
+                raspiotService.devices[i].status = 'partial'
+                raspiotService.devices[i].lastupdate = params.lastupdate;
+                raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
             }
         }
@@ -166,5 +143,5 @@ var shuttersService = function($q, $rootScope, rpcService, objectsService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('shuttersService', ['$q', '$rootScope', 'rpcService', 'objectsService', shuttersService]);
+RaspIot.service('shuttersService', ['$rootScope', 'rpcService', 'raspiotService', shuttersService]);
 

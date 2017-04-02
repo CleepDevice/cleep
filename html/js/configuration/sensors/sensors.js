@@ -2,12 +2,12 @@
  * Sensors config directive
  * Handle sensors configuration
  */
-var sensorsConfigDirective = function(toast, objectsService, configsService, sensorsService, confirm, $mdDialog) {
+var sensorsConfigDirective = function(toast, raspiotService, sensorsService, confirm, $mdDialog) {
 
     var sensorsController = [function() {
         var self = this;
         self.raspiGpios = [];
-        self.devices = objectsService.devices;
+        self.devices = raspiotService.devices;
         self.name = '';
         self.gpio = 'GPIO2';
         self.reverted = false;
@@ -70,7 +70,7 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
                     return sensorsService.addSensor(self.name, self.gpio, self.reverted, self.type);
                 })
                 .then(function() {
-                    return sensorsService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Sensor added');
@@ -101,7 +101,7 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
                     return sensorsService.updateSensor(device.uuid, self.name, self.reverted);
                 })
                 .then(function() {
-                    return sensorsService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Sensor updated');
@@ -120,7 +120,7 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
                     return sensorsService.deleteSensor(device.uuid);
                 })
                 .then(function() {
-                    return sensorsService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Sensor deleted');
@@ -131,7 +131,7 @@ var sensorsConfigDirective = function(toast, objectsService, configsService, sen
          * Init controller
          */
         self.init = function() {
-            var config = configsService.getConfig('sensors');
+            var config = raspiotService.getConfig('sensors');
             self.raspiGpios = config.raspi_gpios;
         };
 
@@ -166,6 +166,6 @@ var sensorGpiosFilter = function($filter) {
 }
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['toastService', 'objectsService', 'configsService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['toastService', 'raspiotService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
 RaspIot.filter('displayGpios', sensorGpiosFilter);
 

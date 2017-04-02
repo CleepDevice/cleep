@@ -373,6 +373,27 @@ def modules():
 
     return json.dumps(configs)
 
+@app.route('/devices', method='POST')
+@authenticate()
+def devices():
+    """
+    Return all devices
+    """
+    #request each loaded module for its devices
+    devices = {}
+    for module in app.config:
+        if module.startswith('mod.'):
+            _module = module.replace('mod.', '')
+            logger.debug('Request "%s" config' % _module)
+            response = execute_command('get_module_devices', _module, {})
+            if not response['error']:
+                devices[_module] = response['data']
+            else:
+                devices[_module] = None
+    logger.debug('Devices: %s' % devices)
+
+    return json.dumps(devices)
+
 @app.route('/registerpoll', method='POST')
 @authenticate()
 def registerpoll():

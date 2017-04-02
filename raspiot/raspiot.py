@@ -291,6 +291,15 @@ class RaspIot(BusClient):
 
         return None
 
+    def _get_device_count(self):
+        """
+        Return number of devices in configuration file"
+        """
+        if self._config.has_key('devices'):
+            return len(self._config['devices'])
+        else:
+            return 0
+
     def get_module_config(self):
         """
         Return module configuration.
@@ -309,10 +318,8 @@ class RaspIot(BusClient):
         Return module devices
         This function returns all devices registered in 'devices' config section
         """
-        config = self._config
-
-        if config.has_key('devices'):
-            return config['devices']
+        if self._config.has_key('devices'):
+            return self._config['devices']
         else:
             return {}
 

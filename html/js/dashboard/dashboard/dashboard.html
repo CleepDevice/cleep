@@ -1,10 +1,10 @@
 <div layout="row" layout-wrap layout-padding>
 
     <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
-        <div ng-if="device.__type=='gpio'" widget-gpio-directive device="device"></div>
-        <div ng-if="device.__type=='clock'" widget-clock-directive device="device"></div>
-        <div ng-if="device.__type==='motion'" widget-motion-directive device="device"></div>
-        <div ng-if="device.__type==='shutter'" widget-shutter-directive device="device"></div>
+        <div ng-if="device.type=='gpio'" widget-gpio-directive device="device"></div>
+        <div ng-if="device.type=='clock'" widget-clock-directive device="device"></div>
+        <div ng-if="device.type==='motion'" widget-motion-directive device="device"></div>
+        <div ng-if="device.type==='shutter'" widget-shutter-directive device="device"></div>
     </div>
 
 </div>

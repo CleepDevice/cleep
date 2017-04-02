@@ -2,7 +2,7 @@
  * Actions configuration directive
  * Handle actions module configuration
  */
-var actionsConfigDirective = function(toast, configsService, actionsService, confirm, $mdDialog) {
+var actionsConfigDirective = function(toast, raspiotService, actionsService, confirm, $mdDialog) {
 
     var actionController = ['$scope', function($scope) {
         var self = this;
@@ -38,7 +38,7 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
                     return actionsService.deleteScript(script);
                 })
                 .then(function() {
-                    return configsService.reloadConfig('actions');
+                    return raspiotService.reloadConfig('actions');
                 })
                 .then(function(config) {
                     self.scripts = config.scripts;
@@ -58,7 +58,7 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
                 toast.loading('Uploading script...');
                 actionsService.uploadScript(file)
                     .then(function(resp) {
-                        return configsService.reloadConfig('actions');
+                        return raspiotService.reloadConfig('actions');
                     })
                     .then(function(config) {
                         $mdDialog.hide();
@@ -74,7 +74,7 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
         self.disableScript = function(script, disabled) {
             actionsService.disableScript(script, disabled)
                 .then(function(resp) {
-                    return configsService.reloadConfig('actions')
+                    return raspiotService.reloadConfig('actions')
                 })
                 .then(function(config) {
                     self.scripts = config.scripts;
@@ -99,7 +99,7 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
          * Init controller
          */
         self.init = function() {
-            var config = configsService.getConfig('actions');
+            var config = raspiotService.getConfig('actions');
             self.scripts = config['scripts'];
         };
 
@@ -119,5 +119,5 @@ var actionsConfigDirective = function(toast, configsService, actionsService, con
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionsConfigDirective', ['toastService', 'configsService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
+RaspIot.directive('actionsConfigDirective', ['toastService', 'raspiotService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
 

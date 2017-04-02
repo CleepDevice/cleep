@@ -2,12 +2,12 @@
  * Gpios config directive
  * Handle gpios configuration
  */
-var gpiosConfigDirective = function(gpiosService, objectsService, configsService, toast, confirm, $mdDialog) {
+var gpiosConfigDirective = function(gpiosService, raspiotService, toast, confirm, $mdDialog) {
 
     var gpiosConfigController = function() {
         var self = this;
         self.raspiGpios = [];
-        self.devices = objectsService.devices;
+        self.devices = raspiotService.devices;
         self.name = '';
         self.gpio = 'GPIO3';
         self.mode = 'in';
@@ -71,7 +71,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
                     return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep, self.reverted);
                 })
                 .then(function() {
-                    return gpiosService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Gpio added');
@@ -98,7 +98,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
                     return gpiosService.updateGpio(device.uuid, self.name, self.keep, self.reverted);
                 })
                 .then(function(resp) {
-                    return gpiosService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Gpio updated');
@@ -117,7 +117,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
                     return gpiosService.deleteGpio(device.uuid);
                 })
                 .then(function() {
-                    return gpiosService.loadDevices();
+                    return raspiotService.reloadDevices();
                 })
                 .then(function() {
                     toast.success('Gpio deleted');
@@ -128,7 +128,7 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
          * Init controller
          */
         self.init = function() {
-            var config = configsService.getConfig('gpios');
+            var config = raspiotService.getConfig('gpios');
             self.raspiGpios = config.raspi_gpios;
         };
     };
@@ -148,5 +148,5 @@ var gpiosConfigDirective = function(gpiosService, objectsService, configsService
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('gpiosConfigDirective', ['gpiosService', 'objectsService', 'configsService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
+RaspIot.directive('gpiosConfigDirective', ['gpiosService', 'raspiotService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
 
