@@ -16,31 +16,6 @@ var messageboardService = function($q, $rootScope, rpcService, raspiotService) {
     };
 
     /**
-     * Parse data and return message
-     * @param data: input data from rpc command
-     * @return message as dict format {message:<?>, lastupdate:<>}
-     */
-    self._parseMessageData = function(data) {
-        var message = {};
-        if( data.nomessage )
-        {
-            message.message = '<no message>';
-            message.lastupdate = null;
-        }
-        else if( data.off )
-        {
-            message = '<board is off>';
-            message.lastupdate = null;
-        }
-        else
-        {
-            message.message = data.message.message;
-            message.lastupdate = data.message.displayed_time;
-        }
-        return message;
-    };
-
-    /**
      * Add new message
      */
     self.addMessage = function(message, start, end) {
