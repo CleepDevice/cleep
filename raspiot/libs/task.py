@@ -6,10 +6,10 @@ import logging
 import glob
 import uuid as moduuid
 import json
-import threading
+from threading import Timer, Thread
 import time
 
-__all__ = ['Task', 'BackgroundTask']
+__all__ = ['Task', 'BackgroundTask', 'CountTask']
 
 class Task:
     """
@@ -57,7 +57,7 @@ class Task:
 
         #run again task?
         if run_again:
-            self.__timer = threading.Timer(self._interval, self.__run)
+            self.__timer = Timer(self._interval, self.__run)
             self.__timer.start()
 
     def set_interval(self, interval):
@@ -73,7 +73,7 @@ class Task:
         """
         if self.__timer:
             self.stop()
-        self.__timer = threading.Timer(self._interval, self.__run)
+        self.__timer = Timer(self._interval, self.__run)
         self.__timer.start()
   
     def stop(self):
@@ -100,7 +100,7 @@ class CountTask(Task):
         self._run_count = count
 
 
-class BackgroundTask(threading.Thread):
+class BackgroundTask(Thread):
     """
     Run background task indefinitely (thread helper)
     """
@@ -110,7 +110,8 @@ class BackgroundTask(threading.Thread):
         @param task: function to call
         @param pause: pause between task call
         """
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
+        Thread.daemon = True
         self.task = task
         if pause<=0.25:
             pause = 0.25
