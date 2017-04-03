@@ -4,13 +4,14 @@
 import os
 import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 from raspiot.libs.task import Task
 import time
 
 __all__ = ['Sensors']
 
-class Sensors(RaspIot):
+class Sensors(RaspIotMod):
+
     MODULE_CONFIG_FILE = 'sensors.conf'
     MODULE_DEPS = ['gpios']
 
@@ -22,8 +23,13 @@ class Sensors(RaspIot):
     }
 
     def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
         #init
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #members
         self.__tasks = {}
@@ -41,13 +47,6 @@ class Sensors(RaspIot):
         for uuid in devices:
             if devices[uuid]['type']=='temperature':
                 self.__launch_temperature_task(devices[uuid])
-        #for sensor in self._config['sensors'].keys():
-        #    if self._config['sensors'][sensor]['type']=='motion':
-        #        #motion sensor, nothing to do
-        #        pass
-        #    elif self._config['sensors'][sensor]['type']=='temperature':
-        #        #temperature sensor
-        #        self.__launch_temperature_task(self._config['sensors'][sensor])
 
     def _stop(self):
         """
@@ -125,7 +124,6 @@ class Sensors(RaspIot):
                 return
 
             #get uuid event
-            #gpio = event['params']['gpio']
             gpio_uuid = event['uuid']
 
             #search sensor
@@ -333,10 +331,9 @@ class Sensors(RaspIot):
                 'keep': False,
                 'reverted':reverted
             }
-            #resp = self.push(req)
             resp_gpio = self.send_command('add_gpio', 'gpios', params)
             if resp_gpio['error']:
-                raise RaspIot.CommandError(resp['message'])
+                raise CommandError(resp['message'])
             resp_gpio = resp_gpio['data']
                 
             #gpio was added and sensor is valid, add new sensor
@@ -370,7 +367,7 @@ class Sensors(RaspIot):
             for gpio in device['gpios']:
                 resp = self.send_command('delete_gpio', 'gpios', {'uuid':gpio['gpio_uuid']})
                 if resp['error']:
-                    raise RaspIot.CommandError(resp['message'])
+                    raise CommandError(resp['message'])
 
             #sensor is valid, remove it
             if not self._delete_device(device['uuid']):

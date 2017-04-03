@@ -4,13 +4,15 @@
 import os
 import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CommandInfo
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 from threading import Timer
 import time
 
 __all__ = ['Shutters']
 
-class Shutters(RaspIot):
+
+class Shutters(RaspIotMod):
+
     MODULE_CONFIG_FILE = 'shutters.conf'
     MODULE_DEPS = ['gpios']
 
@@ -21,8 +23,13 @@ class Shutters(RaspIot):
     STATUS_CLOSING = 'closing'
 
     def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
         #init
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #internal timers
         self.__timers = {}

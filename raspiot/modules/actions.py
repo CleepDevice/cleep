@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 import time
 from threading import Thread, Lock
 from collections import deque
@@ -15,6 +15,7 @@ import shutil
 __all__ = ['Actions']
 
 class Script(Thread):
+
     def __init__(self, script, bus_push, disabled, test=False):
         """
         Constructor
@@ -157,7 +158,9 @@ class Script(Thread):
         self.logger.debug('Thread is stopped')
 
 
-class Actions(RaspIot):
+
+        
+class Actions(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'actions.conf'
     MODULE_DEPS = []
@@ -169,7 +172,13 @@ class Actions(RaspIot):
     }
 
     def __init__(self, bus, debug_enabled):
-        RaspIot.__init__(self, bus, debug_enabled)
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
+        #init
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #make sure sounds path exists
         if not os.path.exists(Actions.SCRIPTS_PATH):

@@ -9,7 +9,7 @@ import json
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
 from raspiot.utils import InvalidParameter, Unauthorized, MissingParameter, CommandError
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 import time
 
 __all__ = ['Gpios']
@@ -118,7 +118,7 @@ class GpioInputWatcher(Thread):
 # GPIO26  37    *
 # GPIO20  38
 # GPIO21  40
-class Gpios(RaspIot):
+class Gpios(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'gpios.conf'
     MODULE_DEPS = []
@@ -159,7 +159,12 @@ class Gpios(RaspIot):
     INPUT_DROP_THRESHOLD = 0.150 #in ms
 
     def __init__(self, bus, debug_enabled):
-        RaspIot.__init__(self, bus, debug_enabled)
+        """
+        Constructor
+        @param bus: message bus instance
+        @param debug_enabled: debug status
+        """
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #members
         self.__input_watchers = []

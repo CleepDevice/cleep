@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.utils import InvalidParameter
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 from datetime import datetime
 import time
 from raspiot.libs.task import Task
@@ -12,7 +12,9 @@ from astral import Astral, GoogleGeocoder, AstralError
 
 __all__ = ['Scheduler']
 
-class Scheduler(RaspIot):
+
+
+class Scheduler(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'scheduler.conf'
     MODULE_DEPS = []
@@ -22,8 +24,12 @@ class Scheduler(RaspIot):
     }
 
     def __init__(self, bus, debug_enabled):
-        #init
-        RaspIot.__init__(self, bus, debug_enabled)
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #members
         self.time_task = None

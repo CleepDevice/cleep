@@ -5,7 +5,7 @@ import os
 import shutil
 import logging
 from raspiot.utils import InvalidParameter
-from raspiot.raspiot import RaspIot
+from raspiot.raspiot import RaspIotMod
 import pygame
 from threading import Thread
 from gtts import gTTS
@@ -17,6 +17,7 @@ class PlaySound(Thread):
     """
     Play sound thread
     """
+
     def __init__(self, filepath, delete=False):
         """
         Constructor
@@ -69,7 +70,10 @@ class PlaySound(Thread):
         except:
             self.logger.exception('Exception during sound playing:')
 
-class Sounds(RaspIot):
+
+
+
+class Sounds(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
@@ -134,8 +138,13 @@ class Sounds(RaspIot):
     }
 
     def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
         #init
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #disable urllib info logs
         url_log = logging.getLogger("urllib3")

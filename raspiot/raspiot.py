@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import logging
 import os
 import json
@@ -8,14 +11,14 @@ import time
 import copy
 import uuid
 
-__all__ = ['RaspIot', 'CommandError', 'CommandInfo']
+__all__ = ['RaspIot', 'RaspIotApp', 'RaspIotMod']
 
 
 class RaspIot(BusClient):
     """
     Base raspiot class
     It implements :
-     - configuration saving
+     - configuration helpers
      - message bus access
      - logger with log level configured
     """
@@ -158,6 +161,89 @@ class RaspIot(BusClient):
         """
         return str(uuid.uuid4())
 
+
+    def get_module_config(self):
+        """
+        Return module configuration.
+        This function returns all config content except 'devices' entry
+        """
+        config = self._get_config()
+
+        #remove devices from config
+        if config.has_key('devices'):
+            del config['devices']
+
+        return self._get_config()
+
+    def get_module_devices(self):
+        """
+        Return module devices
+        This function returns all devices registered in 'devices' config section
+        """
+        if self._config.has_key('devices'):
+            return self._config['devices']
+        else:
+            return {}
+
+    def start(self):
+        """
+        Start module
+        """
+        BusClient.start(self)
+        self._start()
+
+    def _start(self):
+        """
+        Post start: called just after module is started
+        This function is used to launch processes that requests cpu time and cannot be launched during init
+        At this time, all modules are loaded and the system is completely operational
+        """
+        pass
+
+    def stop(self):
+        """
+        Stop process
+        """
+        BusClient.stop(self)
+        self._stop()
+
+    def _stop(self):
+        """
+        Pre stop: called just before module is stopped
+        This function is used to stop specific processes like threads
+        """
+        pass
+
+    def __get_commands(self, obj):
+        """
+        Return available module commands
+        @return array of command names
+        """
+        ms = dir(obj)
+        for m in ms[:]:
+            if m.startswith('_') or not callable(getattr(obj, m)):
+                ms.remove(m)
+        return ms
+
+
+
+
+class RaspIotMod(RaspIot):
+    """
+    Base raspiot class for module
+    It implements:
+     - device helpers
+    """
+
+    def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+        @param bus: MessageBus instance
+        @param debug_enabled: flag to set debug level to logger (bool)
+        """
+        #init raspiot
+        RaspIot.__init__(self, bus, debug_enabled)
+
     def _add_device(self, data):
         """
         Helper function to add device in module configuration file.
@@ -290,72 +376,30 @@ class RaspIot(BusClient):
     def _get_device_count(self):
         """
         Return number of devices in configuration file"
+        @return number of saved devices (int)
         """
         if self._config.has_key('devices'):
             return len(self._config['devices'])
         else:
             return 0
 
-    def get_module_config(self):
-        """
-        Return module configuration.
-        This function returns all config content except 'devices' entry
-        """
-        config = self._get_config()
 
-        #remove devices from config
-        if config.has_key('devices'):
-            del config['devices']
 
-        return self._get_config()
 
-    def get_module_devices(self):
-        """
-        Return module devices
-        This function returns all devices registered in 'devices' config section
-        """
-        if self._config.has_key('devices'):
-            return self._config['devices']
-        else:
-            return {}
+class RaspIotApp(RaspIot):
+    """
+    Base raspiot class for application
+    It implements:
+     - nothing for now
+    """
 
-    def start(self):
+    def __init__(self, bus, debug_enabled):
         """
-        Start module
+        Constructor
+        @param bus: MessageBus instance
+        @param debug_enabled: flag to set debug level to logger (bool)
         """
-        BusClient.start(self)
-        self._start()
+        #init raspiot
+        RaspIot.__init__(self, bus, debug_enabled)
 
-    def _start(self):
-        """
-        Post start: called just after module is started
-        This function is used to launch processes that requests cpu time and cannot be launched during init
-        At this time, all modules are loaded and the system is completely operational
-        """
-        pass
-
-    def stop(self):
-        """
-        Stop process
-        """
-        BusClient.stop(self)
-        self._stop()
-
-    def _stop(self):
-        """
-        Pre stop: called just before module is stopped
-        This function is used to stop specific processes like threads
-        """
-        pass
-
-    def __get_public_methods(self, obj):
-        """
-        Return "public" methods of specified object
-        @return array
-        """
-        ms = dir(obj)
-        for m in ms[:]:
-            if m.startswith('_') or not callable(getattr(obj, m)):
-                ms.remove(m)
-        return ms
 

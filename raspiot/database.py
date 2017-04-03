@@ -4,13 +4,13 @@
 import os
 import sqlite3
 import logging
-from raspiot import RaspIot
+from raspiot import RaspIotMod
 from utils import CommandError, MissingParameter, InvalidParameter
 import time
 
 __all__ = ['Database']
 
-class Database(RaspIot):
+class Database(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'database.conf'
     MODULE_DEPS = []
@@ -18,8 +18,13 @@ class Database(RaspIot):
     DATABASE_NAME = 'raspiot.db'
 
     def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+        @param bus: bus instance
+        @param debug_enabled: debug status
+        """
         #init
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIotMod.__init__(self, bus, debug_enabled)
 
         #member
         self.__cnx = None

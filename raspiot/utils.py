@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 __all__ = ['CommandError', 'CommandInfo', 'NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 
            'InvalidMessage', 'Unauthorized', 'BusError', 'MessageResponse', 'MessageRequest']
 
