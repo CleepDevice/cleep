@@ -59,11 +59,25 @@ class RaspIot(BusClient):
         """
         return os.path.isfile(path) and not os.path.getsize(path)>0
 
+    def __has_config_file(self):
+        """
+        Check if module has configuration file
+        """
+        if getattr(self, 'MODULE_CONFIG_FILE', None) is None:
+            return False
+
+        return True
+
     def _load_config(self):
         """
         Load config file
-        @return configuration file content
+        @return configuration file content or None if error occured
         """
+        #check if module have config file
+        if not self.__has_config_file():
+            self.logger.info('Module %s has no configuration file configured' % self.__class__.__name__)
+            return None
+
         self.__configLock.acquire(True)
         out = None
         try:
@@ -98,6 +112,11 @@ class RaspIot(BusClient):
         out = None
         force_reload = False
 
+        #check if module have config file
+        if not self.__has_config_file():
+            self.logger.warning('Module %s has no configuration file configured' % self.__class__.__name__)
+            return None
+
         self.__configLock.acquire(True)
         try:
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
@@ -126,6 +145,11 @@ class RaspIot(BusClient):
         """
         Return copy of config dict
         """
+        #check if module have config file
+        if not self.__has_config_file():
+            self.logger.warning('Module %s has no configuration file configured' % self.__class__.__name__)
+            return {}
+
         self.__configLock.acquire(True)
         copy_ = copy.deepcopy(self._config)
         self.__configLock.release()
@@ -185,6 +209,31 @@ class RaspIot(BusClient):
         else:
             return {}
 
+    def get_module_commands(self):
+        """
+        Return available module commands
+        @return array of command names
+        """
+        ms = dir(self)
+        for m in ms[:]:
+            if not callable(getattr(self, m)):
+                #filter module members
+                ms.remove(m)
+            elif m.startswith('_'):
+                #filter protected or private commands
+                ms.remove(m)
+            elif m in ('send_command', 'send_event', 'start', 'stop', 'push'):
+                #filter bus commands
+                ms.remove(m)
+            elif m in ('event_received'):
+                #filter raspiot commands
+                ms.remove(m)
+            elif m in ('getName', 'isAlive', 'isDaemon', 'is_alive', 'join', 'run', 'setDaemon', 'setName'):
+                #filter system commands
+                ms.remove(m)
+
+        return ms
+
     def start(self):
         """
         Start module
@@ -214,16 +263,6 @@ class RaspIot(BusClient):
         """
         pass
 
-    def __get_commands(self, obj):
-        """
-        Return available module commands
-        @return array of command names
-        """
-        ms = dir(obj)
-        for m in ms[:]:
-            if m.startswith('_') or not callable(getattr(obj, m)):
-                ms.remove(m)
-        return ms
 
 
 
@@ -248,7 +287,8 @@ class RaspIotMod(RaspIot):
         """
         Helper function to add device in module configuration file.
         This function auto inject new entry "devices" in configuration file.
-        This function just append new device in devices section and add unique id
+        This function appends new device in devices section and add unique id in uuid property
+        It also appends 'name' property if not provided
         @param data: device data
         @return device data if process was successful, None otherwise
         """
@@ -261,6 +301,8 @@ class RaspIotMod(RaspIot):
         #prepare data
         uuid = self._get_unique_id()
         data['uuid'] = uuid
+        if not data.has_key('name'):
+            data['name'] = ''
         config['devices'][uuid] = data
         self.logger.debug('config=%s' % config)
 
