@@ -86,3 +86,29 @@ RaspIot.filter('hrTime', function($filter) {
     };
 });
 
+/**
+ * Temperature to string (with unit)
+ */
+RaspIot.filter('temperature', function($filter) {
+    return function(temperature, unit) {
+        result = '';
+        console.log(temperature, unit);
+
+        if( angular.isUndefined(temperature) || temperature==null )
+            result = '?';
+        else
+            result = Number(temperature).toFixed(2);
+
+        if( angular.isUndefined(unit) || unit==null )
+            result += '?';
+        else if( unit=='celsius' )
+            result += '°C';
+        else if( unit=='fahrenheit' )
+            result += '°F';
+        else
+            result += '?';
+
+        return result;
+    };
+});
+

@@ -7,6 +7,7 @@ from raspiot.utils import MissingParameter, InvalidParameter, CommandError
 from raspiot.raspiot import RaspIotMod
 from raspiot.libs.task import Task
 import time
+import glob
 
 __all__ = ['Sensors']
 
@@ -42,11 +43,11 @@ class Sensors(RaspIotMod):
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()
 
-        #launch temperature reading task
+        #launch temperature reading tasks
         devices = self.get_module_devices()
         for uuid in devices:
             if devices[uuid]['type']=='temperature':
-                self.__launch_temperature_task(devices[uuid])
+                self.__start_temperature_task(devices[uuid])
 
     def _stop(self):
         """
@@ -111,7 +112,7 @@ class Sensors(RaspIotMod):
         """
         Event received
         """
-        self.logger.debug('*** event received: %s' % str(event))
+        #self.logger.debug('*** event received: %s' % str(event))
         #drop startup events
         if event['startup']:
             self.logger.debug('Drop startup event')
@@ -136,81 +137,140 @@ class Sensors(RaspIotMod):
                     #motion sensor
                     self.__process_motion_sensor(event, sensor)
 
-    def __scan_onewire_bus(self):
+    def get_onewire_devices(self):
         """
         Scan for devices connected on 1wire bus
-        @return dict of 1wire devices {'device name': 'device full path', ...}
+        @return array of dict(<onewire device>, <onewire path>)
         """
-        out = {}
+        onewires = []
+
         devices = glob.glob(os.path.join(Sensors.ONEWIRE_PATH, '28*'))
         for device in devices:
             try:
-                path = os.path.join(device, Sensors.ONEWIRE_SLAVE)
-                out[device] = path
+                onewires.append({
+                    'device': os.path.basename(device),
+                    'path': os.path.join(device, Sensors.ONEWIRE_SLAVE)
+                })
             except:
                 self.logger.exception('Error during 1wire bus scan:')
+                raise CommandError('Unable to scan onewire bus')
 
-        return out
+        return onewires
 
-    def __read_onewire_temperature(self, device):
+    def __read_onewire_temperature(self, sensor):
         """
         Read temperature from 1wire device
-        @param device: path to 1wire device
-        @return (temperature celsius, temperature fahrenheit)
+        @param sensor: path to 1wire device
+        @return tuple(<celsius>, <fahrenheit>) or (None, None) if error occured
         """
         tempC = None
         tempF = None
+
+        self.logger.debug('sensor: %s' % sensor)
+
         try:
-            if os.path.exists(device):
-                f = open(device, 'r')
+            if os.path.exists(sensor['path']):
+                f = open(sensor['path'], 'r')
                 raw = f.readlines()
                 f.close()
                 equals_pos = raw[1].find('t=')
+
                 if equals_pos!=-1:
-                    tempString = raw[1][equals_pos+2:]
+                    tempString = raw[1][equals_pos+2:].strip()
+
+                    #check value
+                    if tempString=='85000' or tempString=='-62':
+                        #invalid value
+                        raise Exception('Invalid temperature "%s"' % tempString)
+
+                    #convert temperatures
                     tempC = float(tempString) / 1000.0
                     tempF = tempC * 9.0 / 5.0 + 32.0
+
+                    #apply offsets
+                    tempC += sensor['offsetcelsius']
+                    tempF += sensor['offsetfahrenheit']
+
+                else:
+                    #no temperature found in file
+                    raise Exception('No temperature found for onewire %s' % sensor['path'])
+
+            else:
+                #onewire device doesn't exist
+                raise Exception('Onewire device %s doesn\'t exist anymore' % sensor['path'])
+
         except:
-            self.logger.exception('Unable to read 1wire device file "%s":' % device)
+            self.logger.exception('Unable to read 1wire device file "%s":' % sensor['path'])
 
         return (tempC, tempF)
 
     def __read_temperature(self, sensor):
         """
         Read temperature
-        @param sensor: sensor to use
+        @param sensor: sensor object
         """
-        if sensor:
-            #sensor specified, init variables
-            tempC = None
-            tempF = None
+        if sensor['subtype']=='onewire':
+            (tempC, tempF) = self.__read_onewire_temperature(sensor)
+            self.logger.debug('Read temperature: %s°C - %s°F' % (tempC, tempF))
+            if tempC is not None and tempF is not None:
+                #temperature values are valid, update sensor values
+                sensor['celsius'] = tempC
+                sensor['fahrenheit'] = tempF
+                if not self._update_device(sensor['uuid'], sensor):
+                    self.logger.error('Unable to update device %s' % sensor['uuid'])
 
-            #read temperature according to sensor kind
-            if sensor['kind']=='1wire':
-                (tempC, tempF) = self.__read_onewire_temperature(sensor['device'])
-                if tempC and tempF:
-                    #update sensor
-                    sensor['temperature_c'] = tempC
-                    sensor['temperature_f'] = tempF
-                    sensor['lastupdate'] = time.time()
+                #and send event
+                now = int(time.time())
+                self.send_event('sensors.temperature.update', {'sensor':sensor['name'], 'celsius':tempC, 'fahrenheit':tempF, 'lastupdate':now}, sensor['uuid'])
 
-            #broadcast event
-            if tempC and tempF:
-                self.send_event('sensors.temperature.value', {'sensor': sensor['name'], 'celsius':tempC, 'fahrenheit':tempF}, sensor['uuid'])
+        else:
+            self.logger.warning('Unknown temperature subtype "%s"' % sensor['subtype'])
 
-    def __launch_temperature_task(self, sensor):
+    def __start_temperature_task(self, sensor):
         """
-        Launch temperature reading task
-        @param sensor: sensor name
+        start temperature reading task
+        @param sensor: sensor object
         """
-        if self.__tasks.has_key(sensor):
+        if self.__tasks.has_key(sensor['uuid']):
             #sensor has already task
-            self.logger.warning('Sensor "%s" has already task running' % sensor)
-            return False
+            self.logger.warning('Temperature sensor "%s" has already task running' % sensor['uuid'])
+            return
 
-        #launch task
-        self.__tasks[sensor['name']] = Task(sensor['duration'], self.__read_temperature, [sensor])
-        self.__tasks[sensor['name']].start()
+        #start task
+        self.logger.debug('Start temperature task (refresh every %s seconds) for sensor %s ' % (str(sensor['interval']), sensor['uuid']))
+        self.__tasks[sensor['uuid']] = Task(float(sensor['interval']), self.__read_temperature, [sensor])
+        self.__tasks[sensor['uuid']].start()
+
+    def __stop_temperature_task(self, sensor):
+        """
+        Stop temperature reading task
+        @param sensor: sensor object
+        """
+        if not self.__tasks.has_key(sensor['uuid']):
+            #sensor hasn't already task
+            self.logger.warning('Temperature sensor "%s" has no task to stop' % sensor['uuid'])
+            return
+
+        #stop task
+        self.logger.debug('Stop temperature task for sensor %s' % sensor['uuid'])
+        self.__tasks[sensor['uuid']].stop()
+
+    def __compute_temperature_offset(self, offset, offset_unit):
+        """
+        Compute temperature offset
+        @param offset: offset value
+        @param offset_unit: determine if specific offset is in celsius or fahrenheit
+        @return tuple(<offset celsius>, <offset fahrenheit>)
+        """
+        if offset==0:
+            #no offset
+            return (0, 0)
+        elif offset_unit=='celsius':
+            #compute fahrenheit offset
+            return (offset, offset*1.8+32)
+        else:
+            #compute celsius offset
+            return ((offset-32)/1.8, offset)
 
     def get_module_config(self):
         """
@@ -242,65 +302,127 @@ class Sensors(RaspIotMod):
         else:
             return resp['data']
 
-    def get_onewire_devices(self):
+    def add_temperature_onewire(self, name, device, path, interval, offset, offset_unit):
         """
-        Scan onewire bus and return found devices
-        """
-        return self.__scan_onewire_bus()
-
-    def add_ds18b20(self, name, path, duration, offset):
-        """
-        Add new 1wire temperature sensor (DS18B20)
+        Add new onewire temperature sensor (DS18B20)
         @param name: sensor name
-        @param path: onewire device path
-        @param duration: duration between temperature reading
+        @param device: onewire device as returned by get_onewire_devices function
+        @param path: onewire path as returned by get_onewire_devices function
+        @param interval: interval between temperature reading (seconds)
+        @param offset: temperature offset
+        @param offset_unit: temperature offset unit (string 'celsius' or 'fahrenheit')
         @return True if sensor added
         """
         #check values
-        if not name:
+        if name is None or len(name)==0:
             raise MissingParameter('Name parameter is missing')
-        elif not path:
+        elif self._search_device('name', name) is not None:
+            raise InvalidParameter('Name "%s" is already used' % name)
+        elif device is None or len(device)==0:
+            raise MissingParameter('Device parameter is missing')
+        elif path is None or len(path)==0:
             raise MissingParameter('Path parameter is missing')
-        elif not duration:
-            raise MissingParameter('Duration parameter is missing')
-        elif name in self.get_sensors():
-            raise InvalidParameter('Name is already used')
+        elif interval is None:
+            raise MissingParameter('Interval parameter is missing')
+        elif interval<=0:
+            raise InvalidParameter('Interval must be greater than 60')
+        elif offset is None:
+            raise MissingParameter('Offset parameter is missing')
+        elif offset<0:
+            raise InvalidParameter('Offset must be positive')
+        elif offset_unit is None or len(offset_unit)==0:
+            raise MissingParameter('Offset_unit paramter is missing')
+        elif offset_unit not in ('celsius', 'fahrenheit'):
+            raise InvalidParameter('Offset_unit must be equal to "celsius" or "fahrenheit"')
         else:
-            #try to read temperature
-            (tempC, tempF) = self.__read_onewire_temperature(path)
+            #compute offsets
+            (offsetC, offsetF) = self.__compute_temperature_offset(offset, offset_unit)
 
             #sensor is valid, save new entry
-            config = self._get_config()
-            #config['sensors'][name] = {
-            #    'name': name,
-            #    'gpios': [gpio],
-            #    'type': 'motion',
-            #    'on': False,
-            #    'reverted': reverted,
-            #    'lastupdate': 0,
-            #    'lastduration': 0
-            #}
-            config['sensors'][name] = {
+            sensor = {
                 'name': name,
-                'device': path,
+                'gpios': [],
+                'device': device,
+                'path': path,
                 'type': 'temperature',
-                'subtype': '1wire',
-                'duration': duration,
+                'subtype': 'onewire',
+                'interval': interval,
+                'offsetcelsius': offsetC,
+                'offsetfahrenheit': offsetF,
                 'offset': offset,
-                'lastupdate': time.time(),
-                'temperature_c': tempC,
-                'temperature_f': tempF
+                'offsetunit': offset_unit,
+                'lastupdate': int(time.time()),
+                'celsius': None,
+                'fahrenheit': None
             }
-            self._save_config(config)
+
+            #read temperature
+            (tempC, tempF) = self.__read_onewire_temperature(sensor)
+            sensor['celsius'] = tempC
+            sensor['fahrenheit'] = tempF
+
+            #save sensor
+            sensor = self._add_device(sensor)
 
             #launch temperature reading task
-            self.__launch_temperature_task(config['sensors'][name])
+            self.__start_temperature_task(sensor)
 
         return True
 
-    def add_motion(self, name, gpio, reverted):
+    def update_temperature_onewire(self, uuid, name, interval, offset, offset_unit):
         """
-        Add new motion sensor
+        Update onewire temperature sensor
+        @param uuid: sensor identifier
+        @param name: sensor name
+        @param interval: interval between reading (seconds)
+        @param offset_unit: temperature offset unit (string 'celsius' or 'fahrenheit')
+        @param offset: temperature offset
+        @return True if device update is successful
+        """
+        device = self._get_device(uuid)
+        if not uuid:
+            raise MissingParameter('Uuid parameter is missing')
+        elif device is None:
+            raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
+        elif name is None or len(name)==0:
+            raise MissingParameter('Name parameter is missing')
+        elif name!=device['name'] and self._search_device('name', name) is not None:
+            raise InvalidParameter('Name "%s" is already used' % name)
+        elif interval is None:
+            raise MissingParameter('Interval parameter is missing')
+        elif interval<=0:
+            raise InvalidParameter('Interval must be greater than 60')
+        elif offset is None:
+            raise MissingParameter('Offset parameter is missing')
+        elif offset<0:
+            raise InvalidParameter('Offset must be positive')
+        elif offset_unit is None or len(offset_unit)==0:
+            raise MissingParameter('Offset_unit paramter is missing')
+        elif offset_unit not in ('celsius', 'fahrenheit'):
+            raise InvalidParameter('Offset_unit must be equal to "celsius" or "fahrenheit"')
+        else:
+            #compute offsets
+            (offsetC, offsetF) = self.__compute_temperature_offset(offset, offset_unit)
+
+            #update sensor
+            device['name'] = name
+            device['interval'] = interval
+            device['offset'] = offset
+            device['offsetunit'] = offset_unit
+            device['offsetcelsius'] = offsetC
+            device['offsetfahrenheit'] = offsetF
+            if not self._update_device(uuid, device):
+                raise commanderror('Unable to update sensor')
+
+            #stop and launch temperature reading task
+            self.__stop_temperature_task(device)
+            self.__start_temperature_task(device)
+
+        return True
+
+    def add_motion_generic(self, name, gpio, reverted):
+        """
+        Add new generic motion sensor
         @param name: sensor name
         @param gpio: sensor gpio
         @param reverted: set if gpio is reverted or not (bool)
@@ -319,7 +441,7 @@ class Sensors(RaspIotMod):
         elif gpio in assigned_gpios:
             raise InvalidParameter('Gpio is already used')
         elif self._search_device('name', name) is not None:
-            raise InvalidParameter('Name is already used')
+            raise InvalidParameter('Name "%s" is already used' % name)
         elif gpio not in self.raspi_gpios:
             raise InvalidParameter('Gpio does not exist for this raspberry pi')
         else:
@@ -341,6 +463,7 @@ class Sensors(RaspIotMod):
                 'name': name,
                 'gpios': [{'gpio':gpio, 'gpio_uuid':resp_gpio['uuid']}],
                 'type': 'motion',
+                'subtype': 'generic',
                 'on': False,
                 'reverted': reverted,
                 'lastupdate': 0,
@@ -348,6 +471,36 @@ class Sensors(RaspIotMod):
             }
             if self._add_device(data) is None:
                 raise CommandError('Unable to add sensor')
+
+        return True
+
+    def update_motion_generic(self, uuid, name, reverted):
+        """
+        Update generic motion sensor
+        @param uuid: sensor identifier
+        @param name: sensor name
+        @param reverted: set if gpio is reverted or not (bool)
+        @return True if device update is successful
+        """
+        device = self._get_device(uuid)
+        if not uuid:
+            raise MissingParameter('Uuid parameter is missing')
+        elif device is None:
+            raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
+        elif name!=device['name'] and self._search_device('name', name) is not None:
+            raise InvalidParameter('Name "%s" is already used' % name)
+        elif not name:
+            raise MissingParameter('Name parameter is missing')
+        elif reverted is None:
+            raise MissingParameter('Reverted parameter is missing')
+        elif self._search_device('name', name) is not None:
+            raise InvalidParameter('Name is already used')
+        else:
+            #update sensor
+            device['name'] = name
+            device['reverted'] = reverted
+            if not self._update_device(uuid, device):
+                raise commanderror('Unable to update sensor')
 
         return True
 
@@ -375,33 +528,6 @@ class Sensors(RaspIotMod):
 
         return True
 
-    def update_sensor(self, uuid, name, reverted):
-        """
-        Update specified sensor
-        @param uuid: sensor identifier
-        @param name: sensor name
-        @param reverted: set if gpio is reverted or not (bool)
-        @return True if device update is successful
-        """
-        device = self._get_device(uuid)
-        if not uuid:
-            raise MissingParameter('Uuid parameter is missing')
-        elif device is None:
-            raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
-        if not name:
-            raise MissingParameter('Name parameter is missing')
-        elif reverted is None:
-            raise MissingParameter('Reverted parameter is missing')
-        elif self._search_device('name', name) is not None:
-            raise InvalidParameter('Name is already used')
-        else:
-            #update sensor
-            device['name'] = name
-            device['reverted'] = reverted
-            if not self._update_device(uuid, device):
-                raise CommandError('Unable to update sensor')
-
-        return True
 
 if __name__ == '__main__':
     #testu

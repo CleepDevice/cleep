@@ -128,7 +128,7 @@ class Database(RaspIotMod):
         if len(values)==1:
             self.__cur.execute('INSERT INTO data1(timestamp, uuid, value) values(?,?,?)', (int(time.time()), uuid, values[0]))
         elif len(values)==2:
-            self.__cur.execute('INSERT INTO data1(timestamp, uuid, value1, value2) values(?,?,?,?)', (int(time.time()), uuid, values[0], values[1],))
+            self.__cur.execute('INSERT INTO data2(timestamp, uuid, value1, value2) values(?,?,?,?)', (int(time.time()), uuid, values[0], values[1],))
 
         #commit changes
         self.__cnx.commit()
@@ -179,6 +179,7 @@ class Database(RaspIotMod):
             if event_type=='temperature':
                 #save temperature event
                 self.save_data(event['uuid'], event_type, (event['params']['celsius'], event['params']['fahrenheit']))
+
             elif event_type=='motion':
                 #save motion event
                 if event_action=='on':
