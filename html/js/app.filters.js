@@ -92,7 +92,6 @@ RaspIot.filter('hrTime', function($filter) {
 RaspIot.filter('temperature', function($filter) {
     return function(temperature, unit) {
         result = '';
-        console.log(temperature, unit);
 
         if( angular.isUndefined(temperature) || temperature==null )
             result = '?';
