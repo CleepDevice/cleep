@@ -216,6 +216,7 @@ class Sensors(RaspIotMod):
                 #temperature values are valid, update sensor values
                 sensor['celsius'] = tempC
                 sensor['fahrenheit'] = tempF
+                sensor['lastupdate'] = int(time.time())
                 if not self._update_device(sensor['uuid'], sensor):
                     self.logger.error('Unable to update device %s' % sensor['uuid'])
 
