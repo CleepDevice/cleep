@@ -26,7 +26,6 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
             {label:'Fahrenheit', value:'fahrenheit'}
         ];
         self.offsetUnit = self.offsetUnits[0].value;
-        self.updateDevice = false;
         self.TYPE_MOTION_GENERIC = 'motion_generic';
         self.TYPE_TEMPERATURE_ONEWIRE = 'temperature_onewire';
         self.types = [
@@ -34,6 +33,7 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
             {label:'Temperature (onewire)', value:self.TYPE_TEMPERATURE_ONEWIRE}
         ];
         self.type = self.TYPE_MOTION_GENERIC;
+        self.updateDevice = false;
 
         /**
          * Return sensor type
@@ -49,7 +49,10 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
             self.name = ''; 
             self.gpio = 'GPIO2';
             self.reverted = false;
-            self.type = 'motion';
+            self.type = self.TYPE_MOTION_GENERIC;
+            self.interval = self.intervals[1].value;
+            self.offset = 0;
+            self.offsetUnit = self.offsetUnits[0].value;
         };
 
         /** 
