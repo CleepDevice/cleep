@@ -2,11 +2,15 @@
  * Temperature widget directive
  * Display temperature dashboard widget
  */
-var widgetTemperatureDirective = function() {
+var widgetTemperatureDirective = function($mdDialog, graphService) {
 
     var widgetTemperatureController = ['$scope', function($scope) {
         var self = this;
         self.device = $scope.device;
+        self.graphOptions = {
+            'output': 'list',
+            'fields': ['timestamp', 'celsius']
+        };
     }];
 
     return {
@@ -22,5 +26,5 @@ var widgetTemperatureDirective = function() {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetTemperatureDirective', [widgetTemperatureDirective]);
+RaspIot.directive('widgetTemperatureDirective', ['$mdDialog', 'graphService', widgetTemperatureDirective]);
 

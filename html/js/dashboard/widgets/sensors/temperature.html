@@ -21,6 +21,9 @@
         </md-icon>
         <span>{{widgetCtl.device.lastupdate | hrDatetime}}</span>
     </md-card-footer>
+    <md-card-actions layout="row" layout-align="start center">
+        <div graph-button device="widgetCtl.device" options="widgetCtl.graphOptions"></div>
+    </md-card-actions>
 </md-card>
 
 </div>

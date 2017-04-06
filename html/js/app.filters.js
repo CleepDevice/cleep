@@ -111,3 +111,16 @@ RaspIot.filter('temperature', function($filter) {
     };
 });
 
+/**
+ * Return graph dialog title
+ */
+RaspIot.filter('graphDialogTitle', function($filter) {
+    return function(device) {
+        if( angular.isUndefined(device) && device==null )
+            return 'Sensor graph';
+
+        result = device.type + ' graph of ' + device.name;
+        return result.firstUpperCase();
+    };
+});
+
