@@ -76,7 +76,7 @@ class Database(RaspIotMod):
         # - value2: field name for value2
         # - value3: field name for value3
         # - value4: field name for value4
-        cur.execute('CREATE TABLE devices(uuid TEXT PRIMARY KEY UNIQUE, event TEXT, valuescount INTEGER, value1 TEXT DEFAULT NULL, value2 TEXT DEFAULT NULL, value3 TEXT DEFAULT NULL, value4 TEXT DEFAULT NULL);')
+        cur.execute('CREATE TABLE devices(uuid TEXT PRIMARY KEY UNIQUE, event TEXT, valuescount INTEGER, value1 NUMBER DEFAULT NULL, value2 TEXT DEFAULT NULL, value3 TEXT DEFAULT NULL, value4 TEXT DEFAULT NULL);')
 
         #create data1 table (contains 1 field to store value, typically light/humidity... sensors)
         #format:
@@ -84,22 +84,22 @@ class Database(RaspIotMod):
         # - timestamp: timestamp when value was inserted
         # - uuid: device uuid that pushes values
         # - value, value1, value2, value3, value4: values of device
-        cur.execute('CREATE TABLE data1(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 TEXT);')
+        cur.execute('CREATE TABLE data1(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 NUMBER);')
         cur.execute('CREATE INDEX data1_device_index ON data1(uuid);')
         cur.execute('CREATE INDEX data1_timestamp_index ON data1(timestamp);')
 
         #create data2 table (contains 2 fields to store values, typically gps positions, temperature (C° and F°))
-        cur.execute('CREATE TABLE data2(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 TEXT, value2 TEXT);')
+        cur.execute('CREATE TABLE data2(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 NUMBER, value2 NUMBER);')
         cur.execute('CREATE INDEX data2_device_index ON data2(uuid);')
         cur.execute('CREATE INDEX data2_timestamp_index ON data2(timestamp);')
 
         #create data3 table (contains 3 fields to store values)
-        cur.execute('CREATE TABLE data3(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 TEXT, value2 TEXT, value3 TEXT);')
+        cur.execute('CREATE TABLE data3(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 NUMBER, value2 NUMBER, value3 NUMBER);')
         cur.execute('CREATE INDEX data3_device_index ON data3(uuid);')
         cur.execute('CREATE INDEX data3_timestamp_index ON data3(timestamp);')
 
         #create data4 table (contains 4 fields to store values)
-        cur.execute('CREATE TABLE data4(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 TEXT, value2 TEXT, value3 TEXT, value4 TEXT);')
+        cur.execute('CREATE TABLE data4(id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, timestamp INTEGER, uuid TEXT, value1 NUMBER, value2 NUMBER, value3 NUMBER, value4 NUMBER);')
         cur.execute('CREATE INDEX data4_device_index ON data4(uuid);')
         cur.execute('CREATE INDEX data4_timestamp_index ON data4(timestamp);')
 

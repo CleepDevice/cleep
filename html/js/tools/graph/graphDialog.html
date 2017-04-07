@@ -1,0 +1,27 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>{{::graphCtl.device | graphDialogTitle}}</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="graphCtl.cancelDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <md-content layout-padding>
+                <nvd3 ng-if="graphCtl.graphData.length>0" options='graphCtl.graphOptions[graphCtl.type]' data='graphCtl.graphData'></nvd3>
+            </md-content>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            
+        </md-dialog-actions>
+
+    </form>
+
+</md-dialog>
