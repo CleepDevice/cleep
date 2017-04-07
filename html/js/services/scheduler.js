@@ -51,7 +51,6 @@ var schedulerService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                console.log('update clock');
                 raspiotService.devices[i].time = params.time;
                 raspiotService.devices[i].sunset = params.sunset;
                 raspiotService.devices[i].sunrise = params.sunrise;

@@ -35,6 +35,7 @@ class Scheduler(RaspIotMod):
         self.time_task = None
         self.sunset = time.mktime(datetime.min.timetuple())
         self.sunrise = time.mktime(datetime.min.timetuple())
+        self.__clock_uuid = None
 
     def _start(self):
         """
@@ -56,6 +57,13 @@ class Scheduler(RaspIotMod):
                 'name': 'Clock'
             }
             self._add_device(clock)
+        else:
+            #store clock uuid for time events
+            devices = self.get_module_devices()
+            for uuid in devices:
+                if devices[uuid]['type']=='clock':
+                    self.__clock_uuid = uuid
+                    break
 
     def _stop(self):
         """
@@ -158,19 +166,19 @@ class Scheduler(RaspIotMod):
         now_formatted = self.__format_time()
 
         #push now event
-        self.send_event('scheduler.time.now', now_formatted)
+        self.send_event('scheduler.time.now', now_formatted, self.__clock_uuid)
 
         #handle sunset
         if self.sunset:
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
-                self.send_event('scheduler.time.sunset')
+                self.send_event('scheduler.time.sunset', None, self.__clock_uuid)
 
         #handle sunrise
         if self.sunrise:
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
-                self.send_event('scheduler.time.sunrise')
+                self.send_event('scheduler.time.sunrise', None, self.__clock_uuid)
 
         #compute sunset/sunrise at midnight
         if now_formatted['hour']==0 and now_formatted['minute']==0:
