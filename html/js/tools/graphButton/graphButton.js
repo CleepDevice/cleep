@@ -1,6 +1,19 @@
 /**
  * Graph button
- * Display a button that open graph dialog
+ * Display a button that opens graph dialog
+ *
+ * Directive example:
+ * <div graph-button device="<device>" options="<options>"></div
+ * @param device: device object
+ * @param options: graph options. An object with the following format:
+ *  {
+ *      'type': <'stack', 'line'> : type of graph (string) (mandatory)
+ *      'filters': ['fieldname1', ...]: list of field names to display (array) (optional)
+ *      'timerange': { (optional)
+ *          'start': <timestamp>: start range timestamp (integer)
+ *          'end': <timestamp>: end range timestamp (integer)
+ *      }
+ *  }
  */
 var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
 
@@ -91,17 +104,41 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
             }
         };
         self.types = {
-            'stack': self.stackGraphOptions
+            'stack': self.stackGraphOptions,
             'line': self.barGraphOptions
         };
         self.graphData = [];
+        self.graphRequestOptions = {
+            'output': 'list',
+            'fields' : []
+        };
     
         /**
          * Load graph data
          */
         self.loadGraphData = function() {
-            var now = Number(moment().format('X'));
-            graphService.getDeviceData(self.device.uuid, now-86400, now, self.options)
+            //prepare timestamp range
+            var timestampEnd = Number(moment().format('X'));
+            var timestampStart = timestampEnd - 86400;
+
+            //prepare request options
+            if( angular.isUndefined(self.options) && self.options!==null )
+            {
+                //fields filtering
+                if( angular.isUndefined(self.options.filters) && self.options.filters!==null )
+                {
+                    self.graphRequestOptions.fields = self.options.filters;
+                }
+
+                //force timestamp range
+                if( angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
+                {
+                    timestampStart = self.options.timestamp.start;
+                    timestampEnd = self.options.timestamp.end;
+                }
+            }
+
+            graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.options)
                 .then(function(resp) {
                     self.graphData = [{
                         'key': self.device.name,

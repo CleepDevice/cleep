@@ -191,7 +191,7 @@ class Database(RaspIotMod):
         @param uuid: device uuid
         @param timestamp_start: start of range
         @param timestamp_end: end of range
-        @param options: command options (dict('output':<'list','dict'[default]>, 'fields':[<field1>, <field2>, ...]))
+        @param options: command options (dict('output':<'list','dict'[default]>, 'fields':[<field1>, <field2>, ...], 'sort':<'asc'[default],'desc'>))
         @return dict of rows
         """
         #check parameters
@@ -213,7 +213,10 @@ class Database(RaspIotMod):
         options_output = 'dict'
         if options is not None and options.has_key('output') and options['output'] in ('list', 'dict'):
             options_output = options['output']
-        self.logger.debug('options_fields=%s options_output=%s' % (options_fields, options_output))
+        options_sort = 'asc'
+        if options is not None and options.has_key('sort') and options['sort'] in ('asc', 'desc'):
+            options_sort = options['sort']
+        self.logger.debug('options: fields=%s output=%s sort=%s' % (options_fields, options_output, options_sort))
 
         #get device infos
         self.__cur.execute('SELECT event, valuescount, value1, value2, value3, value4 FROM devices WHERE uuid=?', (uuid,))
@@ -248,16 +251,18 @@ class Database(RaspIotMod):
                             columns.append(column)
 
         #get device data
-        query = 'SELECT %s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp ASC' % (','.join(columns), infos['valuescount'])
+        query = 'SELECT %s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (','.join(columns), infos['valuescount'], options_sort)
         self.logger.debug('query=%s' % query)
         self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
 
         #format data
         data = None
         if options_output=='dict':
+            #output as dict
             #code from http://stackoverflow.com/a/3287775
             data = [dict((self.__restore_field_name(self.__cur.description[i][0], infos), value) for i, value in enumerate(row)) for row in self.__cur.fetchall()]
         else:
+            #output as list (format for graph)
             data = self.__cur.fetchall()
 
         return {

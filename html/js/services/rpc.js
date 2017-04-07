@@ -140,9 +140,8 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param command: command that handles upload function
      * @param to: module that handles upload
      * @param file: file to upload (data from html form input type file)
-     * @param onSuccess: on success callback (can be null)
-     * @param onError: on error callback (can be null)
      * @param data: more data to embed during upload
+     * @return promise: success returns command data, failure returns error message
      */
     self.upload = function(command, to, file, data)
     {

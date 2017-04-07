@@ -39,8 +39,8 @@ var actionsService = function($q, $rootScope, rpcService) {
     /**
      * Upload script
      */
-    self.uploadScript = function(file, onSuccess, onError) {
-        return rpcService.upload('add_script', 'actions', file, onSuccess, onError);
+    self.uploadScript = function(file) {
+        return rpcService.upload('add_script', 'actions', file);
     };
 };
     
