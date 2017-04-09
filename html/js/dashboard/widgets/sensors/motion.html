@@ -11,8 +11,11 @@
         </md-card-header-text>
     </md-card-header>
     <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
-        <div>
-            <md-icon class="typcn typcn-wi-fi icon-xl"></md-icon>
+        <div layout="row" layout-align="space-around center">
+            <div>
+                <md-icon class="typcn typcn-wi-fi icon-xl"></md-icon>
+            </div>
+            <div graph-button device="widgetCtl.device" options="widgetCtl.graphOptions"></div>
         </div>
     </md-card-content>
     <md-card-footer>

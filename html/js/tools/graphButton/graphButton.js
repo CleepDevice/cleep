@@ -7,7 +7,7 @@
  * @param device: device object
  * @param options: graph options. An object with the following format:
  *  {
- *      'type': <'stack', 'line'> : type of graph (string) (mandatory)
+ *      'type': <'bar', 'line'> : type of graph (string) (mandatory)
  *      'filters': ['fieldname1', ...]: list of field names to display (array) (optional)
  *      'timerange': { (optional)
  *          'start': <timestamp>: start range timestamp (integer)
@@ -15,7 +15,7 @@
  *      }
  *  }
  */
-var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
+var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toast) {
 
     var graphButtonController = ['$scope', function($scope) {
         var self = this;
@@ -27,7 +27,7 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
             ["%B", function(d) { return d.getMonth(); }], 
             ["%Y", function() { return true; }]
         ]);
-        self.barGraphOptions = {
+        self.historicalBarGraphOptions = {
             chart: {
                 type: "historicalBarChart",
                 height: 400,
@@ -37,18 +37,30 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
                     bottom: 65,
                     left: 50
                 },
+                x: function(d){return d[0];},
+                y: function(d){return d[1];},
                 showValues: true,
                 duration: 100,
                 xAxis: {
-                    axisLabel: "X Axis",
-                    rotateLabels: 30,
-                    showMaxMin: false
+                    //axisLabel: "X Axis",
+                    //rotateLabels: 30,
+                    showMaxMin: false,
+                    tickFormat: function(d) {
+                        return self.customTimeFormat(moment(d,'X').toDate());
+                    }
                 },
                 yAxis: {
-                    axisLabel: "Y Axis",
-                    axisLabelDistance: -10
+                    //axisLabel: "Y Axis",
+                    axisLabelDistance: -10,
+                    tickFormat: function(d){
+                        return d3.format(',.2f')(d);
+                    }
                 },
-                tooltip: {},
+                tooltip: {
+                    keyFormatter: function(d) {
+                        return self.customTimeFormat(moment(d,'X').toDate());
+                    }
+                },
                 zoom: {
                     enabled: true,
                     scaleExtent: [
@@ -63,7 +75,7 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
                 }
             }
         }
-        self.stackGraphOptions = {
+        self.stackedAreaGraphOptions = {
             chart: {
                 type: 'stackedAreaChart',
                 height: 400,
@@ -103,47 +115,90 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
                 showLegend: false
             }
         };
-        self.types = {
-            'stack': self.stackGraphOptions,
-            'line': self.barGraphOptions
+        self.graphOptionsByType = {
+            'line': self.stackedAreaGraphOptions,
+            'bar': self.historicalBarGraphOptions
         };
         self.graphData = [];
+        self.graphOptions = {};
         self.graphRequestOptions = {
-            'output': 'list',
-            'fields' : []
+            output: 'list',
+            fields: [],
+            sort: 'ASC'
         };
     
         /**
          * Load graph data
          */
         self.loadGraphData = function() {
-            //prepare timestamp range
+            //prepare default timestamp range
             var timestampEnd = Number(moment().format('X'));
             var timestampStart = timestampEnd - 86400;
 
-            //prepare request options
-            if( angular.isUndefined(self.options) && self.options!==null )
+            //set graph request options and graph options
+            if( !angular.isUndefined(self.options) && self.options!==null )
             {
                 //fields filtering
-                if( angular.isUndefined(self.options.filters) && self.options.filters!==null )
+                if( !angular.isUndefined(self.options.fields) && self.options.fields!==null )
                 {
-                    self.graphRequestOptions.fields = self.options.filters;
+                    self.graphRequestOptions.fields = self.options.fields;
                 }
 
                 //force timestamp range
-                if( angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
+                if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
                 {
                     timestampStart = self.options.timestamp.start;
                     timestampEnd = self.options.timestamp.end;
                 }
+
+                //graph type
+                if( !angular.isUndefined(self.options.type) && self.options.type!==null )
+                {
+                    if( self.options.type=='line' )
+                    {
+                        self.graphRequestOptions.fields.output = 'list';
+                        self.graphOptions = self.graphOptionsByType[self.options.type];
+                    }
+                    else if( self.options.type=='bar' )
+                    {
+                        self.graphRequestOptions.fields.output = 'list';
+                        self.graphOptions = self.graphOptionsByType[self.options.type];
+                    }
+                    else
+                    {
+                        //invalid type specified
+                        toast.error('Invalid graph type specified');
+                    }
+                }
+
+                //graph color
+                if( self.device.type==='temperature' )
+                    self.graphOptions.chart.color = ['#FF7F00'];
+                else if( self.device.type==='motion' )
+                    self.graphOptions.chart.color = ['#24A222'];
+                else if( self.device.type==='humidity' )
+                    self.graphOptions.chart.color = ['#1776B6'];
+                else if( self.device.type==='energy' )
+                    self.graphOptions.chart.color = ['#D8241F'];
             }
 
-            graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.options)
+            graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.graphRequestOptions)
                 .then(function(resp) {
-                    self.graphData = [{
-                        'key': self.device.name,
-                        'values': resp.data.data
-                    }];
+                    if( self.options.type=='line' )
+                    {
+                        self.graphData = [{
+                            'key': self.device.name,
+                            'values': resp.data.data
+                        }];
+                    }
+                    else if( self.options.type=='bar' )
+                    {
+                        self.graphData = [{
+                            'key': self.device.name,
+                            'bar': true,
+                            'values': resp.data.data
+                        }];
+                    }
                 });
         };
 
@@ -168,7 +223,7 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'graphCtl',
-                templateUrl: 'js/tools/graph/graphDialog.html',
+                templateUrl: 'js/tools/graphButton/graphDialog.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 onComplete: self.loadGraphData(),
@@ -185,7 +240,7 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
 
     return {
         restrict: 'AE',
-        templateUrl: 'js/tools/graph/graph.html',
+        templateUrl: 'js/tools/graphButton/graphButton.html',
         replace: true,
         scope: {
             device: '=',
@@ -199,5 +254,5 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('graphButton', ['$q', '$rootScope', 'graphService', '$mdDialog', graphButtonDirective]);
+RaspIot.directive('graphButton', ['$q', '$rootScope', 'graphService', '$mdDialog', 'toastService', graphButtonDirective]);
 

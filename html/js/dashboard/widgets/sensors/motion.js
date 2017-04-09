@@ -7,6 +7,9 @@ var widgetMotionDirective = function() {
     var widgetMotionController = ['$scope', function($scope) {
         var self = this;
         self.device = $scope.device;
+        self.graphOptions = {
+            'type': 'bar'
+        };
     }];
 
     return {

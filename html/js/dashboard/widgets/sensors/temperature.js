@@ -8,7 +8,7 @@ var widgetTemperatureDirective = function($mdDialog, graphService) {
         var self = this;
         self.device = $scope.device;
         self.graphOptions = {
-            'output': 'list',
+            'type': 'line',
             'fields': ['timestamp', 'celsius']
         };
     }];

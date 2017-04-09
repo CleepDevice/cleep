@@ -96,7 +96,7 @@ RaspIot.filter('temperature', function($filter) {
         if( angular.isUndefined(temperature) || temperature==null )
             result = '?';
         else
-            result = Number(temperature).toFixed(2);
+            result = Number(temperature).toFixed(1);
 
         if( angular.isUndefined(unit) || unit==null )
             result += '?';

@@ -291,6 +291,11 @@ class Database(RaspIotMod):
             elif event_type=='motion':
                 #save motion event
                 if event_action=='on':
+                    #trick to make graphable motion data (inject 0 just before setting real value)
+                    self.save_data(event['uuid'], event_type, [
+                        {'field':'on', 'value':0}
+                    ])
+                    time.sleep(1.0)
                     self.save_data(event['uuid'], event_type, [
                         {'field':'on', 'value':1}
                     ])

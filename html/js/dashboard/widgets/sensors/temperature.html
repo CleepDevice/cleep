@@ -11,8 +11,11 @@
         </md-card-header-text>
     </md-card-header>
     <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
-        <div layout="row" layout-align="center center">
-            <span class="md-display-1">{{widgetCtl.device.celsius | temperature:'celsius'}}</span>
+        <div layout="row" layout-align="space-around center">
+            <div>
+                <span class="md-display-1">{{widgetCtl.device.celsius | temperature:'celsius'}}</span>
+            </div>
+            <div graph-button device="widgetCtl.device" options="widgetCtl.graphOptions"></div>
         </div>
     </md-card-content> 
     <md-card-footer>
@@ -21,9 +24,6 @@
         </md-icon>
         <span>{{widgetCtl.device.lastupdate | hrDatetime}}</span>
     </md-card-footer>
-    <md-card-actions layout="row" layout-align="start center">
-        <div graph-button device="widgetCtl.device" options="widgetCtl.graphOptions"></div>
-    </md-card-actions>
 </md-card>
 
 </div>
