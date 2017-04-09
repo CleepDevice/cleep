@@ -1,8 +1,8 @@
 /**
- * Scheduler service
- * Handle scheduler module requests
+ * Raspberry service
+ * Handle raspberry module requests
  */
-var schedulerService = function($rootScope, rpcService, raspiotService) {
+var raspberryService = function($rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
@@ -10,8 +10,8 @@ var schedulerService = function($rootScope, rpcService, raspiotService) {
      */
     self.getDirectiveInfos = function() {
         return {
-            label: 'Scheduler',
-            name: 'schedulerConfigDirective'
+            label: 'Raspberry',
+            name: 'raspberryConfigDirective'
         };  
     }; 
 
@@ -19,34 +19,34 @@ var schedulerService = function($rootScope, rpcService, raspiotService) {
      * Change city
      */
     self.setCity = function(city) {
-        return rpcService.sendCommand('set_city', 'scheduler', {'city':city});
+        return rpcService.sendCommand('set_city', 'raspberry', {'city':city});
     };
 
     /**
      * Get city
      */
     self.getCity = function() {
-        return rpcService.sendCommand('get_city', 'scheduler');
+        return rpcService.sendCommand('get_city', 'raspberry');
     };
 
     /**
      * Get sunset/sunrise
      */
     self.getSun = function() {
-        return rpcService.sendCommand('get_sun', 'scheduler');
+        return rpcService.sendCommand('get_sun', 'raspberry');
     };
 
     /**
      * Get messages
      */
     self.getTime = function() {
-        return rpcService.sendCommand('get_time', 'scheduler');
+        return rpcService.sendCommand('get_time', 'raspberry');
     };
 
     /**
-     * Catch scheduler time event
+     * Catch raspberry time event
      */
-    $rootScope.$on('scheduler.time.now', function(event, uuid, params) {
+    $rootScope.$on('raspberry.time.now', function(event, uuid, params) {
         for( var i=0; i<raspiotService.devices.length; i++ )
         {
             if( raspiotService.devices[i].uuid==uuid )
@@ -61,5 +61,5 @@ var schedulerService = function($rootScope, rpcService, raspiotService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('schedulerService', ['$rootScope', 'rpcService', 'raspiotService', schedulerService]);
+RaspIot.service('raspberryService', ['$rootScope', 'rpcService', 'raspiotService', raspberryService]);
 

@@ -10,6 +10,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.configs = [];
     //list of devices
     self.devices = [];
+    //list of modules
+    self.modules = [];
 
     /**
      * Set modules configurations
@@ -132,7 +134,17 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             });
         
         return d.promise;
-    }
+    };
+
+    /**
+     * Check if specified module name is loaded
+     * @param module: module name
+     * @return true if module is loaded, false otherwise
+     */
+    self.hasModule = function(module)
+    {
+        return objectsService.modules.indexOf(module)!==-1;
+    };
 
 };
     

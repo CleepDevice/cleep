@@ -2,7 +2,7 @@
  * Motion widget directive
  * Display motion dashboard widget
  */
-var widgetMotionDirective = function() {
+var widgetMotionDirective = function(raspiotService) {
 
     var widgetMotionController = ['$scope', function($scope) {
         var self = this;
@@ -10,6 +10,7 @@ var widgetMotionDirective = function() {
         self.graphOptions = {
             'type': 'bar'
         };
+        self.hasDatabase = raspiotService.hasModule('database');
     }];
 
     return {
@@ -25,5 +26,5 @@ var widgetMotionDirective = function() {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetMotionDirective', [widgetMotionDirective]);
+RaspIot.directive('widgetMotionDirective', ['raspiotService', widgetMotionDirective]);
 

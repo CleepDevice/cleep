@@ -10,12 +10,11 @@
             <span class="md-subhead">{{widgetCtl.device.type}}</span>
         </md-card-header-text>
     </md-card-header>
-    <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
-        <div layout="row" layout-align="space-around center">
-            <div>
-                <span class="md-display-1">{{widgetCtl.device.celsius | temperature:'celsius'}}</span>
-            </div>
-            <div graph-button device="widgetCtl.device" options="widgetCtl.graphOptions"></div>
+    <md-card-content layout="row" layout-align="space-around center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
+        <div>
+            <span class="md-display-1">{{widgetCtl.device.celsius | temperature:'celsius'}}</span>
+        </div>
+        <div ng-if="widgetCtl.hasDatabase" graph-button device="widgetCtl.device" options="widgetCtl.graphOptions">
         </div>
     </md-card-content> 
     <md-card-footer>

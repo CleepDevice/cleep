@@ -10,13 +10,13 @@ import time
 from raspiot.libs.task import Task
 from astral import Astral, GoogleGeocoder, AstralError
 
-__all__ = ['Scheduler']
+__all__ = ['Raspberry']
 
 
 
-class Scheduler(RaspIotMod):
+class Raspberry(RaspIotMod):
 
-    MODULE_CONFIG_FILE = 'scheduler.conf'
+    MODULE_CONFIG_FILE = 'raspberry.conf'
     MODULE_DEPS = []
 
     DEFAULT_CONFIG = {
@@ -110,7 +110,7 @@ class Scheduler(RaspIotMod):
         else:
             self.sunset = None
             self.sunrise = None
-            self.logger.warning('No city configured, scheduler will only return current timestamp')
+            self.logger.warning('No city configured, only current time will be returned')
 
     def __format_time(self, now=None):
         """
@@ -166,19 +166,19 @@ class Scheduler(RaspIotMod):
         now_formatted = self.__format_time()
 
         #push now event
-        self.send_event('scheduler.time.now', now_formatted, self.__clock_uuid)
+        self.send_event('raspberry.time.now', now_formatted, self.__clock_uuid)
 
         #handle sunset
         if self.sunset:
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
-                self.send_event('scheduler.time.sunset', None, self.__clock_uuid)
+                self.send_event('raspberry.time.sunset', None, self.__clock_uuid)
 
         #handle sunrise
         if self.sunrise:
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
-                self.send_event('scheduler.time.sunrise', None, self.__clock_uuid)
+                self.send_event('raspberry.time.sunrise', None, self.__clock_uuid)
 
         #compute sunset/sunrise at midnight
         if now_formatted['hour']==0 and now_formatted['minute']==0:
@@ -195,9 +195,9 @@ class Scheduler(RaspIotMod):
 
     def get_module_devices(self):
         """
-        Return clock as scheduler device
+        Return clock as raspberry device
         """
-        devices = super(Scheduler, self).get_module_devices()
+        devices = super(Raspberry, self).get_module_devices()
         uuid = devices.keys()[0]
         data = self.get_time()
         devices[uuid].update(data)

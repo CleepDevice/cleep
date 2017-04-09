@@ -1,11 +1,11 @@
 /**
- * Scheduler config directive
- * Handle scheduler configuration
+ * Raspberry config directive
+ * Handle raspberry configuration
  */
-var schedulerConfigDirective = function($filter, toast, schedulerService, raspiotService) {
+var raspberryConfigDirective = function($filter, toast, raspberryService, raspiotService) {
     var container = null;
 
-    var schedulerController = function() {
+    var raspberryController = function() {
         var self = this;
         self.sunset = null;
         self.sunrise = null;
@@ -17,9 +17,9 @@ var schedulerConfigDirective = function($filter, toast, schedulerService, raspio
         self.setCity = function()
         {
             toast.loading('Updating city...');
-            schedulerService.setCity(self.city)
+            raspberryService.setCity(self.city)
                 .then(function(resp) {
-                    return raspiotService.reloadConfig('scheduler');
+                    return raspiotService.reloadConfig('raspberry');
                 })
                 .then(function(resp) {
                     toast.success('City updated');
@@ -33,7 +33,7 @@ var schedulerConfigDirective = function($filter, toast, schedulerService, raspio
          */
         self.init = function()
         {
-            var config = raspiotService.getConfig('scheduler');
+            var config = raspiotService.getConfig('raspberry');
             self.city = config.city;
             self.sunset = $filter('hrTime')(config.sun.sunset);
             self.sunrise = $filter('hrTime')(config.sun.sunrise);
@@ -41,20 +41,20 @@ var schedulerConfigDirective = function($filter, toast, schedulerService, raspio
 
     };
 
-    var schedulerLink = function(scope, element, attrs, controller) {
+    var raspberryLink = function(scope, element, attrs, controller) {
         controller.init();
     };
 
     return {
-        templateUrl: 'js/configuration/scheduler/scheduler.html',
+        templateUrl: 'js/configuration/raspberry/raspberry.html',
         replace: true,
         scope: true,
-        controller: schedulerController,
-        controllerAs: 'schedulerCtl',
-        link: schedulerLink
+        controller: raspberryController,
+        controllerAs: 'raspberryCtl',
+        link: raspberryLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('schedulerConfigDirective', ['$filter', 'toastService', 'schedulerService', 'raspiotService', schedulerConfigDirective]);
+RaspIot.directive('raspberryConfigDirective', ['$filter', 'toastService', 'raspberryService', 'raspiotService', raspberryConfigDirective]);
 

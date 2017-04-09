@@ -57,17 +57,20 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 var angularService = module + 'Service';
                 if( $injector.has(angularService) )
                 {
-                    //module has service, inject it then add it
+                    //module has service, inject it then register it
                     objectsService._addService(module, $injector.get(angularService));
 
-                    //add module directive
+                    //register module directive
                     directive = objectsService.services[module].getDirectiveInfos();
-                    objectsService._addModuleDirective(module, directive['label'], directive['name'] );
+                    objectsService._addModuleWithConfig(module, directive['label'], directive['name'] );
                 }
                 else
                 {
                     //module has no associated service
-                    console.warn('Module "'+serviceName+'" has no angular service');
+                    console.warn('Module "' + angularService + '" has no angular service');
+
+                    //register module
+                    objectsService._addModule(module);
                 }
             }
 
