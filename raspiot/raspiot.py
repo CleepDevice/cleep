@@ -415,6 +415,12 @@ class RaspIotMod(RaspIot):
 
         return None
 
+    def _get_devices(self):
+        """
+        Return module devices (alias to get_module_devices function)
+        """
+        return self.get_module_devices()
+
     def _get_device_count(self):
         """
         Return number of devices in configuration file"

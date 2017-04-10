@@ -424,10 +424,10 @@ class BusClient(threading.Thread):
                                         except CommandError as e:
                                             self.logger.error('Command error: %s' % str(e))
                                             resp.error = True
-                                            resp.message = '%s' % str(e)
+                                            resp.message = str(e)
                                         except CommandInfo as e:
                                             #informative message
-                                            resp.message = '%s' % str(e)
+                                            resp.message = str(e)
                                         except Exception as e:
                                             #command failed
                                             self.logger.exception('bus.run exception')
