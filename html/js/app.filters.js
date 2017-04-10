@@ -124,3 +124,14 @@ RaspIot.filter('graphDialogTitle', function($filter) {
     };
 });
 
+/**
+ * Return string lowered with first char in upper case
+ */
+RaspIot.filter('firstUpper', function($filter) {
+    return function(string) {
+        if( angular.isUndefined(string) && string==null )
+            return '';
+
+        return string.firstUpperCase();
+    };
+});

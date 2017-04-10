@@ -8,7 +8,7 @@ var widgetMotionDirective = function(raspiotService) {
         var self = this;
         self.device = $scope.device;
         self.graphOptions = {
-            'type': 'bar'
+            'type': 'line'
         };
         self.hasDatabase = raspiotService.hasModule('database');
     }];

@@ -19,6 +19,8 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
 
     var graphButtonController = ['$scope', function($scope) {
         var self = this;
+        self.buttonLabel = '';
+        self.buttonClass = 'md-fab md-mini';
         self.customTimeFormat = d3.time.format.multi([
             ["%H:%M", function(d) { return d.getMinutes(); }], 
             ["%H", function(d) { return d.getHours(); }], 
@@ -234,8 +236,17 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
     }];
 
     var graphButtonLink = function(scope, element, attrs, controller) {
+        console.log("GB", scope);
         controller.device = scope.device;
         controller.options = scope.options;
+        if( !angular.isUndefined(scope.buttonLabel) )
+        {
+            controller.buttonLabel = scope.buttonLabel;
+        }
+        if( !angular.isUndefined(scope.buttonClass) )
+        {
+            controller.buttonClass = scope.buttonClass;
+        }
     };
 
     return {
@@ -244,7 +255,9 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
         replace: true,
         scope: {
             device: '=',
-            options: '='
+            options: '=graphOptions',
+            buttonLabel: '@',
+            buttonClass: '@'
         },
         controller: graphButtonController,
         controllerAs: 'graphButtonCtl',

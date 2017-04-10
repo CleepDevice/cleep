@@ -1,6 +1,7 @@
 <div>
-    <md-button ng-click="graphButtonCtl.openGraphDialog()" class="md-fab md-mini" aria-label="Graph dialog">
+    <md-button ng-click="graphButtonCtl.openGraphDialog()" class="{{graphButtonCtl.buttonClass}}" aria-label="Graph dialog">
         <md-icon md-font-set="material-icons" aria-label="Graph dialog">insert_chart</md-icon>
-        <md-tooltip md-direction="top">Show graph</md-tooltip>
+        <md-tooltip md-direction="top">Display chart</md-tooltip>
+        <span ng-if="!graphButtonCtl.buttonLabel.length==0">{{graphButtonCtl.buttonLabel}}</span>
     </md-button>
 </div>

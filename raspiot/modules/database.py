@@ -301,6 +301,10 @@ class Database(RaspIotMod):
                     ])
                 else:
                     self.save_data(event['uuid'], event_type, [
+                        {'field':'on', 'value':1}
+                    ])
+                    time.sleep(1.0)
+                    self.save_data(event['uuid'], event_type, [
                         {'field':'on', 'value':0}
                     ])
 

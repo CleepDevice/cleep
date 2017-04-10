@@ -65,6 +65,13 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set shutter level
+     */
+    self.levelShutter = function(uuid, level) {
+        return rpcService.sendCommand('level_shutter', 'shutters', {'uuid':uuid, 'level':level});
+    };
+
+    /**
      * Catch shutter opening event
      */
     $rootScope.$on('shutters.shutter.opening', function(event, uuid, params) {
