@@ -343,13 +343,13 @@ class Shutters(RaspIotMod):
             raise InvalidParameter('Close switch does not exist for this raspberry pi')
         else:
             #configure open shutter
-            resp_shutter_open = self.send_command('add_gpio', 'gpios', {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':True, 'reverted':False})
+            resp_shutter_open = self.send_command('add_gpio', 'gpios', {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':False, 'reverted':False})
             if resp_shutter_open['error']:
                 raise CommandError(resp_shutter_open['message'])
             resp_shutter_open = resp_shutter_open['data']
                 
             #configure close shutter
-            resp_shutter_close = self.send_command('add_gpio', 'gpios', {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':True, 'reverted':False})
+            resp_shutter_close = self.send_command('add_gpio', 'gpios', {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':False, 'reverted':False})
             if resp_shutter_close['error']:
                 raise CommandError(resp_shutter_close['message'])
             resp_shutter_close = resp_shutter_close['data']

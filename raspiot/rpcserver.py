@@ -439,16 +439,19 @@ def poll():
             logger.debug('polling: bus not available')
             message['message'] = 'Bus not available'
             time.sleep(1.0)
+
         elif not params.has_key('pollKey'):
             #rpc client no registered yet
             logger.debug('polling: registration key must be sent to poll request')
             message['message'] = 'Polling key is missing'
             time.sleep(1.0)
+
         elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
             #rpc client no registered yet
             logger.debug('polling: rpc client must be registered before polling')
             message['message'] = 'Client not registered'
             time.sleep(1.0)
+
         else:
             #wait for event (blocking by default) until end of timeout
             try:
@@ -460,9 +463,11 @@ def poll():
                 message['error'] = False
                 message['data'] = msg['message']
                 logger.debug('polling received %s' % message)
+
             except NoMessageAvailable:
                 message['message'] = 'No message available'
                 time.sleep(1.0)
+
             except:
                 logger.exception('poll exception')
                 message['message'] = 'Internal error'
