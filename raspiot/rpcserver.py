@@ -104,16 +104,24 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
     @param cert: SSL certificate file
     """
     global server, app
-    if key is not None and len(key)>0 and cert is not None and len(cert)>0:
-        #start HTTPS server
-        logger.info('Starting HTTPS server on %s:%d' % (host, port))
-        server_logger = LoggingLogAdapter(logger, logging.DEBUG)
-        server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
-        server.serve_forever()
-    else:
-        #start HTTP server
-        logger.info('Starting HTTP server on %s:%d' % (host, port))
-        app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+
+    try:
+        if key is not None and len(key)>0 and cert is not None and len(cert)>0:
+            #start HTTPS server
+            logger.info('Starting HTTPS server on %s:%d' % (host, port))
+            server_logger = LoggingLogAdapter(logger, logging.DEBUG)
+            server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
+            server.serve_forever()
+
+        else:
+            #start HTTP server
+            logger.info('Starting HTTP server on %s:%d' % (host, port))
+            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+
+    except KeyboardInterrupt:
+        #user stops raspiot, close server properly
+        if not server.closed:
+            server.close()
 
 def check_auth(username, password):
     """
