@@ -8,7 +8,8 @@ var widgetMotionDirective = function(raspiotService) {
         var self = this;
         self.device = $scope.device;
         self.graphOptions = {
-            'type': 'line'
+            'type': 'line',
+            'color': '#24A222'
         };
         self.hasDatabase = raspiotService.hasModule('database');
     }];

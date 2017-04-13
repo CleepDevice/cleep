@@ -1,35 +1,46 @@
 /**
- * Graph button
- * Display a button that opens graph dialog
+ * Graph directive
+ * Display graph of specified device values
  *
  * Directive example:
- * <div graph-button device="<device>" options="<options>"></div
+ * <chart device="<device>" options="<options>"></div>
+ *
  * @param device: device object
- * @param options: graph options. An object with the following format:
+ * @param options: chart options. An object with the following format
  *  {
- *      'type': <'bar', 'line'> : type of graph (string) (mandatory)
- *      'filters': ['fieldname1', ...]: list of field names to display (array) (optional)
- *      'timerange': { (optional)
- *          'start': <timestamp>: start range timestamp (integer)
- *          'end': <timestamp>: end range timestamp (integer)
- *      }
+ *    'type': <'bar', 'line'> : type of graph (string) (optional, default line)
+ *    'filters': ['fieldname1', ...]: list of field names to display (array) (optional, default all fields)
+ *    'timerange': {
+ *      'start': <timestamp>: start range timestamp (integer)
+ *      'end': <timestamp>: end range timestamp (integer)
+ *    } (optional, default timerange 1 day until now),
+ *    'format': function(value) : callback to convert value to specific format (optional, default is raw value)
+ *              @see https://github.com/d3/d3-format
+ *    'label': string: value label,
+ *    'height': int : graph height (optional, default 400px)
+ *    'color': string  : color hex code (starting with #). Only used for single data
  *  }
  */
-var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toast) {
+var graphDirective = function($q, $rootScope, graphService, toast) {
 
-    var graphButtonController = ['$scope', function($scope) {
+    var graphController = ['$scope', function($scope) {
         var self = this;
-        self.buttonLabel = '';
-        self.buttonClass = 'md-fab md-mini';
-        /*self.customTimeFormat = d3.time.format.multi([
+        self.device = null;
+        self.options = null;
+        self.loading = true;
+
+        //dynamic time format according to zoom
+        self.customTimeFormat = d3.time.format.multi([
             ["%H:%M", function(d) { return d.getMinutes(); }], 
             ["%H", function(d) { return d.getHours(); }], 
             ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }], 
             ["%b %d", function(d) { return d.getDate() != 1; }], 
             ["%B", function(d) { return d.getMonth(); }], 
             ["%Y", function() { return true; }]
-        ]);*/
-        /*self.historicalBarGraphOptions = {
+        ]);
+
+        //bar graph default options
+        self.historicalBarGraphOptions = {
             chart: {
                 type: "historicalBarChart",
                 height: 400,
@@ -52,10 +63,12 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                     }
                 },
                 yAxis: {
-                    //axisLabel: "Y Axis",
-                    axisLabelDistance: -10,
-                    tickFormat: function(d){
-                        return d3.format(',.2f')(d);
+                    axisLabel: function() {
+                        return self.defaultLabel;
+                    },
+                    //axisLabelDistance: -10,
+                    tickFormat: function(v) {
+                        return self.defaultFormat(v);
                     }
                 },
                 tooltip: {
@@ -76,8 +89,10 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                     unzoomEventType: "dblclick.zoom"
                 }
             }
-        };*/
-        /*self.stackedAreaGraphOptions = {
+        }
+
+        //line graph default options
+        self.stackedAreaGraphOptions = {
             chart: {
                 type: 'stackedAreaChart',
                 height: 400,
@@ -100,8 +115,9 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                     }
                 },
                 yAxis: {
-                    tickFormat: function(d){
-                        return d3.format(',.2f')(d);
+                    axisLabel: '',
+                    tickFormat: function(v) {
+                        return self.defaultFormat(v);
                     }
                 },
                 zoom: {
@@ -116,23 +132,41 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                 showControls: false,
                 showLegend: false
             }
-        };*/
-        /*self.graphOptionsByType = {
+        };
+
+        //default value format callback
+        self.defaultFormat = function(v) {
+            //return d3.format(',.2f')(v);
+            return v;
+        };
+
+        //default label (on Y axis)
+        self.defaultLabel = '';
+
+        //default height
+        self.defaultLabel = 400;
+
+        //graph types<=>options mapping
+        self.graphOptionsByType = {
             'line': self.stackedAreaGraphOptions,
             'bar': self.historicalBarGraphOptions
-        };*/
-        //self.graphData = [];
-        //self.graphOptions = {};
-        /*self.graphRequestOptions = {
+        };
+
+        //graph data and options
+        self.graphData = [];
+        self.graphOptions = {};
+
+        //data for graph values request
+        self.graphRequestOptions = {
             output: 'list',
             fields: [],
             sort: 'ASC'
-        };*/
+        };
     
         /**
          * Load graph data
          */
-        /*self.loadGraphData = function(scope, el) {
+        self.loadGraphData = function(scope, el) {
             //prepare default timestamp range
             var timestampEnd = Number(moment().format('X'));
             var timestampStart = timestampEnd - 86400;
@@ -140,19 +174,6 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
             //set graph request options and graph options
             if( !angular.isUndefined(self.options) && self.options!==null )
             {
-                //fields filtering
-                if( !angular.isUndefined(self.options.fields) && self.options.fields!==null )
-                {
-                    self.graphRequestOptions.fields = self.options.fields;
-                }
-
-                //force timestamp range
-                if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
-                {
-                    timestampStart = self.options.timestamp.start;
-                    timestampEnd = self.options.timestamp.end;
-                }
-
                 //graph type
                 if( !angular.isUndefined(self.options.type) && self.options.type!==null )
                 {
@@ -173,20 +194,58 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                     }
                 }
 
-                //graph color
-                if( self.device.type==='temperature' )
+                //fields filtering
+                if( !angular.isUndefined(self.options.fields) && self.options.fields!==null )
+                {
+                    self.graphRequestOptions.fields = self.options.fields;
+                }
+
+                //force timestamp range
+                if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
+                {
+                    timestampStart = self.options.timestamp.start;
+                    timestampEnd = self.options.timestamp.end;
+                }
+
+                //force values format
+                if( !angular.isUndefined(self.options.format) && self.options.format!==null )
+                {
+                    self.defaultFormat = self.options.format;
+                }
+
+                //force values unit (Y label)
+                if( !angular.isUndefined(self.options.height) && self.options.height!==null )
+                {
+                    //self.defaultLabel = self.options.label;
+                    self.graphOptions.chart.height = self.options.height;
+                }
+
+                //force Y label
+                if( !angular.isUndefined(self.options.label) && self.options.label!==null )
+                {
+                    self.graphOptions.chart.yAxis.axisLabel = self.options.label;
+                    self.graphOptions.chart.margin.left = 60;
+                }
+
+                //force color
+                if( !angular.isUndefined(self.options.color) && self.options.color!==null )
+                {
+                    self.graphOptions.chart.color = [self.options.color];
+                }
+                /*if( self.device.type==='temperature' )
                     self.graphOptions.chart.color = ['#FF7F00'];
                 else if( self.device.type==='motion' )
                     self.graphOptions.chart.color = ['#24A222'];
                 else if( self.device.type==='humidity' )
                     self.graphOptions.chart.color = ['#1776B6'];
                 else if( self.device.type==='energy' )
-                    self.graphOptions.chart.color = ['#D8241F'];
+                    self.graphOptions.chart.color = ['#D8241F'];*/
             }
 
             graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.graphRequestOptions)
                 .then(function(resp) {
                     var graphData = []
+                    var count = 0;
                     if( self.options.type=='line' )
                     {
                         for( var name in resp.data.data )
@@ -195,6 +254,7 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                                 'key': resp.data.data[name].name,
                                 'values': resp.data.data[name].values
                             });
+                            count++;
                         }
                     }
                     else if( self.options.type=='bar' )
@@ -206,77 +266,68 @@ var graphButtonDirective = function($q, $rootScope, graphService, $mdDialog, toa
                                 'bar': true,
                                 'values': resp.data.data[name].values
                             });
+                            count++;
                         }
                     }
+
+                    //adjust some graph properties
+                    //force legend displaying
+                    if( count>1 )
+                    {
+                        self.graphOptions.chart.showLegend = true;
+                        self.graphOptions.chart.margin.top = 30;
+                    }
+
+                    //set graph data and loading flag
                     self.graphData = graphData;
+                    self.loading = false;
                 });
-        };*/
-
-        /**
-         * Clear graph data
-         */
-        /*self.clearGraphData = function(el, promise) {
-            promise.then(function() {
-                self.graphData = [];
-            });
-        };*/
-
-        /**
-         * Cancel dialog
-         */
-        self.cancelDialog = function() {
-            $mdDialog.cancel();
         };
 
         /**
-         * Open graph dialog
+         * Init controller
          */
-        self.openGraphDialog = function() {
-            $mdDialog.show({
-                controller: function() { return self; },
-                controllerAs: 'graphButtonCtl',
-                templateUrl: 'js/tools/graphButton/graphDialog.html',
-                parent: angular.element(document.body),
-                clickOutsideToClose: true,
-                //onComplete: self.loadGraphData,
-                //onRemoving: self.clearGraphData,
-                fullscreen: true,
-                escapeToClose: false //disable esc key to avoid tooltip issue
-            });
+        self.init = function()
+        {
+            self.loadGraphData();
         };
-    
+
+        /**
+         * Destroy directive
+         */
+        $scope.$on('$destroy', function() {
+            //workaround to remove tooltips when dialog is closed: dialog is closed before 
+            //nvd3 has time to remove tooltips elements
+            var tooltips = $("div[id^='nvtooltip']");
+            for( var i=0; i<tooltips.length; i++ )
+            {
+                tooltips[i].remove();
+            }
+        });
+
     }];
 
-    var graphButtonLink = function(scope, element, attrs, controller) {
+    var graphLink = function(scope, element, attrs, controller) {
         controller.device = scope.device;
-        controller.graphOptions = scope.graphOptions;
-        if( !angular.isUndefined(scope.buttonLabel) )
-        {
-            controller.buttonLabel = scope.buttonLabel;
-        }
-        if( !angular.isUndefined(scope.buttonClass) )
-        {
-            controller.buttonClass = scope.buttonClass;
-        }
+        controller.options = scope.options;
+        controller.init();
     };
 
     return {
         restrict: 'AE',
-        templateUrl: 'js/tools/graphButton/graphButton.html',
+        templateUrl: 'js/tools/graph/graph.html',
         replace: true,
         scope: {
             device: '=',
-            graphOptions: '=graphOptions',
-            buttonLabel: '@',
-            buttonClass: '@'
+            options: '=options',
         },
-        controller: graphButtonController,
-        controllerAs: 'graphButtonCtl',
-        link: graphButtonLink
+        controller: graphController,
+        controllerAs: 'graphCtl',
+        link: graphLink
     };
 
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('graphButton', ['$q', '$rootScope', 'graphService', '$mdDialog', 'toastService', graphButtonDirective]);
+RaspIot.directive('graph', ['$q', '$rootScope', 'graphService', 'toastService', graphDirective]);
 

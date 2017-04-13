@@ -9,7 +9,9 @@ var widgetTemperatureDirective = function(raspiotService) {
         self.device = $scope.device;
         self.graphOptions = {
             'type': 'line',
-            'fields': ['timestamp', 'celsius']
+            'fields': ['timestamp', 'celsius'],
+            'color': '#FF7F00',
+            'label': 'Temperature (°C)'
         };
         self.hasDatabase = raspiotService.hasModule('database');
     }];

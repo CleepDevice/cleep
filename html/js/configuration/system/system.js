@@ -1,25 +1,25 @@
 /**
- * Raspberry config directive
- * Handle raspberry configuration
+ * System config directive
+ * Handle system configuration
  */
-var raspberryConfigDirective = function($filter, toast, raspberryService, raspiotService) {
+var systemConfigDirective = function($filter, toast, systemService, raspiotService) {
     var container = null;
 
-    var raspberryController = function() {
+    var systemController = function() {
         var self = this;
         self.sunset = null;
         self.sunrise = null;
         self.city = null;
+        self.monitoring = false;
 
         /**
          * Set city
          */
-        self.setCity = function()
-        {
+        self.setCity = function() {
             toast.loading('Updating city...');
-            raspberryService.setCity(self.city)
+            systemService.setCity(self.city)
                 .then(function(resp) {
-                    return raspiotService.reloadConfig('raspberry');
+                    return raspiotService.reloadConfig('system');
                 })
                 .then(function(resp) {
                     toast.success('City updated');
@@ -29,32 +29,40 @@ var raspberryConfigDirective = function($filter, toast, raspberryService, raspio
         };
 
         /**
+         * Save monitoring
+         */
+        self.setMonitoring = function() {
+
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
         {
-            var config = raspiotService.getConfig('raspberry');
+            var config = raspiotService.getConfig('system');
             self.city = config.city;
             self.sunset = $filter('hrTime')(config.sun.sunset);
             self.sunrise = $filter('hrTime')(config.sun.sunrise);
+            self.monitoring = config.monitoring;
         };
 
     };
 
-    var raspberryLink = function(scope, element, attrs, controller) {
+    var systemLink = function(scope, element, attrs, controller) {
         controller.init();
     };
 
     return {
-        templateUrl: 'js/configuration/raspberry/raspberry.html',
+        templateUrl: 'js/configuration/system/system.html',
         replace: true,
         scope: true,
-        controller: raspberryController,
-        controllerAs: 'raspberryCtl',
-        link: raspberryLink
+        controller: systemController,
+        controllerAs: 'systemCtl',
+        link: systemLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('raspberryConfigDirective', ['$filter', 'toastService', 'raspberryService', 'raspiotService', raspberryConfigDirective]);
+RaspIot.directive('systemConfigDirective', ['$filter', 'toastService', 'systemService', 'raspiotService', systemConfigDirective]);
 

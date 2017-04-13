@@ -11,7 +11,7 @@ var widgetClockDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/scheduler/clock.html',
+        templateUrl: 'js/dashboard/widgets/system/clock.html',
         replace: true,
         scope: {
             'device': '='

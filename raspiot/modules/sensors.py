@@ -255,6 +255,7 @@ class Sensors(RaspIotMod):
         #stop task
         self.logger.debug('Stop temperature task for sensor %s' % sensor['uuid'])
         self.__tasks[sensor['uuid']].stop()
+        del self.__tasks[sensor['uuid']]
 
     def __compute_temperature_offset(self, offset, offset_unit):
         """

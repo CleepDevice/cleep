@@ -192,7 +192,7 @@ class Database(RaspIotMod):
         @param timestamp_start: start of range
         @param timestamp_end: end of range
         @param options: command options (dict('output':<'list','dict'[default]>, 'fields':[<field1>, <field2>, ...], 'sort':<'asc'[default],'desc'>))
-        @return dict of rows
+        @return data dict('uuid'<device uuid>, 'event':<event type>, 'names':<list(<data name>,...)>, 'data':<list(list(<data value,...>|list(dict('data name':<data value>,...)))))
         """
         #check parameters
         if uuid is None or len(uuid)==0:
@@ -228,46 +228,54 @@ class Database(RaspIotMod):
 
         #adjust options
         columns = []
+        names = ['timestamp']
         if len(options_fields)==0:
             #no field filtered, add all existing fields
-            columns.append('timestamp')
             columns.append('value1')
+            names.append(infos['value1'])
             if infos['value2'] is not None:
                 columns.append('value2')
+                names.append(infos['value2'])
             if infos['value3'] is not None:
                 columns.append('value3')
+                names.append(infos['value3'])
             if infos['value4'] is not None:
                 columns.append('value4')
+                names.append(infos['value4'])
         else:
             #get column associated to field name
             for options_field in options_fields:
-                if options_field=='timestamp':
-                    columns.append('timestamp')
-                else:
-                    for column in infos.keys():
-                        self.logger.debug('%s==%s' % (infos[column], options_field))
-                        if column.startswith('value') and infos[column]==options_field:
-                            self.logger.debug('append')
-                            columns.append(column)
+                for column in infos.keys():
+                    if column.startswith('value') and infos[column]==options_field:
+                        columns.append(column)
+                        names.append(options_field)
 
-        #get device data
-        query = 'SELECT %s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (','.join(columns), infos['valuescount'], options_sort)
-        self.logger.debug('query=%s' % query)
-        self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
-
-        #format data
+        #get device data for each request columns
         data = None
         if options_output=='dict':
             #output as dict
-            #code from http://stackoverflow.com/a/3287775
+            query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (','.join(columns), infos['valuescount'], options_sort)
+            self.logger.debug('query=%s' % query)
+            self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
+            #@see http://stackoverflow.com/a/3287775
             data = [dict((self.__restore_field_name(self.__cur.description[i][0], infos), value) for i, value in enumerate(row)) for row in self.__cur.fetchall()]
+
         else:
-            #output as list (format for graph)
-            data = self.__cur.fetchall()
+            #output as list
+            data = {}
+            for column in columns:
+                query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (column, infos['valuescount'], options_sort)
+                self.logger.debug('query=%s' % query)
+                self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
+                data[infos[column]] = {
+                    'name': infos[column],
+                    'values': self.__cur.fetchall()
+                }
 
         return {
             'uuid': uuid,
             'event': infos['event'],
+            'names': names,
             'data': data
         }
 
@@ -308,4 +316,31 @@ class Database(RaspIotMod):
                         {'field':'on', 'value':0}
                     ])
 
-        
+            elif event_type=='monitoring':
+                #save cpu usage
+                if event_action=='cpu':
+                    raspiot = float(event['params']['raspiot'])
+                    system = float(event['params']['system'])
+                    others = system - raspiot
+                    if others<0:
+                        others = 0
+                    idle = 100.0 - system
+                    self.save_data(event['uuid'], event_type, [
+                        {'field':'raspiot', 'value':raspiot},
+                        {'field':'others', 'value':others},
+                        {'field':'idle', 'value':idle}
+                    ])
+
+                #save memory usage
+                if event_action=='memory':
+                    raspiot = float(event['params']['raspiot'])
+                    total = float(event['params']['total'])
+                    available = float(event['params']['available'])
+                    others = total - available - raspiot
+                    self.save_data(event['uuid'], event_type, [
+                        {'field':'raspiot', 'value':raspiot},
+                        {'field':'others', 'value':others},
+                        {'field':'available', 'value':available}
+                    ])
+
+

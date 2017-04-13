@@ -7,7 +7,7 @@ import getopt
 import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
-from raspiot import rpcserver, bus, raspberry, inventory
+from raspiot import rpcserver, bus, raspberry, inventory, system
 import importlib
 
 CONFIG_FILE = 'raspiot.conf'
@@ -137,14 +137,14 @@ if __name__ == '__main__':
         #app.config['sys.database'] = db
         #db.start()
 
-        #create raspberry
-        #logger.debug('Initializing Raspberry')
-        #debug = False
-        #if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('raspberry')==1):
-        #    debug = True
-        #raspberry= raspberry.Raspberry(bus, debug)
-        #app.config['sys.raspberry'] = raspberry
-        #raspberry.start()
+        #create system module by default
+        logger.debug('Initializing system module')
+        debug = False
+        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('system')==1):
+            debug = True
+        system = system.System(bus, debug)
+        app.config['mod.system'] = system
+        system.start()
 
         #load user modules
         logger.debug('Loading user modules:')

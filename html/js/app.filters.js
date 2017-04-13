@@ -119,7 +119,7 @@ RaspIot.filter('graphDialogTitle', function($filter) {
         if( angular.isUndefined(device) && device==null )
             return 'Sensor graph';
 
-        result = device.type + ' graph of ' + device.name;
+        result = device.type + ' chart of ' + device.name;
         return result.firstUpperCase();
     };
 });

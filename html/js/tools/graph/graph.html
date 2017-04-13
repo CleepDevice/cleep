@@ -1,0 +1,8 @@
+<div layout="column" layout-align="center stretch">
+    <div ng-if="graphCtl.loading" layout="row" layout-align="space-around center" style="height:400px;">
+        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+    </div>
+    <div ng-if="!graphCtl.loading">
+        <nvd3 options='graphCtl.graphOptions' data='graphCtl.graphData'></nvd3>
+    </div>
+</div>
