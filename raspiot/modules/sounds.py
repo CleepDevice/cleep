@@ -279,7 +279,7 @@ class Sounds(RaspIotMod):
     def get_sounds(self):
         """
         Get sounds
-        @return: array of sounds {'name':<name>}
+        @return: ilist of sounds (list(dict('name':<name>)))
         """
         out = []
         for root, dirs, sounds in os.walk(Sounds.SOUNDS_PATH):
@@ -314,4 +314,18 @@ class Sounds(RaspIotMod):
             raise Exception('Sound file "%s"  doesn\'t exists' % filepath)
 
         return True
+
+    def play_random_sound(self):
+        """
+        Play random sound from list of sounds
+        @return always True
+        """
+        sounds = self.get_sounds()
+
+        if len(sounds)>0
+            num = random.randrange(0, len(sounds), 1)
+            self.play_sound(sounds[num])
+
+        return True
+
 
