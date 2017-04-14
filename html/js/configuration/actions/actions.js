@@ -23,7 +23,7 @@ var actionsConfigDirective = function(toast, raspiotService, actionsService, con
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'actionsCtl',
-                templateUrl: 'js/directives/actions/addAction.html',
+                templateUrl: 'js/configuration/actions/addAction.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false
             }); 

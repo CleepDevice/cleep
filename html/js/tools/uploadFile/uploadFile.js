@@ -89,7 +89,7 @@ var uploadFileDirective = function(rpcService) {
 
     return {
         restrict: 'AE',
-        templateUrl: 'js/directives/uploadfile/uploadfile.html',
+        templateUrl: 'js/tools/uploadFile/uploadFile.html',
         scope: {
             selectedFile: '=',
             label: '@'
