@@ -27,7 +27,8 @@ class System(RaspIotMod):
         'monitoring': False
     }
 
-    MONITORING_DELAY = 60.0
+    MONITORING_CPU_DELAY = 60.0
+    MONITORING_MEMORY_DELAY = 300.0
 
     def __init__(self, bus, debug_enabled):
         """
@@ -44,7 +45,8 @@ class System(RaspIotMod):
         self.__clock_uuid = None
         self.__monitor_cpu_uuid = None
         self.__monitor_memory_uuid = None
-        self.__monitoring_task = None
+        self.__monitoring_cpu_task = None
+        self.__monitoring_memory_task = None
         self.__process = None
 
     def _start(self):
@@ -106,14 +108,18 @@ class System(RaspIotMod):
                 self.__monitor_memory_uuid = uuid
 
         #launch monitoring thread
-        self.__start_monitoring_thread()
+        self.__start_monitoring_threads()
 
     def _stop(self):
         """
         Stop module
         """
+        #stop time task
         if self.time_task:
             self.time_task.stop()
+
+        #stop monitoring task
+        self.__stop_monitoring_threads()
 
     def __search_city(self, city):
         """
@@ -417,30 +423,40 @@ class System(RaspIotMod):
 
         return infos
 
-    def __start_monitoring_thread(self):
+    def __start_monitoring_threads(self):
         """
-        Start monitoring thread
+        Start monitoring threads
         """
-        self.__monitoring_task = Task(self.MONITORING_DELAY, self.__monitoring_thread)
-        self.__monitoring_task.start()
+        self.__monitoring_cpu_task = Task(self.MONITORING_CPU_DELAY, self.__monitoring_cpu_thread)
+        self.__monitoring_cpu_task.start()
+        self.__monitoring_memory_task = Task(self.MONITORING_MEMORY_DELAY, self.__monitoring_memory_thread)
+        self.__monitoring_memory_task.start()
 
-    def __stop_monitoring_thread(self):
+    def __stop_monitoring_threads(self):
         """
-        Stop monitoring thread
+        Stop monitoring threads
         """
-        if self.__monitoring_task is not None:
-            self.__monitoring_task.stop()
+        if self.__monitoring_cpu_task is not None:
+            self.__monitoring_cpu_task.stop()
+        if self.__monitoring_memory_task is not None:
+            self.__monitoring_memory_task.stop()
 
-    def __monitoring_thread(self):
+    def __monitoring_cpu_thread(self):
         """
-        Read memory and cpu usage 
+        Read cpu usage 
         """
         config = self._get_config()
 
-        #report cpu and memory usage
         if config['monitoring']:
-            #need to send 2 events, one per devices
             self.send_event('system.monitoring.cpu', self.get_cpu_usage(), self.__monitor_cpu_uuid)
+
+    def __monitoring_memory_thread(self):
+        """
+        Read memory usage 
+        """
+        config = self._get_config()
+
+        if config['monitoring']:
             self.send_event('system.monitoring.memory', self.get_memory_usage(), self.__monitor_memory_uuid)
 
     def __hr_bytes(self, n):
