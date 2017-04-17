@@ -28,8 +28,13 @@ class System(RaspIotMod):
         'monitoring': False
     }
 
-    MONITORING_CPU_DELAY = 60.0
-    MONITORING_MEMORY_DELAY = 300.0
+    MONITORING_CPU_DELAY = 60.0 #1 minute
+    MONITORING_MEMORY_DELAY = 300.0 #5 minutes
+    MONITORING_DISKS_DELAY = 21600 #6 hours
+
+    THRESHOLD_MEMORY = 80.0
+    THRESHOLD_DISK_SYSTEM = 80.0
+    THRESHOLD_DISK_EXTERNAL = 90.0
 
     def __init__(self, bus, debug_enabled):
         """
@@ -48,6 +53,7 @@ class System(RaspIotMod):
         self.__monitor_memory_uuid = None
         self.__monitoring_cpu_task = None
         self.__monitoring_memory_task = None
+        self.__monitoring_disks_task = None
         self.__process = None
 
     def _start(self):
@@ -471,6 +477,8 @@ class System(RaspIotMod):
         self.__monitoring_cpu_task.start()
         self.__monitoring_memory_task = Task(self.MONITORING_MEMORY_DELAY, self.__monitoring_memory_thread)
         self.__monitoring_memory_task.start()
+        self.__monitoring_disks_task = Task(self.MONITORING_DISKS_DELAY, self.__monitoring_disks_thread)
+        self.__monitoring_disks_task.start()
 
     def __stop_monitoring_threads(self):
         """
@@ -480,6 +488,8 @@ class System(RaspIotMod):
             self.__monitoring_cpu_task.stop()
         if self.__monitoring_memory_task is not None:
             self.__monitoring_memory_task.stop()
+        if self.__monitoring_disks_task is not None:
+            self.__monitoring_disks_task.stop()
 
     def __monitoring_cpu_thread(self):
         """
@@ -487,17 +497,40 @@ class System(RaspIotMod):
         """
         config = self._get_config()
 
+        #send event if monitoring activated
         if config['monitoring']:
             self.send_event('system.monitoring.cpu', self.get_cpu_usage(), self.__monitor_cpu_uuid)
 
     def __monitoring_memory_thread(self):
         """
-        Read memory usage 
+        Read memory usage
+        Send alert if threshold reached
         """
         config = self._get_config()
+        memory = self.get_memory_usage()
 
+        #detect memory leak
+        percent = float(memory['available'])/float(memory['total'])*100.0
+        if percent>=self.THRESHOLD_MEMORY:
+            self.send_event('system.alert.memory', {'percent':percent, 'threshold':self.THRESHOLD_MEMORY})
+
+        #send event if monitoring activated
         if config['monitoring']:
-            self.send_event('system.monitoring.memory', self.get_memory_usage(), self.__monitor_memory_uuid)
+            self.send_event('system.monitoring.memory', memory, self.__monitor_memory_uuid)
+
+    def __monitoring_disks_thread(self):
+        """
+        Read disks usage
+        Only used to send alert when threshold reached
+        """
+        disks = self.get_filesystem_infos()
+        for disk in disks:
+            if disk['mounted']:
+                if disk['mountpoint']=='/' and disk['percent']>=self.THRESHOLD_DISK_SYSTEM:
+                    self.send_event('system.alert.disk', {'percent':disk['percent'], 'threshold':self.THRESHOLD_DISK_SYSTEM, 'mountpoint':disk['mountpoint']})
+
+                elif disk['mountpoint'] not in ('/', '/boot') and disk['percent']>=self.THRESHOLD_DISK_EXTERNAL:
+                    self.send_event('system.alert.disk', {'percent':disk['percent'], 'threshold':self.THRESHOLD_DIST_EXTERNAL, 'mountpoint':disk['mountpoint']})
 
     def __hr_bytes(self, n):
         """
