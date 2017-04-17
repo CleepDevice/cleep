@@ -37,10 +37,24 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
-     * Get messages
+     * Get current time
      */
     self.getTime = function() {
         return rpcService.sendCommand('get_time', 'system');
+    };
+
+    /**
+     * Get filesystem infos
+     */
+    self.getFilesystemInfos = function() {
+        return rpcService.sendCommand('get_filesystem_infos', 'system');
+    };
+
+    /**
+     * Get network infos
+     */
+    self.getNetworkInfos = function() {
+        return rpcService.sendCommand('get_network_infos', 'system');
     };
 
     /**

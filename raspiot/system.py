@@ -12,6 +12,7 @@ from astral import Astral, GoogleGeocoder, AstralError
 import psutil
 import time
 from libs.console import Console
+from libs.fstab import Fstab
 
 __all__ = ['System']
 
@@ -350,7 +351,13 @@ class System(RaspIotMod):
     def get_memory_usage(self):
         """
         Return system memory usage
-        @return memory usage (dict('total':<int>', 'available':<int>, 'percent':<float>))
+        @return memory usage :
+            dict(
+                'total': <total memory in bytes (int)>',
+                'available':<available memory in bytes (int)>,
+                'available_hr':<human readble available memory (string)>,
+                'raspiot': <raspiot process memory in bytes (float)>
+            )
         """
         system = psutil.virtual_memory()
         raspiot = self.__process.memory_info()[0]
@@ -368,7 +375,11 @@ class System(RaspIotMod):
     def get_cpu_usage(self):
         """
         Return system cpu usage
-        @return cpu usage (dict('system':<float>, 'raspiot':<float>))
+        @return cpu usage :
+            dict(
+                'system': <system cpu usage percentage (float)>,
+                'raspiot': <raspiot cpu usage percentage (float>)>
+            )
         """
         system = psutil.cpu_percent()
         if system>100.0:
@@ -392,10 +403,33 @@ class System(RaspIotMod):
             'uptime_hr': self.__hr_uptime(uptime)
         }
 
+    def __is_interface_wired(self, interface):
+        """
+        Return True if interface is wireless
+        """
+        console = Console()
+        res = console.command('iwconfig %s 2>&1' % interface)
+        if res['error'] or res['killed'] or len(res['output'])==0:
+            return False
+
+        if res['output'][0].lower().find('no wireless')==-1:
+            return False
+
+        return True
+
     def get_network_infos(self):
         """
         Return network infos
-        @return network infos (dict('<interface>': {'interface':<string>, 'ip':<string>, 'mac':<string>'}, ...)
+        @return network infos:
+            dict(
+                '<interface>': dict(
+                    'interface':<interface name (string)>,
+                    'ip': <ip address (string)>,
+                    'mac': <interface mac address (string)>,
+                    'wired': <interface type ('wired', 'wifi')> 
+                ),
+                ...
+            )
         """
         nets = psutil.net_if_addrs()
         infos = {}
@@ -418,7 +452,8 @@ class System(RaspIotMod):
             infos[interface] = {
                 'ip': ip,
                 'mac': mac,
-                'interface': interface
+                'interface': interface,
+                'wired': self.__is_interface_wired(interface)
             }
 
         return infos
@@ -490,3 +525,75 @@ class System(RaspIotMod):
         minutes = uptime / 60 % 60
 
         return '%dd %dh %dm' % (days, hours, minutes)
+
+    def get_filesystem_infos(self):
+        """
+        Return filesystem infos (all values are in octets)
+        @return list of device available with those informations:
+            list(dict(
+                'device': <device path /dev/XXX (string)>
+                'uuid': <device uuid like found in blkid (string)>,
+                'system': <system partition (bool)>,
+                'mountpoint': <mountpoint (string)>
+                'mounted': <partition is mounted (bool)>,
+                'mounttype': <partition type (string)>,
+                'options': <mountpoint options (string)>,
+                'total': <partition total space in octets (number)>,
+                'used': <partition used space in octets (number)>,
+                'free': <partition free space in octets (number)>,
+                'percent': <partition used space in percentage (number)>
+            ), ...)
+        """
+        #get mounted partitions and all devices
+        fstab = Fstab()
+        mounted_partitions = fstab.get_mountpoints()
+        self.logger.debug('mounted_partitions=%s' % mounted_partitions)
+        all_devices = fstab.get_all_devices()
+        self.logger.debug('all_devices=%s' % all_devices)
+
+        #build output
+        fsinfos = []
+        for device in all_devices:
+            #check if partition is mounted
+            mounted = {'mounted':False, 'mountpoint':'', 'mounttype':'-', 'options':'', 'uuid':None}
+            system = False
+            for partition in mounted_partitions:
+                if mounted_partitions[partition]['device']==device:
+                    mounted['mounted'] = True
+                    mounted['mountpoint'] = mounted_partitions[partition]['mountpoint']
+                    mounted['device'] = mounted_partitions[partition]['device']
+                    mounted['uuid'] = mounted_partitions[partition]['uuid']
+                    mounted['mounttype'] = mounted_partitions[partition]['mounttype']
+                    mounted['options'] = mounted_partitions[partition]['options']
+                    if mounted_partitions[partition]['mountpoint'] in ('/', '/boot'):
+                        system = True
+
+            #get mounted partition usage
+            usage = {'total':0, 'used':0, 'free':0, 'percent':0.0}
+            if mounted['mounted']:
+                sdiskusage = psutil.disk_usage(mounted['mountpoint'])
+                self.logger.debug('diskusage for %s: %s' % (device, sdiskusage));
+                usage['total'] = sdiskusage.total
+                usage['used'] = sdiskusage.used
+                usage['free'] = sdiskusage.free
+                usage['percent'] = sdiskusage.percent
+
+            #fill infos
+            fsinfos.append({
+                'device': device,
+                'uuid': mounted['uuid'],
+                'system': system,
+                'mountpoint': mounted['mountpoint'],
+                'mounted': mounted['mounted'],
+                'mounttype': mounted['mounttype'],
+                'options': mounted['options'],
+                'total': usage['total'],
+                'used': usage['used'],
+                'free': usage['free'],
+                'percent': usage['percent']
+            })
+
+        self.logger.debug('Filesystem infos: %s' % fsinfos)
+        return fsinfos
+
+

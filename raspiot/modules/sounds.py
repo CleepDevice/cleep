@@ -322,7 +322,7 @@ class Sounds(RaspIotMod):
         """
         sounds = self.get_sounds()
 
-        if len(sounds)>0
+        if len(sounds)>0:
             num = random.randrange(0, len(sounds), 1)
             self.play_sound(sounds[num])
 

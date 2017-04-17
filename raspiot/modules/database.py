@@ -191,8 +191,20 @@ class Database(RaspIotMod):
         @param uuid: device uuid
         @param timestamp_start: start of range
         @param timestamp_end: end of range
-        @param options: command options (dict('output':<'list','dict'[default]>, 'fields':[<field1>, <field2>, ...], 'sort':<'asc'[default],'desc'>))
-        @return data dict('uuid'<device uuid>, 'event':<event type>, 'names':<list(<data name>,...)>, 'data':<list(list(<data value,...>|list(dict('data name':<data value>,...)))))
+        @param options: command options
+                dict(
+                    'output': <'list','dict'[default]>,
+                    'fields': [<field1>, <field2>, ...],
+                    'sort': <'asc'[default],'desc'>,
+                    'limit': <number>
+                )
+        @return data
+            dict(
+                'uuid': <device uuid>,
+                'event': <event type>,
+                'names': <list(<data name>,...)>,
+                'data': <list(list(<data value,...>|list(dict('data name':<data value>,...))))
+            )
         """
         #check parameters
         if uuid is None or len(uuid)==0:
@@ -208,15 +220,19 @@ class Database(RaspIotMod):
 
         #prepare options
         options_fields = []
-        if options is not None and options.has_key('fields'):
-            options_fields = options['fields']
         options_output = 'dict'
-        if options is not None and options.has_key('output') and options['output'] in ('list', 'dict'):
-            options_output = options['output']
         options_sort = 'asc'
-        if options is not None and options.has_key('sort') and options['sort'] in ('asc', 'desc'):
-            options_sort = options['sort']
-        self.logger.debug('options: fields=%s output=%s sort=%s' % (options_fields, options_output, options_sort))
+        options_limit = ''
+        if options is not None:
+            if options.has_key('fields'):
+                options_fields = options['fields']
+            if options.has_key('output') and options['output'] in ('list', 'dict'):
+                options_output = options['output']
+            if options.has_key('sort') and options['sort'] in ('asc', 'desc'):
+                options_sort = options['sort']
+            if options.has_key('limit') and options['limit'].isdigit():
+                options_limit = 'LIMIT %d' % options['limit']
+        self.logger.debug('options: fields=%s output=%s sort=%s limit=%s' % (options_fields, options_output, options_sort, options_limit))
 
         #get device infos
         self.__cur.execute('SELECT event, valuescount, value1, value2, value3, value4 FROM devices WHERE uuid=?', (uuid,))
@@ -254,7 +270,7 @@ class Database(RaspIotMod):
         data = None
         if options_output=='dict':
             #output as dict
-            query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (','.join(columns), infos['valuescount'], options_sort)
+            query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s %s' % (','.join(columns), infos['valuescount'], options_sort, options_limit)
             self.logger.debug('query=%s' % query)
             self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
             #@see http://stackoverflow.com/a/3287775
@@ -264,7 +280,7 @@ class Database(RaspIotMod):
             #output as list
             data = {}
             for column in columns:
-                query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s' % (column, infos['valuescount'], options_sort)
+                query = 'SELECT timestamp,%s FROM data%d WHERE uuid=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp %s %s' % (column, infos['valuescount'], options_sort, options_limit)
                 self.logger.debug('query=%s' % query)
                 self.__cur.execute(query, (uuid, timestamp_start, timestamp_end))
                 data[infos[column]] = {
@@ -321,10 +337,10 @@ class Database(RaspIotMod):
                 if event_action=='cpu':
                     raspiot = float(event['params']['raspiot'])
                     system = float(event['params']['system'])
-                    others = system - raspiot
-                    if others<0:
-                        others = 0
-                    idle = 100.0 - system
+                    others = float('{0:.2f}'.format(system - raspiot))
+                    if others<0.0:
+                        others = 0.0
+                    idle = 100.0 - raspiot - others
                     self.save_data(event['uuid'], event_type, [
                         {'field':'raspiot', 'value':raspiot},
                         {'field':'others', 'value':others},

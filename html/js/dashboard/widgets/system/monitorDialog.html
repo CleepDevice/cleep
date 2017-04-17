@@ -13,9 +13,38 @@
         </md-toolbar>
 
         <md-dialog-content>
-            <md-content layout="column" layout-padding>
-                    <graph device="monitorCtl.monitorCpu" options='monitorCtl.graphCpuOptions'></graph>
-                    <graph device="monitorCtl.monitorMemory" options='monitorCtl.graphMemoryOptions'></graph>
+            <md-content layout-padding>
+                <md-list>
+                    <md-subheader class="md-no-sticky">Hardware infos</md-subheader>
+                    <md-list-item>
+                        <graph device="monitorCtl.monitorCpu" options="monitorCtl.graphCpuOptions" flex="50"></graph>
+                        <graph device="monitorCtl.monitorMemory" options="monitorCtl.graphMemoryOptions" flex="50"></graph>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-subheader class="md-no-sticky">Filesystem infos</md-subheader>
+                    <md-list-item>
+                        <graph device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskSystemOptions" flex="33"></graph>
+                        <graph ng-show="monitorCtl.graphDistExt1Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt1Options" flex="33"></graph>
+                        <graph ng-show="monitorCtl.graphDistExt2Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt2Options" flex="33"></graph>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-subheader class="md-no-sticky">Network infos</md-subheader>
+                    <md-list-item ng-repeat="(interface,infos) in monitorCtl.networks">
+                        <md-icon ng-if="!infos.wired" md-font-set="material-icons">
+                            network_wifi
+                            <md-tooltip md-direction="right">Wireless interface</md-tooltip>
+                        </md-icon>
+                        <md-icon ng-if="infos.wired" md-font-set="material-icons">
+                            settings_ethernet
+                            <md-tooltip md-direction="right">Wired interface</md-tooltip>
+                        </md-icon>
+                        <p layout="row">
+                            <span class="md-title" flex="33">{{infos.interface}}</span>
+                            <span flex="33">{{infos.ip}}</span>
+                            <span flex="33">{{infos.mac}}</span>
+                        </p>
+                    </md-list-item>
+                </md-list>
             </md-content>
         </md-dialog-content>
 

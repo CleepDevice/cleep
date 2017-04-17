@@ -19,6 +19,10 @@
  *    'label': string: value label,
  *    'height': int : graph height (optional, default 400px)
  *    'color': string  : color hex code (starting with #). Only used for single data
+ *    'loadData': function: callback that returns data to display (mandatory for pie chart).
+ *                @param start: start timestamp
+ *                @param end: end timestamp
+ *                @return promise. The callback must return a promise
  *  }
  */
 var graphDirective = function($q, $rootScope, graphService, toast) {
@@ -28,6 +32,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         self.device = null;
         self.options = null;
         self.loading = true;
+        self.graphHeight = '400px';
 
         //dynamic time format according to zoom
         self.customTimeFormat = d3.time.format.multi([
@@ -63,10 +68,8 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                     }
                 },
                 yAxis: {
-                    axisLabel: function() {
-                        return self.defaultLabel;
-                    },
-                    //axisLabelDistance: -10,
+                    axisLabel: '',
+                    axisLabelDistance: -15,
                     tickFormat: function(v) {
                         return self.defaultFormat(v);
                     }
@@ -78,16 +81,17 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 },
                 zoom: {
                     enabled: true,
-                    scaleExtent: [
-                        1,
-                        10
-                    ],
+                    scaleExtent: [1,10],
                     useFixedDomain: false,
                     useNiceScale: false,
                     horizontalOff: false,
                     verticalOff: true,
                     unzoomEventType: "dblclick.zoom"
                 }
+            },
+            title: {
+                enable: false,
+                text: ''
             }
         }
 
@@ -116,6 +120,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 },
                 yAxis: {
                     axisLabel: '',
+                    axisLabelDistance: -15,
                     tickFormat: function(v) {
                         return self.defaultFormat(v);
                     }
@@ -131,25 +136,55 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 },
                 showControls: false,
                 showLegend: false
+            },
+            title: {
+                enable: false,
+                text: ''
+            }
+        };
+
+        //pie graph default options
+        self.pieGraphOptions = {
+            chart: {
+                type: "pieChart",
+                height: 400,
+                showLabels: true,
+                duration: 500,
+                labelThreshold: 0.05,
+                labelType: 'percent',
+                donut: true,
+                donutRatio: 0.35,
+                x: function(d) {
+                    return d.key;
+                },
+                y: function(d) {
+                    return self.defaultFormat(d.value);
+                },
+                legend: {
+                    margin: {
+                        top: 5,
+                        right: 35,
+                        bottom: 5,
+                        left: 0
+                    }
+                }
+            },
+            title: {
+                enable: false,
+                text: ''
             }
         };
 
         //default value format callback
         self.defaultFormat = function(v) {
-            //return d3.format(',.2f')(v);
             return v;
         };
-
-        //default label (on Y axis)
-        self.defaultLabel = '';
-
-        //default height
-        self.defaultLabel = 400;
 
         //graph types<=>options mapping
         self.graphOptionsByType = {
             'line': self.stackedAreaGraphOptions,
-            'bar': self.historicalBarGraphOptions
+            'bar': self.historicalBarGraphOptions,
+            'pie': self.pieGraphOptions
         };
 
         //graph data and options
@@ -162,15 +197,11 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
             fields: [],
             sort: 'ASC'
         };
-    
-        /**
-         * Load graph data
-         */
-        self.loadGraphData = function(scope, el) {
-            //prepare default timestamp range
-            var timestampEnd = Number(moment().format('X'));
-            var timestampStart = timestampEnd - 86400;
 
+        /**
+         * Prepare graph options according to directive options
+         */
+        self.__prepareGraphOptions = function() {
             //set graph request options and graph options
             if( !angular.isUndefined(self.options) && self.options!==null )
             {
@@ -187,11 +218,23 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                         self.graphRequestOptions.fields.output = 'list';
                         self.graphOptions = self.graphOptionsByType[self.options.type];
                     }
+                    else if( self.options.type=='pie' )
+                    {
+                        self.graphRequestOptions.fields.output = 'dict';
+                        self.graphOptions = self.graphOptionsByType[self.options.type];
+                    }
                     else
                     {
                         //invalid type specified
                         toast.error('Invalid graph type specified');
                     }
+                }
+
+                //force graph height
+                if( !angular.isUndefined(self.options.height) && self.options.height!==null )
+                {
+                    self.graphOptions.chart.height = self.options.height;
+                    self.graphHeight = '' + self.options.height + 'px';
                 }
 
                 //fields filtering
@@ -200,24 +243,10 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                     self.graphRequestOptions.fields = self.options.fields;
                 }
 
-                //force timestamp range
-                if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
-                {
-                    timestampStart = self.options.timestamp.start;
-                    timestampEnd = self.options.timestamp.end;
-                }
-
                 //force values format
                 if( !angular.isUndefined(self.options.format) && self.options.format!==null )
                 {
                     self.defaultFormat = self.options.format;
-                }
-
-                //force values unit (Y label)
-                if( !angular.isUndefined(self.options.height) && self.options.height!==null )
-                {
-                    //self.defaultLabel = self.options.label;
-                    self.graphOptions.chart.height = self.options.height;
                 }
 
                 //force Y label
@@ -225,6 +254,13 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 {
                     self.graphOptions.chart.yAxis.axisLabel = self.options.label;
                     self.graphOptions.chart.margin.left = 60;
+                }
+
+                //force title
+                if( !angular.isUndefined(self.options.title) && self.options.title!==null )
+                {
+                    self.graphOptions.title.enable = true;
+                    self.graphOptions.title.text = self.options.title;
                 }
 
                 //force color
@@ -241,47 +277,97 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 else if( self.device.type==='energy' )
                     self.graphOptions.chart.color = ['#D8241F'];*/
             }
+        };
 
-            graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.graphRequestOptions)
-                .then(function(resp) {
-                    var graphData = []
-                    var count = 0;
-                    if( self.options.type=='line' )
-                    {
-                        for( var name in resp.data.data )
-                        {
-                            graphData.push({
-                                'key': resp.data.data[name].name,
-                                'values': resp.data.data[name].values
-                            });
-                            count++;
-                        }
-                    }
-                    else if( self.options.type=='bar' )
-                    {
-                        for( var name in resp.data.data )
-                        {
-                            graphData.push({
-                                'key': self.device[name].name,
-                                'bar': true,
-                                'values': resp.data.data[name].values
-                            });
-                            count++;
-                        }
-                    }
+        /**
+         * Finalize graph options according to directive options
+         * @param count: number of items in graph. Used to disable/enable legend
+         */
+        self.__finalizeGraphOptions = function(data) {
+            var graphData = [];
+            var count = 0;
 
-                    //adjust some graph properties
-                    //force legend displaying
-                    if( count>1 )
-                    {
-                        self.graphOptions.chart.showLegend = true;
-                        self.graphOptions.chart.margin.top = 30;
-                    }
+            if( self.options.type=='line' )
+            {
+                for( var name in data )
+                {
+                    graphData.push({
+                        'key': data[name].name,
+                        'values': data[name].values
+                    });
+                    count++;
+                }
+            }
+            else if( self.options.type=='bar' )
+            {
+                for( var name in data )
+                {
+                    graphData.push({
+                        'key': self.device[name].name,
+                        'bar': true,
+                        'values': data[name].values
+                    });
+                    count++;
+                }
+            }
+            else if( self.options.type=='pie' )
+            {
+                for( var name in data )
+                {
+                    graphData.push({
+                        'key': data[name].name,
+                        'value': data[name].value
+                    });
+                }
+            }
 
-                    //set graph data and loading flag
-                    self.graphData = graphData;
-                    self.loading = false;
-                });
+            //force legend displaying
+            if( count>1 && self.options.type!=='pie' )
+            {
+                self.graphOptions.chart.showLegend = true;
+                self.graphOptions.chart.margin.top = 30;
+            }   
+
+            //set graph data and loading flag
+            self.graphData = graphData;
+            self.loading = false;
+        };
+    
+        /**
+         * Load graph data
+         */
+        self.loadGraphData = function(scope, el) {
+            //prepare default timestamp range
+            var timestampEnd = Number(moment().format('X'));
+            var timestampStart = timestampEnd - 86400;
+            if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
+            {
+                timestampStart = self.options.timestamp.start;
+                timestampEnd = self.options.timestamp.end;
+            }
+
+            //prepare graph options
+            self.__prepareGraphOptions();
+
+            //load graph data
+            if( !angular.isUndefined(self.options.loadData) && self.options.loadData!==null )
+            {
+                //load user data
+                self.options.loadData(timestampStart, timestampEnd)
+                    .then(function(resp) {
+                        self.__finalizeGraphOptions(resp);
+                    }, function(err) {
+                        //toast.error(err);
+                    });
+            }
+            else
+            {
+                //load device data
+                graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.graphRequestOptions)
+                    .then(function(resp) {
+                        self.__finalizeGraphOptions(resp.data.data);
+                    });
+            }
         };
 
         /**

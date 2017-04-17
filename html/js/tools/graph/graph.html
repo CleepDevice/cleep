@@ -1,5 +1,5 @@
 <div layout="column" layout-align="center stretch">
-    <div ng-if="graphCtl.loading" layout="row" layout-align="space-around center" style="height:400px;">
+    <div ng-if="graphCtl.loading" layout="row" layout-align="space-around center" ng-style="{'height':graphCtl.graphHeight}">
         <md-progress-circular md-mode="indeterminate"></md-progress-circular>
     </div>
     <div ng-if="!graphCtl.loading">
