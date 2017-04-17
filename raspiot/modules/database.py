@@ -38,7 +38,6 @@ class Database(RaspIotMod):
         """
         Start module
         """
-        self.logger.debug('_start')
         #make sure database file exists
         if not os.path.exists(os.path.join(Database.DATABASE_PATH, Database.DATABASE_NAME)):
             self.logger.debug('Database file not found')
@@ -53,7 +52,6 @@ class Database(RaspIotMod):
         Stop module
         """
         if self.__cnx:
-            self.logger.debug('close db')
             self.__cnx.close()
 
     def __init_database(self):
@@ -185,6 +183,25 @@ class Database(RaspIotMod):
         
         return True
 
+    def __get_device_infos(self, uuid):
+        """
+        Return device infos (read from "devices" table)
+        @return list of devices table fields:
+            dict(
+                'event': event associated to device (string),
+                'valuescount': number of values saved for this device (used to get data table) (int),
+                'value1': value1 field name (string),
+                'value2': value2 field name (string or None),
+                'value3': value3 field name (string or None),
+                'value4': value4 field name (string or None),
+            )
+        """
+        self.__cur.execute('SELECT event, valuescount, value1, value2, value3, value4 FROM devices WHERE uuid=?', (uuid,))
+        row = self.__cur.fetchone()
+        if row is None:
+            raise CommandError('Device %s not found!' % uuid)
+        return dict((self.__cur.description[i][0], value) for i, value in enumerate(row))
+
     def get_data(self, uuid, timestamp_start, timestamp_end, options=None):
         """
         Return data from data table
@@ -235,14 +252,10 @@ class Database(RaspIotMod):
         self.logger.debug('options: fields=%s output=%s sort=%s limit=%s' % (options_fields, options_output, options_sort, options_limit))
 
         #get device infos
-        self.__cur.execute('SELECT event, valuescount, value1, value2, value3, value4 FROM devices WHERE uuid=?', (uuid,))
-        row = self.__cur.fetchone()
-        if row is None:
-            raise CommandError('Device %s not found!' % uuid)
-        infos = dict((self.__cur.description[i][0], value) for i, value in enumerate(row))
+        infos = self.__get_device_infos(uuid)
         self.logger.debug('infos=%s' % infos)
 
-        #adjust options
+        #prepare query options
         columns = []
         names = ['timestamp']
         if len(options_fields)==0:
@@ -294,6 +307,46 @@ class Database(RaspIotMod):
             'names': names,
             'data': data
         }
+
+    def purge_data(self, uuid, timestamp_until):
+        """
+        Purge device data until specified time
+        @param uuid: device uuid (string)
+        @param timestamp_until: timestamp to delete data before (int)
+        @return always True
+        @raise MissingParameter, InvalidParameter
+        """
+        #check parameters
+        if uuid is None or len(uuid)==0:
+            raise MissingParameter('Uuid parameter is missing')
+        if timestamp_until is None:
+            raise MissingParameter('Timestamp_until parameter is missing')
+        if timestamp_until<0:
+            raise InvalidParameter('Timestamp_until value must be positive') 
+        
+        #get device infos
+        infos = self.__get_device_infos(uuid)
+        self.logger.debug('infos=%s' % infos)
+
+        #prepare query parameters
+        tablename = ''
+        if infos['valuescount']==1:
+            tablename = 'data1'
+        if infos['valuescount']==2:
+            tablename = 'data2'
+        if infos['valuescount']==3:
+            tablename = 'data3'
+        if infos['valuescount']==4:
+            tablename = 'data4'
+
+        #prepare sql query
+        query = 'DELETE FROM %s WHERE uuid=? AND timestamp<?' % tablename
+        self.logger.debug('query=%s' % query)
+
+        #execute query
+        self.__cur.execute(query, (uuid, timestamp_until))
+
+        return True
 
     def event_received(self, event):
         """
@@ -358,5 +411,4 @@ class Database(RaspIotMod):
                         {'field':'others', 'value':others},
                         {'field':'available', 'value':available}
                     ])
-
 

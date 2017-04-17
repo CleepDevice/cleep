@@ -37,7 +37,6 @@ class Inventory(RaspIotMod):
                 _module = module.replace('mod.', '')
                 self.modules[_module] = {}
 
-
     def _start(self):
         """
         Start module
@@ -128,4 +127,12 @@ class Inventory(RaspIotMod):
             return self.modules[module]
 
         return None
+
+    def is_module_loaded(self, module):
+        """
+        Simply returns True if specified module is loaded
+        @param module: module name
+        @return True if module loaded, False otherwise
+        """
+        return self.modules.has_key(module)
 

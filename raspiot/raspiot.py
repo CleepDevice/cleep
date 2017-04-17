@@ -263,6 +263,17 @@ class RaspIot(BusClient):
         """
         pass
 
+    def is_module_loaded(self, module):
+        """
+        Request inventory to check if specified module is loaded or not
+        @param module: module name
+        @return True if module is loaded, False otherwise
+        """
+        resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
+        if resp['error']:
+            self.logger.error('Unable to request inventory')
+
+        return resp['data']
 
 
 

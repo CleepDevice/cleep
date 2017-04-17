@@ -230,9 +230,14 @@ class System(RaspIotMod):
                 #sunrise time
                 self.send_event('system.time.sunrise', None, self.__clock_uuid)
 
-        #compute sunset/sunrise at midnight
+        #compute some stuff at midnight
         if now_formatted['hour']==0 and now_formatted['minute']==0:
+            #compute sunset/sunrise at midnight
             self.__compute_sun()
+            #purge data
+            if self.is_module_loaded('database'):
+                self.__purge_cpu_data()
+                self.__purge_memory_data()
 
     def get_module_config(self):
         """
@@ -595,5 +600,31 @@ class System(RaspIotMod):
 
         self.logger.debug('Filesystem infos: %s' % fsinfos)
         return fsinfos
+
+    def __purge_cpu_data(self):
+        """
+        Purge cpu data (keep 1 week)
+        """
+        params = {
+            'uuid': self.__monitor_cpu_uuid,
+            'timestamp_until': int(time.time()) - 604800
+        }
+        try:
+            self.send_command('purge_data', 'database', params, 10.0)
+        except NoResponse:
+            self.logger.warning('Unable to purge CPU usage from database')
+
+    def __purge_memory_data(self):
+        """
+        Purge memory data (keep 1 month)
+        """
+        params = {
+            'uuid': self.__monitor_memory_uuid,
+            'timestamp_until': int(time.time()) - 2592000
+        }
+        try:
+            self.send_command('purge_data', 'database', params, 10.0)
+        except NoResponse:
+            self.logger.warning('Unable to purge memory usage from database')
 
 
