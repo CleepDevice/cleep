@@ -23,6 +23,9 @@ class Sensors(RaspIotMod):
         'sensors': {}
     }
 
+    TYPE_TEMPERATURE = 'temperature'
+    TYPE_MOTION = 'motion'
+
     def __init__(self, bus, debug_enabled):
         """
         Constructor
@@ -46,7 +49,7 @@ class Sensors(RaspIotMod):
         #launch temperature reading tasks
         devices = self.get_module_devices()
         for uuid in devices:
-            if devices[uuid]['type']=='temperature':
+            if devices[uuid]['type']==self.TYPE_TEMPERATURE:
                 self.__start_temperature_task(devices[uuid])
 
     def _stop(self):
@@ -133,7 +136,7 @@ class Sensors(RaspIotMod):
 
             #process event
             if sensor:
-                if sensor['type']=='motion':
+                if sensor['type']==self.TYPE_MOTION:
                     #motion sensor
                     self.__process_motion_sensor(event, sensor)
 
@@ -375,7 +378,7 @@ class Sensors(RaspIotMod):
                 'gpios': [{'gpio':gpio, 'gpio_uuid':resp_gpio['uuid']}],
                 'device': device,
                 'path': path,
-                'type': 'temperature',
+                'type': self.TYPE_TEMPERATURE,
                 'subtype': 'onewire',
                 'interval': interval,
                 'offsetcelsius': offsetC,
@@ -493,7 +496,7 @@ class Sensors(RaspIotMod):
             data = {
                 'name': name,
                 'gpios': [{'gpio':gpio, 'gpio_uuid':resp_gpio['uuid']}],
-                'type': 'motion',
+                'type': self.TYPE_MOTION,
                 'subtype': 'generic',
                 'on': False,
                 'reverted': reverted,
@@ -547,6 +550,10 @@ class Sensors(RaspIotMod):
         elif device is None:
             raise InvalidParameter('Sensor "%s" doesn\'t exist' % name)
         else:
+            #stop task if necessary
+            if device['type']==self.TYPE_TEMPERATURE:
+                self.__stop_temperature_task(device)
+
             #unconfigure gpios
             for gpio in device['gpios']:
                 #is a reserved gpio (onewire?)
@@ -573,6 +580,7 @@ class Sensors(RaspIotMod):
             #sensor is valid, remove it
             if not self._delete_device(device['uuid']):
                 raise CommandError('Unable to delete sensor')
+            self.logger.debug('Device %s deleted sucessfully' % uuid)
 
         return True
 

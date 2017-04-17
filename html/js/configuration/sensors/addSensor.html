@@ -55,7 +55,7 @@
                     <md-input-container class="md-block" flex-gt-sm>
                         <label>Onewire devices found</label>
                         <md-select ng-model="sensorsCtl.onewire" ng-disabled="sensorsCtl.updateDevice">
-                            <md-option ng-repeat="onewire in sensorsCtl.onewires" ng-value="onewire">{{onewire.device}}</md-option>
+                            <md-option ng-disabled="onewire.disable" ng-repeat="onewire in sensorsCtl.onewires" ng-value="onewire">{{onewire.device}}</md-option>
                         </md-select>
                     </md-input-container>
                     <!--<md-input-container class="md-block" flex-gt-sm>

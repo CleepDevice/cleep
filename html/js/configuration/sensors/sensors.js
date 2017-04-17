@@ -53,6 +53,8 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
             self.interval = self.intervals[1].value;
             self.offset = 0;
             self.offsetUnit = self.offsetUnits[0].value;
+            self.onewires = [];
+            self.onewire = '';
         };
 
         /** 
@@ -183,6 +185,27 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
         self.getOnewires = function() {
             sensorsService.getOnewires()
                 .then(function(resp) {
+                    //disable already used items
+                    for( var i=0; i<resp.data.length; i++ )
+                    {
+                        var found = false;
+                        for( var j=0; j<self.devices.length; j++ )
+                        {
+                            if( self.devices[j].type==='temperature' && self.devices[j].subtype==='onewire' && self.devices[j].device===resp.data[i].device )
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        resp.data[i].disable = false;
+                        if( found )
+                        {
+                            resp.data[i].disable = true;
+                        }
+                    }
+
+                    //fill onewire devices
                     self.onewires = resp.data;
                     self.onewire = self.onewires[0];
                 });

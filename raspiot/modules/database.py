@@ -348,6 +348,42 @@ class Database(RaspIotMod):
 
         return True
 
+    def __delete_device(self, uuid):
+        """
+        Purge device data until specified time
+        @param uuid: device uuid (string)
+        @param timestamp_until: timestamp to delete data before (int)
+        @return always True
+        @raise MissingParameter, InvalidParameter
+        """
+        #check parameters
+        if uuid is None or len(uuid)==0:
+            raise MissingParameter('Uuid parameter is missing')
+        
+        #get device infos
+        infos = self.__get_device_infos(uuid)
+        self.logger.debug('infos=%s' % infos)
+
+        #prepare query parameters
+        tablename = ''
+        if infos['valuescount']==1:
+            tablename = 'data1'
+        if infos['valuescount']==2:
+            tablename = 'data2'
+        if infos['valuescount']==3:
+            tablename = 'data3'
+        if infos['valuescount']==4:
+            tablename = 'data4'
+
+        #prepare sql query
+        query = 'DELETE FROM %s WHERE uuid=?' % tablename
+        self.logger.debug('query=%s' % query)
+
+        #execute query
+        self.__cur.execute(query, (uuid,))
+
+        return True
+
     def event_received(self, event):
         """
         Event received
@@ -358,7 +394,11 @@ class Database(RaspIotMod):
             #split event
             (event_module, event_type, event_action) = event['event'].split('.')
 
-            if event_type=='temperature':
+            if event_type=='device' and event_action=='delete':
+                #delete device data
+                self.__delete_device(event['uuid'])
+
+            elif event_type=='temperature':
                 #save temperature event
                 self.save_data(event['uuid'], event_type, [
                     {'field':'celsius', 'value':event['params']['celsius']},
