@@ -158,7 +158,11 @@ class Gpios(RaspIotMod):
     MODE_INPUT = 'input'
     MODE_OUTPUT = 'output'
     MODE_RESERVED = 'reserved'
+
     INPUT_DROP_THRESHOLD = 0.150 #in ms
+
+    USAGE_ONEWIRE = 'onewire'
+    USAGE_LIRC = 'lirc'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -307,12 +311,13 @@ class Gpios(RaspIotMod):
             return self.GPIOS_REV3
         return {}
 
-    def reserve_gpio(self, name, gpio, command_sender):
+    def reserve_gpio(self, name, gpio, usage, command_sender):
         """
         Reserve a gpio used to configure raspberry pi (ie onewire, lirc...)
         This action only flag this gpio as reserved to avoid using it again
         @param name: name of gpio
         @param gpio: gpio value
+        @param usage: gpio usage (must be a known value 'onewire', ?)
         @param command_sender: command request sender (used to set gpio in readonly mode)
         @return Created gpio device
         @raise CommandError, MissingParameter, InvalidParameter
@@ -321,22 +326,29 @@ class Gpios(RaspIotMod):
         if command_sender=='rpcserver':
             command_sender = 'gpios'
 
+        #search for gpio device
+        found_gpio = self._search_device('gpio', gpio)
+
         #check values
         if not gpio:
             raise MissingParameter('Gpio parameter is missing')
+        elif found_gpio is not None and found_gpio['mode']!=usage:
+            raise InvalidParameter('Gpio is already reserved for %s usage' % found_gpio['mode'])
+        elif found_gpio is not None and found_gpio['mode']==usage:
+            return found_gpio
         elif not name:
             raise MissingParameter('Name parameter is missing')
         elif self._search_device('name', name) is not None:
             raise InvalidParameter('Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
             raise InvalidParameter('Gpio does not exist for this raspberry pi')
-        elif self._search_device('gpio', gpio) is not None:
-            raise InvalidParameter('Gpio "%s" is already configured' % gpio)
+        elif usage not in [self.USAGE_ONEWIRE]:
+            raise InvalidParameter('Usage is invalid')
         else:
             #gpio is valid, prepare new entry
             data = {
                 'name': name,
-                'mode': self.MODE_RESERVED,
+                'mode': usage,
                 'pin': self.get_raspi_gpios()[gpio],
                 'gpio': gpio,
                 'keep': False,
@@ -354,6 +366,22 @@ class Gpios(RaspIotMod):
                 raise CommandError('Unable to add device')
     
             return device
+
+    def is_reserved_gpio(self, uuid):
+        """
+        Return True if gpio is reserved
+        @param uuid: device uuid (string)
+        @return True if gpio is reserved, False otherwise
+        """
+        device = self._get_device(uuid)
+        if device is None:
+            raise CommandError('Device %s not found' % uuid)
+
+        self.logger.debug('is_reserved_gpio: %s' % device)
+        if device['subtype']==self.MODE_RESERVED:
+            return True
+
+        return False
 
     def add_gpio(self, name, gpio, mode, keep, reverted, command_sender):
         """

@@ -274,6 +274,21 @@ class Sensors(RaspIotMod):
             #compute celsius offset
             return ((offset-32)/1.8, offset)
 
+    def __get_gpio_uses(self, gpio):
+        """
+        Return number of gpio uses
+        @param uuid: device uuid (string)
+        @return list of gpios or empty list if nothing found
+        """
+        devices = self._get_devices()
+        uses = 0
+        for uuid in devices:
+            for gpio_ in devices[uuid]['gpios']:
+                if gpio==gpio_['gpio']:
+                    uses += 1
+
+        return uses
+
     def get_module_config(self):
         """
         Get full module configuration
@@ -304,7 +319,7 @@ class Sensors(RaspIotMod):
         else:
             return resp['data']
 
-    def add_temperature_onewire(self, name, device, path, interval, offset, offset_unit):
+    def add_temperature_onewire(self, name, device, path, interval, offset, offset_unit, gpio='GPIO4'):
         """
         Add new onewire temperature sensor (DS18B20)
         @param name: sensor name
@@ -313,6 +328,7 @@ class Sensors(RaspIotMod):
         @param interval: interval between temperature reading (seconds)
         @param offset: temperature offset
         @param offset_unit: temperature offset unit (string 'celsius' or 'fahrenheit')
+        @param gpio: onewire gpio (for now this parameter is useless because forced to default onewire gpio GPIO4)
         @return True if sensor added
         """
         #check values
@@ -336,14 +352,27 @@ class Sensors(RaspIotMod):
             raise MissingParameter('Offset_unit paramter is missing')
         elif offset_unit not in ('celsius', 'fahrenheit'):
             raise InvalidParameter('Offset_unit must be equal to "celsius" or "fahrenheit"')
+        elif gpio is None or len(gpio)==0:
+            raise MissingParameter('Gpio parameter is missing')
         else:
             #compute offsets
             (offsetC, offsetF) = self.__compute_temperature_offset(offset, offset_unit)
 
+            #configure gpio
+            params = {
+                'name': name+'_onewire',
+                'gpio': gpio,
+                'usage': 'onewire'
+            }
+            resp_gpio = self.send_command('reserve_gpio', 'gpios', params)
+            if resp_gpio['error']:
+                raise CommandError(resp_gpio['message'])
+            resp_gpio = resp_gpio['data']
+
             #sensor is valid, save new entry
             sensor = {
                 'name': name,
-                'gpios': [],
+                'gpios': [{'gpio':gpio, 'gpio_uuid':resp_gpio['uuid']}],
                 'device': device,
                 'path': path,
                 'type': 'temperature',
@@ -457,7 +486,7 @@ class Sensors(RaspIotMod):
             }
             resp_gpio = self.send_command('add_gpio', 'gpios', params)
             if resp_gpio['error']:
-                raise CommandError(resp['message'])
+                raise CommandError(resp_gpio['message'])
             resp_gpio = resp_gpio['data']
                 
             #gpio was added and sensor is valid, add new sensor
@@ -520,9 +549,26 @@ class Sensors(RaspIotMod):
         else:
             #unconfigure gpios
             for gpio in device['gpios']:
-                resp = self.send_command('delete_gpio', 'gpios', {'uuid':gpio['gpio_uuid']})
+                #is a reserved gpio (onewire?)
+                resp = self.send_command('is_reserved_gpio', 'gpios', {'uuid': gpio['gpio_uuid']})
+                self.logger.debug('is_reserved_gpio: %s' % resp)
                 if resp['error']:
                     raise CommandError(resp['message'])
+                
+                #if gpio is reserved, check if no other sensor is using it
+                delete = True
+                if resp['data']==True:
+                    if self.__get_gpio_uses(gpio['gpio'])>1:
+                        #more than one devices are using this gpio, disable gpio unconfiguration
+                        self.logger.debug('More than one device is using gpio, disable gpio deletion')
+                        delete = False
+
+                #unconfigure gpio
+                if delete:
+                    self.logger.debug('Unconfigure gpio %s' % gpio['gpio_uuid'])
+                    resp = self.send_command('delete_gpio', 'gpios', {'uuid':gpio['gpio_uuid']})
+                    if resp['error']:
+                        raise CommandError(resp['message'])
 
             #sensor is valid, remove it
             if not self._delete_device(device['uuid']):

@@ -103,7 +103,7 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
                     }
                     else if( self.type===self.TYPE_TEMPERATURE_ONEWIRE )
                     {
-                        return sensorsService.addOnewireTemperatureSensor(self.name, self.onewire.device, self.onewire.path, self.interval, self.offset, self.offsetUnit);
+                        return sensorsService.addOnewireTemperatureSensor(self.name, self.onewire.device, self.onewire.path, self.interval, self.offset, self.offsetUnit, 'GPIO4');
                     }
                 })
                 .then(function() {
@@ -165,7 +165,7 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
          * Delete device
          */
         self.openDeleteDialog = function(device) {
-            confirm.open('Delete sensor?', null, 'Delete')
+            confirm.open('Delete sensor?', 'All sensor data will be deleted and you will not be able to restore it!', 'Delete')
                 .then(function() {
                     return sensorsService.deleteSensor(device.uuid);
                 })

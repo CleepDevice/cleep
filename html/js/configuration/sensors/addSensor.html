@@ -58,6 +58,12 @@
                             <md-option ng-repeat="onewire in sensorsCtl.onewires" ng-value="onewire">{{onewire.device}}</md-option>
                         </md-select>
                     </md-input-container>
+                    <!--<md-input-container class="md-block" flex-gt-sm>
+                        <label>Onewire gpio</label>
+                        <md-select ng-model="sensorsCtl.gpio" ng-disabled="sensorsCtl.updateDevice">
+                            <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
+                        </md-select>
+                    </md-input-container>-->
                 </div>
                 <div layout-gt-sm="row">
                     <md-input-container class="md-block" flex-gt-sm>
