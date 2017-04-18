@@ -58,6 +58,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set monitoring
+     */
+    self.setMonitoring = function(monitoring) {
+        return rpcService.sendCommand('set_monitoring', 'system', {'monitoring': monitoring});
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

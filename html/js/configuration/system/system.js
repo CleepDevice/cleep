@@ -2,7 +2,7 @@
  * System config directive
  * Handle system configuration
  */
-var systemConfigDirective = function($filter, toast, systemService, raspiotService) {
+var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService) {
     var container = null;
 
     var systemController = function() {
@@ -32,7 +32,16 @@ var systemConfigDirective = function($filter, toast, systemService, raspiotServi
          * Save monitoring
          */
         self.setMonitoring = function() {
-
+            //delay update to make sure model value is updated
+            $timeout(function() {
+                systemService.setMonitoring(self.monitoring)
+                    .then(function(resp) {
+                        return raspiotService.reloadConfig('system');
+                    })
+                    .then(function(resp) {
+                        toast.success('Monitoring updated');
+                    });
+            }, 250);
         };
 
         /**
@@ -64,5 +73,5 @@ var systemConfigDirective = function($filter, toast, systemService, raspiotServi
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('systemConfigDirective', ['$filter', 'toastService', 'systemService', 'raspiotService', systemConfigDirective]);
+RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', 'toastService', 'systemService', 'raspiotService', systemConfigDirective]);
 

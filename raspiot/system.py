@@ -3,7 +3,7 @@
     
 import os
 import logging
-from utils import InvalidParameter
+from utils import InvalidParameter, MissingParameter
 from raspiot import RaspIotMod
 from datetime import datetime
 import time
@@ -292,10 +292,24 @@ class System(RaspIotMod):
         sunrise = None
         if self.sunrise:
             sunrise = int(time.mktime(self.sunrise.timetuple()))
+
         return {
             'sunset': sunset,
             'sunrise': sunrise
         }
+
+    def set_monitoring(self, monitoring):
+        """
+        Set monitoring flag
+        @param monitoring: monitoring flag (bool)
+        """
+        if monitoring is None:
+            raise MissingParameter('Monitoring parameter missing')
+
+        config = self._get_config()
+        config['monitoring'] = monitoring
+        if self._save_config(config) is None:
+            raise CommandError('Unable to save configuration')
 
     def get_monitoring(self):
         """
@@ -315,7 +329,7 @@ class System(RaspIotMod):
         @param city: closest city name
         """
         if city is None:
-            raise InvalidParameter('City parameter is missing')
+            raise MissingParameter('City parameter is missing')
 
         #compute sunset/sunrise
         self.__compute_sun(city)
@@ -323,7 +337,8 @@ class System(RaspIotMod):
         #save city (exception raised before if error occured)
         config = self._get_config()
         config['city'] = city
-        self._save_config(config)
+        if self._save_config(config) is None:
+            raise CommandError('Unable to save configuration')
 
         return self.get_sun()
 

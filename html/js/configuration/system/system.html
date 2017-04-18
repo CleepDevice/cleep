@@ -1,8 +1,10 @@
 <md-content layout-fill ng-cloak>
-    <md-content layout-padding flex>
+    <md-content layout="column" layout-padding flex>
 
         <!-- city + sunset/sunrise -->
-        <h2>Sunset/sunrise configuration</h2>
+        <div class="md-title">
+            Sunset/sunrise configuration
+        </div>
         <div layout-gt-sm="row">
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Biggest city closed to your position</label>
@@ -21,15 +23,20 @@
                 <input type="text" ng-model="systemCtl.sunset" disabled></input>
             </md-input-container>
         </div>
+        <md-divider></md-divider>
 
         <!-- monitoring -->
-        <h2>Monitoring</h2>
-            <span>Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.</span>
-            <md-input-container class="md-block" flex-gt-sm>
-                <md-checkbox ng-model="systemCtl.monitoring" aria-label="" aria-label="Enable monitoring">
-                    Enable monitoring
-                </md-checkbox>
-            </md-input-container>
+        <div class="md-title">
+            Monitoring
+        </div>
+        <div>
+            Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.
+        </div>
+        <md-input-container class="md-block" flex-gt-sm>
+            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Set monitoring" aria-label="Enable monitoring">
+                Enable monitoring
+            </md-checkbox>
+        </md-input-container>
 
     </md-content>
 </md-content>
