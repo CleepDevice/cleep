@@ -20,7 +20,7 @@ var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
      */
     self.initDevices = function(devices)
     {   
-        for( uuid in devices )
+        for( var uuid in devices )
         {   
             if( devices[uuid].type==='motion' )
             {

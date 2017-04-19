@@ -71,7 +71,7 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
             //get unix timestamp
             var temp = self.startTime.split(':');
             var start = moment(self.startDate).hours(temp[0]).minutes(temp[1]);
-            var temp = self.endTime.split(':');
+            temp = self.endTime.split(':');
             var end = moment(self.endDate).hours(temp[0]).minutes(temp[1]);
 
             //send command

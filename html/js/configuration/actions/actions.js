@@ -74,7 +74,7 @@ var actionsConfigDirective = function(toast, raspiotService, actionsService, con
         self.disableScript = function(script, disabled) {
             actionsService.disableScript(script, disabled)
                 .then(function(resp) {
-                    return raspiotService.reloadConfig('actions')
+                    return raspiotService.reloadConfig('actions');
                 })
                 .then(function(config) {
                     self.scripts = config.scripts;
@@ -100,7 +100,7 @@ var actionsConfigDirective = function(toast, raspiotService, actionsService, con
          */
         self.init = function() {
             var config = raspiotService.getConfig('actions');
-            self.scripts = config['scripts'];
+            self.scripts = config.scripts;
         };
 
     }];

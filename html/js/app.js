@@ -40,7 +40,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 }
                 window.setTimeout(polling, nextPollingTimeout*1000);
             });
-    }
+    };
     window.setTimeout(polling, 0);
 
     //get server modules and inject services. Finally load devices
@@ -62,7 +62,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
                     //register module directive
                     directive = objectsService.services[module].getDirectiveInfos();
-                    objectsService._addModuleWithConfig(module, directive['label'], directive['name'] );
+                    objectsService._addModuleWithConfig(module, directive.label, directive.name);
                 }
                 else
                 {

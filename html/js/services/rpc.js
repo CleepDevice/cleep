@@ -30,7 +30,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         else
         {
             //no params
-            data.params = {}
+            data.params = {};
         }
 
         if( to!==undefined && to!==null )
@@ -155,8 +155,8 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         var formData = new FormData();
         formData.append('file', file);
         formData.append('filename', file.name);
-        formData.append('to', to)
-        formData.append('command', command)
+        formData.append('to', to);
+        formData.append('command', command);
         if( angular.isObject(data) )
         {
             //append extra parameters

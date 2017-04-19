@@ -20,7 +20,7 @@ var gpiosService = function($q, $rootScope, rpcService, raspiotService) {
      */
     self.initDevices = function(devices)
     {
-        for( uuid in devices )
+        for( var uuid in devices )
         {
             //change current color if gpio is on
             if( devices[uuid].on )
@@ -100,9 +100,9 @@ var gpiosService = function($q, $rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                if( raspiotService.devices[i]['on']===true )
+                if( raspiotService.devices[i].on===true )
                 {
-                    raspiotService.devices[i]['on'] = false;
+                    raspiotService.devices[i].on = false;
                     raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                     break;
                 }

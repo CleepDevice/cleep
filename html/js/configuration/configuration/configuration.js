@@ -13,24 +13,16 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
          */
         self.init = function()
         {
-            //debugger;
-            //save directives
-            //self.directives = raspiotService.directives;
-
             //wait for ng-repeat digest call
             $timeout(function() {
                 //dynamically generate configuration panel according to loaded modules
-                var container = $element.find('#configTabContent');
-                //angular.forEach(self.directives, function(item) {
-                for( module in self.directives )
+                for( var module in self.directives )
                 {
                     //get container
-                    //var id = item.cleanLabel+'Config';
                     var id = self.directives[module].cleanLabel + 'Config';
                     var container = $element.find('#'+id);
 
                     //prepare template to inject
-                    //var template = '<div '+item.directive.toDash()+'></div>';
                     var template = '<div ' + self.directives[module].directive.toDash() + '></div>';
 
                     //compile directive
@@ -38,7 +30,7 @@ var configurationDirective = function($q, objectsService, $compile, $timeout) {
 
                     //append directive to container
                     container.append(directive);
-                };
+                }
             });
         };
 

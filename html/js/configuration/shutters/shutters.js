@@ -90,10 +90,10 @@ var shuttersConfigDirective = function(shuttersService, raspiotService, toast, $
             //set editor's value
             self.name = device.name;
             self.shutter_open = device.shutter_open;
-            self.shutter_close = device.shutter_close
+            self.shutter_close = device.shutter_close;
             self.delay = device.delay;
             self.switch_open = device.switch_open;
-            self.switch_close = device.switch_close
+            self.switch_close = device.switch_close;
 
             //open dialog
             self.updateDevice = true;

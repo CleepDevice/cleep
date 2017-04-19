@@ -79,7 +79,7 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                raspiotService.devices[i].status = 'opening'
+                raspiotService.devices[i].status = 'opening';
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-accent-400"}';
                 break;
@@ -95,7 +95,7 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                raspiotService.devices[i].status = 'closing'
+                raspiotService.devices[i].status = 'closing';
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-accent-400"}';
                 break;
@@ -110,7 +110,7 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                raspiotService.devices[i].status = 'opened'
+                raspiotService.devices[i].status = 'opened';
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
@@ -125,7 +125,7 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                raspiotService.devices[i].status = 'closed'
+                raspiotService.devices[i].status = 'closed';
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;
@@ -140,7 +140,7 @@ var shuttersService = function($rootScope, rpcService, raspiotService) {
         {
             if( raspiotService.devices[i].uuid==uuid )
             {
-                raspiotService.devices[i].status = 'partial'
+                raspiotService.devices[i].status = 'partial';
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
                 break;

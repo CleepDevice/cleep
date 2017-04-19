@@ -95,7 +95,7 @@ var uploadFileDirective = function(rpcService) {
             label: '@'
         },
         link: uploadFileLink
-    }
+    };
 };
 
 var RaspIot = angular.module('RaspIot');

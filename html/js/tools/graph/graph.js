@@ -93,7 +93,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 enable: false,
                 text: ''
             }
-        }
+        };
 
         //line graph default options
         self.stackedAreaGraphOptions = {
@@ -286,10 +286,11 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         self.__finalizeGraphOptions = function(data) {
             var graphData = [];
             var count = 0;
+            var name = null;
 
             if( self.options.type=='line' )
             {
-                for( var name in data )
+                for( name in data )
                 {
                     graphData.push({
                         'key': data[name].name,
@@ -300,7 +301,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
             }
             else if( self.options.type=='bar' )
             {
-                for( var name in data )
+                for( name in data )
                 {
                     graphData.push({
                         'key': self.device[name].name,
@@ -312,7 +313,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
             }
             else if( self.options.type=='pie' )
             {
-                for( var name in data )
+                for( name in data )
                 {
                     graphData.push({
                         'key': data[name].name,

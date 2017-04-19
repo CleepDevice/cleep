@@ -89,7 +89,7 @@ var gpiosConfigDirective = function(gpiosService, raspiotService, toast, confirm
             self.name = device.name;
             self.gpio = device.gpio;
             self.mode = device.mode;
-            self.keep = device.keep
+            self.keep = device.keep;
 
             //open dialog
             self.updateDevice = true;

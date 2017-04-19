@@ -83,49 +83,51 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.reloadDevices = function()
     {
         var d = $q.defer();
+        var uuid = null;
+        var i = 0;
 
         rpcService.getDevices()
             .then(function(devices) {
                 var newDevices = [];
-                for( module in devices )
+                for( var module in devices )
                 {
-                        //add specific ui stuff
-                        for( uuid in devices[module] )
-                        {
-                            //add widget infos
-                            devices[module][uuid].__widget = {
-                                mdcolors: '{background:"default-primary-300"}'
-                            };
+                    //add specific ui stuff
+                    for( uuid in devices[module] )
+                    {
+                        //add widget infos
+                        devices[module][uuid].__widget = {
+                            mdcolors: '{background:"default-primary-300"}'
+                        };
 
-                            //add service infos
-                            devices[module][uuid].__service = module;
-                        }
+                        //add service infos
+                        devices[module][uuid].__service = module;
+                    }
 
-                        //request module service to update specifically its device
-                        if( objectsService.services[module] && typeof(objectsService.services[module].initDevices)!=='undefined' )
-                        {
-                            moduleDevices = objectsService.services[module].initDevices(devices[module]);
-                        }
-                        else
-                        {
-                            moduleDevices = devices[module];
-                        }
+                    //request module service to update specifically its device
+                    if( objectsService.services[module] && typeof(objectsService.services[module].initDevices)!=='undefined' )
+                    {
+                        moduleDevices = objectsService.services[module].initDevices(devices[module]);
+                    }
+                    else
+                    {
+                        moduleDevices = devices[module];
+                    }
 
-                        //store device
-                        for( uuid in moduleDevices )
-                        {
-                            newDevices.push(moduleDevices[uuid]);
-                        }
+                    //store device
+                    for( uuid in moduleDevices )
+                    {
+                        newDevices.push(moduleDevices[uuid]);
+                    }
                 }
 
                 //clear existing devices
-                for( var i=self.devices.length-1; i>=0; i--)
+                for( i=self.devices.length-1; i>=0; i--)
                 {
                     self.devices.splice(i, 1);
                 }
 
                 //save new devices
-                for( var i=0; i<newDevices.length; i++ )
+                for( i=0; i<newDevices.length; i++ )
                 {
                     self.devices.push(newDevices[i]);
                 }

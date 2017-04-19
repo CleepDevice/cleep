@@ -20,7 +20,7 @@ gulp.task('checkcode', function() {
             '!' + source + '/js/libs/**/*.js'
         ])
         .pipe(jshint())
-        .pipe(jshint.reporter('fail'));
+        .pipe(jshint.reporter());
 });
 
 gulp.task('minifyjs', function() {

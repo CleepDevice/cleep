@@ -96,7 +96,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
          */
         self.__getPartitionData = function(used, free)
         {
-            return pieData = {
+            return {
                 used: {
                     name: 'used',
                     value: used
@@ -153,9 +153,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                         else if( resp.data[i].mounted )
                         {
                             //external partition mounted
-                            if( extCount==0 )
+                            if( extCount===0 )
                             {
-                                console.log('mounted0', resp.data[i]);
                                 //return external1 usage
                                 self.graphDiskExt1Deferred.resolve(self.__getPartitionData(resp.data[i].used, resp.data[i].free));
                                 self.graphDiskExt1Options.title = resp.data[i].mountpoint;
@@ -163,7 +162,6 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                             }
                             else if( extCount==1 )
                             {
-                                console.log('mounted1', resp.data[i]);
                                 //return external2 usage
                                 self.graphDiskExt2Deferred.resolve(self.__getPartitionData(resp.data[i].used, resp.data[i].free));
                                 self.graphDiskExt2Options.title = resp.data[i].mountpoint;
@@ -173,7 +171,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                     }
 
                     //reject unecessary promises
-                    if( extCount==0 )
+                    if( extCount===0 )
                     {
                         self.graphDiskExt1Deferred.reject('No external1');
                         self.graphDistExt1Show = false;

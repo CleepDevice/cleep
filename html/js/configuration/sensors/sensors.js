@@ -247,7 +247,7 @@ var sensorGpiosFilter = function($filter) {
             return names.join(',');
         }
     };
-}
+};
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('sensorsConfigDirective', ['toastService', 'raspiotService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
