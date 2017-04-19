@@ -1,3 +1,16 @@
+raspiot (0.0.6) UNRELEASED; urgency=low
+
+  * Major improvements (device handling, inventory, rpc, core)
+  * New database module
+  * Add js graph support
+  * New system module (handle cpu/memory/disk usage)
+  * Improve package building (using npm and gulp)
+  * Temperature sensor handling
+  * Improve gpios module: add reserved feature
+  * Improve shutter module: fix startup issue and implement level feature
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 19 Apr 2017 18:00:00 +0100
+
 raspiot (0.0.5) UNRELEASED; urgency=low
 
   * Migration to angular material completed

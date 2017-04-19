@@ -174,9 +174,9 @@ def authenticate():
 
     return decorator
 
-def execute_command(command, to, params):
+def send_command(command, to, params):
     """
-    Execute specified command
+    Send specified command
     @param command: command to execute
     @param to: command recipient
     @param parmas: command parameters
@@ -238,7 +238,7 @@ def upload():
 
             #execute specified command
             logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
-            resp = execute_command(command, to, params)
+            resp = send_command(command, to, params)
 
     except Exception as e:
         logger.exception('Exception in upload:')
@@ -280,7 +280,7 @@ def download():
             params = {}
 
         #request full filepath from module (string format)
-        resp = execute_command(command, to, params)
+        resp = send_command(command, to, params)
         logger.debug('response: %s' % resp)
         if not resp['error']:
             filename = os.path.basename(resp['data'])
@@ -347,7 +347,7 @@ def command():
                 params = tmp_params['params']
 
         #execute command
-        resp = execute_command(command, to, params)
+        resp = send_command(command, to, params)
 
     except Exception as e:
         logger.exception('Exception in command:')
@@ -370,12 +370,14 @@ def modules():
     for module in app.config:
         if module.startswith('mod.'):
             _module = module.replace('mod.', '')
+
             logger.debug('Request "%s" config' % _module)
-            response = execute_command('get_module_config', _module, {})
+            response = send_command('get_module_config', _module, {})
             if not response['error']:
                 configs[_module] = response['data']
             else:
                 configs[_module] = None
+
     logger.debug('Configs: %s' % configs)
 
     return json.dumps(configs)
@@ -392,7 +394,7 @@ def devices():
         if module.startswith('mod.'):
             _module = module.replace('mod.', '')
             logger.debug('Request "%s" config' % _module)
-            response = execute_command('get_module_devices', _module, {})
+            response = send_command('get_module_devices', _module, {})
             if not response['error']:
                 devices[_module] = response['data']
             else:

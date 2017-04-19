@@ -8,6 +8,7 @@ var gutil = require('gulp-util');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var del = require('del');
+var wait = require('gulp-wait');
 
 var source = './html';
 var destination = './dist';
@@ -43,16 +44,16 @@ gulp.task('deb-build', function(cb) {
         env: process.env
     });
     cmd.stdout.on('data', function(data) {
-        gutil.log(data.toString().trim());
-        //console.log(data.toString().trim());
+        //gutil.log(data.toString().trim());
+        console.log(data.toString());
     });
     cmd.stderr.on('data', function(data) {
-        gutil.log(gutil.colors.red(data.toString().trim()));
-        //console.error(data.toString().trim());
+        //gutil.log(gutil.colors.red(data.toString().trim()));
+        console.error(data.toString());
     });
     cmd.on('close', function(code) {
-        gutil.log(gutil.colors.green('Done ['+code.toString().trim()+']'));
-        //console.log('Done ['+code.toString().trim()+']');
+        //gutil.log(gutil.colors.green('Done ['+code.toString().trim()+']'));
+        console.log('Done ['+code.toString()+']');
     });
 });
 
@@ -70,14 +71,14 @@ gulp.task('deb-move', function() {
             '../raspiot_*.dsc',
             '../raspiot_*.tar.gz'
         ])
-        .pipe(gulp.dest(destination))
-        .pipe(del([
+        .pipe(gulp.dest(destination));
+        /*.pipe(del([
             '../raspiot_*.build',
             '../raspiot_*.changes',
             '../raspiot_*.deb',
             '../raspiot_*.dsc',
             '../raspiot_*.tar.gz'
-        ], {force:true}));
+        ], {force:true}));*/
 });
 
 gulp.task('deb', ['deb-build', 'deb-clean', 'deb-move']);

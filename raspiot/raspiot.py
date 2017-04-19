@@ -173,18 +173,11 @@ class RaspIot(BusClient):
             self.logger.debug('Config file fixed')
             self._save_config(config)
 
-    def _get_dependencies(self):
-        """
-        Return module dependencies
-        """
-        return self.DEPS
-
     def _get_unique_id(self):
         """
         Return unique id. Useful to get unique device identifier
         """
         return str(uuid.uuid4())
-
 
     def get_module_config(self):
         """
@@ -197,7 +190,7 @@ class RaspIot(BusClient):
         if config.has_key('devices'):
             del config['devices']
 
-        return self._get_config()
+        return config
 
     def get_module_devices(self):
         """

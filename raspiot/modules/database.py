@@ -14,6 +14,7 @@ class Database(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'database.conf'
     MODULE_DEPS = []
+
     DATABASE_PATH = '/var/opt/raspiot/databases'
     DATABASE_NAME = 'raspiot.db'
 
