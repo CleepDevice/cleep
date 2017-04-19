@@ -3,3 +3,4 @@
 **/*.pyc
 *.pyc
 raspiot/test.py
+node_modules/
