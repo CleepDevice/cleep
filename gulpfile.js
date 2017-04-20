@@ -8,7 +8,6 @@ var gutil = require('gulp-util');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var del = require('del');
-var wait = require('gulp-wait');
 
 var source = './html';
 var destination = './dist';
@@ -58,9 +57,16 @@ gulp.task('deb-build', function(cb) {
 });
 
 gulp.task('deb-clean', function() {
-    var cmd = spawnSync('/usr/bin/debuild', ['clean'], {cwd: './', env:process.env});
-    cmd = spawnSync('/bin/rm', ['-rf', 'raspiot.egg-info'], {cwd:'./', env:process.env});
-    cmd = spawnSync('/bin/rm', ['-rf', 'pyraspiot.egg-info/'], {cwd:'./', env:process.env});
+    spawnSync('/usr/bin/debuild', ['clean'], {cwd: './', env:process.env});
+    spawnSync('/bin/rm', ['-rf', 'raspiot.egg-info'], {cwd:'./', env:process.env});
+    spawnSync('/bin/rm', ['-rf', 'pyraspiot.egg-info/'], {cwd:'./', env:process.env});
+    del([
+        '../raspiot_*.build',
+        '../raspiot_*.changes',
+        '../raspiot_*.deb',
+        '../raspiot_*.dsc',
+        '../raspiot_*.tar.gz'
+    ], {force:true});
 });
 
 gulp.task('deb-move', function() {
@@ -72,14 +78,7 @@ gulp.task('deb-move', function() {
             '../raspiot_*.tar.gz'
         ])
         .pipe(gulp.dest(destination));
-        /*.pipe(del([
-            '../raspiot_*.build',
-            '../raspiot_*.changes',
-            '../raspiot_*.deb',
-            '../raspiot_*.dsc',
-            '../raspiot_*.tar.gz'
-        ], {force:true}));*/
 });
 
-gulp.task('deb', ['deb-build', 'deb-clean', 'deb-move']);
+gulp.task('deb', ['deb-build', 'deb-move', 'deb-clean']);
 
