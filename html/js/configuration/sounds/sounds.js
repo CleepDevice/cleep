@@ -133,16 +133,18 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getModuleConfig('sounds');
-            var langs = [];
-            angular.forEach(config.langs.langs, function(label, lang) {
-                langs.push({'lang':lang, 'label':label});
-            });
-            self.langs = langs;
-            self.lang = config.langs.lang;
-            self.ttsLang = config.langs.lang;
-            self.volume = config.volume;
-            self.sounds = config.sounds;
+            raspiotService.getModuleConfig('sounds')
+                .then(function(config) {
+                    var langs = [];
+                    angular.forEach(config.langs.langs, function(label, lang) {
+                        langs.push({'lang':lang, 'label':label});
+                    });
+                    self.langs = langs;
+                    self.lang = config.langs.lang;
+                    self.ttsLang = config.langs.lang;
+                    self.volume = config.volume;
+                    self.sounds = config.sounds;
+                });
 
             //add module actions to fabButton
             var actions = [{

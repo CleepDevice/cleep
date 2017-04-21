@@ -215,8 +215,10 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getModuleConfig('sensors');
-            self.raspiGpios = config.raspi_gpios;
+            raspiotService.getModuleConfig('sensors')
+                .then(function(config) {
+                    self.raspiGpios = config.raspi_gpios;
+                });
 
             //add module actions to fabButton
             var actions = [{

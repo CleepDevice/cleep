@@ -128,8 +128,10 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getModuleConfig('gpios');
-            self.raspiGpios = config.raspi_gpios;
+            raspiotService.getModuleConfig('gpios')
+                .then(function(config) {
+                    self.raspiGpios = config.raspi_gpios;
+                });
 
             //add module actions to fabButton
             var actions = [{

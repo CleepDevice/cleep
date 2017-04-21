@@ -6,6 +6,8 @@
  */
 var raspiotService = function($rootScope, $q, toast, rpcService, objectsService) {
     var self = this;
+    //initialized
+    self.__deferred = $q.defer();
     //list of devices
     self.devices = [];
     //list of installed modules
@@ -53,22 +55,45 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
 
             self.modules[module].hasService = objectsService._moduleHasService(module);
         }
+
+        //resolve deferred
+        self.__deferred.resolve();
+        self.__deferred = null;
     };
 
     /**
      * Get specified module configuration
+     * @param module: module name to return configuration
+     * @return promise: promise is resolved when configuration is loaded
      */
     self.getModuleConfig = function(module)
     {
-        if( self.modules[module] )
+        var deferred = $q.defer();
+
+        if( self.__deferred===null )
         {
-            return self.modules[module].config;
+            if( self.modules[module] )
+            {
+                deferred.resolve(self.modules[module].config);
+            }
+            else
+            {
+                console.error('Specified module "' + module + '" has no configuration');
+                deferred.reject();
+            }
         }
         else
         {
-            console.error('Specified module "' + module + '" has no configuration');
-            return {};
+            //module not loaded, wait for it
+            self.__deferred.promise
+                .then(function() {
+                    deferred.resolve(self.modules[module].config);
+                }, function() {
+                    deferred.reject();
+                });
         }
+
+        return deferred.promise;
     };
 
     /**

@@ -132,8 +132,10 @@ var shuttersConfigDirective = function($rootScope, shuttersService, raspiotServi
          * Controller init
          */
         self.init = function() {
-            var config = raspiotService.getModuleConfig('shutters');
-            self.raspiGpios = config.raspi_gpios;
+            raspiotService.getModuleConfig('shutters')
+                .then(function(config) {
+                    self.raspiGpios = config.raspi_gpios;
+                });
 
             //add module actions to fabButton
             var actions = [{

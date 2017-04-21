@@ -99,8 +99,10 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getModuleConfig('actions');
-            self.scripts = config.scripts;
+            raspiotService.getModuleConfig('actions')
+                .then(function(config) {
+                    self.scripts = config.scripts;
+                });
 
             //add module actions to fabButton
             var actions = [{

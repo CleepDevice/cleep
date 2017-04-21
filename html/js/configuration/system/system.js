@@ -49,11 +49,13 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          */
         self.init = function()
         {
-            var config = raspiotService.getModuleConfig('system');
-            self.city = config.city;
-            self.sunset = $filter('hrTime')(config.sun.sunset);
-            self.sunrise = $filter('hrTime')(config.sun.sunrise);
-            self.monitoring = config.monitoring;
+            raspiotService.getModuleConfig('system')
+                .then(function(config) {
+                    self.city = config.city;
+                    self.sunset = $filter('hrTime')(config.sun.sunset);
+                    self.sunrise = $filter('hrTime')(config.sun.sunrise);
+                    self.monitoring = config.monitoring;
+                });
         };
 
     };
