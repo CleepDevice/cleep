@@ -9,32 +9,6 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
         self.modules = [];
         self.search = '';
 
-        /**
-         * Init controller
-         */
-        /*self.init = function()
-        {
-            //wait for ng-repeat digest call
-            $timeout(function() {
-                //dynamically generate configuration panel according to loaded modules
-                for( var module in self.directives )
-                {
-                    //get container
-                    var id = self.directives[module].cleanLabel + 'Config';
-                    var container = $element.find('#'+id);
-
-                    //prepare template to inject
-                    var template = '<div ' + self.directives[module].directive.toDash() + '></div>';
-
-                    //compile directive
-                    var directive = $compile(template)($scope);
-
-                    //append directive to container
-                    container.append(directive);
-                }
-            });
-        };*/
-
         self.init = function()
         {
             //flatten modules to array to allow sorting with ngrepeat
@@ -48,6 +22,13 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
             }
 
             //add dummy module to add new "install module" card in dashboard
+            //dummy name is used to always have this item at end of list
+            //dummy description is used to find this item using search
+            modules.push({
+                name: 'zzzzz',
+                description: 'install new module',
+                installmodule: true
+            });
             
             //save modules list
             self.modules = modules;

@@ -12,9 +12,9 @@
     </md-toolbar>
 
     <!-- modules list -->
-    <div layout="row" layout-xs="column" layout-wrap>
-        <div ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25" flex-xs="100">
-            <md-card>
+    <div layout="row" layout-xs="column" layout-wrap="">
+        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25" flex-xs="100">
+            <md-card ng-if="!module.installmodule">
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">{{module.name | firstUpper}}</span>
@@ -22,7 +22,7 @@
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-font-set="material-icons" class="icon-xl md-primary" style="padding:4px;">{{module.icon}}</md-icon>
+                            <md-icon md-font-set="material-icons" class="icon-xl" style="padding:4px;">{{module.icon}}</md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
@@ -35,6 +35,13 @@
                         <md-icon md-font-set="material-icons">delete</md-icon>
                         Uninstall
                     </md-button>
+                </md-card-actions>
+            </md-card>
+
+            <md-card ng-if="module.installmodule">
+                <md-icon md-font-set="material-icons" class="icon-xxl" style="padding: 8px 0px 8px 0px;">add_circle_outline</md-icon>
+                <md-card-actions layout="column" layout-align="start">
+                    <md-button class="md-raised md-accent">Install new module</md-button>
                 </md-card-actions>
             </md-card>
         </div>
