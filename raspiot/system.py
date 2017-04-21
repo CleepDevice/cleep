@@ -22,6 +22,8 @@ class System(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'system.conf'
     MODULE_DEPS = []
+    MODULE_DESCRIPTION = 'Monitor your raspberry easily'
+    MODULE_LOCKED = True
 
     DEFAULT_CONFIG = {
         'city': None,

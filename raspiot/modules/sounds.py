@@ -77,6 +77,8 @@ class Sounds(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
+    MODULE_DESCRIPTION = 'Plays sounds or speech text you want'
+    MODULE_LOCKED = False
 
     DEFAULT_CONFIG = {
         'lang': 'en'

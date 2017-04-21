@@ -24,14 +24,16 @@
                     <md-tooltip md-direction="bottom">Dashboard</md-tooltip>
                     <md-icon md-font-set="material-icons">dashboard</md-icon>
                 </md-button>
-                <md-button href="#!configuration" class="md-icon-button" aria-label="Configuration">
-                    <md-tooltip md-direction="bottom">Settings</md-tooltip>
+                <md-button href="#!modules" class="md-icon-button" aria-label="Modules">
+                    <md-tooltip md-direction="bottom">Modules</md-tooltip>
                     <md-icon md-font-set="material-icons">settings</md-icon>
                 </md-button>
             </div>
         </md-toolbar>
 
-        <div flex="90" ng-view></div>
+        <div ng-view></div>
+
+        <div fab-button></div>
 
     </div>
 
@@ -75,6 +77,7 @@
     <script src="js/services/graph.js"></script>
     <script src="js/tools/graph/graph.js"></script>
     <script src="js/tools/graphButton/graphButton.js"></script>
+    <script src="js/tools/fabButton/fabButton.js"></script>
     <script src="js/configuration/gpios/gpios.js"></script>
     <script src="js/configuration/shutters/shutters.js"></script>
     <script src="js/configuration/sounds/sounds.js"></script>
@@ -83,6 +86,8 @@
     <script src="js/configuration/actions/actions.js"></script>
     <script src="js/configuration/sensors/sensors.js"></script>
     <script src="js/configuration/configuration/configuration.js"></script>
+    <script src="js/modules/modules/modules.js"></script>
+    <script src="js/modules/module/module.js"></script>
     <script src="js/dashboard/widgets/gpios/gpio.js"></script>
     <script src="js/dashboard/widgets/messageboard/messageboard.js"></script>
     <script src="js/dashboard/widgets/sensors/motion.js"></script>

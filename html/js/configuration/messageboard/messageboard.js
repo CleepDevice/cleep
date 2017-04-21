@@ -1,7 +1,7 @@
 /**
  * Message board config directive
  */
-var messageboardDirective = function(raspiotService, toast, messageboardService, confirm) {
+var messageboardDirective = function($rootScope, raspiotService, toast, messageboardService, confirm) {
 
     var messageboardController = ['$scope', function($scope) {
         var self = this;
@@ -24,7 +24,7 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getConfig('messageboard');
+            var config = raspiotService.getModuleConfig('messageboard');
             self.duration = config.duration;
             self.unitMinutes = config.units.minutes;
             self.unitHours = config.units.hours;
@@ -32,20 +32,31 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
             self.speed = config.speed;
             self.boardIsOn = !config.status.off;
             self.messages = config.messages;
+
+            //add module actions to fabButton
+            var actions = [{
+                icon: 'add_circle',
+                callback: self.openAddDialog,
+                tooltip: 'Add message'
+            }, {
+                icon: 'build',
+                callback: self.openAdvancedDialog,
+                tooltip: 'Advanced configuration'
+            }]; 
+            $rootScope.$broadcast('enableFab', actions);
         };
 
         /**
          * Open add panel
          */
-        self.openAddPanel = function() {
-            self.showAddPanel = true;
+        self.openAddDialog = function() {
             self.closeAdvancedPanel();
         };
 
         /**
          * Close add panel
          */
-        self.closeAddPanel = function() {
+        self.closeAddDialog = function() {
             self.showAddPanel = false;
         };
 
@@ -77,7 +88,7 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
             //send command
             messageboardService.addMessage(self.message, start.unix(), end.unix())
                 .then(function(resp) {
-                    return raspiotService.reloadConfig('messageboard');
+                    return raspiotService.reloadModuleConfig('messageboard');
                 })
                 .then(function(config) {
                     self.messages = config.messages;
@@ -95,7 +106,7 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
                     return messageboardService.deleteMessage(message.uuid);
                 })
                 .then(function(resp) {
-                    return raspiotService.reloadConfig('messageboard');
+                    return raspiotService.reloadModuleConfig('messageboard');
                 })
                 .then(function(config) {
                     self.messages = config.messages;
@@ -163,5 +174,5 @@ var messageboardDirective = function(raspiotService, toast, messageboardService,
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('messageboardConfigDirective', ['raspiotService', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
+RaspIot.directive('messageboardConfigDirective', ['$rootScope', 'raspiotService', 'toastService', 'messageboardService', 'confirmService', messageboardDirective]);
 

@@ -1,4 +1,4 @@
-<md-content layout-fill ng-cloak>
+<md-content ng-cloak>
 
     <!-- list -->
     <md-table-container>
@@ -38,27 +38,5 @@
         </div>
     </div>
 
-    <!-- toolbar -->
-    <md-fab-speed-dial md-direction="left" class="md-scale md-fab-bottom-right">
-        <md-fab-trigger>
-            <md-button class="md-fab md-primary" aria-label="Actions">
-                <md-icon md-font-set="material-icons">more_vert</md-icon>
-            </md-button>
-        </md-fab-trigger>
-        <md-fab-actions>
-            <md-button ng-click="soundsCtl.openConfigDialog()" class="md-fab md-mini md-primary" aria-label="Advanced configuration">
-                <md-tooltip md-direction="top">Advanced configuration</md-tooltip>
-                <md-icon md-font-set="material-icons">build</md-icon>
-            </md-button>
-            <md-button ng-click="soundsCtl.openAddDialog()" class="md-fab md-mini md-primary" aria-label="Add sound">
-                <md-tooltip md-direction="top">Add sound</md-tooltip>
-                <md-icon md-font-set="material-icons">add_circle</md-icon>
-            </md-button>
-        </md-fab-actions>
-    </md-fab-speed-dial>
-
 </md-content>
-
-
-
 

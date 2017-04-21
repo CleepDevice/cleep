@@ -2,7 +2,7 @@
  * Gpios config directive
  * Handle gpios configuration
  */
-var gpiosConfigDirective = function(gpiosService, raspiotService, toast, confirm, $mdDialog) {
+var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, toast, confirm, $mdDialog) {
 
     var gpiosConfigController = function() {
         var self = this;
@@ -128,13 +128,22 @@ var gpiosConfigDirective = function(gpiosService, raspiotService, toast, confirm
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getConfig('gpios');
+            var config = raspiotService.getModuleConfig('gpios');
             self.raspiGpios = config.raspi_gpios;
+
+            //add module actions to fabButton
+            var actions = [{
+                icon: 'add_circle',
+                callback: self.openAddDialog,
+                tooltip: 'Add gpio'
+            }]; 
+            $rootScope.$broadcast('enableFab', actions);
         };
     };
 
     var gpiosConfigLink = function(scope, element, attrs, controller) {
         controller.init();
+
     };
 
     return {
@@ -148,5 +157,5 @@ var gpiosConfigDirective = function(gpiosService, raspiotService, toast, confirm
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('gpiosConfigDirective', ['gpiosService', 'raspiotService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
+RaspIot.directive('gpiosConfigDirective', ['$rootScope', 'gpiosService', 'raspiotService', 'toastService', 'confirmService', '$mdDialog', gpiosConfigDirective]);
 

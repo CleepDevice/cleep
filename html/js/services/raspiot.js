@@ -1,35 +1,68 @@
 /**
  * Raspiot services
  * Handles :
- *  - module configurations: base module configs and config helpers (reload config, get config...)
+ *  - installed modules: module and module helpers (reload config, get config...)
  *  - devices: all devices and devices helpers (reload devices)
  */
 var raspiotService = function($rootScope, $q, toast, rpcService, objectsService) {
     var self = this;
-    //list of configs
-    self.configs = [];
     //list of devices
     self.devices = [];
-    //list of modules
-    self.modules = [];
+    //list of installed modules
+    self.modules = {};
 
     /**
-     * Set modules configurations
+     * Set module icon
+     */
+    self.__setModuleIcon = function(module)
+    {
+        var icons = {
+            actions: 'slideshow',
+            database: 'storage',
+            gpios: 'filter_center_focus',
+            messageboard: 'tv',
+            sensors: 'leak_add',
+            shutters: 'format_line_spacing',
+            sounds: 'audiotrack',
+            system: 'favorite'
+        };
+
+        if( !angular.isUndefined(icons[module]) )
+        {
+            self.modules[module].icon = icons[module];
+        }
+        else
+        {
+            //default icon
+            self.modules[module].icon = 'bookmark';
+        }
+    };
+
+    /**
+     * Set modules configurations as returned by rpcserver
      * Internal usage, do not use
      */
-    self._setConfigs = function(configs)
+    self._setModules = function(modules)
     {
-        self.configs = configs;
+        self.modules = modules;
+
+        //inject module icon in each entry
+        for( module in self.modules )
+        {
+            self.__setModuleIcon(module);
+
+            self.modules[module].hasService = objectsService._moduleHasService(module);
+        }
     };
 
     /**
      * Get specified module configuration
      */
-    self.getConfig = function(module)
+    self.getModuleConfig = function(module)
     {
-        if( self.configs[module] )
+        if( self.modules[module] )
         {
-            return self.configs[module];
+            return self.modules[module].config;
         }
         else
         {
@@ -41,18 +74,19 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     /**
      * Reload configuration of specified module
      */
-    self.reloadConfig = function(module)
+    self.reloadModuleConfig = function(module)
     {
         var d = $q.defer();
 
-        if( self.configs[module] )
+        if( self.modules[module] )
         {
             rpcService.sendCommand('get_module_config', module)
                 .then(function(resp) {
                     if( resp.error===false )
                     {
                         //save new config
-                        self.configs[module] = resp.data;
+                        self.modules[module] = resp.data;
+                        self.__setModuleIcon(module);
                         d.resolve(resp.data);
                     }
                     else
@@ -145,7 +179,14 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
      */
     self.hasModule = function(module)
     {
-        return objectsService.modules.indexOf(module)!==-1;
+        for( var name in self.modules )
+        {
+            if( name===module )
+            {
+                return true;
+            }
+        }
+        return false;
     };
 
 };

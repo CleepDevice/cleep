@@ -20,6 +20,12 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
         .when('/configuration', {
             template: '<div configuration-directive></div>'
         })
+        .when('/modules', {
+            template: '<div modules-directive></div>'
+        })
+        .when('/module/:name', {
+            template: '<div module-directive></div>'
+        })
         .otherwise({
             redirectTo: '/dashboard'
         });
@@ -31,14 +37,13 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
 RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
-        .primaryPalette('blue-grey')
-        .accentPalette('orange');
-        //.backgroundPalette('grey')
-        //.dark();
+        .primaryPalette('amber')
+        .accentPalette('blue')
+        .backgroundPalette('grey');
     $mdThemingProvider
         .theme('dark')
-        .primaryPalette('blue-grey')
-        .accentPalette('orange')
+        .primaryPalette('amber')
+        .accentPalette('blue')
         .dark();
     /*$mdThemingProvider
         .theme('alt')

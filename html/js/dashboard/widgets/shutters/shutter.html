@@ -52,11 +52,20 @@
             <span>Level</span>
         </md-button>
     </md-card-actions>
-    <md-card-footer>
-        <md-icon class="typcn typcn-time">
-            <md-tooltip md-direction="top">Last update</md-tooltip>
-        </md-icon>
-        <span>{{widgetCtl.device.lastupdate | hrDatetime}}</span>
+    <md-card-footer layout="row">
+        <div>
+            <md-icon class="typcn typcn-time">
+                <md-tooltip md-direction="top">Last update</md-tooltip>
+            </md-icon>
+            <span>{{widgetCtl.device.lastupdate | hrDatetime:true}}</span>
+        </div>
+        <div style="width:20px;"></div>
+        <div>
+            <md-icon class="typcn typcn-info-outline">
+                <md-tooltip md-direction="top">Status</md-tooltip>
+            </md-icon>
+            <span>{{widgetCtl.device.status}}</span>
+        </div>
     </md-card-footer>
 </md-card>
 

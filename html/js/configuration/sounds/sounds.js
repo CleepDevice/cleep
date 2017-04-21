@@ -2,7 +2,7 @@
  * Sounds configuration directive
  * Handle sounds module configuration
  */
-var soundsConfigDirective = function($q, toast, raspiotService, soundsService, confirm, $mdDialog) {
+var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soundsService, confirm, $mdDialog) {
 
     var soundsController = ['$scope', function($scope) {
         var self = this;
@@ -59,7 +59,7 @@ var soundsConfigDirective = function($q, toast, raspiotService, soundsService, c
                 toast.loading('Uploading file');
                 soundsService.uploadSound(file)
                     .then(function(resp) {
-                        return raspiotService.reloadConfig('sounds');
+                        return raspiotService.reloadModuleConfig('sounds');
                     })
                     .then(function(config) {
                         $mdDialog.hide();
@@ -78,7 +78,7 @@ var soundsConfigDirective = function($q, toast, raspiotService, soundsService, c
                     return soundsService.deleteSound(soundfile);
                 })
                 .then(function() {
-                    return raspiotService.reloadConfig('sounds');
+                    return raspiotService.reloadModuleConfig('sounds');
                 })
                 .then(function(config) {
                     self.sounds = config.sounds;
@@ -133,7 +133,7 @@ var soundsConfigDirective = function($q, toast, raspiotService, soundsService, c
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getConfig('sounds');
+            var config = raspiotService.getModuleConfig('sounds');
             var langs = [];
             angular.forEach(config.langs.langs, function(label, lang) {
                 langs.push({'lang':lang, 'label':label});
@@ -143,6 +143,18 @@ var soundsConfigDirective = function($q, toast, raspiotService, soundsService, c
             self.ttsLang = config.langs.lang;
             self.volume = config.volume;
             self.sounds = config.sounds;
+
+            //add module actions to fabButton
+            var actions = [{
+                icon: 'add_circle',
+                callback: self.openAddDialog,
+                tooltip: 'Add sound'
+            }, {
+                icon: 'build',
+                callback: self.openConfigDialog,
+                tooltip: 'Advanced configuration '
+            }]; 
+            $rootScope.$broadcast('enableFab', actions);
         };
 
     }];
@@ -162,5 +174,5 @@ var soundsConfigDirective = function($q, toast, raspiotService, soundsService, c
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('soundsConfigDirective', ['$q', 'toastService', 'raspiotService', 'soundsService', 'confirmService', '$mdDialog', soundsConfigDirective]);
+RaspIot.directive('soundsConfigDirective', ['$rootScope', '$q', 'toastService', 'raspiotService', 'soundsService', 'confirmService', '$mdDialog', soundsConfigDirective]);
 

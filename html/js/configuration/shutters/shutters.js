@@ -2,7 +2,7 @@
  * Shutters config directive
  * Handle shutter configuration
  */
-var shuttersConfigDirective = function(shuttersService, raspiotService, toast, $mdDialog, confirm) {
+var shuttersConfigDirective = function($rootScope, shuttersService, raspiotService, toast, $mdDialog, confirm) {
 
     var shuttersConfigController = function() {
         var self = this;
@@ -132,8 +132,16 @@ var shuttersConfigDirective = function(shuttersService, raspiotService, toast, $
          * Controller init
          */
         self.init = function() {
-            var config = raspiotService.getConfig('shutters');
+            var config = raspiotService.getModuleConfig('shutters');
             self.raspiGpios = config.raspi_gpios;
+
+            //add module actions to fabButton
+            var actions = [{
+                icon: 'add_circle',
+                callback: self.openAddDialog,
+                tooltip: 'Add shutter'
+            }]; 
+            $rootScope.$broadcast('enableFab', actions);
         };
 
     };
@@ -153,5 +161,5 @@ var shuttersConfigDirective = function(shuttersService, raspiotService, toast, $
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('shuttersConfigDirective', ['shuttersService', 'raspiotService', 'toastService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
+RaspIot.directive('shuttersConfigDirective', ['$rootScope', 'shuttersService', 'raspiotService', 'toastService', '$mdDialog', 'confirmService', shuttersConfigDirective]);
 

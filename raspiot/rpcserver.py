@@ -372,11 +372,15 @@ def modules():
             _module = module.replace('mod.', '')
 
             logger.debug('Request "%s" config' % _module)
-            response = send_command('get_module_config', _module, {})
-            if not response['error']:
-                configs[_module] = response['data']
-            else:
-                configs[_module] = None
+            #response = send_command('get_module_config', _module, {})
+            #if not response['error']:
+            #    configs[_module] = response['data']
+            #else:
+            #    configs[_module] = None
+            configs[_module] = {}
+            configs[_module]['config'] = app.config[module].get_module_config()
+            configs[_module]['description'] = app.config[module].MODULE_DESCRIPTION
+            configs[_module]['locked'] = app.config[module].MODULE_LOCKED
 
     logger.debug('Configs: %s' % configs)
 

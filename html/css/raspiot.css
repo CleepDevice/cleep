@@ -63,14 +63,30 @@ md-toast.info .md-toast-content {
 }
 
 /* icon */
-.icon-xl {
+.icon-md {
     font-size: 48px;
     width: 48px;
     height: 48px;
+}
+
+.icon-xl {
+    font-size: 72px;
+    width: 72px;
+    height: 72px;
 }
 
 .icon-xxl {
     font-size: 96px;
     width: 96px;
     height: 96px;
+}
+
+/* remove input text error spacer */
+.no-error-spacer .md-errors-spacer {
+    min-height: 0px !important;
+}
+
+/* fix fab button with href */
+.fix-href-button {
+    padding-top: 6px;
 }

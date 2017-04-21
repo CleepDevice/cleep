@@ -54,14 +54,21 @@ RaspIot.filter('filterDeviceByService', function($filter) {
  * Timestamp to human readable string
  */
 RaspIot.filter('hrDatetime', function($filter) {
-    return function(ts) {
+    return function(ts, shortYear) {
         if( angular.isUndefined(ts) || ts===null )
         {
             return '-';
         }
         else
         {
-            return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+            if( angular.isUndefined(shortYear) )
+            {
+                return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+            }
+            else
+            {
+                return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
+            }
         }
     };
 });
@@ -135,3 +142,4 @@ RaspIot.filter('firstUpper', function($filter) {
         return string.firstUpperCase();
     };
 });
+

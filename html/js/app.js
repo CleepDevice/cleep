@@ -46,9 +46,6 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     //get server modules and inject services. Finally load devices
     rpcService.getModules()
         .then(function(resp) {
-            //save modules configurations as soon as possible to make sure
-            //configurations directives can access their own configs when they start
-            raspiotService._setConfigs(resp);
 
             //now inject configurations directives
             for( var module in resp)
@@ -61,8 +58,8 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                     objectsService._addService(module, $injector.get(angularService));
 
                     //register module directive
-                    directive = objectsService.services[module].getDirectiveInfos();
-                    objectsService._addModuleWithConfig(module, directive.label, directive.name);
+                    //directive = objectsService.services[module].getDirectiveInfos();
+                    //objectsService._addModuleWithConfig(module, directive.label, directive.name, resp[module].description, resp[module].locked);
                 }
                 else
                 {
@@ -70,9 +67,13 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                     console.warn('Module "' + angularService + '" has no angular service');
 
                     //register module
-                    objectsService._addModule(module);
+                    //objectsService._addModule(module);
                 }
             }
+
+            //save modules configurations as soon as possible to make sure
+            //configurations directives can access their own configs when they start
+            raspiotService._setModules(resp);
 
             //load devices
             return raspiotService.reloadDevices();
@@ -80,7 +81,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         .finally(function() {
             console.log("DEVICES", raspiotService.devices);
             console.log("SERVICES", objectsService.services);
-            console.log("MODULE DIRECTIVES", objectsService.moduleDirectives);
+            console.log("MODULES", raspiotService.modules);
         });
 
 };

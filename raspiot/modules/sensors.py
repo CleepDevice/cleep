@@ -15,6 +15,8 @@ class Sensors(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'sensors.conf'
     MODULE_DEPS = ['gpios']
+    MODULE_DESCRIPTION = 'Implements easily and quickly sensors you need (temperature, motion, light...)'
+    MODULE_LOCKED = False
 
     ONEWIRE_PATH = '/sys/bus/w1/devices/'
     ONEWIRE_SLAVE = 'w1_slave'

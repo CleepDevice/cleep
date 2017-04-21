@@ -123,6 +123,8 @@ class Gpios(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'gpios.conf'
     MODULE_DEPS = []
+    MODULE_DESCRIPTION = 'Gives you access to raspberry pins to configure your inputs/ouputs as you wish.'
+    MODULE_LOCKED = False
 
     GPIOS_REV2 = {'GPIO4' : 7,
                   'GPIO17': 11,

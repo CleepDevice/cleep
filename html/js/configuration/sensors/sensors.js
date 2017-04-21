@@ -2,7 +2,7 @@
  * Sensors config directive
  * Handle sensors configuration
  */
-var sensorsConfigDirective = function(toast, raspiotService, sensorsService, confirm, $mdDialog) {
+var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensorsService, confirm, $mdDialog) {
 
     var sensorsController = [function() {
         var self = this;
@@ -215,8 +215,16 @@ var sensorsConfigDirective = function(toast, raspiotService, sensorsService, con
          * Init controller
          */
         self.init = function() {
-            var config = raspiotService.getConfig('sensors');
+            var config = raspiotService.getModuleConfig('sensors');
             self.raspiGpios = config.raspi_gpios;
+
+            //add module actions to fabButton
+            var actions = [{
+                icon: 'add_circle',
+                callback: self.openAddDialog,
+                tooltip: 'Add sensor'
+            }];
+            $rootScope.$broadcast('enableFab', actions);
         };
 
     }];
@@ -250,6 +258,6 @@ var sensorGpiosFilter = function($filter) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('sensorsConfigDirective', ['toastService', 'raspiotService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
+RaspIot.directive('sensorsConfigDirective', ['$rootScope', 'toastService', 'raspiotService', 'sensorsService', 'confirmService', '$mdDialog', sensorsConfigDirective]);
 RaspIot.filter('displayGpios', sensorGpiosFilter);
 

@@ -164,6 +164,8 @@ class Actions(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'actions.conf'
     MODULE_DEPS = []
+    MODULE_DESCRIPTION = 'Helps you trigger custom action to fit your needs'
+    MODULE_LOCKED = False
 
     SCRIPTS_PATH = '/var/opt/raspiot/scripts'
     DATA_FILE = 'raspiot.data.conf'
