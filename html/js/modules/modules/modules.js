@@ -9,6 +9,16 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
         self.modules = [];
         self.search = '';
 
+        /**
+         * Clear search input
+         */
+        self.clearSearch = function() {
+            self.search = '';
+        };
+
+        /**
+         * Init controller
+         */
         self.init = function()
         {
             //flatten modules to array to allow sorting with ngrepeat
@@ -34,7 +44,9 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
             self.modules = modules;
         };
 
-        //refresh module directives as soon as modules are loaded (see mainController)
+        /**
+         * Init controller as soon as modules configuration are loaded
+         */
         $scope.$watchCollection(
             function() {
                 return raspiotService.modules;

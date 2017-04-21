@@ -25,7 +25,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             messageboard: 'tv',
             sensors: 'leak_add',
             shutters: 'format_line_spacing',
-            sounds: 'audiotrack',
+            sounds: 'volume_up',
             system: 'favorite'
         };
 

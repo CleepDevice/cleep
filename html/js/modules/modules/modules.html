@@ -8,6 +8,11 @@
                 <md-icon md-font-set="material-icons">search</md-icon>
                 <input ng-model="modulesCtl.search" type="text" aria-label="Search">
             </md-input-container>
+            <div>
+                <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()" aria-label="Clear search">
+                    <md-icon md-font-set="material-icons">clear</md-icon>
+                </md-button>
+            </div>
         </div>
     </md-toolbar>
 
