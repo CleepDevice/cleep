@@ -18,7 +18,7 @@ from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
-from .utils import NoMessageAvailable, MessageResponse, MessageRequest
+from .utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
 import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt
@@ -365,26 +365,19 @@ def modules():
     """
     Return configurations for all loaded modules
     """
-    #request each loaded module for its config
-    configs = {}
-    for module in app.config:
-        if module.startswith('mod.'):
-            _module = module.replace('mod.', '')
+    logger.debug('Request inventory for available modules')
+    resp = send_command('get_modules', 'inventory', {})
+    if resp['error']:
+        raise CommandError('Unable to get list of modules')
 
-            logger.debug('Request "%s" config' % _module)
-            #response = send_command('get_module_config', _module, {})
-            #if not response['error']:
-            #    configs[_module] = response['data']
-            #else:
-            #    configs[_module] = None
-            configs[_module] = {}
-            configs[_module]['config'] = app.config[module].get_module_config()
-            configs[_module]['description'] = app.config[module].MODULE_DESCRIPTION
-            configs[_module]['locked'] = app.config[module].MODULE_LOCKED
+    #inject config of installed modules
+    modules = resp['data']
+    for module in modules:
+        if modules[module]['installed']:
+            modules[module]['config'] = app.config['mod.%s' % module].get_module_config()
 
-    logger.debug('Configs: %s' % configs)
-
-    return json.dumps(configs)
+    logger.debug('Modules: %s' % modules)
+    return json.dumps(modules)
 
 @app.route('/devices', method='POST')
 @authenticate()

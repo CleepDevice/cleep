@@ -5,6 +5,7 @@ import os
 import logging
 from raspiot import RaspIotMod
 from utils import CommandError, MissingParameter, InvalidParameter
+import importlib
 
 __all__ = ['Inventory']
 
@@ -15,7 +16,7 @@ class Inventory(RaspIotMod):
      - loaded modules and their commands
     """  
 
-    def __init__(self, bus, debug_enabled, modules):
+    def __init__(self, bus, debug_enabled, installed_modules):
         """
         Constructor
         @param bus: bus instance
@@ -28,26 +29,48 @@ class Inventory(RaspIotMod):
         #member
         #list devices: uuid => module name
         self.devices = {}
-        #list of modules: module name => module commands
+        #list of modules: dict(<module name>:dict(<module config>), ...)
         self.modules = {}
+        #list of installed modules
+        self.installed_modules = []
 
-        #fill modules
-        for module in modules:
+        #fill installed modules list
+        for module in installed_modules:
             if module.startswith('mod.'):
                 _module = module.replace('mod.', '')
-                self.modules[_module] = {}
+                self.installed_modules.append(_module)
 
     def _start(self):
         """
         Start module
         """
-        for module in self.modules:
+        #list all modules
+        path = os.path.join(os.path.dirname(__file__), 'modules')
+        if not os.path.exists(path):
+            raise CommandError('Invalid modules path')
+        for f in os.listdir(path):
+            fpath = os.path.join(path, f)
+            (module, ext) = os.path.splitext(f)
+            if os.path.isfile(fpath) and ext=='.py' and module!='__init__':
+                module_ = importlib.import_module('raspiot.modules.%s' % module)
+                class_ = getattr(module_, module.capitalize())
+                self.modules[module] = {
+                    'description': class_.MODULE_DESCRIPTION,
+                    'locked': class_.MODULE_LOCKED,
+                    'installed': False
+                }
 
-            #fill modules
+        self.logger.info('installed modules: %s' % self.installed_modules)
+        for module in self.installed_modules:
+            self.logger.info(' ==> %s' % module)
+            #update installed flag
+            self.modules[module]['installed'] = True
+
+            #fill installed modules
             self.logger.debug('Request commands of module "%s"' % module)
             resp = self.send_command('get_module_commands', module)
             if not resp['error']:
-                self.modules[module] = resp['data']
+                self.modules[module]['commands'] = resp['data']
             else:
                 self.logger.error('Unable to get commands of module "%s"' % module)
 
@@ -113,6 +136,13 @@ class Inventory(RaspIotMod):
     def get_modules(self):
         """
         Return list of modules
+        @return dict of modules
+        """
+        return self.modules
+
+    def get_modules_names(self):
+        """
+        Return list of modules names
         @return array of module names (string)
         """
         return self.modules.keys()

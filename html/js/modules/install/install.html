@@ -1,0 +1,52 @@
+<md-content layout="column">
+
+    <!-- toolbar -->
+    <md-toolbar class="md-hue-1">
+        <div class="md-toolbar-tools">
+            <md-button href="#!modules" class="md-raised" aria-label="Go back">
+                <md-icon md-font-set="material-icons">arrow_back</md-icon>
+                <md-tooltip>Back to installed modules</md-tooltip>
+                Back
+            </md-button>
+            <div style="width:15px;"></div>
+            <h2 flex md-truncate>
+                Installable modules
+            </h2>
+            <md-input-container class="md-icon-float md-block no-error-spacer">
+                <md-icon md-font-set="material-icons">search</md-icon>
+                <input ng-model="installCtl.search" type="text" aria-label="Search">
+            </md-input-container>
+            <div>
+                <md-button class="md-icon-button" ng-click="installCtl.clearSearch()" aria-label="Clear search">
+                    <md-icon md-font-set="material-icons">clear</md-icon>
+                </md-button>
+            </div>
+        </div>
+    </md-toolbar>
+
+    <!-- modules list -->
+    <div layout="row" layout-xs="column" layout-wrap="">
+        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex="25" flex-xs="100">
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">{{module.name | firstUpper}}</span>
+                        <span class="md-subhead">{{module.description}}</span>
+                    </md-card-title-text>
+                    <md-card-title-media>
+                        <div class="md-media-sm">
+                            <md-icon md-font-set="material-icons" class="icon-xl" style="padding:4px;">{{module.icon}}</md-icon>
+                        </div>
+                    </md-card-title-media>
+                </md-card-title>
+                <md-card-actions layout="row" layout-align="end center">
+                    <md-button class="md-raised">
+                        <md-icon md-font-set="material-icons">add_circle_outline</md-icon>
+                        Install
+                    </md-button>
+                </md-card-actions>
+            </md-card>
+        </div>
+    </div>
+ 
+</md-content>

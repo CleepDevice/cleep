@@ -2,9 +2,9 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($q, raspiotService, $compile, $timeout) {
+var installDirective = function($q, raspiotService, $compile) {
 
-    var modulesController = ['$scope','$element', function($scope, $element) {
+    var installController = ['$scope','$element', function($scope, $element) {
         var self = this;
         self.modules = [];
         self.search = '';
@@ -25,7 +25,7 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
             var modules = [];
             for( var module in raspiotService.modules )
             {
-                if( raspiotService.modules[module].installed )
+                if( !raspiotService.modules[module].installed )
                 {
                     //add module name as 'name' property
                     raspiotService.modules[module].name = module;
@@ -34,15 +34,6 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
                 }
             }
 
-            //add dummy module to add new "install module" card in dashboard
-            //dummy name is used to always have this item at end of list
-            //dummy description is used to find this item using search
-            modules.push({
-                name: 'zzzzz',
-                description: 'install new module',
-                installmodule: true
-            });
-            
             //save modules list
             self.modules = modules;
         };
@@ -60,19 +51,19 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
         );
     }];
 
-    var modulesLink = function(scope, element, attrs, controller) {
+    var installLink = function(scope, element, attrs, controller) {
         //see watchcollection above !
     };
 
     return {
-        templateUrl: 'js/modules/modules/modules.html',
+        templateUrl: 'js/modules/install/install.html',
         replace: true,
-        controller: modulesController,
-        controllerAs: 'modulesCtl',
-        link: modulesLink
+        controller: installController,
+        controllerAs: 'installCtl',
+        link: installLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$q', 'raspiotService', '$compile', '$timeout', modulesDirective]);
+RaspIot.directive('installDirective', ['$q', 'raspiotService', '$compile', installDirective]);
 

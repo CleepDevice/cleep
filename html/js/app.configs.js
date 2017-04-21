@@ -23,6 +23,9 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
         .when('/modules', {
             template: '<div modules-directive></div>'
         })
+        .when('/install', {
+            template: '<div install-directive></div>'
+        })
         .when('/module/:name', {
             template: '<div module-directive></div>'
         })
@@ -71,5 +74,14 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
  */
 RaspIot.config(['$compileProvider', function($compileProvider) {
     $compileProvider.preAssignBindingsEnabled(true);
+}]);
+
+
+/**
+ * Blockui configuration
+ */
+RaspIot.config(['blockUIConfig', function(blockUIConfig) {
+    blockUIConfig.message = 'Restarting...';
+    blockUIConfig.autoBlock = false;
 }]);
 

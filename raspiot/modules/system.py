@@ -3,16 +3,16 @@
     
 import os
 import logging
-from utils import InvalidParameter, MissingParameter
-from raspiot import RaspIotMod
+from raspiot.utils import InvalidParameter, MissingParameter
+from raspiot.raspiot import RaspIotMod
 from datetime import datetime
 import time
-from libs.task import Task
+from raspiot.libs.task import Task
 from astral import Astral, GoogleGeocoder, AstralError
 import psutil
 import time
-from libs.console import Console
-from libs.fstab import Fstab
+from raspiot.libs.console import Console
+from raspiot.libs.fstab import Fstab
 
 __all__ = ['System']
 
