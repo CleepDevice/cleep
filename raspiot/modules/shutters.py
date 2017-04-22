@@ -17,6 +17,8 @@ class Shutters(RaspIotMod):
     MODULE_DEPS = ['gpios']
     MODULE_DESCRIPTION = 'Controls your roller shutters'
     MODULE_LOCKED = False
+    MODULE_URL = None
+    MODULE_TAGS = []
 
     STATUS_OPENED = 'opened'
     STATUS_CLOSED = 'closed'

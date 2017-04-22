@@ -57,6 +57,8 @@ class Inventory(RaspIotMod):
                 self.modules[module] = {
                     'description': class_.MODULE_DESCRIPTION,
                     'locked': class_.MODULE_LOCKED,
+                    'tags': class_.MODULE_TAGS,
+                    'url': class_.MODULE_URL,
                     'installed': False
                 }
 

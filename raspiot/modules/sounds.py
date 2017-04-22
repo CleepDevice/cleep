@@ -79,6 +79,8 @@ class Sounds(RaspIotMod):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = 'Plays sounds or speech text you want'
     MODULE_LOCKED = False
+    MODULE_URL = None
+    MODULE_TAGS = []
 
     DEFAULT_CONFIG = {
         'lang': 'en'

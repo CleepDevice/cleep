@@ -24,6 +24,8 @@ class System(RaspIotMod):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = 'Monitor your raspberry easily'
     MODULE_LOCKED = True
+    MODULE_URL = None
+    MODULE_TAGS = []
 
     DEFAULT_CONFIG = {
         'city': None,
