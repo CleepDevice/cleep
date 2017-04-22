@@ -81,7 +81,7 @@ RaspIot.config(['$compileProvider', function($compileProvider) {
  * Blockui configuration
  */
 RaspIot.config(['blockUIConfig', function(blockUIConfig) {
-    blockUIConfig.message = 'Restarting...';
+    blockUIConfig.message = 'Loading';
     blockUIConfig.autoBlock = false;
 }]);
 
