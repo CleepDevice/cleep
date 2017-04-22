@@ -354,13 +354,10 @@ class System(RaspIotMod):
         console = Console()
 
         #send event
-        self.send_event('system.action.reboot')
-
-        #wait few seconds
-        time.sleep(2.0)
+        self.send_event('system.system.reboot')
 
         #and reboot system
-        console.execute('reboot')
+        console.command_delayed('reboot', 5.0)
 
     def halt_system(self):
         """
@@ -370,13 +367,10 @@ class System(RaspIotMod):
         console = Console()
 
         #send event
-        self.send_event('system.action.halt')
-
-        #wait few seconds
-        time.sleep(2.0)
+        self.send_event('system.system.halt')
 
         #and reboot system
-        console.execute('halt')
+        console.command_delayed('halt', 5.0)
 
     def get_memory_usage(self):
         """

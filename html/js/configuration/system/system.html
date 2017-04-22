@@ -1,4 +1,4 @@
-<md-content layout-fill ng-cloak>
+<md-content ng-cloak>
     <md-content layout="column" layout-padding flex>
 
         <!-- city + sunset/sunrise -->
@@ -33,9 +33,23 @@
             Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.
         </div>
         <md-input-container class="md-block" flex-gt-sm>
-            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Set monitoring" aria-label="Enable monitoring">
+            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Enable monitoring">
                 Enable monitoring
             </md-checkbox>
+        </md-input-container>
+        <md-divider></md-divider>
+
+        <!-- system action -->
+        <div class="md-title">
+            Actions
+        </div>
+        <md-input-container class="md-block" flex-gt-sm>
+            <md-button ng-click="systemCtl.reboot()" class="md-raised md-accent" aria-label="Reboot system">
+                Reboot system
+            </md-button>
+            <md-button ng-click="systemCtl.halt()" class="md-raised md-accent" aria-label="Halt system properly">
+                Halt system properly
+            </md-button>
         </md-input-container>
 
     </md-content>

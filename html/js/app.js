@@ -10,18 +10,39 @@ var RaspIot = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService) {
+var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, blockUI, toast) {
 
     //handle polling
     var pollingTimeout = 0;
     var nextPollingTimeout = 1;
+    var reboot = false;
     var polling = function() {
          rpcService.poll()
             .then(function(response) {
+                if( reboot )
+                {
+                    //system has started
+                    toast.success('System has rebooted.');
+                    reboot = false;
+                    blockUI.stop();
+                }
+
                 if( response && response.data && !response.error )
                 {
-                    //broadcast received message
-                    $rootScope.$broadcast(response.data.event, response.data.uuid, response.data.params);
+                    if( response.data.event.startsWith('system.system.') )
+                    {
+                        //handle system events
+                        if( response.data.event.endsWith('reboot') )
+                        {
+                            reboot = true;
+                            blockUI.start('System is rebooting. Please wait.');
+                        }
+                    }
+                    else
+                    {
+                        //broadcast received message
+                        $rootScope.$broadcast(response.data.event, response.data.uuid, response.data.params);
+                    }
                 }
 
                 //reset next polling timeout
@@ -29,14 +50,22 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
                 //relaunch polling right now
                 window.setTimeout(polling, 0);
-            },
+            }, 
             function(err) {
-                //error occured, differ next polling
-                nextPollingTimeout *= 2;
-                if( nextPollingTimeout>300 )
+                if( !reboot )
                 {
-                    //do not exceed polling timeout over 5 minutes
-                    nextPollingTimeout /= 2;
+                    //error occured, differ next polling
+                    nextPollingTimeout *= 2;
+                    if( nextPollingTimeout>300 )
+                    {
+                        //do not exceed polling timeout over 5 minutes
+                        nextPollingTimeout /= 2;
+                    }
+                }
+                else
+                {
+                    //during reboot try every seconds
+                    nextPollingTimeout = 1;
                 }
                 window.setTimeout(polling, nextPollingTimeout*1000);
             });
@@ -56,18 +85,11 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 {
                     //module has service, inject it then register it
                     objectsService._addService(module, $injector.get(angularService));
-
-                    //register module directive
-                    //directive = objectsService.services[module].getDirectiveInfos();
-                    //objectsService._addModuleWithConfig(module, directive.label, directive.name, resp[module].description, resp[module].locked);
                 }
                 else
                 {
                     //module has no associated service
                     console.warn('Module "' + angularService + '" has no angular service');
-
-                    //register module
-                    //objectsService._addModule(module);
                 }
             }
 
@@ -86,5 +108,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', mainController]);
+RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', 'blockUI', 'toastService', mainController]);
 

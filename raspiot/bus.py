@@ -68,7 +68,7 @@ class MessageBus():
         #then set app is configured
         self.__app_configured = True
 
-        #and finally launch purge task
+        #and finally launch purge subscriptions task
         self.__purge = Task(60.0, self.purge_subscriptions)
         self.__purge.start()
 

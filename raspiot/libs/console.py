@@ -5,6 +5,7 @@ import subprocess
 import time
 from raspiot.utils import InvalidParameter
 import unittest
+from threading import Timer
 
 class Console():
     """
@@ -73,6 +74,18 @@ class Console():
                 result['output'] = self.__remove_eol(p.stdout.readlines())
                         
         return result
+
+    def command_delayed(self, command, delay, timeout=2.0):
+        """
+        Execute specified command line after specified delay
+        @param command: command to execute (string)
+        @param delay: time to wait before executing command (milliseconds)
+        @param timeout: timeout before killing command
+        @see command function to have more details
+        @return True if command delayed succesfully or False otherwise
+        """
+        timer = Timer(delay, self.command, [command])
+        timer.start()
 
     def command_event(self, command, timeout=None):
         """

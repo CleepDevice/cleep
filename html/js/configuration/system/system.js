@@ -45,6 +45,16 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         };
 
         /**
+         * Reboot system
+         */
+        self.reboot = function() {
+            systemService.reboot()
+                .then(function() {
+                    toast.success('System will reboot soon');
+                });
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
