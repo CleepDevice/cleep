@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($q, raspiotService, $compile, $timeout) {
+var modulesDirective = function($rootScope, raspiotService, $compile, $timeout, $window) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -14,6 +14,13 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
          */
         self.clearSearch = function() {
             self.search = '';
+        };
+
+        /**
+         * Redirect to install module page
+         */
+        self.toInstallPage = function() {
+            $window.location.href = '#!install';
         };
 
         /**
@@ -34,17 +41,17 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
                 }
             }
 
-            //add dummy module to add new "install module" card in dashboard
-            //dummy name is used to always have this item at end of list
-            //dummy description is used to find this item using search
-            modules.push({
-                name: 'zzzzz',
-                description: 'install new module',
-                installmodule: true
-            });
-            
             //save modules list
             self.modules = modules;
+
+            //add fab action
+            action = [{
+                callback: self.toInstallPage,
+                icon: 'add_circle_outline',
+                aria: 'Install module',
+                tooltip: 'Install module'
+            }];
+            $rootScope.$broadcast('enableFab', action);
         };
 
         /**
@@ -74,5 +81,5 @@ var modulesDirective = function($q, raspiotService, $compile, $timeout) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$q', 'raspiotService', '$compile', '$timeout', modulesDirective]);
+RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$compile', '$timeout', '$window', modulesDirective]);
 
