@@ -57,7 +57,8 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
                 controllerAs: 'gpiosCtl',
                 templateUrl: 'js/configuration/gpios/addGpio.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             });
         };
         

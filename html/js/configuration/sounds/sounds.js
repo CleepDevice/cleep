@@ -30,7 +30,8 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
                 controllerAs: 'soundsCtl',
                 templateUrl: 'js/configuration/sounds/addSound.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             });
         };
 
@@ -43,7 +44,8 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
                 controllerAs: 'soundsCtl',
                 templateUrl: 'js/configuration/sounds/configSound.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             });
         };
 

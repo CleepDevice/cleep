@@ -59,7 +59,8 @@ var shuttersConfigDirective = function($rootScope, shuttersService, raspiotServi
                 controllerAs: 'shuttersCtl',
                 templateUrl: 'js/configuration/shutters/addShutter.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             });
         };
 

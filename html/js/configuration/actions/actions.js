@@ -25,7 +25,8 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
                 controllerAs: 'actionsCtl',
                 templateUrl: 'js/configuration/actions/addAction.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             }); 
         }; 
 

@@ -88,7 +88,8 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
                 controllerAs: 'sensorsCtl',
                 templateUrl: 'js/configuration/sensors/addSensor.html',
                 parent: angular.element(document.body),
-                clickOutsideToClose: false
+                clickOutsideToClose: false,
+                fullscreen: true
             });
         };
 
