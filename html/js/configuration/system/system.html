@@ -1,5 +1,4 @@
-<md-content ng-cloak>
-    <md-content layout="column" layout-padding flex>
+<div layout="column" layout-padding ng-cloak>
 
         <!-- city + sunset/sunrise -->
         <div class="md-title">
@@ -43,15 +42,18 @@
         <div class="md-title">
             Actions
         </div>
-        <md-input-container class="md-block" flex-gt-sm>
+        <div layout="row" flex-gt-sm>
+            <md-button ng-click="systemCtl.restart()" class="md-raised md-accent" aria-label="Reboot system">
+                Restart RaspIot
+            </md-button>
+            <div flex></div>
             <md-button ng-click="systemCtl.reboot()" class="md-raised md-accent" aria-label="Reboot system">
                 Reboot system
             </md-button>
             <md-button ng-click="systemCtl.halt()" class="md-raised md-accent" aria-label="Halt system properly">
                 Halt system properly
             </md-button>
-        </md-input-container>
+        </div>
 
-    </md-content>
-</md-content>
+</div>
 

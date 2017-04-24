@@ -35,7 +35,12 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                         if( response.data.event.endsWith('reboot') )
                         {
                             reboot = true;
-                            blockUI.start('System is rebooting. Please wait.');
+                            blockUI.start('System is rebooting. It might take some time.');
+                        }
+                        else if( response.data.event.endsWith('restart') )
+                        {
+                            reboot = true;
+                            blockUI.start('System is restarting. Please wait few seconds.');
                         }
                     }
                     else

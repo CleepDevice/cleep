@@ -50,7 +50,27 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         self.reboot = function() {
             systemService.reboot()
                 .then(function() {
-                    toast.success('System will reboot soon');
+                    toast.success('System will reboot');
+                });
+        };
+
+        /**
+         * Halt system
+         */
+        self.halt = function() {
+            systemService.halt()
+                .then(function() {
+                    toast.success('System will halt');
+                });
+        };
+
+        /**
+         * Restart raspiot
+         */
+        self.restart = function() {
+            systemService.restart()
+                .then(function() {
+                    toast.success('Raspiot will restart');
                 });
         };
 

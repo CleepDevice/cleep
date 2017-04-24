@@ -79,6 +79,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Restart raspiot
+     */
+    self.restart = function() {
+        return rpcService.sendCommand('restart', 'system');
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

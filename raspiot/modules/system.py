@@ -372,6 +372,18 @@ class System(RaspIotMod):
         #and reboot system
         console.command_delayed('halt', 5.0)
 
+    def restart(self):
+        """
+        Restart raspiot
+        """
+        console = Console()
+
+        #send event
+        self.send_event('system.system.restart')
+
+        #and restart raspiot
+        console.command_delayed('/etc/raspiot/raspiot_helper.sh restart', 3.0)
+
     def get_memory_usage(self):
         """
         Return system memory usage
