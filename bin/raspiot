@@ -9,9 +9,9 @@ from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
 from raspiot import rpcserver, bus, raspberry, inventory
 from raspiot.modules import system
+from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
 
-CONFIG_FILE = 'raspiot.conf'
 LOG_FILE = '/var/log/raspiot.log'
 LOG_SETTINGS = { 
     'version': 1,
@@ -62,16 +62,11 @@ def load_config():
     @raise ConfigException when error occured
     """
     #load config
-    config_path = os.path.join(RaspIot.CONFIG_DIR, CONFIG_FILE)
-    logger.info('Loading configuration file %s' % config_path)
-    config = {}
-    execfile(config_path, config)
-
-    #check config
-    keys = ['modules', 'webserver_host', 'webserver_port', 'webserver_key', 'webserver_cert']
-    for key in keys:
-        if not config.has_key(key):
-            raise ConfigException('Missing "%s" parameter in %s' % (key, config_path))
+    logger.info('Loading configuration raspiot.conf file')
+    conf = RaspiotConf()
+    conf.check()
+    config = conf.as_dict()
+    logger.info('config: %s' % config)
 
     return config
 
@@ -110,21 +105,21 @@ if __name__ == '__main__':
         config = load_config()
 
         #set debug level after config reading
-        if config['debug_enabled']:
+        if config['debug']['debug_enabled']:
             debug_enabled = True
         if debug_enabled:
             logger.setLevel(logging.DEBUG)
 
         #get webserver app (used to store application objects)
         debug = False
-        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('rpcserver')==1):
+        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('rpcserver')==1):
             debug = True
         app = rpcserver.get_app(debug)
 
         #create message bus
         logger.debug('Initializing message bus')
         debug = False
-        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('bus')==1):
+        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('bus')==1):
             debug = True
         bus = bus.MessageBus(debug)
         app.config['sys.bus'] = bus
@@ -132,7 +127,7 @@ if __name__ == '__main__':
         #create system module by default
         logger.debug('Initializing system module')
         debug = False
-        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('system')==1):
+        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('system')==1):
             debug = True
         system = system.System(bus, debug)
         app.config['mod.system'] = system
@@ -141,7 +136,7 @@ if __name__ == '__main__':
         #load user modules
         logger.debug('Loading user modules:')
         loaded_modules = {}
-        for module_name in config['modules']:
+        for module_name in config['general']['modules']:
             logger.debug(' - %s:' % (module_name));
 
             #check if not already loaded
@@ -173,7 +168,7 @@ if __name__ == '__main__':
                         logger.debug('     - starting dependency...')
                         logger.debug('===============BEGIN %s===============', dep)
                         debug = False
-                        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count(dep)==1):
+                        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count(dep)==1):
                             logger.debug('Debug enabled for this module')
                             debug = True
                         app.config['lib.%s' % dep] = dep_class_(bus, debug)
@@ -185,7 +180,7 @@ if __name__ == '__main__':
             logger.debug('   - starting module...')
             logger.debug('---------------BEGIN %s---------------', module_name)
             debug = False
-            if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count(module_name)==1):
+            if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count(module_name)==1):
                 logger.debug('Debug enabled for this module')
                 debug = True
             app.config['mod.%s' % module_name] = class_(bus, debug)
@@ -196,7 +191,7 @@ if __name__ == '__main__':
         #create inventory
         logger.debug('Initializing inventory')
         debug = False
-        if debug_enabled and (len(config['debug_modules'])==0 or config['debug_modules'].count('inventory')==1):
+        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('inventory')==1):
             debug = True
         db = inventory.Inventory(bus, debug, app.config)
         app.config['sys.inventory'] = db
@@ -205,7 +200,7 @@ if __name__ == '__main__':
         #unlock bus and launch webserver (blocking)
         logger.info('Raspiot running...')
         bus.app_configured()
-        rpcserver.start(config['webserver_host'], config['webserver_port'], config['webserver_key'], config['webserver_cert'])
+        rpcserver.start(config['rpc']['rpc_host'], config['rpc']['rpc_port'], config['rpc']['rpc_key'], config['rpc']['rpc_cert'])
 
     except getopt.GetoptError:
         #display usage
