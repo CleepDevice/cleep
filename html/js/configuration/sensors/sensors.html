@@ -9,6 +9,7 @@
                 <th md-column>Gpios</th>
                 <th md-column md-order-by="type">Type</th>
                 <th md-column md-order-by="lastupdate">Last update</th>
+                <th md-column>Extra</th>
                 <th md-column>Status</th>
                 <th md-column>Actions</th>
             </tr>
@@ -19,13 +20,28 @@
                 <td md-cell>{{device.gpios | displayGpios}}</td>
                 <td md-cell>{{device.type}}</td>
                 <td md-cell>{{device.lastupdate | hrDatetime}}</td>
-                <td md-cell>
+                <td md-cell ng-if="device.type==='motion'">
+                    <span>Last duration: {{device.lastduration | number:0}} secs</span>
+                </td>
+                <td md-cell ng-if="device.type==='temperature'">
+                    <span ng-if="device.offsetunit==='celsius'">Offset: {{device.offsetcelsius}}°C</span>
+                    <span ng-if="device.offsetunit==='fahrenheit'">Offset: {{device.offsetfahrenheit}}°F</span>
+                    </br>
+                    <span>Interval: {{device.interval/60}} mins</span>
+                </td>
+                <td md-cell ng-if="device.type==='motion'">
                     <md-button ng-if="!device.on" class="md-icon-button md-primary default-cursor" aria-label="Off">
+                        <md-tooltip md-direction="bottom">Off</md-tooltip>
                         <span class="material-icons">fiber_manual_record</span>
                     </md-button>
                     <md-button ng-if="device.on" class="md-icon-button md-accent default-cursor" aria-label="On">
+                        <md-tooltip md-direction="bottom">On</md-tooltip>
                         <span class="material-icons">fiber_manual_record</span>
                     </md-button>
+                </td>
+                <td md-cell ng-if="device.type==='temperature'">
+                    <span ng-if="device.offsetunit==='celsius'">{{device.celsius}}°C</span>
+                    <span ng-if="device.offsetunit==='fahrenheit'">{{device.fahrenheit}}°F</span>
                 </td>
                 <td md-cell>
                     <md-button class="md-icon-button" ng-click="sensorsCtl.openUpdateDialog(device)" aria-label="Edit">
