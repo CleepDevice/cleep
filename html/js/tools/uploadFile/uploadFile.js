@@ -69,8 +69,6 @@ var uploadFileDirective = function(rpcService) {
                     scope.selectedFile = null;
                 }
                 scope.$apply();
-            } else {
-                console.log('locked');
             }
         });
 

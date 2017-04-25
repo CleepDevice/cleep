@@ -64,7 +64,6 @@ class Inventory(RaspIotMod):
 
         self.logger.info('installed modules: %s' % self.installed_modules)
         for module in self.installed_modules:
-            self.logger.info(' ==> %s' % module)
             #update installed flag
             self.modules[module]['installed'] = True
 

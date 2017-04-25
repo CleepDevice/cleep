@@ -23,6 +23,7 @@ import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt
 import functools
+from .libs.raspiotconf import RaspiotConf
 
 __all__ = ['app']
 
@@ -366,15 +367,24 @@ def modules():
     Return configurations for all loaded modules
     """
     logger.debug('Request inventory for available modules')
-    resp = send_command('get_modules', 'inventory', {})
-    if resp['error']:
-        raise CommandError('Unable to get list of modules')
-
+    modules = app.config['sys.inventory'].get_modules()
+    
     #inject config of installed modules
-    modules = resp['data']
     for module in modules:
         if modules[module]['installed']:
             modules[module]['config'] = app.config['mod.%s' % module].get_module_config()
+
+    #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
+    conf = RaspiotConf()
+    config = conf.as_dict()
+    for module in modules:
+        modules[module]['pending'] = False
+        if module in config['general']['modules'] and not modules[module]['installed']:
+            #install pending
+            modules[module]['pending'] = True
+        if module not in config['general']['modules'] and modules[module]['installed']:
+            #uninstall pending
+            modules[module]['pending'] = True
 
     logger.debug('Modules: %s' % modules)
     return json.dumps(modules)

@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, $compile, $timeout, $window) {
+var modulesDirective = function($rootScope, raspiotService, systemService, $window, toast) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -12,15 +12,53 @@ var modulesDirective = function($rootScope, raspiotService, $compile, $timeout, 
         /**
          * Clear search input
          */
-        self.clearSearch = function() {
+        self.clearSearch = function()
+        {
             self.search = '';
         };
 
         /**
          * Redirect to install module page
          */
-        self.toInstallPage = function() {
+        self.toInstallPage = function()
+        {
             $window.location.href = '#!install';
+        };
+
+        /**
+         * Uninstall module
+         */
+        self.uninstall = function(module)
+        {
+            systemService.uninstallModule(module)
+                .then(function(resp) {
+                    //reload system config to activate restart flag (see main controller)
+                    return raspiotService.reloadModuleConfig('system');
+                })  
+                .then(function(config) {
+                    self.updateModulePendingStatus(module);
+                    toast.success('Module ' + module + ' will be uninstalled after next restart.' );
+                }); 
+        };
+
+        /** 
+         * Update pending module status after install
+         * Everything will be reloaded automatically after page reloading
+         * @param module: module name
+         */
+        self.updateModulePendingStatus = function(module)
+        {   
+            //update pending status in local modules
+            for( var i=0; i<self.modules.length; i++ )
+            {   
+                if( self.modules[i].name===module )
+                {   
+                    self.modules[i].pending = true;
+                }
+            }
+
+            //update pending status in raspiotService
+            raspiotService.modules[module].pending = true;
         };
 
         /**
@@ -81,5 +119,5 @@ var modulesDirective = function($rootScope, raspiotService, $compile, $timeout, 
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$compile', '$timeout', '$window', modulesDirective]);
+RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', 'systemService', '$window', 'toastService', modulesDirective]);
 

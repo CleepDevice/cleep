@@ -13,6 +13,7 @@ import psutil
 import time
 from raspiot.libs.console import Console
 from raspiot.libs.fstab import Fstab
+from raspiot.libs.raspiotconf import RaspiotConf
 
 __all__ = ['System']
 
@@ -59,6 +60,7 @@ class System(RaspIotMod):
         self.__monitoring_memory_task = None
         self.__monitoring_disks_task = None
         self.__process = None
+        self.__need_restart = False
 
     def _start(self):
         """
@@ -257,8 +259,9 @@ class System(RaspIotMod):
         config['sun'] = self.get_sun()
         config['city'] = self.get_city()
         config['monitoring'] = self.get_monitoring()
-        #append current monitoring values
         config['uptime'] = self.get_uptime()
+        config['needrestart'] = self.__need_restart
+
         return config
 
     def get_module_devices(self):
@@ -383,6 +386,36 @@ class System(RaspIotMod):
 
         #and restart raspiot
         console.command_delayed('/etc/raspiot/raspiot_helper.sh restart', 3.0)
+
+    def install_module(self, module):
+        """
+        Install specified module
+        @param module: module name to install
+        @return True if module installed
+        """
+        if module is None or len(module)==0:
+            raise MissingParameter('Module parameter is missing')
+
+        raspiot = RaspiotConf()
+        if raspiot.install_module(module):
+            self.__need_restart = True
+
+        return True
+
+    def uninstall_module(self, module):
+        """
+        Uninstall specified module
+        @param module: module name to install
+        @return True if module uninstalled
+        """
+        if module is None or len(module)==0:
+            raise MissingParameter('Module parameter is missing')
+
+        raspiot = RaspiotConf()
+        if raspiot.uninstall_module(module):
+            self.__need_restart = True
+
+        return True
 
     def get_memory_usage(self):
         """

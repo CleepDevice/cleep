@@ -104,7 +104,7 @@ class RaspiotConf():
         #check if module isn't already installed
         modules = ast.literal_eval(conf.get('general', 'modules'))
         if module in modules:
-            raise InvalidParameter('Module "%s" is already installed')
+            raise InvalidParameter('Module %s is already installed' % module)
 
         #install module
         modules.append(module)
@@ -125,7 +125,7 @@ class RaspiotConf():
         #check if module is installed
         modules = ast.literal_eval(conf.get('general', 'modules'))
         if module not in modules:
-            raise InvalidParameter('Unable to uninstall not installed module')
+            raise InvalidParameter('Unable to uninstall not installed module %s' % module)
 
         #uninstall module
         modules.remove(module)

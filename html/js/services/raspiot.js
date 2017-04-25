@@ -110,7 +110,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
                     if( resp.error===false )
                     {
                         //save new config
-                        self.modules[module] = resp.data;
+                        self.modules[module].config = resp.data;
                         self.__setModuleIcon(module);
                         d.resolve(resp.data);
                     }

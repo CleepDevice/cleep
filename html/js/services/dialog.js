@@ -24,16 +24,7 @@ var dialogService = function($mdDialog) {
     self.open = function(options, controllerAs, templateUrl) {
         //extend specified controller with dialog function helpers
         var controller = angular.extend(self.dialogController, options || {});
-        console.log(controller);
         return $mdDialog.show({
-            /*controller: function($scope, $mdDialog) {
-                $scope.cancel = function() {
-                    $mdDialog.cancel();
-                };
-                $scope.hide = function() {
-                    $mdDialog.hide();
-                };
-            },*/
             controller: controller,
             controllerAs: controllerAs,
             templateUrl: templateUrl,
