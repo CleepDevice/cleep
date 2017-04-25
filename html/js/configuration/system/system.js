@@ -3,9 +3,9 @@
  * Handle system configuration
  */
 var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService) {
-    var container = null;
 
-    var systemController = function() {
+    var systemController = function()
+    {
         var self = this;
         self.sunset = null;
         self.sunrise = null;
