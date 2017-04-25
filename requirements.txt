@@ -4,3 +4,4 @@ RPi.GPIO
 passlib
 astral
 gTTS
+psutil

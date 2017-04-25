@@ -7,7 +7,7 @@ import getopt
 import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
-from raspiot import rpcserver, bus, raspberry, inventory
+from raspiot import rpcserver, bus, inventory
 from raspiot.modules import system
 from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
