@@ -42,13 +42,13 @@ class WpaSupplicantConf():
         self.__fd = open(self.CONF, mode)
         return self.__fd
 
-    def __close(self, write=False):
+    def __close(self):
         """
-        Close everything and write new content if specified
-        @param write: write new content if set to True
+        Close file descriptor is still opened
         """
         if self.__fd:
             self.__fd.close()
+            self.__fd = None
     
     def get_networks(self):
         """
