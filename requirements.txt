@@ -1,7 +1,3 @@
-gevent
-bottle
-RPi.GPIO
-passlib
-astral
-gTTS
-psutil
+gevent==1.1.0
+astral==1.4
+gTTS==1.2.0

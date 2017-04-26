@@ -1,0 +1,8 @@
+#!/bin/sh
+
+#disabling raspiot from startup
+/etc/raspiot/raspiot_helper.sh disable
+
+#stop raspiot
+/etc/raspiot/raspiot_helper.sh stop
+
