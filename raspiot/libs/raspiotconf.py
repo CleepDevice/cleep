@@ -271,6 +271,9 @@ class RaspiotConfTests(unittest.TestCase):
         self.rc = RaspiotConf()
         self.rc.CONF = '/tmp/raspiot.fake.conf'
 
+    def tearDown(self):
+        os.remove('/tmp/raspiot.fake.conf')
+
     def test_get_global_debug(self):
         self.assertFalse(self.rc.get_global_debug())
 
