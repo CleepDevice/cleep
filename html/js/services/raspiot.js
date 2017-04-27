@@ -206,7 +206,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     {
         for( var name in self.modules )
         {
-            if( name===module )
+            if( name===module && self.modules[name].installed )
             {
                 return true;
             }
