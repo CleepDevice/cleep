@@ -197,7 +197,7 @@ class RaspIot(BusClient):
         Return module devices
         This function returns all devices registered in 'devices' config section
         """
-        if self._config.has_key('devices'):
+        if self._config is not None and self._config.has_key('devices'):
             return self._config['devices']
         else:
             return {}
