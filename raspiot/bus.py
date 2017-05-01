@@ -254,12 +254,14 @@ class BusClient(threading.Thread):
     It reads module message, read command and execute module command
     Finally it returns command response to message originator
     """
-    def __init__(self, bus):
+    def __init__(self, bus, pre_start, pre_stop):
         threading.Thread.__init__(self)
         self.__continue = True
         self.bus = bus
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
+        self.__pre_start = pre_start
+        self.__pre_stop = pre_stop
 
         #add subscription
         self.bus.add_subscription(self.__name)
@@ -378,6 +380,10 @@ class BusClient(threading.Thread):
         Bus reading process
         """
         self.logger.debug('BusClient %s started' % self.__name)
+
+        #call pre start function
+        if self.__pre_start:
+            self.__pre_start()
         
         #check messages
         while self.__continue:
@@ -490,6 +496,10 @@ class BusClient(threading.Thread):
 
             #self.logger.debug('----> sleep')
             #time.sleep(1.0)
+
+        #call pre stop function
+        if self.__pre_stop:
+            self.__pre_stop()
 
         #remove subscription
         self.bus.remove_subscription(self.__name)

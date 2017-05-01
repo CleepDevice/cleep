@@ -32,7 +32,7 @@ class RaspIot(BusClient):
         @param debug_enabled: flag to set debug level to logger (bool)
         """
         #init bus
-        BusClient.__init__(self, bus)
+        BusClient.__init__(self, bus, self._start, self._stop)
 
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -232,7 +232,6 @@ class RaspIot(BusClient):
         Start module
         """
         BusClient.start(self)
-        self._start()
 
     def _start(self):
         """
