@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import InvalidParameter, MissingParameter
+from raspiot.utils import InvalidParameter, MissingParameter, NoResponse
 from raspiot.raspiot import RaspIotMod
 from datetime import datetime
 import time
