@@ -15,9 +15,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param data: data to send
      * @param to: request destinated to specified module. If not specified
      *            message will be broadcasted to all modules
+     * @param params: object of params to pass to command
+     * @param timeout: specify command timeout (default is 3seconds)
      * @return promises
      */
-    self.sendCommand = function(command, to, params) {
+    self.sendCommand = function(command, to, params, timeout) {
         var d = $q.defer();
         var data = {};
 
@@ -42,6 +44,16 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         {
             //broadcast command
             data.to = null;
+        }
+
+        console.log('timeout='+timeout);
+        if( angular.isUndefined(timeout) )
+        {
+            data.timeout = null;
+        }
+        else
+        {
+            data.timeout = timeout;
         }
 
         $http({

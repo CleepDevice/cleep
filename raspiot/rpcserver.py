@@ -175,12 +175,13 @@ def authenticate():
 
     return decorator
 
-def send_command(command, to, params):
+def send_command(command, to, params, timeout=None):
     """
     Send specified command
     @param command: command to execute
     @param to: command recipient
-    @param parmas: command parameters
+    @param params: command parameters
+    @param timeout: set new timeout (default 3secs)
     @return command response (None if broadcasted message)
     """
     #get bus
@@ -192,7 +193,11 @@ def send_command(command, to, params):
     request.to = to
     request.from_ = 'rpcserver'
     request.params = params
-    return bus.push(request)
+
+    if timeout is not None:
+        return bus.push(request, timeout)
+    else:
+        return bus.push(request)
 
 
 @app.route('/upload', method='POST')
@@ -239,7 +244,7 @@ def upload():
 
             #execute specified command
             logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
-            resp = send_command(command, to, params)
+            resp = send_command(command, to, params, 10.0)
 
     except Exception as e:
         logger.exception('Exception in upload:')
@@ -311,12 +316,18 @@ def command():
     logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
     try:
+        command = None
+        to = None
+        params = {}
+        timeout = None
+
         #prepare data to push
         if bottle.request.method=='GET':
             #GET request
             command = bottle.request.query.command
             to = bottle.request.query.to
             params = bottle.request.query.params
+            timeout = bottle.request.query.timeout
             #handle params: 
             # - could be specified as params field with json 
             # - or not specified in which case parameters are directly specified in query string
@@ -344,11 +355,15 @@ def command():
             if tmp_params.has_key('command'):
                 command = tmp_params['command']
                 del tmp_params['command']
+            if tmp_params.has_key('timeout') and tmp_params['timeout'] is not None and type(tmp_params['timeout']).__name__ in ('float', 'int'):
+                logger.debug(' ==> timeout=%d' % tmp_params['timeout'])
+                timeout = float(tmp_params['timeout'])
+                del tmp_params['timeout']
             if len(tmp_params)>0:
                 params = tmp_params['params']
 
         #execute command
-        resp = send_command(command, to, params)
+        resp = send_command(command, to, params, timeout)
 
     except Exception as e:
         logger.exception('Exception in command:')
