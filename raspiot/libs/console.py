@@ -5,7 +5,77 @@ import subprocess
 import time
 from raspiot.utils import InvalidParameter
 import unittest
-from threading import Timer
+from threading import Timer, Thread
+import os
+import signal
+import logging
+
+class NoEndCommand(Thread):
+    def __init__(self, command, callback, logger):
+        """
+        Constructor
+        @param command: command to execute
+        @param callback: callback when message is received
+        @param logger: logger
+        """
+        Thread.__init__(self)
+        Thread.daemon = True
+
+        #members
+        self.logger = logger
+        self.running = True
+
+    def __del__(self):
+        self.stop()
+
+    def __log(self, message, level):
+        if self.logger:
+            if level==logging.DEBUG:
+                self.logger.debug(message)
+            if level==logging.INFO:
+                self.logger.info(message)
+            if level==logging.WARN:
+                self.logger.warn(message)
+            if level==logging.ERROR:
+                self.logger.error(message)
+
+    def stop(self):
+        """
+        Stop command line execution (kill it)
+        """
+        self.running = False
+
+    def run(self):
+        #launch command
+        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        pid = p.pid
+
+        #wait for end of command line
+        while not done:
+            #check if command has finished
+            p.poll()
+
+            #read outputs and launch callbacks
+            if self.callback:
+                (stdout, stderr) = p.communicate()
+                if len(stdout)>0 or len(stderr)>0:
+                    self.callback(stdout, stderr)
+
+            #check end of command
+            if p.returncode is not None:
+                break
+            
+            #kill on demand
+            if not self.running:
+                p.kill()
+                break
+
+            #pause
+            time.sleep(0.125)
+
+        #make sure process is killed
+        os.kill(pid, signal.SIGKILL)
+
 
 class Console():
     """
@@ -36,6 +106,7 @@ class Console():
 
         #launch command
         p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        pid = p.pid
 
         #wait for end of command line
         done = False
@@ -63,16 +134,23 @@ class Console():
         result = {
             'error': False,
             'killed': killed,
-            'output': []
+            'stdout': [],
+            'stderr': []
         }
         if not killed:
             err = self.__remove_eol(p.stderr.readlines())
             if len(err)>0:
                 result['error'] = True
-                result['output'] = err
+                result['stderr'] = err
             else:
-                result['output'] = self.__remove_eol(p.stdout.readlines())
-                        
+                result['stdout'] = self.__remove_eol(p.stdout.readlines())
+
+        #make sure process is really killed
+        try:
+            subprocess.Popen('/bin/kill -9 %s' % pid, shell=True)
+        except:
+            pass
+
         return result
 
     def command_delayed(self, command, delay, timeout=2.0):
@@ -87,10 +165,10 @@ class Console():
         timer = Timer(delay, self.command, [command])
         timer.start()
 
-    def command_event(self, command, timeout=None):
+    def command_noend(self, command, timeout=None):
         """
         Execute specified command.
-        The main goal of this function is to execute command that requires some time to end (ie download file using wget, system configuration...)
+        The main goal of this function is to execute command that requires some time to end (ie download file using wget, system update...)
         This function returns as soon as command is launched and send event when something is read on console stdout/stderr
         A timeout can be set to secure command execution (the command is killed after timeout)
         @param command : command to execute
@@ -98,6 +176,9 @@ class Console():
         @return True if command is launched successfully, False otherwise
         """
         pass
+
+
+
 
 class ConsoleTests(unittest.TestCase):
     def setUp(self):
@@ -113,38 +194,40 @@ class ConsoleTests(unittest.TestCase):
         res = self.c.command('ls -lh')
         self.assertFalse(res['error'])
         self.assertFalse(res['killed'])
-        self.assertIsNot(len(res['output']), 0)
+        self.assertIsNot(len(res['stdout']), 0)
     
     def test_timeout_command(self):
         res = self.c.command('sleep 4')
         self.assertTrue(res['killed'])
         self.assertFalse(res['error'])
-        self.assertIs(len(res['output']), 0)
+        self.assertIs(len(res['stdout']), 0)
 
     def test_change_timeout_command(self):
         res = self.c.command('sleep 4', 5.0)
         self.assertFalse(res['killed'])
         self.assertFalse(res['error'])
-        self.assertIs(len(res['output']), 0)
+        self.assertIs(len(res['stdout']), 0)
 
     def test_failed_command(self):
         res = self.c.command('ls -123456')
         self.assertFalse(res['killed'])
         self.assertTrue(res['error'])
-        self.assertIsNot(len(res['output']), 0)
+        self.assertIsNot(len(res['stderr']), 0)
 
     def test_command_lsmod(self):
         res = self.c.command('lsmod | grep snd_bcm2835 | wc -l')
         self.assertFalse(res['killed'])
         self.assertFalse(res['error'])
-        self.assertIs(res['output'][0], '3')
+        self.assertIs(res['stdout'][0], '3')
 
     def test_command_uptime(self):
         res = self.c.command('uptime')
         self.assertFalse(res['killed'])
         self.assertFalse(res['error'])
-        self.assertIs(len(res['output']), 1)
+        self.assertIs(len(res['stdout']), 1)
 
     def test_complex_command(self):
         res = self.c.command('cat /proc/partitions | awk -F " " \'$2==0 { print $4}\'')
         self.assertIsNot(len(res), 0)
+
+

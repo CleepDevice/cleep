@@ -41,7 +41,7 @@ class Fstab():
         if res['error'] or res['killed']:
             return None
         else:
-            items = res['output'][0].split()
+            items = res['stdout'][0].split()
             for item in items:
                 if item.lower().startswith('uuid='):
                     return item[5:].replace('"', '').strip()
@@ -58,7 +58,7 @@ class Fstab():
         if res['error'] or res['killed']:
             return None
         else:
-            items = res['output'].split()
+            items = res['stdout'].split()
             return items[0].replace(':', '').strip()
 
         return None
@@ -75,7 +75,7 @@ class Fstab():
             return None
 
         else:
-            for line in res['output']:
+            for line in res['stdout']:
                 device = {
                     'device': None,
                     'uuid': None
