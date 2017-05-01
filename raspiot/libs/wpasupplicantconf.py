@@ -22,7 +22,8 @@ class WpaSupplicantConf():
     NETWORK_TYPE_WPA2 = 'wpa2'
     NETWORK_TYPE_WEP = 'wep'
     NETWORK_TYPE_UNSECURED = 'unsecured'
-    NETWORK_TYPES = [NETWORK_TYPE_WPA, NETWORK_TYPE_WPA2, NETWORK_TYPE_WEP, NETWORK_TYPE_UNSECURED]
+    NETWORK_TYPE_UNKNOWN = 'unknown'
+    NETWORK_TYPES = [NETWORK_TYPE_WPA, NETWORK_TYPE_WPA2, NETWORK_TYPE_WEP, NETWORK_TYPE_UNSECURED, NETWORK_TYPE_UNKNOWN]
 
     def __init__(self):
         self.__fd = None
@@ -128,7 +129,7 @@ class WpaSupplicantConf():
             fd.write(content)
             self.__close()
         else:
-            raise CommandError('Network "%s" does not exist')
+            raise CommandError('Network %s does not exist' % network)
 
         return True
 
@@ -160,9 +161,13 @@ class WpaSupplicantConf():
             c = Console()
             res = c.command('/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
             if res['error'] or res['killed']:
-                raise Exception('Unable to encrypt password')
+                self.logger.error('Error with password: %s' % ''.join(res['stderr']))
+                raise Exception('Error with password: unable to encrypt it')
+            if not ''.join(res['stdout']).startswith('network'):
+                self.logger.error('Error with password: %s' % stdout)
+                raise Exception('Error with password: %s' % stdout)
             password = None
-            output = [line for line in res['output'] if not line.startswith('\t#psk=')]
+            output = [line for line in res['stdout'] if not line.startswith('\t#psk=')]
 
             #inject hidden param if necessary
             if hidden:

@@ -1,72 +1,19 @@
 <div layout="column" layout-padding ng-cloak>
 
-    <!-- network type -->
-    <md-input-container class="md-block" flex-gt-sm>
-        <label>Network type</label>
-        <md-select ng-model="networkCtl.type">
-            <md-option value="wired">Wired</md-option>
-            <md-option value="wireless">Wireless</md-option>
-        </md-select>
-    </md-input-container>
+    <!-- navigation tabs -->
+    <md-nav-bar md-selected-nav-item="networkCtl.networkType" nav-bar-aria-label="Network type">
+        <md-nav-item md-nav-click="goto('wifi')" name="wifi">Wifi configuration</md-nav-item>
+        <md-nav-item md-nav-click="goto('wired')" name="wired">Wired configuration</md-nav-item>
+    </md-nav-bar>
 
-    <!-- wired type -->
-    <md-input-container ng-if="networkCtl.type==='wired'" class="md-block" flex-gt-sm>
-        <label>Wired type</label>
-        <md-select ng-model="networkCtl.wiredType">
-            <md-option value="auto">Automatic</md-option>
-            <md-option value="static">Static</md-option>
-        </md-select>
-    </md-input-container>
-    
-    <!-- wired auto -->
-    <div ng-if="networkCtl.type==='wired' && networkCtl.wiredType==='auto'">
-        <span>Nothing to configure</span>
+    <!-- wifi tab -->
+    <div ng-if="networkCtl.networkType=='wifi'">
+        <div wifi-config></div>
     </div>
 
-    <!-- wired static -->
-    <div ng-if="networkCtl.type==='wired' && networkCtl.wiredType==='static'" layout-gt-sm="row">
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Ip address</label>
-            <input ng-model="networkCtl.wiredStaticIp">
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Netmask</label>
-            <input ng-model="networkCtl.wiredStaticNetmask">
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Gateway</label>
-            <input ng-model="networkCtl.wiredStaticGateway">
-        </md-input-container>
-    </div>
-
-    <!-- wireless -->
-    <div ng-if="networkCtl.type==='wireless'" layout-gt-sm="row">
-        <div>
-            <md-button class="md-raised md-primary" ng-click="networkCtl.scanWifis()" aria-label="Scan wifi networks">
-                Scan wifi networks
-            </md-button>
-        </div>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Detected wifi networks</label>
-            <md-select ng-model="networkCtl.wirelessWifi">
-                <md-option value="wifi1">wifi1</md-option>
-                <md-option value="wifi2">wifi2</md-option>
-            </md-select>
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Password</label>
-            <input ng-model="networkCtl.wirelessPassword">
-        </md-input-container>
-    </div>
-
-    <!-- save button -->
-    <div layout="row" layout-align="end center">
-        <md-button class="md-raised md-accent">
-            Test connection
-        </md-button>
-        <md-button class="md-raised md-accent">
-            Save
-        </md-button>
+    <!-- wired tab -->
+    <div ng-if="networkCtl.networkType=='wired'">
+        wired
     </div>
 
 </div>

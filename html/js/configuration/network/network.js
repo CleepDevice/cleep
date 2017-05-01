@@ -2,19 +2,41 @@
  * Network config directive
  * Handle network configuration
  */
-var networkConfigDirective = function($filter, $timeout, toast, networkService, raspiotService) {
+var networkConfigDirective = function(toast, networkService, raspiotService) {
 
     var networkController = function()
     {
         var self = this;
-        self.type = 'wired';
-        self.wiredType = 'auto';
+        self.networkType = 'wifi';
+
+        /**
+         * Scan wifi networks
+         */
+        self.scanWifiNetworks = function()
+        {
+            networkService.scanWifiNetworks()
+                .then(function(resp) {
+                    console.log('wifi networks', resp);
+                });
+        };
+
+        /**
+         * Get interfaces configurations
+         */
+        self.getInterfacesConfigurations = function()
+        {
+            networkService.getInterfacesConfigurations()
+                .then(function(resp) {
+                    console.log('network config', resp);
+                });
+        };
 
         /**
          * Init controller
          */
         self.init = function()
         {
+           //self.getInterfacesConfigurations();
         };
 
     };
@@ -34,5 +56,4 @@ var networkConfigDirective = function($filter, $timeout, toast, networkService, 
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('networkConfigDirective', ['$filter', '$timeout', 'toastService', 'systemService', 'raspiotService', networkConfigDirective]);
-
+RaspIot.directive('networkConfigDirective', ['toastService', 'networkService', 'raspiotService', networkConfigDirective])

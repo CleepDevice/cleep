@@ -2,16 +2,26 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from raspiot.utils import InvalidParameter
+from raspiot.utils import InvalidParameter, MissingParameter, CommandError, CommandInfo
 from raspiot.raspiot import RaspIotMod
+from raspiot.libs.wpasupplicantconf import WpaSupplicantConf
+from raspiot.libs.console import Console
+import re
+import time
+import os
+import uuid
 
-__all__ = ['NEtwork']
+__all__ = ['Network']
 
-#https://www.raspberrypi.org/documentation/configuration/
 
 class Network(RaspIotMod):
+    """
+    Network module allows user to configure wired and wifi connection
+    @see https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/ iw versus iwconfig (deprecated)
+    @see https://www.raspberrypi.org/documentation/configuration/ official raspberry pi foundation configuration guide
+    @see https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ another super guide ;)
+    """
 
-    #MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
     MODULE_DESCRIPTION = 'Network configuration helper'
     MODULE_LOCKED = True
@@ -27,15 +37,374 @@ class Network(RaspIotMod):
         #init
         RaspIotMod.__init__(self, bus, debug_enabled)
 
-    def set_configuration(self):
-        """
-        """
-        pass
+        #members
+        self.wifi_networks = {}
+        self.interfaces = {}
 
-    def scan_wireless_networks(self):
+    def _start(self):
         """
-        Scan wireless networks
+        Module start
         """
+        self.wifi_networks = self.scan_wifi_networks()
+
+    def get_module_config(self):
+        """
+        Return module configuration (wifi networks, ip address, ...)
+        """
+        config = {}
+        self.interfaces = self.get_interfaces_configurations()
+        config['interfaces'] = self.interfaces
+        config['wifi_networks'] = self.wifi_networks
+
+        return config
+
+    def __get_interface_names(self):
+        """
+        Return interface names
+        """
+        c = Console()
+        res = c.command('/bin/ls -1 /sys/class/net')
+
+        if res['error'] or res['killed']:
+            raise Exception('Unable to get interfaces names')
+
+        output = [line.strip() for line in res['stdout']]
+        output.remove('lo')
+        self.logger.debug('Interface names=%s' % output)
+        return output
+
+    def __get_wifi_interfaces(self):
+        """
+        Return list of wifi interfaces
+        """
+        interfaces = {}
+        c = Console()
+        res = c.command('/sbin/iw dev | grep Interface')
+
+        if res['error'] or res['killed']:
+            raise Exception('Unable to get interfaces names')
+
+        output = [line.strip() for line in res['stdout']]
+        names = [line.replace('Interface ', '') for line in output]
+        self.logger.debug('Wifi interfaces: %s' % interfaces)
+
+        #get connection status
+        regex = r'(SSID):\s*(.*?)\s'
+        for name in names:
+            connected = False
+            network = None
+            res = c.command('/sbin/iw %s link' % name)
+            if not res['error'] and not res['killed']:
+                groups = re.findall(regex, ''.join(res['stdout']), re.DOTALL)
+                for group in groups:
+                    group = filter(None, group)
+                    self.logger.debug(group)
+                    if group[0] is not None and len(group[0])>0:
+                        if group[0]=='SSID':
+                            connected = True
+                            network = group[1]
+
+            interfaces[name] = {
+                'name': name,
+                'connected': connected,
+                'network': network
+            }
+
+        return interfaces
+
+    def get_interfaces_configurations(self):
+        """
+        Return interfaces configurations as returned by ifconfig command
+        """
+        interfaces = {}
+
+        #get interface names
+        names = self.__get_interface_names()
+
+        #get wifi interfaces
+        wifis = self.__get_wifi_interfaces()
         
+        regex = r'(HWaddr)\s*(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})|(inet addr):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(Bcast):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(Mask):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(inet6 addr):\s*(.{4}::.{4}:.{4}:.{4}:.{1,4}/\d{1,4})'
+        for name in names:
+            #get infos
+            c = Console()
+            res = c.command('/sbin/ifconfig %s' % name)
+            if res['error'] or res['killed']:
+                raise CommandError('Unable to get network configuration')
+            self.logger.debug(''.join(res['stdout']))
 
+            #extract interesting data
+            ipv4 = None
+            ipv6 = None
+            broadcast = None
+            mac = None
+            mask = None
+            wifi = False
+            wifi_network = None
+            if name in wifis:
+                wifi = True
+                if wifis[name]['connected']:
+                    wifi_network = wifis[name]['network']
+            groups = re.findall(regex, ''.join(res['stdout']), re.DOTALL)
+            for group in groups:
+                group = filter(None, group)
+                if group[0] is not None and len(group[0])>0:
+                    if group[0]=='HWaddr':
+                        mac = group[1]
+                    elif group[0]=='inet addr':
+                        ipv4 = group[1]
+                    elif group[0]=='Bcast':
+                        broadcast = group[1]
+                    elif group[0]=='Mask':
+                        mask = group[1]
+                    elif group[0]=='inet6 addr':
+                        ipv6 = group[1]
+            
+            #save data
+            interfaces[name] = {
+                'interface': name,
+                'ipv4': ipv4,
+                'ipv6': ipv6,
+                'mask': mask,
+                'broadcast': broadcast,
+                'mac': mac,
+                'wifi': wifi,
+                'wifi_network': wifi_network
+            }
+
+        return interfaces
+
+    def __add_wired_static_interface(self, interface, ip_address, router, domain_name_servers):
+        """
+        Configure wired static interface
+        """
+        conf = DhcpcdConf()
+        return conf.add_static_interface(interface, ip_address, router, domain_name_servers)
+
+    def __delete_wired_static_interface(self, interface):
+        """
+        Configure wired static interface
+        """
+        conf = DhcpcdConf()
+        return conf.delete_static_interface(interface)
+
+    def __add_wifi_network(self, network, network_type, password, hidden):
+        """
+        Add new wifi network configuration
+        @param network: network name (ssid)
+        @param network_type: network type (string: wpa, wpa2, wep, unsecured)
+        @param password: network password (it will be saved encrypted) (string)
+        @param hidden: hidden network (bool)
+        """
+        conf = WpaSupplicantConf()
+        return conf.add_network(network, network_type, password, hidden)
+
+    def __delete_wifi_network(self, network):
+        """
+        Remove wifi network configuration
+        @param network: network name (string)
+        """
+        conf = WpaSupplicantConf()
+        return conf.delete_network(network)
+
+    def scan_wifi_networks(self):
+        """
+        Scan wifi networks
+        @see https://ubuntuforums.org/showthread.php?t=1402284 for different iwlist samples
+        """
+        networks = {}
+
+        #get interface names
+        names = self.__get_interface_names()
+
+        regex = r'(ESSID):\"(.*?)\"|(IE):\s*(.*)|(Encryption key):(.*)|(Signal level)=(\d{1,3})/100'
+        for name in names:
+            #get infos
+            c = Console()
+            res = c.command('/sbin/iwlist %s scan' % name, 15.0)
+            if res['error'] or res['killed']:
+                #error occured, but it's maybe because interface is not wifi
+                continue
+            self.logger.debug(''.join(res['stdout']))
+
+            #extract interesting data
+            essid = None
+            network_type = None
+            network_wpa = False
+            network_wpa2 = False
+            encryption = None
+            signal_level = None
+            groups = re.findall(regex, '\n'.join(res['stdout']))
+            self.logger.debug(groups)
+            for group in groups:
+                group = filter(None, group)
+                self.logger.debug(group)
+                if group[0] is not None and len(group[0])>0:
+                    if group[0]=='ESSID':
+                        essid = group[1]
+                    elif group[0]=='IE' and group[1].lower().find('wpa2'):
+                        network_wpa2 = True
+                    elif group[0]=='IE' and group[1].lower().find('wpa'):
+                        network_wpa = True
+                    elif group[0]=='Encryption key':
+                        encryption = group[1]
+                    elif group[0]=='Signal level':
+                        if group[1].isdigit():
+                            signal_level = float(group[1])
+                        else:
+                            signal_level = group[1]
+
+            #adjust network type
+            if network_wpa2:
+                network_type = WpaSupplicantConf.NETWORK_TYPE_WPA2
+            elif network_wpa:
+                network_type = WpaSupplicantConf.NETWORK_TYPE_WPA
+            elif encryption=='on':
+                network_type = WpaSupplicantConf.NETWORK_TYPE_WEP
+            elif encryption=='off':
+                network_type = WpaSupplicantConf.NETWORK_TYPE_UNSECURED
+            else:
+                network_type = WpaSupplicantConf.NETWORK_TYPE_UNKNOWN
+            
+            #save data
+            networks[essid] = {
+                'interface': name,
+                'network': essid,
+                'network_type': network_type,
+                'signal_level': signal_level
+            }
+
+        #save found networks
+        self.wifi_networks = networks
+
+        return networks
+
+    def test_wifi_network(self, interface, network, network_type, password, hidden):
+        """
+        Try to connect to specified wifi network. Save anything or revert back to original state after test.
+        @return None
+        @raise CommandError, CommandInfo
+        """
+        c = Console()
+        error = None
+        try:
+            #add network configuration
+            self.__add_wifi_network(network, network_type, password, hidden)
+            time.sleep(1.0)
+
+            #stop wpa_supplicant daemon
+            res = c.command('/usr/bin/pkill -f wpa_supplicant')
+            self.logger.debug(res)
+    
+            #try to connect
+            wpafile = '/tmp/wpa_%s.log' % str(uuid.uuid4())
+            res = c.command('/sbin/wpa_supplicant -i %s -c /etc/wpa_supplicant/wpa_supplicant.conf -f %s' % (interface, wpafile), 8.0)
+            self.logger.debug(res)
+
+            #wpa_supplicant command can only be killed by CTRL-C because it uses wpa_cli
+            #so we need to kill it explicitely
+            res = c.command('/usr/bin/pkill -f wpa_supplicant')
+            self.logger.debug(res)
+
+            #parse result
+            with open(wpafile) as f:
+                lines = f.readlines()
+            os.remove(wpafile)
+            self.logger.debug(lines)
+            groups = re.findall(r'(CTRL-EVENT-SSID-TEMP-DISABLED).*reason=(.*?)\s|(CTRL-EVENT-CONNECTED)', '\n'.join(lines))
+            for group in groups:
+                group = filter(None, group)
+                self.logger.debug(group)
+                if group[0] is not None and len(group[0])>0:
+                    if group[0]=='CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]=='WRONG_KEY':
+                        #invalid password detected
+                        raise Exception('Invalid password')
+                    elif group[0]=='CTRL-EVENT-CONNECTED':
+                        #connection successful
+                        break
+
+        except Exception as e:
+            error = str(e)
+    
+        finally:
+            #always delete wifi config
+            self.logger.debug('Delete wifi config for %s' % interface)
+            self.__delete_wifi_network(network)
+
+            #and relaunch wpa_supplicant
+            res = c.command('/bin/ip link set %s up' % interface)
+            self.logger.debug(res)
+            res = c.command('/sbin/ifdown %s' % interface)
+            self.logger.debug(res)
+            res = c.command('/sbin/ifup %s' % interface)
+            self.logger.debug(res)
+
+        if error:
+            raise CommandError(error)
+        raise CommandInfo('Connection to %s successful' % network)
+
+    def save_wifi_network(self, interface, network, network_type, password, hidden):
+        """
+        @return None
+        @raise CommandError, CommandInfo
+        """
+        c = Console()
+        error = None
+        try:
+            #add network configuration
+            self.__add_wifi_network(network, network_type, password, hidden)
+            time.sleep(1.0)
+
+            #and relaunch wpa_supplicant that will connect automatically
+            res = c.command('/bin/ip link set %s up' % interface)
+            self.logger.debug(res)
+            res = c.command('/sbin/ifdown %s' % interface)
+            self.logger.debug(res)
+            res = c.command('/sbin/ifup %s' % interface)
+            self.logger.debug(res)
+
+        except Exception as e:
+            error = str(e)
+
+        #wait few seconds to make sure interface is refreshed
+        time.sleep(4.0)
+    
+        if error:
+            raise CommandError(error)
+        raise CommandInfo('Connected to %s' % network)
+
+    def disconnect_wifi(self, network):
+        """
+        Disconnect from specified wifi network
+        """
+        c = Console()
+
+        #get network interface
+        interface = None
+        for name in self.interfaces:
+            if self.interfaces[name]['wifi_network']==network:
+                interface = name
+                break
+        self.logger.debug('Found interface to restart %s' % interface)
+        if interface is None:
+            raise CommandError('No network interface found for network %s' % network)
+
+        #delete network from configuration
+        self.__delete_wifi_network(network)
+
+        #restart interface
+        res = c.command('/bin/ip link set %s up' % interface)
+        self.logger.debug(res)
+        res = c.command('/sbin/ifdown %s' % interface)
+        self.logger.debug(res)
+        res = c.command('/sbin/ifup %s' % interface)
+        self.logger.debug(res)
+
+        #wait few seconds to make sure interface is refreshed
+        time.sleep(4.0)
+
+        #reload configuration
+        self.get_interfaces_configurations()
+
+        raise CommandInfo('Disconnected from %s' % network)
 
