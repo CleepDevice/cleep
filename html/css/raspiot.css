@@ -90,3 +90,8 @@ md-toast.info .md-toast-content {
 .fix-href-button {
     padding-top: 6px;
 }
+
+/* fix row with input for button, checkbox...*/
+.padding-row-with-input {
+    padding-top: 15px;
+}

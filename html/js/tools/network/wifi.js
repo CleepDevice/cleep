@@ -1,4 +1,10 @@
-var wifiDirective = function(networkService, toast, raspiotService) {
+/**
+ * Wifi directive adds panel to configure wifi network
+ *
+ * Usage: <div wifi-config></div>
+ * No parameter needed. The directive gets all it needs from raspiotService
+ */
+var wifiDirective = function(networkService, toast, raspiotService, confirm) {
 
     var wifiController = ['$scope', function($scope) {
         var self = this;
@@ -12,9 +18,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
         self.networkType = 'wpa2';
         self.interfaces = [];
         self.interface = '';
-        self.testing = false;
-        self.scanning = false;
-        self.saving = false;
+        self.processing = false;
 
         /**
          * Load config
@@ -84,7 +88,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
         self.scanWifiNetworks = function()
         {
             self.password = '';
-            self.scanning = true;
+            self.processing = true;
             networkService.scanWifiNetworks()
                 .then(function(resp) {
                     if( resp.data.length===0 )
@@ -97,7 +101,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
                     }
                 })
                 .finally(function() {
-                    self.scanning = false;
+                    self.processing = false;
                 });
         };
 
@@ -106,7 +110,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
          */
         self.disablePassword = function()
         {
-            if( !self.loaded || self.scanning || self.testing || self.saving ) 
+            if( !self.loaded || self.processing ) 
             {
                 return true;
             }
@@ -127,7 +131,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
 
         self.disableDisconnectButton = function()
         {
-            if( !self.loaded || self.scanning || self.testing || self.saving )
+            if( !self.loaded || self.processing )
             {
                 return true;
             }
@@ -143,7 +147,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
          */
         self.disableButtons = function()
         {
-            if( !self.loaded || self.scanning || self.testing || self.saving )
+            if( !self.loaded || self.processing )
             {
                 return true;
             }
@@ -198,13 +202,13 @@ var wifiDirective = function(networkService, toast, raspiotService) {
          */
         self.testConnection = function()
         {
-            self.testing = true;
+            self.processing = true;
             var params = self.__getConnectionParameters();
 
             //execute test
             networkService.testWifiNetwork(params.interface, params.network, params.networkType, params.password, params.hidden)
                 .finally(function() {
-                    self.testing = false;
+                    self.processing = false;
                 });
         };
 
@@ -213,8 +217,11 @@ var wifiDirective = function(networkService, toast, raspiotService) {
          */
         self.disconnect = function()
         {
-            self.saving = true;
-            networkService.disconnectWifi(self.wifi.network)
+            self.processing = true;
+            confirm.open('Confirm disconnection?', null, 'Disconnect')
+                .then(function() {
+                    return networkService.disconnectWifi(self.wifi.network);
+                })
                 .then(function() {
                     //reload network config
                     return raspiotService.reloadModuleConfig('network');
@@ -223,7 +230,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
                     self.__loadConfig(config);
                 })
                 .finally(function() {
-                    self.saving = false;
+                    self.processing = false;
                 });
 
         };
@@ -233,7 +240,7 @@ var wifiDirective = function(networkService, toast, raspiotService) {
          */
         self.saveConnection = function()
         {
-            self.saving = true;
+            self.processing = true;
             var params = self.__getConnectionParameters();
 
             //execute test
@@ -244,36 +251,15 @@ var wifiDirective = function(networkService, toast, raspiotService) {
                 })
                 .then(function(config) {
                     self.__loadConfig(config);
+                    //force connected flag because ip takes some time to be retrieved
+                    self.wifi.connected = true;
+                    //clear password
+                    self.password = '';
                 })
                 .finally(function() {
-                    self.saving = false;
+                    self.processing = false;
                 });
         };
-
-        /**
-         * Get wifi interfaces
-         */
-        /*self.getWifiInterfaces = function()
-        {
-            networkService.getInterfacesConfigurations()
-                .then(function(resp) {
-                    //store wifi interfaces
-                    for( interface in resp.data )
-                    {
-                        if( resp.data[interface].wifi )
-                        {
-                            self.interfaces.push(interface);
-                        }
-                    }
-                    //by default select first wifi interface (used for hidden network)
-                    if( self.interfaces.length>0 )
-                    {
-                        self.interface = self.interfaces[0];
-                    }
-                    //loaded flag
-                    self.loaded = true;
-                });
-        };*/
 
         /**
          * Controller init
@@ -305,5 +291,5 @@ var wifiDirective = function(networkService, toast, raspiotService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('wifiConfig', ['networkService', 'toastService', 'raspiotService', wifiDirective]);
+RaspIot.directive('wifiConfig', ['networkService', 'toastService', 'raspiotService', 'confirmService', wifiDirective]);
 
