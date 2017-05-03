@@ -144,7 +144,7 @@ class MessageBus():
 
             else:
                 #app is configured but recipient is unknown
-                raise InvalidParameter('Unknown destination %s, check "to" param' % request.to)
+                raise InvalidModule(request.to)
 
         else:
             raise InvalidParameter('Request parameter must be MessageRequest instance')

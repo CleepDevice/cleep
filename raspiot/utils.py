@@ -40,6 +40,12 @@ class InvalidMessage(Exception):
     def __str__(self):
         return repr('Invalid message')
 
+class InvalidModule(Exception):
+    def __init__(self, module):
+        self.module = module
+    def __str__(self):
+        return repr('Invalid module %s (not loaded or unknown)' % module)
+
 class Unauthorized(Exception):
     def __init__(self, value):
         self.value = value

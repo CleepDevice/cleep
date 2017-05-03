@@ -702,8 +702,13 @@ class System(RaspIotMod):
         }
         try:
             self.send_command('purge_data', 'database', params, 10.0)
+        except InvalidModule:
+            #database module not loaded, drop
+            pass
         except NoResponse:
             self.logger.warning('Unable to purge CPU usage from database')
+        except:
+            self.logger.exception('Unable to purge CPU usage from database:')
 
     def __purge_memory_data(self):
         """
@@ -715,7 +720,12 @@ class System(RaspIotMod):
         }
         try:
             self.send_command('purge_data', 'database', params, 10.0)
+        except InvalidModule:
+            #database module not loaded, drop
+            pass
         except NoResponse:
             self.logger.warning('Unable to purge memory usage from database')
+        except:
+            self.logger.exception('Unable to purge memory usage from database:')
 
 
