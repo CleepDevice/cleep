@@ -69,7 +69,7 @@ class Inventory(RaspIotMod):
 
             #fill installed modules
             self.logger.debug('Request commands of module "%s"' % module)
-            resp = self.send_command('get_module_commands', module)
+            resp = self.send_command('get_module_commands', module, None, 15)
             if not resp['error']:
                 self.modules[module]['commands'] = resp['data']
             else:
