@@ -5,6 +5,7 @@ import logging
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError, CommandInfo
 from raspiot.raspiot import RaspIotMod
 from raspiot.libs.wpasupplicantconf import WpaSupplicantConf
+from raspiot.libs.dhcpcdconf import DhcpcdConf
 from raspiot.libs.console import Console
 import re
 import time
@@ -55,8 +56,21 @@ class Network(RaspIotMod):
         self.interfaces = self.get_interfaces_configurations()
         config['interfaces'] = self.interfaces
         config['wifi_networks'] = self.wifi_networks
+        config['wired_config'] = self.__get_wired_config()
 
         return config
+
+    def __restart_interface(self, interface):
+        """
+        Restart network interface
+        @param interface: network interface name (string)
+        """
+        res = c.command('/bin/ip link set %s up' % interface)
+        self.logger.debug(res)
+        res = c.command('/sbin/ifdown %s' % interface)
+        self.logger.debug(res)
+        res = c.command('/sbin/ifup %s' % interface)
+        self.logger.debug(res)
 
     def __get_interface_names(self):
         """
@@ -71,7 +85,19 @@ class Network(RaspIotMod):
         output = [line.strip() for line in res['stdout']]
         output.remove('lo')
         self.logger.debug('Interface names=%s' % output)
+
         return output
+
+    def __get_wired_config(self):
+        """
+        Return wired configuration
+        """
+        #get interfaces from dhcpcd.conf file
+        d = DhcpcdConf()
+        interfaces = d.get_interfaces()
+        self.logger.debug('Wired interfaces: %s' % interfaces)
+
+        return interfaces
 
     def __get_wifi_interfaces(self):
         """
@@ -123,6 +149,9 @@ class Network(RaspIotMod):
 
         #get wifi interfaces
         wifis = self.__get_wifi_interfaces()
+
+        #get wired interfaces configurations
+        wired_configs = self.__get_wired_config()
         
         regex = r'(HWaddr)\s*(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})|(inet addr):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(Bcast):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(Mask):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(inet6 addr):\s*(.{4}::.{4}:.{4}:.{4}:.{1,4}/\d{1,4})'
         for name in names:
@@ -133,18 +162,33 @@ class Network(RaspIotMod):
                 raise CommandError('Unable to get network configuration')
             self.logger.debug(''.join(res['stdout']))
 
-            #extract interesting data
-            ipv4 = None
-            ipv6 = None
-            broadcast = None
-            mac = None
-            mask = None
+            #add wifi status
             wifi = False
             wifi_network = None
             if name in wifis:
                 wifi = True
                 if wifis[name]['connected']:
                     wifi_network = wifis[name]['network']
+
+            #add wired status
+            dhcp = True
+            fallback = False
+            ip_address = None
+            router_address = None
+            name_server = None
+            if name in wired_configs:
+                dhcp = False
+                fallback = wired_configs[name]['fallback']
+                ip_address = wired_configs[name]['ip_address']
+                router_address = wired_configs[name]['router_address']
+                name_server = wired_configs[name]['name_server']
+
+            #extract useful data
+            ipv4 = None
+            ipv6 = None
+            broadcast = None
+            mac = None
+            mask = None
             groups = re.findall(regex, ''.join(res['stdout']), re.DOTALL)
             for group in groups:
                 group = filter(None, group)
@@ -169,21 +213,36 @@ class Network(RaspIotMod):
                 'broadcast': broadcast,
                 'mac': mac,
                 'wifi': wifi,
-                'wifi_network': wifi_network
+                'wifi_network': wifi_network,
+                'dhcp': dhcp,
+                'fallback': fallback,
+                'ip_address': ip_address,
+                'router_address': router_address,
+                'name_server': name_server
             }
 
         return interfaces
 
-    def __add_wired_static_interface(self, interface, ip_address, router, domain_name_servers):
+    def __add_static_interface(self, interface, ip_address, router_address, name_server):
         """
         Configure wired static interface
         """
         conf = DhcpcdConf()
-        return conf.add_static_interface(interface, ip_address, router, domain_name_servers)
+        return conf.add_static_interface(interface, ip_address, router_address, name_server)
 
-    def __delete_wired_static_interface(self, interface):
+    def __add_fallback_interface(self, interface, ip_address, router_address, name_server):
         """
-        Configure wired static interface
+        Configure wired fallback interface
+        """
+        conf = DhcpcdConf()
+        return conf.add_fallback_interface(interface, ip_address, router_address, name_server)
+
+    def __add_static_fallback(self, interface, ip_address, router_address, name_server):
+        conf = DhcpcdConf()
+
+    def __delete_static_interface(self, interface):
+        """
+        Unconfigure wired static interface
         """
         conf = DhcpcdConf()
         return conf.delete_static_interface(interface)
@@ -206,6 +265,48 @@ class Network(RaspIotMod):
         """
         conf = WpaSupplicantConf()
         return conf.delete_network(network)
+
+    def save_wired_static_configuration(self, interface, ip_address, router_address, name_server, fallback):
+        """
+        Save wired static configuration
+        @param interface: interface to configure (string)
+        @param ip_address: desired ip address (string)
+        @param router_address: router address (usually gateway) (string)
+        @param name_server: domain name server (usually gateway) (string)
+        @param fallback: is configuration used as fallback (bool)
+        """
+        res = False
+
+        #delete interface first (if configured)
+        self.__delete_static_interface(interface)
+
+        #then add new one
+        if not fallback:
+            res = self.__add_static_interface(interface, ip_address, router_address, name_server)
+        else:
+            self.logger.debug('--> add fallback')
+            res = self.__add_fallback_interface(interface, ip_address, router_address, name_server)
+
+        #restart interface
+        #self.__restart_interface(interface)
+
+        if not res:
+            raise CommandError('Unable to configure interface')
+
+        return True
+
+    def save_wired_dhcp_configuration(self, interface):
+        """
+        Save wired dhcp configuration
+        Remove static configuration for specified interface
+        """
+        #simply delete static configuration for specified interface
+        self.__delete_static_interface(interface)
+
+        #restart interface
+        #self.__restart_interface(interface)
+
+        return True
 
     def scan_wifi_networks(self):
         """
@@ -332,12 +433,7 @@ class Network(RaspIotMod):
             self.__delete_wifi_network(network)
 
             #and relaunch wpa_supplicant
-            res = c.command('/bin/ip link set %s up' % interface)
-            self.logger.debug(res)
-            res = c.command('/sbin/ifdown %s' % interface)
-            self.logger.debug(res)
-            res = c.command('/sbin/ifup %s' % interface)
-            self.logger.debug(res)
+            self.__restart_interface(interface)
 
         if error:
             raise CommandError(error)
@@ -356,12 +452,7 @@ class Network(RaspIotMod):
             time.sleep(1.0)
 
             #and relaunch wpa_supplicant that will connect automatically
-            res = c.command('/bin/ip link set %s up' % interface)
-            self.logger.debug(res)
-            res = c.command('/sbin/ifdown %s' % interface)
-            self.logger.debug(res)
-            res = c.command('/sbin/ifup %s' % interface)
-            self.logger.debug(res)
+            self.__restart_interface(interface)
 
         except Exception as e:
             error = str(e)
@@ -393,12 +484,7 @@ class Network(RaspIotMod):
         self.__delete_wifi_network(network)
 
         #restart interface
-        res = c.command('/bin/ip link set %s up' % interface)
-        self.logger.debug(res)
-        res = c.command('/sbin/ifdown %s' % interface)
-        self.logger.debug(res)
-        res = c.command('/sbin/ifup %s' % interface)
-        self.logger.debug(res)
+        self.__restart_interface(interface)
 
         #wait few seconds to make sure interface is refreshed
         time.sleep(4.0)

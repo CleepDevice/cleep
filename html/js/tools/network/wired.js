@@ -1,158 +1,137 @@
-var wiredDirective = function(networkService, toast) {
+var wiredDirective = function(raspiotService, networkService, toast, confirm) {
 
     var wiredController = ['$scope', function($scope) {
         var self = this;
-        self.loaded = false;
-        self.wifis = [];
-        self.wifi = null;
-        self.showPassword = false;
-        self.password = '';
-        self.hidden = false;
-        self.network = '';
-        self.networkType = 'wpa2';
-        self.wifiInterfaces = [];
-        self.interface = '';
-        self.testing = false;
-        self.scanning = false;
+        self.interfaces = [];
+        self.saving = false;
 
         /**
-         * Scan wifi networks
+         * Load configuration
          */
-        self.scanWifiNetworks = function()
+        self.__loadConfig = function(config)
         {
-            self.password = '';
-            self.scanning = true;
-            networkService.scanWifiNetworks()
-                .then(function(resp) {
-                    wifis = []
-                    for( network in resp['data'] )
+            //fill available wired interfaces
+            self.__fillInterfaces(config.interfaces);
+
+            //fill current configuration
+            if( !config.wired_config.dhcp )
+            {
+                if( !config.wired_config.dhcp )
+                {
+                    self.type = 'static';
+                }
+                else
+                {
+                    self.type = 'auto';
+                }
+
+                self.__fillConfigurations(config.wired_config.interfaces);
+            }
+        };
+
+        /**
+         * Fill interfaces
+         */
+        self.__fillInterfaces = function(interfaces)
+        {
+            var interfaces_ = [];
+            for( name in interfaces )
+            {
+                if( !interfaces[name].wifi )
+                {
+                    interfaces_.push(interfaces[name]);
+                }
+            }
+            self.interfaces = interfaces_;
+
+            if( interfaces_.length>0 )
+            {
+                self.interface = self.interfaces[0];
+            } 
+        };
+
+        /**
+         * Fill configured static interfaces
+         */
+        self.__fillConfigurations = function(configs)
+        {
+            for( var config in configs )
+            {
+                //check if configured interface is among available ones
+                found = false;
+                for( var i=0; i<self.interfaces.length; i++ )
+                {
+                    if( self.interfaces[i].interface===config )
                     {
-                        wifis.push(resp['data'][network]);
+                        found = true;
+                        break;
                     }
+                }
 
-                    if( wifis.length>0 )
-                    {
-                        self.wifis = wifis;
-                        self.wifi = self.wifis[0];
-                    }
-                    else
-                    {
-                        toast.warning('No wifi network found');
-                    }
-                })
-                .finally(function() {
-                    self.scanning = false;
-                });
+                //keep only first configured interface for now
+                if( found ) 
+                {
+                    self.ipAddress = configs[config].ip_address;
+                    self.routerAddress = configs[config].router_address;
+                    self.nameServer = configs[config].name_server;
+                }
+            }
         };
 
         /**
-         * Disable action buttons
+         * Save static configuration
          */
-        self.disableButtons = function()
-        {
-            if( self.scanning || self.testing )
-            {
-                return true;
-            }
-            else if( self.wifiInterfaces.length===0 )
-            {
-                return true;
-            }
-            else if( !self.hidden && !self.wifi )
-            {
-                return true;
-            }
-            else if( !self.hidden && self.wifi && self.wifi.network_type!=='unsecured' && self.password.length==0 )
-            {
-                return true;
-            }
-            else if( self.hidden && self.network.length===0 )
-            {
-                return true;
-            }
-            else if( self.hidden && self.networkType!=='unsecured' && self.password.length===0 )
-            {
-                return true;
-            }
-            return false;
-        };
-
-        /**
-         * Get connection parameter according to user configuration
-         */
-        self.__getConnectionParameter = function()
-        {
-            var output = {
-                interface: self.interface,
-                network: self.network,
-                networkType: self.networkType,
-                password: self.password,
-                hidden: self.hidden
-            };
-
-            if( !self.hidden )
-            {
-                output.interface = self.wifi.interface;
-                output.network = self.wifi.network;
-                output.networkType = self.wifi.network_type;
-            }
-
-            return output;
-        };
-
-        /**
-         * Try to connect to selected wifi network
-         */
-        self.testConnection = function()
-        {
-            self.testing = true;
-            var params = self.__getConnectionParameters();
-
-            //execute test
-            networkService.testWifiNetwork(params.interface, params.network, params.networkType, params.password, params.hidden)
-                .finally(function() {
-                    self.testing = false;
-                });
-        };
-
-        /**
-         * Save connection configuration
-         */
-        self.saveConnection = function()
+        self.saveStatic = function(interface)
         {
             self.saving = true;
-            var params = self.__getConnectionParameters();
-
-            //execute test
-            networkService.saveWifiNetwork(params.interface, params.network, params.networkType, params.password, params.hidden)
+            confirm.open('Confirmation', 'Forcing ip manually can break your remote access. Please make sure of what you do!', 'Save')
+                .then(function() {
+                    return networkService.saveWiredStaticConfiguration(interface.interface, interface.ip_address, interface.router_address, interface.name_server, interface.fallback);
+                })
+                .then(function() {
+                    return raspiotService.reloadModuleConfig('network');
+                })
+                .then(function(config) {
+                    self.__loadConfig(config);
+                    toast.success('Configuration saved');
+                })
                 .finally(function() {
                     self.saving = false;
                 });
         };
 
         /**
-         * Get wifi interfaces
+         * Save dhcp configuration
          */
-        self.getWifiInterfaces = function()
+        self.saveAuto = function(interface)
         {
-            networkService.getInterfacesConfigurations()
-                .then(function(resp) {
-                    //store wifi interfaces
-                    for( interface in resp.data )
-                    {
-                        if( resp.data[interface].wired )
-                        {
-                            self.wifiInterfaces.push(interface);
-                        }
-                    }
-                    //by default select first wifi interface (used for hidden network)
-                    if( self.wifiInterfaces.length>0 )
-                    {
-                        self.interface = self.wifiInterfaces[0];
-                    }
-                    //loaded flag
-                    self.loaded = true;
+            self.saving = true;
+            networkService.saveWiredDhcpConfiguration(interface.interface)
+                .then(function() {
+                    return raspiotService.reloadModuleConfig('network');
+                })
+                .then(function(config) {
+                    self.__loadConfig(config);
+                    toast.success('Configuration saved');
+                })
+                .finally(function() {
+                    self.saving = false;
                 });
+        };
+
+        /**
+         * Save action
+         */
+        self.save = function(interface)
+        {
+            if( interface.dhcp )
+            {
+                self.saveAuto(interface);
+            }
+            else
+            {
+                self.saveStatic(interface);
+            }
         };
 
         /**
@@ -160,12 +139,15 @@ var wiredDirective = function(networkService, toast) {
          */
         self.init = function()
         {
-            self.getWifiInterfaces();
+            raspiotService.getModuleConfig('network')
+                .then(function(config) {
+                    self.__loadConfig(config);
+                });
         };
 
     }];
 
-    var wifiLink = function(scope, element, attrs, controller) {
+    var wiredLink = function(scope, element, attrs, controller) {
         controller.init();
     };
 
@@ -181,5 +163,5 @@ var wiredDirective = function(networkService, toast) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('wiredConfig', ['networkService', 'toastService', wiredDirective]);
+RaspIot.directive('wiredConfig', ['raspiotService', 'networkService', 'toastService', 'confirmService', wiredDirective]);
 

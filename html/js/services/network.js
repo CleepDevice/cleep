@@ -5,20 +5,12 @@
 var networkService = function($q, $rootScope, rpcService) {
     var self = this;
 
-    self.addWiredStaticInterface = function(interface, ipAddress, routers, domainNameServers) {
-        return rpcService.sendCommand('add_wired_static_interface', 'network', {'interface':interface, 'ip_address':ipAddress, 'routers':routers, 'domain_name_servers':domainNameServers});
+    self.saveWiredStaticConfiguration = function(interface, ipAddress, routerAddress, nameServer, fallback) {
+        return rpcService.sendCommand('save_wired_static_configuration', 'network', {'interface':interface, 'ip_address':ipAddress, 'router_address':routerAddress, 'name_server':nameServer, 'fallback':fallback});
     };
 
-    self.deleteWiredStaticInterface = function(interface) {
-        return rpcService.sendCommand('delete_wired_static_interface', 'network', {'interface':interface});
-    };
-
-    self.addWifiNetwork = function(network, networkType, password, hidden) {
-        return rpcService.sendCommand('add_wifi_network', 'network', {'network':network, 'network_type':networkType, 'password':password, 'hidden':hidden});
-    };
-
-    self.deleteWifiNetwork = function(network) {
-        return rpcService.sendCommand('delete_wifi_network', 'network', {'network':network});
+    self.saveWiredDhcpConfiguration = function(interface) {
+        return rpcService.sendCommand('save_wired_dhcp_configuration', 'network', {'interface':interface});
     };
 
     self.scanWifiNetworks = function() {

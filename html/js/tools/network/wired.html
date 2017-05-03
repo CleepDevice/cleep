@@ -1,72 +1,51 @@
 <div layout="column" layout-padding ng-cloak>
 
-    <!-- network type -->
-    <md-input-container class="md-block" flex-gt-sm>
-        <label>Network type</label>
-        <md-select ng-model="networkCtl.type">
-            <md-option value="wired">Wired</md-option>
-            <md-option value="wireless">Wireless</md-option>
-        </md-select>
-    </md-input-container>
+    <div ng-repeat="interface in wiredCtl.interfaces">
 
-    <!-- wired type -->
-    <md-input-container ng-if="networkCtl.type==='wired'" class="md-block" flex-gt-sm>
-        <label>Wired type</label>
-        <md-select ng-model="networkCtl.wiredType">
-            <md-option value="auto">Automatic</md-option>
-            <md-option value="static">Static</md-option>
-        </md-select>
-    </md-input-container>
-    
-    <!-- wired auto -->
-    <div ng-if="networkCtl.type==='wired' && networkCtl.wiredType==='auto'">
-        <span>Nothing to configure</span>
-    </div>
-
-    <!-- wired static -->
-    <div ng-if="networkCtl.type==='wired' && networkCtl.wiredType==='static'" layout-gt-sm="row">
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Ip address</label>
-            <input ng-model="networkCtl.wiredStaticIp">
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Netmask</label>
-            <input ng-model="networkCtl.wiredStaticNetmask">
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Gateway</label>
-            <input ng-model="networkCtl.wiredStaticGateway">
-        </md-input-container>
-    </div>
-
-    <!-- wireless -->
-    <div ng-if="networkCtl.type==='wireless'" layout-gt-sm="row">
         <div>
-            <md-button class="md-raised md-primary" ng-click="networkCtl.scanWifiNetworks()" aria-label="Scan wifi networks">
-                Scan wifi networks
-            </md-button>
+            <span class="md-title">{{interface.interface}} configuration</span>
+            <span class="md-caption">({{interface.mac}})</span>
         </div>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Detected wifi networks</label>
-            <md-select ng-model="networkCtl.wirelessWifi">
-                <md-option value="wifi1">wifi1</md-option>
-                <md-option value="wifi2">wifi2</md-option>
-            </md-select>
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Password</label>
-            <input ng-model="networkCtl.wirelessPassword">
-        </md-input-container>
-    </div>
 
-    <!-- save button -->
-    <div layout="row" layout-align="end center">
-        <md-button class="md-raised md-accent">
-            Test connection
-        </md-button>
-        <md-button class="md-raised md-accent">
-            Save
-        </md-button>
+        <div layout-gt-sm="row">
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Wired type</label>
+                <md-select ng-model="interface.dhcp">
+                    <md-option ng-value="true">Automatic</md-option>
+                    <md-option ng-value="false">Manual</md-option>
+                </md-select>
+            </md-input-container>
+
+            <!-- wired auto -->
+            <md-input-container class="md-block" ng-if="interface.dhcp" flex-gt-sm>
+                <span>Your server will automatically assigned an ip address.</span>
+            </md-input-container> 
+
+            <!-- wired static -->
+            <md-input-container class="md-block" ng-if="!interface.dhcp" flex-gt-sm>
+                <label>Ip address</label>
+                <input ng-model="interface.ip_address">
+            </md-input-container>
+            <md-input-container class="md-block" ng-if="!interface.dhcp" flex-gt-sm>
+                <label>Router address</label>
+                <input ng-model="interface.router_address">
+            </md-input-container>
+            <md-input-container class="md-block" ng-if="!interface.dhcp" flex-gt-sm>
+                <label>Domain name server address</label>
+                <input ng-model="interface.name_server">
+            </md-input-container>
+            <div class="padding-row-with-input" ng-if="!interface.dhcp">
+                <md-checkbox ng-model="interface.fallback">
+                    Fallback ip
+                </md-checkbox>
+            </div>
+            <div>
+                <md-button class="md-raised md-accent" ng-click="wiredCtl.save(interface)">
+                    Save
+                </md-button>
+            </div>
+        </div>
+    
     </div>
 
 </div>
