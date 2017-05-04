@@ -26,7 +26,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             sensors: 'leak_add',
             shutters: 'format_line_spacing',
             sounds: 'volume_up',
-            system: 'favorite'
+            system: 'favorite',
+            network: 'network_wifi'
         };
 
         if( !angular.isUndefined(icons[module]) )
