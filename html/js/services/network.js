@@ -21,12 +21,12 @@ var networkService = function($q, $rootScope, rpcService) {
         return rpcService.sendCommand('get_interfaces_configurations', 'network');
     };
 
-    self.testWifiNetwork = function(interface, network, networkType, password, hidden) {
-        return rpcService.sendCommand('test_wifi_network', 'network', {'interface':interface, 'network':network, 'network_type':networkType, 'password':password, 'hidden':hidden}, 30);
+    self.testWifiNetwork = function(interface, network, encryption, password, hidden) {
+        return rpcService.sendCommand('test_wifi_network', 'network', {'interface':interface, 'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 30);
     };
 
-    self.saveWifiNetwork = function(interface, network, networkType, password, hidden) {
-        return rpcService.sendCommand('save_wifi_network', 'network', {'interface':interface, 'network':network, 'network_type':networkType, 'password':password, 'hidden':hidden}, 20);
+    self.saveWifiNetwork = function(interface, network, encryption, password, hidden) {
+        return rpcService.sendCommand('save_wifi_network', 'network', {'interface':interface, 'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 20);
     };
 
     self.disconnectWifi = function(network) {

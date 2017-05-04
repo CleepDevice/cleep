@@ -10,6 +10,7 @@ from shutil import copy2
 class DhcpcdConf():
     """
     Helper class to update and read /etc/dhcpcd.conf file
+    @see https://wiki.archlinux.org/index.php/dhcpcd
     """
 
     CONF = '/etc/dhcpcd.conf'
@@ -47,66 +48,6 @@ class DhcpcdConf():
         if self.__fd:
             self.__fd.close()
             self.__fd = None
-
-    #def __get_interface_config(self, interface):
-    #    """
-    #    Return interface configuration from config file
-    #    @param interface: interface name
-    #    @return interface configuration (dict)
-    #    """
-    #    #get file content
-    #    fd = self.__open()
-    #    lines = fd.readlines()
-    #    content = '\n'.join(lines)
-    #    self.__close()
-    #
-    #    #get interface declaration line content
-    #    interface_line = re.findall('^(\s*interface\s*%s\s*)$' % interface, content, re.MULTILINE)
-    #    if len(interface_line)==0:
-    #        raise Exception('No configuration found for interface %s' % interface)
-    #    elif len(interface_line)!=1:
-    #        raise Exception('Duplicate configuration found for interface %s' % interface)
-    #    interface_line = interface_line[0].strip()
-    #
-    #    #parse lines
-    #    start = False
-    #    line_number = 0
-    #    ip_address = None
-    #    routers = None
-    #    domain_name_servers = None
-    #    for line in lines:
-    #        line_number += 1
-    #        if line.startswith(interface_line):
-    #            #start of interface config found
-    #            start = True
-    #        elif start and not line.strip().startswith('static'):
-    #            #end of current interface config
-    #            break
-    #        elif start:
-    #            #readline current interface config line
-    #            items = re.findall('^static\s*(.*?)\s*=\s*(.*?)$', line)
-    #            if len(items)!=1:
-    #                raise Exception('Malformed line in dhcpcd.conf at %d' % line_number)
-    #            items = items[0]
-    #            if len(items)==2:
-    #                if items[0]=='ip_address':
-    #                    ip_address = items[1].replace('/24', '')
-    #                elif items[0]=='routers':
-    #                    routers = items[1]
-    #                elif items[0]=='domain_name_servers':
-    #                    domain_name_servers = items[1]
-    #                else:
-    #                    #Unknown interface field
-    #                    pass
-    #            else:
-    #                raise Exception('Dhcpcd.conf seems to be malformed at line %d (%s)' % (line_number, items))
-    #
-    #    return {
-    #        'interface': interface,
-    #        'ip_address': ip_address,
-    #        'router_address': routers,
-    #        'name_server': domain_name_servers
-    #    };
 
     def restore_default(self):
         """
@@ -189,27 +130,6 @@ class DhcpcdConf():
                 interfaces[interface]['router_address'] = interfaces_[interface]['router_address']
                 interfaces[interface]['name_server'] = interfaces_[interface]['name_server']
 
-        #regex = r'(.*interface)\s*(.*?)\s|(.*static\s*ip_address)\s*=\s*(.*?)\s|(.*static\s*routers)\s*=\s*(.*?)\s|(.*static\s*domain_name_servers)\s*=\s*(.*?)\s'
-        #groups = re.findall(regex, content)
-        #current_interface = None
-        #for group in groups:
-        #    group = filter(None, group)
-        #    if group[0] is not None and len(group[0])>0:
-        #        if group[0]=='interface':
-        #            current_interface = group[1]
-        #            interfaces[current_interface] = {
-        #                'interface': current_interface,
-        #                'ip_address': None,
-        #                'router_address': None,
-        #                'name_server': None
-        #            }
-        #        elif group[0].endswith('ip_address'):
-        #            interfaces[current_interface]['ip_address'] = group[1].replace('/24', '')
-        #        elif group[0].endswith('routers'):
-        #            interfaces[current_interface]['router_address'] = group[1]
-        #        elif group[0].endswith('domain_name_servers'):
-        #            interfaces[current_interface]['name_server'] = group[1]
-        
         return interfaces
 
     def get_interface(self, interface):
@@ -287,15 +207,31 @@ class DhcpcdConf():
         start = False
         indexes = []
         index = 0
+        count = 0
+        regex_header = r'^\s*interface\s*%s\s*$' % interface
+        regex_line = r'^\s*static.*$'
         for line in lines:
-            if re.match('^\s*interface\s*%s\s*$' % interface, line):
+            if re.match(regex_header, line):
+                #header found, start
                 indexes.append(index)
                 start = True
-            elif start and not line.strip().startswith('static'):
+                count += 1
+            elif count==4:
+                #number of line to delete reached, stop
                 break
-            elif start:
+            elif start and line.strip().startswith('#'):
+                #commented line
+                continue
+            #elif start and not line.strip().startswith('static'):
+            elif start and re.match(regex_line, line):
+                #save index of line to delete
                 indexes.append(index)
+                count += 1
             index += 1
+
+        if len(indexes)!=4:
+            #number of line to delete not found. Do nothing
+            return False
 
         #delete interface configuration lines
         indexes.reverse()
@@ -350,10 +286,95 @@ class DhcpcdConf():
     def delete_fallback_interface(self, interface):
         """
         Delete fallback configuration for specified interface
-        @param interface: interface to delete
-        @return True if command successful
+        @param interface: interface name
+        @return True if interface is deleted, False otherwise
+        @raise MissingParameter
         """
-        pass
+        #check params
+        if interface is None or len(interface)==0:
+            raise MissingParameter('Interface parameter is missing')
+
+        #check if interface is configured
+        if self.get_interface(interface) is None:
+            return False
+
+        #delete interface data and find profile name
+        fd = self.__open()
+        lines = fd.readlines()
+        self.__close()
+        profile = None
+        start = False
+        indexes = []
+        index = 0
+        count = 0
+        regex_header = r'^\s*interface\s*%s\s*$' % interface
+        regex_line = r'^\s*fallback\s*(.*?)\s*$'
+        for line in lines:
+            if re.match(regex_header, line):
+                #header found, start
+                indexes.append(index)
+                start = True
+                count += 1
+            elif count==2:
+                #number of line to delete reached, stop
+                break
+            elif start and line.strip().startswith('#'):
+                #commented line
+                continue
+            elif start:
+                matches = re.match(regex_line, line)
+                if matches and len(matches.groups())==1:
+                    #save profile name
+                    profile = matches.groups()[0]
+                    #save index of line to delete
+                    indexes.append(index)
+                    count += 1
+            index += 1
+
+        if len(indexes)!=2:
+            #number of line to delete not found. Do nothing
+            return False
+
+        #delete profile data
+        start = False
+        index = 0
+        count = 0
+        regex_header = r'^\s*profile\s*%s\s*$' % profile
+        regex_line = r'^\s*static.*$'
+        for line in lines:
+            if re.match(regex_header, line):
+                #header found, start
+                indexes.append(index)
+                start = True
+                count += 1
+            elif count==4:
+                #number of line to delete reached, stop
+                break
+            elif start and line.strip().startswith('#'):
+                #commented line
+                continue
+            elif start and re.match(regex_line, line):
+                #save index of line to delete
+                indexes.append(index)
+                count += 1
+            index += 1
+
+        if len(indexes)!=6:
+            #number of line to delete not found. Do nothing
+            return False
+
+        #remove found lines
+        indexes.sort()
+        indexes.reverse()
+        for index in indexes:
+            lines.pop(index)
+
+        #write config file
+        fd = self.__open(self.MODE_WRITE)
+        fd.write(''.join(lines))
+        self.__close()
+
+        return True
 
 
 
@@ -454,7 +475,7 @@ static domain_name_servers=192.168.1.1""")
         self.assertRaises(MissingParameter, self.d.delete_static_interface, '')
 
     def test_delete_interface_invalid_parameter(self):
-        self.assertRaises(InvalidParameter, self.d.delete_static_interface, 'eth1')
+        self.assertFalse(self.d.delete_static_interface('eth1'))
         
     def test_delete_interface(self):
         self.assertTrue(self.d.add_static_interface('eth1', '10.30.1.255', '10.30.1.1', '10.30.1.2'))
@@ -511,8 +532,10 @@ nohook lookup-hostname
 
 # define static profile
 profile fallback_eth1
+
 static ip_address=192.168.1.23/24
 static routers=192.168.1.1
+#static routers=192.168.1.2
 static domain_name_servers=192.168.1.1
 
 interface eth0
@@ -570,11 +593,29 @@ fallback fallback_eth1""")
         self.assertRaises(MissingParameter, self.d.delete_static_interface, '')
 
     def test_delete_interface_invalid_parameter(self):
-        self.assertRaises(InvalidParameter, self.d.delete_static_interface, 'eth4')
+        self.assertFalse(self.d.delete_static_interface('eth4'))
         
     def test_delete_interface(self):
         self.assertTrue(self.d.add_static_interface('eth3', '10.30.1.255', '10.30.1.1', '10.30.1.2'))
         self.assertEqual(len(self.d.get_interfaces()), 3)
         self.assertTrue(self.d.delete_static_interface('eth3'))
+        self.assertEqual(len(self.d.get_interfaces()), 2)
+
+    def test_add_fallback_interface(self):
+        self.assertTrue(self.d.add_fallback_interface('eth6', '12.12.12.12', '12.12.12.1', '12.12.12.20'))
+        interfaces = self.d.get_interfaces()
+        self.assertEqual(len(interfaces), 3)
+        interface = self.d.get_interface('eth6')
+        self.assertIsNotNone(interface)
+        self.assertEqual(interface['interface'], 'eth6')
+        self.assertEqual(interface['ip_address'], '12.12.12.12')
+        self.assertEqual(interface['router_address'], '12.12.12.1')
+        self.assertEqual(interface['name_server'], '12.12.12.20')
+        self.assertTrue(interface['fallback'])
+
+    def test_delete_fallback_interface(self):
+        self.assertTrue(self.d.add_fallback_interface('eth6', '12.12.12.12', '12.12.12.14', '12.12.12.16'))
+        self.assertEqual(len(self.d.get_interfaces()), 3)
+        self.assertTrue(self.d.delete_fallback_interface('eth6'))
         self.assertEqual(len(self.d.get_interfaces()), 2)
 

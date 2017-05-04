@@ -12,25 +12,11 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm) {
         {
             //fill available wired interfaces
             self.__fillInterfaces(config.interfaces);
-
-            //fill current configuration
-            if( !config.wired_config.dhcp )
-            {
-                if( !config.wired_config.dhcp )
-                {
-                    self.type = 'static';
-                }
-                else
-                {
-                    self.type = 'auto';
-                }
-
-                self.__fillConfigurations(config.wired_config.interfaces);
-            }
         };
 
         /**
          * Fill interfaces
+         * @param interfaces: list of interfaces return by rpc
          */
         self.__fillInterfaces = function(interfaces)
         {
@@ -51,35 +37,8 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm) {
         };
 
         /**
-         * Fill configured static interfaces
-         */
-        self.__fillConfigurations = function(configs)
-        {
-            for( var config in configs )
-            {
-                //check if configured interface is among available ones
-                found = false;
-                for( var i=0; i<self.interfaces.length; i++ )
-                {
-                    if( self.interfaces[i].interface===config )
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                //keep only first configured interface for now
-                if( found ) 
-                {
-                    self.ipAddress = configs[config].ip_address;
-                    self.routerAddress = configs[config].router_address;
-                    self.nameServer = configs[config].name_server;
-                }
-            }
-        };
-
-        /**
          * Save static configuration
+         * @param interface: interface object
          */
         self.saveStatic = function(interface)
         {
@@ -102,6 +61,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm) {
 
         /**
          * Save dhcp configuration
+         * @param interface: interface object
          */
         self.saveAuto = function(interface)
         {
@@ -121,6 +81,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm) {
 
         /**
          * Save action
+         * @param interface: interface object
          */
         self.save = function(interface)
         {

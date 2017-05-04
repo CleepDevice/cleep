@@ -10,14 +10,8 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
         var self = this;
         self.loaded = false;
         self.wifis = [];
-        self.wifi = null;
         self.showPassword = false;
-        self.password = '';
-        self.hidden = false;
-        self.network = '';
-        self.networkType = 'wpa2';
         self.interfaces = [];
-        self.interface = '';
         self.processing = false;
 
         /**
@@ -37,28 +31,34 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
          */
         self.__fillWifis = function(wifis)
         {
-            var wifis_ = [];
+            var wifis_ = []
+
+            //fill wifis list and add useful properties
             for( name in wifis )
             {
-                //is interface connected to this wifi network?
-                var connected = false;
-                for( var i=0; i<self.interfaces.length; i++ )
-                {
-                    if( self.interfaces[i].wifi_network==name )
-                    {
-                        connected = true;
-                        break;
-                    }
-                }
-                wifis[name].connected = connected;
+                wifis[name].sort = name;
+                wifis[name].dummy = false;
+                wifis[name].label = wifis[name].network+' ('+wifis[name].encryption+', '+wifis[name].signal_level+'% signal)';
                 wifis_.push(wifis[name]);
             }
-            self.wifis = wifis_;
 
-            if( wifis_.length>0 )
-            {
-                self.wifi = self.wifis[0];
-            }
+            //add dummy option to add hidden network
+            wifis_.push({
+                label: 'Connect to hidden network',
+                sort: 'ZZZZZZZZZZ999',
+                network: 'hidden',
+                dummy: true
+            });
+
+            //add dummy option to add hidden network
+            wifis_.push({
+                label: 'Not connected',
+                sort: '_______000',
+                network: 'notconnected',
+                dummy: true
+            });
+
+            self.wifis = wifis_;
         };
 
         /**
@@ -71,15 +71,19 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
             {
                 if( interfaces[name].wifi )
                 {
+                    interfaces[name].wifi_new_network = interfaces[name].wifi_network;
+                    interfaces[name].wifi_hidden_encryption = 'WPA2';
+                    interfaces[name].wifi_hidden_network = '';
+                    interfaces[name].password = null;
+                    if( interfaces[name].wifi_network===null )
+                    {
+                        interfaces[name].wifi_network = 'notconnected';
+                        interfaces[name].wifi_new_network = 'notconnected';
+                    }
                     interfaces_.push(interfaces[name]);
                 }
             }
             self.interfaces = interfaces_;
-
-            if( interfaces_.length>0 )
-            {
-                self.interface = self.interfaces[0];
-            }
         };
 
         /**
@@ -106,68 +110,54 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
         };
 
         /**
-         * Hide password input
+         * Show disconnect button
+         * @param interface: interface object
          */
-        self.disablePassword = function()
+        self.disablePasswordInput = function(interface)
         {
-            if( !self.loaded || self.processing ) 
+            if( self.processing )
             {
                 return true;
             }
-            else if( self.wifi && self.wifi.network_type==='unsecured' )
+            else if( interface.wifi_new_network==='notconnected' )
             {
                 return true;
             }
-            else if( self.wifi && self.wifi.connected )
+            else if( interface.wifi_new_network==='hidden' && interface.wifi_hidden_encryption==='unsecured' )
             {
                 return true;
             }
-            else if( self.hidden && self.networkType==='unsecured' )
+            else if( interface.wifi_new_network===interface.wifi_network )
             {
                 return true;
             }
-            return false;
-        };
-
-        self.disableDisconnectButton = function()
-        {
-            if( !self.loaded || self.processing )
+            else
             {
-                return true;
-            }
-            else if( self.wifi && !self.wifi.connected )
-            {
-                return true;
+                for( var i=0; i<self.wifis.length; i++ )
+                {
+                    if( self.wifis[i].network===interface.wifi_new_network )
+                    {
+                        if( self.wifis[i].encryption==='unsecured' )
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
             }
             return false;
         };
 
         /**
-         * Disable action buttons
+         * Show disconnect button
+         * @param interface: interface object
          */
-        self.disableButtons = function()
+        self.showDisconnectButton = function(interface)
         {
-            if( !self.loaded || self.processing )
-            {
-                return true;
-            }
-            else if( self.interfaces.length===0 )
-            {
-                return true;
-            }
-            else if( !self.hidden && !self.wifi )
-            {
-                return true;
-            }
-            else if( !self.hidden && self.wifi && self.wifi.network_type!=='unsecured' && self.password.length==0 )
-            {
-                return true;
-            }
-            else if( self.hidden && self.network.length===0 )
-            {
-                return true;
-            }
-            else if( self.hidden && self.networkType!=='unsecured' && self.password.length===0 )
+            if( interface.wifi_network===interface.wifi_new_network )
             {
                 return true;
             }
@@ -175,52 +165,49 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
         };
 
         /**
-         * Get connection parameter according to user configuration
+         * Disable disconnect button
+         * @param interface: interface object
          */
-        self.__getConnectionParameters = function()
+        self.disableDisconnectButton = function(interface)
         {
-            var output = {
-                interface: self.interface,
-                network: self.network,
-                networkType: self.networkType,
-                password: self.password,
-                hidden: self.hidden
-            };
-
-            if( !self.hidden )
+            if( self.processing )
             {
-                output.interface = self.wifi.interface;
-                output.network = self.wifi.network;
-                output.networkType = self.wifi.network_type;
+                return true;
             }
-
-            return output;
+            else if( interface.wifi_new_network==='notconnected' || interface.wifi_network!==interface.wifi_new_network )
+            {
+                return true;
+            }
+            return false;
         };
 
         /**
-         * Try to connect to selected wifi network
+         * Disable connect button
+         * @param interface: interface object
          */
-        self.testConnection = function()
+        self.disableConnectButton = function(interface)
         {
-            self.processing = true;
-            var params = self.__getConnectionParameters();
-
-            //execute test
-            networkService.testWifiNetwork(params.interface, params.network, params.networkType, params.password, params.hidden)
-                .finally(function() {
-                    self.processing = false;
-                });
+            if( self.processing )
+            {
+                return true;
+            }
+            else if( interface.wifi_new_network==='notconnected' || interface.wifi_network===interface.wifi_new_network )
+            {
+                return true;
+            }
+            return false;
         };
 
         /**
          * Disconnect specified network
          */
-        self.disconnect = function()
+        self.disconnect = function(interface)
         {
             self.processing = true;
+            self.showPassword = false;
             confirm.open('Confirm disconnection?', null, 'Disconnect')
                 .then(function() {
-                    return networkService.disconnectWifi(self.wifi.network);
+                    return networkService.disconnectWifi(interface.wifi_network);
                 })
                 .then(function() {
                     //reload network config
@@ -238,13 +225,38 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
         /**
          * Save connection configuration
          */
-        self.saveConnection = function()
+        self.saveConnection = function(interface)
         {
             self.processing = true;
-            var params = self.__getConnectionParameters();
+            self.showPassword = false;
+
+            //get parameters
+            var network = null;
+            var encryption = null;
+            var hidden = false;
+            if( interface.wifi_new_network==='hidden' )
+            {
+                //get parameters from interface fields
+                hidden = true;
+                network = interface.wifi_hidden_network;
+                encryption = interface.wifi_hidden_encryption;
+            }
+            else
+            {
+                //get parameters from selected network
+                hidden = false;
+                network = interface.wifi_new_network;
+                for( var i=0; i<self.wifis.length; i++ )
+                {
+                    if( self.wifis[i].network===network )
+                    {
+                        encryption = self.wifis[i].encryption;
+                    }
+                }
+            }
 
             //execute test
-            networkService.saveWifiNetwork(params.interface, params.network, params.networkType, params.password, params.hidden)
+            networkService.saveWifiNetwork(interface.interface, network, encryption, interface.password, hidden)
                 .then(function() {
                     //reload network config
                     return raspiotService.reloadModuleConfig('network');

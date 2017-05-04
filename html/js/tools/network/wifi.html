@@ -2,81 +2,78 @@
 
     <!-- no wifi interface found -->
     <div layout-gt-sm="row" ng-if="wifiCtl.interfaces.length===0 && wifiCtl.loaded">
-        <span>Please install wifi adapter to be able to connect to wifi networks.</span>
+        <span>Please install wifi adapter to be able to connect to wifi network</span>
     </div>
 
-    <!-- wifi scanner -->
-    <div layout-gt-sm="row" ng-if="wifiCtl.interfaces.length>0">
-        <div class="padding-row-with-input">
-            <md-button class="md-icon-button" ng-click="wifiCtl.scanWifiNetworks()" ng-disabled="wifiCtl.hidden || wifiCtl.processing" aria-label="Scan wifi networks">
-                <md-icon md-font-set="material-icons">refresh</md-icon>
-                <md-tooltip md-direction="right">Scan wifi networks</md-tooltip>
-            </md-button>
+    <!-- interfaces list -->
+    <div ng-repeat="interface in wifiCtl.interfaces">
+
+        <div>
+            <span class="md-title">{{interface.interface}} configuration</span>
+            <span class="md-caption">({{interface.mac}})</span>
         </div>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Available wifi networks</label>
-            <md-select ng-model="wifiCtl.wifi" ng-disabled="wifiCtl.hidden || wifiCtl.processing">
-                <md-option ng-repeat="wifi in wifiCtl.wifis | orderBy:'network'" ng-value="wifi">
-                    <span ng-if="!wifi.connected">{{wifi.network}} ({{wifi.network_type}} - {{wifi.signal_level}}% signal)</span>
-                    <span ng-if="wifi.connected">{{wifi.network}} ({{wifi.network_type}} - {{wifi.signal_level}}% signal) [CONNECTED]</span>
-                </md-option>
-            </md-select>
-        </md-input-container>
-        <div class="padding-row-with-input">
-            <md-checkbox ng-model="wifiCtl.hidden" ng-disabled="wifiCtl.processing">
-                Connect to hidden network
-            </md-checkbox>
+
+        <div layout="row">
+
+            <!-- wifi refresh -->
+            <div class="padding-row-with-input">
+                <md-button class="md-icon-button" ng-click="wifiCtl.scanWifiNetworks()" ng-disabled="wifiCtl.processing" aria-label="Scan wifi networks">
+                    <md-icon md-font-set="material-icons">refresh</md-icon>
+                    <md-tooltip md-direction="right">Scan wifi networks</md-tooltip>
+                </md-button>
+            </div>
+
+            <!-- wifis list -->
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Available wifi networks</label>
+                <md-select ng-model="interface.wifi_new_network" ng-disabled="wifiCtl.processing">
+                    <md-option ng-repeat="wifi in wifiCtl.wifis | orderBy:'sort'" ng-value="wifi.network">
+                        {{wifi.label}}
+                    </md-option>
+                </md-select>
+            </md-input-container>
+
+            <!-- network name -->
+            <md-input-container class="md-block" ng-if="interface.wifi_new_network==='hidden'" flex-gt-sm>
+                <label>Network name</label>
+                <input ng-model="interface.wifi_hidden_network" ng-disabled="wifiCtl.processing">
+            </md-input-container>
+
+            <!-- network encryption -->
+            <md-input-container class="md-block" ng-if="interface.wifi_new_network==='hidden'" flex-gt-sm>
+                <label>Network encryption</label>
+                <md-select ng-model="interface.wifi_hidden_encryption" ng-disabled="wifiCtl.processing">
+                    <md-option value="wpa2">WPA2</md-option>
+                    <md-option value="wpa">WPA</md-option>
+                    <md-option value="wep">WEP</md-option>
+                    <md-option value="unsecured">No encryption</md-option>
+                </md-select>
+            </md-input-container>
+    
+            <!-- password -->
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Password</label>
+                <input ng-attr-type="{{wifiCtl.showPassword ? 'text' : 'password'}}" ng-disabled="wifiCtl.disablePasswordInput(interface)" ng-model="interface.password">
+            </md-input-container>
+            <div class="padding-row-with-input">
+                <md-button class="md-icon-button" ng-click="wifiCtl.showPassword=!wifiCtl.showPassword" ng-disabled="wifiCtl.disablePasswordInput(interface)" aria-label="Show password">
+                    <md-icon md-font-set="material-icons">remove_red_eye</md-icon>
+                    <md-tooltip md-direction="left">Show password</md-tooltip>
+                </md-icon>
+            </div>
+
+            <!-- action buttons -->
+            <div>
+                <md-button class="md-raised md-accent" ng-if="!wifiCtl.showDisconnectButton(interface)" ng-disabled="wifiCtl.disableConnectButton(interface)" ng-click="wifiCtl.saveConnection(interface)">
+                    Connect
+                </md-button>
+                <md-button class="md-raised md-accent" ng-if="wifiCtl.showDisconnectButton(interface)" ng-disabled="wifiCtl.disableDisconnectButton(interface)" ng-click="wifiCtl.disconnect(interface)">
+                    Disconnect
+                </md-button>
+            </div>
+    
         </div>
-    </div>
-
-    <!-- hidden network -->
-    <div layout-gt-sm="row" ng-if="wifiCtl.hidden" ng-if="wifiCtl.interfaces.length>0">
-        <md-input-container class="md-block" ng-if="wifiCtl.interfaces.length>1" flex-gt-sm>
-            <label>Network interface</label>
-            <md-select ng-model="wifiCtl.interface" ng-disabled="wifiCtl.processing">
-                <md-option ng-repeat="interface in wifiCtl.interfaces" ng-value="interface">{{interface}}</md-option>
-            </md-select>
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Network name</label>
-            <input ng-model="wifiCtl.network" ng-disabled="wifiCtl.processing">
-        </md-input-container>
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Network encryption</label>
-            <md-select ng-model="wifiCtl.networkType" ng-disabled="wifiCtl.processing">
-                <md-option value="wpa2">WPA2</md-option>
-                <md-option value="wpa">WPA</md-option>
-                <md-option value="wep">WEP</md-option>
-                <md-option value="unsecured">No encryption</md-option>
-            </md-select>
-        </md-input-container>
-    </div>
-
-    <!-- password -->
-    <div layout-gt-sm="row">
-        <md-input-container class="md-block" flex-gt-sm>
-            <label>Password</label>
-            <input ng-disabled="wifiCtl.disablePassword()" ng-attr-type="{{wifiCtl.showPassword ? 'text' : 'password'}}" ng-model="wifiCtl.password">
-        </md-input-container>
-        <div class="padding-row-with-input">
-            <md-button class="md-icon-button" ng-click="wifiCtl.showPassword=!wifiCtl.showPassword" ng-disabled="wifiCtl.processing" aria-label="Show password">
-                <md-icon md-font-set="material-icons">remove_red_eye</md-icon>
-                <md-tooltip md-direction="left">Show password</md-tooltip>
-            </md-icon>
-        </div>
-    </div>
-
-    <!-- action buttons -->
-    <div layout="row" layout-align="end center">
-        <md-button class="md-raised md-accent" ng-disabled="wifiCtl.disableDisconnectButton()" ng-click="wifiCtl.disconnect()">
-            Disconnect
-        </md-button>
-        <md-button class="md-raised md-accent" ng-disabled="wifiCtl.disableButtons()" ng-click="wifiCtl.testConnection()">
-            Test connection
-        </md-button>
-        <md-button class="md-raised md-accent" ng-disabled="wifiCtl.disableButtons()" ng-click="wifiCtl.saveConnection()">
-            Save
-        </md-button>
+        
     </div>
 
 </div>

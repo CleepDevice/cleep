@@ -18,12 +18,12 @@ class WpaSupplicantConf():
     MODE_READ = 'r'
     MODE_APPEND = 'a'
 
-    NETWORK_TYPE_WPA = 'wpa'
-    NETWORK_TYPE_WPA2 = 'wpa2'
-    NETWORK_TYPE_WEP = 'wep'
-    NETWORK_TYPE_UNSECURED = 'unsecured'
-    NETWORK_TYPE_UNKNOWN = 'unknown'
-    NETWORK_TYPES = [NETWORK_TYPE_WPA, NETWORK_TYPE_WPA2, NETWORK_TYPE_WEP, NETWORK_TYPE_UNSECURED, NETWORK_TYPE_UNKNOWN]
+    ENCRYPTION_TYPE_WPA = 'wpa'
+    ENCRYPTION_TYPE_WPA2 = 'wpa2'
+    ENCRYPTION_TYPE_WEP = 'wep'
+    ENCRYPTION_TYPE_UNSECURED = 'unsecured'
+    ENCRYPTION_TYPE_UNKNOWN = 'unknown'
+    ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
     def __init__(self):
         self.__fd = None
@@ -65,7 +65,7 @@ class WpaSupplicantConf():
             scan_ssid = None
             key_mgmt = None
             hidden = False
-            network_type = self.NETWORK_TYPE_UNSECURED
+            encryption = self.ENCRYPTION_TYPE_UNSECURED
             res = re.search('ssid="(.*?)"\s', group+'\n')
             if res:
                 ssid = res.group(1).strip()
@@ -78,14 +78,14 @@ class WpaSupplicantConf():
             if res:
                 key_mgmt = res.group(1).strip()
                 if key_mgmt=='WPA-PSK':
-                    network_type = self.NETWORK_TYPE_WPA2
+                    encryption = self.ENCRYPTION_TYPE_WPA2
                 elif key_mgmt=='NONE':
-                    network_type = self.NETWORK_TYPE_WEP
+                    encryption = self.ENCRYPTION_TYPE_WEP
 
             networks.append({
                 'network': ssid,
                 'hidden': hidden,
-                'network_type': network_type
+                'encryption': encryption
             })
 
         return networks
@@ -107,6 +107,7 @@ class WpaSupplicantConf():
         """
         Delete network from config
         @param network: network name (ssid)
+        @return True if network deleted, Fale otherwise
         """
         fd = self.__open()
         content = fd.read()
@@ -129,27 +130,27 @@ class WpaSupplicantConf():
             fd.write(content)
             self.__close()
         else:
-            raise CommandError('Network %s does not exist' % network)
+            return False
 
         return True
 
-    def add_network(self, network, network_type, password, hidden=False):
+    def add_network(self, network, encryption, password, hidden=False):
         """
         Add new network in config file
         Password is automatically encrypted using wpa_passphrase
         @param network: network name (ssid)
-        @param network_type: type of network (wpa, wpa, wep, unsecured)
+        @param encryption: type of network (wpa, wpa, wep, unsecured)
         @param password: network password (string)
         @param hidden: hiddent network flag (bool)
         """
         #check params
         if network is None or len(network)==0:
             raise MissingParameter('Network parameter is missing')
-        if network_type is None or len(network_type)==0:
-            raise MissingParameter('Network_type parameter is missing')
-        if network_type not in self.NETWORK_TYPES:
-            raise InvalidParameter('Network_type "%s" does not exist (available: %s)' % (network_type, ','.join(self.NETWORK_TYPES)))
-        if network_type!=self.NETWORK_TYPE_UNSECURED and password is None or len(password)==0:
+        if encryption is None or len(encryption)==0:
+            raise MissingParameter('Encryption parameter is missing')
+        if encryption not in self.ENCRYPTION_TYPES:
+            raise InvalidParameter('Encryption "%s" does not exist (available: %s)' % (encryption, ','.join(self.ENCRYPTION_TYPES)))
+        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and password is None or len(password)==0:
             raise MissingParameter('Password parameter is missing')
 
         #check if network doesn't already exist
@@ -157,7 +158,7 @@ class WpaSupplicantConf():
             raise InvalidParameter('Network "%s" is already configured')
     
         #get config to write with encrypted password and clear password removed
-        if network_type!=self.NETWORK_TYPE_UNSECURED:
+        if encryption!=self.ENCRYPTION_TYPE_UNSECURED:
             c = Console()
             res = c.command('/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
             if res['error'] or res['killed']:
@@ -174,9 +175,9 @@ class WpaSupplicantConf():
                 output.insert(2, '\tscan_ssid=1')
 
             #inject network type
-            if network_type in [self.NETWORK_TYPE_WPA, self.NETWORK_TYPE_WPA2]:
+            if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
                 output.insert(2, '\tkey_mgmt=WPA-PSK')
-            elif network_type==self.NETWORK_TYPE_WEP:
+            elif encryption==self.ENCRYPTION_TYPE_WEP:
                 output.insert(2, '\tkey_mgmt=NONE')
 
         else:

@@ -56,7 +56,6 @@ class Network(RaspIotMod):
         self.interfaces = self.get_interfaces_configurations()
         config['interfaces'] = self.interfaces
         config['wifi_networks'] = self.wifi_networks
-        config['wired_config'] = self.__get_wired_config()
 
         return config
 
@@ -65,6 +64,7 @@ class Network(RaspIotMod):
         Restart network interface
         @param interface: network interface name (string)
         """
+        c = Console()
         res = c.command('/bin/ip link set %s up' % interface)
         self.logger.debug(res)
         res = c.command('/sbin/ifdown %s' % interface)
@@ -165,10 +165,15 @@ class Network(RaspIotMod):
             #add wifi status
             wifi = False
             wifi_network = None
+            wifi_encryption = None
+            wifi_signal_level = 0
             if name in wifis:
                 wifi = True
                 if wifis[name]['connected']:
                     wifi_network = wifis[name]['network']
+                    if wifi_network in self.wifi_networks:
+                        wifi_encryption = self.wifi_networks[wifi_network]['encryption']
+                        wifi_signal_level = self.wifi_networks[wifi_network]['signal_level']
 
             #add wired status
             dhcp = True
@@ -214,6 +219,8 @@ class Network(RaspIotMod):
                 'mac': mac,
                 'wifi': wifi,
                 'wifi_network': wifi_network,
+                'wifi_encryption': wifi_encryption,
+                'wifi_signal_level': wifi_signal_level,
                 'dhcp': dhcp,
                 'fallback': fallback,
                 'ip_address': ip_address,
@@ -247,16 +254,23 @@ class Network(RaspIotMod):
         conf = DhcpcdConf()
         return conf.delete_static_interface(interface)
 
-    def __add_wifi_network(self, network, network_type, password, hidden):
+    def __delete_fallback_interface(self, interface):
+        """
+        Unconfigure wired fallback interface
+        """
+        conf = DhcpcdConf()
+        return conf.delete_fallback_interface(interface)
+
+    def __add_wifi_network(self, network, encryption, password, hidden):
         """
         Add new wifi network configuration
         @param network: network name (ssid)
-        @param network_type: network type (string: wpa, wpa2, wep, unsecured)
+        @param encryption: network encryption (string: wpa, wpa2, wep, unsecured)
         @param password: network password (it will be saved encrypted) (string)
         @param hidden: hidden network (bool)
         """
         conf = WpaSupplicantConf()
-        return conf.add_network(network, network_type, password, hidden)
+        return conf.add_network(network, encryption, password, hidden)
 
     def __delete_wifi_network(self, network):
         """
@@ -284,7 +298,6 @@ class Network(RaspIotMod):
         if not fallback:
             res = self.__add_static_interface(interface, ip_address, router_address, name_server)
         else:
-            self.logger.debug('--> add fallback')
             res = self.__add_fallback_interface(interface, ip_address, router_address, name_server)
 
         #restart interface
@@ -300,8 +313,18 @@ class Network(RaspIotMod):
         Save wired dhcp configuration
         Remove static configuration for specified interface
         """
-        #simply delete static configuration for specified interface
-        self.__delete_static_interface(interface)
+        #get current interface configuration
+        d = DhcpcdConf()
+        config = d.get_interface(interface)
+        self.logger.debug('Interface config: %s' % config)
+        if config is None:
+            raise CommandError('Interface %s is not configured' % interface)
+
+        #delete configuration for specified interface
+        if not config['fallback']:
+            self.__delete_static_interface(interface)
+        else:
+            self.__delete_fallback_interface(interface)
 
         #restart interface
         #self.__restart_interface(interface)
@@ -330,7 +353,7 @@ class Network(RaspIotMod):
 
             #extract interesting data
             essid = None
-            network_type = None
+            security = None
             network_wpa = False
             network_wpa2 = False
             encryption = None
@@ -348,7 +371,7 @@ class Network(RaspIotMod):
                     elif group[0]=='IE' and group[1].lower().find('wpa'):
                         network_wpa = True
                     elif group[0]=='Encryption key':
-                        encryption = group[1]
+                        security = group[1]
                     elif group[0]=='Signal level':
                         if group[1].isdigit():
                             signal_level = float(group[1])
@@ -357,21 +380,21 @@ class Network(RaspIotMod):
 
             #adjust network type
             if network_wpa2:
-                network_type = WpaSupplicantConf.NETWORK_TYPE_WPA2
+                encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
             elif network_wpa:
-                network_type = WpaSupplicantConf.NETWORK_TYPE_WPA
-            elif encryption=='on':
-                network_type = WpaSupplicantConf.NETWORK_TYPE_WEP
-            elif encryption=='off':
-                network_type = WpaSupplicantConf.NETWORK_TYPE_UNSECURED
+                encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
+            elif security=='on':
+                encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
+            elif security=='off':
+                encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
             else:
-                network_type = WpaSupplicantConf.NETWORK_TYPE_UNKNOWN
+                encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
             
             #save data
             networks[essid] = {
                 'interface': name,
                 'network': essid,
-                'network_type': network_type,
+                'encryption': encryption,
                 'signal_level': signal_level
             }
 
@@ -380,7 +403,7 @@ class Network(RaspIotMod):
 
         return networks
 
-    def test_wifi_network(self, interface, network, network_type, password, hidden):
+    def test_wifi_network(self, interface, network, encryption, password, hidden):
         """
         Try to connect to specified wifi network. Save anything or revert back to original state after test.
         @return None
@@ -390,7 +413,7 @@ class Network(RaspIotMod):
         error = None
         try:
             #add network configuration
-            self.__add_wifi_network(network, network_type, password, hidden)
+            self.__add_wifi_network(network, encryption, password, hidden)
             time.sleep(1.0)
 
             #stop wpa_supplicant daemon
@@ -439,7 +462,7 @@ class Network(RaspIotMod):
             raise CommandError(error)
         raise CommandInfo('Connection to %s successful' % network)
 
-    def save_wifi_network(self, interface, network, network_type, password, hidden):
+    def save_wifi_network(self, interface, network, encryption, password, hidden):
         """
         @return None
         @raise CommandError, CommandInfo
@@ -448,7 +471,7 @@ class Network(RaspIotMod):
         error = None
         try:
             #add network configuration
-            self.__add_wifi_network(network, network_type, password, hidden)
+            self.__add_wifi_network(network, encryption, password, hidden)
             time.sleep(1.0)
 
             #and relaunch wpa_supplicant that will connect automatically
