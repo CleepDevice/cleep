@@ -4,14 +4,14 @@
 import os
 import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CommandInfo
-from raspiot.raspiot import RaspIotMod
+from raspiot.raspiot import RaspIotModule
 from threading import Timer
 import time
 
 __all__ = ['Shutters']
 
 
-class Shutters(RaspIotMod):
+class Shutters(RaspIotModule):
 
     MODULE_CONFIG_FILE = 'shutters.conf'
     MODULE_DEPS = ['gpios']
@@ -33,7 +33,7 @@ class Shutters(RaspIotMod):
         @param debug_enabled: debug status
         """
         #init
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #internal timers
         self.__timers = {}

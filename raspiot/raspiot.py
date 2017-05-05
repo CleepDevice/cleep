@@ -5,13 +5,13 @@ import logging
 import os
 import json
 from bus import BusClient
-import utils
 from threading import Lock, Thread
 import time
 import copy
 import uuid
 
-__all__ = ['RaspIot', 'RaspIotApp', 'RaspIotMod']
+
+__all__ = ['RaspIot', 'RaspIotProvider', 'RaspIotModule']
 
 
 class RaspIot(BusClient):
@@ -270,7 +270,7 @@ class RaspIot(BusClient):
 
 
 
-class RaspIotMod(RaspIot):
+class RaspIotModule(RaspIot):
     """
     Base raspiot class for module
     It implements:
@@ -437,11 +437,14 @@ class RaspIotMod(RaspIot):
 
 
 
-class RaspIotApp(RaspIot):
+class RaspIotProvider(RaspIotModule):
     """
-    Base raspiot class for application
+    Base raspiot class for provider
     It implements:
-     - nothing for now
+     - automatic provider registration
+     - post function to post data to provider
+     - get function to get data from provider
+     - get capabilities to get provider capabilities
     """
 
     def __init__(self, bus, debug_enabled):
@@ -453,4 +456,24 @@ class RaspIotApp(RaspIot):
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
 
+    def __get_capabilities(self):
+        if getattr(self, 'PROVIDER_CAPABILITIES'):
+            return self.PROVIDER_CAPABILITIES
+        else:
+            raise NotImplementedError('PROVIDER_CAPABILITIES must be implemented in provider')
 
+    def post(self, data):
+        """
+        Post data to provider
+        @param data: data to post
+        @return True if post is successful
+        """
+        return True
+
+    def get(self, data):
+        """
+        Get data from provider
+        @param data: data to post
+        @return dict of infos
+        """
+        return {}

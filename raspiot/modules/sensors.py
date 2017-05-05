@@ -4,14 +4,14 @@
 import os
 import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
-from raspiot.raspiot import RaspIotMod
+from raspiot.raspiot import RaspIotModule
 from raspiot.libs.task import Task
 import time
 import glob
 
 __all__ = ['Sensors']
 
-class Sensors(RaspIotMod):
+class Sensors(RaspIotModule):
 
     MODULE_CONFIG_FILE = 'sensors.conf'
     MODULE_DEPS = ['gpios']
@@ -37,7 +37,7 @@ class Sensors(RaspIotMod):
         @param debug_enabled: debug status
         """
         #init
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #members
         self.__tasks = {}

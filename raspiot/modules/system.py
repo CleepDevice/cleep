@@ -4,7 +4,7 @@
 import os
 import logging
 from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule
-from raspiot.raspiot import RaspIotMod
+from raspiot.raspiot import RaspIotModule
 from datetime import datetime
 import time
 from raspiot.libs.task import Task
@@ -19,7 +19,7 @@ __all__ = ['System']
 
 
 
-class System(RaspIotMod):
+class System(RaspIotModule):
 
     MODULE_CONFIG_FILE = 'system.conf'
     MODULE_DEPS = []
@@ -47,7 +47,7 @@ class System(RaspIotMod):
         @param bus: bus instance
         @param debug_enabled: debug status
         """
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #members
         self.time_task = None

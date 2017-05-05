@@ -3,13 +3,13 @@
     
 import os
 import logging
-from raspiot import RaspIotMod
+from raspiot import RaspIotModule
 from utils import CommandError, MissingParameter, InvalidParameter
 import importlib
 
 __all__ = ['Inventory']
 
-class Inventory(RaspIotMod):
+class Inventory(RaspIotModule):
     """
     Class that handles inventory of:
      - existing devices: knows all devices uuid and module that handles it
@@ -24,7 +24,7 @@ class Inventory(RaspIotMod):
         @param modules: array of available modules
         """
         #init
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #member
         #list devices: uuid => module name
@@ -33,6 +33,8 @@ class Inventory(RaspIotMod):
         self.modules = {}
         #list of installed modules
         self.installed_modules = []
+        #list of gateways
+        self.gateways = {}
 
         #fill installed modules list
         for module in installed_modules:
@@ -166,4 +168,45 @@ class Inventory(RaspIotMod):
         @return True if module loaded, False otherwise
         """
         return self.modules.has_key(module)
+
+    def register_provider(self, type, command_sender):
+        """
+        Register new provider
+        @param type: type of provider. If new type specified, it will create new entry
+        @param command_sender: command sender (automatically added by bus)
+        """
+        if not self.providers.has_key(type):
+            self.providers[type] = []
+
+        #register new provider
+        self.providers[type][command_sender] = {
+            'priority': priority,
+            'capabilities': capabilities
+        }
+        
+        return True
+
+    def unregister_provider(self, type, command_sender):
+        """
+        Unregister provider
+        @param command_sender: command sender (automatically added by bus)
+        """
+        if not self.providers.has_key(type) or not self.providers[type].has_key(command_sender):
+            return False
+
+        #remove provider
+        del self.providers[type][command_sender]
+
+        return True
+
+    def has_provider(self, type):
+        """
+        Return True if at least one provider is registered for specified type
+        @param type: provider type
+        @return True if provider exists or False otherwise
+        """
+        if self.providers.has_key(type) and len(self.providers[type])>0:
+            return True
+
+        return False
 

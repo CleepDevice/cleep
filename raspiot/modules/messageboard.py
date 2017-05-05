@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.raspiot import RaspIotMod
+from raspiot.raspiot import RaspIotModule
 import time
 import raspiot.libs.task
 from raspiot.libs.ht1632c import HT1632C
@@ -49,7 +49,7 @@ class Message():
 
 
 
-class Messageboard(RaspIotMod):
+class Messageboard(RaspIotModule):
 
     MODULE_CONFIG_FILE = 'messageboard.conf'
     MODULE_DEPS = []
@@ -69,7 +69,7 @@ class Messageboard(RaspIotMod):
 
     def __init__(self, bus, debug_enabled):
         #init
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None

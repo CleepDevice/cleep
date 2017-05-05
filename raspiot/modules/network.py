@@ -3,7 +3,7 @@
     
 import logging
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError, CommandInfo
-from raspiot.raspiot import RaspIotMod
+from raspiot.raspiot import RaspIotModule
 from raspiot.libs.wpasupplicantconf import WpaSupplicantConf
 from raspiot.libs.dhcpcdconf import DhcpcdConf
 from raspiot.libs.console import Console
@@ -15,7 +15,7 @@ import uuid
 __all__ = ['Network']
 
 
-class Network(RaspIotMod):
+class Network(RaspIotModule):
     """
     Network module allows user to configure wired and wifi connection
     @see https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/ iw versus iwconfig (deprecated)
@@ -36,7 +36,7 @@ class Network(RaspIotMod):
         @param debug_enabled: debug status
         """
         #init
-        RaspIotMod.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled)
 
         #members
         self.wifi_networks = {}
