@@ -2,7 +2,7 @@
  * System config directive
  * Handle system configuration
  */
-var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService) {
+var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService, confirm) {
 
     var systemController = function()
     {
@@ -48,7 +48,10 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          * Reboot system
          */
         self.reboot = function() {
-            systemService.reboot()
+            confirm.open('Confirm device reboot?', null, 'Reboot')
+                .then(function() {
+                    return systemService.reboot();
+                })
                 .then(function() {
                     toast.success('System will reboot');
                 });
@@ -58,7 +61,10 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          * Halt system
          */
         self.halt = function() {
-            systemService.halt()
+            confirm.open('Confirm device shutdown?', null, 'Reboot')
+                .then(function() {
+                    systemService.halt();
+                })
                 .then(function() {
                     toast.success('System will halt');
                 });
@@ -68,7 +74,10 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          * Restart raspiot
          */
         self.restart = function() {
-            systemService.restart()
+            confirm.open('Confirm application restart?', null, 'Reboot')
+                .then(function() {
+                    systemService.restart();
+                })
                 .then(function() {
                     toast.success('Raspiot will restart');
                 });
@@ -105,5 +114,5 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', 'toastService', 'systemService', 'raspiotService', systemConfigDirective]);
+RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', 'toastService', 'systemService', 'raspiotService', 'confirmService', systemConfigDirective]);
 

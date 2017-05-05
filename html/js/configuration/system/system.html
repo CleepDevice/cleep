@@ -5,6 +5,9 @@
             Sunset/sunrise configuration
         </div>
         <div layout-gt-sm="row">
+            <div flex="20">
+                <span>System needs to know your approximative position to compute sunrise and sunset hours</span>
+            </div>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Biggest city closed to your position</label>
                 <input type="text" ng-model="systemCtl.city"></input>
@@ -12,7 +15,6 @@
             <div>
                 <md-button class="md-raised md-primary" ng-click="systemCtl.setCity()" aria-label="Set city">Set city</md-button>
             </div>
-            <span flex="10"></span>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Computed sunrise</label>
                 <input type="text" ng-model="systemCtl.sunrise" disabled></input>
@@ -22,21 +24,16 @@
                 <input type="text" ng-model="systemCtl.sunset" disabled></input>
             </md-input-container>
         </div>
-        <md-divider></md-divider>
 
         <!-- monitoring -->
         <div class="md-title">
             Monitoring
         </div>
-        <div>
-            Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.
-        </div>
         <md-input-container class="md-block" flex-gt-sm>
             <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Enable monitoring">
-                Enable monitoring
+                Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.
             </md-checkbox>
         </md-input-container>
-        <md-divider></md-divider>
 
         <!-- system action -->
         <div class="md-title">
