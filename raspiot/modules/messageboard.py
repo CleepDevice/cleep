@@ -53,7 +53,7 @@ class Messageboard(RaspIotMod):
 
     MODULE_CONFIG_FILE = 'messageboard.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Display your own infos on a single line LED panel.'
+    MODULE_DESCRIPTION = 'Displays your own infos on a single line LED panel.'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
