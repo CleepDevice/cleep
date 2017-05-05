@@ -22,12 +22,15 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             actions: 'slideshow',
             database: 'storage',
             gpios: 'filter_center_focus',
-            messageboard: 'tv',
+            messageboard: 'view_comfy',
             sensors: 'leak_add',
             shutters: 'format_line_spacing',
             sounds: 'volume_up',
             system: 'favorite',
-            network: 'network_wifi'
+            network: 'network_wifi',
+            sms: 'sms',
+            mail: 'mail',
+            push: 'send'
         };
 
         if( !angular.isUndefined(icons[module]) )
