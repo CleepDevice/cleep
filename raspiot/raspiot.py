@@ -32,7 +32,7 @@ class RaspIot(BusClient):
         @param debug_enabled: flag to set debug level to logger (bool)
         """
         #init bus
-        BusClient.__init__(self, bus, self._start, self._stop)
+        BusClient.__init__(self, bus)
 
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -232,12 +232,14 @@ class RaspIot(BusClient):
         Start module
         """
         BusClient.start(self)
+        self._start()
 
     def _start(self):
         """
         Post start: called just after module is started
         This function is used to launch processes that requests cpu time and cannot be launched during init
-        At this time, all modules are loaded and the system is completely operational
+        At this time application is starting up and bus is not operational. If you need to push message to
+        bus you should implement event_received method and handle system.application.ready event.
         """
         pass
 
@@ -461,6 +463,23 @@ class RaspIotProvider(RaspIotModule):
             return self.PROVIDER_CAPABILITIES
         else:
             raise NotImplementedError('PROVIDER_CAPABILITIES must be implemented in provider')
+
+    def register_provider(self, type, capabilities):
+        """
+        Register provider to inventory
+        @param type: type of provider
+        @param capabilities: used to describe provider capabilities (ie: screen can have 1 or 2
+                             lines, provider user must adapts posted data according to this capabilities)
+        @return True if provider registered successfully
+        """
+        if type is None or len(type)==0:
+            raise CommandError('Type parameter is missing')
+
+        resp = self.send_command('register_provider', 'inventory', {'type':type, 'capabilities':capabilities})
+        if resp['error']:
+            self.logger.error('Unable to register provider to inventory: %s' % resp['message'])
+
+        return True
 
     def post(self, data):
         """

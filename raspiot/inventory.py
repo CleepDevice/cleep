@@ -33,8 +33,8 @@ class Inventory(RaspIotModule):
         self.modules = {}
         #list of installed modules
         self.installed_modules = []
-        #list of gateways
-        self.gateways = {}
+        #list of providers
+        self.providers = {}
 
         #fill installed modules list
         for module in installed_modules:
@@ -169,18 +169,20 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def register_provider(self, type, command_sender):
+    def register_provider(self, type, capabilities, command_sender):
         """
         Register new provider
         @param type: type of provider. If new type specified, it will create new entry
+        @param capabilities: used to describe provider capabilities (ie: screen can have 1 or 2
+                             lines, provider user must adapts posted data according to this capabilities)
         @param command_sender: command sender (automatically added by bus)
         """
+        self.logger.debug('Register new %s provider %s' % (type, command_sender))
         if not self.providers.has_key(type):
-            self.providers[type] = []
+            self.providers[type] = {}
 
         #register new provider
         self.providers[type][command_sender] = {
-            'priority': priority,
             'capabilities': capabilities
         }
         
@@ -209,4 +211,15 @@ class Inventory(RaspIotModule):
             return True
 
         return False
+
+    def get_providers(self, type):
+        """
+        Return list of available providers for specified type
+        @param type: provider type
+        @return empty dict if not provider available for requested type or available providers (dict)
+        """
+        if self.providers.has_key(type):
+            return self.providers[type]
+
+        return {}
 
