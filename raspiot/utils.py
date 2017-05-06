@@ -40,6 +40,10 @@ class InvalidMessage(Exception):
     def __str__(self):
         return repr('Invalid message')
 
+class BusNotReady(Exception):
+    def __str__(self):
+        return repr('Bus is not ready yet. Please handle system.application.ready event before sending events.')
+
 class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
@@ -104,9 +108,9 @@ class MessageRequest():
 
     def __str__(self):
         if self.command:
-            return '{command:\'%s\', params:%s, to:%s}' % (self.command, str(self.params), self.to)
+            return '{command:%s, params:%s, to:%s}' % (self.command, str(self.params), self.to)
         elif self.event:
-            return '{event:\'%s\', params:%s, to:%s}' % (self.event, str(self.params), self.to)
+            return '{event:%s, params:%s, to:%s}' % (self.event, str(self.params), self.to)
         else:
             return 'Invalid message'
 
