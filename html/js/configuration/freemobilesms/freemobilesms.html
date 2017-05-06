@@ -1,0 +1,32 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <div layout="row" layout-xs="column" layout-align="start center" layout-padding>
+        <div>
+            <img src="/images/freemobile.png"/>
+        </div>
+        <div>
+            <p><a href="http://mobile.free.fr/" target="_blank">Free mobile</a> is a french mobile service provider. Subscribers can freely sends sms to their own phone.</p>
+            <p>Please connect to your <a href="https://mobile.free.fr/moncompte" target="_blank">freemobile account</a> and go to "Gérer mon compte &gt; Mes options &gt; Notifications sms".</p>
+            <p>Then copy api key and fill informations below.</p>
+        </div>
+    </div>
+
+    <div layout-gt-sm="row">
+        <md-input-container class="md-block" flex-gt-sm>
+            <label>User id</label>
+            <input type="text" ng-model="freemobilesmsCtl.userid"></input>
+        </md-input-container>
+        <md-input-container class="md-block" flex-gt-sm>
+            <label>Api key</label>
+            <input type="text" ng-model="freemobilesmsCtl.apikey"></input>
+        </md-input-container>
+        <div>
+            <md-button class="md-raised md-primary" ng-click="freemobilesmsCtl.setCredentials()" aria-label="Save">Save</md-button>
+        </div>
+        <div>
+            <md-button class="md-raised md-primary" ng-click="freemobilesmsCtl.test()" aria-label="Save">Test</md-button>
+        </div>
+    </div>
+
+</div>
+

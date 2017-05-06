@@ -29,6 +29,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             system: 'favorite',
             network: 'network_wifi',
             bulksms: 'sms',
+            freemobilesms: 'sms',
             mail: 'mail',
             push: 'send'
         };
