@@ -11,7 +11,7 @@ from collections import deque
 from threading import Event
 from .libs.task import Task
 from Queue import Queue
-from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo
+from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, BusNotReady
 
 __all__ = ['MessageBus', 'BusClient']
 
@@ -40,7 +40,7 @@ class MessageBus():
         self.__purge = None
         #configured flag
         self.__app_configured = False
-        self.__defered_messages = Queue()
+        self.__deferred_messages = Queue()
 
     def stop(self):
         """
@@ -51,17 +51,16 @@ class MessageBus():
 
     def app_configured(self):
         """
-        Say message bus app is configured
-        If not called, all broadcasted messages are stored and not really pushed
+        Say message bus is configured
         /!\ This way of proceed is dangerous if clients always broadcast messages, the bus may always stay
         blocked in "app not configured" state. But in small system like raspiot, it should be fine.
         """
-        #first of all unqueue defered messages to preserve order
-        self.logger.debug('Unqueue defered message')
-        while not self.__defered_messages.empty():
-            msg = self.__defered_messages.get()
+        #first of all unqueue deferred messages to preserve order
+        self.logger.debug('Unqueue deferred message')
+        while not self.__deferred_messages.empty():
+            msg = self.__deferred_messages.get()
             #msg.startup = True
-            self.logger.debug('Push defered: %s' % str(msg))
+            self.logger.debug('Push deferred: %s' % str(msg))
             for q in self.__queues:
                 self.__queues[q].append(msg)
 
@@ -71,6 +70,11 @@ class MessageBus():
         #and finally launch purge subscriptions task
         self.__purge = Task(60.0, self.purge_subscriptions)
         self.__purge.start()
+
+        #broadcast event application is ready
+        request = MessageRequest()
+        request.event = 'system.application.ready'
+        self.push(request)
 
         #now push function will handle new messages
 
@@ -87,6 +91,7 @@ class MessageBus():
         if isinstance(request, MessageRequest):
             #get request as dict
             request_dict = request.to_dict(not self.__app_configured)
+            self.logger.debug('Push %s => %s' % (request_dict, request.to))
 
             #push message to specified queue
             if self.__queues.has_key(request.to):
@@ -134,13 +139,13 @@ class MessageBus():
                 else:
                     #defer message if app not configured yet
                     self.logger.debug('defer message: %s' % str(msg))
-                    self.__defered_messages.put(msg)
+                    self.__deferred_messages.put(msg)
     
                 return None
 
             elif not self.__app_configured:
                 #surely a message with recipient, but app is not configured yet
-                pass
+                raise BusNotReady()
 
             else:
                 #app is configured but recipient is unknown
@@ -254,14 +259,12 @@ class BusClient(threading.Thread):
     It reads module message, read command and execute module command
     Finally it returns command response to message originator
     """
-    def __init__(self, bus, pre_start, pre_stop):
+    def __init__(self, bus):
         threading.Thread.__init__(self)
         self.__continue = True
         self.bus = bus
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
-        self.__pre_start = pre_start
-        self.__pre_stop = pre_stop
 
         #add subscription
         self.bus.add_subscription(self.__name)
@@ -381,10 +384,6 @@ class BusClient(threading.Thread):
         """
         self.logger.debug('BusClient %s started' % self.__name)
 
-        #call pre start function
-        if self.__pre_start:
-            self.__pre_start()
-        
         #check messages
         while self.__continue:
             try:
@@ -496,10 +495,6 @@ class BusClient(threading.Thread):
 
             #self.logger.debug('----> sleep')
             #time.sleep(1.0)
-
-        #call pre stop function
-        if self.__pre_stop:
-            self.__pre_stop()
 
         #remove subscription
         self.bus.remove_subscription(self.__name)
