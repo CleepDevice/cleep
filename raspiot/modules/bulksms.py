@@ -4,11 +4,11 @@
 import os
 import shutil
 import logging
-from raspiot.utils import InvalidParameter, CommandError
+from raspiot.utils import InvalidParameter, CommandError, MissingParameter
 from raspiot.libs.smsprovider import SmsProvider, SmsData
 import urllib
 
-__all__ = ['BulkSms']
+__all__ = ['Bulksms']
 
 
 class Bulksms(SmsProvider):

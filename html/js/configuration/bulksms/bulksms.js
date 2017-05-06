@@ -10,6 +10,7 @@ var bulksmsConfigDirective = function(toast, bulksmsService, raspiotService) {
         self.username = '';
         self.password = '';
         self.phoneNumbers = '';
+        self.credits = 0;
 
         /**
          * Set credentials
@@ -21,10 +22,10 @@ var bulksmsConfigDirective = function(toast, bulksmsService, raspiotService) {
                     return raspiotService.reloadModuleConfig('bulksms');
                 })
                 .then(function(config) {
-                    self.username = config.data.username;
+                    self.username = config.username;
                     self.password = '';
-                    self.phoneNumbers = config.data.phoneNumbers;
-                    self.credits = config.data.credits;
+                    self.phoneNumbers = config.phoneNumbers;
+                    self.credits = config.credits;
 
                     toast.success('Credentials saved');
                 });
@@ -73,3 +74,4 @@ var bulksmsConfigDirective = function(toast, bulksmsService, raspiotService) {
 
 var RaspIot = angular.module('RaspIot');
 RaspIot.directive('bulksmsConfigDirective', ['toastService', 'bulksmsService', 'raspiotService', bulksmsConfigDirective])
+
