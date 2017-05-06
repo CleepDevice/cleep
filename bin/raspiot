@@ -36,7 +36,7 @@ LOG_SETTINGS = {
     },  
     'formatters': {
         'detailed': {
-            'format': '%(asctime)s %(name)-12s[%(lineno)-4d] %(levelname)-5s : %(message)s'
+            'format': '%(asctime)s %(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s'
         }   
     },  
 }
