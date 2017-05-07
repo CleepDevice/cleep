@@ -10,6 +10,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         self.sunset = null;
         self.sunrise = null;
         self.city = null;
+        self.country = '';
         self.monitoring = false;
 
         /**
@@ -17,14 +18,16 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          */
         self.setCity = function() {
             toast.loading('Updating city...');
-            systemService.setCity(self.city)
+            systemService.setCity(self.city, self.country)
                 .then(function(resp) {
                     return raspiotService.reloadModuleConfig('system');
                 })
-                .then(function(resp) {
+                .then(function(config) {
                     toast.success('City updated');
-                    self.sunset = $filter('hrTime')(resp.sun.sunset);
-                    self.sunrise = $filter('hrTime')(resp.sun.sunrise);
+                    self.city = config.city.city;
+                    self.country = config.city.country;
+                    self.sunset = $filter('hrTime')(config.sun.sunset);
+                    self.sunrise = $filter('hrTime')(config.sun.sunrise);
                 });
         };
 
@@ -90,7 +93,8 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         {
             raspiotService.getModuleConfig('system')
                 .then(function(config) {
-                    self.city = config.city;
+                    self.city = config.city.city;
+                    self.country = config.city.country;
                     self.sunset = $filter('hrTime')(config.sun.sunset);
                     self.sunrise = $filter('hrTime')(config.sun.sunrise);
                     self.monitoring = config.monitoring;

@@ -30,6 +30,7 @@ class System(RaspIotModule):
 
     DEFAULT_CONFIG = {
         'city': None,
+        'country': '',
         'monitoring': False
     }
 
@@ -134,45 +135,60 @@ class System(RaspIotModule):
         #stop monitoring task
         self.__stop_monitoring_threads()
 
-    def __search_city(self, city):
+    def __search_city(self, city, country):
         """
         Search for specified city
+        @param city: city name
+        @param country: city country
         @return astral location (from geocoder function)
         """
         try:
             a = Astral(GoogleGeocoder)
-            return a.geocoder[city]
+            pattern = city
+            if country and len(country)>0:
+                pattern = '%s,%s' % (city, country)
+            return a.geocoder[pattern]
+
         except AstralError as e:
             if e.message and e.message.find('Unable to locate')>=0:
-                raise Exception('Unable to find city. Please specify a bigger city.')
+                raise Exception('Unable to find city. Please specify a more important city.')
             else:
                 raise Exception(e.message)
 
-    def __compute_sun(self, city=None):
+    def __compute_sun(self, city=None, country=''):
         """
         Compute sunset/sunrise times
+        @param city: city name
+        @param country: country name
+        @return True if computation succeed, False otherwise
         """
         self.logger.debug('Compute sunset/sunrise')
 
         #force city from configurated one if city not specified
-        if not city:
+        if city is None:
             if self._config.has_key('city') and self._config['city'] is not None:
                 city = self._config['city']
+                country = self._config['country']
             else:
                 #no city available
                 city = None
+                country = ''
                 
         if city:
-            loc = self.__search_city(city)
+            loc = self.__search_city(city, country)
+            city = loc.name
+            country = loc.region
             sun = loc.sun()
             self.sunset = sun['sunset']
             self.sunrise = sun['sunrise']
             self.logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
+            return True, city, country
             
         else:
             self.sunset = None
             self.sunrise = None
             self.logger.warning('No city configured, only current time will be returned')
+            return False, None, None
 
     def __format_time(self, now=None):
         """
@@ -328,26 +344,34 @@ class System(RaspIotModule):
         """
         Return configured city
         """
-        return self._config['city']
+        return {
+            'city': self._config['city'],
+            'country': self._config['country']
+        }
 
-    def set_city(self, city):
+    def set_city(self, city, country):
         """
         Set city name
         @param city: closest city name
+        @param country: country name
+        @return True if city configured
+        @raise CommandError
         """
-        if city is None:
+        if city is None or len(city)==0:
             raise MissingParameter('City parameter is missing')
 
         #compute sunset/sunrise
-        self.__compute_sun(city)
+        (res, city, country) = self.__compute_sun(city, country)
         
-        #save city (exception raised before if error occured)
-        config = self._get_config()
-        config['city'] = city
-        if self._save_config(config) is None:
-            raise CommandError('Unable to save configuration')
+        if res:
+            #save city (exception raised before if error occured)
+            config = self._get_config()
+            config['city'] = city
+            config['country'] = country
+            if self._save_config(config) is None:
+                raise CommandError('Unable to save configuration')
 
-        return self.get_sun()
+        return True
 
     def reboot_system(self):
         """

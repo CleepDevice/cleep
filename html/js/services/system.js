@@ -18,8 +18,8 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     /**
      * Change city
      */
-    self.setCity = function(city) {
-        return rpcService.sendCommand('set_city', 'system', {'city':city});
+    self.setCity = function(city, country) {
+        return rpcService.sendCommand('set_city', 'system', {'city':city, 'country':country});
     };
 
     /**
