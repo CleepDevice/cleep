@@ -11,7 +11,7 @@ from collections import deque
 from threading import Event
 from .libs.task import Task
 from Queue import Queue
-from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, BusNotReady
+from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, BusNotReady, InvalidModule
 
 __all__ = ['MessageBus', 'BusClient']
 
