@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
     
-import os
-import shutil
 import logging
 from raspiot.utils import InvalidParameter, CommandError, MissingParameter
 from raspiot.libs.smsprovider import SmsProvider, SmsData

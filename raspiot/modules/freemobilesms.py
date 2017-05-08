@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
     
-import os
-import shutil
 import logging
 from raspiot.utils import CommandError, MissingParameter
 from raspiot.libs.smsprovider import SmsProvider, SmsData
@@ -92,7 +90,7 @@ class Freemobilesms(SmsProvider):
         params = urllib.urlencode({
             'user': userid,
             'pass': apikey,
-            'msg': 'Knock knock, is it Cleep?'
+            'msg': 'Hello this is Cleep'
         })
         self.logger.debug('Request params: %s' % params)
 
