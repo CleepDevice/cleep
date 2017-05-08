@@ -1,0 +1,78 @@
+<md-dialog flex="50">
+
+    <form ng-cloak>
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Weather</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="owmCtl.cancelDialog()" aria-label="Close dialog">
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content layout="column">
+            <div>
+                <md-card flex="100">
+                    <md-card-content layout="row" layout-padding>
+                            <div>
+                                <img src="{{owmCtl.device.icon}}" style="height:100px;"/>
+                            </div>
+                            <div layout="column">
+                                <div>
+                                    <span class="md-display-1">{{owmCtl.device.celsius}}°C</span>
+                                </div>
+                                <div style="padding-top:15px;">
+                                    <span class="md-title">{{owmCtl.device.current}}</span>
+                                </div>
+                            </div>
+                    </md-card-content>
+                </md-card>
+            </div>
+            <div layout="row">
+                <md-card flex="33">
+                    <md-card-content layout="column" layout-padding layout-align="center center">
+                        <div>
+                            <md-icon class="typcn typcn-waves icon-md"></md-icon>
+                            <span class="md-title">Humidity</span>
+                        </div>
+                        <div>
+                            <div>
+                                <span class="md-display-1">{{owmCtl.device.humidity}}%</span>
+                            </div>
+                        </div>
+                    </md-card-content>
+                </md-card>
+                <md-card flex="33">
+                    <md-card-content layout="column" layout-padding layout-align="center center">
+                        <div>
+                            <md-icon class="typcn typcn-thermometer icon-md"></md-icon>
+                            <span class="md-title">Pressure</span>
+                        </div>
+                        <div>
+                            <div>
+                                <span class="md-display-1">{{owmCtl.device.pressure}}hPa</span>
+                            </div>
+                        </div>
+                    </md-card-content>
+                </md-card>
+                <md-card flex="33">
+                    <md-card-content layout="column" layout-padding layout-align="center center">
+                        <div>
+                            <md-icon class="typcn typcn-weather-windy icon-md"></md-icon>
+                            <span class="md-title">Wind</span>
+                        </div>
+                        <div>
+                            <div>
+                                <span class="md-display-1">{{owmCtl.device.wind_speed}}m/s</span> <span class="md-display-1">{{owmCtl.device.wind_direction}}</span>
+                            </div>
+                        </div>
+                    </md-card-content>
+                </md-card>
+            </div>
+        </md-dialog-content>
+
+    </form>
+
+</md-dialog>
