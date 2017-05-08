@@ -114,8 +114,6 @@ class System(RaspIotModule):
         for uuid in devices:
             if devices[uuid]['type']=='clock':
                 self.__clock_uuid = uuid
-            elif devices[uuid]['type']=='monitor':
-                self.__monitor_uuid = uuid
             elif devices[uuid]['type']=='monitorcpu':
                 self.__monitor_cpu_uuid = uuid
             elif devices[uuid]['type']=='monitormemory':
