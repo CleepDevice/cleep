@@ -17,15 +17,10 @@
                 <md-card flex="100">
                     <md-card-content layout="row" layout-padding>
                             <div>
-                                <img src="{{owmCtl.device.icon}}" style="height:100px;"/>
+                                <img src="{{owmCtl.device.icon}}"/>
                             </div>
-                            <div layout="column">
-                                <div>
-                                    <span class="md-display-1">{{owmCtl.device.celsius}}°C</span>
-                                </div>
-                                <div style="padding-top:15px;">
-                                    <span class="md-title">{{owmCtl.device.current}}</span>
-                                </div>
+                            <div class="md-display-1">
+                                <span>{{owmCtl.device.celsius}}°C : {{owmCtl.device.current}}</span>
                             </div>
                     </md-card-content>
                 </md-card>

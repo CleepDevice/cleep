@@ -33,8 +33,7 @@ class Openweathermap(RaspIotModule):
 
     OWM_WEATHER_URL = 'http://api.openweathermap.org/data/2.5/weather'
     OWM_FORECAST_URL = 'http://api.openweathermap.org/data/2.5/forecast'
-    #OWM_TASK_DELAY = 3600
-    OWM_TASK_DELAY = 900
+    OWM_TASK_DELAY = 1800
     OWM_WEATHER_CODES = {
         200: 'Thunderstorm with light rain',
         201: 'Thunderstorm with rain',
@@ -356,7 +355,7 @@ class Openweathermap(RaspIotModule):
                     index = int(round( (weather['wind']['deg'] % 360) / 22.5) + 1)
                     device['wind_direction'] = self.OWM_WIND_DIRECTIONS[index]
                 else:
-                    device['wind_cirection'] = None
+                    device['wind_direction'] = None
             self._update_device(self.__owm_uuid, device)
 
             #and emit event
