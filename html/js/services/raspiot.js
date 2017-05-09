@@ -30,8 +30,9 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             network: 'network_wifi',
             bulksms: 'sms',
             freemobilesms: 'sms',
-            mail: 'mail',
-            push: 'send'
+            smtp: 'mail',
+            push: 'send',
+            openweathermap: 'cloud'
         };
 
         if( !angular.isUndefined(icons[module]) )
