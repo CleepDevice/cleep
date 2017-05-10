@@ -20,7 +20,7 @@ class Bulksms(SmsProvider):
     MODULE_DESCRIPTION = 'Sends you SMS alerts using BulkSms gateway.'
     MODULE_LOCKED = False
     MODULE_URL = 'https://github.com/tangb/Cleep/wiki/BulkSms'
-    MODULE_TAGS = []
+    MODULE_TAGS = ['sms', 'alert']
 
     DEFAULT_CONFIG = {
         'username': None,
@@ -29,7 +29,7 @@ class Bulksms(SmsProvider):
         'credits': 0
     }
 
-    PROVIDER_CAPABILITIES = {}
+    PROVIDER_PROFILE = {}
 
     BULKSMS_API_URL = 'https://bulksms.vsms.net/eapi/submission/send_sms/2/2.0'
     BULKSMS_CREDITS_URL = 'https://bulksms.vsms.net/eapi/user/get_credits/1/1.1'

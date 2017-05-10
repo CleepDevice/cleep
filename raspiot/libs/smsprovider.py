@@ -36,7 +36,7 @@ class SmsProvider(RaspIotProvider):
     def event_received(self, event):
         if event['event']=='system.application.ready':
             #application is ready, register provider
-            self.register_provider('sms', self.PROVIDER_CAPABILITIES)
+            self.register_provider('alert', 'sms', self.PROVIDER_CAPABILITIES)
     
     def post(self, data):
         """

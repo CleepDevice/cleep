@@ -23,7 +23,7 @@ class EmailData():
 
 class EmailProvider(RaspIotProvider):
     """
-    Base sms provider class.
+    Base email provider class.
     Register provider to inventory at startup
     """
 
@@ -39,7 +39,7 @@ class EmailProvider(RaspIotProvider):
     def event_received(self, event):
         if event['event']=='system.application.ready':
             #application is ready, register provider
-            self.register_provider('email', self.PROVIDER_CAPABILITIES)
+            self.register_provider('alert', 'email', self.PROVIDER_PROFILE)
     
     def post(self, data):
         """
@@ -48,7 +48,7 @@ class EmailProvider(RaspIotProvider):
         #check params
         if data is None:
             raise MissingParameter('Data parameter is missing')
-        if not isinstance(data, iEmailData):
+        if not isinstance(data, EmailData):
             raise InvalidParameter('Data must be a EmailData instance')
 
         #call implementation

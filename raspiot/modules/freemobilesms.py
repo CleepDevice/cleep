@@ -22,14 +22,14 @@ class Freemobilesms(SmsProvider):
     MODULE_DESCRIPTION = 'Sends you SMS alerts using french Freemobile provider.'
     MODULE_LOCKED = False
     MODULE_URL = 'https://github.com/tangb/Cleep/wiki/FreemobileSms'
-    MODULE_TAGS = []
+    MODULE_TAGS = ['sms', 'alert']
 
     DEFAULT_CONFIG = {
         'userid': None,
         'apikey': None
     }
 
-    PROVIDER_CAPABILITIES = {}
+    PROVIDER_PROFILE = {}
 
     FREEMOBILESMS_API_URL = 'https://smsapi.free-mobile.fr/sendmsg'
     FREEMOBILESMS_RESPONSE = {

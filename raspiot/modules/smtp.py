@@ -20,7 +20,6 @@ __all__ = ['Smtp']
 class Smtp(EmailProvider):
     """
     Smtp module
-    @see https://security.google.com/settings/security/apppasswords 2 step auth factor for gmail (reminder)
     """
 
     MODULE_CONFIG_FILE = 'smtp.conf'
@@ -28,7 +27,7 @@ class Smtp(EmailProvider):
     MODULE_DESCRIPTION = 'Sends you alerts by email.'
     MODULE_LOCKED = False
     MODULE_URL = 'https://github.com/tangb/Cleep/wiki/ModuleSmtp'
-    MODULE_TAGS = ['email', 'smtp']
+    MODULE_TAGS = ['email', 'smtp', 'alert']
 
     DEFAULT_CONFIG = {
         'smtp_server': None,
@@ -40,7 +39,7 @@ class Smtp(EmailProvider):
         'email_sender':''
     }
 
-    PROVIDER_CAPABILITIES = {}
+    PROVIDER_PROFILE = {}
 
     def __init__(self, bus, debug_enabled):
         """
@@ -160,7 +159,7 @@ class Smtp(EmailProvider):
 
     def set_config(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, recipient):
         """
-        Set FreemobileSms credentials
+        Set configuration
         @param smtp_server: smtp server address
         @param smtp_port: smtp server port
         @param smtp_login: login to connect to smtp server
