@@ -1,0 +1,31 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <div layout="row" layout-xs="column" layout-align="start center" layout-padding>
+        <div>
+            <img src="/images/pushover.png"/>
+        </div>
+        <div>
+            <p>Pushover allows you to receive push messages directly on your mobile or desktop.</p>
+            <p><a hef="https://pushover.net/" target="_blank">Create an account</a>, buy application you need (around 5€) on <a href="https://pushover.net/clients" target="_blank">android, ios</a> or install <a href="https://github.com/cgrossde/Pullover" target="_blank">free desktop app Pullover</a> and fill informations below.</p>
+        </div>
+    </div>
+
+    <div layout-gt-sm="row">
+        <md-input-container class="md-block" flex-gt-sm>
+            <label>User key</label>
+            <input type="text" ng-model="pushoverCtl.userkey"></input>
+        </md-input-container>
+        <md-input-container class="md-block" flex-gt-sm>
+            <label>Api key</label>
+            <input type="text" ng-model="pushoverCtl.apikey"></input>
+        </md-input-container>
+        <div>
+            <md-button class="md-raised md-primary" ng-click="pushoverCtl.setConfig()" aria-label="Save">Save</md-button>
+        </div>
+        <div>
+            <md-button class="md-raised md-primary" ng-click="pushoverCtl.test()" aria-label="Test">Test</md-button>
+        </div>
+    </div>
+
+</div>
+
