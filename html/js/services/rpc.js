@@ -46,7 +46,6 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             data.to = null;
         }
 
-        console.log('timeout='+timeout);
         if( angular.isUndefined(timeout) )
         {
             data.timeout = null;
