@@ -31,7 +31,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             bulksms: 'sms',
             freemobilesms: 'sms',
             smtp: 'mail',
-            push: 'send',
+            pushover: 'send',
             openweathermap: 'cloud'
         };
 
