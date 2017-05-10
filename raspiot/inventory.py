@@ -169,21 +169,33 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def register_provider(self, type, capabilities, command_sender):
+    def register_provider(self, type, subtype, profile, command_sender):
         """
         Register new provider
-        @param type: type of provider. If new type specified, it will create new entry
-        @param capabilities: used to describe provider capabilities (ie: screen can have 1 or 2
-                             lines, provider user must adapts posted data according to this capabilities)
+        @param type: provider type (ie: alert for sms/push/email provider)
+        @param subtype: provider subtype (ie: sms for sms provider)
+        @param profile: used to describe provider capabilities (ie: screen can have 1 or 2
+                        lines, provider user must adapts posted data according to this capabilities)
         @param command_sender: command sender (automatically added by bus)
         """
-        self.logger.debug('Register new %s provider %s' % (type, command_sender))
+        self.logger.debug('Register new %s:%s provider %s' % (type, subtype, command_sender))
+        #check values
+        if type is None or len(type)==0:
+            raise MissingParameter('Type parameter is missing')
+        if subtype is None or len(subtype)==0:
+            raise MissingParameter('Subtype parameter is missing')
+
+        #add provider type
         if not self.providers.has_key(type):
             self.providers[type] = {}
 
+        #add provider subtype
+        if not self.providers[type].has_key(subtype):
+            self.providers[type][subtype] = {}
+
         #register new provider
-        self.providers[type][command_sender] = {
-            'capabilities': capabilities
+        self.providers[type][subtype][command_sender] = {
+            'profile': profile
         }
         
         return True

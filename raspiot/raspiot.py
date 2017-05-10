@@ -445,8 +445,7 @@ class RaspIotProvider(RaspIotModule):
     It implements:
      - automatic provider registration
      - post function to post data to provider
-     - get function to get data from provider
-     - get capabilities to get provider capabilities
+     - a function to get provider profile
     """
 
     def __init__(self, bus, debug_enabled):
@@ -458,13 +457,7 @@ class RaspIotProvider(RaspIotModule):
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
 
-    def __get_capabilities(self):
-        if getattr(self, 'PROVIDER_CAPABILITIES'):
-            return self.PROVIDER_CAPABILITIES
-        else:
-            raise NotImplementedError('PROVIDER_CAPABILITIES must be implemented in provider')
-
-    def register_provider(self, type, capabilities):
+    def register_provider(self, type, subtype, profile):
         """
         Register provider to inventory
         @param type: type of provider
@@ -475,7 +468,7 @@ class RaspIotProvider(RaspIotModule):
         if type is None or len(type)==0:
             raise CommandError('Type parameter is missing')
 
-        resp = self.send_command('register_provider', 'inventory', {'type':type, 'capabilities':capabilities})
+        resp = self.send_command('register_provider', 'inventory', {'type':type, 'subtype':subtype, 'profile':profile})
         if resp['error']:
             self.logger.error('Unable to register provider to inventory: %s' % resp['message'])
 
@@ -487,12 +480,5 @@ class RaspIotProvider(RaspIotModule):
         @param data: data to post
         @return True if post is successful
         """
-        return True
+        raise NotImplementedError('post function must implemented in a provider')
 
-    def get(self, data):
-        """
-        Get data from provider
-        @param data: data to post
-        @return dict of infos
-        """
-        return {}
