@@ -10,7 +10,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
         self.devices = raspiotService.devices;
         self.name = '';
         self.gpio = 'GPIO3';
-        self.mode = 'in';
+        self.mode = 'input';
         self.keep = false;
         self.reverted = false;
         self.updateDevice = false;
@@ -21,7 +21,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
         self._resetValues = function() {
             self.name = '';
             self.gpio = 'GPIO3';
-            self.mode = 'in';
+            self.mode = 'input';
             self.keep = false;
             self.reverted = false;
         };
