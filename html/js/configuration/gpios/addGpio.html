@@ -19,12 +19,7 @@
                 <label>Name</label>
                 <input ng-model="gpiosCtl.name">
             </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Gpio</label>
-                <md-select ng-model="gpiosCtl.gpio" ng-disabled="gpiosCtl.updateDevice">
-                    <md-option ng-repeat="(gpio,pin) in gpiosCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
-                </md-select>
-            </md-input-container>
+            <div gpios-pins-config readonly="gpiosCtl.updateDevice" selected-gpios="gpiosCtl.selectedGpios"></div>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Mode</label>
                 <md-select ng-model="gpiosCtl.mode" ng-disabled="gpiosCtl.updateDevice">

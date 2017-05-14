@@ -9,7 +9,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
         self.raspiGpios = [];
         self.devices = raspiotService.devices;
         self.name = '';
-        self.gpio = 'GPIO2';
+        self.selectedGpios = [{'gpio':null, 'label':'wire'}];
         self.reverted = false;
         self.onewires = [];
         self.onewire = '';
@@ -47,7 +47,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
          */
         self._resetValues = function() {
             self.name = ''; 
-            self.gpio = 'GPIO2';
+            self.selectedGpios = [{'gpio':null, 'label':'wire'}];
             self.reverted = false;
             self.type = self.TYPE_MOTION_GENERIC;
             self.interval = self.intervals[1].value;
@@ -102,7 +102,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
                 .then(function() {
                     if( self.type===self.TYPE_MOTION_GENERIC )
                     {
-                        return sensorsService.addGenericMotionSensor(self.name, self.gpio, self.reverted);
+                        return sensorsService.addGenericMotionSensor(self.name, self.selectedGpios[0].gpio, self.reverted);
                     }
                     else if( self.type===self.TYPE_TEMPERATURE_ONEWIRE )
                     {
@@ -130,7 +130,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
             self.type = self._getSensorType(device);
             if( self.type===self.TYPE_MOTION_GENERIC )
             {
-                self.gpio = device.gpios[0].gpio;
+                self.selectedGpios = [{gpio:device.gpios[0].gpio, label:'motion wire'}];
                 self.reverted = device.reverted;
             }
             else if( self.type===self.TYPE_TEMPERATURE_ONEWIRE )
@@ -223,7 +223,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle',
+                icon: 'add_circle_outline',
                 callback: self.openAddDialog,
                 tooltip: 'Add sensor'
             }];

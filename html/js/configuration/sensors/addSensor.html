@@ -31,12 +31,13 @@
 
             <!-- motion -->
             <div ng-if="sensorsCtl.type===sensorsCtl.TYPE_MOTION_GENERIC">
-                <md-input-container class="md-block" flex-gt-sm>
+                <!--<md-input-container class="md-block" flex-gt-sm>
                     <label>Gpio</label>
                     <md-select ng-model="sensorsCtl.gpio" ng-disabled="sensorsCtl.updateDevice">
                         <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
                     </md-select>
-                </md-input-container>
+                </md-input-container>-->
+                <div gpios-pins-config readonly="sensorsCtl.updateDevice" selected-gpios="sensorsCtl.selectedGpios"></div>
                 <md-input-container class="md-block" flex-gt-sm>
                     <md-checkbox ng-model="sensorsCtl.reverted" aria-label="Revert state">
                         State is reverted?

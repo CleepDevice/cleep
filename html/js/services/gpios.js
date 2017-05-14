@@ -40,6 +40,20 @@ var gpiosService = function($q, $rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Return list of assigned gpios
+     */
+    self.getAssignedGpios = function() {
+        return rpcService.sendCommand('get_assigned_gpios', 'gpios');
+    };
+
+    /**
+     * Return list of pins
+     */
+    self.getPinsDescription = function() {
+        return rpcService.sendCommand('get_pins_description', 'gpios');
+    };
+
+    /**
      * Add new gpio
      */
     self.addGpio = function(name, gpio, mode, keep, reverted) {

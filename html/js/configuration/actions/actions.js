@@ -107,7 +107,7 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle',
+                icon: 'add_circle_outline',
                 callback: self.openAddDialog,
                 tooltip: 'Add script'
             }]; 

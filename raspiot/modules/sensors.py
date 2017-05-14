@@ -487,7 +487,7 @@ class Sensors(RaspIotModule):
             params = {
                 'name': name+'_motion',
                 'gpio': gpio,
-                'mode': 'in',
+                'mode': 'input',
                 'keep': False,
                 'reverted':reverted
             }

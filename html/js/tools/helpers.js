@@ -2,6 +2,10 @@
  * This file contains javascript helpers
  */
 
+String.prototype.parseBool = function() {
+    return (/^true$/i).test(this);
+};
+
 /**
  * http://jamesroberts.name/blog/2010/02/22/string-functions-for-javascript-trim-to-camel-case-to-dashed-and-to-underscore/
  * String functions

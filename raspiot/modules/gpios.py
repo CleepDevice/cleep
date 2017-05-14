@@ -128,6 +128,24 @@ class Gpios(RaspIotModule):
     MODULE_URL = None
     MODULE_TAGS = []
 
+    GPIOS_REV1 = {'GPIO0' : 3,
+                  'GPIO1' : 5,
+                  'GPIO4' : 7,
+                  'GPIO14': 8,
+                  'GPIO15': 10,
+                  'GPIO17': 11,
+                  'GPIO18': 12,
+                  'GPIO21': 13,
+                  'GPIO22': 15,
+                  'GPIO23': 16,
+                  'GPIO24': 18,
+                  'GPIO10': 19,
+                  'GPIO9' : 21,
+                  'GPIO25': 22,
+                  'GPIO11': 23,
+                  'GPIO8' : 24,
+                  'GPIO7' : 26
+    }
     GPIOS_REV2 = {'GPIO4' : 7,
                   'GPIO17': 11,
                   'GPIO18': 12,
@@ -145,7 +163,7 @@ class Gpios(RaspIotModule):
                   'GPIO11': 23,
                   'GPIO14': 8,
                   'GPIO15': 10
-    } #first items are dedicated GPIO ports. Then possible GPIO ports
+    }
     GPIOS_REV3 = {'GPIO5' : 29,
                   'GPIO6' : 31,
                   'GPIO12': 32,
@@ -157,6 +175,101 @@ class Gpios(RaspIotModule):
                   'GPIO16': 36,
                   'GPIO20': 38,
                   'GPIO21': 40
+    }
+    PINS_REV1 = {1 : '3.3V',
+                 2 : '5V',
+                 3 : 'GPIO0',
+                 4 : '5V',
+                 5 : 'GPIO1',
+                 6 : 'GND',
+                 7 : 'GPIO4',
+                 8 : 'GPIO14',
+                 9 : 'GND',
+                 10: 'GPIO15',
+                 11: 'GPIO17',
+                 12: 'GPIO18',
+                 13: 'GPIO21',
+                 14: 'GND',
+                 15: 'GPIO22',
+                 16: 'GPIO23',
+                 17: '3.3V',
+                 18: 'GPIO24',
+                 19: 'GPIO10',
+                 20: 'GND',
+                 21: 'GPIO9',
+                 22: 'GPIO25',
+                 23: 'GPIO11',
+                 24: 'GPIO8',
+                 25: 'GND',
+                 26: 'GPIO7'
+    }
+    PINS_REV2 = {1 : '3.3V',
+                 2 : '5V',
+                 3 : 'GPIO2',
+                 4 : '5V',
+                 5 : 'GPIO3',
+                 6 : 'GND',
+                 7 : 'GPIO4',
+                 8 : 'GPIO14',
+                 9 : 'GND',
+                 10: 'GPIO15',
+                 11: 'GPIO17',
+                 12: 'GPIO18',
+                 13: 'GPIO27',
+                 14: 'GND',
+                 15: 'GPIO22',
+                 16: 'GPIO23',
+                 17: '3.3V',
+                 18: 'GPIO24',
+                 19: 'GPIO10',
+                 20: 'GND',
+                 21: 'GPIO9',
+                 22: 'GPIO25',
+                 23: 'GPIO11',
+                 24: 'GPIO8',
+                 25: 'GND',
+                 26: 'GPIO7'
+    }
+    PINS_REV3 = {1: '3.3V',
+                 2: '5V',
+                 3: 'GPIO2',
+                 4: '5V',
+                 5: 'GPIO3',
+                 6: 'GND',
+                 7: 'GPIO4',
+                 8: 'GPIO14',
+                 9: 'GND',
+                 10: 'GPIO15',
+                 11: 'GPIO17',
+                 12: 'GPIO18',
+                 13: 'GPIO27',
+                 14: 'GND',
+                 15: 'GPIO22',
+                 16: 'GPIO23',
+                 17: '3.3V',
+                 18: 'GPIO24',
+                 19: 'GPIO10',
+                 20: 'GND',
+                 21: 'GPIO9',
+                 22: 'GPIO25',
+                 23: 'GPIO11',
+                 24: 'GPIO8',
+                 25: 'GND',
+                 26: 'GPIO7',
+                 27: 'DNC',
+                 28: 'DNC',
+                 29: 'GPIO5',
+                 30: 'GND',
+                 31: 'GPIO6',
+                 32: 'GPIO12',
+                 33: 'GPIO13',
+                 34: 'GND',
+                 35: 'GPIO19',
+                 36: 'GPIO16',
+                 37: 'GPIO26',
+                 38: 'GPIO20',
+                 39: 'GND',
+                 40: 'GPIO21'
     }
 
     MODE_INPUT = 'input'
@@ -286,8 +399,47 @@ class Gpios(RaspIotModule):
         Return module full config
         """
         config = {}
-        config['raspi_gpios'] = self.get_raspi_gpios();
+
+        #merge available gpios with assigned ones
+        gpios = {}
+        all_gpios = self.get_raspi_gpios()
+        devices = self.get_module_devices()
+        for gpio in all_gpios:
+            #get gpio assigned infos
+            assigned = False
+            owner = None
+            for uuid in devices:
+                if devices[uuid]['gpio']==gpio:
+                    assigned = True
+                    owner = devices[uuid]['owner']
+                    break
+
+            #add new entry
+            gpios[gpio] = {
+                'gpio': gpio,
+                'pin': all_gpios[gpio],
+                'assigned': assigned,
+                'owner': owner
+            }
+        config['gpios'] = gpios
+
         return config
+
+    def get_pins_description(self):
+        """
+        Return pins description
+        @result list of pins (dict(<pin number (int)>:<gpio name|5v|3.3v|gnd|dnc(string)>))
+        """
+        rev = GPIO.RPI_INFO['P1_REVISION']
+
+        if rev==1:
+            return self.PINS_REV1
+        elif rev==2:
+            return self.PINS_REV2
+        elif rev==3:
+            return self.PINS_REV3
+
+        return {}
 
     def get_assigned_gpios(self):
         """
@@ -307,13 +459,31 @@ class Gpios(RaspIotModule):
         @return list of gpios (dict(<gpio name>, <pin number>))
         """
         rev = GPIO.RPI_INFO['P1_REVISION']
+
+        if rev==1:
+            return self.GPIOS_REV1
         if rev==2:
-            #A/B
             return self.GPIOS_REV2
         elif rev==3:
-            #A+/B+/B2
-            return self.GPIOS_REV3
+            gpios = self.GPIOS_REV2.copy()
+            gpios.update(self.GPIOS_REV3)
+            return gpios
+
         return {}
+
+    def get_pins_number(self):
+        """
+        Return pins number according to board revision
+        @return pins number (int)
+        """
+        rev = GPIO.RPI_INFO['P1_REVISION']
+
+        if rev==1 or rev==2:
+            return 26
+        elif rev==3:
+            return 40
+
+        return 0
 
     def reserve_gpio(self, name, gpio, usage, command_sender):
         """

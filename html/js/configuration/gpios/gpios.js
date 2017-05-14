@@ -9,18 +9,18 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
         self.raspiGpios = [];
         self.devices = raspiotService.devices;
         self.name = '';
-        self.gpio = 'GPIO3';
         self.mode = 'input';
         self.keep = false;
         self.reverted = false;
         self.updateDevice = false;
+        self.selectedGpios = [{gpio:null, 'label':'wire'}];
 
         /**
          * Reset editor's values
          */
         self._resetValues = function() {
             self.name = '';
-            self.gpio = 'GPIO3';
+            self.selectedGpios = [{gpio:null, 'label':'wire'}];
             self.mode = 'input';
             self.keep = false;
             self.reverted = false;
@@ -69,7 +69,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
             self.updateDevice = false;
             self._openDialog()
                 .then(function() {
-                    return gpiosService.addGpio(self.name, self.gpio, self.mode, self.keep, self.reverted);
+                    return gpiosService.addGpio(self.name, self.selectedGpios[0].gpio, self.mode, self.keep, self.reverted);
                 })
                 .then(function() {
                     return raspiotService.reloadDevices();
@@ -88,7 +88,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
         self.openUpdateDialog = function(device) {
             //set editor's value
             self.name = device.name;
-            self.gpio = device.gpio;
+            self.selectedGpios = [{gpio:device.gpio, label:'gpio'}];
             self.mode = device.mode;
             self.keep = device.keep;
 
@@ -136,7 +136,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle',
+                icon: 'add_circle_outline',
                 callback: self.openAddDialog,
                 tooltip: 'Add gpio'
             }]; 
