@@ -26,7 +26,7 @@
             <!-- wifis list -->
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Available wifi networks</label>
-                <md-select ng-model="interface.wifi_new_network" ng-disabled="wifiCtl.processing">
+                <md-select ng-model="interface.wifi_new_network" ng-model-options="{trackBy: '$value'}" ng-disabled="wifiCtl.processing">
                     <md-option ng-repeat="wifi in wifiCtl.wifis | orderBy:'sort'" ng-value="wifi.network">
                         {{wifi.label}}
                     </md-option>
