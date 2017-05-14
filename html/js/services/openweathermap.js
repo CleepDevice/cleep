@@ -2,7 +2,7 @@
  * OpenWeatherMap service
  * Handle openweathermap module requests
  */
-var openweathermapService = function($q, $rootScope, rpcService) {
+var openweathermapService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
 
     self.setApikey = function(apikey) {
@@ -33,5 +33,5 @@ var openweathermapService = function($q, $rootScope, rpcService) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('openweathermapService', ['$q', '$rootScope', 'rpcService', openweathermapService]);
+RaspIot.service('openweathermapService', ['$q', '$rootScope', 'rpcService', 'raspiotService', openweathermapService]);
 
