@@ -263,8 +263,6 @@ var wifiDirective = function(networkService, toast, raspiotService, confirm) {
                 })
                 .then(function(config) {
                     self.__loadConfig(config);
-                    //force connected flag because ip takes some time to be retrieved
-                    self.wifi.connected = true;
                     //clear password
                     self.password = '';
                 })
