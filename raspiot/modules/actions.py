@@ -19,9 +19,11 @@ class Script(Thread):
     def __init__(self, script, bus_push, disabled, test=False):
         """
         Constructor
-        @param script: full script path
-        @param bus_push: bus push function
-        @param test: set to True to execute this script once
+
+        Args:
+            script (string): full script path
+            bus_push (callback): bus push function
+            test (bool): set to True to execute this script once
         """
         #init
         Thread.__init__(self)
@@ -46,32 +48,45 @@ class Script(Thread):
     def get_last_execution(self):
         """
         Get last script execution
-        @return timestamp
+
+        Returns:
+            int: timestamp
         """
         return self.last_execution
 
     def set_debug_level(self, level):
         """
         Set debug level
-        @param level: use logging.<INFO|ERROR|WARN|DEBUG>
+
+        Args:
+            level (int): use logging.<INFO|ERROR|WARN|DEBUG>
         """
         self.logger_level = level
 
     def set_disabled(self, disabled):
         """
         Disable/enable script
+
+        Args:
+            disabled (bool): True to disable script exection
         """
         self.__disabled = disabled
 
     def is_disabled(self):
         """
         Return disabled status
+
+        Returns:
+            bool: True if script execution disabled
         """
         return self.__disabled
 
     def push_event(self, event):
         """
         Event received
+
+        Args:
+            event (MessageRequest): message instance
         """
         self.__events.appendleft(event)
 
@@ -82,6 +97,9 @@ class Script(Thread):
         pass
 
     def run(self):
+        """
+        Script execution process
+        """
         #configure logger
         self.logger.setLevel(self.logger_level)
         self.logger.debug('Thread started')
@@ -161,6 +179,9 @@ class Script(Thread):
 
         
 class Actions(RaspIotModule):
+    """
+    Action allows user to execute its own python scripts interacting with RaspIot
+    """
 
     MODULE_CONFIG_FILE = 'actions.conf'
     MODULE_DEPS = []
@@ -178,8 +199,10 @@ class Actions(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -270,6 +293,9 @@ class Actions(RaspIotModule):
     def get_module_config(self):
         """
         Return full module configuration
+
+        Returns:
+            dict: module configuration
         """
         config = {}
         config['scripts'] = self.get_scripts()
@@ -278,6 +304,9 @@ class Actions(RaspIotModule):
     def event_received(self, event):
         """
         Event received
+
+        Args:
+            event (MessageRequest): an event
         """
         self.logger.debug('Event received %s' % str(event))
         #push event to all script threads
@@ -287,7 +316,9 @@ class Actions(RaspIotModule):
     def get_scripts(self):
         """
         Return scripts
-        @return array of scripts
+        
+        Returns:
+            list: list of scripts
         """
         scripts = []
         for script in self.__scripts:
@@ -297,13 +328,19 @@ class Actions(RaspIotModule):
                 'disabled': self.__scripts[script].is_disabled()
             }
             scripts.append(script)
+
         return scripts
 
     def disable_script(self, script, disabled):
         """
         Enable/disable specified script
-        @param script: script name
-        @param disable: bool
+        
+        Args:
+            script (string): script name
+            disable (bool): disable flag
+
+        Raises:
+            InvalidParameter: if parameter is invalid
         """
         if not self.__scripts.has_key(script):
             raise InvalidParameter('Script not found')
@@ -319,6 +356,9 @@ class Actions(RaspIotModule):
     def delete_script(self, script):
         """
         Delete specified script
+
+        Args:
+            script (string): script name
         """
         for root, dirs, scripts in os.walk(Actions.SCRIPTS_PATH):
             for script_ in scripts:
@@ -333,7 +373,14 @@ class Actions(RaspIotModule):
 
     def add_script(self, filepath):
         """
-        Add new script
+        Add new script using rpc upload
+
+        Args:
+            filepath (string): script full path
+
+        Raises:
+            InvalidParameter: if invalid parameter is specified
+            Exception: if error occured
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
@@ -361,6 +408,15 @@ class Actions(RaspIotModule):
     def download_script(self, script):
         """
         Download specified script
+
+        Args:
+            script (string): script name to download
+
+        Returns:
+            string: script full path
+
+        Raises:
+            Exception: if error occured
         """
         filepath = os.path.join(Actions.SCRIPTS_PATH, script)
         if os.path.exists(filepath):
@@ -370,5 +426,3 @@ class Actions(RaspIotModule):
             #script doesn't exist, raise exception
             raise Exception('Script "%s" doesn\'t exist' % script)
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")

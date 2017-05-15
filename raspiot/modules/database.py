@@ -25,8 +25,10 @@ class Database(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -118,8 +120,13 @@ class Database(RaspIotModule):
     def __restore_field_name(self, current_field, fields):
         """
         Restore field name as stored in database
-        @param current_field: current field to replace
-        @param fields: fields mapping (dict)
+
+        Args:
+            current_field (string): current field to replace
+            fields (string): fields mapping (dict)
+
+        Returns:
+            string: field name
         """
         try:
             if current_field=='timestamp':
@@ -134,9 +141,14 @@ class Database(RaspIotModule):
     def save_data(self, uuid, event, values):
         """
         Save data into database
-        @param uuid: device uuid
-        @param event: event name
-        @param values: values to save (must be an list of dict(<field>,<value>))
+
+        Args:
+            uuid (string): device uuid
+            event (string): event name
+            values (list): values to save (must be an list of dict(<field>,<value>))
+
+        Raises:
+            InvalidParameter: if invalid parameter is specified
         """
         self.logger.debug('set_data uuid=%s event=%s values=%s' % (uuid, event, str(values)))
         if uuid is None or len(uuid)==0:
@@ -191,15 +203,20 @@ class Database(RaspIotModule):
     def __get_device_infos(self, uuid):
         """
         Return device infos (read from "devices" table)
-        @return list of devices table fields:
-            dict(
-                'event': event associated to device (string),
-                'valuescount': number of values saved for this device (used to get data table) (int),
-                'value1': value1 field name (string),
-                'value2': value2 field name (string or None),
-                'value3': value3 field name (string or None),
-                'value4': value4 field name (string or None),
-            )
+
+        Args:
+            uuid (string): uuid
+
+        Returns:
+            dict: list of devices table fields
+                {
+                    'event': event associated to device (string),
+                    'valuescount': number of values saved for this device (used to get data table) (int),
+                    'value1': value1 field name (string),
+                    'value2': value2 field name (string or None),
+                    'value3': value3 field name (string or None),
+                    'value4': value4 field name (string or None),
+                }
         """
         self.__cur.execute('SELECT event, valuescount, value1, value2, value3, value4 FROM devices WHERE uuid=?', (uuid,))
         row = self.__cur.fetchone()
@@ -210,23 +227,31 @@ class Database(RaspIotModule):
     def get_data(self, uuid, timestamp_start, timestamp_end, options=None):
         """
         Return data from data table
-        @param uuid: device uuid
-        @param timestamp_start: start of range
-        @param timestamp_end: end of range
-        @param options: command options
-                dict(
+
+        Args:
+            uuid (string): device uuid
+            timestamp_start (int): start of range
+            timestamp_end (int): end of range
+            options (dict): command options
+                {
                     'output': <'list','dict'[default]>,
                     'fields': [<field1>, <field2>, ...],
                     'sort': <'asc'[default],'desc'>,
                     'limit': <number>
-                )
-        @return data
-            dict(
-                'uuid': <device uuid>,
-                'event': <event type>,
-                'names': <list(<data name>,...)>,
-                'data': <list(list(<data value,...>|list(dict('data name':<data value>,...))))
-            )
+                }
+
+        Returns:
+            dict: data
+                {
+                    'uuid': <device uuid>,
+                    'event': <event type>,
+                    'names': <list(<data name>,...)>,
+                    'data': <list(list(<data value,...>|list(dict('data name':<data value>,...))))
+                }
+
+        Raises:
+            InvalidParameter: if invalid parameter is specified
+            MissingParameter: if parameter is missing
         """
         #check parameters
         if uuid is None or len(uuid)==0:
@@ -316,10 +341,17 @@ class Database(RaspIotModule):
     def purge_data(self, uuid, timestamp_until):
         """
         Purge device data until specified time
-        @param uuid: device uuid (string)
-        @param timestamp_until: timestamp to delete data before (int)
-        @return always True
-        @raise MissingParameter, InvalidParameter
+
+        Args:
+            uuid (string): device uuid (string)
+            timestamp_until (int): timestamp to delete data before (int)
+
+        Returns:
+            bool: always True
+
+        Raises:
+            MissingParameter: if parameter is missing
+            InvalidParameter: if invalid parameter is specified
         """
         #check parameters
         if uuid is None or len(uuid)==0:
@@ -356,10 +388,17 @@ class Database(RaspIotModule):
     def __delete_device(self, uuid):
         """
         Purge device data until specified time
-        @param uuid: device uuid (string)
-        @param timestamp_until: timestamp to delete data before (int)
-        @return always True
-        @raise MissingParameter, InvalidParameter
+
+        Args:
+            uuid (string): device uuid
+            timestamp_until (int): timestamp to delete data before
+        
+        Returns:
+            bool: always True
+
+        Raises:
+            MissingParameter: if parameter is missing
+            InvalidParameter: if invalid parameter is specified
         """
         #check parameters
         if uuid is None or len(uuid)==0:
@@ -391,8 +430,10 @@ class Database(RaspIotModule):
 
     def event_received(self, event):
         """
-        Event received
-        @param event: event object
+        Event received, stored sensor data if possible
+
+        Args:
+            event (MessageRequest): event
         """
         self.logger.debug('Event received %s' % event)
         if event['uuid'] is not None:

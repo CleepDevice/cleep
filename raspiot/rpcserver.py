@@ -2,8 +2,15 @@
 # -*- coding: utf-8 -*-
 
 """
-Based on long poll example from https://github.com/larsks/pubsub_example
-Encryption based on example from XXX
+Rpcserver based on long poll example from https://github.com/larsks/pubsub_example
+Rpcserver implements:
+ - authentication (login, password)
+ - HTTP and HTTPS support
+ - file upload and download
+ - poll requests
+ - command requests
+ - module configs requests
+ - devices list requests
 """
 
 import os
@@ -79,7 +86,9 @@ def load_auth():
 def get_app(debug_enabled):
     """
     Return web server
-    @return bottle instance
+
+    Returns:
+        object: bottle instance
     """
     global logger, app
 
@@ -96,13 +105,15 @@ def get_app(debug_enabled):
 
 def start(host='0.0.0.0', port=80, key=None, cert=None):
     """
-    Start RPC server
+    Start RPC server. This function is blocking.
     Start by default unsecure web server
     You can configure SSL server specifying key and cert parameters
-    @param host: host (default computer is accessible on localt network)
-    @param port: port to listen to (by default is standart HTTP port 80)
-    @param key: SSL key file
-    @param cert: SSL certificate file
+
+    Args:
+        host (string): host (default computer is accessible on localt network)
+        port (int): port to listen to (by default is standart HTTP port 80)
+        key (string): SSL key file
+        cert (string): SSL certificate file
     """
     global server, app
 
@@ -127,6 +138,10 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
 def check_auth(username, password):
     """
     Check auth
+
+    Args:
+        username (string): username
+        password (string): user password
     """
     global auth_config_loaded, auth_config, sessions, SESSION_TIMEOUT
 
@@ -178,11 +193,15 @@ def authenticate():
 def send_command(command, to, params, timeout=None):
     """
     Send specified command
-    @param command: command to execute
-    @param to: command recipient
-    @param params: command parameters
-    @param timeout: set new timeout (default 3secs)
-    @return command response (None if broadcasted message)
+
+    Args:
+        command (string): command to execute
+        to (string): command recipient
+        params (dict): command parameters
+        timeout (float): set new timeout (default no timeout)
+
+    Returns:
+        MessageResonse: command response (None if broadcasted message)
     """
     #get bus
     bus = app.config['sys.bus']
@@ -204,7 +223,16 @@ def send_command(command, to, params, timeout=None):
 @authenticate()
 def upload():
     """
-    Upload file
+    Upload file (POST only)
+    Parameters are embedded in POST data
+
+    Args:
+        command (string): command
+        to (string): command recipient
+        params (dict): command parameters
+
+    Returns:
+        MessageResponse: command response
     """
     path = None
     try:
@@ -266,7 +294,15 @@ def upload():
 def download():
     """
     Download file
-    @info: need to have command, to and params values on uri:
+    Parameters must be specified in uri: http://mydomain.com/download?command=mycommand&to=myrecipient&params=
+
+    Args:
+        command (string): command
+        to (string): command recipient
+        params (dict): command parameters
+
+    Returns:
+        MessageResponse: command response
     """
     try:
         #prepare params
@@ -312,6 +348,15 @@ def download():
 def command():
     """
     Execute command on raspiot
+
+    Args:
+        command (string): command
+        to (string): command recipient
+        timeout (float): timeout
+        params (dict): command parameters
+
+    Returns:
+        MessageResponse: command response
     """
     logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
@@ -380,6 +425,9 @@ def command():
 def modules():
     """
     Return configurations for all loaded modules
+
+    Returns:
+        Dict: map of modules with their configuration, devices, commands...
     """
     logger.debug('Request inventory for available modules')
     modules = app.config['sys.inventory'].get_modules()
@@ -409,6 +457,9 @@ def modules():
 def devices():
     """
     Return all devices
+
+    Returns:
+        Dict: map of all devices
     """
     #request each loaded module for its devices
     devices = {}
@@ -430,6 +481,9 @@ def devices():
 def registerpoll():
     """
     Register poll
+
+    Returns:
+        dict: {'pollkey':''}
     """
     #subscribe to bus
     poll_key = str(uuid.uuid4())
@@ -453,6 +507,9 @@ def pollcounter():
 def poll():
     """
     This is the endpoint for long poll clients.
+
+    Returns:
+        dict: map of received event
     """
     with pollcounter():
         params = bottle.request.json

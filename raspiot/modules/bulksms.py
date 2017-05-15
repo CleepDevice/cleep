@@ -71,8 +71,10 @@ class Bulksms(SmsProvider):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         SmsProvider.__init__(self, bus, debug_enabled)
@@ -80,10 +82,14 @@ class Bulksms(SmsProvider):
     def set_credentials(self, username, password, phone_numbers):
         """
         Set BulkSms credentials
-        @param username: username (string)
-        @param password: password (string)
-        @param phone_numbers: phone numbers (coma separated if many) (string)
-        @return True if credentials saved successfully
+
+        Args:
+            username (string): username
+            password (string): password
+            phone_numbers (string): phone numbers (coma separated if many)
+
+        Returns:
+            bool: True if credentials saved successfully
         """
         if username is None or len(username)==0:
             raise MissingParameter('Username parameter is missing')
@@ -108,9 +114,13 @@ class Bulksms(SmsProvider):
     def get_credits(self, username=None, password=None):
         """
         Return user credits
-        @param username: username. If not specified use username from config
-        @param password: password. If not specified use password from config
-        @return remaining credits
+
+        Args:
+            username (string): username. If not specified use username from config
+            password (string): password. If not specified use password from config
+        
+        Returns:
+            int: remaining credits
         """
         if username is None or password is None:
             config = self._get_config()
@@ -155,8 +165,12 @@ class Bulksms(SmsProvider):
     def _post(self, data):
         """
         Post data
-        @param data: SmsData instance
-        @return True if post succeed, False otherwise
+
+        Args:
+            data (SmsData): SmsData instance
+
+        Returns:
+            bool: True if post succeed, False otherwise
         """
         config = self._get_config()
         params = urllib.urlencode({

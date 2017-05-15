@@ -28,8 +28,10 @@ class RaspIot(BusClient):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: MessageBus instance
-        @param debug_enabled: flag to set debug level to logger (bool)
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init bus
         BusClient.__init__(self, bus)
@@ -54,14 +56,21 @@ class RaspIot(BusClient):
     def __file_is_empty(self, path):
         """
         Return True if file is empty
-        @param path: path to check
-        @return True if file is empty
+
+        Args:
+            path (string): path to check
+        
+        Returns:
+            bool: True if file is empty
         """
         return os.path.isfile(path) and not os.path.getsize(path)>0
 
     def __has_config_file(self):
         """
         Check if module has configuration file
+
+        Returns:
+            bool: True if module has config file, False otherwise
         """
         if getattr(self, 'MODULE_CONFIG_FILE', None) is None:
             return False
@@ -71,7 +80,9 @@ class RaspIot(BusClient):
     def _load_config(self):
         """
         Load config file
-        @return configuration file content or None if error occured
+
+        Returns:
+            dict: configuration file content or None if error occured
         """
         #check if module have config file
         if not self.__has_config_file():
@@ -106,8 +117,12 @@ class RaspIot(BusClient):
     def _save_config(self, config):
         """
         Save config file
-        @param config: config to save
-        @return configuration file content or None if error occured
+
+        Args:
+            config (dict): config to save
+        
+        Returns:
+            dict: configuration file content or None if error occured
         """
         out = None
         force_reload = False
@@ -137,13 +152,16 @@ class RaspIot(BusClient):
     def _reload_config(self):
         """
         Reload configuration
-        Just an alias to _load_configuration
+        Just an alias to _load_config without config content
         """
         self._load_config()
 
     def _get_config(self):
         """
         Return copy of config dict
+
+        Returns:
+            dict: config file content (copy)
         """
         #check if module have config file
         if not self.__has_config_file():
@@ -153,14 +171,20 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         copy_ = copy.deepcopy(self._config)
         self.__configLock.release()
+
         return copy_
 
     def _check_config(self, keys):
         """
         Check config files looking for specified keys.
         If key not found, key is added with specified default value
-        @param keys: dict {'key1':'default value1', ...}
-        @return nothing, only check configuration file consistency
+        Save new configuration file if necessary
+
+        Args:
+            keys (dict): dict ov keys-default values {'key1':'default value1', ...}
+
+        Returns:
+            None: nothing, only check configuration file consistency
         """
         config = self._get_config()
         fixed = False
@@ -176,13 +200,18 @@ class RaspIot(BusClient):
     def _get_unique_id(self):
         """
         Return unique id. Useful to get unique device identifier
+
+        Returns:
+            string: new unique id (uuid4 format)
         """
         return str(uuid.uuid4())
 
     def get_module_config(self):
         """
-        Return module configuration.
-        This function returns all config content except 'devices' entry
+        Returns module configuration.
+        
+        Returns:
+            dict: all config content except 'devices' entry
         """
         config = self._get_config()
 
@@ -194,8 +223,10 @@ class RaspIot(BusClient):
 
     def get_module_devices(self):
         """
-        Return module devices
-        This function returns all devices registered in 'devices' config section
+        Returns module devices
+
+        Returns:
+            dict: all devices registered in 'devices' config section
         """
         if self._config is not None and self._config.has_key('devices'):
             return self._config['devices']
@@ -205,7 +236,9 @@ class RaspIot(BusClient):
     def get_module_commands(self):
         """
         Return available module commands
-        @return array of command names
+        
+        Returns:
+            list: list of command names
         """
         ms = dir(self)
         for m in ms[:]:
@@ -260,8 +293,12 @@ class RaspIot(BusClient):
     def is_module_loaded(self, module):
         """
         Request inventory to check if specified module is loaded or not
-        @param module: module name
-        @return True if module is loaded, False otherwise
+        
+        Args:
+            module (string): module name
+
+        Returns:
+            bool: True if module is loaded, False otherwise
         """
         resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
         if resp['error']:
@@ -282,8 +319,10 @@ class RaspIotModule(RaspIot):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: MessageBus instance
-        @param debug_enabled: flag to set debug level to logger (bool)
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
@@ -294,8 +333,12 @@ class RaspIotModule(RaspIot):
         This function auto inject new entry "devices" in configuration file.
         This function appends new device in devices section and add unique id in uuid property
         It also appends 'name' property if not provided
-        @param data: device data
-        @return device data if process was successful, None otherwise
+
+        Args:
+            data (dict): device data
+        
+        Returns:
+            dict: device data if process was successful, None otherwise
         """
         config = self._get_config()
 
@@ -321,8 +364,12 @@ class RaspIotModule(RaspIot):
     def _delete_device(self, uuid):
         """
         Helper function to remove device from module configuration file
-        @param uuid: device identifier
-        @return True if device was deleted, False otherwise
+
+        Args:
+            uuid (string): device identifier
+
+        Returns:
+            bool: True if device was deleted, False otherwise
         """
         config = self._get_config()
 
@@ -347,9 +394,13 @@ class RaspIotModule(RaspIot):
     def _update_device(self, uuid, data):
         """
         Helper function to update device
-        @param uuid: device identifier
-        @param data: device data to update
-        @return True if device updated, False otherwise
+
+        Args:
+            uuid (string): device identifier
+            data (dict): device data to update
+
+        Returns:
+            bool: True if device updated, False otherwise
         """
         config = self._get_config()
 
@@ -378,9 +429,13 @@ class RaspIotModule(RaspIot):
         """
         Helper function to search a device based on the property value
         Useful to search a device of course, but can be used to check if a name is not already assigned to a device
-        @param key: device property to search on
-        @param value: property value
-        @return None if key-value wasn't found or the device data if key-value found
+
+        Args:
+            key (string): device property to search on
+            value (any): property value
+
+        Returns
+            dict: the device data if key-value found, or None otherwise
         """
         config = self._get_config()
 
@@ -404,8 +459,12 @@ class RaspIotModule(RaspIot):
     def _get_device(self, uuid):
         """
         Get device according to specified identifier
-        @param uuid: device identifier
-        @return None if device not found, device data otherwise
+
+        Args:
+            uuid (string): device identifier
+
+        Returns:
+            dict: None if device not found, device data otherwise
         """
         config = self._get_config()
 
@@ -423,13 +482,18 @@ class RaspIotModule(RaspIot):
     def _get_devices(self):
         """
         Return module devices (alias to get_module_devices function)
+
+        Returns:
+            list: list of devices
         """
         return self.get_module_devices()
 
     def _get_device_count(self):
         """
         Return number of devices in configuration file"
-        @return number of saved devices (int)
+
+        Returns:
+            int: number of saved devices
         """
         if self._config.has_key('devices'):
             return len(self._config['devices'])
@@ -451,8 +515,10 @@ class RaspIotProvider(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: MessageBus instance
-        @param debug_enabled: flag to set debug level to logger (bool)
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
@@ -460,10 +526,13 @@ class RaspIotProvider(RaspIotModule):
     def register_provider(self, type, subtype, profile):
         """
         Register provider to inventory
-        @param type: type of provider
-        @param capabilities: used to describe provider capabilities (ie: screen can have 1 or 2
-                             lines, provider user must adapts posted data according to this capabilities)
-        @return True if provider registered successfully
+
+        Args:
+            type (string): type of provider
+            profiles: used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to this capabilities)
+
+        Returns:
+            bool: True if provider registered successfully
         """
         if type is None or len(type)==0:
             raise CommandError('Type parameter is missing')
@@ -477,8 +546,15 @@ class RaspIotProvider(RaspIotModule):
     def post(self, data):
         """
         Post data to provider
-        @param data: data to post
-        @return True if post is successful
+
+        Args:
+            data (dict): data to post
+
+        Returns:
+            bool: True if post is successful
+
+        Raises:
+            NotImplementedError: if function not implemented in provider instance
         """
         raise NotImplementedError('post function must implemented in a provider')
 

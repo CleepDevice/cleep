@@ -1,0 +1,4 @@
+in docs dir:
+sphinx-apidoc -f -o source/ ../raspiot/
+
+make html

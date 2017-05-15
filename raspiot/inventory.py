@@ -11,22 +11,25 @@ __all__ = ['Inventory']
 
 class Inventory(RaspIotModule):
     """
-    Class that handles inventory of:
+    Inventory handles inventory of:
      - existing devices: knows all devices uuid and module that handles it
      - loaded modules and their commands
+     - existing providers (sms, email, sound...)
     """  
 
     def __init__(self, bus, debug_enabled, installed_modules):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
-        @param modules: array of available modules
+
+        Args:
+            bus (MessageBus): bus instance
+            debug_enabled (bool): debug status
+            modules (array): available modules
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
 
-        #member
+        #members
         #list devices: uuid => module name
         self.devices = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
@@ -96,8 +99,12 @@ class Inventory(RaspIotModule):
     def get_device_module(self, uuid):
         """
         Return module that owns specified device
-        @param uuid: device identifier
-        @return module name (string) or None if device was not found
+
+        Args:
+            uuid (string): device identifier
+
+        Returns:
+            string: module name or None if device was not found
         """
         if self.devices.has_key(uuid):
             return self.devices[uuid]
@@ -107,8 +114,16 @@ class Inventory(RaspIotModule):
     def get_device_infos(self, uuid):
         """
         Return device infos (module name and device name) according to specified uuid
-        @param uuid: device identifier
-        @return device infos (dict(<device name>, <device module>)) or None if device not found
+
+        Args:
+            uuid (string): device identifier
+        
+        Returns:
+            dict: device infos or None if device not found
+                {
+                    'name': '',
+                    'module': ''
+                }
         """
         if self.devices.has_key(uuid):
             return self.devices[uuid]
@@ -118,8 +133,16 @@ class Inventory(RaspIotModule):
     def get_module_devices(self, module):
         """
         Return module devices
-        @param module: module name
-        @return list of devices (array of dict(<device uuid>, <device name>))
+        
+        Args:
+            module (strng): module name
+        
+        Returns:
+            array: list of devices 
+                [{'uuid':'', 'name':''}, ...]
+
+        Raises:
+            CommandError: if module doesn't exists
         """
         #check values
         if self.modules.has_key(module):
@@ -139,22 +162,33 @@ class Inventory(RaspIotModule):
     def get_modules(self):
         """
         Return list of modules
-        @return dict of modules
+        
+        Returns:
+            list: list of modules
+                ['module name':{'module info':'', ...}, ...]
         """
         return self.modules
 
     def get_modules_names(self):
         """
         Return list of modules names
-        @return array of module names (string)
+
+        Returns:
+            list: list of module names
+                ['name1', 'name2', ...]
         """
         return self.modules.keys()
 
     def get_module_commands(self, module):
         """
         Return list of module commands
-        @param module: module name (string)
-        @return list of commands (array(<command name>)) or None if module not found
+
+        Args:
+            module (string): module name
+
+        Returns:
+            list: list of commands or None if module not found
+                ['command1', 'command2', ...]
         """
         if self.modules.has_key(module):
             return self.modules[module]
@@ -164,19 +198,30 @@ class Inventory(RaspIotModule):
     def is_module_loaded(self, module):
         """
         Simply returns True if specified module is loaded
-        @param module: module name
-        @return True if module loaded, False otherwise
+        
+        Args:
+            module (string): module name
+
+        Returns:
+            bool: True if module loaded, False otherwise
         """
         return self.modules.has_key(module)
 
     def register_provider(self, type, subtype, profile, command_sender):
         """
         Register new provider
-        @param type: provider type (ie: alert for sms/push/email provider)
-        @param subtype: provider subtype (ie: sms for sms provider)
-        @param profile: used to describe provider capabilities (ie: screen can have 1 or 2
-                        lines, provider user must adapts posted data according to this capabilities)
-        @param command_sender: command sender (automatically added by bus)
+
+        Args:
+            type (string): provider type (ie: alert for sms/push/email provider)
+            subtype (string): provider subtype (ie: sms for sms provider)
+            profiles (list of dict): used to describe provider capabilities (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to this capabilities)
+            command_sender (string): command sender (automatically added by bus)
+
+        Returns:
+            bool: True
+
+        Raises:
+            MissingParameter: if parameter is missing
         """
         self.logger.debug('Register new %s:%s provider %s' % (type, subtype, command_sender))
         #check values
@@ -203,7 +248,12 @@ class Inventory(RaspIotModule):
     def unregister_provider(self, type, command_sender):
         """
         Unregister provider
-        @param command_sender: command sender (automatically added by bus)
+
+        Args:
+            command_sender (string): command sender (automatically added by bus)
+
+        Returns:
+            bool: True if unregistration succeed, False otherwise
         """
         if not self.providers.has_key(type) or not self.providers[type].has_key(command_sender):
             return False
@@ -216,8 +266,12 @@ class Inventory(RaspIotModule):
     def has_provider(self, type):
         """
         Return True if at least one provider is registered for specified type
-        @param type: provider type
-        @return True if provider exists or False otherwise
+
+        Args:
+            type (string): provider type
+        
+        Returns:
+            bool: True if provider exists or False otherwise
         """
         if self.providers.has_key(type) and len(self.providers[type])>0:
             return True
@@ -227,8 +281,12 @@ class Inventory(RaspIotModule):
     def get_providers(self, type):
         """
         Return list of available providers for specified type
-        @param type: provider type
-        @return empty dict if not provider available for requested type or available providers (dict)
+
+        Args:
+            type (string): provider type
+
+        Returns:
+            dict: empty dict if not provider available for requested type or available providers
         """
         if self.providers.has_key(type):
             return self.providers[type]
