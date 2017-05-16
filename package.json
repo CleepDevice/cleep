@@ -17,7 +17,9 @@
     "gulp-concat": "2.6.1",
     "gulp-rename": "1.2.2",
     "gulp-jshint": "^1.6.1",
-    "del": "2.2.2"
+    "del": "2.2.2",
+    "gulp-tar": "1.9.0",
+    "gulp-gzip": "1.4.0" 
   },
   "optionalDependencies": {},
   "engines": {

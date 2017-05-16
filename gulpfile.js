@@ -8,6 +8,8 @@ var gutil = require('gulp-util');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var del = require('del');
+var tar = require('gulp-tar');
+var gzip = require('gulp-gzip');
 
 var source = './html';
 var destination = './dist';
@@ -82,3 +84,23 @@ gulp.task('deb-move', function() {
 
 gulp.task('deb', ['deb-build', 'deb-move', 'deb-clean']);
 
+gulp.task('docs-html', function() {
+    spawnSync('make', ['html'], {cwd: './docs/', env:process.env});
+});
+
+gulp.task('docs-xml', function() {
+    spawnSync('make', ['xml'], {cwd: './docs/', env:process.env});
+});
+
+gulp.task('docs-move', function() {
+    gulp.src('./docs/_build/html/**/*')
+        .pipe(tar('raspiot-docs.tar'))
+        .pipe(gzip())
+        .pipe(gulp.dest(destination));
+});
+
+gulp.task('docs-clean', function() {
+    spawnSync('make', ['clean'], {cwd: './docs/', env:process.env});
+});
+
+gulp.task('docs', ['docs-html', 'docs-move', 'docs-clean']);

@@ -44,8 +44,10 @@ class Smtp(EmailProvider):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         EmailProvider.__init__(self, bus, debug_enabled)
@@ -53,15 +55,19 @@ class Smtp(EmailProvider):
     def __send_email(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, data):
         """
         Send test email
-        @param smtp_server: smtp server address (string)
-        @param smtp_port: smtp server port (int)
-        @param smtp_login: login to connect to smtp server (string)
-        @param smtp_password: password to connect to smtp server (string)
-        @param smtp_tls: tls option (bool)
-        @param smtp_ssl: ssl option (bool)
-        @param email_sender: email sender (string)
-        @param data: email data (EmailData instance)
-        @return True if test succeed
+
+        Params:
+            smtp_server: smtp server address (string)
+            smtp_port: smtp server port (int)
+            smtp_login: login to connect to smtp server (string)
+            smtp_password: password to connect to smtp server (string)
+            smtp_tls: tls option (bool)
+            smtp_ssl: ssl option (bool)
+            email_sender: email sender (string)
+            data: email data (EmailData instance)
+
+        Returns:
+            bool: True if test succeed
         """
         try:
             self.logger.debug('Send email: %s:%s@%s:%s from %s SSl:%s TLS:%s' % (smtp_login, smtp_password, smtp_server, str(smtp_port), email_sender, str(smtp_ssl), str(smtp_tls)))
@@ -160,15 +166,19 @@ class Smtp(EmailProvider):
     def set_config(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, recipient):
         """
         Set configuration
-        @param smtp_server: smtp server address
-        @param smtp_port: smtp server port
-        @param smtp_login: login to connect to smtp server
-        @param smtp_password: password to connect to smtp server
-        @param smtp_tls: tls option
-        @param smtp_ssl: ssl option
-        @param email_sender: email sender
-        @param recipient: email recipient
-        @return True if config saved successfully
+
+        Params:
+            smtp_server: smtp server address
+            smtp_port: smtp server port
+            smtp_login: login to connect to smtp server
+            smtp_password: password to connect to smtp server
+            smtp_tls: tls option
+            smtp_ssl: ssl option
+            email_sender: email sender
+            recipient: email recipient
+
+        Returns:
+            bool: True if config saved successfully
         """
         if smtp_server is None or len(smtp_server)==0:
             raise MissingParameter('Smtp_server parameter is missing')
@@ -210,15 +220,19 @@ class Smtp(EmailProvider):
     def test(self, recipient, smtp_server=None, smtp_port=None, smtp_login=None, smtp_password=None, smtp_tls=None, smtp_ssl=None, email_sender=None):
         """
         Send test email
-        @param smtp_server: smtp server address
-        @param smtp_port: smtp server port
-        @param smtp_login: login to connect to smtp server
-        @param smtp_password: password to connect to smtp server
-        @param smtp_tls: tls option
-        @param smtp_ssl: ssl option
-        @param email_sender: email sender
-        @param recipient: test email recipient
-        @return True if test succeed
+
+        Params:
+            smtp_server: smtp server address
+            smtp_port: smtp server port
+            smtp_login: login to connect to smtp server
+            smtp_password: password to connect to smtp server
+            smtp_tls: tls option
+            smtp_ssl: ssl option
+            email_sender: email sender
+            recipient: test email recipient
+
+        Returns:
+            bool: True if test succeed
         """
         if recipient is None or len(recipient)==0:
             raise CommandError('Recipient parameter is missing')
@@ -250,8 +264,12 @@ class Smtp(EmailProvider):
     def _post(self, data):
         """
         Post data
-        @param data: SmsData instance
-        @return True if post succeed, False otherwise
+
+        Params:
+            data (EmailData): EmailData instance
+
+        Returns:
+            bool: True if post succeed, False otherwise
         """
         config = self._get_config()
         if config['smtp_server'] is None or config['email_sender'] is None:

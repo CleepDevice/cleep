@@ -144,8 +144,10 @@ class Sounds(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -175,6 +177,13 @@ class Sounds(RaspIotModule):
     def get_langs(self):
         """
         Return all langs
+
+        Returns:
+            dict: languages infos::
+                {
+                    langs (dict): list of all langs,
+                    lang (string): selected lang
+                }
         """
         return {
             'langs': Sounds.TTS_LANGS,
@@ -184,7 +193,9 @@ class Sounds(RaspIotModule):
     def set_lang(self, lang):
         """
         Set tts lang
-        @param lang: tts lang (see TTS_LANGS)
+
+        Params:
+            lang (string): tts lang (see TTS_LANGS)
         """
         #check params
         if lang not in Sounds.TTS_LANGS.keys():
@@ -198,7 +209,9 @@ class Sounds(RaspIotModule):
     def get_volume(self):
         """
         Get volume
-        @return volume value (integer)
+
+        Returns:
+            int: volume value
         """
         pygame.mixer.init()
         volume = pygame.mixer.music.get_volume()
@@ -208,7 +221,9 @@ class Sounds(RaspIotModule):
     def set_volume(self, volume):
         """
         Set volume
-        @param volume: volume value (int)
+
+        Params:
+            volume (int): volume value
         """
         pygame.mixer.init()
         pygame.mixer.music.set_volume(int(volume/100.0))
@@ -217,7 +232,12 @@ class Sounds(RaspIotModule):
     def play_sound(self, filename):
         """
         Play specified file
-        @param filepath: file path to play
+
+        Params:
+            filename: filename to play
+
+        Raises:
+            Exception, InvalidParameter
         """
         #build filepath
         filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
@@ -239,8 +259,13 @@ class Sounds(RaspIotModule):
     def speak_message(self, text, lang):
         """
         Speak specified message
-        @param text: text to say
-        @param lang: spoken lang
+
+        Params:
+            text (string): text to say
+            lang (string): spoken lang
+
+        Raises:
+            Exception, InvalidParameter
         """
         #check parameters
         if not text or not lang:
@@ -269,6 +294,12 @@ class Sounds(RaspIotModule):
     def delete_sound(self, filename):
         """
         Delete sound
+
+        Params:
+            filename (string): filename to delete
+
+        Raises:
+            InvalidParameter
         """
         #build filepath
         filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
@@ -283,7 +314,15 @@ class Sounds(RaspIotModule):
     def get_sounds(self):
         """
         Get sounds
-        @return: ilist of sounds (list(dict('name':<name>)))
+
+        Returns:
+            list: list of sounds::
+                [
+                    {
+                        name (string): filename
+                    },
+                    ...
+                ]
         """
         out = []
         for root, dirs, sounds in os.walk(Sounds.SOUNDS_PATH):
@@ -296,8 +335,15 @@ class Sounds(RaspIotModule):
     def add_sound(self, filepath):
         """
         Add new sound
-        @param filepath: uploaded filepath
-        @return: True if file uploaded successfully, raise error otherwise
+
+        Params:
+            filepath (string): uploaded and local filepath
+
+        Returns:
+            bool: True if file uploaded successfully
+            
+        Raises:
+            Exception, InvalidParameter
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
@@ -322,7 +368,6 @@ class Sounds(RaspIotModule):
     def play_random_sound(self):
         """
         Play random sound from list of sounds
-        @return always True
         """
         sounds = self.get_sounds()
 

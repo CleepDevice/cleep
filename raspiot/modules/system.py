@@ -45,8 +45,10 @@ class System(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         RaspIotModule.__init__(self, bus, debug_enabled)
 
@@ -136,9 +138,13 @@ class System(RaspIotModule):
     def __search_city(self, city, country):
         """
         Search for specified city
-        @param city: city name
-        @param country: city country
-        @return astral location (from geocoder function)
+
+        Params:
+            city (string): city name
+            country (string): city country
+
+        Returns:
+            object: astral location (from geocoder function)
         """
         try:
             a = Astral(GoogleGeocoder)
@@ -156,9 +162,13 @@ class System(RaspIotModule):
     def __compute_sun(self, city=None, country=''):
         """
         Compute sunset/sunrise times
-        @param city: city name
-        @param country: country name
-        @return True if computation succeed, False otherwise
+
+        Params:
+            city (string): city name
+            country (string): country name
+
+        Returns:
+            bool: True if computation succeed, False otherwise
         """
         self.logger.debug('Compute sunset/sunrise')
 
@@ -191,6 +201,9 @@ class System(RaspIotModule):
     def __format_time(self, now=None):
         """
         Return current time object
+
+        Returns:
+            dict: time data
         """
         #current time
         if not now:
@@ -236,7 +249,7 @@ class System(RaspIotModule):
     def __send_time_event(self):
         """
         Send time event every minute
-        Send sunset/sunrise
+        Send sunset/sunrise events and purge database if possible
         """
         now = int(time.time())
         now_formatted = self.__format_time()
@@ -268,6 +281,9 @@ class System(RaspIotModule):
     def get_module_config(self):
         """
         Return full module configuration
+
+        Returns:
+            dict: configuration
         """
         config = {}
         config['sun'] = self.get_sun()
@@ -281,6 +297,9 @@ class System(RaspIotModule):
     def get_module_devices(self):
         """
         Return clock as system device
+
+        Returns:
+            dict: devices
         """
         devices = super(System, self).get_module_devices()
         
@@ -300,12 +319,18 @@ class System(RaspIotModule):
     def get_time(self):
         """
         Return current time
+
+        Returns:
+            dict: time data
         """
         return self.__format_time()
 
     def get_sun(self):
         """
         Return sunset and sunrise timestamps
+
+        Returns:
+            dict: sunset and sunrise timestamps
         """
         sunset = None
         if self.sunset:
@@ -322,7 +347,9 @@ class System(RaspIotModule):
     def set_monitoring(self, monitoring):
         """
         Set monitoring flag
-        @param monitoring: monitoring flag (bool)
+        
+        Params:
+            monitoring (bool): monitoring flag
         """
         if monitoring is None:
             raise MissingParameter('Monitoring parameter missing')
@@ -335,12 +362,18 @@ class System(RaspIotModule):
     def get_monitoring(self):
         """
         Return monitoring configuration
+
+        Returns:
+            dict: monitoring configuration
         """
         return self._config['monitoring']
 
     def get_city(self):
         """
         Return configured city
+
+        Returns:
+            dict: city and country infos
         """
         return {
             'city': self._config['city'],
@@ -350,10 +383,16 @@ class System(RaspIotModule):
     def set_city(self, city, country):
         """
         Set city name
-        @param city: closest city name
-        @param country: country name
-        @return True if city configured
-        @raise CommandError
+
+        Params:
+            city (string): closest city name
+            country (string): country name
+        
+        Returns:
+            bool: True if city configured
+
+        Raises:
+            CommandError
         """
         if city is None or len(city)==0:
             raise MissingParameter('City parameter is missing')
@@ -374,7 +413,6 @@ class System(RaspIotModule):
     def reboot_system(self):
         """
         Reboot system
-        @return None
         """
         console = Console()
 
@@ -387,7 +425,6 @@ class System(RaspIotModule):
     def halt_system(self):
         """
         Halt system
-        @return None
         """
         console = Console()
 
@@ -412,8 +449,12 @@ class System(RaspIotModule):
     def install_module(self, module):
         """
         Install specified module
-        @param module: module name to install
-        @return True if module installed
+
+        Params:
+            module (string): module name to install
+
+        Returns:
+            bool: True if module installed
         """
         if module is None or len(module)==0:
             raise MissingParameter('Module parameter is missing')
@@ -427,8 +468,12 @@ class System(RaspIotModule):
     def uninstall_module(self, module):
         """
         Uninstall specified module
-        @param module: module name to install
-        @return True if module uninstalled
+
+        Params:
+            module (string): module name to install
+
+        Returns:
+            bool: True if module uninstalled
         """
         if module is None or len(module)==0:
             raise MissingParameter('Module parameter is missing')
@@ -442,13 +487,15 @@ class System(RaspIotModule):
     def get_memory_usage(self):
         """
         Return system memory usage
-        @return memory usage :
-            dict(
-                'total': <total memory in bytes (int)>',
-                'available':<available memory in bytes (int)>,
-                'available_hr':<human readble available memory (string)>,
-                'raspiot': <raspiot process memory in bytes (float)>
-            )
+
+        Returns:
+            dict: memory usage::
+                {
+                    'total': <total memory in bytes (int)>',
+                    'available':<available memory in bytes (int)>,
+                    'available_hr':<human readble available memory (string)>,
+                    'raspiot': <raspiot process memory in bytes (float)>
+                }
         """
         system = psutil.virtual_memory()
         raspiot = self.__process.memory_info()[0]
@@ -466,11 +513,13 @@ class System(RaspIotModule):
     def get_cpu_usage(self):
         """
         Return system cpu usage
-        @return cpu usage :
-            dict(
-                'system': <system cpu usage percentage (float)>,
-                'raspiot': <raspiot cpu usage percentage (float>)>
-            )
+
+        Returns:
+            dict: cpu usage::
+                {
+                    'system': <system cpu usage percentage (float)>,
+                    'raspiot': <raspiot cpu usage percentage (float>)>
+                }
         """
         system = psutil.cpu_percent()
         if system>100.0:
@@ -486,7 +535,9 @@ class System(RaspIotModule):
     def get_uptime(self):
         """
         Return system uptime (in seconds)
-        @return int
+
+        Returns:
+            int: uptime
         """
         uptime = int(time.time() - psutil.boot_time())
         return {
@@ -497,6 +548,9 @@ class System(RaspIotModule):
     def __is_interface_wired(self, interface):
         """
         Return True if interface is wireless
+
+        Params:
+            interface (string): interface name
         """
         console = Console()
         res = console.command('iwconfig %s 2>&1' % interface)
@@ -511,16 +565,18 @@ class System(RaspIotModule):
     def get_network_infos(self):
         """
         Return network infos
-        @return network infos:
-            dict(
-                '<interface>': dict(
-                    'interface':<interface name (string)>,
-                    'ip': <ip address (string)>,
-                    'mac': <interface mac address (string)>,
-                    'wired': <interface type ('wired', 'wifi')> 
-                ),
-                ...
-            )
+
+        Returns:
+            dict: network infos::
+                {
+                    '<interface>': {
+                        'interface':<interface name (string)>,
+                        'ip': <ip address (string)>,
+                        'mac': <interface mac address (string)>,
+                        'wired': <interface type ('wired', 'wifi')> 
+                    },
+                    ...
+                }
         """
         nets = psutil.net_if_addrs()
         infos = {}
@@ -615,7 +671,15 @@ class System(RaspIotModule):
     def __hr_bytes(self, n):
         """
         Human readable bytes value
-        @see http://code.activestate.com/recipes/578019
+
+        Note:
+            http://code.activestate.com/recipes/578019
+
+        Params: 
+            n (int): bytes
+
+        Returns:
+            string: human readable bytes value
         """
         symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
         prefix = {}
@@ -633,9 +697,15 @@ class System(RaspIotModule):
     def __hr_uptime(self, uptime):
         """
         Human readable uptime (in days/hours/minutes/seconds)
-        @see http://unix.stackexchange.com/a/27014
-        @param uptime: uptime value (int)
-        @return human readable string (string)
+
+        Note:
+            http://unix.stackexchange.com/a/27014
+
+        Params:
+            uptime (int): uptime value
+
+        Returns:
+            string: human readable string
         """
         #get values
         days = uptime / 60 / 60 / 24
@@ -647,20 +717,25 @@ class System(RaspIotModule):
     def get_filesystem_infos(self):
         """
         Return filesystem infos (all values are in octets)
-        @return list of device available with those informations:
-            list(dict(
-                'device': <device path /dev/XXX (string)>
-                'uuid': <device uuid like found in blkid (string)>,
-                'system': <system partition (bool)>,
-                'mountpoint': <mountpoint (string)>
-                'mounted': <partition is mounted (bool)>,
-                'mounttype': <partition type (string)>,
-                'options': <mountpoint options (string)>,
-                'total': <partition total space in octets (number)>,
-                'used': <partition used space in octets (number)>,
-                'free': <partition free space in octets (number)>,
-                'percent': <partition used space in percentage (number)>
-            ), ...)
+
+        Returns:
+            list: list of devices available with some informations::
+                [
+                    {
+                        'device': <device path /dev/XXX (string)>
+                        'uuid': <device uuid like found in blkid (string)>,
+                        'system': <system partition (bool)>,
+                        'mountpoint': <mountpoint (string)>
+                        'mounted': <partition is mounted (bool)>,
+                        'mounttype': <partition type (string)>,
+                        'options': <mountpoint options (string)>,
+                        'total': <partition total space in octets (number)>,
+                        'used': <partition used space in octets (number)>,
+                        'free': <partition free space in octets (number)>,
+                        'percent': <partition used space in percentage (number)>
+                    },
+                    ...
+                ]
         """
         #get mounted partitions and all devices
         fstab = Fstab()

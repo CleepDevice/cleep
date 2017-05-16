@@ -18,9 +18,11 @@ __all__ = ['Network']
 class Network(RaspIotModule):
     """
     Network module allows user to configure wired and wifi connection
-    @see https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/ iw versus iwconfig (deprecated)
-    @see https://www.raspberrypi.org/documentation/configuration/ official raspberry pi foundation configuration guide
-    @see https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ another super guide ;)
+
+    Note:
+        https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/ iw versus iwconfig (deprecated)
+        https://www.raspberrypi.org/documentation/configuration/ official raspberry pi foundation configuration guide
+        https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ another super guide ;)
     """
 
     MODULE_DEPS = []
@@ -32,8 +34,10 @@ class Network(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Params:
+            bus (MessageBus): bus instance
+            debug_enabled (bool): debug status
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -51,6 +55,9 @@ class Network(RaspIotModule):
     def get_module_config(self):
         """
         Return module configuration (wifi networks, ip address, ...)
+
+        Returns:
+            dict: module configuration
         """
         config = {}
         self.interfaces = self.get_interfaces_configurations()
@@ -62,7 +69,9 @@ class Network(RaspIotModule):
     def __restart_interface(self, interface):
         """
         Restart network interface
-        @param interface: network interface name (string)
+
+        Params:
+            interface (string): network interface name
         """
         c = Console()
         res = c.command('/bin/ip link set %s up' % interface)
@@ -75,6 +84,9 @@ class Network(RaspIotModule):
     def __get_interface_names(self):
         """
         Return interface names
+
+        Returns:
+            list: network interface names
         """
         c = Console()
         res = c.command('/bin/ls -1 /sys/class/net')
@@ -91,6 +103,9 @@ class Network(RaspIotModule):
     def __get_wired_config(self):
         """
         Return wired configuration
+
+        Returns:
+            list: wired interfaces list
         """
         #get interfaces from dhcpcd.conf file
         d = DhcpcdConf()
@@ -102,6 +117,9 @@ class Network(RaspIotModule):
     def __get_wifi_interfaces(self):
         """
         Return list of wifi interfaces
+
+        Returns:
+            list: wifi interfaces list
         """
         interfaces = {}
         c = Console()
@@ -141,6 +159,9 @@ class Network(RaspIotModule):
     def get_interfaces_configurations(self):
         """
         Return interfaces configurations as returned by ifconfig command
+
+        Returns:
+            dict: dict of interfaces
         """
         interfaces = {}
 
@@ -233,6 +254,12 @@ class Network(RaspIotModule):
     def __add_static_interface(self, interface, ip_address, router_address, name_server):
         """
         Configure wired static interface
+
+        Params:
+            interface (string): interface name
+            ip_address (string): ip address
+            router_address (string): router address
+            name_server (string): name server
         """
         conf = DhcpcdConf()
         return conf.add_static_interface(interface, ip_address, router_address, name_server)
@@ -240,16 +267,22 @@ class Network(RaspIotModule):
     def __add_fallback_interface(self, interface, ip_address, router_address, name_server):
         """
         Configure wired fallback interface
+
+        Params:
+            interface (string): interface name
+            ip_address (string): ip address
+            router_address (string): router address
+            name_server (string): name server
         """
         conf = DhcpcdConf()
         return conf.add_fallback_interface(interface, ip_address, router_address, name_server)
 
-    def __add_static_fallback(self, interface, ip_address, router_address, name_server):
-        conf = DhcpcdConf()
-
     def __delete_static_interface(self, interface):
         """
         Unconfigure wired static interface
+
+        Params:
+            interface (string): interface name
         """
         conf = DhcpcdConf()
         return conf.delete_static_interface(interface)
@@ -257,6 +290,9 @@ class Network(RaspIotModule):
     def __delete_fallback_interface(self, interface):
         """
         Unconfigure wired fallback interface
+
+        Params:
+            interface (string): interface name
         """
         conf = DhcpcdConf()
         return conf.delete_fallback_interface(interface)
@@ -264,10 +300,11 @@ class Network(RaspIotModule):
     def __add_wifi_network(self, network, encryption, password, hidden):
         """
         Add new wifi network configuration
-        @param network: network name (ssid)
-        @param encryption: network encryption (string: wpa, wpa2, wep, unsecured)
-        @param password: network password (it will be saved encrypted) (string)
-        @param hidden: hidden network (bool)
+        Params:
+            network (string): network name (ssid)
+            encryption (wpa|wpa2|wep|unsecured): network encryption
+            password (string): network password (it will be saved encrypted)
+            hidden (bool): hidden network (bool)
         """
         conf = WpaSupplicantConf()
         return conf.add_network(network, encryption, password, hidden)
@@ -275,7 +312,8 @@ class Network(RaspIotModule):
     def __delete_wifi_network(self, network):
         """
         Remove wifi network configuration
-        @param network: network name (string)
+        Params:
+            network (string): network name
         """
         conf = WpaSupplicantConf()
         return conf.delete_network(network)
@@ -283,11 +321,13 @@ class Network(RaspIotModule):
     def save_wired_static_configuration(self, interface, ip_address, router_address, name_server, fallback):
         """
         Save wired static configuration
-        @param interface: interface to configure (string)
-        @param ip_address: desired ip address (string)
-        @param router_address: router address (usually gateway) (string)
-        @param name_server: domain name server (usually gateway) (string)
-        @param fallback: is configuration used as fallback (bool)
+
+        Params:
+            interface (string): interface to configure (string)
+            ip_address (string): desired ip address (string)
+            router_address (string): router address (usually gateway) (string)
+            name_server (string): domain name server (usually gateway) (string)
+            fallback (bool): is configuration used as fallback (bool)
         """
         res = False
 
@@ -311,7 +351,9 @@ class Network(RaspIotModule):
     def save_wired_dhcp_configuration(self, interface):
         """
         Save wired dhcp configuration
-        Remove static configuration for specified interface
+
+        Params:
+            interface (string): interface name
         """
         #get current interface configuration
         d = DhcpcdConf()
@@ -334,7 +376,9 @@ class Network(RaspIotModule):
     def scan_wifi_networks(self):
         """
         Scan wifi networks
-        @see https://ubuntuforums.org/showthread.php?t=1402284 for different iwlist samples
+
+        Note:
+            https://ubuntuforums.org/showthread.php?t=1402284 for different iwlist samples
         """
         networks = {}
 
@@ -406,8 +450,16 @@ class Network(RaspIotModule):
     def test_wifi_network(self, interface, network, encryption, password, hidden):
         """
         Try to connect to specified wifi network. Save anything or revert back to original state after test.
-        @return None
-        @raise CommandError, CommandInfo
+
+        Params:
+            interface (string) interface name
+            network (string): network name
+            encryption (wpa|wpa2|wep|unsecured): network encryption
+            password (string): password
+            hidden (bool) hidden network
+
+        Raises:
+            CommandError, CommandInfo
         """
         c = Console()
         error = None
@@ -464,8 +516,17 @@ class Network(RaspIotModule):
 
     def save_wifi_network(self, interface, network, encryption, password, hidden):
         """
-        @return None
-        @raise CommandError, CommandInfo
+        Save wifi network
+
+        Params:
+            interface (string) interface name
+            network (string): network name
+            encryption (wpa|wpa2|wep|unsecured): network encryption
+            password (string): password
+            hidden (bool) hidden network
+
+        Raises:
+            CommandError, CommandInfo
         """
         c = Console()
         error = None
@@ -490,6 +551,9 @@ class Network(RaspIotModule):
     def disconnect_wifi(self, network):
         """
         Disconnect from specified wifi network
+
+        Params:
+            network (string): network name
         """
         c = Console()
 

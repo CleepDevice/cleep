@@ -68,6 +68,13 @@ class Messageboard(RaspIotModule):
     }
 
     def __init__(self, bus, debug_enabled):
+        """
+        Constructor
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
+        """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
 

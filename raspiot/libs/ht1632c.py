@@ -5,42 +5,40 @@
 HT1632 python driver
 Used to control HT1632 Sure Electronics panels
 
-Resources
----------
-This driver has been realized using those tutorials:
- - https://github.com/zzxydg/RaspPi-ht1632c/blob/master/HT1632C_LEDDriver.py
-   This tuto was useful for GPIO configuration
- - https://github.com/pinski1/MessageBoard
-   And this one useful for SPI configuration and panels connection
-Thanks to their authors for sharing their experience.
+Resources:
+    This driver has been realized using those tutorials:
+    - https://github.com/zzxydg/RaspPi-ht1632c/blob/master/HT1632C_LEDDriver.py
+        This tuto was useful for GPIO configuration
+    - https://github.com/pinski1/MessageBoard
+        And this one useful for SPI configuration and panels connection
+    Thanks to their authors for sharing their experience.
 
-Hardware
---------
-Shopping list:
- - 4x HT1632C monocolor from Sure Electronics
- - 1x74HCT138 mux
- - 1x raspberry pi 
- - power supply 220-5v/3A
+Hardware:
+    Shopping list:
+    - 4x HT1632C monocolor from Sure Electronics
+    - 1x74HCT138 mux
+    - 1x raspberry pi 
+    - power supply 220-5v/3A
 
 Connections:
-PSU   RASPI        74HCT38       HT1632C
-VCC --   2  ------   VCC
-        15  ------   A0
-        16  ------   A1
-        18  ------   A2
-        19  --------------------  7
-GND --------------   E1
-GND --------------   E2
-        22  ------   E3
-        23  --------------------  5   
-GND --  25  --------------------  8
-                     Y0   ------  3
-                     Y1   ------  1
-                     Y2   ------  2
-                     Y3   ------  4
+    PSU   RASPI        74HCT38       HT1632C
+    VCC --   2  ------   VCC
+            15  ------   A0
+            16  ------   A1
+            18  ------   A2
+            19  --------------------  7
+    GND --------------   E1
+    GND --------------   E2
+            22  ------   E3
+            23  --------------------  5   
+    GND --  25  --------------------  8
+                         Y0   ------  3
+                         Y1   ------  1
+                         Y2   ------  2
+                         Y3   ------  4
 
-All panels are connected together (data + power supply)
-First panel's jumpers are set to 1, second panel's jumpers to 2...
+    All panels are connected together (data + power supply)
+    First panel's jumpers are set to 1, second panel's jumpers to 2...
 """
 
 import RPi.GPIO as GPIO
@@ -70,7 +68,21 @@ class ScrollingMessage(Thread):
     Scrolling message thread
     Use to scroll specified message until end of thread
     """
+
     def __init__(self, board_size, message_length, buf, buf_index, direction, speed, write_pixels_callback, reset_callback):
+        """
+        Constructor
+
+        Args:
+            board_size (int): board size
+            message_length (int): message length
+            buf () : buffer
+            buf_index (int): buffer index
+            direction (int): scroll direction
+            speed (float): message speed (pause between each step)
+            write_pixels_callback (function): write pixel callback
+            reset_callback (function): reset screen callback
+        """
         #init
         Thread.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -88,9 +100,15 @@ class ScrollingMessage(Thread):
         self.__continu = True
 
     def stop(self):
+        """
+        Stop scrolling message
+        """
         self.__continu = False
 
     def run(self):
+        """
+        Scrolling message process
+        """
         while self.__continu:
             try:
                 #make buffer copy
@@ -261,6 +279,9 @@ LOGOS = {
 PATTERN_REPLACEMENT = '^'
 
 class HT1632C():
+    """
+    HT1632C driver class
+    """
 
     HT1632_ID_CMD      = 0b100   # ID = 100 - Commands
     HT1632_ID_RD       = 0b110   # ID = 110 - Read RAM
@@ -302,6 +323,15 @@ class HT1632C():
     RESET_HW_DELAY = 60
 
     def __init__(self, pin_a0, pin_a1, pin_a2, pin_e3, panel_count):
+        """
+        Constructor
+
+        Args:
+            pin_ao (int): pin connected to A0
+            pin_a1 (int): pin connected to A1
+            pin_e3 (int): pin connected to E3
+            panel_count (int): number of HT1632C panels
+        """
         #init
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
@@ -379,18 +409,29 @@ class HT1632C():
     def set_scroll_speed(self, speed):
         """
         Set default scroll speed
+
+        Args:
+            speed (float): speed (in seconds)
         """
         self.speed = speed
 
     def set_direction(self, direction):
         """
         Set default direction
+
+        Args:
+            direction (0|1): direction (0: left->right, 1: right->left)
         """
         self.direction = direction
 
     def set_time_units(self, days, hours, minutes):
         """
         Set default time units. Used to display time units in your language
+
+        Args:
+            days (string): days string
+            hours (string): hours string
+            minutes (string): minutes string
         """
         self.unit_days = days
         self.unit_hours = hours
@@ -432,7 +473,9 @@ class HT1632C():
         """
         Select specified panel number
         A small pause is executed to make sure GPIO are updated before sending data to SPI
-        @param panel: panel number
+        
+        Args:
+            panel (int): panel number
         """
         if panel==0:
             GPIO.output(self.__pin_a0, GPIO.LOW)
@@ -464,8 +507,10 @@ class HT1632C():
     def __write_command_to_panel(self, panel, command):
         """
         Write command to specified panel
-        @param panel: panel number
-        @param command: command to send
+        
+        Args:
+            panel (int): panel number
+            command (hex): command to send
         """
         #prepare command
         buf = [(HT1632C.HT1632_ID_CMD << 5) | (command >> 3), (command << 5)]
@@ -486,8 +531,10 @@ class HT1632C():
     def __write_pixels_to_panel(self, panel, pixels):
         """
         Write pixels buffer to specified panel
-        @param panel: panel number
-        @param pixels: pixels buffer
+        
+        Args:
+            panel: panel number
+            pixels: pixels buffer
         """
         #prepare buffer
         buf =  [(HT1632C.HT1632_ID_WR << 5) & 0xE0, ((0x3F & pixels[0]) >> 2),
@@ -528,10 +575,14 @@ class HT1632C():
         """
         Write pixels to board
         Buffer must be large enough for current board
-        @param pixels: buffer of pixels
-        @param index: if buffer is too large, index can be used to get index of buffer to display.
-                      If buffer is still too large, buffer is adjusted to board size.
-        @raise BufferInvalid
+
+        Args:
+            pixels: buffer of pixels
+            index: if buffer is too large, index can be used to get index of buffer to display.
+                If buffer is still too large, buffer is adjusted to board size.
+
+        Raises:
+            BufferInvalid
         """
         #check size
         if len(pixels)<self.__get_board_size():
@@ -556,10 +607,14 @@ class HT1632C():
     def __append_letter(self, buf, letter, position):
         """
         Append letter to specified buffer
-        @param buf: pixels buffer. can be None to compute buffer buffer length
-        @param letter: letter to write
-        @param position: current position in buffer
-        @return new position in buffer
+
+        Args:
+            buf: pixels buffer. can be None to compute buffer buffer length
+            letter: letter to write
+            position: current position in buffer
+
+        Returns:
+            int: new position in buffer
         """
         if letter!=PATTERN_REPLACEMENT:
             try:
@@ -577,10 +632,14 @@ class HT1632C():
     def __append_logo(self, buf, logo, position):
         """
         Append logo to specified buffer
-        @param buf: pixels buffer. Can be None to compute buffer length
-        @param logo: logo to write
-        @param position: current position in buffer
-        @return new position in buffer
+
+        Args:
+            buf: pixels buffer. Can be None to compute buffer length
+            logo: logo to write
+            position: current position in buffer
+
+        Returns:
+            int: new position in buffer
         """
         font_size = len(LOGOS[logo])
         for col in range(font_size):
@@ -592,10 +651,14 @@ class HT1632C():
     def __append_text(self, buf, text, position):
         """
         Append text to specified buffer
-        @param buf: pixels buffer. Can be None to compute buffer length
-        @param text: text to write
-        @param position: current position in buffer
-        @return new position in buffer
+        
+        Args:
+            buf: pixels buffer. Can be None to compute buffer length
+            text: text to write
+            position: current position in buffer
+
+        Returns:
+            new position in buffer
         """
         self.logger.debug('append text %s @ %d' % (text, position))
         text_size = len(text)
@@ -606,14 +669,21 @@ class HT1632C():
     def __get_board_size(self):
         """
         Return default buffer size
+
+        Returns:
+            int: board size
         """
         return self.__panel_count*32
 
     def __get_buffer(self, size=None):
         """
         Return empty buffer that fits current board size
-        @param size: you can get custom buffer of specified size
-        @return empty buffer (filled of zeros)
+        
+        Args:
+            size: you can get custom buffer of specified size
+
+        Returns:
+            numpy.ndarray: empty buffer (filled of zeros)
         """
         board_size = self.__get_board_size()
         if size is None:
@@ -632,6 +702,9 @@ class HT1632C():
     def __human_readable_duration(self, timestamp):
         """
         Return human readable duration
+
+        Returns:
+            string: duration
         """
         if timestamp<3600:
             return '%d %s' % (int(float(timestamp)/60.0), self.unit_minutes)
@@ -643,10 +716,14 @@ class HT1632C():
     def __search_for_patterns(self, message):
         """
         Search for patterns in message (logos, time...)
-        @param message: input message
-        @return found_logos: dict of found logos (logo index:found logo string)
-        @return message: modifiyed message (logo strings are replaced by constant PATTERN_REPLACEMENT)
-        @return evolutive: True if message contains evolutive fields (like time)
+        
+        Args:
+            message: input message
+
+        Returns:
+            tuple: found_logos: dict of found logos (logo index:found logo string),
+                message: modified message (logo strings are replaced by constant PATTERN_REPLACEMENT),
+                evolutive: True if message contains evolutive fields (like time),
         """
         found_patterns = {}
         evolutive = False
@@ -684,8 +761,13 @@ class HT1632C():
     def __get_message_length(self, message, patterns):
         """
         Compute message length
-        @param message: message with logos replaced (see __search_for_patterns function)
-        @param logos: logos indexes
+
+        Args:
+            message: message with logos replaced (see __search_for_patterns function)
+            logos: logos indexes
+
+        Returns:
+            int: buffer position
         """
         buffer_position = 0
 
@@ -715,9 +797,13 @@ class HT1632C():
     def display_message(self, message, position=0):
         """
         Display message to board
-        @param message: message to display
-        @param position: position of message in board (if message is too long it will be truncated)
-        @return True if message is evolutive or False if board is off or message not evolutive
+
+        Args:
+            message: message to display
+            position: position of message in board (if message is too long it will be truncated)
+
+        Returns:
+            bool: True if message is evolutive or False if board is off or message not evolutive
         """
         buffer_position = 0
 
@@ -797,10 +883,14 @@ class HT1632C():
     def scroll_message_once(self, message, speed=0.05, direction=0):
         """
         Scroll message to board
-        @param message: message to display
-        @param speed: animation speed
-        @param direction: scroll direction
-        @return True if message is evolutive or False if board is off or message not evolutive
+
+        Args:
+            message: message to display
+            speed: animation speed
+            direction: scroll direction
+
+        Returns:
+            bool: True if message is evolutive or False if board is off or message not evolutive
         """
         font_size = 5
 
@@ -853,7 +943,9 @@ class HT1632C():
     def random(self, duration, speed=0.025):
         """
         Turn on/off pixels randomly
-        @param duration: animation duration (in s)
+
+        Args:
+            duration: animation duration (in s)
         """
         for i in range(int(float(duration)/float(speed))):
             buf = np.random.randint(0, 255, self.__get_board_size())
@@ -863,16 +955,20 @@ class HT1632C():
     def display_animation(self):
        """
        Display programmed animation
-       @param animation: name of animation
+        
+       Args:
+            animation: name of animation
        """
        pass
 
     def set_time_units(self, minutes, hours, days):
         """
         Set time units. Useful to change string according to your lang
-        @param minutes: minutes
-        @param hours: hours
-        @param days: days
+
+        Args:
+            minutes: minutes
+            hours: hours
+            days: days
         """
         self.unit_days = days
         self.unit_hours = hours
@@ -900,7 +996,9 @@ class HT1632C():
     def is_on(self):
         """
         Return display state
-        @return True if display is on
+
+        Returns:
+            bool: True if display is on
         """
         return self.__turned_on
 

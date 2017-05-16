@@ -10,13 +10,21 @@ import os
 import signal
 import logging
 
-class NoEndCommand(Thread):
+class InfiniteConsole(Thread):
+    """
+    Helper class to execute long command line (system update...)
+    This kind of console doesn't kill command line after timeout. It just let command line running
+    until end of it or if user explicitely requests to kill (or stop) it.
+    """
+
     def __init__(self, command, callback, logger):
         """
         Constructor
-        @param command: command to execute
-        @param callback: callback when message is received
-        @param logger: logger
+
+        Args:
+            command (string): command to execute
+            callback (function): callback when message is received
+            logger (Logger): logger
         """
         Thread.__init__(self)
         Thread.daemon = True
@@ -26,9 +34,19 @@ class NoEndCommand(Thread):
         self.running = True
 
     def __del__(self):
+        """
+        Destructor
+        """
         self.stop()
 
     def __log(self, message, level):
+        """
+        Log facility
+
+        Args:
+            message (string): message to log
+            level (int): log level
+        """
         if self.logger:
             if level==logging.DEBUG:
                 self.logger.debug(message)
@@ -45,7 +63,16 @@ class NoEndCommand(Thread):
         """
         self.running = False
 
+    def kill(self):
+        """
+        Stop command line execution
+        """
+        self.running = False
+
     def run(self):
+        """
+        Console process
+        """
         #launch command
         p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         pid = p.pid
@@ -85,8 +112,12 @@ class Console():
     def __remove_eol(self, lines):
         """
         Remove end of line char for given lines
-        @param lines: list of lines
-        @result: list of lines with eol removed
+        
+        Args:
+            lines (list): list of lines
+        
+        Results:
+            list: input list of lines with eol removed
         """
         for i in range(len(lines)):
             lines[i] = lines[i].rstrip()
@@ -95,10 +126,19 @@ class Console():
     def command(self, command, timeout=2.0):
         """
         Execute specified command line with auto kill after timeout
-        @param command: command to execute
-        @param timeout: wait timeout before killing process and return command result
-        @return result of command (dict('error':<bool>, 'killed':<bool>, 'output':<list<string>>))
-                if error occured output will contain stderr, if command is successful output will contain stdout.
+        
+        Args:
+            command (string): command to execute
+            timeout (float): wait timeout before killing process and return command result
+
+        Returns:
+            dict: result of command::
+                {
+                    'error': True if error occured,
+                    'killed': True if command was killed,
+                    'stdout': command line output (list(string))
+                    'stderr': command line error (list(string))
+                }
         """
         #check params
         if timeout is None or timeout<=0.0:
@@ -156,26 +196,20 @@ class Console():
     def command_delayed(self, command, delay, timeout=2.0):
         """
         Execute specified command line after specified delay
-        @param command: command to execute (string)
-        @param delay: time to wait before executing command (milliseconds)
-        @param timeout: timeout before killing command
-        @see command function to have more details
-        @return True if command delayed succesfully or False otherwise
+
+        Args:
+            command (string): command to execute
+            delay (int): time to wait before executing command (milliseconds)
+            timeout (float): timeout before killing command
+
+        Note:
+            Command function to have more details
+        
+        Returns:
+            bool: True if command delayed succesfully or False otherwise
         """
         timer = Timer(delay, self.command, [command])
         timer.start()
-
-    def command_noend(self, command, timeout=None):
-        """
-        Execute specified command.
-        The main goal of this function is to execute command that requires some time to end (ie download file using wget, system update...)
-        This function returns as soon as command is launched and send event when something is read on console stdout/stderr
-        A timeout can be set to secure command execution (the command is killed after timeout)
-        @param command : command to execute
-        @param timeout: if specified kill command after timeout
-        @return True if command is launched successfully, False otherwise
-        """
-        pass
 
 
 

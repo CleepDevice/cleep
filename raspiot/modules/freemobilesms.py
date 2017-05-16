@@ -14,7 +14,9 @@ __all__ = ['Freemobilesms']
 class Freemobilesms(SmsProvider):
     """
     FreemobileSms module
-    @see http://developer.bulksms.com/eapi/submission/send_sms/
+
+    Note:
+        http://developer.bulksms.com/eapi/submission/send_sms/
     """
 
     MODULE_CONFIG_FILE = 'freemobilesms.conf'
@@ -43,8 +45,10 @@ class Freemobilesms(SmsProvider):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Params:
+            bus: bus instance
+            debug_enabled: debug status
         """
         #init
         SmsProvider.__init__(self, bus, debug_enabled)
@@ -52,9 +56,13 @@ class Freemobilesms(SmsProvider):
     def set_credentials(self, userid, apikey):
         """
         Set FreemobileSms credentials
-        @param userid: userid (string)
-        @param apikey: apikey (string)
-        @return True if credentials saved successfully
+
+        Params:
+            userid: userid (string)
+            apikey: apikey (string)
+
+        Returns:
+            bool: True if credentials saved successfully
         """
         if userid is None or len(userid)==0:
             raise MissingParameter('Userid parameter is missing')
@@ -75,9 +83,13 @@ class Freemobilesms(SmsProvider):
     def test(self, userid=None, apikey=None):
         """
         Send test sms
-        @param userid: userid. If not specified use userid from config
-        @param apikey: apikey. If not specified use apikey from config
-        @return True if test succeed
+
+        Params:
+            userid: userid. If not specified use userid from config
+            apikey: apikey. If not specified use apikey from config
+
+        Returns:
+            bool: True if test succeed
         """
         if userid is None or apikey is None:
             config = self._get_config()
@@ -121,8 +133,12 @@ class Freemobilesms(SmsProvider):
     def _post(self, data):
         """
         Post data
-        @param data: SmsData instance
-        @return True if post succeed, False otherwise
+
+        Params:
+            data: SmsData instance
+
+        Returns:
+            bool: True if post succeed, False otherwise
         """
         config = self._get_config()
         params = urllib.urlencode({

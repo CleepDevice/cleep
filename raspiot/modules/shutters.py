@@ -29,8 +29,10 @@ class Shutters(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)

@@ -16,8 +16,10 @@ __all__ = ['Openweathermap']
 
 class Openweathermap(RaspIotModule):
     """
-    FreemobileSms module
-    @see http://developer.bulksms.com/eapi/submission/send_sms/
+    OpenWeatherMap module
+
+    Note:
+        https://openweathermap.org/api
     """
 
     MODULE_CONFIG_FILE = 'openweathermap.conf'
@@ -114,8 +116,10 @@ class Openweathermap(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -171,9 +175,13 @@ class Openweathermap(RaspIotModule):
     def __get_weather(self, apikey):
         """
         Get weather condition
-        @return weather conditions (dict)
-        @see http://openweathermap.org/current#parameter for output format
-        @raise InvalidParameter, CommandError
+
+        Returns:
+            dict: weather conditions
+                http://openweathermap.org/current#parameter for output format
+
+        Raises:
+            InvalidParameter, CommandError
         """
         #check parameter
         if apikey is None or len(apikey)==0:
@@ -240,9 +248,13 @@ class Openweathermap(RaspIotModule):
     def __get_forecast(self, apikey):
         """
         Get forecast (5 days with 3 hours step)
-        @return forecast (dict)
-        @see http://openweathermap.org/forecast5 for output format
-        @raise InvalidParameter, CommandError
+
+        Returns:
+            dict: forecast
+                http://openweathermap.org/forecast5 for output format
+
+        Raises:
+            InvalidParameter, CommandError
         """
         #check parameter
         if apikey is None or len(apikey)==0:
@@ -364,8 +376,12 @@ class Openweathermap(RaspIotModule):
     def set_apikey(self, apikey):
         """
         Set openweathermap apikey
-        @param apikey: apikey (string)
-        @return True if config saved successfully
+
+        Params:
+            apikey (string): apikey
+
+        Returns:
+            bool: True if config saved successfully
         """
         if apikey is None or len(apikey)==0:
             raise MissingParameter('Apikey parameter is missing')
@@ -379,3 +395,5 @@ class Openweathermap(RaspIotModule):
         config['apikey'] = apikey
 
         return self._save_config(config)
+
+

@@ -30,13 +30,21 @@ class EmailProvider(RaspIotProvider):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+        
+        Args:
+            bus (MessageBus): bus instance
+            debug_enabled (bool): debug status
         """
         #init
         RaspIotProvider.__init__(self, bus, debug_enabled)
 
     def event_received(self, event):
+        """
+        Event received from bus
+
+        Args:
+            event (MessageRequest): received event
+        """
         if event['event']=='system.application.ready':
             #application is ready, register provider
             self.register_provider('alert', 'email', self.PROVIDER_PROFILE)
@@ -44,6 +52,12 @@ class EmailProvider(RaspIotProvider):
     def post(self, data):
         """
         Data posted to provider
+
+        Args:
+            data (EmailData): data to post
+
+        Raises:
+            MissingParameter, InvalidParameter
         """
         #check params
         if data is None:

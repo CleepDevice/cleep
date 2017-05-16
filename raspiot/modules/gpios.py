@@ -18,14 +18,25 @@ __all__ = ['Gpios']
 class GpioInputWatcher(Thread):
     """
     Class that watches for changes on specified input pin
-    We don't use GPIO lib implemented threaded callback due to a bug when executing a timer
-    within callback function.
-    /!\ This object doesn't configure pin!
+    We don't use GPIO lib implemented threaded callback due to a bug when executing a timer within callback function.
+
+    Note:
+        This object doesn't configure pin!
     """
 
     DEBOUNCE = 0.20
 
     def __init__(self, pin, uuid, on_callback, off_callback, level=GPIO.LOW):
+        """
+        Constructor
+
+        Params: 
+            pin (int): gpio pin number
+            uuid (string): device uuid
+            on_callback (function): on callback
+            off_callback (function): off callback
+            level (GPIO.LOW|GPIO.HIGH): triggered level
+        """
         #init
         Thread.__init__(self)
         Thread.daemon = True
@@ -49,6 +60,9 @@ class GpioInputWatcher(Thread):
         self.continu = False
 
     def run(self):
+        """
+        Run watcher
+        """
         last_level = None
         time_on = 0
         try:
@@ -120,6 +134,9 @@ class GpioInputWatcher(Thread):
 # GPIO20  38
 # GPIO21  40
 class Gpios(RaspIotModule):
+    """
+    Raspberry pi gpios class
+    """
 
     MODULE_CONFIG_FILE = 'gpios.conf'
     MODULE_DEPS = []
@@ -284,8 +301,10 @@ class Gpios(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: message bus instance
-        @param debug_enabled: debug status
+
+        Params:
+            bus: message bus instance
+            debug_enabled: debug status
         """
         RaspIotModule.__init__(self, bus, debug_enabled)
 
@@ -319,8 +338,12 @@ class Gpios(RaspIotModule):
     def __configure_gpio(self, device):
         """
         Configure GPIO (internal use)
-        @param device: device object
-        @return True if gpio is configured False otherwise
+
+        Params:
+            device: device object
+        
+        Returns:
+            bool: True if gpio is configured False otherwise
         """
         self.logger.debug('configuregpio: device=%s' % (device))
 
@@ -373,6 +396,9 @@ class Gpios(RaspIotModule):
     def __input_on_callback(self, uuid):
         """
         Callback when input is turned on (internal use)
+
+        Params: 
+            uuid (string): device uuid
         """
         self.logger.debug('on_callback for gpio %s triggered' % uuid)
         device = self._get_device(uuid)
@@ -385,6 +411,10 @@ class Gpios(RaspIotModule):
     def __input_off_callback(self, uuid, duration):
         """
         Callback when input is turned off
+
+        Params: 
+            uuid (string): device uuid
+            duration (float): trigger duration
         """
         self.logger.debug('off_callback for gpio %s triggered' % uuid)
         device = self._get_device(uuid)
@@ -428,7 +458,12 @@ class Gpios(RaspIotModule):
     def get_pins_description(self):
         """
         Return pins description
-        @result list of pins (dict(<pin number (int)>:<gpio name|5v|3.3v|gnd|dnc(string)>))
+
+        Results:
+            dict: dict of pins 
+                {
+                    <pin number (int)>:<gpio name|5v|3.3v|gnd|dnc(string)>
+                }
         """
         rev = GPIO.RPI_INFO['P1_REVISION']
 
@@ -444,7 +479,9 @@ class Gpios(RaspIotModule):
     def get_assigned_gpios(self):
         """
         Return assigned gpios
-        @return list of gpios (list)
+
+        Returns:
+            list: list of gpios
         """
         devices = self.get_module_devices()
         gpios = []
@@ -456,7 +493,12 @@ class Gpios(RaspIotModule):
     def get_raspi_gpios(self):
         """
         Return available GPIO pins according to board revision
-        @return list of gpios (dict(<gpio name>, <pin number>))
+
+        Returns:
+            dict: dict of gpios 
+                {
+                    <gpio name>, <pin number>
+                }
         """
         rev = GPIO.RPI_INFO['P1_REVISION']
 
@@ -474,7 +516,9 @@ class Gpios(RaspIotModule):
     def get_pins_number(self):
         """
         Return pins number according to board revision
-        @return pins number (int)
+        
+        Returns:
+            int: pins number
         """
         rev = GPIO.RPI_INFO['P1_REVISION']
 
@@ -489,12 +533,18 @@ class Gpios(RaspIotModule):
         """
         Reserve a gpio used to configure raspberry pi (ie onewire, lirc...)
         This action only flag this gpio as reserved to avoid using it again
-        @param name: name of gpio
-        @param gpio: gpio value
-        @param usage: gpio usage (must be a known value 'onewire', ?)
-        @param command_sender: command request sender (used to set gpio in readonly mode)
-        @return Created gpio device
-        @raise CommandError, MissingParameter, InvalidParameter
+
+        Params:
+            name: name of gpio
+            gpio: gpio value
+            usage: gpio usage (must be a known value 'onewire', ?)
+            command_sender: command request sender (used to set gpio in readonly mode)
+
+        Returns:
+            dict: Created gpio device
+
+        Raises:
+            CommandError, MissingParameter, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
         if command_sender=='rpcserver':
@@ -544,8 +594,12 @@ class Gpios(RaspIotModule):
     def is_reserved_gpio(self, uuid):
         """
         Return True if gpio is reserved
-        @param uuid: device uuid (string)
-        @return True if gpio is reserved, False otherwise
+
+        Params:
+            uuid (string): device uuid
+
+        Returns:
+            bool: True if gpio is reserved, False otherwise
         """
         device = self._get_device(uuid)
         if device is None:
@@ -560,14 +614,20 @@ class Gpios(RaspIotModule):
     def add_gpio(self, name, gpio, mode, keep, reverted, command_sender):
         """
         Add new gpio
-        @param name: name of gpio
-        @param gpio: gpio value
-        @param mode: mode (input or output)
-        @param keep: keep state when restarting
-        @param reverted: if true on callback will be triggered on gpio low level instead of high level
-        @param command_sender: command request sender (used to set gpio in readonly mode)
-        @return created gpio device
-        @raise CommandError, MissingParameter, InvalidParameter
+
+        Params:
+            name: name of gpio
+            gpio: gpio value
+            mode: mode (input or output)
+            keep: keep state when restarting
+            reverted: if true on callback will be triggered on gpio low level instead of high level
+            command_sender: command request sender (used to set gpio in readonly mode)
+
+        Returns:
+            dict: created gpio device
+
+        Raises:
+            CommandError, MissingParameter, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
         if command_sender=='rpcserver':
@@ -619,9 +679,16 @@ class Gpios(RaspIotModule):
     def delete_gpio(self, uuid, command_sender):
         """
         Delete gpio
-        @param uuid: device identifier
-        @return True if device was deleted, False otherwise
-        @raise CommandError, MissingParameter, Unauthorized, InvalidParameter
+
+        Params:
+            uuid: device identifier
+            command_sender (string): command sender
+
+        Returns:
+            bool: True if device was deleted, False otherwise
+
+        Raises:
+            CommandError, MissingParameter, Unauthorized, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
         if command_sender=='rpcserver':
@@ -647,9 +714,19 @@ class Gpios(RaspIotModule):
     def update_gpio(self, uuid, name, keep, reverted, command_sender):
         """
         Update gpio
-        @param uuid: device identifier
-        @return True if update was successfull, False otherwise
-        @raise CommandError, MissingParameter, Unauthorized, InvalidParameter
+
+        Params:
+            uuid (string): device identifier
+            name (string): gpio name
+            keep (bool): keep status flag
+            reverted (bool): reverted flag
+            command_sender (string): command sender
+
+        Returns:
+            bool: True if update was successfull, False otherwise
+
+        Raises:
+            CommandError, MissingParameter, Unauthorized, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
         if command_sender=='rpcserver':
@@ -678,8 +755,12 @@ class Gpios(RaspIotModule):
     def turn_on(self, uuid):
         """
         Turn on specified device
-        @param uuid: device identifier
-        @return True if command executed successfully
+
+        Params:
+            uuid (string): device identifier
+
+        Returns:
+            bool: True if command executed successfully
         """
         #check values
         device = self._get_device(uuid)
@@ -705,9 +786,15 @@ class Gpios(RaspIotModule):
     def turn_off(self, uuid):
         """
         Turn off specified device
-        @param uuid: device identifier
-        @return True if command executed successfully
-        @raise CommandError
+
+        Params:
+            uuid (string): device identifier
+
+        Returns:
+            bool: True if command executed successfully
+
+        Raises:
+            CommandError
         """
         device = self._get_device(uuid)
         if device is None:
@@ -732,9 +819,15 @@ class Gpios(RaspIotModule):
     def is_on(self, uuid):
         """
         Return gpio status (on or off)
-        @param uuid: device identifier
-        @return True if device is on, False if device is off
-        @raise CommandError
+
+        Params:
+            uuid (string): device identifier
+
+        Returns:
+            bool: True if device is on, False if device is off
+
+        Raises:
+            CommandError
         """
         #check values
         device = self._get_device(uuid)
@@ -748,7 +841,6 @@ class Gpios(RaspIotModule):
     def reset_gpios(self):
         """
         Reset all gpios turning them off
-        @return nothing
         """
         devices = self.get_module_devices()
         for uuid in devices:

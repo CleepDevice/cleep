@@ -35,8 +35,10 @@ class Pushover(PushProvider):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init
         PushProvider.__init__(self, bus, debug_enabled)
@@ -44,10 +46,14 @@ class Pushover(PushProvider):
     def __send_push(self, userkey, apikey, data):
         """
         Send push
-        @param userkey: user key
-        @param apikey: user apikey
-        @param data: data to push (PushData instance)
-        @return True if push sent successfully
+        
+        Params:
+            userkey: user key
+            apikey: user apikey
+            data: data to push (PushData instance)
+
+        Returns:
+            bool: True if push sent successfully
         """
         try:
             conn = httplib.HTTPSConnection(self.PUSHOVER_API_URL)
@@ -92,9 +98,13 @@ class Pushover(PushProvider):
     def set_config(self, userkey, apikey):
         """
         Set configuration
-        @param userkey: user key (string)
-        @param apikey: user apikey
-        @return True if config saved successfully
+
+        Params:
+            userkey (string): user key
+            apikey: user apikey
+
+        Returns:
+            bool: True if config saved successfully
         """
         if userkey is None or len(userkey)==0:
             raise MissingParameter('Userkey parameter is missing')
@@ -120,9 +130,13 @@ class Pushover(PushProvider):
     def test(self, userkey=None, apikey=None):
         """
         Send test push
-        @param userkey: user id (string)
-        @param apikey; user apikey (string)
-        @return True if test succeed
+
+        Params:
+            userkey (string): user id
+            apikey (string): user apikey
+
+        Returns:
+            bool: True if test succeed
         """
         if userkey is None or len(userkey)==0 or apikey is None or len(apikey)==0:
             config = self._get_config()
@@ -144,8 +158,12 @@ class Pushover(PushProvider):
     def _post(self, data):
         """
         Post data
-        @param data: SmsData instance
-        @return True if post succeed, False otherwise
+
+        Params:
+            data (SmsData): SmsData instance
+
+        Returns:
+            bool: True if post succeed, False otherwise
         """
         config = self._get_config()
         if config['userkey'] is None or len(config['userkey'])==0 or config['apikey'] is None or len(config['apikey'])==0:

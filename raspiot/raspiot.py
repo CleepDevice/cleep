@@ -27,11 +27,11 @@ class RaspIot(BusClient):
 
     def __init__(self, bus, debug_enabled):
         """
-        Constructor
+        Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance
-            debug_enabled (bool): flag to set debug level to logger
+            bus (MessageBus): MessageBus instance.
+            debug_enabled (bool): flag to set debug level to logger.
         """
         #init bus
         BusClient.__init__(self, bus)
@@ -49,28 +49,28 @@ class RaspIot(BusClient):
 
     def __del__(self):
         """
-        Destructor
+        Destructor.
         """
         self.stop()
 
     def __file_is_empty(self, path):
         """
-        Return True if file is empty
+        Return True if file is empty.
 
         Args:
-            path (string): path to check
+            path (string): path to check.
         
         Returns:
-            bool: True if file is empty
+            bool: True if file is empty.
         """
         return os.path.isfile(path) and not os.path.getsize(path)>0
 
     def __has_config_file(self):
         """
-        Check if module has configuration file
+        Check if module has configuration file.
 
         Returns:
-            bool: True if module has config file, False otherwise
+            bool: True if module has config file, False otherwise.
         """
         if getattr(self, 'MODULE_CONFIG_FILE', None) is None:
             return False
@@ -79,10 +79,10 @@ class RaspIot(BusClient):
 
     def _load_config(self):
         """
-        Load config file
+        Load config file.
 
         Returns:
-            dict: configuration file content or None if error occured
+            dict: configuration file content or None if error occured.
         """
         #check if module have config file
         if not self.__has_config_file():
@@ -116,13 +116,13 @@ class RaspIot(BusClient):
  
     def _save_config(self, config):
         """
-        Save config file
+        Save config file.
 
         Args:
-            config (dict): config to save
+            config (dict): config to save.
         
         Returns:
-            dict: configuration file content or None if error occured
+            dict: configuration file content or None if error occured.
         """
         out = None
         force_reload = False
@@ -151,17 +151,17 @@ class RaspIot(BusClient):
 
     def _reload_config(self):
         """
-        Reload configuration
-        Just an alias to _load_config without config content
+        Reload configuration.
+        Just an alias to _load_config without config content.
         """
         self._load_config()
 
     def _get_config(self):
         """
-        Return copy of config dict
+        Return copy of config dict.
 
         Returns:
-            dict: config file content (copy)
+            dict: config file content (copy).
         """
         #check if module have config file
         if not self.__has_config_file():
@@ -177,14 +177,14 @@ class RaspIot(BusClient):
     def _check_config(self, keys):
         """
         Check config files looking for specified keys.
-        If key not found, key is added with specified default value
-        Save new configuration file if necessary
+        If key not found, key is added with specified default value.
+        Save new configuration file if necessary.
 
         Args:
-            keys (dict): dict ov keys-default values {'key1':'default value1', ...}
+            keys (dict): dict ov keys-default values {'key1':'default value1', ...}.
 
         Returns:
-            None: nothing, only check configuration file consistency
+            None: nothing, only check configuration file consistency.
         """
         config = self._get_config()
         fixed = False
@@ -199,10 +199,10 @@ class RaspIot(BusClient):
 
     def _get_unique_id(self):
         """
-        Return unique id. Useful to get unique device identifier
+        Return unique id. Useful to get unique device identifier.
 
         Returns:
-            string: new unique id (uuid4 format)
+            string: new unique id (uuid4 format).
         """
         return str(uuid.uuid4())
 
@@ -211,7 +211,7 @@ class RaspIot(BusClient):
         Returns module configuration.
         
         Returns:
-            dict: all config content except 'devices' entry
+            dict: all config content except 'devices' entry.
         """
         config = self._get_config()
 
@@ -223,10 +223,10 @@ class RaspIot(BusClient):
 
     def get_module_devices(self):
         """
-        Returns module devices
+        Returns module devices.
 
         Returns:
-            dict: all devices registered in 'devices' config section
+            dict: all devices registered in 'devices' config section.
         """
         if self._config is not None and self._config.has_key('devices'):
             return self._config['devices']
@@ -235,10 +235,10 @@ class RaspIot(BusClient):
 
     def get_module_commands(self):
         """
-        Return available module commands
+        Return available module commands.
         
         Returns:
-            list: list of command names
+            list: list of command names.
         """
         ms = dir(self)
         for m in ms[:]:
@@ -262,15 +262,15 @@ class RaspIot(BusClient):
 
     def start(self):
         """
-        Start module
+        Start module.
         """
         BusClient.start(self)
         self._start()
 
     def _start(self):
         """
-        Post start: called just after module is started
-        This function is used to launch processes that requests cpu time and cannot be launched during init
+        Post start: called just after module is started.
+        This function is used to launch processes that requests cpu time and cannot be launched during init.
         At this time application is starting up and bus is not operational. If you need to push message to
         bus you should implement event_received method and handle system.application.ready event.
         """
@@ -278,27 +278,27 @@ class RaspIot(BusClient):
 
     def stop(self):
         """
-        Stop process
+        Stop process.
         """
         BusClient.stop(self)
         self._stop()
 
     def _stop(self):
         """
-        Pre stop: called just before module is stopped
-        This function is used to stop specific processes like threads
+        Pre stop: called just before module is stopped.
+        This function is used to stop specific processes like threads.
         """
         pass
 
     def is_module_loaded(self, module):
         """
-        Request inventory to check if specified module is loaded or not
+        Request inventory to check if specified module is loaded or not.
         
         Args:
-            module (string): module name
+            module (string): module name.
 
         Returns:
-            bool: True if module is loaded, False otherwise
+            bool: True if module is loaded, False otherwise.
         """
         resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
         if resp['error']:
@@ -318,11 +318,11 @@ class RaspIotModule(RaspIot):
 
     def __init__(self, bus, debug_enabled):
         """
-        Constructor
+        Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance
-            debug_enabled (bool): flag to set debug level to logger
+            bus (MessageBus): MessageBus instance.
+            debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
@@ -331,14 +331,14 @@ class RaspIotModule(RaspIot):
         """
         Helper function to add device in module configuration file.
         This function auto inject new entry "devices" in configuration file.
-        This function appends new device in devices section and add unique id in uuid property
-        It also appends 'name' property if not provided
+        This function appends new device in devices section and add unique id in uuid property.
+        It also appends 'name' property if not provided.
 
         Args:
-            data (dict): device data
+            data (dict): device data.
         
         Returns:
-            dict: device data if process was successful, None otherwise
+            dict: device data if process was successful, None otherwise.
         """
         config = self._get_config()
 
@@ -363,13 +363,13 @@ class RaspIotModule(RaspIot):
 
     def _delete_device(self, uuid):
         """
-        Helper function to remove device from module configuration file
+        Helper function to remove device from module configuration file.
 
         Args:
-            uuid (string): device identifier
+            uuid (string): device identifier.
 
         Returns:
-            bool: True if device was deleted, False otherwise
+            bool: True if device was deleted, False otherwise.
         """
         config = self._get_config()
 
@@ -393,14 +393,14 @@ class RaspIotModule(RaspIot):
 
     def _update_device(self, uuid, data):
         """
-        Helper function to update device
+        Helper function to update device.
 
         Args:
-            uuid (string): device identifier
-            data (dict): device data to update
+            uuid (string): device identifier.
+            data (dict): device data to update.
 
         Returns:
-            bool: True if device updated, False otherwise
+            bool: True if device updated, False otherwise.
         """
         config = self._get_config()
 
@@ -427,15 +427,15 @@ class RaspIotModule(RaspIot):
 
     def _search_device(self, key, value):
         """
-        Helper function to search a device based on the property value
-        Useful to search a device of course, but can be used to check if a name is not already assigned to a device
+        Helper function to search a device based on the property value.
+        Useful to search a device of course, but can be used to check if a name is not already assigned to a device.
 
         Args:
-            key (string): device property to search on
-            value (any): property value
+            key (string): device property to search on.
+            value (any): property value.
 
         Returns
-            dict: the device data if key-value found, or None otherwise
+            dict: the device data if key-value found, or None otherwise.
         """
         config = self._get_config()
 
@@ -458,13 +458,13 @@ class RaspIotModule(RaspIot):
 
     def _get_device(self, uuid):
         """
-        Get device according to specified identifier
+        Get device according to specified identifier.
 
         Args:
-            uuid (string): device identifier
+            uuid (string): device identifier.
 
         Returns:
-            dict: None if device not found, device data otherwise
+            dict: None if device not found, device data otherwise.
         """
         config = self._get_config()
 
@@ -481,19 +481,19 @@ class RaspIotModule(RaspIot):
 
     def _get_devices(self):
         """
-        Return module devices (alias to get_module_devices function)
+        Return module devices (alias to get_module_devices function).
 
         Returns:
-            list: list of devices
+            list: list of devices.
         """
         return self.get_module_devices()
 
     def _get_device_count(self):
         """
-        Return number of devices in configuration file"
+        Return number of devices in configuration file".
 
         Returns:
-            int: number of saved devices
+            int: number of saved devices.
         """
         if self._config.has_key('devices'):
             return len(self._config['devices'])
@@ -505,7 +505,7 @@ class RaspIotModule(RaspIot):
 
 class RaspIotProvider(RaspIotModule):
     """
-    Base raspiot class for provider
+    Base raspiot class for provider.
     It implements:
      - automatic provider registration
      - post function to post data to provider
@@ -514,22 +514,23 @@ class RaspIotProvider(RaspIotModule):
 
     def __init__(self, bus, debug_enabled):
         """
-        Constructor
+        Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance
-            debug_enabled (bool): flag to set debug level to logger
+            bus (MessageBus): MessageBus instance.
+            debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
 
-    def register_provider(self, type, subtype, profile):
+    def register_provider(self, type, subtype, profiles):
         """
-        Register provider to inventory
+        Register provider to inventory.
 
         Args:
-            type (string): type of provider
-            profiles: used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to this capabilities)
+            type (string): provider main type.
+            subtype (string): provider subtype.
+            profiles: used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to a profile).
 
         Returns:
             bool: True if provider registered successfully
@@ -537,7 +538,7 @@ class RaspIotProvider(RaspIotModule):
         if type is None or len(type)==0:
             raise CommandError('Type parameter is missing')
 
-        resp = self.send_command('register_provider', 'inventory', {'type':type, 'subtype':subtype, 'profile':profile})
+        resp = self.send_command('register_provider', 'inventory', {'type':type, 'subtype':subtype, 'profiles':profiles})
         if resp['error']:
             self.logger.error('Unable to register provider to inventory: %s' % resp['message'])
 
@@ -545,16 +546,16 @@ class RaspIotProvider(RaspIotModule):
 
     def post(self, data):
         """
-        Post data to provider
+        Post data to provider.
 
         Args:
-            data (dict): data to post
+            data (dict): data to post.
 
         Returns:
-            bool: True if post is successful
+            bool: True if post is successful.
 
         Raises:
-            NotImplementedError: if function not implemented in provider instance
+            NotImplementedError: if function not implemented in provider instance.
         """
         raise NotImplementedError('post function must implemented in a provider')
 

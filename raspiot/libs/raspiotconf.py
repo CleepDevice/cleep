@@ -17,8 +17,12 @@ class RaspiotConf():
     def __open(self):
         """
         Open config file
-        @return ConfigParser instance (ConfigParser)
-        @raise Exception if file doesn't exist
+        
+        Returns:
+            ConfigParser: ConfigParser instance
+
+        Raises:
+            Exception: if file doesn't exist
         """
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
@@ -30,7 +34,9 @@ class RaspiotConf():
     def __close(self, write=False):
         """
         Close everything and write new content if specified
-        @param write: write new content if set to True
+
+        Args:
+            write (bool): write new content if set to True
         """
         if self.__conf and write: 
             self.__conf.write(open(self.CONF, 'w'))
@@ -38,8 +44,12 @@ class RaspiotConf():
     def check(self):
         """
         Check configuration file content
-        @return True if file is conform, False otherwise
-        @raise Exception if file content is malformed
+        
+        Returns:
+            bool: True if file is conform, False otherwise
+
+        Raises:
+            Exception: if file content is malformed
         """
         conf = self.__open()
         if not conf.has_section('general') or not conf.has_section('rpc') or not conf.has_section('debug'):
@@ -56,7 +66,9 @@ class RaspiotConf():
     def as_dict(self):
         """
         Return all config content as dict
-        @return config content (dict)
+
+        Returns:
+            dict: config content
         """
         conf = self.__open()
         config = {}
@@ -71,7 +83,9 @@ class RaspiotConf():
     def get_global_debug(self):
         """
         Get global debug status
-        @return global debug status (bool)
+
+        Returns:
+            bool: global debug status
         """
         conf = self.__open()
         debug = conf.getboolean('debug', 'debug_enabled')
@@ -81,7 +95,9 @@ class RaspiotConf():
     def set_global_debug(self, debug):
         """
         Set global debug status
-        @param debug: new debug status (bool)
+
+        Args:
+            debug (bool): new debug status
         """
         if debug is None:
             raise MissingParameter('Debug parameter is missing')
@@ -95,9 +111,15 @@ class RaspiotConf():
     def install_module(self, module):
         """
         Add module to list of modules to load at startup
-        @param module: module name to load (string)
-        @return True if module installed
-        @raise InvalidParameter
+
+        Args:
+            module (string): module name to load
+
+        Returns:
+            bool: True if module installed
+
+        Raises:
+            InvalidParameter
         """
         conf = self.__open()
         
@@ -116,9 +138,15 @@ class RaspiotConf():
     def uninstall_module(self, module):
         """
         Remove module from list of loaded modules
-        @param module: module name to uninstall
-        @return True if module uninstalled
-        @raise InvalidParameter
+
+        Args:
+            module (string): module name to uninstall
+        
+        Returns:
+            bool: True if module uninstalled
+
+        Raises:
+            InvalidParameter
         """
         conf = self.__open()
         
@@ -137,8 +165,12 @@ class RaspiotConf():
     def module_is_installed(self, module):
         """
         Return True if specified module is installed
-        @param module: module name to check
-        @return True if module is installed
+        
+        Args:
+            module (string): module name to check
+
+        Returns:
+            bool: True if module is installed
         """
         conf = self.__open()
 
@@ -149,8 +181,12 @@ class RaspiotConf():
     def enable_module_debug(self, module):
         """
         Enable module debug
-        @param module: module name to debug
-        @return True if module debug enabled
+
+        Args:
+            module (string): module name to debug
+
+        Returns:
+            bool: True if module debug enabled
         """
         conf = self.__open()
         
@@ -170,8 +206,12 @@ class RaspiotConf():
     def disable_module_debug(self, module):
         """
         Disable module debug
-        @param module: module name to disable
-        @return True if module debug disabled
+
+        Args:
+            module (string): module name to disable
+                             
+        Returns:
+            bool: True if module debug disabled
         """
         conf = self.__open()
         
@@ -191,8 +231,12 @@ class RaspiotConf():
     def module_is_debugged(self, module):
         """
         Return True if module debug is enabled
-        @param module: module name to check
-        @return True if module debug is enabled, False if disabled
+
+        Args:
+            module (string): module name to check
+
+        Returns:
+            bool: True if module debug is enabled, False if disabled
         """
         conf = self.__open()
 
@@ -202,9 +246,13 @@ class RaspiotConf():
     def set_rpc_config(self, host, port):
         """
         Set rpc configuration
-        @param host: rpc server host value
-        @param port: rpc server port value
-        @return True if rpc config saved
+
+        Args:
+            host (string): rpc server host value
+            port (int): rpc server port value
+
+        Returns:
+            bool: True if rpc config saved
         """
         conf = self.__open()
 
@@ -217,7 +265,13 @@ class RaspiotConf():
     def get_rpc_config(self):
         """
         Get rpc configuration
-        @return rpc host and port values (tuple)
+
+        Returns:
+            tuple: rpc host and port values
+                (
+                    host (string),
+                    port (int)
+                )
         """
         conf = self.__open()
 
@@ -227,9 +281,13 @@ class RaspiotConf():
     def set_rpc_security(self, cert, key):
         """
         Set rpc security configuration
-        @param cert: certificate file path
-        @param key: key file path
-        @return True if values saved successfully
+
+        Args:
+            cert (string): certificate file path
+            key (string): key file path
+
+        Returns:
+            bool: True if values saved successfully
         """
         conf = self.__open()
 
@@ -242,7 +300,13 @@ class RaspiotConf():
     def get_rpc_security(self):
         """
         Get rpc security configuration
-        @return cert and key values (tuple)
+
+        Returns:
+            tuple: cert and key values
+                (
+                    cert,
+                    key
+                )
         """
         conf = self.__open()
 

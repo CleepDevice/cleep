@@ -26,16 +26,26 @@ class WpaSupplicantConf():
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
     def __init__(self):
+        """
+        Constructor
+        """
         self.__fd = None
 
     def __del__(self):
+        """
+        Destructor
+        """
         self.__close()
 
     def __open(self, mode='r'):
         """
         Open config file
-        @return file descriptor as returned by open() function
-        @raise Exception if file doesn't exist
+
+        Returns:
+            file: file descriptor as returned by open() function
+
+        Raises:
+            Exception if file doesn't exist
         """
         if not os.path.exists(self.CONF):
             raise Exception('wpa_supplicant.conf file does not exist')
@@ -93,8 +103,13 @@ class WpaSupplicantConf():
     def get_network(self, network):
         """
         Get network config
-        @param network: network name
-        @return network config (dict) or None if network is not found
+
+        Args:
+            network (string): network name
+
+        Returns:
+            dict: network config
+            None: if network is not found
         """
         networks = self.get_networks()
         for network_ in networks:
@@ -106,8 +121,12 @@ class WpaSupplicantConf():
     def delete_network(self, network):
         """
         Delete network from config
-        @param network: network name (ssid)
-        @return True if network deleted, Fale otherwise
+
+        Args:
+            network (string): network name
+
+        Returns:
+            bool: True if network deleted, False otherwise
         """
         fd = self.__open()
         content = fd.read()
@@ -138,10 +157,15 @@ class WpaSupplicantConf():
         """
         Add new network in config file
         Password is automatically encrypted using wpa_passphrase
-        @param network: network name (ssid)
-        @param encryption: type of network (wpa, wpa, wep, unsecured)
-        @param password: network password (string)
-        @param hidden: hiddent network flag (bool)
+        
+        Args:
+            network (string): network name (ssid)
+            encryption (wpa|wpa2|wpe|unsecured): type of network
+            password (string): network password
+            hidden (bool): hidden network flag
+
+        Raises:
+            MissingParameter, InvalidParameter
         """
         #check params
         if network is None or len(network)==0:

@@ -10,18 +10,28 @@ class Fstab():
     MODE_RW = 'w'
 
     def __init__(self):
+        """
+        Constructor
+        """
         self.__fd = None
         self.console = Console()
 
     def __del__(self):
+        """
+        Destructor
+        """
         if self.__fd is not None:
             self.__fd.close()
 
     def __open_file(self, mode):
         """
         Open file on specified mode
-        @param mode: opening mode (MODE_RO|MODE_RW)
-        @return file descriptor
+
+        Args:
+            mode (r|w): opening mode
+
+        Returns:
+            file: file descriptor
         """
         #close existing file descriptor first
         if self.__fd is not None:
@@ -34,8 +44,13 @@ class Fstab():
     def get_uuid_by_device(self, device):
         """
         Return uuid corresponding to device
-        @param device: device as presented in fstab
-        @return uuid (string) or None if nothing found
+
+        Args:
+            device (string): device as presented in fstab
+
+        Returns:
+            string: uuid
+            None: if nothing found
         """
         res = self.console.command('blkid | grep "%s"' % device)
         if res['error'] or res['killed']:
@@ -51,8 +66,13 @@ class Fstab():
     def get_device_by_uuid(self, uuid):
         """
         Return device corresponding to uuid
-        @param uuid: device uuid (string)
-        @return device (string) or None if nothing found
+
+        Args:
+            uuid (string): device uuid
+
+        Returns:
+            string: device
+            None: if nothing found
         """
         res = self.console.command('blkid | grep "%s"' % uuid)
         if res['error'] or res['killed']:
@@ -66,7 +86,16 @@ class Fstab():
     def get_all_devices(self):
         """
         Return all devices as returned by command blkid
-        @return list of devices (dict('device':dict(device, uuid), ...))
+
+        Returns:
+            dict: list of devices
+                {
+                    'device': {
+                        device: '',
+                        uuid: ''
+                    },
+                    ...
+                }
         """
         devices = {}
 
@@ -93,7 +122,19 @@ class Fstab():
     def get_mountpoints(self):
         """
         Return all mountpoints as presented in /etc/fstab file
-        @return list of mountpoints (dict('mountpoint': dict(device, uuid, mountpoint, mounttype, options'), ...))
+
+        Returns:
+            dict: list of mountpoints
+                {
+                    'mountpoint': {
+                        device: '',
+                        uuid: '',
+                        mountpoint: '',
+                        mounttype: '',
+                        options: ''
+                    },
+                    ...
+                }
         """
         mountpoints = {}
 
@@ -135,12 +176,18 @@ class Fstab():
     def add_mountpoint(self, mountpoint, device, mounttype, options):
         """
         Add specified mount point to /etc/fstab file
-        @param mountpoint: mountpoint (string)
-        @param device: device path (string)
-        @param mounttype: type of mountpoint (ext4, ext3...)
-        @param options: specific options for mountpoint
-        @return True if mountpoint added succesfully, False otherwise
-        @raise MissingParameter
+
+        Args:
+            mountpoint (string): mountpoint
+            device (string): device path
+            mounttype (string): type of mountpoint (ext4, ext3...)
+            options (string): specific options for mountpoint
+                              
+        Returns:
+            bool: True if mountpoint added succesfully, False otherwise
+
+        Raises:
+            MissingParameter
         """
         if mountpoint is None or len(mountpoint)==0:
             raise MissingParameter('Mountpoint parameter is missing')
@@ -155,9 +202,15 @@ class Fstab():
     def delete_mountpoint(self, mountpoint):
         """
         Delete specified mount point from /etc/fstab file
-        @param mountpoint: mountpoint to delete (string)
-        @return True if removed, False otherwise
-        @raise MissingParameter
+        
+        Args:
+            mountpoint (string): mountpoint to delete
+        
+        Returns:
+            bool: True if removed, False otherwise
+
+        Raises:
+            MissingParameter
         """
         if options is None or len(options)==0:
             raise MissingParameter('Mountpoint parameter is missing')
@@ -166,7 +219,9 @@ class Fstab():
     def reload_fstab(self):
         """
         Reload fstab file (mount -a)
-        @return True if command successful, False otherwise
+        
+        Returns:
+            bool: True if command successful, False otherwise
         """
         res = self.console.command('/bin/mount -a')
         if res['error'] or res['killed']:

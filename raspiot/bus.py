@@ -85,18 +85,18 @@ class MessageBus():
         without result, but command is sent.
 
         Args:
-            request (MessageRequest): message to push
-            timeout (float): time to wait for response. If not specified, function returns None
+            request (MessageRequest): message to push.
+            timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            MessageResponse: message response instance
-            None: if request is event or broadcast
+            MessageResponse: message response instance.
+            None: if request is event or broadcast.
 
         Raises:
-            InvalidParameter: if request is not a MessageRequest instance
-            NoResponse: if no response is received from module
-            BusNotReady: if bus is not ready when message is pushed (catch event 'system.application.ready' if exception received)
-            InvalidModule: if specified recipient is unknown
+            InvalidParameter: if request is not a MessageRequest instance.
+            NoResponse: if no response is received from module.
+            BusNotReady: if bus is not ready when message is pushed (catch event 'system.application.ready' if exception received).
+            InvalidModule: if specified recipient is unknown.
         """
         if isinstance(request, MessageRequest):
             #get request as dict
@@ -166,16 +166,19 @@ class MessageBus():
 
     def pull(self, module, timeout=0.5):
         """
-        Pull message from specified module queue
+        Pull message from specified module queue.
+
         Args:
-            module (string): module name
-            timeout (float): time to wait, default is blocking (0.5s)
+            module (string): module name;
+            timeout (float): time to wait, default is blocking (0.5s).
+
         Returns:
-            MessageResponse: received message
+            MessageResponse: received message.
+
         Raises:
-            InvalidModule: if module is unknown
-            BusError: if fatal error occured during message pulling
-            NoMessageAvailable: if no message is available
+            InvalidModule: if module is unknown.
+            BusError: if fatal error occured during message pulling.
+            NoMessageAvailable: if no message is available.
         """
         _module = module.lower()
         if self.__queues.has_key(_module):
@@ -230,9 +233,10 @@ class MessageBus():
 
     def add_subscription(self, module):
         """
-        Add new subscription
+        Add new subscription.
+
         Args:
-            module (string): module name
+            module (string): module name.
         """
         _module = module.lower()
         self.logger.debug('Add subscription for module %s' % _module)
@@ -241,11 +245,13 @@ class MessageBus():
 
     def remove_subscription(self, module):
         """
-        Remove existing subscription
+        Remove existing subscription;
+
         Args:
-            module (string): module name
+            module (string): module name.
+
         Raises:
-            InvalidParameter: if module is unknown
+            InvalidParameter: if module is unknown.
         """
         _module = module.lower()
         self.logger.debug('Remove subscription for module %s' % _module)
@@ -259,17 +265,19 @@ class MessageBus():
 
     def is_subscribed(self, module):
         """
-        Check if module is subscribed
+        Check if module is subscribed.
+
         Args:
-            module (string): module name
+            module (string): module name.
+
         Returns:
-            bool: True if module is subscribed
+            bool: True if module is subscribed.
         """
         return self.__queues.has_key(module.lower())
 
     def purge_subscriptions(self):
         """
-        Purge old subscriptions
+        Purge old subscriptions.
         """
         now = int(time.time())
         copy = self.__activities.copy()
@@ -284,9 +292,9 @@ class MessageBus():
 
 class BusClient(threading.Thread):
     """
-    BusClient class must be inherited to handle message from MessageBus
-    It reads module message, read command and execute module command
-    Finally it returns command response to message originator
+    BusClient class must be inherited to handle message from MessageBus.
+    It reads module message, read command and execute module command.
+    Finally it returns command response to message originator.
     """
     def __init__(self, bus):
         threading.Thread.__init__(self)
@@ -306,11 +314,13 @@ class BusClient(threading.Thread):
 
     def __check_params(self, function, message, sender):
         """
-        Check if message contains all necessary function parameters
+        Check if message contains all necessary function parameters.
+
         Args:
-            function (function): function reference
-            message (dict): current message content (contains all command parameters)
-            sender (string): message sender ("from" item from MessageRequest)
+            function (function): function reference.
+            message (dict): current message content (contains all command parameters).
+            sender (string): message sender ("from" item from MessageRequest).
+
         Returns:
             tuple: (
                 bool: True or False,
@@ -361,14 +371,17 @@ class BusClient(threading.Thread):
         Push message to specified module and wait for response until timeout.
         By default it is blocking but with timeout=0.0 the function returns instantly
         without result, but command is sent.
+
         Args:
-            request (MessageRequest): message to push
-            timeout (float): time to wait for response. If not specified, function returns None
+            request (MessageRequest): message to push.
+            timeout (float): time to wait for response. If not specified, function returns None.
+
         Returns:
-            MessageResponse: message response instance
-            None: if request is event or broadcast
+            MessageResponse: message response instance.
+            None: if request is event or broadcast.
+
         Raises:
-            InvalidParameter: if request is not a MessageRequest instance
+            InvalidParameter: if request is not a MessageRequest instance.
         """
         if isinstance(request, MessageRequest):
             #fill sender
@@ -387,14 +400,16 @@ class BusClient(threading.Thread):
 
     def send_event(self, event, params=None, uuid=None, to=None):
         """
-        Helper function to push event message to bus
+        Helper function to push event message to bus.
+
         Args:
-            event (string): event name
-            params (dict): event parameters
-            uuid (string): device uuid that send event. If not specified event cannot be monitored
-            to (string): event recipient. If not specified, event will be broadcasted
+            event (string): event name.
+            params (dict): event parameters.
+            uuid (string): device uuid that send event. If not specified event cannot be monitored.
+            to (string): event recipient. If not specified, event will be broadcasted.
+
         Returns:
-            None: event always returns None
+            None: event always returns None.
         """
         request = MessageRequest()
         request.to = to
@@ -406,15 +421,17 @@ class BusClient(threading.Thread):
 
     def send_command(self, command, to, params=None, timeout=3.0):
         """
-        Helper function to push command message to bus
+        Helper function to push command message to bus.
+
         Args:
-            command (string): command name
-            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return
-            params (dict): command parameters
-            timeout (float): change default timeout if you wish. Default is 3 seconds
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            params (dict): command parameters.
+            timeout (float): change default timeout if you wish. Default is 3 seconds.
+
         Returns:
-            MessageResponse: push response
-            None; if command is broadcast
+            MessageResponse: push response.
+            None; if command is broadcast.
         """
         request = MessageRequest()
         request.to = to
@@ -425,7 +442,7 @@ class BusClient(threading.Thread):
 
     def run(self):
         """
-        Bus reading process
+        Bus reading process.
         """
         self.logger.debug('BusClient %s started' % self.__name)
 

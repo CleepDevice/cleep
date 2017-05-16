@@ -19,8 +19,10 @@ class Task:
     def __init__(self, interval, task, task_args=[], task_kwargs={}):
         """
         Create new task
-        @param interval : interval to repeat task (in s)
-        @param task: function to call periodically
+        
+        Args:
+            interval (int): interval to repeat task (in seconds)
+            task (function): function to call periodically
         """
         self._task = task
         self._args = task_args
@@ -63,7 +65,9 @@ class Task:
     def set_interval(self, interval):
         """
         Define a task interval to repeat the task
-        @param interval: task interval (in s)
+
+        Args:
+            interval (int): task interval (in seconds)
         """
         self._interval = interval
   
@@ -89,12 +93,15 @@ class CountTask(Task):
     """
     Run task X times
     """
+
     def __init__(self, interval, task, count, task_args=[], task_kwargs={}):
         """
         Constructor
-        @param interval : interval to repeat task (in s)
-        @param task: function to call periodically
-        @param count: number of times to run task
+        
+        Args:
+            interval (int): interval to repeat task (in seconds)
+            task (function): function to call periodically
+            count (int): number of times to run task
         """
         Task.__init__(self, interval, task, task_args, task_kwargs)
         self._run_count = count
@@ -104,11 +111,13 @@ class BackgroundTask(Thread):
     """
     Run background task indefinitely (thread helper)
     """
+
     def __init__(self, task, pause=0.25):
         """
         Constructor
-        @param task: function to call
-        @param pause: pause between task call
+        Args:
+            task (function): function to call
+            pause (int): pause between task call (in seconds)
         """
         Thread.__init__(self)
         Thread.daemon = True
@@ -119,9 +128,15 @@ class BackgroundTask(Thread):
         self.running = True
 
     def __del__(self):
+        """
+        Destructor
+        """
         self.stop()
 
     def run(self):
+        """
+        Run task
+        """
         while self.running:
             self.task()
             for i in range(self.pause):
@@ -130,6 +145,9 @@ class BackgroundTask(Thread):
                 time.sleep(0.25)
 
     def stop(self):
+        """
+        Stop task
+        """
         self.running = False
 
 

@@ -9,8 +9,10 @@ from shutil import copy2
 
 class DhcpcdConf():
     """
-    Helper class to update and read /etc/dhcpcd.conf file
-    @see https://wiki.archlinux.org/index.php/dhcpcd
+    Helper class to update and read /etc/dhcpcd.conf file.
+
+    Note:
+        see https://wiki.archlinux.org/index.php/dhcpcd
     """
 
     CONF = '/etc/dhcpcd.conf'
@@ -21,19 +23,34 @@ class DhcpcdConf():
     MODE_APPEND = 'a'
 
     def __init__(self):
+        """
+        Constructor.
+
+        Args:
+            bus (MessageBus): MessageBus instance
+            debug_enabled (bool): flag to set debug level to logger
+        """
         self.__fd = None
+
         #make copy of original file if not exists
         if not os.path.exists(self.BACKUP):
             copy2(self.CONF, self.BACKUP)
 
     def __del__(self):
+        """
+        Destructor
+        """
         self.__close()
 
     def __open(self, mode='r'):
         """
         Open config file
-        @return file descriptor as returned by open() function
-        @raise Exception if file doesn't exist
+        
+        Returns:
+            file: file descriptor as returned by open() function
+        
+        Raises:
+            Exception: if file doesn't exist
         """
         if not os.path.exists(self.CONF):
             raise Exception('dhcpcd.conf file does not exist')
@@ -52,7 +69,9 @@ class DhcpcdConf():
     def restore_default(self):
         """
         Restore original file (at least file backuped at first class startup)
-        @return True if file restoration succeed, False otherwise
+
+        Returns:
+            bool: True if file restoration succeed, False otherwise
         """
         if os.path.exists(self.BACKUP):
             copy2(self.BACKUP, self.CONF)
@@ -135,9 +154,16 @@ class DhcpcdConf():
     def get_interface(self, interface):
         """
         Return specified interface config
-        @param interface: interface name
-        @return interface config (dict) or None if interface is not configured
-        @raise MissingParameter
+        
+        Args:
+            interface (string): interface name
+
+        Returns:
+            dict: interface config (dict)
+            None: if interface is not configured
+
+        Raises:
+            MissingParameter: if parameter is missing
         """
         #check params
         if interface is None or len(interface)==0:
@@ -152,11 +178,17 @@ class DhcpcdConf():
     def add_static_interface(self, interface, ip_address, router_address, name_server):
         """
         Add new static interface
-        @param ip_address: static ip address
-        @param router_address: router address
-        @param name_server: name server
-        @return True if interface added successfully
-        @raise MissingParameter, InvalidParameter
+        
+        Args:
+            ip_address (string): static ip address
+            router_address (string): router address
+            name_server (string): name server
+        
+        Returns
+            bool: True if interface added successfully
+                
+        Raises:
+            MissingParameter, InvalidParameter
         """
         #check params
         if interface is None or len(interface)==0:
@@ -188,9 +220,15 @@ class DhcpcdConf():
     def delete_static_interface(self, interface):
         """
         Delete new static interface
-        @param interface: interface name
-        @return True if interface is deleted, False otherwise
-        @raise MissingParameter
+
+        Args:
+            interface (string): interface name
+    
+        Returns:
+            bool: True if interface is deleted, False otherwise
+
+        Raises:
+            MissingParameter
         """
         #check params
         if interface is None or len(interface)==0:
@@ -248,11 +286,17 @@ class DhcpcdConf():
     def add_fallback_interface(self, interface, ip_address, router_address, name_server):
         """
         Configure fallback static interface
-        @param ip_address: static ip address
-        @param router_address: router address
-        @param name_server: name server
-        @return True if interface added successfully
-        @raise MissingParameter, InvalidParameter
+
+        Args:
+            ip_address (string): static ip address
+            router_address (string): router address
+            name_server (string): name server
+        
+        Returns:
+            bool: True if interface added successfully
+
+        Raises:
+            MissingParameter, InvalidParameter
         """
         #check params
         if interface is None or len(interface)==0:
@@ -286,9 +330,15 @@ class DhcpcdConf():
     def delete_fallback_interface(self, interface):
         """
         Delete fallback configuration for specified interface
-        @param interface: interface name
-        @return True if interface is deleted, False otherwise
-        @raise MissingParameter
+
+        Args:
+            interface (string): interface name
+
+        Returns:
+            bool: True if interface is deleted, False otherwise
+
+        Raises:
+            MissingParameter
         """
         #check params
         if interface is None or len(interface)==0:
