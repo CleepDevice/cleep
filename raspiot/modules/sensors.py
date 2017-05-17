@@ -12,6 +12,12 @@ import glob
 __all__ = ['Sensors']
 
 class Sensors(RaspIotModule):
+    """
+    Sensors module handles different kind of sensors:
+     - temperature (DS18B20)
+     - motion
+     - more to come...
+    """
 
     MODULE_CONFIG_FILE = 'sensors.conf'
     MODULE_DEPS = ['gpios']
@@ -33,8 +39,10 @@ class Sensors(RaspIotModule):
     def __init__(self, bus, debug_enabled):
         """
         Constructor
-        @param bus: bus instance
-        @param debug_enabled: debug status
+
+        Params:
+            bus (MessageBus): bus instance
+            debug_enabled (bool): debug status
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled)
@@ -67,8 +75,12 @@ class Sensors(RaspIotModule):
     def __search_by_gpio(self, gpio_uuid):
         """
         Search sensor connected to specified gpio_uuid
-        @param gpio_uuid: gpio uuid to search
-        @return Sensor data or None if nothing found
+
+        Params:
+            gpio_uuid (string): gpio uuid to search
+
+        Returns:
+            dict: sensor data or None if nothing found
         """
         devices = self.get_module_devices()
         for uuid in devices:
@@ -83,6 +95,10 @@ class Sensors(RaspIotModule):
     def __process_motion_sensor(self, event, sensor):
         """
         Process motion event
+
+        Params:
+            event (MessageRequest): gpio event
+            sensor (dict): sensor data
         """
         #get current time
         now = int(time.time())
@@ -118,6 +134,9 @@ class Sensors(RaspIotModule):
     def event_received(self, event):
         """
         Event received
+
+        Params:
+            event (MessageRequest): event data
         """
         #self.logger.debug('*** event received: %s' % str(event))
         #drop startup events
@@ -147,7 +166,13 @@ class Sensors(RaspIotModule):
     def get_onewire_devices(self):
         """
         Scan for devices connected on 1wire bus
-        @return array of dict(<onewire device>, <onewire path>)
+
+        Returns:
+            dict: list of onewire devices::
+                {
+                    <onewire device>, <onewire path>,
+                    ...
+                }
         """
         onewires = []
 
@@ -167,8 +192,13 @@ class Sensors(RaspIotModule):
     def __read_onewire_temperature(self, sensor):
         """
         Read temperature from 1wire device
-        @param sensor: path to 1wire device
-        @return tuple(<celsius>, <fahrenheit>) or (None, None) if error occured
+        
+        Params:
+            sensor (string): path to 1wire device
+
+        Returns:
+            tuple: temperature infos::
+                (<celsius>, <fahrenheit>) or (None, None) if error occured
         """
         tempC = None
         tempF = None
@@ -214,7 +244,9 @@ class Sensors(RaspIotModule):
     def __read_temperature(self, sensor):
         """
         Read temperature
-        @param sensor: sensor object
+
+        Params:
+            sensor (dict): sensor data
         """
         if sensor['subtype']=='onewire':
             (tempC, tempF) = self.__read_onewire_temperature(sensor)
@@ -237,7 +269,9 @@ class Sensors(RaspIotModule):
     def __start_temperature_task(self, sensor):
         """
         start temperature reading task
-        @param sensor: sensor object
+
+        Params:
+            sensor (dict): sensor data
         """
         if self.__tasks.has_key(sensor['uuid']):
             #sensor has already task
@@ -252,7 +286,9 @@ class Sensors(RaspIotModule):
     def __stop_temperature_task(self, sensor):
         """
         Stop temperature reading task
-        @param sensor: sensor object
+
+        Params:
+            sensor (dict): sensor data
         """
         if not self.__tasks.has_key(sensor['uuid']):
             #sensor hasn't already task
@@ -267,9 +303,14 @@ class Sensors(RaspIotModule):
     def __compute_temperature_offset(self, offset, offset_unit):
         """
         Compute temperature offset
-        @param offset: offset value
-        @param offset_unit: determine if specific offset is in celsius or fahrenheit
-        @return tuple(<offset celsius>, <offset fahrenheit>)
+
+        Params:
+            offset (int): offset value
+            offset_unit (celsius|fahrenheit): determine if specific offset is in celsius or fahrenheit
+
+        Returns:
+            tuple: temperature offset::
+                (<offset celsius>, <offset fahrenheit>)
         """
         if offset==0:
             #no offset
@@ -284,8 +325,12 @@ class Sensors(RaspIotModule):
     def __get_gpio_uses(self, gpio):
         """
         Return number of gpio uses
-        @param uuid: device uuid (string)
-        @return list of gpios or empty list if nothing found
+
+        Params:
+            uuid (string): device uuid
+
+        Returns:
+            list: list of gpios or empty list if nothing found
         """
         devices = self._get_devices()
         uses = 0
@@ -299,6 +344,9 @@ class Sensors(RaspIotModule):
     def get_module_config(self):
         """
         Get full module configuration
+
+        Returns:
+            dict: module configuration
         """
         config = {}
         config['raspi_gpios'] = self.get_raspi_gpios()
@@ -307,6 +355,9 @@ class Sensors(RaspIotModule):
     def get_raspi_gpios(self):
         """
         Get raspi gpios
+
+        Returns:
+            dict: raspi gpios
         """
         resp = self.send_command('get_raspi_gpios', 'gpios')
         if resp['error']:
@@ -318,6 +369,9 @@ class Sensors(RaspIotModule):
     def get_assigned_gpios(self):
         """
         Return assigned gpios
+
+        Returns:
+            dict: assigned gpios
         """
         resp = self.send_command('get_assigned_gpios', 'gpios')
         if resp['error']:
@@ -329,14 +383,18 @@ class Sensors(RaspIotModule):
     def add_temperature_onewire(self, name, device, path, interval, offset, offset_unit, gpio='GPIO4'):
         """
         Add new onewire temperature sensor (DS18B20)
-        @param name: sensor name
-        @param device: onewire device as returned by get_onewire_devices function
-        @param path: onewire path as returned by get_onewire_devices function
-        @param interval: interval between temperature reading (seconds)
-        @param offset: temperature offset
-        @param offset_unit: temperature offset unit (string 'celsius' or 'fahrenheit')
-        @param gpio: onewire gpio (for now this parameter is useless because forced to default onewire gpio GPIO4)
-        @return True if sensor added
+
+        Params:
+            name (string): sensor name
+            device (string): onewire device as returned by get_onewire_devices function
+            path (string): onewire path as returned by get_onewire_devices function
+            interval (int): interval between temperature reading (seconds)
+            offset (int): temperature offset
+            offset_unit (string): temperature offset unit (string 'celsius' or 'fahrenheit')
+            gpio (string): onewire gpio (for now this parameter is useless because forced to default onewire gpio GPIO4)
+
+        Returns:
+            bool: True if sensor added
         """
         #check values
         if name is None or len(name)==0:
@@ -410,12 +468,16 @@ class Sensors(RaspIotModule):
     def update_temperature_onewire(self, uuid, name, interval, offset, offset_unit):
         """
         Update onewire temperature sensor
-        @param uuid: sensor identifier
-        @param name: sensor name
-        @param interval: interval between reading (seconds)
-        @param offset_unit: temperature offset unit (string 'celsius' or 'fahrenheit')
-        @param offset: temperature offset
-        @return True if device update is successful
+
+        Params:
+            uuid (string): sensor identifier
+            name (string): sensor name
+            interval (int): interval between reading (seconds)
+            offset (int): temperature offset
+            offset_unit (string): temperature offset unit (string 'celsius' or 'fahrenheit')
+
+        Returns:
+            bool: True if device update is successful
         """
         device = self._get_device(uuid)
         if not uuid:
@@ -461,10 +523,14 @@ class Sensors(RaspIotModule):
     def add_motion_generic(self, name, gpio, reverted):
         """
         Add new generic motion sensor
-        @param name: sensor name
-        @param gpio: sensor gpio
-        @param reverted: set if gpio is reverted or not (bool)
-        @return True if sensor added successfully
+
+        Params:
+            name (string): sensor name
+            gpio (string): sensor gpio
+            reverted (bool): set if gpio is reverted or not (bool)
+
+        Returns:
+            bool: True if sensor added successfully
         """
         #get assigned gpios
         assigned_gpios = self.get_assigned_gpios()
@@ -515,10 +581,14 @@ class Sensors(RaspIotModule):
     def update_motion_generic(self, uuid, name, reverted):
         """
         Update generic motion sensor
-        @param uuid: sensor identifier
-        @param name: sensor name
-        @param reverted: set if gpio is reverted or not (bool)
-        @return True if device update is successful
+
+        Params:
+            uuid (string): sensor identifier
+            name (string): sensor name
+            reverted (bool): set if gpio is reverted or not
+
+        Returns:
+            bool: True if device update is successful
         """
         device = self._get_device(uuid)
         if not uuid:
@@ -545,8 +615,12 @@ class Sensors(RaspIotModule):
     def delete_sensor(self, uuid):
         """
         Delete specified sensor
-        @param uuid: sensor identifier
-        @return True if deletion succeed
+
+        Params:
+            uuid (string): sensor identifier
+
+        Returns:
+            bool: True if deletion succeed
         """
         device = self._get_device(uuid)
         if not uuid:
@@ -588,8 +662,3 @@ class Sensors(RaspIotModule):
 
         return True
 
-
-if __name__ == '__main__':
-    #testu
-    o = Sensor()
-    print o.get_raspi_gpios()

@@ -212,7 +212,9 @@ class Messageboard(RaspIotModule):
     def set_duration(self, duration):
         """
         Configure message cycle duration
-        @param duration: message cycle duration
+
+        Params:
+            duration (float): message cycle duration
         """
         #save duration
         config = self._get_config()
@@ -230,6 +232,16 @@ class Messageboard(RaspIotModule):
     def get_module_config(self):
         """
         Return module full configuration
+
+        Returns:
+            dict: module configuration::
+                {
+                    messages (list): list of displayed messages
+                    duration (float): message duration
+                    units (dict): hours, minutes and days in user translation
+                    speed (int): scroll speed
+                    status (dict): current message data
+                }
         """
         config = {}
         config['messages'] = self.get_messages()
@@ -243,24 +255,32 @@ class Messageboard(RaspIotModule):
     def get_module_devices():
         """
         Return updated messageboard device
+
+        Returns:
+            dict: current message data
         """
         devices = super(Messageboard, self).get_module_devices()
         uuid = devices.keys()[0]
         data = self.get_current_message()
         devices[uuid].update(data)
+
         return devices
 
     def get_duration(self):
         """
         Return message cycle duration
-        @return duration
+
+        Returns:
+            float: duration (seconds)
         """
         return self._config['duration']
 
     def set_speed(self, speed):
         """
         Configure scrolling message speed
-        @param speed: message speed
+
+        Params:
+            speed (int): message speed
         """
         #save speed
         config = self._get_config()
@@ -273,17 +293,23 @@ class Messageboard(RaspIotModule):
     def get_speed(self):
         """
         Return scrolling message speed
-        @return speed
+
+        Returns:
+            int: speed
         """
         return self._config['speed']
 
     def add_message(self, message, start, end):
         """
         Add advertisment to display
-        @param message: message to display
-        @param start: date to start displaying message from
-        @param end: date to stop displaying message
-        @return message uuid
+
+        Params:
+            message (string): message to display
+            start (timestamp): date to start displaying message from
+            end (timestamp): date to stop displaying message
+        
+        Returns:
+            string: message uuid
         """
         #create message object
         msg = Message(message, start, end)
@@ -302,7 +328,12 @@ class Messageboard(RaspIotModule):
     def delete_message(self, uuid):
         """
         Delete message which uuid is specified
-        @param uuid: message uuid
+
+        Params:
+            uuid (string): message uuid
+
+        Returns:
+            bool: True if message deleted
         """
         deleted = False
         #delete message from config
@@ -328,10 +359,15 @@ class Messageboard(RaspIotModule):
     def replace_message(self, uuid, message, start, end):
         """
         Replace message by new specified infos. Useful to cycle message transparently
-        @param uuid: message uuid to replace content
-        @param message: message to display
-        @param start: date to start displaying message from
-        @param end: date to stop displaying message
+        
+        Params:
+            uuid: message uuid to replace content
+            message: message to display
+            start: date to start displaying message from
+            end: date to stop displaying message
+
+        Returns:
+            bool: True if message replaced
         """
         #replace message in config
         replaced = False
@@ -360,6 +396,9 @@ class Messageboard(RaspIotModule):
     def get_messages(self):
         """
         Return all messages
+
+        Returns:
+            list: list of messages
         """
         msgs = []
         for msg in self.messages:
@@ -369,6 +408,14 @@ class Messageboard(RaspIotModule):
     def get_current_message(self):
         """
         Return current displayed message
+
+        Returns:
+            dict: current message data::
+                {
+                    nomessage (bool): True if no message displayed
+                    off (bool): True if board is off
+                    message (string): current message
+                }
         """
         out = {
             'nomessage': False,
@@ -391,7 +438,14 @@ class Messageboard(RaspIotModule):
     def get_units(self):
         """
         Return time units
-        @return dict {days, hours, minutes}
+
+        Returns:
+            dict: units::
+                {
+                    days (string): days in user lang
+                    hours (string): hours in user lang
+                    minutes (string): minutes in user lang
+                }
         """
         return {
             'days': self._config['unit_days'],
@@ -402,6 +456,11 @@ class Messageboard(RaspIotModule):
     def set_units(self, minutes, hours, days):
         """
         Set board time units
+
+        Params:
+            minutes (string): minutes in user lang
+            hours (string): hourss in user lang
+            days (string): days in user lang
         """
         #save units in config
         if minutes and hours and days:
@@ -440,6 +499,9 @@ class Messageboard(RaspIotModule):
     def is_on(self):
         """
         Return board status (on/off)
+
+        Returns:
+            bool: True if board is on, False otherwise
         """
         return self.board.is_on()
 

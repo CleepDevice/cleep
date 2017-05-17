@@ -21,8 +21,10 @@ class PlaySound(Thread):
     def __init__(self, filepath, delete=False):
         """
         Constructor
-        @param filepath: sound filepath
-        @param filedesc: file descriptor. Closed at end of playback
+        
+        Params:
+            filepath (string): sound filepath
+            filedesc (file): file descriptor. Closed at end of playback
         """
         #init
         Thread.__init__(self)

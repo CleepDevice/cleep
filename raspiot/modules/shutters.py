@@ -12,6 +12,13 @@ __all__ = ['Shutters']
 
 
 class Shutters(RaspIotModule):
+    """
+    Shutters module helps user configures GPIOS to control roller shutters. It allows:
+     - open and close shutters in software (using dashboard widget)
+     - configure relays control
+     - configure switches
+     - close shutters at specific level (in percentage)
+    """
 
     MODULE_CONFIG_FILE = 'shutters.conf'
     MODULE_DEPS = ['gpios']
@@ -54,6 +61,9 @@ class Shutters(RaspIotModule):
     def get_module_config(self):
         """
         Get full module configuration
+
+        Returns:
+            dict: module configuration
         """
         config = {}
         config['raspi_gpios'] = self.get_raspi_gpios()
@@ -62,6 +72,9 @@ class Shutters(RaspIotModule):
     def event_received(self, event):
         """
         Event received from bus
+
+        Params:
+            event (MessageRequest): event data
         """
         self.logger.debug('Event received %s' % event)
         #drop startup events
@@ -131,6 +144,9 @@ class Shutters(RaspIotModule):
     def get_raspi_gpios(self):
         """
         Get raspi gpios
+
+        Returns:
+            dict: raspi gpios
         """
         resp = self.send_command('get_raspi_gpios', 'gpios')
         if resp['error']:
@@ -142,6 +158,9 @@ class Shutters(RaspIotModule):
     def get_assigned_gpios(self):
         """
         Return assigned gpios
+
+        Returns:
+            dict: assigned gpios
         """
         resp = self.send_command('get_assigned_gpios', 'gpios')
         if resp['error']:
@@ -153,7 +172,9 @@ class Shutters(RaspIotModule):
     def __stop_action(self, shutter):
         """
         Stop specified shutter
-        @param shutter: shutter object
+
+        Params:
+            shutter (dict): shutter data
         """
         #first of all cancel timer if necessary
         if self.__timers.has_key(shutter['uuid']):
@@ -188,7 +209,9 @@ class Shutters(RaspIotModule):
     def __open_action(self, shutter):
         """
         Open specified shutter
-        @param shutter: shutter object
+
+        Params:
+            shutter (dict): shutter data
         """
         #turn on gpio
         gpio_uuid = shutter['shutter_open_uuid']
@@ -207,8 +230,10 @@ class Shutters(RaspIotModule):
     def __close_action(self, shutter, level):
         """
         Close specified shutter
-        @param shutter: shutter object
-        @param level: level to close shutter
+
+        Params:
+            shutter (dict): shutter data
+            level (int): level to close shutter (percentage)
         """
         #turn on gpio
         gpio_uuid = shutter['shutter_close_uuid']
@@ -239,9 +264,11 @@ class Shutters(RaspIotModule):
         """
         Execute action according to parameters
         Centralize here all process to avoid turning off and on at the same time
-        @param shutter: concerned shutter
-        @param open_shutter: True if action is to open shutter. False if is close action
-        @param close_level: open or close shutter at specified level value (percentage)
+
+        Params:
+            shutter (dict): concerned shutter data
+            open_shutter (bool): True if action is to open shutter. False if is close action
+            close_level (int): open or close shutter at specified level value (percentage)
         """
         if not shutter:
             self.logger.error('__execute_action: shutter is not defined')
@@ -301,13 +328,17 @@ class Shutters(RaspIotModule):
     def add_shutter(self, name, shutter_open, shutter_close, delay, switch_open, switch_close):
         """
         Add shutter
-        @param name: shutter name
-        @param shutter_open: shutter_open gpio
-        @param shutter_close: shutter_close gpio
-        @param delay: shutter delay
-        @param switch_open: switch_open gpio
-        @param switch_close: switch_close gpio
-        @return True if shutter added
+
+        Paarams:
+            name (string): shutter name
+            shutter_open (string): shutter_open gpio
+            shutter_close (string): shutter_close gpio
+            delay (int): shutter delay (seconds)
+            switch_open (string): switch_open gpio
+            switch_close (string): switch_close gpio
+
+        Returns:
+            bool: True if shutter added
         """
         #get used gpios
         assigned_gpios = self.get_assigned_gpios()
@@ -401,7 +432,12 @@ class Shutters(RaspIotModule):
     def delete_shutter(self, uuid):
         """
         Delete specified shutter
-        @param uuid: device identifier
+
+        Params:
+            uuid (string): device identifier
+
+        Raises:
+            CommandError, InvalidParameter, MissingParameter
         """
         device = self._get_device(uuid)
         if not uuid:
@@ -437,10 +473,15 @@ class Shutters(RaspIotModule):
 
     def update_shutter(self, uuid, name, delay):
         """
+
         Update specified shutter
-        @param uuid: device identifier
-        @param name: shutter name
-        @param delay: shutter delay
+        Params:
+            uuid (string): device identifier
+            name (string): shutter name
+            delay (int): shutter delay (seconds)
+
+        Raises:
+            CommandError, InvalidParameter, MissingParameter
         """
         shutter = self._get_device(uuid)
         if not uuid:
@@ -466,8 +507,10 @@ class Shutters(RaspIotModule):
     def change_status(self, uuid, status):
         """
         Change shutter status
-        @param uuid: device identifier
-        @param status: shutter status
+
+        Params:
+            uuid (string): device identifier
+            status (string): shutter status
         """
         self.logger.debug('change_status for shutter "%s" to "%s"' % (str(uuid), str(status)))
         device = self._get_device(uuid)
@@ -491,6 +534,14 @@ class Shutters(RaspIotModule):
     def __end_of_timer(self, uuid, gpio_uuid, new_status):
         """
         Triggered when timer is over
+
+        Params:
+            uuid (string): device identifier
+            gpio_uuid (string): gpio device identifier
+            new_status (string): new shutter status
+
+        Raises:
+            CommandError
         """
         #turn off specified gpio
         self.logger.debug('end_of_timer for gpio "%s"' % gpio_uuid)
@@ -504,7 +555,12 @@ class Shutters(RaspIotModule):
     def open_shutter(self, uuid):
         """
         Open specified shutter
-        @param uuid: device identifier
+
+        Params:
+            uuid (string): device identifier
+
+        Raises:
+            InvalidParameter
         """
         self.logger.debug('Open shutter %s' % (uuid))
         device = self._get_device(uuid)
@@ -515,7 +571,12 @@ class Shutters(RaspIotModule):
     def close_shutter(self, uuid):
         """
         Close specified shutter
-        @param uuid: device identifier
+
+        Params:
+            uuid (string): device identifier
+
+        Raises:
+            InvalidParameter
         """
         self.logger.debug('Close shutter %s' % (uuid))
         device = self._get_device(uuid)
@@ -526,7 +587,12 @@ class Shutters(RaspIotModule):
     def stop_shutter(self, uuid):
         """
         Stop specified shutter
-        @param uuid: device identifier
+
+        Params:
+            uuid (string): device identifier
+
+        Raises:
+            InvalidParameter
         """
         self.logger.debug('stop_shutter %s' % uuid)
         device = self._get_device(uuid)
@@ -538,8 +604,13 @@ class Shutters(RaspIotModule):
         """
         Close shutter at specified level.
         If shutter is not opened, it is opened first then close at level.
-        @param uuid: device uuid
-        @param level: open shutter at specified level value (percentage)
+
+        Params:
+            uuid (string): device uuid
+            level (int): open shutter at specified level value (percentage)
+
+        Raises:
+            InvalidParameter
         """
         self.logger.debug('level_shutter %s' % uuid)
         device = self._get_device(uuid)
@@ -551,7 +622,3 @@ class Shutters(RaspIotModule):
             raise InvalidParameter('Level value must be between 0 and 100')
         self.__execute_action(device, True, level)
 
-if __name__ == '__main__':
-    #testu
-    o = Shutters()
-    print o.get_raspi_gpios()
