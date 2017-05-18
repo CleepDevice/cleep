@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse
+from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse, CommandError
 from raspiot.raspiot import RaspIotModule
 import time
 from threading import Thread, Lock
@@ -11,26 +11,166 @@ from collections import deque
 import time
 from raspiot.libs.task import Task
 import shutil
+import re
+import traceback
 
 __all__ = ['Actions']
 
-class Script(Thread):
+class ScriptDebugLogger():
+    """
+    Logger instance for script debugging
+    """
 
-    def __init__(self, script, bus_push, disabled, test=False):
+    def __init__(self, bus_push):
+        """
+        Constructor
+        
+        Params:
+            bus_push (function) callback to bus push function
+        """
+        self.logs = []
+        self.__bus_push = bus_push
+
+    def get_messages(self):
+        """
+        Return all messages
+
+        Returns:
+            list: messages
+        """
+        return self.logs
+
+    def __add_message(self, message, level):
+        """
+        Add message. Format output adding timestamp
+
+        Params:
+            message (string): message
+            level (string): log level
+        """
+        #store message
+        #log = '%s %s: %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), level.upper(), message)
+        #self.logs.append(log)
+
+        #push message
+        request = MessageRequest()
+        request.event = 'actions.debug.message'
+        request.params = {
+            'message': message,
+            'level': level.upper(),
+            'timestamp': time.time()
+        }
+
+        #push message
+        resp = None
+        try:
+            resp = self.__bus_push(request)
+        except:
+            pass
+
+    def debug(self, message):
+        """
+        Info message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'DEBUG')
+
+    def info(self, message):
+        """
+        Info message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'INFO')
+
+    def warning(self, message):
+        """
+        Warning message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'WARNING')
+
+    def warn(self, message):
+        """
+        Warning message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'WARNING')
+
+    def error(self, message):
+        """
+        Error message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'ERROR')
+
+    def fatal(self, message):
+        """
+        Critical message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'CRITICAL')
+
+    def critical(self, message):
+        """
+        Critical message
+
+        Params:
+            message (string): message
+        """
+        self.__add_message(message, 'CRITICAL')
+
+    def exception(self, message):
+        """
+        Handle exception message
+        """
+        lines = traceback.format_exc().split('\n')
+        self.__add_message(message, 'EXCEPTION')
+        for line in lines:
+            if len(line.strip())>0:
+                self.__add_message(line, 'EXCEPTION')
+
+
+
+
+class Script(Thread):
+    """
+    Script class launches isolated thread for an action
+    It handles 2 kinds of process:
+     - if debug parameter is True, Script instance runs action once and allows you to get output traces
+     - if debug parameter is False, Script instance runs undefinitely (until end of raspiot)
+    """
+
+    def __init__(self, script, bus_push, disabled, debug=False, debug_event=None):
         """
         Constructor
 
         Args:
             script (string): full script path
             bus_push (callback): bus push function
-            test (bool): set to True to execute this script once
+            disabled (bool): script disabled status
+            debug (bool): set to True to execute this script once
+            debug_event (MessageRequest): event that trigger script
         """
         #init
         Thread.__init__(self)
         self.logger = logging.getLogger(os.path.basename(script))
 
         #members
-        self.__test = test
+        self.__debug = debug
+        if debug:
+            self.__debug_logger = ScriptDebugLogger(bus_push)
         self.script = script
         self.__bus_push = bus_push
         self.__events = deque()
@@ -124,22 +264,22 @@ class Script(Thread):
             else:
                 return resp
 
-        #logger helper
-        logger = self.logger
-
-        if self.__test:
+        if self.__debug:
             #event in queue, get event
-            current_event = self.__events.pop()
             self.logger.debug('Script execution')
+
+            #special logger for debug to store trace
+            logger = self.__debug_logger
 
             #and execute file
             try:
                 execfile(self.script)
-                self.last_execution = int(time.time())
             except:
-                self.logger.exception('Fatal error in script "%s"' % self.script)
-                #self.__exec_script()
+                logger.exception('Fatal error in script "%s"' % self.script)
         else:
+            #logger helper
+            logger = self.logger
+
             #loop forever
             while self.__continu:
                 if len(self.__events)>0:
@@ -313,18 +453,119 @@ class Actions(RaspIotModule):
         for script in self.__scripts:
             self.__scripts[script].push_event(event)
 
+    def get_script(self, script):
+        """
+        Return a script
+
+        Params:
+            script (string): script name
+
+        Returns:
+            dict: script data::
+                {
+                    visual (string): visual editor used to edit file or None if no editor used
+                    code (string): source code
+                    header (string): source file header (can contains necessary infos for visual editor)
+                }
+
+        Raises:
+            InvalidParameter: if script not found
+            CommandError: if error occured processing script
+        """
+        if not self.__scripts.has_key(script):
+            raise InvalidParameter('Unknown script "%s"' % script)
+        path = os.path.join(Actions.SCRIPTS_PATH, script)
+        if not os.path.exists(path):
+            raise InvalidParameter('Script "%s" does not exist' % script)
+
+        output = {
+            'visual': None,
+            'code': None,
+            'header': None
+        }
+
+        #read file content
+        self.logger.debug('Loading script: %s' % path)
+        fd = open(path)
+        content = fd.read()
+        fd.close()
+
+        #parse file
+        groups = re.findall('^(?:\"\"\"(.*)\"\"\"\s)?(.*)$', content, re.S)
+        if len(groups)==1:
+            #seems good
+            try:
+                output['header'] = groups[0][0].strip()
+                output['code'] = groups[0][1].strip()
+                groups = re.findall('^editor:(.*?)?\s(.*)$', output['header'])
+                output['visual'] = None
+                if groups and len(groups)==1:
+                    output['visual'] = groups[0][0]
+                    output['header'] = groups[0][1]
+            except Exception as e:
+                self.logger.exception('Exception when loading script %s:' % path)
+                raise CommandError('Unable to load script')
+        else:
+            self.logger.warning('Unhandled source code: %s' % groups)
+
+        return output
+
+    def save_script(self, script, editor, header, code):
+        """
+        Save script content. If script name if not found, it will create new script
+
+        Params:
+            script (string): script name
+            editor (string): editor name
+            header (string): script header (header comments, may contains editor specific stuff)
+            code (string): source code
+
+        Returns:
+            bool: True if script saved successfully
+
+        Raises:
+            MissingParameter: if parameter is missing
+            CommandError: if error processing script
+        """
+        if not script or len(script)==0:
+            raise InvalidParameter('Script parameter is missing')
+        if not editor or len(editor)==0:
+            raise InvalidParameter('editor parameter is missing')
+        if not header or len(header)==0:
+            raise InvalidParameter('Header parameter is missing')
+        if not code or len(code)==0:
+            raise InvalidParameter('Code parameter is missing')
+
+        #open script for writing
+        path = os.path.join(Actions.SCRIPTS_PATH, script)
+        self.logger.debug('Opening script: %s' % path)
+        fd = open(path, 'w')
+        
+        #write content
+        content = '"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
+        fd.write(content)
+        fd.close()
+
     def get_scripts(self):
         """
         Return scripts
         
         Returns:
-            list: list of scripts
+            list: list of scripts::
+                [
+                    {
+                        name (string): script name
+                        lastexecution (timestamp): last execution time
+                        disabled (bool): True if script is disabled
+                    },
+                    ...
+                ]
         """
         scripts = []
         for script in self.__scripts:
             script = {
                 'name': script,
-                'last_execution': self.__scripts[script].get_last_execution(),
+                'lastexecution': self.__scripts[script].get_last_execution(),
                 'disabled': self.__scripts[script].is_disabled()
             }
             scripts.append(script)
@@ -350,8 +591,6 @@ class Actions(RaspIotModule):
         config['scripts'][script]['disabled'] = disabled
         self._save_config(config)
         self.__scripts[script].set_disabled(disabled)
-
-        return True
 
     def delete_script(self, script):
         """
@@ -403,8 +642,6 @@ class Actions(RaspIotModule):
             self.logger.error('Script file "%s" doesn\'t exist' % filepath)
             raise Exception('Script file "%s"  doesn\'t exists' % filepath)
 
-        return True 
-
     def download_script(self, script):
         """
         Download specified script
@@ -425,4 +662,26 @@ class Actions(RaspIotModule):
         else:
             #script doesn't exist, raise exception
             raise Exception('Script "%s" doesn\'t exist' % script)
+
+    def debug_script(self, script, event_name=None, event_values=None):
+        """
+        Launch script debugging. Script output will be send to message bus as event
+
+        Params:
+            script (string): script name
+            event_name (string): event name
+            event_values (dict): event values
+
+        Raises:
+            InvalidParameter
+        """
+        if not self.__scripts.has_key(script):
+            raise InvalidParameter('Unknown script "%s"' % script)
+        path = os.path.join(Actions.SCRIPTS_PATH, script)
+        if not os.path.exists(path):
+            raise InvalidParameter('Script "%s" does not exist' % script)
+        
+        #TODO handle event
+        debug = Script(os.path.join(Actions.SCRIPTS_PATH, script), self.push, False, True)
+        debug.start()
 

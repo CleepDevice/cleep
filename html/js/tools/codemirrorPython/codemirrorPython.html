@@ -1,0 +1,75 @@
+<div layout="column" ng-cloak>
+
+    <!-- toolbar -->
+    <md-toolbar layout="row" class="md-hue-1">
+        <div flex="66" class="md-toolbar-tools">
+            <md-button href="#!module/actions" class="md-raised" aria-label="Back">
+                <md-icon md-font-set="material-icons">arrow_back</md-icon>
+                Back
+            </md-button>
+            <h2>Action editor</h2>
+            <span flex></span>
+            <md-button aria-label="Save" ng-click="codeCtl.save()">
+                <md-icon md-font-set="material-icons">save</md-icon>
+                Save
+            </md-button>
+            <md-button aria-label="Save as">
+                <md-icon md-font-set="material-icons">save</md-icon>
+                Save as
+            </md-button>
+        </div>
+        <md-divider></md-divider>
+        <div flex="33" class="md-toolbar-tools">
+            <h2>Debug output</h2>
+            <span flex></span>
+            <md-button aria-label="Debug" ng-click="codeCtl.debug()">
+                <md-icon md-font-set="material-icons">play_circle_filled</md-icon>
+                Debug
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <div layout="row" layout-padding>
+        <div flex="66">
+            <!-- source code -->
+            <div ui-codemirror ui-codemirror-opts="codeCtl.options" ng-model="codeCtl.code"></div>
+        </div>
+        <div flex="33">
+            <!-- debug output -->
+            <md-list>
+                <md-list-item ng-repeat="debug in codeCtl.debugs" class="debug-line">
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='DEBUG'" class="debug-icon-debug">
+                        <md-tooltip md-direction="right">Debug</md-tooltip>
+                        bug_report
+                    </md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='INFO'" class="debug-icon-info">
+                        <md-tooltip md-direction="right">Info</md-tooltip>
+                        lightbulb_outline
+                    </md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='WARNING'" class="debug-icon-warning">
+                        <md-tooltip md-direction="right">Warning</md-tooltip>
+                        warning
+                    </md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='ERROR'" class="debug-icon-error">
+                        <md-tooltip md-direction="right">Error</md-tooltip>
+                        error
+                    </md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='CRITICAL'" class="debug-icon-critical">
+                        <md-tooltip md-direction="right">Critical</md-tooltip>
+                        healing
+                    </md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="debug.level==='EXCEPTION'" class="debug-icon-exception">
+                        <md-tooltip md-direction="right">Exception</md-tooltip>
+                        thumb_down
+                    </md-icon>
+                    <p>
+                        <span class="md-body-2">{{debug.timestamp | hrMilliseconds}}</span> : <span class="md-body-1">{{debug.message}}</span>
+                    </p>
+                </md-list-item>
+            </md-list>
+        </div>
+    </div>
+
+
+</div>
+

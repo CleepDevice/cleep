@@ -94,6 +94,22 @@ RaspIot.filter('hrTime', function($filter) {
 });
 
 /**
+ * Timestamp in milliseconds to human readable string
+ */
+RaspIot.filter('hrMilliseconds', function($filter) {
+    return function(ts) {
+        if( angular.isUndefined(ts) || ts===null )
+        {
+            return '-';
+        }
+        else
+        {
+            return moment.unix(ts).format('HH:mm:ss.SSS');
+        }
+    };
+});
+
+/**
  * Temperature to string (with unit)
  */
 RaspIot.filter('temperature', function($filter) {

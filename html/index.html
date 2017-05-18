@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/raspiot.css"/>
     <link rel="stylesheet" href="css/nv.d3.min.css"/>
     <link rel="stylesheet" href="css/angular-block-ui.min.css"/>
+    <link rel="stylesheet" href="css/codemirror.css"/>
 </head>
 <body ng-app="RaspIot" layout-fill ng-cloak>
 
@@ -22,7 +23,7 @@
                 </h2>
                 <span flex></span>
                 <md-button ng-if="mainCtl.restart" class="md-raised md-accent" aria-label="Restart">
-                    Restart RaspIot to apply changes
+                    Restart to apply changes
                 </md-button>
                 <md-button href="#!dashboard" class="md-icon-button" aria-label="Dashboard">
                     <md-tooltip md-direction="bottom">Dashboard</md-tooltip>
@@ -60,6 +61,9 @@
     <!-- plugins -->
     <script src="js/libs/moment.min.js"></script>
     <script src="js/libs/angular-base64.min.js"></script>
+    <script src="js/libs/codemirror.js"></script>
+    <script src="js/libs/codemirror-python.js"></script>
+    <script src="js/libs/ui-codemirror.js"></script>
 
     <!-- application -->
     <script src="js/tools/helpers.js"></script>
@@ -93,6 +97,7 @@
     <script src="js/tools/network/wifi.js"></script>
     <script src="js/tools/network/wired.js"></script>
     <script src="js/tools/gpiosPins/gpiosPins.js"></script>
+    <script src="js/tools/codemirrorPython/codemirrorPython.js"></script>
     <script src="js/configuration/gpios/gpios.js"></script>
     <script src="js/configuration/shutters/shutters.js"></script>
     <script src="js/configuration/sounds/sounds.js"></script>

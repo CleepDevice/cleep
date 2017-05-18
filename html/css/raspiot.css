@@ -104,7 +104,7 @@ md-toast.info .md-toast-content {
     font-size: 14px;
 }
 
-/* gpioPins */
+/********** gpioPins **********/
 .board {
     width: 650px;
     background-color: #008500;
@@ -188,7 +188,46 @@ md-toast.info .md-toast-content {
     cursor: not-allowed;
 }
 
-/*.pin-selected {
-   background-color: #1DAF5F !important;
-}*/
 
+/********** debug list item **********/
+.debug-line {
+    border-bottom-color: rgba(0,0,0,0.12);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+
+.debug-icon-debug {
+    color: #4CAF50;
+    margin-right: 15px !important;
+}
+
+.debug-icon-info {
+    color: #2196F3;
+    margin-right: 15px !important;
+}
+
+.debug-icon-warning {
+    color: #FF9800;
+    margin-right: 15px !important;
+}
+
+.debug-icon-error {
+    color: #F44336;
+    margin-right: 15px !important;
+}
+
+.debug-icon-critical {
+    color: #795548;
+    margin-right: 15px !important;
+}
+
+.debug-icon-exception {
+    color: #9C27B0;
+    margin-right: 15px !important;
+}
+
+/********** codemirror **********/
+.CodeMirror {
+    border: 1px solid #eee;
+    height: 500px !important;
+}

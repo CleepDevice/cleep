@@ -18,6 +18,10 @@
                 </td>
                 <td md-cell>{{script.last_execution | hrDatetime}}</td>
                 <td md-cell>
+                    <md-button class="md-icon-button" href="{{'#!module/actions/edit/'+script.name}}" aria-label="Edit script">
+                        <md-tooltip md-direction="bottom">Edit script</md-tooltip>
+                        <md-icon md-font-set="material-icons">edit</md-icon>
+                    </md-button>
                     <md-button class="md-icon-button" ng-click="actionsCtl.disableScript(script.name, true)" ng-if="!script.disabled" aria-label="Disable script">
                         <md-tooltip md-direction="bottom">Disable script</md-tooltip>
                         <md-icon md-font-set="material-icons">lock</md-icon>
