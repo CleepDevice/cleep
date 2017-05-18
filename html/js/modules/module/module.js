@@ -25,7 +25,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
     }];
 
     var moduleLink = function(scope, element, attrs, controller) {
-        //see watchcollection above !
         controller.init($routeParams.name);
     };
 
