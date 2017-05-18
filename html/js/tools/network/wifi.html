@@ -57,7 +57,8 @@
             </md-input-container>
             <div class="padding-row-with-input">
                 <md-button class="md-icon-button" ng-click="wifiCtl.showPassword=!wifiCtl.showPassword" ng-disabled="wifiCtl.disablePasswordInput(interface)" aria-label="Show password">
-                    <md-icon md-font-set="material-icons">remove_red_eye</md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="!wifiCtl.showPassword">visibility</md-icon>
+                    <md-icon md-font-set="material-icons" ng-if="wifiCtl.showPassword">visibility_off</md-icon>
                     <md-tooltip md-direction="left">Show password</md-tooltip>
                 </md-icon>
             </div>
