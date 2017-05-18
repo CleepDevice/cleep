@@ -324,54 +324,57 @@ class Openweathermap(RaspIotModule):
         """
         Weather task in charge to refresh weather condition every hours
         """
-        self.logger.debug('Update weather conditions')
-        #get api key
-        config = self._get_config()
-        if config['apikey'] is not None and len(config['apikey'])>0:
-            #apikey configured, get weather
-            weather = self.__get_weather(config['apikey'])
+        try:
+            self.logger.debug('Update weather conditions')
+            #get api key
+            config = self._get_config()
+            if config['apikey'] is not None and len(config['apikey'])>0:
+                #apikey configured, get weather
+                weather = self.__get_weather(config['apikey'])
 
-            #save current weather conditions
-            device = self._get_devices()[self.__owm_uuid]
-            device['lastupdate'] = int(time.time())
-            if weather.has_key('weather') and len(weather['weather'])>0:
-                if weather['weather'][0].has_key('icon'):
-                    device['icon'] = 'http://openweathermap.org/img/w/%s.png' % weather['weather'][0]['icon']
-                else:
-                    device['icon'] = null
-                if weather['weather'][0].has_key('id'):
-                    device['current'] = self.OWM_WEATHER_CODES[weather['weather'][0]['id']]
-                else:
-                    device['current'] = None
-            if weather.has_key('main'):
-                if weather['main'].has_key('temp'):
-                    device['celsius'] = weather['main']['temp']
-                    device['fahrenheit'] = weather['main']['temp'] * 9.0 / 5.0  + 32.0
-                else:
-                    device['celsius'] = None
-                    device['fahrenheit'] = None
-                if weather['main'].has_key('pressure'):
-                    device['pressure'] = weather['main']['pressure']
-                else:
-                    device['pressure'] = None
-                if weather['main'].has_key('humidity'):
-                    device['humidity'] = weather['main']['humidity']
-                else:
-                    device['humidity'] = None
-            if weather.has_key('wind'):
-                if weather['wind'].has_key('speed'):
-                    device['wind_speed'] = weather['wind']['speed']
-                else:
-                    device['wind_speed'] = None
-                if weather['wind'].has_key('deg'):
-                    index = int(round( (weather['wind']['deg'] % 360) / 22.5) + 1)
-                    device['wind_direction'] = self.OWM_WIND_DIRECTIONS[index]
-                else:
-                    device['wind_direction'] = None
-            self._update_device(self.__owm_uuid, device)
+                #save current weather conditions
+                device = self._get_devices()[self.__owm_uuid]
+                device['lastupdate'] = int(time.time())
+                if weather.has_key('weather') and len(weather['weather'])>0:
+                    if weather['weather'][0].has_key('icon'):
+                        device['icon'] = 'http://openweathermap.org/img/w/%s.png' % weather['weather'][0]['icon']
+                    else:
+                        device['icon'] = null
+                    if weather['weather'][0].has_key('id'):
+                        device['current'] = self.OWM_WEATHER_CODES[weather['weather'][0]['id']]
+                    else:
+                        device['current'] = None
+                if weather.has_key('main'):
+                    if weather['main'].has_key('temp'):
+                        device['celsius'] = weather['main']['temp']
+                        device['fahrenheit'] = weather['main']['temp'] * 9.0 / 5.0  + 32.0
+                    else:
+                        device['celsius'] = None
+                        device['fahrenheit'] = None
+                    if weather['main'].has_key('pressure'):
+                        device['pressure'] = weather['main']['pressure']
+                    else:
+                        device['pressure'] = None
+                    if weather['main'].has_key('humidity'):
+                        device['humidity'] = weather['main']['humidity']
+                    else:
+                        device['humidity'] = None
+                if weather.has_key('wind'):
+                    if weather['wind'].has_key('speed'):
+                        device['wind_speed'] = weather['wind']['speed']
+                    else:
+                        device['wind_speed'] = None
+                    if weather['wind'].has_key('deg'):
+                        index = int(round( (weather['wind']['deg'] % 360) / 22.5) + 1)
+                        device['wind_direction'] = self.OWM_WIND_DIRECTIONS[index]
+                    else:
+                        device['wind_direction'] = None
+                self._update_device(self.__owm_uuid, device)
 
-            #and emit event
-            self.send_event('openweathermap.weather.update', device, self.__owm_uuid)
+                #and emit event
+                self.send_event('openweathermap.weather.update', device, self.__owm_uuid)
+        except Exception as e:
+            self.logger.exception('Exception during weather task')
 
     def set_apikey(self, apikey):
         """
