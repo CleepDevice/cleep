@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse, CommandError
+from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse, CommandError, InvalidModule
 from raspiot.raspiot import RaspIotModule
 import time
 from threading import Thread, Lock
@@ -28,30 +28,16 @@ class ScriptDebugLogger():
         Params:
             bus_push (function) callback to bus push function
         """
-        self.logs = []
         self.__bus_push = bus_push
-
-    def get_messages(self):
-        """
-        Return all messages
-
-        Returns:
-            list: messages
-        """
-        return self.logs
 
     def __add_message(self, message, level):
         """
-        Add message. Format output adding timestamp
+        Emit debug message event.
 
         Params:
             message (string): message
             level (string): log level
         """
-        #store message
-        #log = '%s %s: %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), level.upper(), message)
-        #self.logs.append(log)
-
         #push message
         request = MessageRequest()
         request.event = 'actions.debug.message'
@@ -252,12 +238,14 @@ class Script(Thread):
             request.params = params
 
             #push message
-            resp = None
+            resp = MessageResponse()
             try:
                 resp = self.__bus_push(request)
+            except InvalidModule:
+                raise Exception('Module "%" does not exit (loaded?)' % to)
             except NoResponse:
                 #handle long response
-                resp = None
+                raise Exception('No response from "%s" module' % to)
 
             if resp!=None and isinstance(resp, MessageResponse):
                 return resp.to_dict()
@@ -276,6 +264,12 @@ class Script(Thread):
                 execfile(self.script)
             except:
                 logger.exception('Fatal error in script "%s"' % self.script)
+
+            #send end event
+            request = MessageRequest()
+            request.event = 'actions.debug.end'
+            resp = self.__bus_push(request)
+
         else:
             #logger helper
             logger = self.logger

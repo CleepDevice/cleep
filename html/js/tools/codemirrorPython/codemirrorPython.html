@@ -9,11 +9,11 @@
             </md-button>
             <h2>Action editor</h2>
             <span flex></span>
-            <md-button aria-label="Save" ng-click="codeCtl.save()">
+            <md-button aria-label="Save" ng-click="codeCtl.save()" ng-disabled="codeCtl.debugging">
                 <md-icon md-font-set="material-icons">save</md-icon>
                 Save
             </md-button>
-            <md-button aria-label="Save as">
+            <md-button aria-label="Save as" ng-disabled="codeCtl.debugging">
                 <md-icon md-font-set="material-icons">save</md-icon>
                 Save as
             </md-button>
@@ -22,7 +22,7 @@
         <div flex="33" class="md-toolbar-tools">
             <h2>Debug output</h2>
             <span flex></span>
-            <md-button aria-label="Debug" ng-click="codeCtl.debug()">
+            <md-button aria-label="Debug" ng-click="codeCtl.debug()" ng-disabled="codeCtl.debugging">
                 <md-icon md-font-set="material-icons">play_circle_filled</md-icon>
                 Debug
             </md-button>

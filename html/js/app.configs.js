@@ -51,14 +51,17 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
         .primaryPalette('amber')
         .accentPalette('blue')
         .dark();
+
     /*$mdThemingProvider
-        .theme('alt')
-        .primaryPalette('blue-grey')
-        .accentPalette('amber');
+        .theme('default')
+        .primaryPalette('blue')
+        .accentPalette('orange')
+        .backgroundPalette('grey');
     $mdThemingProvider
-        .theme('alt-dark')
-        .primaryPalette('blue-grey')
-        .accentPalette('amber')
+        .theme('dark')
+        .primaryPalette('blue')
+        .accentPalette('orange')
+        .backgroundPalette('grey')
         .dark();*/
 }]);
 

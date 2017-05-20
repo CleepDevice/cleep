@@ -13,6 +13,7 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
         self.codemirrorInstance = null;
         self.debugs = [];
         self.modified = false;
+        self.debugging = false;
         self.options = {
             mode : { 
                 name: "python",
@@ -41,8 +42,26 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
          */
         self.debug = function()
         {
+            //clear debug output
             self.debugs = [];
-            actionsService.debugScript(self.script);
+            self.debugging = true;
+
+            if( self.modified )
+            {
+                //save source code first
+                actionsService.saveScript(self.script, 'manual', self.header, self.code)
+                    .then(function() {
+                        self.modified = false;
+
+                        //launch debug
+                        actionsService.debugScript(self.script);
+                    });
+            }
+            else
+            {
+                //launch debug
+                actionsService.debugScript(self.script);
+            }
         };
 
         /**
@@ -53,6 +72,7 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
             actionsService.saveScript(self.script, 'manual', self.header, self.code)
                 .then(function() {
                     toast.success('Action script saved');
+                    self.modified = false;
                 });
         };
 
@@ -83,6 +103,10 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
             //catch debug message
             $rootScope.$on('actions.debug.message', function(event, uuid, params) {
                 self.debugs.push(params);
+            });
+
+            $rootScope.$on('actions.debug.end', function(event, uuid, params) {
+                self.debugging = false;
             });
         };
 
