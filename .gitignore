@@ -6,3 +6,4 @@ raspiot/test.py
 node_modules/
 docs/_build
 dist/
+**/*.swp
