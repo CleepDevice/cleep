@@ -207,7 +207,7 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def register_provider(self, type, subtype, profile, command_sender):
+    def register_provider(self, type, subtype, profiles, command_sender):
         """
         Register new provider
 
@@ -240,7 +240,7 @@ class Inventory(RaspIotModule):
 
         #register new provider
         self.providers[type][subtype][command_sender] = {
-            'profile': profile
+            'profiles': profiles
         }
         
         return True
