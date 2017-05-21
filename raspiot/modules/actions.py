@@ -487,15 +487,18 @@ class Actions(RaspIotModule):
 
         #parse file
         groups = re.findall('^(?:\"\"\"(.*)\"\"\"\s)?(.*)$', content, re.S)
+        self.logger.debug(groups)
         if len(groups)==1:
             #seems good
             try:
-                output['header'] = groups[0][0].strip()
-                output['code'] = groups[0][1].strip()
-                groups = re.findall('^editor:(.*?)?\s(.*)$', output['header'])
-                output['visual'] = None
+                output['header'] = groups[0][0]
+                output['code'] = groups[0][1]
+                self.logger.debug('header=%s' % output['header'])
+                groups = re.findall('^\seditor:(.*?)\s(.*)$', output['header'], re.S)
+                self.logger.debug(groups)
+                output['editor'] = None
                 if groups and len(groups)==1:
-                    output['visual'] = groups[0][0]
+                    output['editor'] = groups[0][0]
                     output['header'] = groups[0][1]
             except Exception as e:
                 self.logger.exception('Exception when loading script %s:' % path)
@@ -522,13 +525,13 @@ class Actions(RaspIotModule):
             MissingParameter: if parameter is missing
             CommandError: if error processing script
         """
-        if not script or len(script)==0:
+        if script is None or len(script)==0:
             raise InvalidParameter('Script parameter is missing')
-        if not editor or len(editor)==0:
+        if editor is None or len(editor)==0:
             raise InvalidParameter('editor parameter is missing')
-        if not header or len(header)==0:
+        if header is None:
             raise InvalidParameter('Header parameter is missing')
-        if not code or len(code)==0:
+        if code is None:
             raise InvalidParameter('Code parameter is missing')
 
         #open script for writing
@@ -540,6 +543,9 @@ class Actions(RaspIotModule):
         content = '"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
         fd.write(content)
         fd.close()
+
+        #force script loading
+        self.__load_scripts()
 
     def get_scripts(self):
         """

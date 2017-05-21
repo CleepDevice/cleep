@@ -2,7 +2,7 @@
  * Actions configuration directive
  * Handle actions module configuration
  */
-var actionsConfigDirective = function($rootScope, toast, raspiotService, actionsService, confirm, $mdDialog) {
+var actionsConfigDirective = function($rootScope, toast, raspiotService, actionsService, confirm, $mdDialog, $window) {
 
     var actionController = ['$scope', function($scope) {
         var self = this;
@@ -17,18 +17,56 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
         };
 
         /** 
-         * Open add dialog
+         * Open upload dialog
          */
-        self.openAddDialog = function() {
+        self.openUploadDialog = function() {
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'actionsCtl',
-                templateUrl: 'js/configuration/actions/addAction.html',
+                templateUrl: 'js/configuration/actions/uploadAction.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
             }); 
         }; 
+
+        /**
+         * Open add dialog
+         */
+        self.openAddDialog = function() {
+            var dial = $mdDialog.prompt()
+                .title('New action name')
+                .textContent('Give a name to your action script')
+                .placeholder('Name')
+                .ariaLabel('Name')
+                .initialValue('')
+                //.targetEvent(ev)
+                .ok('Create new action')
+                .cancel('Cancel');
+
+            var script = null;
+
+            $mdDialog.show(dial)
+                .then(function(newScript) {
+                    //check script name
+                    if( !newScript.endsWith('.py') )
+                    {
+                        newScript += '.py';
+                    }
+
+                    //save new script
+                    script = newScript;
+                    return actionsService.saveScript(script, 'manual', '', '');
+                })
+                .then(function() {
+                    //reload scripts list
+                    return raspiotService.reloadModuleConfig('actions');
+                })
+                .then(function() {
+                    //edit new script
+                    $window.location.href = '#!/module/actions/edit/' + script;
+                });
+        };
 
         /**
          * Delete script
@@ -109,7 +147,11 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
             var actions = [{
                 icon: 'add_circle_outline',
                 callback: self.openAddDialog,
-                tooltip: 'Add script'
+                tooltip: 'Create script'
+            }, {
+                icon: 'file_upload',
+                callback: self.openUploadDialog,
+                tooltip: 'Upload script'
             }]; 
             $rootScope.$broadcast('enableFab', actions);
         };
@@ -130,5 +172,5 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('actionsConfigDirective', ['$rootScope', 'toastService', 'raspiotService', 'actionsService', 'confirmService', '$mdDialog', actionsConfigDirective]);
+RaspIot.directive('actionsConfigDirective', ['$rootScope', 'toastService', 'raspiotService', 'actionsService', 'confirmService', '$mdDialog', '$window', actionsConfigDirective]);
 

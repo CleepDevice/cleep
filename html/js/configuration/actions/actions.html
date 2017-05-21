@@ -16,7 +16,7 @@
                     <del ng-if="script.disabled">{{script.name}}</del>
                     <span ng-if="!script.disabled">{{script.name}}</span>
                 </td>
-                <td md-cell>{{script.last_execution | hrDatetime}}</td>
+                <td md-cell>{{script.lastexecution | hrDatetime}}</td>
                 <td md-cell>
                     <md-button class="md-icon-button" href="{{'#!module/actions/edit/'+script.name}}" aria-label="Edit script">
                         <md-tooltip md-direction="bottom">Edit script</md-tooltip>

@@ -82,10 +82,10 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
          */
         self.saveAs = function(ev)
         {
-            var confirm = $mdDialog.prompt()
+            var dial = $mdDialog.prompt()
                 .title('Save as')
                 .textContent('Give new name to your action script')
-                .placeholder('name')
+                .placeholder('Name')
                 .ariaLabel('Name')
                 .initialValue(self.script)
                 .targetEvent(ev)
@@ -94,8 +94,14 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
 
             var newScript = null;
 
-            $mdDialog.show(confirm)
+            $mdDialog.show(dial)
                 .then(function(script) {
+                    //check script name
+                    if( !script.endsWith('.py') )
+                    {
+                        script += '.py';
+                    }
+
                     //first of all save current script
                     newScript = script;
                     return actionsService.saveScript(self.script, 'manual', self.header, self.code);
