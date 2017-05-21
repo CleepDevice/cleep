@@ -9,11 +9,15 @@
             </md-button>
             <h2>Action editor</h2>
             <span flex></span>
+            <md-button aria-label="Show header" ng-click="codeCtl.showHeader=!codeCtl.showHeader" ng-disabled="codeCtl.debugging">
+                <md-icon md-font-set="material-icons">view_headline</md-icon>
+                Header
+            </md-button>
             <md-button aria-label="Save" ng-click="codeCtl.save()" ng-disabled="codeCtl.debugging">
                 <md-icon md-font-set="material-icons">save</md-icon>
                 Save
             </md-button>
-            <md-button aria-label="Save as" ng-disabled="codeCtl.debugging">
+            <md-button aria-label="Save as" ng-click="codeCtl.saveAs()" ng-disabled="codeCtl.debugging">
                 <md-icon md-font-set="material-icons">save</md-icon>
                 Save as
             </md-button>
@@ -31,8 +35,11 @@
 
     <div layout="row" layout-padding>
         <div flex="66">
+            <!-- header -->
+            <div ui-codemirror ng-if="codeCtl.showHeader" ui-codemirror-opts="codeCtl.options" ng-model="codeCtl.header" class="codemirror-header"></div>
+
             <!-- source code -->
-            <div ui-codemirror ui-codemirror-opts="codeCtl.options" ng-model="codeCtl.code"></div>
+            <div ui-codemirror ui-codemirror-opts="codeCtl.options" ng-model="codeCtl.code" class="codemirror-code"></div>
         </div>
         <div flex="33">
             <!-- debug output -->

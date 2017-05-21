@@ -466,6 +466,7 @@ class Actions(RaspIotModule):
             InvalidParameter: if script not found
             CommandError: if error occured processing script
         """
+        self.logger.debug('Config: %s' % self._config)
         if not self.__scripts.has_key(script):
             raise InvalidParameter('Unknown script "%s"' % script)
         path = os.path.join(Actions.SCRIPTS_PATH, script)
@@ -679,3 +680,40 @@ class Actions(RaspIotModule):
         debug = Script(os.path.join(Actions.SCRIPTS_PATH, script), self.push, False, True)
         debug.start()
 
+    def rename_script(self, old_script, new_script):
+        """
+        Rename script
+
+        Args:
+            old_script (string): old script name
+            new_script (string): new script name
+
+        Raises:
+            MissingParameter, InvalidParameter
+        """
+        if old_script is None or len(old_script)==0:
+            raise MissingParameter('Old_script parameter is missing')
+        if new_script is None or len(new_script)==0:
+            raise MissingParameter('New_script parameter is missing')
+        if old_script==new_script:
+            raise InvalidParameter('Script names must be differents')
+        if not self.__scripts.has_key(old_script):
+            raise InvalidParameter('Script "%s" does not exist' % old_script)
+        if self.__scripts.has_key(new_script):
+            raise InvalidParameter('Script "%s" already exists' % new_script)
+
+        #rename script in filesystem
+        shutil.move(os.path.join(Actions.SCRIPTS_PATH, old_script), os.path.join(Actions.SCRIPTS_PATH, new_script))
+        time.sleep(0.5)
+
+        #rename script in config
+        config = self._get_config()
+        old = config['scripts'][old_script]
+        config['scripts'][new_script] = old
+        del config['scripts'][old_script]
+        self._save_config(config)
+
+        #reload scripts
+        self.__load_scripts()
+
+        

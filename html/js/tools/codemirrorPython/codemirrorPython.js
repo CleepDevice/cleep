@@ -3,7 +3,7 @@
  *
  * Usage: <div codemirror-python-directive></div>
  */
-var codemirrorPythonDirective = function($rootScope, actionsService, toast, raspiotService, confirm, $routeParams) {
+var codemirrorPythonDirective = function($rootScope, actionsService, toast, raspiotService, confirm, $routeParams, $mdDialog, $window) {
 
     var codemirrorPythonController = ['$scope', function($scope) {
         var self = this;
@@ -14,6 +14,7 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
         self.debugs = [];
         self.modified = false;
         self.debugging = false;
+        self.showHeader = false;
         self.options = {
             mode : { 
                 name: "python",
@@ -77,6 +78,43 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
         };
 
         /**
+         * Save as
+         */
+        self.saveAs = function(ev)
+        {
+            var confirm = $mdDialog.prompt()
+                .title('Save as')
+                .textContent('Give new name to your action script')
+                .placeholder('name')
+                .ariaLabel('Name')
+                .initialValue(self.script)
+                .targetEvent(ev)
+                .ok('Save as')
+                .cancel('Cancel');
+
+            var newScript = null;
+
+            $mdDialog.show(confirm)
+                .then(function(script) {
+                    //first of all save current script
+                    newScript = script;
+                    return actionsService.saveScript(self.script, 'manual', self.header, self.code);
+                })
+                .then(function() {
+                    //then rename it
+                    return actionsService.renameScript(self.script, newScript);
+                })
+                .then(function() {
+                    //reload actions configuration
+                    return raspiotService.reloadModuleConfig('actions');
+                })
+                .then(function() {
+                    //and change page editor
+                    $window.location.href = '#!/module/actions/edit/' + newScript;
+                });
+        }
+
+        /**
          * Refresh editor
          */
         self.refreshEditor = function()
@@ -128,5 +166,5 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('codemirrorPythonDirective', ['$rootScope', 'actionsService', 'toastService', 'raspiotService', 'confirmService', '$routeParams', codemirrorPythonDirective]);
+RaspIot.directive('codemirrorPythonDirective', ['$rootScope', 'actionsService', 'toastService', 'raspiotService', 'confirmService', '$routeParams', '$mdDialog', '$window', codemirrorPythonDirective]);
 

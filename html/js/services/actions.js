@@ -64,6 +64,13 @@ var actionsService = function($q, $rootScope, rpcService) {
         return rpcService.sendCommand('debug_script', 'actions', {'script':script, 'event_name':eventName, 'event_values':eventValues});
     };
 
+    /**
+     * Rename script
+     */
+    self.renameScript = function(oldScript, newScript) {
+        return rpcService.sendCommand('rename_script', 'actions', {'old_script':oldScript, 'new_script':newScript});
+    };
+
 };
     
 var RaspIot = angular.module('RaspIot');
