@@ -12,15 +12,44 @@
             </div>
         </md-toolbar>
 
-        <md-dialog-content layout="column">
-            <div>
+        <md-dialog-content layout="row" layout-align="center center" layout-padding>
+            <div flex="25" style="text-align:center;">
+                <md-icon class="icon-xl" ng-class="owmCtl.getIconClass()"></md-icon>
+            </div>
+            <div flex="75" layout="column" layout-padding>
+                <div style="text-align:center;">
+                    <span class="md-headline">{{owmCtl.device.celsius}}°C : {{owmCtl.device.condition}}</span>
+                </div>
+                <div layout="row" layout-align="space-around stretch">
+                    <div>
+                        <md-icon class="wi wi-humidity">
+                            <md-tooltip>Humidity</md-tooltip>
+                        </md-icon>
+                        <span>{{owmCtl.device.humidity}}%</span>
+                    </div>
+                    <div>
+                        <md-icon class="wi wi-barometer">
+                            <md-tooltip>Pressure</md-tooltip>
+                        </md-icon>
+                        <span>{{owmCtl.device.pressure}}hPa</span>
+                    </div>
+                    <div>
+                        <md-icon ng-class="owmCtl.getWindClass()">
+                            <md-tooltip>Wind (direction {{owmCtl.device.wind_direction}})</md-tooltip>
+                        </md-icon>
+                        <span>{{owmCtl.device.wind_speed}}m/s</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!--<div>
                 <md-card flex="100">
                     <md-card-content layout="row" layout-padding>
                             <div>
-                                <img src="{{owmCtl.device.icon}}"/>
+                                <md-icon class="icon-md" ng-class="owmCtl.getIconClass()"></md-icon>
                             </div>
                             <div class="md-display-1">
-                                <span>{{owmCtl.device.celsius}}°C : {{owmCtl.device.current}}</span>
+                                <span>{{owmCtl.device.celsius}}°C : {{owmCtl.device.condition}}</span>
                             </div>
                     </md-card-content>
                 </md-card>
@@ -65,7 +94,7 @@
                         </div>
                     </md-card-content>
                 </md-card>
-            </div>
+            </div>-->
         </md-dialog-content>
 
     </form>

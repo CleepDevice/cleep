@@ -286,11 +286,11 @@ class Openweathermap(RaspIotModule):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             req = urllib2.urlopen('%s?%s' % (self.OWM_FORECAST_URL, params), context=context)
             res = req.read()
-            self.logger.debug('Request response: %s' % (res))
             req.close()
 
             #parse request result
             data = json.loads(res)
+            self.logger.debug('Request response: %s' % (data))
             if data.has_key('cod'):
                 if data['cod']!=200:
                     #request failed, get error message
@@ -331,6 +331,7 @@ class Openweathermap(RaspIotModule):
             if config['apikey'] is not None and len(config['apikey'])>0:
                 #apikey configured, get weather
                 weather = self.__get_weather(config['apikey'])
+                #forecast = self.__get_forecast(config['apikey'])
 
                 #save current weather conditions
                 device = self._get_devices()[self.__owm_uuid]
@@ -341,9 +342,11 @@ class Openweathermap(RaspIotModule):
                     else:
                         device['icon'] = null
                     if weather['weather'][0].has_key('id'):
-                        device['current'] = self.OWM_WEATHER_CODES[weather['weather'][0]['id']]
+                        device['condition'] = self.OWM_WEATHER_CODES[weather['weather'][0]['id']]
+                        device['code'] = int(weather['weather'][0]['id'])
                     else:
-                        device['current'] = None
+                        device['condition'] = None
+                        device['code'] = None
                 if weather.has_key('main'):
                     if weather['main'].has_key('temp'):
                         device['celsius'] = weather['main']['temp']
@@ -399,4 +402,10 @@ class Openweathermap(RaspIotModule):
 
         return self._save_config(config)
 
+    def get_weather(self):
+        """
+        Return current weather conditions
+        Useful to use it in action script
+        """
+        return self._get_devices()[self.__owm_uuid]
 
