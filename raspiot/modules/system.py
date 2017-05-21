@@ -646,7 +646,7 @@ class System(RaspIotModule):
         memory = self.get_memory_usage()
 
         #detect memory leak
-        percent = float(memory['available'])/float(memory['total'])*100.0
+        percent = (float(memory['total'])-float(memory['available']))/float(memory['total'])*100.0
         if percent>=self.THRESHOLD_MEMORY:
             self.send_event('system.alert.memory', {'percent':percent, 'threshold':self.THRESHOLD_MEMORY})
 
