@@ -17,8 +17,8 @@
     </md-toolbar>
 
     <!-- modules list -->
-    <div layout="row" layout-xs="column" layout-wrap="">
-        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25" flex-xs="100">
+    <div layout="row" layout-align="space-around center" layout-xs="column" layout-align-xs="space-between stretch" layout-wrap="">
+        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25">
 
             <md-card>
                 <md-card-title>

@@ -12,89 +12,85 @@
             </div>
         </md-toolbar>
 
-        <md-dialog-content layout="row" layout-align="center center" layout-padding>
-            <div flex="25" style="text-align:center;">
-                <md-icon class="icon-xl" ng-class="owmCtl.getIconClass()"></md-icon>
+        <md-dialog-content layout="column" layout-padding>
+
+            <!-- weather -->
+            <div>
+                <span class="md-title">Current conditions</span>
             </div>
-            <div flex="75" layout="column" layout-padding>
-                <div style="text-align:center;">
-                    <span class="md-headline">{{owmCtl.device.celsius}}°C : {{owmCtl.device.condition}}</span>
+            <div layout="row" layout-align="center center">
+                <div flex="25" style="text-align:center;">
+                    <md-icon class="icon-xl" ng-class="owmCtl.getIconClass()"></md-icon>
                 </div>
-                <div layout="row" layout-align="space-around stretch">
-                    <div>
-                        <md-icon class="wi wi-humidity">
-                            <md-tooltip>Humidity</md-tooltip>
-                        </md-icon>
-                        <span>{{owmCtl.device.humidity}}%</span>
+                <div flex="75" layout="column" layout-padding>
+                    <div style="text-align:center;">
+                        <span class="md-headline">{{owmCtl.device.celsius}}°C : {{owmCtl.device.condition}}</span>
                     </div>
-                    <div>
-                        <md-icon class="wi wi-barometer">
-                            <md-tooltip>Pressure</md-tooltip>
-                        </md-icon>
-                        <span>{{owmCtl.device.pressure}}hPa</span>
-                    </div>
-                    <div>
-                        <md-icon ng-class="owmCtl.getWindClass()">
-                            <md-tooltip>Wind (direction {{owmCtl.device.wind_direction}})</md-tooltip>
-                        </md-icon>
-                        <span>{{owmCtl.device.wind_speed}}m/s</span>
+                    <div layout="row" layout-align="space-around stretch">
+                        <div>
+                            <md-icon class="wi wi-humidity">
+                                <md-tooltip>Humidity</md-tooltip>
+                            </md-icon>
+                            <span>{{owmCtl.device.humidity}}%</span>
+                        </div>
+                        <div>
+                            <md-icon class="wi wi-barometer">
+                                <md-tooltip>Pressure</md-tooltip>
+                            </md-icon>
+                            <span>{{owmCtl.device.pressure}}hPa</span>
+                        </div>
+                        <div>
+                            <md-icon ng-class="owmCtl.getWindClass()">
+                                <md-tooltip>Wind (direction {{owmCtl.device.wind_direction}})</md-tooltip>
+                            </md-icon>
+                            <span>{{owmCtl.device.wind_speed}}m/s</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!--<div>
-                <md-card flex="100">
-                    <md-card-content layout="row" layout-padding>
-                            <div>
-                                <md-icon class="icon-md" ng-class="owmCtl.getIconClass()"></md-icon>
-                            </div>
-                            <div class="md-display-1">
-                                <span>{{owmCtl.device.celsius}}°C : {{owmCtl.device.condition}}</span>
-                            </div>
-                    </md-card-content>
-                </md-card>
+
+            <!-- forecast -->
+            <div>
+                <span class="md-title">{{owmCtl.selection}} forecast</span>
+            </div>
+            <div ng-if="owmCtl.loading" layout="row" layout-align="space-around center" style="height:200px;">
+                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            </div>
+            <div ng-if="!owmCtl.loading">
+                <nvd3 options='owmCtl.graphOptions' data='owmCtl.forecastData'></nvd3>
             </div>
             <div layout="row">
-                <md-card flex="33">
-                    <md-card-content layout="column" layout-padding layout-align="center center">
-                        <div>
-                            <md-icon class="typcn typcn-waves icon-md"></md-icon>
-                            <span class="md-title">Humidity</span>
-                        </div>
-                        <div>
-                            <div>
-                                <span class="md-display-1">{{owmCtl.device.humidity}}%</span>
-                            </div>
-                        </div>
-                    </md-card-content>
-                </md-card>
-                <md-card flex="33">
-                    <md-card-content layout="column" layout-padding layout-align="center center">
-                        <div>
-                            <md-icon class="typcn typcn-thermometer icon-md"></md-icon>
-                            <span class="md-title">Pressure</span>
-                        </div>
-                        <div>
-                            <div>
-                                <span class="md-display-1">{{owmCtl.device.pressure}}hPa</span>
-                            </div>
-                        </div>
-                    </md-card-content>
-                </md-card>
-                <md-card flex="33">
-                    <md-card-content layout="column" layout-padding layout-align="center center">
-                        <div>
-                            <md-icon class="typcn typcn-weather-windy icon-md"></md-icon>
-                            <span class="md-title">Wind</span>
-                        </div>
-                        <div>
-                            <div>
-                                <span class="md-display-1">{{owmCtl.device.wind_speed}}m/s</span> <span class="md-display-1">{{owmCtl.device.wind_direction}}</span>
-                            </div>
-                        </div>
-                    </md-card-content>
-                </md-card>
-            </div>-->
+                <div flex></div>
+                <div>
+                    <md-button aria-label="Temperature" class="md-icon-button" ng-click="owmCtl.change('temperature')">
+                        <md-icon class="wi wi-thermometer-exterior">
+                            <md-tooltip>Temperature forecast</md-tooltip>
+                        </md-icon>
+                    </md-button>
+                </div>
+                <div>
+                    <md-button aria-label="Humidity" class="md-icon-button" ng-click="owmCtl.change('humidity')">
+                        <md-icon class="wi wi-humidity">
+                            <md-tooltip>Humidity forecast</md-tooltip>
+                        </md-icon>
+                    </md-button>
+                </div>
+                <div>
+                    <md-button aria-label="Pressure" class="md-icon-button" ng-click="owmCtl.change('pressure')">
+                        <md-icon class="wi wi-barometer">
+                            <md-tooltip>Pressure forecast</md-tooltip>
+                        </md-icon>
+                    </md-button>
+                </div>
+                <div>
+                    <md-button aria-label="Wind" class="md-icon-button" ng-click="owmCtl.change('wind')">
+                        <md-icon class="wi wi-wind wi-wind-direction">
+                            <md-tooltip>Wind forecast</md-tooltip>
+                        </md-icon>
+                    </md-button>
+                </div>
+            </div>
+
         </md-dialog-content>
 
     </form>

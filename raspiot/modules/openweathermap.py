@@ -36,6 +36,7 @@ class Openweathermap(RaspIotModule):
     OWM_WEATHER_URL = 'http://api.openweathermap.org/data/2.5/weather'
     OWM_FORECAST_URL = 'http://api.openweathermap.org/data/2.5/forecast'
     OWM_TASK_DELAY = 1800
+    #OWM_TASK_DELAY = 60
     OWM_WEATHER_CODES = {
         200: 'Thunderstorm with light rain',
         201: 'Thunderstorm with rain',
@@ -127,6 +128,7 @@ class Openweathermap(RaspIotModule):
         #members
         self.weather_task = None
         self.__owm_uuid = None
+        self.__forecast = []
 
     def _start(self):
         """
@@ -213,11 +215,11 @@ class Openweathermap(RaspIotModule):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             req = urllib2.urlopen('%s?%s' % (self.OWM_WEATHER_URL, params), context=context)
             res = req.read()
-            self.logger.debug('Request response: %s' % (res))
             req.close()
 
             #parse request result
             data = json.loads(res)
+            self.logger.debug('Weather response: %s' % (data))
             if data.has_key('cod'):
                 if data['cod']!=200:
                     #request failed, get error message
@@ -290,16 +292,12 @@ class Openweathermap(RaspIotModule):
 
             #parse request result
             data = json.loads(res)
-            self.logger.debug('Request response: %s' % (data))
+            self.logger.debug('Forecast response: %s' % (data))
             if data.has_key('cod'):
-                if data['cod']!=200:
-                    #request failed, get error message
-                    if data.has_key('message'):
-                        error = data['message']
-                    else:
-                        error = 'Unknown error'
+                if data['cod']!='200':
+                    error = 'Unknown error'
                 if not data.has_key('list'):
-                    error = 'No request data'
+                    error = 'No forecast data'
             else:
                 #invalid format
                 self.logger.error('Invalid response format')
@@ -331,7 +329,7 @@ class Openweathermap(RaspIotModule):
             if config['apikey'] is not None and len(config['apikey'])>0:
                 #apikey configured, get weather
                 weather = self.__get_weather(config['apikey'])
-                #forecast = self.__get_forecast(config['apikey'])
+                self.__forecast = self.__get_forecast(config['apikey'])
 
                 #save current weather conditions
                 device = self._get_devices()[self.__owm_uuid]
@@ -406,6 +404,18 @@ class Openweathermap(RaspIotModule):
         """
         Return current weather conditions
         Useful to use it in action script
+
+        Returns:
+            dict: device information
         """
         return self._get_devices()[self.__owm_uuid]
 
+    def get_forecast(self):
+        """
+        Return last forecast information.
+        May be empty if raspiot just restarted.
+
+        Returns:
+            list: list of forecast data (every 3 hours)
+        """
+        return self.__forecast

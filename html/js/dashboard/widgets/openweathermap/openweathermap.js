@@ -3,12 +3,19 @@
  * Display openweathermap dashboard widget
  * @see owm=>weather-icons associations from https://gist.github.com/tbranyen/62d974681dea8ee0caa1
  */
-var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q) {
+var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q, openweathermapService) {
 
     var widgetOpenweathermapController = ['$scope', function($scope) {
         var self = this;
         self.device = $scope.device;
-        self.hasDatabase = raspiotService.hasModule('database');
+        self.loading = true;
+        self.selection = 'Temperature';
+        self.unit = null;
+        self.windData = [];
+        self.humidityData = [];
+        self.temperatureData = [];
+        self.pressureData = [];
+        self.forecastData = [];
         self.icons = {
             200: 'storm-showers',
             201: 'storm-showers',
@@ -84,6 +91,53 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q) {
             961: 'thunderstorm',
             962: 'cloudy-gusts'
         };
+        /*self.customTimeFormat = d3.time.format.multi([
+            ["%H:%M", function(d) { return d.getMinutes(); }], 
+            ["%H", function(d) { return d.getHours(); }], 
+            ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }], 
+            ["%b %d", function(d) { return d.getDate() != 1; }], 
+            ["%B", function(d) { return d.getMonth(); }], 
+            ["%Y", function() { return true; }]
+        ]);*/
+        self.customTimeFormat = d3.time.format.multi([
+            ["%a %H:%M", function(d) { return d.getMinutes(); }], 
+            ["%a %H:%M", function() { return true; }]
+        ]);
+        self.graphOptions = {
+            chart: {
+                type: 'stackedAreaChart',
+                height: 200,
+                margin : {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                x: function(d){return d[0];},
+                y: function(d){return d[1];},
+                useVoronoi: false,
+                clipEdge: true,
+                duration: 500,
+                useInteractiveGuideline: true,
+                xAxis: {
+                    showMaxMin: false,
+                    tickFormat: function(d) {
+                        return self.customTimeFormat(moment(d,'X').toDate());
+                    }
+                },
+                yAxis: {
+                    axisLabel: '',
+                    axisLabelDistance: -15,
+                },
+                showControls: false,
+                showLegend: false
+            },
+            title: {
+                enable: false,
+                text: ''
+            }
+        };
+
 
         /**
          * Return weather-icons icon
@@ -138,9 +192,96 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q) {
         };
 
         /**
+         * Load forecast when opening dialog
+         */
+        self.loadDialogData = function()
+        {
+            openweathermapService.getForecast()
+                .then(function(forecast) {
+                    //clear data
+                    self.windData = [];
+                    self.temperatureData = [];
+                    self.pressureData = [];
+                    self.humidityData = [];
+
+                    //fill data
+                    for( var i=0; i<forecast.data.length; i++ )
+                    {
+                        var ts = forecast.data[i].dt;
+                        self.windData.push([ts, forecast.data[i].wind.speed]);
+                        self.humidityData.push([ts, forecast.data[i].main.humidity]);
+                        self.pressureData.push([ts, forecast.data[i].main.pressure]);
+                        self.temperatureData.push([ts, forecast.data[i].main.temp]);
+                    }
+
+                    //set current forecast data (temperature at opening)
+                    self.change(null);
+
+                    //disable flag loading
+                    self.loading = false;
+                });
+        };
+
+        /**
+         * Change type of charts
+         */
+        self.change = function(type)
+        {
+            if( self.selection!==type )
+            {
+                if( type==='humidity' )
+                {
+                    self.unit = '%';
+                    self.graphOptions.chart.color = ['#3F51B5'];
+                    self.graphOptions.chart.yAxis.axisLabel = self.unit;
+                    self.forecastData = [{
+                        key: 'Humidity',
+                        values: self.humidityData
+                    }];
+                    self.selection = 'Humidity';
+                }
+                else if( type==='pressure' )
+                {
+                    self.unit = 'hPa';
+                    self.graphOptions.chart.color = ['#CDDC39'];
+                    self.graphOptions.chart.yAxis.axisLabel = self.unit;
+                    self.forecastData = [{
+                        key: 'Pressure',
+                        values: self.pressureData
+                    }];
+                    self.selection = 'Pressure';
+                }
+                else if( type==='wind' )
+                {
+                    self.unit = 'm/s';
+                    self.graphOptions.chart.color = ['#03A9F4'];
+                    self.graphOptions.chart.yAxis.axisLabel = self.unit;
+                    self.forecastData = [{
+                        key: 'Wind',
+                        values: self.windData
+                    }];
+                    self.selection = 'Wind';
+                }
+                else
+                {
+                    self.unit = '°C';
+                    self.graphOptions.chart.color = ['#FF9800'];
+                    self.graphOptions.chart.yAxis.axisLabel = self.unit;
+                    self.forecastData = [{
+                        key: 'Temperature',
+                        values: self.temperatureData
+                    }];
+                    self.selection = 'Temperature';
+                }
+            }
+        };
+
+        /**
          * Open dialog
          */
         self.openDialog = function() {
+            self.loading = true;
+            self.forecastData = [];
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'owmCtl',
@@ -151,17 +292,28 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q) {
             });
         };
 
+        $scope.$on('$destroy', function() {
+            //workaround to remove tooltips when dialog is closed: dialog is closed before 
+            //nvd3 has time to remove tooltips elements
+            var tooltips = $("div[id^='nvtooltip']");
+            for( var i=0; i<tooltips.length; i++ )
+            {
+                tooltips[i].remove();
+            }
+            self.forecastData = [];
+        });
+
         /**
          * Init controller
          */
-        self.init = function()
+        self.init = function(el)
         {
         };
 
     }];
 
     var widgetOpenweathermapLink = function(scope, element, attrs, controller) {
-        controller.init();
+        controller.init(element);
     };
 
     return {
@@ -178,5 +330,5 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetOpenweathermapDirective', ['raspiotService', '$mdDialog', '$q', widgetOpenweathermapDirective]);
+RaspIot.directive('widgetOpenweathermapDirective', ['raspiotService', '$mdDialog', '$q', 'openweathermapService', widgetOpenweathermapDirective]);
 

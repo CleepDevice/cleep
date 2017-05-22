@@ -9,6 +9,14 @@ var openweathermapService = function($q, $rootScope, rpcService, raspiotService)
         return rpcService.sendCommand('set_apikey', 'openweathermap', {'apikey':apikey});
     };
 
+    self.getWeather = function() {
+        return rpcService.sendCommand('get_weather', 'openweathermap', {});
+    };
+
+    self.getForecast = function() {
+        return rpcService.sendCommand('get_forecast', 'openweathermap', {});
+    };
+
     /**
      * Catch openweathermap event
      */
