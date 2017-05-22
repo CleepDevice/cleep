@@ -33,10 +33,15 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         self.options = null;
         self.loading = true;
         self.graphHeight = '400px';
+        self.rangeSelector = 86400;
+        self.rangeStart = 0;
+        self.rangeEnd = 0;
+        self.timestampStart = 0;
+        self.timestampEnd = 0;
 
         //dynamic time format according to zoom
         self.customTimeFormat = d3.time.format.multi([
-            ["%H:%M", function(d) { return d.getMinutes(); }], 
+            ["%H:%M", function(d) { console.log(d); return d.getMinutes(); }], 
             ["%H", function(d) { return d.getHours(); }], 
             ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }], 
             ["%b %d", function(d) { return d.getDate() != 1; }], 
@@ -82,7 +87,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 zoom: {
                     enabled: true,
                     scaleExtent: [1,10],
-                    useFixedDomain: false,
+                    useFixedDomain: true,
                     useNiceScale: false,
                     horizontalOff: false,
                     verticalOff: true,
@@ -268,14 +273,6 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 {
                     self.graphOptions.chart.color = [self.options.color];
                 }
-                /*if( self.device.type==='temperature' )
-                    self.graphOptions.chart.color = ['#FF7F00'];
-                else if( self.device.type==='motion' )
-                    self.graphOptions.chart.color = ['#24A222'];
-                else if( self.device.type==='humidity' )
-                    self.graphOptions.chart.color = ['#1776B6'];
-                else if( self.device.type==='energy' )
-                    self.graphOptions.chart.color = ['#D8241F'];*/
             }
         };
 
@@ -338,14 +335,8 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
          * Load graph data
          */
         self.loadGraphData = function(scope, el) {
-            //prepare default timestamp range
-            var timestampEnd = Number(moment().format('X'));
-            var timestampStart = timestampEnd - 86400;
-            if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
-            {
-                timestampStart = self.options.timestamp.start;
-                timestampEnd = self.options.timestamp.end;
-            }
+            //set loading flag
+            self.loading = true;
 
             //prepare graph options
             self.__prepareGraphOptions();
@@ -354,7 +345,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
             if( !angular.isUndefined(self.options.loadData) && self.options.loadData!==null )
             {
                 //load user data
-                self.options.loadData(timestampStart, timestampEnd)
+                self.options.loadData(self.timestampStart, self.timestampEnd)
                     .then(function(resp) {
                         self.__finalizeGraphOptions(resp);
                     }, function(err) {
@@ -364,7 +355,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
             else
             {
                 //load device data
-                graphService.getDeviceData(self.device.uuid, timestampStart, timestampEnd, self.graphRequestOptions)
+                graphService.getDeviceData(self.device.uuid, self.timestampStart, self.timestampEnd, self.graphRequestOptions)
                     .then(function(resp) {
                         self.__finalizeGraphOptions(resp.data.data);
                     });
@@ -372,10 +363,37 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         };
 
         /**
+         * Change time range
+         */
+        self.changeRange = function()
+        {
+            //compute new timestamp range
+            self.timestampEnd = Number(moment().format('X'));
+            self.timestampStart = self.timestampEnd - self.rangeSelector;
+
+            //load new graph data
+            self.loadGraphData();
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
         {
+            //force user timestamp if provided
+            if( !angular.isUndefined(self.options.timestamp) && self.options.timestamp!==null )
+            {
+                self.timestampStart = self.options.timestamp.start;
+                self.timestampEnd = self.options.timestamp.end;
+            }
+            else
+            {
+                //set default timestamp range
+                self.timestampEnd = Number(moment().format('X'));
+                self.timestampStart = self.timestampEnd - self.rangeSelector;
+            }
+
+            //load graph data
             self.loadGraphData();
         };
 
