@@ -58,7 +58,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 x: function(d){return d[0];},
                 y: function(d){return d[1];},
                 showValues: true,
-                duration: 100,
+                duration: 500,
                 xAxis: {
                     //axisLabel: "X Axis",
                     //rotateLabels: 30,

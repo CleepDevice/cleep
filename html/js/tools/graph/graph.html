@@ -1,8 +1,47 @@
 <div layout="column" layout-align="center stretch">
+
+    <!-- progress -->
     <div ng-if="graphCtl.loading" layout="row" layout-align="space-around center" ng-style="{'height':graphCtl.graphHeight}">
         <md-progress-circular md-mode="indeterminate"></md-progress-circular>
     </div>
+
+    <!-- chart -->
     <div ng-if="!graphCtl.loading">
         <nvd3 options='graphCtl.graphOptions' data='graphCtl.graphData'></nvd3>
     </div>
+
+    <!-- controls -->
+    <div layout="row">
+        <div flex></div>
+        <!-- custom range -->
+        <div ng-if="graphCtl.selector===0">
+            <md-input-container>
+                <input aria-label="Range start" ng-model="graphCtl.rangeStart">
+            </md-input-container>
+            <md-input-container>
+                <input aria-label="Range end" ng-model="graphCtl.rangeEnd">
+            </md-input-container>
+        </div>
+        <!-- selector -->
+        <div>
+            <md-select class="md-no-underline" ng-model="graphCtl.selector">
+                <md-option value="86400">Last day</md-option>
+                <md-option value="172800">Last 2 days</md-option>
+                <md-option value="604800">Last week</md-option>
+                <md-option value="1209600">Last 2 weeks</md-option>
+                <md-option value="2678400">Last month</md-option>
+                <md-option value="7862400">Last quarter</md-option>
+                <md-option value="15724800">Last semester</md-option>
+                <md-option value="31449600">Last year</md-option>
+                <md-option value="0">Custom range</md-option>
+            </md-select>
+        </div>
+        <!-- button -->
+        <div>
+            <md-button class="md-raised md-primary" aria-label="Ok">
+                <md-icon md-font-set="material-icons">check</md-icon>
+            </md-button>
+        </div>
+    </div>
+
 </div>
