@@ -126,7 +126,8 @@ class Network(RaspIotModule):
         res = c.command('/sbin/iw dev | grep Interface')
 
         if res['error'] or res['killed']:
-            raise Exception('Unable to get interfaces names')
+            self.logger.info('Unable to get interfaces names (certainly iw bin not exists)')
+            return interfaces
 
         output = [line.strip() for line in res['stdout']]
         names = [line.replace('Interface ', '') for line in output]
