@@ -366,9 +366,13 @@ class Openweathermap(RaspIotModule):
                     else:
                         device['wind_speed'] = None
                     if weather['wind'].has_key('deg'):
+                        device['wind_degrees'] = weather['wind']['deg']
                         index = int(round( (weather['wind']['deg'] % 360) / 22.5) + 1)
+                        if index>=17:
+                            index = 0
                         device['wind_direction'] = self.OWM_WIND_DIRECTIONS[index]
                     else:
+                        device['wind_degrees'] = None
                         device['wind_direction'] = None
                 self._update_device(self.__owm_uuid, device)
 
