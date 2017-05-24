@@ -1,3 +1,15 @@
+raspiot (0.0.7) UNRELEASED; urgency=low
+
+  * New push module: pushover
+  * New sms modules: bulksms, freemobilesms
+  * New email modile: smtp
+  * New weather module: openweathermap
+  * Inventory module
+  * New system module
+  * Some core improvements
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
+
 raspiot (0.0.6) UNRELEASED; urgency=low
 
   * Major improvements (device handling, inventory, rpc, core)
