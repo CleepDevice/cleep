@@ -379,7 +379,7 @@ class Openweathermap(RaspIotModule):
                 #and emit event
                 self.send_event('openweathermap.weather.update', device, self.__owm_uuid)
         except Exception as e:
-            self.logger.exception('Exception during weather task')
+            self.logger.exception('Exception during weather task:')
 
     def set_apikey(self, apikey):
         """
