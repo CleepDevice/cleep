@@ -7,6 +7,7 @@ from raspiot.raspiot import RaspIotModule
 import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
+from raspiot.utils import InvalidParameter, MissingParameter
 import uuid
 import socket
 
@@ -58,11 +59,17 @@ class Messageboard(RaspIotModule):
     MODULE_URL = None
     MODULE_TAGS = []
 
+    SPEED_SLOW = 'slow'
+    SPEED_NORMAL = 'normal'
+    SPEED_FAST = 'fast'
+    SPEEDS = {
+        SPEED_SLOW: 0.0025,
+        SPEED_NORMAL: 0.005,
+        SPEED_FAST: 0.0075
+    }
+
     DEFAULT_CONFIG = {
         'duration': 60,
-        'unit_minutes': 'minutes',
-        'unit_hours': 'hours',
-        'unit_days': 'days',
         'messages' : [],
         'speed': 0.05
     }
@@ -193,43 +200,6 @@ class Messageboard(RaspIotModule):
         except:
             self.logger.exception('Exception on message displaying:')
 
-    def __set_board_units(self):
-        """
-        Set board units
-        """
-        days = None
-        hours = None
-        minutes = None
-        if self._config.has_key('unit_days') and self._config['unit_days']:
-            days = self._config['unit_days']
-        if self._config.has_key('unit_hours') and self._config['unit_hours']:
-            hours = self._config['unit_hours']
-        if self._config.has_key('unit_minutes') and self._config['unit_minutes']:
-            minutes = self._config['unit_minutes']
-
-        #set board unit
-        self.board.set_time_units(minutes, hours, days)
-
-    def set_duration(self, duration):
-        """
-        Configure message cycle duration
-
-        Params:
-            duration (float): message cycle duration
-        """
-        #save duration
-        config = self._get_config()
-        config['duration'] = duration
-        self._save_config(config)
-
-        #stop current task
-        if self.__display_task:
-            self.__display_task.stop()
-        
-        #and restart new one
-        self.__display_task = task.BackgroundTask(self.__display_message, float(duration))
-        self.__display_task.start()
-
     def get_module_config(self):
         """
         Return module full configuration
@@ -239,16 +209,14 @@ class Messageboard(RaspIotModule):
                 {
                     messages (list): list of displayed messages
                     duration (float): message duration
-                    units (dict): hours, minutes and days in user translation
                     speed (int): scroll speed
                     status (dict): current message data
                 }
         """
         config = {}
         config['messages'] = self.get_messages()
-        config['duration'] = self.get_duration()
-        config['units'] = self.get_units()
-        config['speed'] = self.get_speed()
+        config['duration'] = self._config['duration']
+        config['speed'] = self._config['speed']
         config['status'] = self.get_current_message()
 
         return config;
@@ -267,38 +235,12 @@ class Messageboard(RaspIotModule):
 
         return devices
 
-    def get_duration(self):
+    def __set_board_units(self):
         """
-        Return message cycle duration
-
-        Returns:
-            float: duration (seconds)
+        Set board units
         """
-        return self._config['duration']
-
-    def set_speed(self, speed):
-        """
-        Configure scrolling message speed
-
-        Params:
-            speed (int): message speed
-        """
-        #save speed
-        config = self._get_config()
-        config['speed'] = speed
-        self._save_config(config)
-
-        #set board scroll speed
-        self.board.set_scroll_speed(speed)
-
-    def get_speed(self):
-        """
-        Return scrolling message speed
-
-        Returns:
-            int: speed
-        """
-        return self._config['speed']
+        #set board unit
+        self.board.set_time_units('minutes', 'hours', 'days')
 
     def add_message(self, message, start, end):
         """
@@ -436,44 +378,6 @@ class Messageboard(RaspIotModule):
 
         return out
 
-    def get_units(self):
-        """
-        Return time units
-
-        Returns:
-            dict: units::
-                {
-                    days (string): days in user lang
-                    hours (string): hours in user lang
-                    minutes (string): minutes in user lang
-                }
-        """
-        return {
-            'days': self._config['unit_days'],
-            'hours': self._config['unit_hours'],
-            'minutes': self._config['unit_minutes']
-        }
-
-    def set_units(self, minutes, hours, days):
-        """
-        Set board time units
-
-        Params:
-            minutes (string): minutes in user lang
-            hours (string): hourss in user lang
-            days (string): days in user lang
-        """
-        #save units in config
-        if minutes and hours and days:
-            config = self._get_config()
-            config['unit_days'] = days
-            config['unit_hours'] = hours
-            config['unit_minutes'] = minutes
-            self._save_config(config)
-
-        #set board units
-        self.__set_board_units()
-
     def turn_on(self):
         """
         Turn on board
@@ -505,6 +409,41 @@ class Messageboard(RaspIotModule):
             bool: True if board is on, False otherwise
         """
         return self.board.is_on()
+
+    def save_configuration(self, duration, speed):
+        """
+        Save board configuration
+
+        Args:
+            duration (float): message duration (cycling time)
+            speed: (slow|normal|fast) message scrolling speed
+
+        Raises:
+            InvalidParameter, MissingParameter
+        """
+        if duration is None:
+            raise MissingParameter('Duration parameter is missing')
+        if duration<5 or duration>60:
+            raise InvalidParameter('Duration value must be between 5 and 60 seconds')
+        if speed is None or len(speed)==0:
+            raise MissingParameter('Speed parameter is missing')
+        if speed not in self.SPEEDS:
+            raise InvalidParameter('Speed value is not valid')
+
+        #save config
+        config = self._get_config()
+        config['duration'] = float(duration)
+        config['speed'] = speed
+        self._save_config(config)
+
+        #stop current task
+        if self.__display_task:
+            self.__display_task.stop()
+        
+        #and restart new one
+        self.__display_task = BackgroundTask(self.__display_message, duration)
+        self.__display_task.start()
+        
 
 
 if __name__ == '__main__':
