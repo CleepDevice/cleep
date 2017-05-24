@@ -5,7 +5,7 @@ import os
 import logging
 from raspiot.raspiot import RaspIotModule
 import time
-import raspiot.libs.task
+from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
 import uuid
 import socket
@@ -91,6 +91,7 @@ class Messageboard(RaspIotModule):
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
         self.__set_board_units()
         self.board.set_scroll_speed(self._config['speed'])
+        self.__display_task = None
 
     def _start(self):
         """
@@ -111,7 +112,7 @@ class Messageboard(RaspIotModule):
             })
 
         #init display task
-        self.__display_task = task.BackgroundTask(self.__display_message, float(self._config['duration']))
+        self.__display_task = BackgroundTask(self.__display_message, float(self._config['duration']))
         self.__display_task.start()
 
         #display ip at startup during 1 minute
@@ -252,7 +253,7 @@ class Messageboard(RaspIotModule):
 
         return config;
 
-    def get_module_devices():
+    def get_module_devices(self):
         """
         Return updated messageboard device
 
