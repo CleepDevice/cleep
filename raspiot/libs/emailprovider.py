@@ -47,7 +47,7 @@ class EmailProvider(RaspIotProvider):
         """
         if event['event']=='system.application.ready':
             #application is ready, register provider
-            self.register_provider('alert', 'email', self.PROVIDER_PROFILE)
+            self.register_provider('alert', self.__class__.__name__, self.PROVIDER_PROFILE)
     
     def post(self, data):
         """

@@ -44,14 +44,14 @@ class SmsProvider(RaspIotProvider):
         """
         if event['event']=='system.application.ready':
             #application is ready, register provider
-            self.register_provider('alert', 'sms', self.PROVIDER_CAPABILITIES)
+            self.register_provider('alert', self.__class__.__name__, self.PROVIDER_CAPABILITIES)
     
     def post(self, data):
         """ 
         Data posted to provider
 
         Args:
-            data (SmsData): data to post
+            data (EmailData): data to post
 
         Raises:
             MissingParameter, InvalidParameter

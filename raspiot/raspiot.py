@@ -530,13 +530,17 @@ class RaspIotProvider(RaspIotModule):
         Args:
             type (string): provider main type.
             subtype (string): provider subtype.
-            profiles: used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to a profile).
+            profiles (list): used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to a profile).
 
         Returns:
             bool: True if provider registered successfully
         """
         if type is None or len(type)==0:
             raise CommandError('Type parameter is missing')
+        if subtype is None or len(subtype)==0:
+            raise CommandError('Subtype parameter is missing')
+        if profiles is None:
+            raise CommandError('Profiles parameter is missing')
 
         resp = self.send_command('register_provider', 'inventory', {'type':type, 'subtype':subtype, 'profiles':profiles})
         if resp['error']:

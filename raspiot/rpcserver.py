@@ -449,6 +449,9 @@ def modules():
             #uninstall pending
             modules[module]['pending'] = True
 
+    #inject providers
+    modules['providers'] = app.config['sys.inventory'].get_providers()
+
     logger.debug('Modules: %s' % modules)
     return json.dumps(modules)
 

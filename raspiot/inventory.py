@@ -161,17 +161,17 @@ class Inventory(RaspIotModule):
 
     def get_modules(self):
         """
-        Return list of modules
+        Returns list of modules
         
         Returns:
-            list: list of modules
+            list: list of modules::
                 ['module name':{'module info':'', ...}, ...]
         """
         return self.modules
 
     def get_modules_names(self):
         """
-        Return list of modules names
+        Returns list of modules names
 
         Returns:
             list: list of module names
@@ -181,19 +181,38 @@ class Inventory(RaspIotModule):
 
     def get_module_commands(self, module):
         """
-        Return list of module commands
+        Returns list of module commands
 
         Args:
             module (string): module name
 
         Returns:
-            list: list of commands or None if module not found
+            list: list of commands or None if module not found::
                 ['command1', 'command2', ...]
         """
         if self.modules.has_key(module):
             return self.modules[module]
 
         return None
+
+    def get_providers(self):
+        """
+        Returns list of providers
+        
+        Returns:
+            list: list of providers by type::
+                {
+                    'type1': {
+                        'subtype1': <provider instance>,
+                        ...
+                    },
+                    'type2': {
+                        'subtype1': <provider instance>
+                    },
+                    ...
+                }
+        """
+        return self.providers
 
     def is_module_loaded(self, module):
         """
@@ -207,15 +226,15 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def register_provider(self, type, subtype, profiles, command_sender):
+    def register_provider(self, type, subtype, profiles):
         """
         Register new provider
 
         Args:
             type (string): provider type (ie: alert for sms/push/email provider)
             subtype (string): provider subtype (ie: sms for sms provider)
-            profiles (list of dict): used to describe provider capabilities (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to this capabilities)
-            command_sender (string): command sender (automatically added by bus)
+            profiles (list of data): used to describe provider capabilities (ie: screen can have 1 or 2 lines,
+                provider must adapts posted data according to this capabilities)
 
         Returns:
             bool: True
@@ -223,7 +242,7 @@ class Inventory(RaspIotModule):
         Raises:
             MissingParameter: if parameter is missing
         """
-        self.logger.debug('Register new %s:%s provider %s' % (type, subtype, command_sender))
+        self.logger.debug('Register new provider %s:%s' % (type, subtype))
         #check values
         if type is None or len(type)==0:
             raise MissingParameter('Type parameter is missing')
@@ -239,27 +258,29 @@ class Inventory(RaspIotModule):
             self.providers[type][subtype] = {}
 
         #register new provider
-        self.providers[type][subtype][command_sender] = {
+        self.providers[type][subtype] = {
             'profiles': profiles
         }
+        self.logger.info('PROVIDERS= %s' % self.providers)
         
         return True
 
-    def unregister_provider(self, type, command_sender):
+    def unregister_provider(self, type, subtype):
         """
         Unregister provider
 
         Args:
-            command_sender (string): command sender (automatically added by bus)
+            type (string): provider type
+            subtype (string): provider subtype
 
         Returns:
             bool: True if unregistration succeed, False otherwise
         """
-        if not self.providers.has_key(type) or not self.providers[type].has_key(command_sender):
+        if not self.providers.has_key(type) or not self.providers[type].has_key(subtype):
             return False
 
         #remove provider
-        del self.providers[type][command_sender]
+        del self.providers[type][subtype]
 
         return True
 
@@ -277,19 +298,4 @@ class Inventory(RaspIotModule):
             return True
 
         return False
-
-    def get_providers(self, type):
-        """
-        Return list of available providers for specified type
-
-        Args:
-            type (string): provider type
-
-        Returns:
-            dict: empty dict if not provider available for requested type or available providers
-        """
-        if self.providers.has_key(type):
-            return self.providers[type]
-
-        return {}
 

@@ -8,6 +8,7 @@ import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
 from raspiot.utils import InvalidParameter, MissingParameter
+from raspiot.libs.displayprovider import DisplayProvider, DisplayData
 import uuid
 import socket
 
@@ -50,7 +51,52 @@ class Message():
 
 
 
-class Messageboard(RaspIotModule):
+
+class DisplayMessageboardData(DisplayData):
+    """
+    Messageboard data handles necessary data to display a message in messageboard module
+    """
+    def __init__(self):
+        DisplayData.__init__(self)
+        #self.message inherited from DisplayData
+        self.start = None
+        self.end = None
+        self.icons = [
+            {'label':'Smiley :)', 'value':':)'},
+            {'label':'Smiley :(', 'value':':('},
+            {'label':'Smiley :D', 'value':':D'},
+            {'label':'Smiley :]', 'value':':]'},
+            {'label':'Smiley :|', 'value':':|'},
+            {'label':'Smiley :[', 'value':':['},
+            {'label':'Smiley :o', 'value':':o'},
+            {'label':'Smiley :O', 'value':':O'},
+            {'label':'Shit', 'value':':shit'},
+            {'label':'Skull', 'value':':skull'},
+            {'label':'Alien', 'value':':alien'},
+            {'label':'Heart', 'value':':heart'},
+            {'label':'Cat', 'value':':cat'},
+            {'label':'Bat', 'value':':bat'},
+            {'label':'Left arrow', 'value':':left'},
+            {'label':'Right arrow', 'value':':right'},
+            {'label':'Top arrow', 'value':':top'},
+            {'label':'Bottom arrow', 'value':'bottom'},
+            {'label':'Weather sunny', 'value':':sunny'},
+            {'label':'Weather rainy', 'value':':rainy'},
+            {'label':'Weather cloudy', 'value':':cloudy'},
+            {'label':'Weather stormy', 'value':':stormy'},
+            {'label':'Weather foggy', 'value':':foggy'},
+            {'label':'Weather snowy', 'value':':snowy'},
+            {'label':'Weather night', 'value':':night'}
+        ]
+
+
+
+
+class Messageboard(DisplayProvider):
+    """
+    Messageboard allows user to display message on single line board
+    Icons are directly handled inside message
+    """
 
     MODULE_CONFIG_FILE = 'messageboard.conf'
     MODULE_DEPS = []
@@ -58,6 +104,8 @@ class Messageboard(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
+
+    PROVIDER_PROFILES = ['DisplayMessageboardData']
 
     SPEED_SLOW = 'slow'
     SPEED_NORMAL = 'normal'
@@ -242,9 +290,24 @@ class Messageboard(RaspIotModule):
         #set board unit
         self.board.set_time_units('minutes', 'hours', 'days')
 
+    def post(self, data):
+        """
+        Post message to screen
+
+        Args:
+            data (DisplayMessageBoardData): data to display
+        """
+        if data is None:
+            raise MissingParameter('Data parameter is missing')
+        if not isinstance(data, DisplayMessageBoardData):
+            raise InvalidParameter('Data must be DisplayMessageBoardData instance')
+
+        #add message
+        self.add_message(data.message, data.start, data.end)
+
     def add_message(self, message, start, end):
         """
-        Add advertisment to display
+        Add message to display
 
         Params:
             message (string): message to display
@@ -270,7 +333,7 @@ class Messageboard(RaspIotModule):
 
     def delete_message(self, uuid):
         """
-        Delete message which uuid is specified
+        Delete specified message
 
         Params:
             uuid (string): message uuid

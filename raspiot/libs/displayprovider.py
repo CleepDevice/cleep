@@ -7,27 +7,24 @@ import logging
 from raspiot.utils import InvalidParameter, MissingParameter
 from raspiot.raspiot import RaspIotProvider
 
-__all__ = ['PushProvider', 'PushData']
+__all__ = ['DisplayProvider', 'DisplayData']
 
 
-class PushData():
+class DisplayData():
     """
-    Structure to store push data
+    Base display data class
+    Handle base data to display a message on screen
     """
     def __init__(self):
-        self.version = 1
-
-        self.title = None
-        self.priority = None
+        """
+        Constructor
+        """
         self.message = None
-        self.devices = []
-        self.attachment = None
-        self.timestamp = None
 
 
-class PushProvider(RaspIotProvider):
+class DisplayProvider(RaspIotProvider):
     """
-    Base push provider class.
+    Base display provider class.
     Register provider to inventory at startup
     """
 
@@ -51,14 +48,14 @@ class PushProvider(RaspIotProvider):
         """
         if event['event']=='system.application.ready':
             #application is ready, register provider
-            self.register_provider('alert', self.__class__.__name__, self.PROVIDER_PROFILE)
+            self.register_provider('display', self.__class__.__name__, self.PROVIDER_PROFILES)
     
     def post(self, data):
         """ 
         Data posted to provider
 
         Args:
-            data (EmailData): data to post
+            data (Data): data to post
 
         Raises:
             MissingParameter, InvalidParameter
@@ -66,8 +63,8 @@ class PushProvider(RaspIotProvider):
         #check params
         if data is None:
             raise MissingParameter('Data parameter is missing')
-        if not isinstance(data, PushData):
-            raise InvalidParameter('Data must be a PushData instance')
+        if not isinstance(data, DisplayData):
+            raise InvalidParameter('Data must be a DisplayData instance')
 
         #call implementation
         return self._post(data)
