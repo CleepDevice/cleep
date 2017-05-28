@@ -51,7 +51,7 @@ class SmsProvider(RaspIotProvider):
         Data posted to provider
 
         Args:
-            data (EmailData): data to post
+            data (SmsData): data to post
 
         Raises:
             MissingParameter, InvalidParameter
