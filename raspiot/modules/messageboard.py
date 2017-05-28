@@ -97,7 +97,7 @@ class Messageboard(RaspIotModule):
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
         self.__set_board_units()
-        self.board.set_scroll_speed(self._config['speed'])
+        self.board.set_scroll_speed(self.SPEEDS[self._config['speed']])
         self.__display_task = None
 
     def _start(self):
@@ -385,6 +385,9 @@ class Messageboard(RaspIotModule):
         #just turn on display
         self.board.turn_on()
 
+        #set current message to None to force current message to be displayed again
+        self.__current_message = None
+
         #push event
         self.send_event('messageboard.message.update', self.get_current_message())
 
@@ -435,6 +438,9 @@ class Messageboard(RaspIotModule):
         config['duration'] = float(duration)
         config['speed'] = speed
         self._save_config(config)
+
+        #update board configuration
+        self.board.set_scroll_speed(self.SPEEDS[self._config['speed']])
 
         #stop current task
         if self.__display_task:
