@@ -3,19 +3,21 @@
     
 import os
 import logging
-from raspiot.raspiot import RaspIotModule
+from raspiot.raspiot import RaspIotProvider
 import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
 from raspiot.utils import InvalidParameter, MissingParameter
-from raspiot.libs.displayprovider import DisplayProvider, DisplayData
+from raspiot.libs.profiles import DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile
 import uuid
 import socket
 
 __all__ = ['Messageboard']
 
 class Message():
-
+    """
+    Messageboard Message object
+    """
     def __init__(self, message=None, start=None, end=None):
         self.message = message
         self.start = start
@@ -51,48 +53,7 @@ class Message():
 
 
 
-
-class DisplayMessageboardData(DisplayData):
-    """
-    Messageboard data handles necessary data to display a message in messageboard module
-    """
-    def __init__(self):
-        DisplayData.__init__(self)
-        #self.message inherited from DisplayData
-        self.start = None
-        self.end = None
-        self.icons = [
-            {'label':'Smiley :)', 'value':':)'},
-            {'label':'Smiley :(', 'value':':('},
-            {'label':'Smiley :D', 'value':':D'},
-            {'label':'Smiley :]', 'value':':]'},
-            {'label':'Smiley :|', 'value':':|'},
-            {'label':'Smiley :[', 'value':':['},
-            {'label':'Smiley :o', 'value':':o'},
-            {'label':'Smiley :O', 'value':':O'},
-            {'label':'Shit', 'value':':shit'},
-            {'label':'Skull', 'value':':skull'},
-            {'label':'Alien', 'value':':alien'},
-            {'label':'Heart', 'value':':heart'},
-            {'label':'Cat', 'value':':cat'},
-            {'label':'Bat', 'value':':bat'},
-            {'label':'Left arrow', 'value':':left'},
-            {'label':'Right arrow', 'value':':right'},
-            {'label':'Top arrow', 'value':':top'},
-            {'label':'Bottom arrow', 'value':'bottom'},
-            {'label':'Weather sunny', 'value':':sunny'},
-            {'label':'Weather rainy', 'value':':rainy'},
-            {'label':'Weather cloudy', 'value':':cloudy'},
-            {'label':'Weather stormy', 'value':':stormy'},
-            {'label':'Weather foggy', 'value':':foggy'},
-            {'label':'Weather snowy', 'value':':snowy'},
-            {'label':'Weather night', 'value':':night'}
-        ]
-
-
-
-
-class Messageboard(DisplayProvider):
+class Messageboard(RaspIotProvider):
     """
     Messageboard allows user to display message on single line board
     Icons are directly handled inside message
@@ -105,7 +66,8 @@ class Messageboard(DisplayProvider):
     MODULE_URL = None
     MODULE_TAGS = []
 
-    PROVIDER_PROFILES = ['DisplayMessageboardData']
+    PROVIDER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
+    PROVIDER_TYPE = 'display'
 
     SPEED_SLOW = 'slow'
     SPEED_NORMAL = 'normal'
@@ -131,7 +93,7 @@ class Messageboard(DisplayProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None
@@ -290,20 +252,19 @@ class Messageboard(DisplayProvider):
         #set board unit
         self.board.set_time_units('minutes', 'hours', 'days')
 
-    def post(self, data):
+    def _post(self, data):
         """
         Post message to screen
 
         Args:
-            data (DisplayMessageBoardData): data to display
+            data (any profile): data to display
         """
-        if data is None:
-            raise MissingParameter('Data parameter is missing')
-        if not isinstance(data, DisplayMessageBoardData):
-            raise InvalidParameter('Data must be DisplayMessageBoardData instance')
+        if isinstance(data, DisplayAddOrReplaceMessageProfile):
+            self.add_or_replace_message(data.message, data.uuid)
 
-        #add message
-        self.add_message(data.message, data.start, data.end)
+        elif isinstance(data, DisplayLimitedTimeMessageProfile):
+            #add message
+            self.add_message(data.message, data.start, data.end)
 
     def add_message(self, message, start, end):
         """
@@ -319,7 +280,7 @@ class Messageboard(DisplayProvider):
         """
         #create message object
         msg = Message(message, start, end)
-        self.logger.debug('add new message: %s' % unicode(msg))
+        self.logger.debug('Add new message: %s' % unicode(msg))
 
         #save it to config
         config = self._get_config()
@@ -362,40 +323,62 @@ class Messageboard(DisplayProvider):
 
         return deleted
 
-    def replace_message(self, uuid, message, start, end):
+    def add_or_replace_message(self, message, uuid):
         """
-        Replace message by new specified infos. Useful to cycle message transparently
+        Add or replace unlimited (1 week in reality) message by new specified infos.
+        Useful to cycle message.
         
         Params:
-            uuid: message uuid to replace content
-            message: message to display
-            start: date to start displaying message from
-            end: date to stop displaying message
+            message (string): message to display
+            uuid (string): message uuid to replace
 
         Returns:
             bool: True if message replaced
         """
+        self.logger.debug('Replacing message uuid "%s" with message "%s"' % (uuid, message))
         #replace message in config
         replaced = False
         config = self._get_config()
+        start = int(time.time())
+        end = start + 604800 #1 week
         for msg in config['messages']:
             if msg['uuid']==uuid:
                 #message found, replace infos by new ones
-                msg.message = message
-                msg.start = start
-                msg.end = end
+                msg['message'] = message
+                msg['start'] = start
+                msg['end'] = end
                 replaced = True
+
         if replaced:
+            #message found and replaced
+            self.logger.debug('Message replaced')
             self._save_config(config)
 
-        #replace message internaly
-        for msg in self.messages:
-            if msg.uuid==uuid:
-                msg.message = message
-                msg.start = start
-                msg.end = end
+            #replace message internaly
+            for msg in self.messages:
+                if msg.uuid==uuid:
+                    msg.message = message
+                    msg.start = start
+                    msg.end = end
 
-        self.logger.debug('Message "%s" replaced' % msg.message)
+                    #force message to be displayed again
+                    self.__current_message = None
+
+        else:
+            #message not found
+            self.logger.debug('Message added instead of replaced')
+            
+            #create message object
+            msg = Message(message, start, end)
+            msg.uuid = uuid
+
+            #save it to config
+            config = self._get_config()
+            config['messages'].append(msg.to_dict())
+            self._save_config(config)
+
+            #save it to internaly
+            self.messages.append(msg)
 
         return replaced
 

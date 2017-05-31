@@ -449,9 +449,6 @@ def modules():
             #uninstall pending
             modules[module]['pending'] = True
 
-    #inject providers
-    modules['providers'] = app.config['sys.inventory'].get_providers()
-
     logger.debug('Modules: %s' % modules)
     return json.dumps(modules)
 
@@ -462,7 +459,7 @@ def devices():
     Return all devices
 
     Returns:
-        Dict: map of all devices
+        dict: all devices by modules
     """
     #request each loaded module for its devices
     devices = {}
@@ -478,6 +475,20 @@ def devices():
     logger.debug('Devices: %s' % devices)
 
     return json.dumps(devices)
+
+@app.route('/providers', method='POST')
+@authenticate()
+def providers():
+    """
+    Returns all providers
+
+    Returns:
+        dict: all providers by type
+    """
+    providers = app.config['sys.inventory'].get_providers()
+
+    logger.debug('Providers: %s' % providers)
+    return json.dumps(providers)
 
 @app.route('/registerpoll', method='POST')
 @authenticate()

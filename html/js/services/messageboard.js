@@ -6,95 +6,31 @@ var messageboardService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'MessageBoard',
-            name: 'messageboardConfigDirective'
-        };
-    };
-
-    /**
      * Add new message
      */
     self.addMessage = function(message, start, end) {
-        return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end})
-            .then(function(resp) {
-            }, function(err) {
-                console.log('addMessage:', err);
-            });
+        return rpcService.sendCommand('add_message', 'messageboard', {'message':message, 'start':start, 'end':end});
     };
 
     /**
      * Delete message
      */
     self.deleteMessage = function(uuid) {
-        return rpcService.sendCommand('delete_message', 'messageboard', {'uuid':uuid})
-            .then(function(resp) {
-            }, function(err) {
-                console.log('deleteMessage:', err);
-            });
+        return rpcService.sendCommand('delete_message', 'messageboard', {'uuid':uuid});
     };
 
     /**
      * Get messages
      */
     self.getMessages = function() {
-        return rpcService.sendCommand('get_messages', 'messageboard')
-            .then(function(resp) {
-                return resp.data;
-            }, function(err) {
-                console.log('getMessages:', err);
-            });
+        return rpcService.sendCommand('get_messages', 'messageboard');
     };
 
     /**
-     * Set message duration
+     * Save board configuration
      */
-    self.setDuration = function(duration) {
-        return rpcService.sendCommand('set_duration', 'messageboard', {'duration':duration});
-    };
-
-    /**
-     * Get duration
-     */
-    self.getDuration = function() {
-        return rpcService.sendCommand('get_duration', 'messageboard')
-            .then(function(resp) {
-                return resp.data;
-            });
-    };
-
-    /**
-     * Set scrolling message speed
-     */
-    self.setSpeed = function(speed) {
-        return rpcService.sendCommand('set_speed', 'messageboard', {'speed':speed});
-    };
-
-    /**
-     * Get speed
-     */
-    self.getSpeed = function() {
-        return rpcService.sendCommand('get_speed', 'messageboard');
-    };
-
-    /**
-     * Set board units
-     */
-    self.setUnits = function(minutes, hours, days) {
-        return rpcService.sendCommand('set_units', 'messageboard', {'minutes':minutes, 'hours':hours, 'days':days});
-    };
-
-    /**
-     * Get board units
-     */
-    self.getUnits = function() {
-        return rpcService.sendCommand('get_units', 'messageboard')
-            .then(function(resp) {
-                return resp.data;
-            });
+    self.saveConfiguration = function(duration, speed) {
+        return rpcService.sendCommand('save_configuration', 'messageboard', {speed:speed, duration:duration});
     };
 
     /**

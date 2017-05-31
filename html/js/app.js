@@ -91,8 +91,9 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
      * Get server modules with their configs
      * And load devices
      */
-    self.loadModules = function()
+    self.loadConfig = function()
     {
+        //load modules and their configs
         rpcService.getModules()
             .then(function(resp) {
 
@@ -120,10 +121,15 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 //load devices
                 return raspiotService.reloadDevices();
             })
+            .then(function() {
+                //load providers
+                return raspiotService.loadProviders();
+            })
             .finally(function() {
                 console.log("DEVICES", raspiotService.devices);
                 console.log("SERVICES", objectsService.services);
                 console.log("MODULES", raspiotService.modules);
+                console.log("PROVIDERS", raspiotService.providers);
             });
     };
 
@@ -135,8 +141,8 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         //launch polling
         window.setTimeout(self.polling, 0);
 
-        //get modules and devices
-        self.loadModules();
+        //load config (modules, devices, providers...)
+        self.loadConfig();
     };
     self.init();
 

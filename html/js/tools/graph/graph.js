@@ -41,7 +41,8 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
 
         //dynamic time format according to zoom
         self.customTimeFormat = d3.time.format.multi([
-            ["%H:%M", function(d) { return d.getMinutes(); }], 
+            ["%H:%M", function(d) { console.log(d); return d.getMinutes(); }], 
+            ["%H", function(d) { return d.getHours(); }], 
             ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }], 
             ["%b %d", function(d) { return d.getDate() != 1; }], 
             ["%B", function(d) { return d.getMonth(); }], 
@@ -69,7 +70,8 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                     showMaxMin: false,
                     tickFormat: function(d) {
                         return self.customTimeFormat(moment(d,'X').toDate());
-                    }
+                    },
+                    scale: d3.time.scale()
                 },
                 yAxis: {
                     axisLabel: '',
@@ -85,7 +87,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 },
                 zoom: {
                     enabled: true,
-                    scaleExtent: [1,25],
+                    scaleExtent: [1,10],
                     useFixedDomain: true,
                     useNiceScale: false,
                     horizontalOff: false,
@@ -131,7 +133,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 },
                 zoom: {
                     enabled: true,
-                    scaleExtent: [1, 25],
+                    scaleExtent: [1, 10],
                     useFixedDomain: false,
                     useNiceScale: false,
                     horizontalOff: false,

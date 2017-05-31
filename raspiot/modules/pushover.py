@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
     
 import logging
+from raspiot.raspiot import RaspIotProvider
 from raspiot.utils import CommandError, MissingParameter, CommandInfo
-from raspiot.libs.pushprovider import PushProvider, PushData
+from raspiot.libs.profiles import PushProfile 
 import urllib
 import httplib
 import json
@@ -12,7 +13,7 @@ import time
 __all__ = ['Pushover']
 
 
-class Pushover(PushProvider):
+class Pushover(RaspIotProvider):
     """
     Pushover module
     """
@@ -30,7 +31,8 @@ class Pushover(PushProvider):
     }
     PUSHOVER_API_URL = 'api.pushover.net:443'
 
-    PROVIDER_PROFILE = {}
+    PROVIDER_PROFILES = [PushProfile()]
+    PROVIDER_TYPE = 'alert.push'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -41,7 +43,7 @@ class Pushover(PushProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        PushProvider.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
     def __send_push(self, userkey, apikey, data):
         """
@@ -50,7 +52,7 @@ class Pushover(PushProvider):
         Params:
             userkey: user key
             apikey: user apikey
-            data: data to push (PushData instance)
+            data: data to push (PushProfile instance)
 
         Returns:
             bool: True if push sent successfully
@@ -147,7 +149,7 @@ class Pushover(PushProvider):
             apikey = config['apikey']
 
         #prepare data
-        data = PushData()
+        data = PushProfile()
         data.message = 'Hello this is Cleep'
 
         #send email

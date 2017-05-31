@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
     
 import logging
+from raspiot.raspiot import RaspIotProvider
 from raspiot.utils import InvalidParameter, CommandError, MissingParameter
-from raspiot.libs.smsprovider import SmsProvider, SmsData
+from raspiot.libs.profiles import SmsProfile
 import urllib
 
 __all__ = ['Bulksms']
 
 
-class Bulksms(SmsProvider):
+class Bulksms(RaspIotProvider):
     """
     BulkSms module
     @see http://developer.bulksms.com/eapi/submission/send_sms/
@@ -29,7 +30,8 @@ class Bulksms(SmsProvider):
         'credits': 0
     }
 
-    PROVIDER_PROFILE = {}
+    PROVIDER_PROFILES = [SmsProfile()]
+    PROVIDER_TYPE = 'alert.sms'
 
     BULKSMS_API_URL = 'https://bulksms.vsms.net/eapi/submission/send_sms/2/2.0'
     BULKSMS_CREDITS_URL = 'https://bulksms.vsms.net/eapi/user/get_credits/1/1.1'
@@ -77,7 +79,7 @@ class Bulksms(SmsProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        SmsProvider.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
     def set_credentials(self, username, password, phone_numbers):
         """
@@ -167,7 +169,7 @@ class Bulksms(SmsProvider):
         Post data
 
         Args:
-            data (SmsData): SmsData instance
+            data (SmsProfile): SmsProfile instance
 
         Returns:
             bool: True if post succeed, False otherwise

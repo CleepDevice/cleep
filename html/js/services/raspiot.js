@@ -12,9 +12,11 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.devices = [];
     //list of installed modules
     self.modules = {};
+    //list of providers
+    self.providers = {};
 
     /**
-     * Set module icon
+     * Set module icon (material icons)
      */
     self.__setModuleIcon = function(module)
     {
@@ -117,7 +119,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
                     {
                         //save new config
                         self.modules[module].config = resp.data;
-                        self.__setModuleIcon(module);
+                        //self.__setModuleIcon(module);
                         d.resolve(resp.data);
                     }
                     else
@@ -204,6 +206,23 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     };
 
     /**
+     * Load providers
+     */
+    self.loadProviders = function()
+    {
+        var d = $q.defer();
+
+        rpcService.getProviders()
+            .then(function(providers) {
+                self.providers = providers;
+
+                d.resolve(providers);
+            });
+
+        return d.promise;
+    };
+
+    /**
      * Check if specified module name is loaded
      * @param module: module name
      * @return true if module is loaded, false otherwise
@@ -218,6 +237,19 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             }
         }
         return false;
+    };
+
+    /**
+     * Returns providers of specified type
+     */
+    self.getProviders = function(type)
+    {
+        if( self.providers[type] )
+        {
+            return self.providers[type];
+        }
+
+        return {};
     };
 
 };

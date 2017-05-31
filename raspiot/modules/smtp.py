@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
     
 import logging
+from raspiot.raspiot import RaspIotProvider
 from raspiot.utils import CommandError, MissingParameter
-from raspiot.libs.emailprovider import EmailProvider, EmailData
+from raspiot.libs.profiles import EmailProfile
 import smtplib
 import mimetypes
 from email import encoders
@@ -17,7 +18,7 @@ from email.mime.text import MIMEText
 __all__ = ['Smtp']
 
 
-class Smtp(EmailProvider):
+class Smtp(RaspIotProvider):
     """
     Smtp module
     """
@@ -39,7 +40,8 @@ class Smtp(EmailProvider):
         'email_sender':''
     }
 
-    PROVIDER_PROFILE = {}
+    PROVIDER_PROFILE = [EmailProfile()]
+    PROVIDER_TYPE = 'alert.email'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -50,7 +52,7 @@ class Smtp(EmailProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        EmailProvider.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
     def __send_email(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, data):
         """
@@ -64,7 +66,7 @@ class Smtp(EmailProvider):
             smtp_tls: tls option (bool)
             smtp_ssl: ssl option (bool)
             email_sender: email sender (string)
-            data: email data (EmailData instance)
+            data: email data (EmailProfile instance)
 
         Returns:
             bool: True if test succeed
@@ -251,7 +253,7 @@ class Smtp(EmailProvider):
             email_sender = config['email_sender']
 
         #prepare data
-        data = EmailData()
+        data = EmailProfile()
         data.subject = 'Cleep test'
         data.message = 'Hello this is Cleep'
         data.recipients.append(recipient)
@@ -266,7 +268,7 @@ class Smtp(EmailProvider):
         Post data
 
         Params:
-            data (EmailData): EmailData instance
+            data (EmailProfile): EmailProfile instance
 
         Returns:
             bool: True if post succeed, False otherwise

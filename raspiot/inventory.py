@@ -6,13 +6,14 @@ import logging
 from raspiot import RaspIotModule
 from utils import CommandError, MissingParameter, InvalidParameter
 import importlib
+import inspect
 
 __all__ = ['Inventory']
 
 class Inventory(RaspIotModule):
     """
     Inventory handles inventory of:
-     - existing devices: knows all devices uuid and module that handles it
+     - existing devices: knows all devices and module that handles it
      - loaded modules and their commands
      - existing providers (sms, email, sound...)
     """  
@@ -36,8 +37,11 @@ class Inventory(RaspIotModule):
         self.modules = {}
         #list of installed modules
         self.installed_modules = []
-        #list of providers
+        #providers
+        self.provider_profiles = {}
         self.providers = {}
+        #formatters
+        self.formatters = {}
 
         #fill installed modules list
         for module in installed_modules:
@@ -48,6 +52,13 @@ class Inventory(RaspIotModule):
     def _start(self):
         """
         Start module
+        """
+        self.__load_modules()
+        self.__load_formatters()
+
+    def __load_modules(self):
+        """
+        Load all available modules and their devices
         """
         #list all modules
         path = os.path.join(os.path.dirname(__file__), 'modules')
@@ -67,7 +78,7 @@ class Inventory(RaspIotModule):
                     'installed': False
                 }
 
-        self.logger.info('installed modules: %s' % self.installed_modules)
+        self.logger.info('Installed modules: %s' % self.installed_modules)
         for module in self.installed_modules:
             #update installed flag
             self.modules[module]['installed'] = True
@@ -93,8 +104,46 @@ class Inventory(RaspIotModule):
             else:
                 self.logger.error('Unable to get devices of module "%s"' % module)
 
-        self.logger.debug('devices=%s' % self.devices)
-        self.logger.debug('modules=%s' % self.modules)
+        self.logger.debug('DEVICES=%s' % self.devices)
+        self.logger.debug('MODULES=%s' % self.modules)
+
+    def __load_formatters(self):
+        """
+        Load all available formatters
+        """
+        #list all formatters in formatters folder
+        path = os.path.join(os.path.dirname(__file__), 'formatters')
+        if not os.path.exists(path):
+            raise CommandError('Invalid formatters path')
+
+        #iterates over formatters
+        for f in os.listdir(path):
+            #build path
+            fpath = os.path.join(path, f)
+            (formatter, ext) = os.path.splitext(f)
+            self.logger.debug('formatter=%s ext=%s' % (formatter, ext))
+
+            #filter files
+            if os.path.isfile(fpath) and ext=='.py' and formatter!='__init__' and formatter!='formatter':
+
+                formatters_ = importlib.import_module('raspiot.formatters.%s' % formatter)
+                for name, class_ in inspect.getmembers(formatters_):
+
+                    #filter imports
+                    if name is None:
+                        continue
+                    if not str(class_).startswith('raspiot.formatters.%s.' % formatter):
+                        continue
+                    instance_ = class_()
+
+                    #save formatter
+                    self.logger.debug('Found class %s in %s' % (str(class_), formatter) )
+                    if not self.formatters.has_key(instance_.input):
+                        self.formatters[instance_.input] = {}
+                    self.formatters[instance_.input][instance_.output] = instance_
+                    self.logger.debug('  %s => %s' % (instance_.input, instance_.output))
+
+        self.logger.debug('FORMATTERS: %s' % self.formatters)
 
     def get_device_module(self, uuid):
         """
@@ -195,25 +244,6 @@ class Inventory(RaspIotModule):
 
         return None
 
-    def get_providers(self):
-        """
-        Returns list of providers
-        
-        Returns:
-            list: list of providers by type::
-                {
-                    'type1': {
-                        'subtype1': <provider instance>,
-                        ...
-                    },
-                    'type2': {
-                        'subtype1': <provider instance>
-                    },
-                    ...
-                }
-        """
-        return self.providers
-
     def is_module_loaded(self, module):
         """
         Simply returns True if specified module is loaded
@@ -226,62 +256,68 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def register_provider(self, type, subtype, profiles):
+    def get_providers(self):
+        """
+        Returns list of providers
+        
+        Returns:
+            list: list of providers by type::
+                {
+                    'type1': {
+                        'subtype1':  {
+                            <profile name>: <profile instance>,
+                            ...
+                        }
+                        'subtype2': ...
+                    },
+                    'type2': {
+                        <profile name>: <provider instance>
+                    },
+                    ...
+                }
+        """
+        return self.providers
+
+    def register_provider(self, type, profiles, command_sender):
         """
         Register new provider
 
         Args:
             type (string): provider type (ie: alert for sms/push/email provider)
-            subtype (string): provider subtype (ie: sms for sms provider)
             profiles (list of data): used to describe provider capabilities (ie: screen can have 1 or 2 lines,
                 provider must adapts posted data according to this capabilities)
+            command_sender (string): value automatically added by raspiot
 
         Returns:
             bool: True
 
         Raises:
-            MissingParameter: if parameter is missing
+            MissingParameter, InvalidParameter
         """
-        self.logger.debug('Register new provider %s:%s' % (type, subtype))
+        self.logger.debug('Register new provider %s' % (type))
         #check values
         if type is None or len(type)==0:
             raise MissingParameter('Type parameter is missing')
-        if subtype is None or len(subtype)==0:
-            raise MissingParameter('Subtype parameter is missing')
+        if profiles is None:
+            raise MissingParameter('Profiles is missing')
+        if len(profiles)==0:
+            raise InvalidParameter('Profiles must contains at least one profile')
 
-        #add provider type
+        #update providers list
         if not self.providers.has_key(type):
-            self.providers[type] = {}
+            self.providers[type] = []
+        self.providers[type].append(command_sender)
 
-        #add provider subtype
-        if not self.providers[type].has_key(subtype):
-            self.providers[type][subtype] = {}
+        #update provider profiles list
+        for profile in profiles:
+            profile_name = profile.__class__.__name__
+            if not self.provider_profiles.has_key(command_sender):
+                self.provider_profiles[command_sender] = []
+            self.provider_profiles[command_sender].append(profile_name)
 
-        #register new provider
-        self.providers[type][subtype] = {
-            'profiles': profiles
-        }
-        self.logger.info('PROVIDERS= %s' % self.providers)
+        self.logger.info('PROVIDERS: %s' % self.providers)
+        self.logger.info('PROVIDERS PROFILES: %s' % self.provider_profiles)
         
-        return True
-
-    def unregister_provider(self, type, subtype):
-        """
-        Unregister provider
-
-        Args:
-            type (string): provider type
-            subtype (string): provider subtype
-
-        Returns:
-            bool: True if unregistration succeed, False otherwise
-        """
-        if not self.providers.has_key(type) or not self.providers[type].has_key(subtype):
-            return False
-
-        #remove provider
-        del self.providers[type][subtype]
-
         return True
 
     def has_provider(self, type):
@@ -294,8 +330,53 @@ class Inventory(RaspIotModule):
         Returns:
             bool: True if provider exists or False otherwise
         """
-        if self.providers.has_key(type) and len(self.providers[type])>0:
+        if len(self.providers[type])>0 and self.providers.has_key(type):
             return True
 
         return False
+
+    def post_event(self, event, event_values, types):
+        """
+        Post event to provider types
+
+        Args:
+            types (list<string>): existing provider type
+        """
+        if not isinstance(types, list):
+            raise InvalidParameter('Types must be a list')
+
+        #iterates over registered types
+        for type in types:
+            if self.has_provider(type):
+                #provider exists for current type
+
+                #get formatters
+                self.logger.debug('Searching formatters...')
+                formatters = {}
+                for formatter in self.formatters:
+                    if formatter.endswith(event):
+                        formatters.update(self.formatters[formatter])
+                if len(formatters)==0:
+                    #no formatter found, exit
+                    self.logger.debug('No formatter found for event %s' % event)
+                    return False
+
+                #find match with formatters and provider profiles
+                for provider in self.providers[type]:
+                    for profile in self.provider_profiles[provider]:
+                        if profile in formatters:
+                            self.logger.debug('Found match, post profile data to provider %s' % provider)
+                            #found match, format event to profile
+                            data = formatters[profile].format(event_values)
+
+                            #and post profile data to provider
+                            resp = self.send_command('post', provider, {'data':data})
+                            if resp['error']:
+                                self.logger.error('Unable to post data to "%s" provider: %s' % (provider, resp['message']))
+
+            else:
+                #no provider for current type
+                self.logger.debug('No provider registered for %s' % type)
+
+
 

@@ -6,6 +6,7 @@ import os
 import json
 from bus import BusClient
 from threading import Lock, Thread
+from utils import CommandError, MissingParameter, InvalidParameter
 import time
 import copy
 import uuid
@@ -309,6 +310,7 @@ class RaspIot(BusClient):
 
 
 
+
 class RaspIotModule(RaspIot):
     """
     Base raspiot class for module
@@ -500,6 +502,22 @@ class RaspIotModule(RaspIot):
         else:
             return 0
 
+    def post_event(self, event, event_values, provider_types):
+        """ 
+        Post event to specified providers types
+
+        Args:
+            provider_types (list): list of provider types
+
+        Returns:
+            bool: True if post command succeed, False otherwise
+        """
+        resp = self.send_command('post_event', 'inventory', {'event':event, 'event_values':event_values, 'types': provider_types})
+        if resp['error']:
+            self.logger.error('Unable to request providers by type')
+            return False
+
+        return True
 
 
 
@@ -509,7 +527,6 @@ class RaspIotProvider(RaspIotModule):
     It implements:
      - automatic provider registration
      - post function to post data to provider
-     - a function to get provider profile
     """
 
     def __init__(self, bus, debug_enabled):
@@ -522,27 +539,25 @@ class RaspIotProvider(RaspIotModule):
         """
         #init raspiot
         RaspIot.__init__(self, bus, debug_enabled)
+        self.profiles_types = []
 
-    def register_provider(self, type, subtype, profiles):
+    def register_provider(self):
         """
         Register provider to inventory.
-
-        Args:
-            type (string): provider main type.
-            subtype (string): provider subtype.
-            profiles (list): used to describe provider profiles (ie: screen can have 1 or 2 lines, provider user must adapts posted data according to a profile).
 
         Returns:
             bool: True if provider registered successfully
         """
-        if type is None or len(type)==0:
-            raise CommandError('Type parameter is missing')
-        if subtype is None or len(subtype)==0:
-            raise CommandError('Subtype parameter is missing')
-        if profiles is None:
-            raise CommandError('Profiles parameter is missing')
+        if getattr(self, 'PROVIDER_PROFILES', None) is None:
+            raise CommandError('PROVIDER_PROFILES is not defined in %s' % self.__class__.__name__)
+        if getattr(self, 'PROVIDER_TYPE', None) is None:
+            raise CommandError('PROVIDER_TYPE is not defined in %s' % self.__class__.__name__)
 
-        resp = self.send_command('register_provider', 'inventory', {'type':type, 'subtype':subtype, 'profiles':profiles})
+        #cache profile types as string
+        for profile in self.PROVIDER_PROFILES:
+            self.profiles_types.append(profile.__class__.__name__)
+
+        resp = self.send_command('register_provider', 'inventory', {'type':self.PROVIDER_TYPE, 'profiles':self.PROVIDER_PROFILES})
         if resp['error']:
             self.logger.error('Unable to register provider to inventory: %s' % resp['message'])
 
@@ -559,7 +574,25 @@ class RaspIotProvider(RaspIotModule):
             bool: True if post is successful.
 
         Raises:
-            NotImplementedError: if function not implemented in provider instance.
+            MissingParameter, InvalidParameter
         """
-        raise NotImplementedError('post function must implemented in a provider')
+        #check data type
+        if data is None:
+            raise MissingParameter('Data parameter is missing')
+        if data.__class__.__name__ not in self.profiles_types:
+            raise InvalidParameter('Data has invalid type "%s"' % data.__class__.__name__)
+
+        #call implementation
+        return self._post(data)
+
+    def event_received(self, event):
+        """ 
+        Event received from bus
+
+        Args:
+            event (MessageRequest): received event
+        """
+        if event['event']=='system.application.ready':
+            #application is ready, register provider
+            self.register_provider()
 
