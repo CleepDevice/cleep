@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 from raspiot.utils import CommandError, MissingParameter, CommandInfo
 from raspiot.libs.profiles import PushProfile 
 import urllib
@@ -13,7 +13,7 @@ import time
 __all__ = ['Pushover']
 
 
-class Pushover(RaspIotProvider):
+class Pushover(RaspIotRenderer):
     """
     Pushover module
     """
@@ -31,8 +31,8 @@ class Pushover(RaspIotProvider):
     }
     PUSHOVER_API_URL = 'api.pushover.net:443'
 
-    PROVIDER_PROFILES = [PushProfile()]
-    PROVIDER_TYPE = 'alert.push'
+    RENDERER_PROFILES = [PushProfile()]
+    RENDERER_TYPE = 'alert.push'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -43,7 +43,7 @@ class Pushover(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
     def __send_push(self, userkey, apikey, data):
         """
@@ -157,9 +157,9 @@ class Pushover(RaspIotProvider):
 
         return True
 
-    def _post(self, data):
+    def _render(self, data):
         """
-        Post data
+        Render data
 
         Params:
             data (SmsData): SmsData instance

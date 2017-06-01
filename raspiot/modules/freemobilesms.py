@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 from raspiot.utils import CommandError, MissingParameter
 from raspiot.libs.profiles import SmsProfile
 import urllib
@@ -12,9 +12,9 @@ import ssl
 __all__ = ['Freemobilesms']
 
 
-class Freemobilesms(RaspIotProvider):
+class Freemobilesms(RaspIotRenderer):
     """
-    FreemobileSms provider
+    FreemobileSms renderer
 
     Note:
         http://developer.bulksms.com/eapi/submission/send_sms/
@@ -32,8 +32,8 @@ class Freemobilesms(RaspIotProvider):
         'apikey': None
     }
 
-    PROVIDER_PROFILES = [SmsProfile()]
-    PROVIDER_TYPE = 'alert.sms'
+    RENDERER_PROFILES = [SmsProfile()]
+    RENDERER_TYPE = 'alert.sms'
 
     FREEMOBILESMS_API_URL = 'https://smsapi.free-mobile.fr/sendmsg'
     FREEMOBILESMS_RESPONSE = {
@@ -53,7 +53,7 @@ class Freemobilesms(RaspIotProvider):
             debug_enabled: debug status
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
     def set_credentials(self, userid, apikey):
         """
@@ -132,15 +132,15 @@ class Freemobilesms(RaspIotProvider):
 
         return True
 
-    def _post(self, data):
+    def _render(self, data):
         """
-        Post data
+        Render data
 
         Params:
             data: SmsProfile instance
 
         Returns:
-            bool: True if post succeed, False otherwise
+            bool: True if render succeed, False otherwise
         """
         config = self._get_config()
         params = urllib.urlencode({

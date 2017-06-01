@@ -15,7 +15,7 @@ class Inventory(RaspIotModule):
     Inventory handles inventory of:
      - existing devices: knows all devices and module that handles it
      - loaded modules and their commands
-     - existing providers (sms, email, sound...)
+     - existing renderers (sms, email, sound...)
     """  
 
     def __init__(self, bus, debug_enabled, installed_modules):
@@ -37,9 +37,9 @@ class Inventory(RaspIotModule):
         self.modules = {}
         #list of installed modules
         self.installed_modules = []
-        #providers
-        self.provider_profiles = {}
-        self.providers = {}
+        #renderers
+        self.renderer_profiles = {}
+        self.renderers = {}
         #formatters
         self.formatters = {}
 
@@ -256,12 +256,12 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
-    def get_providers(self):
+    def get_renderers(self):
         """
-        Returns list of providers
+        Returns list of renderers
         
         Returns:
-            list: list of providers by type::
+            list: list of renderers by type::
                 {
                     'type1': {
                         'subtype1':  {
@@ -271,21 +271,21 @@ class Inventory(RaspIotModule):
                         'subtype2': ...
                     },
                     'type2': {
-                        <profile name>: <provider instance>
+                        <profile name>: <renderer instance>
                     },
                     ...
                 }
         """
-        return self.providers
+        return self.renderers
 
-    def register_provider(self, type, profiles, command_sender):
+    def register_renderer(self, type, profiles, command_sender):
         """
-        Register new provider
+        Register new renderer
 
         Args:
-            type (string): provider type (ie: alert for sms/push/email provider)
-            profiles (list of data): used to describe provider capabilities (ie: screen can have 1 or 2 lines,
-                provider must adapts posted data according to this capabilities)
+            type (string): renderer type (ie: alert for sms/push/email renderer)
+            profiles (list of data): used to describe renderer capabilities (ie: screen can have 1 or 2 lines,
+                renderer must adapts posted data according to this capabilities)
             command_sender (string): value automatically added by raspiot
 
         Returns:
@@ -294,7 +294,7 @@ class Inventory(RaspIotModule):
         Raises:
             MissingParameter, InvalidParameter
         """
-        self.logger.debug('Register new provider %s' % (type))
+        self.logger.debug('Register new renderer %s' % (type))
         #check values
         if type is None or len(type)==0:
             raise MissingParameter('Type parameter is missing')
@@ -303,52 +303,52 @@ class Inventory(RaspIotModule):
         if len(profiles)==0:
             raise InvalidParameter('Profiles must contains at least one profile')
 
-        #update providers list
-        if not self.providers.has_key(type):
-            self.providers[type] = []
-        self.providers[type].append(command_sender)
+        #update renderers list
+        if not self.renderers.has_key(type):
+            self.renderers[type] = []
+        self.renderers[type].append(command_sender)
 
-        #update provider profiles list
+        #update renderer profiles list
         for profile in profiles:
             profile_name = profile.__class__.__name__
-            if not self.provider_profiles.has_key(command_sender):
-                self.provider_profiles[command_sender] = []
-            self.provider_profiles[command_sender].append(profile_name)
+            if not self.renderer_profiles.has_key(command_sender):
+                self.renderer_profiles[command_sender] = []
+            self.renderer_profiles[command_sender].append(profile_name)
 
-        self.logger.debug('PROVIDERS: %s' % self.providers)
-        self.logger.debug('PROVIDERS PROFILES: %s' % self.provider_profiles)
+        self.logger.debug('RENDERERS: %s' % self.renderers)
+        self.logger.debug('RENDERERS PROFILES: %s' % self.renderer_profiles)
         
         return True
 
-    def has_provider(self, type):
+    def has_renderer(self, type):
         """
-        Return True if at least one provider is registered for specified type
+        Return True if at least one renderer is registered for specified type
 
         Args:
-            type (string): provider type
+            type (string): renderer type
         
         Returns:
-            bool: True if provider exists or False otherwise
+            bool: True if renderer exists or False otherwise
         """
-        if len(self.providers)>0 and self.providers.has_key(type) and len(self.providers[type])>0:
+        if len(self.renderers)>0 and self.renderers.has_key(type) and len(self.renderers[type])>0:
             return True
 
         return False
 
-    def post_event(self, event, event_values, types):
+    def render_event(self, event, event_values, types):
         """
-        Post event to provider types
+        Render event to renderer types
 
         Args:
-            types (list<string>): existing provider type
+            types (list<string>): existing renderer type
         """
         if not isinstance(types, list):
             raise InvalidParameter('Types must be a list')
 
         #iterates over registered types
         for type in types:
-            if self.has_provider(type):
-                #provider exists for current type
+            if self.has_renderer(type):
+                #renderer exists for current type
 
                 #get formatters
                 self.logger.debug('Searching formatters...')
@@ -361,22 +361,26 @@ class Inventory(RaspIotModule):
                     self.logger.debug('No formatter found for event %s' % event)
                     return False
 
-                #find match with formatters and provider profiles
-                for provider in self.providers[type]:
-                    for profile in self.provider_profiles[provider]:
+                #find match with formatters and renderer profiles
+                for renderer in self.renderers[type]:
+                    for profile in self.renderer_profiles[renderer]:
                         if profile in formatters:
-                            self.logger.debug('Found match, post profile data to provider %s' % provider)
+                            self.logger.debug('Found match, post profile data to renderer %s' % renderer)
                             #found match, format event to profile
                             data = formatters[profile].format(event_values)
 
-                            #and post profile data to provider
-                            resp = self.send_command('post', provider, {'data':data})
+                            #handle no data
+                            if data is None:
+                                continue
+
+                            #and post profile data to renderer
+                            resp = self.send_command('render', renderer, {'data':data})
                             if resp['error']:
-                                self.logger.error('Unable to post data to "%s" provider: %s' % (provider, resp['message']))
+                                self.logger.error('Unable to post data to "%s" renderer: %s' % (renderer, resp['message']))
 
             else:
-                #no provider for current type
-                self.logger.debug('No provider registered for %s' % type)
+                #no renderer for current type
+                self.logger.debug('No renderer registered for %s' % type)
 
 
 

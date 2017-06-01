@@ -5,7 +5,7 @@ import os
 import shutil
 import logging
 from raspiot.utils import InvalidParameter
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 from raspiot.libs.profiles import TextToSpeechProfile
 import pygame
 from threading import Thread
@@ -76,7 +76,7 @@ class PlaySound(Thread):
 
 
 
-class Sounds(RaspIotProvider):
+class Sounds(RaspIotRenderer):
 
     MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
@@ -85,8 +85,8 @@ class Sounds(RaspIotProvider):
     MODULE_URL = None
     MODULE_TAGS = []
 
-    PROVIDER_PROFILES = [TextToSpeechProfile()]
-    PROVIDER_TYPE = 'sound'
+    RENDERER_PROFILES = [TextToSpeechProfile()]
+    RENDERER_TYPE = 'sound'
 
     DEFAULT_CONFIG = {
         'lang': 'en'
@@ -156,7 +156,7 @@ class Sounds(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
         #disable urllib info logs
         url_log = logging.getLogger("urllib3")
@@ -385,7 +385,7 @@ class Sounds(RaspIotProvider):
 
         return True
 
-    def _post_event(self, data):
+    def _render(self, data):
         """
         TextToSpeech specified data
 

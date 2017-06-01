@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
@@ -53,7 +53,7 @@ class Message():
 
 
 
-class Messageboard(RaspIotProvider):
+class Messageboard(RaspIotRenderer):
     """
     Messageboard allows user to display message on single line board
     Icons are directly handled inside message
@@ -66,8 +66,8 @@ class Messageboard(RaspIotProvider):
     MODULE_URL = None
     MODULE_TAGS = []
 
-    PROVIDER_PROFILES = [DisplayAddOrReplaceMessageProfile(), DisplayLimitedTimeMessageProfile()]
-    PROVIDER_TYPE = 'display'
+    RENDERER_PROFILES = [DisplayAddOrReplaceMessageProfile(), DisplayLimitedTimeMessageProfile()]
+    RENDERER_TYPE = 'display'
 
     SPEED_SLOW = 'slow'
     SPEED_NORMAL = 'normal'
@@ -93,7 +93,7 @@ class Messageboard(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None
@@ -252,9 +252,9 @@ class Messageboard(RaspIotProvider):
         #set board unit
         self.board.set_time_units('minutes', 'hours', 'days')
 
-    def _post(self, data):
+    def _render(self, data):
         """
-        Post message to screen
+        Render message to screen
 
         Args:
             data (any supported profile): data to display

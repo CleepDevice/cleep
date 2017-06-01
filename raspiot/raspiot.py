@@ -12,7 +12,7 @@ import copy
 import uuid
 
 
-__all__ = ['RaspIot', 'RaspIotProvider', 'RaspIotModule']
+__all__ = ['RaspIot', 'RaspIotRenderer', 'RaspIotModule']
 
 
 class RaspIot(BusClient):
@@ -502,31 +502,31 @@ class RaspIotModule(RaspIot):
         else:
             return 0
 
-    def post_event(self, event, event_values, provider_types):
+    def render_event(self, event, event_values, renderer_types):
         """ 
-        Post event to specified providers types
+        Post event to specified renderers types
 
         Args:
-            provider_types (list): list of provider types
+            renderer_types (list): list of renderer types
 
         Returns:
             bool: True if post command succeed, False otherwise
         """
-        resp = self.send_command('post_event', 'inventory', {'event':event, 'event_values':event_values, 'types': provider_types})
+        resp = self.send_command('render_event', 'inventory', {'event':event, 'event_values':event_values, 'types': renderer_types})
         if resp['error']:
-            self.logger.error('Unable to request providers by type')
+            self.logger.error('Unable to request renderers by type')
             return False
 
         return True
 
 
 
-class RaspIotProvider(RaspIotModule):
+class RaspIotRenderer(RaspIotModule):
     """
-    Base raspiot class for provider.
+    Base raspiot class for renderer.
     It implements:
-     - automatic provider registration
-     - post function to post data to provider
+     - automatic renderer registration
+     - post function to post data to renderer
     """
 
     def __init__(self, bus, debug_enabled):
@@ -541,31 +541,31 @@ class RaspIotProvider(RaspIotModule):
         RaspIot.__init__(self, bus, debug_enabled)
         self.profiles_types = []
 
-    def register_provider(self):
+    def register_renderer(self):
         """
-        Register provider to inventory.
+        Register renderer to inventory.
 
         Returns:
-            bool: True if provider registered successfully
+            bool: True if renderer registered successfully
         """
-        if getattr(self, 'PROVIDER_PROFILES', None) is None:
-            raise CommandError('PROVIDER_PROFILES is not defined in %s' % self.__class__.__name__)
-        if getattr(self, 'PROVIDER_TYPE', None) is None:
-            raise CommandError('PROVIDER_TYPE is not defined in %s' % self.__class__.__name__)
+        if getattr(self, 'RENDERER_PROFILES', None) is None:
+            raise CommandError('RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
+        if getattr(self, 'RENDERER_TYPE', None) is None:
+            raise CommandError('RENDERR_TYPE is not defined in %s' % self.__class__.__name__)
 
         #cache profile types as string
-        for profile in self.PROVIDER_PROFILES:
+        for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__class__.__name__)
 
-        resp = self.send_command('register_provider', 'inventory', {'type':self.PROVIDER_TYPE, 'profiles':self.PROVIDER_PROFILES})
+        resp = self.send_command('register_renderer', 'inventory', {'type':self.RENDERER_TYPE, 'profiles':self.RENDERER_PROFILES})
         if resp['error']:
-            self.logger.error('Unable to register provider to inventory: %s' % resp['message'])
+            self.logger.error('Unable to register renderer to inventory: %s' % resp['message'])
 
         return True
 
-    def post(self, data):
+    def render(self, data):
         """
-        Post data to provider.
+        Post data to renderer.
 
         Args:
             data (dict): data to post.
@@ -577,13 +577,19 @@ class RaspIotProvider(RaspIotModule):
             MissingParameter, InvalidParameter
         """
         #check data type
-        if data is None:
-            raise MissingParameter('Data parameter is missing')
+        #if data is None:
+        #    raise MissingParameter('Data parameter is missing')
         if data.__class__.__name__ not in self.profiles_types:
             raise InvalidParameter('Data has invalid type "%s"' % data.__class__.__name__)
 
         #call implementation
-        return self._post(data)
+        return self._render(data)
+
+    def _render(self, data):
+        """
+        Fake render method
+        """
+        pass
 
     def event_received(self, event):
         """ 
@@ -593,6 +599,6 @@ class RaspIotProvider(RaspIotModule):
             event (MessageRequest): received event
         """
         if event['event']=='system.application.ready':
-            #application is ready, register provider
-            self.register_provider()
+            #application is ready, register renderer
+            self.register_renderer()
 

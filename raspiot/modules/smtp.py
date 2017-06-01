@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 from raspiot.utils import CommandError, MissingParameter
 from raspiot.libs.profiles import EmailProfile
 import smtplib
@@ -18,7 +18,7 @@ from email.mime.text import MIMEText
 __all__ = ['Smtp']
 
 
-class Smtp(RaspIotProvider):
+class Smtp(RaspIotRenderer):
     """
     Smtp module
     """
@@ -40,8 +40,8 @@ class Smtp(RaspIotProvider):
         'email_sender':''
     }
 
-    PROVIDER_PROFILES = [EmailProfile()]
-    PROVIDER_TYPE = 'alert.email'
+    RENDERER_PROFILES = [EmailProfile()]
+    RENDERER_TYPE = 'alert.email'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -52,7 +52,7 @@ class Smtp(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
     def __send_email(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, data):
         """
@@ -263,9 +263,9 @@ class Smtp(RaspIotProvider):
 
         return True
 
-    def _post(self, data):
+    def _render(self, data):
         """
-        Post data
+        Render data
 
         Params:
             data (EmailProfile): EmailProfile instance
