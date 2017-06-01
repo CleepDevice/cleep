@@ -32,7 +32,7 @@ class TimeSoundTextFormatter(Formatter):
     Current time data to TextToSpeechProfile
     """
     def __init__(self):
-        Formatter(.__init__(self, 'system.time.now', TextToSpeechProfile())
+        Formatter.__init__(self, 'system.time.now', TextToSpeechProfile())
 
     def format(self, event_values):
         """

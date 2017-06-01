@@ -6,6 +6,7 @@ import shutil
 import logging
 from raspiot.utils import InvalidParameter
 from raspiot.raspiot import RaspIotProvider
+from raspiot.libs.profiles import TextToSpeechProfile
 import pygame
 from threading import Thread
 from gtts import gTTS
@@ -155,7 +156,7 @@ class Sounds(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
         #disable urllib info logs
         url_log = logging.getLogger("urllib3")
@@ -275,7 +276,7 @@ class Sounds(RaspIotProvider):
         #check parameters
         if text is None:
             raise MissingParameter('Text parameter is missing')
-        if lang is None::
+        if lang is None:
             raise MissingParameter('Lang parameter is missing')
 
         #check if sound is already playing
