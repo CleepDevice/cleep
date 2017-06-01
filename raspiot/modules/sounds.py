@@ -5,7 +5,7 @@ import os
 import shutil
 import logging
 from raspiot.utils import InvalidParameter
-from raspiot.raspiot import RaspIotModule
+from raspiot.raspiot import RaspIotProvider
 import pygame
 from threading import Thread
 from gtts import gTTS
@@ -75,7 +75,7 @@ class PlaySound(Thread):
 
 
 
-class Sounds(RaspIotModule):
+class Sounds(RaspIotProvider):
 
     MODULE_CONFIG_FILE = 'sounds.conf'
     MODULE_DEPS = []
@@ -83,6 +83,9 @@ class Sounds(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
+
+    PROVIDER_PROFILES = [TextToSpeechProfile()]
+    PROVIDER_TYPE = 'sound'
 
     DEFAULT_CONFIG = {
         'lang': 'en'
@@ -258,7 +261,7 @@ class Sounds(RaspIotModule):
         self.__sound_thread = PlaySound(filepath)
         self.__sound_thread.start()
 
-    def speak_message(self, text, lang):
+    def speak_text(self, text, lang):
         """
         Speak specified message
 
@@ -270,8 +273,10 @@ class Sounds(RaspIotModule):
             Exception, InvalidParameter
         """
         #check parameters
-        if not text or not lang:
-            raise InvalidParameter('Some parameters are invalid')
+        if text is None:
+            raise MissingParameter('Text parameter is missing')
+        if lang is None::
+            raise MissingParameter('Lang parameter is missing')
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
@@ -379,4 +384,12 @@ class Sounds(RaspIotModule):
 
         return True
 
+    def _post_event(self, data):
+        """
+        TextToSpeech specified data
+
+        Args:
+            data (any supported profile): data to speech
+        """
+        self.speak_text(data.text, self._config['lang'])
 

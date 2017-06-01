@@ -32,7 +32,7 @@ class DisplayLimitedDateFormatter(Formatter):
         return profile
 """
 
-class DisplayAddOrReplaceMessageFormatter(Formatter):
+class OwmDisplayAddOrReplaceMessageFormatter(Formatter):
     """
     Openweathermap data to DisplayAddOrReplaceProfile
     """

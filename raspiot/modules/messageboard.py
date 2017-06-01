@@ -66,7 +66,7 @@ class Messageboard(RaspIotProvider):
     MODULE_URL = None
     MODULE_TAGS = []
 
-    PROVIDER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
+    PROVIDER_PROFILES = [DisplayAddOrReplaceMessageProfile(), DisplayLimitedTimeMessageProfile()]
     PROVIDER_TYPE = 'display'
 
     SPEED_SLOW = 'slow'
@@ -257,7 +257,7 @@ class Messageboard(RaspIotProvider):
         Post message to screen
 
         Args:
-            data (any profile): data to display
+            data (any supported profile): data to display
         """
         if isinstance(data, DisplayAddOrReplaceMessageProfile):
             self.add_or_replace_message(data.message, data.uuid)

@@ -89,4 +89,12 @@ class DisplayAddOrReplaceMessageProfile(ProviderProfile):
         self.message = None
         self.uuid = None
 
+class TextToSpeechProfile(ProviderProfile):
+    """
+    Sound profile
+    TextToSpeech message
+    """
+    def __init__(self):
+        ProviderProfile.__init__(self)
+        self.text = None
 

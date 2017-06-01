@@ -256,18 +256,21 @@ class System(RaspIotModule):
 
         #push now event
         self.send_event('system.time.now', now_formatted, self.__clock_uuid)
+        self.post_event('system.time.now', now_formatted, ['sound', 'display'])
 
         #handle sunset
         if self.sunset:
             if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
                 #sunset time
                 self.send_event('system.time.sunset', None, self.__clock_uuid)
+                self.post_event('system.time.sunset', None, ['display', 'sound'])
 
         #handle sunrise
         if self.sunrise:
             if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
                 #sunrise time
                 self.send_event('system.time.sunrise', None, self.__clock_uuid)
+                self.post_event('system.time.sunrise', None, ['display', 'sound'])
 
         #compute some stuff at midnight
         if now_formatted['hour']==0 and now_formatted['minute']==0:
