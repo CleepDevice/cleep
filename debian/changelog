@@ -1,3 +1,11 @@
+raspiot (0.0.0) UNRELEASED; urgency=low
+
+  * Update messageboard module to fit new ui style
+  * Smart connect between service modules and provider modules: concept of
+  providers/profiles/formatters
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
+
 raspiot (0.0.7) UNRELEASED; urgency=low
 
   * New push module: pushover
