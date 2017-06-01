@@ -330,7 +330,7 @@ class Inventory(RaspIotModule):
         Returns:
             bool: True if provider exists or False otherwise
         """
-        if len(self.providers[type])>0 and self.providers.has_key(type):
+        if len(self.providers)>0 and self.providers.has_key(type) and len(self.providers[type])>0:
             return True
 
         return False
