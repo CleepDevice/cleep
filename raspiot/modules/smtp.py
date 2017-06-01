@@ -40,7 +40,7 @@ class Smtp(RaspIotProvider):
         'email_sender':''
     }
 
-    PROVIDER_PROFILE = [EmailProfile()]
+    PROVIDER_PROFILES = [EmailProfile()]
     PROVIDER_TYPE = 'alert.email'
 
     def __init__(self, bus, debug_enabled):

@@ -315,8 +315,8 @@ class Inventory(RaspIotModule):
                 self.provider_profiles[command_sender] = []
             self.provider_profiles[command_sender].append(profile_name)
 
-        self.logger.info('PROVIDERS: %s' % self.providers)
-        self.logger.info('PROVIDERS PROFILES: %s' % self.provider_profiles)
+        self.logger.debug('PROVIDERS: %s' % self.providers)
+        self.logger.debug('PROVIDERS PROFILES: %s' % self.provider_profiles)
         
         return True
 
