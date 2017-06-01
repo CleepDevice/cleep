@@ -7,7 +7,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.uriRegisterPoll = window.location.protocol + '//' + window.location.host + '/registerpoll';
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
     self.uriDevices = window.location.protocol + '//' + window.location.host + '/devices';
-    self.uriProviders = window.location.protocol + '//' + window.location.host + '/providers';
+    self.uriRenderers = window.location.protocol + '//' + window.location.host + '/renderers';
     self.pollKey = null;
     self._uploading = false;
 
@@ -148,14 +148,14 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     };
 
     /**
-     * Get all providers
+     * Get all renderers
      */
-    self.getProviders = function() {
+    self.getRenderers = function() {
         var d = $q.defer();
 
         $http({
             method: 'POST',
-            url: self.uriProviders,
+            url: self.uriRenderers,
             responseType: 'json'
         })
         .then(function(resp) {

@@ -476,19 +476,19 @@ def devices():
 
     return json.dumps(devices)
 
-@app.route('/providers', method='POST')
+@app.route('/renderers', method='POST')
 @authenticate()
-def providers():
+def renderers():
     """
-    Returns all providers
+    Returns all renderers
 
     Returns:
-        dict: all providers by type
+        dict: all renderers by type
     """
-    providers = app.config['sys.inventory'].get_providers()
+    renderers = app.config['sys.inventory'].get_renderers()
 
-    logger.debug('Providers: %s' % providers)
-    return json.dumps(providers)
+    logger.debug('renderers: %s' % renderers)
+    return json.dumps(renderers)
 
 @app.route('/registerpoll', method='POST')
 @authenticate()

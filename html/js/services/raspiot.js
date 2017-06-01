@@ -12,8 +12,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.devices = [];
     //list of installed modules
     self.modules = {};
-    //list of providers
-    self.providers = {};
+    //list of renderers
+    self.renderers = {};
 
     /**
      * Set module icon (material icons)
@@ -206,17 +206,17 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     };
 
     /**
-     * Load providers
+     * Load renderers
      */
-    self.loadProviders = function()
+    self.loadRenderers = function()
     {
         var d = $q.defer();
 
-        rpcService.getProviders()
-            .then(function(providers) {
-                self.providers = providers;
+        rpcService.getRenderers()
+            .then(function(renderers) {
+                self.renderers = renderers;
 
-                d.resolve(providers);
+                d.resolve(renderers);
             });
 
         return d.promise;
@@ -240,13 +240,13 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     };
 
     /**
-     * Returns providers of specified type
+     * Returns renderers of specified type
      */
-    self.getProviders = function(type)
+    self.getRenderers = function(type)
     {
-        if( self.providers[type] )
+        if( self.renderers[type] )
         {
-            return self.providers[type];
+            return self.renderers[type];
         }
 
         return {};

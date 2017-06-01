@@ -122,14 +122,14 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 return raspiotService.reloadDevices();
             })
             .then(function() {
-                //load providers
-                return raspiotService.loadProviders();
+                //load renderers
+                return raspiotService.loadRenderers();
             })
             .finally(function() {
                 console.log("DEVICES", raspiotService.devices);
                 console.log("SERVICES", objectsService.services);
                 console.log("MODULES", raspiotService.modules);
-                console.log("PROVIDERS", raspiotService.providers);
+                console.log("RENDERERS", raspiotService.renderers);
             });
     };
 
@@ -141,7 +141,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         //launch polling
         window.setTimeout(self.polling, 0);
 
-        //load config (modules, devices, providers...)
+        //load config (modules, devices, renderers...)
         self.loadConfig();
     };
     self.init();
