@@ -1,0 +1,11 @@
+<div layout="row">
+
+    <md-input-container>
+        <md-select ng-model="rendererCtl.renderers" multiple placeholder="Choose outputs">
+            <md-optgroup label="{{currentGroup}} output" ng-repeat="currentGroup in rendererCtl.groups">
+                <md-option ng-value="renderer.value" ng-repeat="renderer in rendererCtl.allRenderers | filter: {group: currentGroup}">{{renderer.label}}</md-option>
+            </md-optgroup>
+        </md-select>
+    </md-input-container>
+
+</div>
