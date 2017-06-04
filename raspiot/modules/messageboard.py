@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.raspiot import RaspIotRenderer
+from raspiot.raspiot import RaspIotProvider
 import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
@@ -53,7 +53,7 @@ class Message():
 
 
 
-class Messageboard(RaspIotRenderer):
+class Messageboard(RaspIotProvider):
     """
     Messageboard allows user to display message on single line board
     Icons are directly handled inside message
@@ -66,8 +66,8 @@ class Messageboard(RaspIotRenderer):
     MODULE_URL = None
     MODULE_TAGS = []
 
-    RENDERER_PROFILES = [DisplayAddOrReplaceMessageProfile(), DisplayLimitedTimeMessageProfile()]
-    RENDERER_TYPE = 'display'
+    PROVIDER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
+    PROVIDER_TYPE = 'display'
 
     SPEED_SLOW = 'slow'
     SPEED_NORMAL = 'normal'
@@ -81,7 +81,7 @@ class Messageboard(RaspIotRenderer):
     DEFAULT_CONFIG = {
         'duration': 60,
         'messages' : [],
-        'speed': 0.05
+        'speed': 'normal'
     }
 
     def __init__(self, bus, debug_enabled):
@@ -93,7 +93,7 @@ class Messageboard(RaspIotRenderer):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled)
+        RaspIotProvider.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None
@@ -252,12 +252,12 @@ class Messageboard(RaspIotRenderer):
         #set board unit
         self.board.set_time_units('minutes', 'hours', 'days')
 
-    def _render(self, data):
+    def _post(self, data):
         """
-        Render message to screen
+        Post message to screen
 
         Args:
-            data (any supported profile): data to display
+            data (any profile): data to display
         """
         if isinstance(data, DisplayAddOrReplaceMessageProfile):
             self.add_or_replace_message(data.message, data.uuid)
@@ -465,7 +465,7 @@ class Messageboard(RaspIotRenderer):
 
         Args:
             duration (float): message duration (cycling time)
-            speed: (slow|normal|fast) message scrolling speed
+            speed (slow|normal|fast): message scrolling speed
 
         Raises:
             InvalidParameter, MissingParameter
@@ -486,7 +486,7 @@ class Messageboard(RaspIotRenderer):
         self._save_config(config)
 
         #update board configuration
-        self.board.set_scroll_speed(self.SPEEDS[self._config['speed']])
+        self.board.set_scroll_speed(self.SPEEDS[speed])
 
         #stop current task
         if self.__display_task:
