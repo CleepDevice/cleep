@@ -142,7 +142,7 @@ class ScrollingMessage(Thread):
                 self.reset()
 
             except:
-                self.logger.exception('Exception in scrolling message:')
+                self.logger.exception(u'Exception in scrolling message:')
             
 
 FONT5x7 = [
@@ -346,9 +346,9 @@ class HT1632C():
         self.__scrolling_thread = None
         self.speed = 0.05
         self.direction = HT1632C.SCROLL_RIGHT_TO_LEFT
-        self.unit_days = 'days'
-        self.unit_hours = 'hours'
-        self.unit_minutes = 'mins'
+        self.unit_days = u'days'
+        self.unit_hours = u'hours'
+        self.unit_minutes = u'mins'
         self.__turned_on = True
         self.__last_hw_reset = None
         self.__panel_cleared = {}
@@ -396,7 +396,7 @@ class HT1632C():
         Reset hardware
         """
         if time.time()>(self.__last_hw_reset+HT1632C.RESET_HW_DELAY):
-            self.logger.info('Reset hardware')
+            self.logger.info(u'Reset hardware')
             #clean everything
             #self.cleanup()
             #close spi
@@ -445,12 +445,12 @@ class HT1632C():
         self.__stop_scrolling_thread()
 
         #clear screen
-        self.logger.debug('Clear board')
+        self.logger.debug(u'Clear board')
         self.clear()
         time.sleep(0.25)
 
         #cleanup gpio
-        self.logger.debug('Cleanup GPIOs')
+        self.logger.debug(u'Cleanup GPIOs')
         GPIO.cleanup()
         time.sleep(0.25)
 
@@ -463,7 +463,7 @@ class HT1632C():
         Stop scrolling thread if necessary
         """
         if self.__scrolling_thread!=None:
-            self.logger.debug('Stop scrolling thread')
+            self.logger.debug(u'Stop scrolling thread')
             self.__scrolling_thread.stop()
             #self.__scrolling_thread.join(1.0)
             time.sleep(0.25)
@@ -586,10 +586,10 @@ class HT1632C():
         """
         #check size
         if len(pixels)<self.__get_board_size():
-             #buffer is not large enough
-             raise InvalidBuffer('Buffer is not large enough (awaited size:%d, found size:%d)' % (self.__get_board_size(), len(pixels)))
+            #buffer is not large enough
+            raise InvalidBuffer(u'Buffer is not large enough (awaited size:%d, found size:%d)' % (self.__get_board_size(), len(pixels)))
         if len(pixels)-index<self.__get_board_size():
-            raise InvalidBuffer('Buffer is too short if index applied. Please provide larger buffer')
+            raise InvalidBuffer(u'Buffer is too short if index applied. Please provide larger buffer')
 
         #get only board size part of buffer
         if index>0 or len(pixels)>self.__get_board_size():
@@ -660,7 +660,7 @@ class HT1632C():
         Returns:
             new position in buffer
         """
-        self.logger.debug('append text %s @ %d' % (text, position))
+        self.logger.debug(u'append text %s @ %d' % (text, position))
         text_size = len(text)
         for col in range(text_size):
             position = self.__append_letter(buf, text[col], position)
@@ -692,7 +692,7 @@ class HT1632C():
 
         elif size<board_size:
             #requested buffer size is not larger enought, return board size
-            self.logger.debug('Requested size is not larger enough, return board size buffer')
+            self.logger.debug(u'Requested size is not larger enough, return board size buffer')
             return np.zeros((board_size,), dtype=np.uint8)
 
         else:
@@ -707,11 +707,11 @@ class HT1632C():
             string: duration
         """
         if timestamp<3600:
-            return '%d %s' % (int(float(timestamp)/60.0), self.unit_minutes)
+            return u'%d %s' % (int(float(timestamp)/60.0), self.unit_minutes)
         elif timestamp<86400:
-            return '%d %s' % (int(float(timestamp)/3600.0), self.unit_hours)
+            return u'%d %s' % (int(float(timestamp)/3600.0), self.unit_hours)
         else:
-            return '%d %s' % (int(float(timestamp)/86400.0), self.unit_days)
+            return u'%d %s' % (int(float(timestamp)/86400.0), self.unit_days)
 
     def __search_for_patterns(self, message):
         """
@@ -736,25 +736,25 @@ class HT1632C():
                 if pos!=-1:
                     #found logo
                     message = message.replace(logo, PATTERN_REPLACEMENT*len(logo), 1)
-                    found_patterns[pos] = {'type':'logo', 'value':logo}
+                    found_patterns[pos] = {u'type':u'logo', u'value':logo}
         
         #search for time pattern
         now_ts = time.time()
         now_dt = datetime.fromtimestamp(now_ts)
-        for match in list(re.finditer('(:time)(:[0-9]+)?', message)):
+        for match in list(re.finditer(u'(:time)(:[0-9]+)?', message)):
             message = message.replace(match.group(0), PATTERN_REPLACEMENT*len(match.group(0)), 1)
             evolutive = True
             if match.group(2) is not None:
                 #timestamp specified, compute duration
                 ts = int(match.group(2)[1:])
                 if now_ts<=ts:
-                    found_patterns[match.start()] = {'type':'text', 'value':'%s' % self.__human_readable_duration(ts-now_ts)}
+                    found_patterns[match.start()] = {u'type':u'text', u'value':u'%s' % self.__human_readable_duration(ts-now_ts)}
                 else:
                     #timestamp is behind now
-                    found_patterns[match.start()] = {'type':'text', 'value':'[OVER]'}
+                    found_patterns[match.start()] = {u'type':u'text', u'value':u'[OVER]'}
             else:
                 #only time tag specified, add current time
-                found_patterns[match.start()] = {'type':'text', 'value':'%0.2d:%0.2d' % (now_dt.hour, now_dt.minute)}
+                found_patterns[match.start()] = {u'type':u'text', u'value':u'%0.2d:%0.2d' % (now_dt.hour, now_dt.minute)}
 
         return found_patterns, message, evolutive
 
@@ -773,10 +773,10 @@ class HT1632C():
 
         for index in range(len(message)):
             if index in patterns.keys():
-                if patterns[index]['type']=='logo':
-                    buffer_position = self.__append_logo(None, patterns[index]['value'], buffer_position)
-                elif patterns[index]['type']=='text':
-                    buffer_position = self.__append_text(None, patterns[index]['value'], buffer_position)
+                if patterns[index][u'type']==u'logo':
+                    buffer_position = self.__append_logo(None, patterns[index][u'value'], buffer_position)
+                elif patterns[index][u'type']==u'text':
+                    buffer_position = self.__append_text(None, patterns[index][u'value'], buffer_position)
             else:
                 buffer_position = self.__append_letter(None, message[index], buffer_position)
 
@@ -812,7 +812,7 @@ class HT1632C():
 
         #drop message if board is off
         if not self.__turned_on:
-            self.logger.debug('Board is turned off')
+            self.logger.debug(u'Board is turned off')
             return False
 
         #search for patterns in message
@@ -820,7 +820,7 @@ class HT1632C():
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
-        self.logger.debug('message length=%d' % message_length)
+        self.logger.debug(u'message length=%d' % message_length)
 
         #stop existing scrolling thread
         self.__stop_scrolling_thread()
@@ -828,7 +828,7 @@ class HT1632C():
         #scroll or display message
         if message_length>self.__get_board_size():
             #scroll message
-            self.logger.debug('Add scrolling message')
+            self.logger.debug(u'Add scrolling message')
 
             #get buffer
             buf = self.__get_buffer(self.__get_board_size() + message_length)
@@ -843,10 +843,10 @@ class HT1632C():
                 buffer_position = len(buf) - message_length
             for index in range(len(message)):
                 if index in patterns.keys():
-                    if patterns[index]['type']=='logo':
-                        buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
-                    elif patterns[index]['type']=='text':
-                        buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
+                    if patterns[index][u'type']==u'logo':
+                        buffer_position = self.__append_logo(buf, patterns[index][u'value'], buffer_position)
+                    elif patterns[index][u'type']==u'text':
+                        buffer_position = self.__append_text(buf, patterns[index][u'value'], buffer_position)
                 else:
                     buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
@@ -856,7 +856,7 @@ class HT1632C():
 
         else:
             #display message
-            self.logger.debug('Add NOT scrolling  message')
+            self.logger.debug(u'Add NOT scrolling  message')
 
             #get buffer
             buf = self.__get_buffer(message_length)
@@ -865,10 +865,10 @@ class HT1632C():
             #buf = self.__get_buffer(message_length)
             for index in range(len(message)):
                 if index in patterns.keys():
-                    if patterns[index]['type']=='logo':
-                        buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
-                    elif patterns[index]['type']=='text':
-                        buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
+                    if patterns[index][u'type']==u'logo':
+                        buffer_position = self.__append_logo(buf, patterns[index][u'value'], buffer_position)
+                    elif patterns[index][u'type']==u'text':
+                        buffer_position = self.__append_text(buf, patterns[index][u'value'], buffer_position)
                 else:
                     buffer_position = self.__append_letter(buf, message[index], buffer_position)
 
@@ -903,7 +903,7 @@ class HT1632C():
 
         #get message length
         message_length = self.__get_message_length(message, patterns)
-        self.logger.debug('message length=%d' % message_length)
+        self.logger.debug(u'message length=%d' % message_length)
 
         #fill buffer
         buf = self.__get_buffer(self.__get_board_size() + message_length)
@@ -916,10 +916,10 @@ class HT1632C():
             buffer_position = len(buf) - message_length
         for index in range(len(message)):
             if index in patterns.keys():
-                if patterns[index]['type']=='logo':
-                    buffer_position = self.__append_logo(buf, patterns[index]['value'], buffer_position)
-                elif patterns[index]['type']=='text':
-                    buffer_position = self.__append_text(buf, patterns[index]['value'], buffer_position)
+                if patterns[index][u'type']==u'logo':
+                    buffer_position = self.__append_logo(buf, patterns[index][u'value'], buffer_position)
+                elif patterns[index][u'type']==u'text':
+                    buffer_position = self.__append_text(buf, patterns[index][u'value'], buffer_position)
             else:
                 buffer_position = self.__append_letter(buf, message[index], buffer_position)
         
@@ -978,7 +978,7 @@ class HT1632C():
         """
         Turn on board
         """
-        self.logger.debug('Turn on display')
+        self.logger.debug(u'Turn on display')
         #enable display
         self.__turned_on = True
 
@@ -986,7 +986,7 @@ class HT1632C():
         """
         Turn off board
         """
-        self.logger.debug('Turn off display')
+        self.logger.debug(u'Turn off display')
         #disable display
         self.__turned_on = False
 

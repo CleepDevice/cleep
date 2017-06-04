@@ -10,7 +10,7 @@ import httplib
 import json
 import time
 
-__all__ = ['Pushover']
+__all__ = [u'Pushover']
 
 
 class Pushover(RaspIotRenderer):
@@ -18,21 +18,21 @@ class Pushover(RaspIotRenderer):
     Pushover module
     """
 
-    MODULE_CONFIG_FILE = 'pushover.conf'
+    MODULE_CONFIG_FILE = u'pushover.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Sends you push alerts using Pushover service.'
+    MODULE_DESCRIPTION = u'Sends you push alerts using Pushover service.'
     MODULE_LOCKED = False
-    MODULE_URL = 'https://github.com/tangb/Cleep/wiki/ModulePushover'
-    MODULE_TAGS = ['push', 'alert']
+    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModulePushover'
+    MODULE_TAGS = [u'push', u'alert']
 
     DEFAULT_CONFIG = {
-        'apikey': None,
-        'userkey': None
+        u'apikey': None,
+        u'userkey': None
     }
-    PUSHOVER_API_URL = 'api.pushover.net:443'
+    PUSHOVER_API_URL = u'api.pushover.net:443'
 
     RENDERER_PROFILES = [PushProfile()]
-    RENDERER_TYPE = 'alert.push'
+    RENDERER_TYPE = u'alert.push'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -59,36 +59,36 @@ class Pushover(RaspIotRenderer):
         """
         try:
             conn = httplib.HTTPSConnection(self.PUSHOVER_API_URL)
-            conn.request("POST", "/1/messages.json",
+            conn.request(u'POST', u'/1/messages.json',
             urllib.urlencode({
-                'user': userkey,
-                'token': apikey,
-                'message': data.message,
-                'priority': 1, #high priority
-                'title': 'Cleep message',
-                'timestamp': int(time.time())
-            }), { "Content-type": "application/x-www-form-urlencoded" })
+                u'user': userkey,
+                u'token': apikey,
+                u'message': data.message,
+                u'priority': 1, #high priority
+                u'title': u'Cleep message',
+                u'timestamp': int(time.time())
+            }), { u'Content-type': u'application/x-www-form-urlencoded'})
             resp = conn.getresponse()
-            self.logger.debug('Pushover response: %s' % resp)
+            self.logger.debug(u'Pushover response: %s' % resp)
 
             #check response
             error = None
             info = None
             if resp:
                 read = resp.read()
-                self.logger.debug('Pushover response content: %s' % read)
+                self.logger.debug(u'Pushover response content: %s' % read)
                 resp = json.loads(read)
 
-                if resp['status']==0:
+                if resp[u'status']==0:
                     #error occured
-                    error = u','.join(resp['errors'])
-                elif resp.has_key('info'):
+                    error = u','.join(resp[u'errors'])
+                elif resp.has_key(u'info'):
                     #request ok but info message available
-                    info = resp['info']
+                    info = resp[u'info']
 
         except Exception as e:
-            self.logger.exception('Exception when pushing message:')
-            error = str(e)
+            self.logger.exception(u'Exception when pushing message:')
+            error = unicode(e)
 
         if error:
             raise CommandError(error)
@@ -109,23 +109,23 @@ class Pushover(RaspIotRenderer):
             bool: True if config saved successfully
         """
         if userkey is None or len(userkey)==0:
-            raise MissingParameter('Userkey parameter is missing')
+            raise MissingParameter(u'Userkey parameter is missing')
         if apikey is None or len(apikey)==0:
-            raise MissingParameter('Apikey parameter is missing')
+            raise MissingParameter(u'Apikey parameter is missing')
 
         #test config
         try:
             self.test(userkey, apikey)
         except CommandInfo as e:
             #info received but not used here
-            self.logger.info('Test returns info: %s' % str(e))
+            self.logger.info(u'Test returns info: %s' % unicode(e))
         except Exception as e:
-            raise CommandError(str(e))
+            raise CommandError(unicode(e))
 
         #save config
         config = self._get_config()
-        config['userkey'] = userkey
-        config['apikey'] = apikey
+        config[u'userkey'] = userkey
+        config[u'apikey'] = apikey
 
         return self._save_config(config)
 
@@ -142,15 +142,15 @@ class Pushover(RaspIotRenderer):
         """
         if userkey is None or len(userkey)==0 or apikey is None or len(apikey)==0:
             config = self._get_config()
-            if config['userkey'] is None or len(config['userkey'])==0 or config['apikey'] is None or len(config['apikey'])==0:
-                raise CommandError('Please fill config first')
+            if config[u'userkey'] is None or len(config[u'userkey'])==0 or config[u'apikey'] is None or len(config[u'apikey'])==0:
+                raise CommandError(u'Please fill config first')
 
-            userkey = config['userkey']
-            apikey = config['apikey']
+            userkey = config[u'userkey']
+            apikey = config[u'apikey']
 
         #prepare data
         data = PushProfile()
-        data.message = 'Hello this is Cleep'
+        data.message = u'Hello this is Cleep'
 
         #send email
         self.__send_push(userkey, apikey, data)
@@ -168,12 +168,12 @@ class Pushover(RaspIotRenderer):
             bool: True if post succeed, False otherwise
         """
         config = self._get_config()
-        if config['userkey'] is None or len(config['userkey'])==0 or config['apikey'] is None or len(config['apikey'])==0:
+        if config[u'userkey'] is None or len(config[u'userkey'])==0 or config[u'apikey'] is None or len(config[u'apikey'])==0:
             #not configured
-            raise CommandError('Can\'t send push message because module is not configured')
+            raise CommandError(u'Can\'t send push message because module is not configured')
 
         #send push
-        self.__send_push(config['userkey'], config['apikey'], data)
+        self.__send_push(config[u'userkey'], config[u'apikey'], data)
 
         return True
 

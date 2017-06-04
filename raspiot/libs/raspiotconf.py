@@ -12,7 +12,7 @@ class RaspiotConf():
     Helper class to update and read values from /etc/raspiot/raspiot.conf file
     """
 
-    CONF = '/etc/raspiot/raspiot.conf'
+    CONF = u'/etc/raspiot/raspiot.conf'
 
     def __open(self):
         """
@@ -26,7 +26,7 @@ class RaspiotConf():
         """
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
-            raise Exception('Config file "%s" does not exist' % self.CONF)
+            raise Exception(u'Config file "%s" does not exist' % self.CONF)
         self.__conf.read(self.CONF)
 
         return self.__conf
@@ -52,14 +52,14 @@ class RaspiotConf():
             Exception: if file content is malformed
         """
         conf = self.__open()
-        if not conf.has_section('general') or not conf.has_section('rpc') or not conf.has_section('debug'):
-            raise Exception('Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option('general', 'modules'):
-            raise Exception('Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option('rpc', 'rpc_host') or not conf.has_option('rpc', 'rpc_port') or not conf.has_option('rpc', 'rpc_cert') or not conf.has_option('rpc', 'rpc_key'):
-            raise Exception('Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option('debug', 'debug_enabled') or not conf.has_option('debug', 'debug_modules'):
-            raise Exception('Config file "%s" is malformed' % self.CONF)
+        if not conf.has_section(u'general') or not conf.has_section(u'rpc') or not conf.has_section(u'debug'):
+            raise Exception(u'Config file "%s" is malformed' % self.CONF)
+        if not conf.has_option(u'general', u'modules'):
+            raise Exception(u'Config file "%s" is malformed' % self.CONF)
+        if not conf.has_option(u'rpc', u'rpc_host') or not conf.has_option(u'rpc', u'rpc_port') or not conf.has_option(u'rpc', u'rpc_cert') or not conf.has_option(u'rpc', u'rpc_key'):
+            raise Exception(u'Config file "%s" is malformed' % self.CONF)
+        if not conf.has_option(u'debug', u'debug_enabled') or not conf.has_option(u'debug', u'debug_modules'):
+            raise Exception(u'Config file "%s" is malformed' % self.CONF)
 
         return True
 
@@ -88,7 +88,7 @@ class RaspiotConf():
             bool: global debug status
         """
         conf = self.__open()
-        debug = conf.getboolean('debug', 'debug_enabled')
+        debug = conf.getboolean(u'debug', u'debug_enabled')
         self.__close()
         return debug
 
@@ -100,12 +100,12 @@ class RaspiotConf():
             debug (bool): new debug status
         """
         if debug is None:
-            raise MissingParameter('Debug parameter is missing')
+            raise MissingParameter(u'Debug parameter is missing')
         if debug not in (True, False):
-            raise InvalidParameter('Debug parameter is invalid')
+            raise InvalidParameter(u'Debug parameter is invalid')
 
         conf = self.__open()
-        conf.set('debug', 'debug_enabled', str(debug))
+        conf.set(u'debug', u'debug_enabled', unicode(debug))
         self.__close(True)
 
     def install_module(self, module):
@@ -124,13 +124,13 @@ class RaspiotConf():
         conf = self.__open()
         
         #check if module isn't already installed
-        modules = ast.literal_eval(conf.get('general', 'modules'))
+        modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module in modules:
-            raise InvalidParameter('Module %s is already installed' % module)
+            raise InvalidParameter(u'Module %s is already installed' % module)
 
         #install module
         modules.append(module)
-        conf.set('general', 'modules', str(modules))
+        conf.set(u'general', u'modules', unicode(modules))
         self.__close(True)
 
         return True
@@ -151,13 +151,13 @@ class RaspiotConf():
         conf = self.__open()
         
         #check if module is installed
-        modules = ast.literal_eval(conf.get('general', 'modules'))
+        modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
-            raise InvalidParameter('Unable to uninstall not installed module %s' % module)
+            raise InvalidParameter(u'Unable to uninstall not installed module %s' % module)
 
         #uninstall module
         modules.remove(module)
-        conf.set('general', 'modules', str(modules))
+        conf.set(u'general', u'modules', unicode(modules))
         self.__close(True)
 
         return True
@@ -174,7 +174,7 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        modules = ast.literal_eval(conf.get('general', 'modules'))
+        modules = ast.literal_eval(conf.get(u'general', u'modules'))
         return module in modules
 
 
@@ -191,14 +191,14 @@ class RaspiotConf():
         conf = self.__open()
         
         #check if module is in debug list
-        modules = ast.literal_eval(conf.get('debug', 'debug_modules'))
+        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         if module in modules:
             #module already in debug list
             return True
 
         #add module to debug list
         modules.append(module)
-        conf.set('debug', 'debug_modules', str(modules))
+        conf.set(u'debug', u'debug_modules', unicode(modules))
         self.__close(True)
 
         return True
@@ -216,14 +216,14 @@ class RaspiotConf():
         conf = self.__open()
         
         #check if module is in debug list
-        modules = ast.literal_eval(conf.get('debug', 'debug_modules'))
+        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         if module not in modules:
             #module not in debug list
             return True
 
         #remove module from debug list
         modules.remove(module)
-        conf.set('debug', 'debug_modules', str(modules))
+        conf.set(u'debug', u'debug_modules', unicode(modules))
         self.__close(True)
 
         return True
@@ -240,7 +240,7 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        modules = ast.literal_eval(conf.get('debug', 'debug_modules'))
+        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         return module in modules
 
     def set_rpc_config(self, host, port):
@@ -256,8 +256,8 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        conf.set('rpc', 'rpc_host', host)
-        conf.set('rpc', 'rpc_port', str(port))
+        conf.set(u'rpc', u'rpc_host', host)
+        conf.set(u'rpc', u'rpc_port', unicode(port))
         self.__close(True)
 
         return True
@@ -275,7 +275,7 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        rpc = (conf.get('rpc', 'rpc_host'), conf.getint('rpc', 'rpc_port'))
+        rpc = (conf.get(u'rpc', u'rpc_host'), conf.getint(u'rpc', u'rpc_port'))
         return rpc
 
     def set_rpc_security(self, cert, key):
@@ -291,8 +291,8 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        conf.set('rpc', 'rpc_cert', cert)
-        conf.set('rpc', 'rpc_key', key)
+        conf.set(u'rpc', u'rpc_cert', cert)
+        conf.set(u'rpc', u'rpc_key', key)
         self.__close(True)
 
         return True
@@ -310,7 +310,7 @@ class RaspiotConf():
         """
         conf = self.__open()
 
-        rpc = (conf.get('rpc', 'rpc_cert'), conf.get('rpc', 'rpc_key'))
+        rpc = (conf.get(u'rpc', u'rpc_cert'), conf.get(u'rpc', u'rpc_key'))
         return rpc
 
 
@@ -321,7 +321,7 @@ class RaspiotConfTests(unittest.TestCase):
         #fake conf file
         conf = SafeConfigParser()
         conf.add_section('general')
-        conf.set('general', 'modules', str([]))
+        conf.set('general', 'modules', unicode([]))
         conf.add_section('rpc')
         conf.set('rpc', 'rpc_host', '0.0.0.0')
         conf.set('rpc', 'rpc_port', '80')
@@ -329,7 +329,7 @@ class RaspiotConfTests(unittest.TestCase):
         conf.set('rpc', 'rpc_key', '')
         conf.add_section('debug')
         conf.set('debug', 'debug_enabled', 'False')
-        conf.set('debug', 'debug_modules', str([]))
+        conf.set('debug', 'debug_modules', unicode([]))
         conf.write(open('/tmp/raspiot.fake.conf', 'w'))
         
         self.rc = RaspiotConf()

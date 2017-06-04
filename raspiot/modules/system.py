@@ -15,23 +15,22 @@ from raspiot.libs.console import Console
 from raspiot.libs.fstab import Fstab
 from raspiot.libs.raspiotconf import RaspiotConf
 
-__all__ = ['System']
-
+__all__ = [u'System']
 
 
 class System(RaspIotModule):
 
-    MODULE_CONFIG_FILE = 'system.conf'
+    MODULE_CONFIG_FILE = u'system.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Monitor your raspberry easily'
+    MODULE_DESCRIPTION = u'Monitor your raspberry easily'
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = []
 
     DEFAULT_CONFIG = {
-        'city': None,
-        'country': '',
-        'monitoring': False
+        u'city': None,
+        u'country': '',
+        u'monitoring': False
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -82,43 +81,43 @@ class System(RaspIotModule):
 
         #add clock device if not already added
         if self._get_device_count()==0:
-            self.logger.debug('Add default devices')
+            self.logger.debug(u'Add default devices')
             #add fake clock device
             clock = {
-                'type': 'clock',
-                'name': 'Clock'
+                u'type': u'clock',
+                u'name': u'Clock'
             }
             self._add_device(clock)
 
             #add fake monitor device (used to have a device on dashboard)
             monitor = {
-                'type': 'monitor',
-                'name': 'System monitor'
+                u'type': u'monitor',
+                u'name': u'System monitor'
             }
             self._add_device(monitor)
 
             #add fake monitor cpu device (used to save cpu data into database and has no widget)
             monitor = {
-                'type': 'monitorcpu',
-                'name': 'Cpu monitor'
+                u'type': u'monitorcpu',
+                u'name': u'Cpu monitor'
             }
             self._add_device(monitor)
 
             #add fake monitor memory device (used to save cpu data into database and has no widget)
             monitor = {
-                'type': 'monitormemory',
-                'name': 'Memory monitor'
+                u'type': u'monitormemory',
+                u'name': u'Memory monitor'
             }
             self._add_device(monitor)
 
         #store device uuids for events
         devices = self.get_module_devices()
         for uuid in devices:
-            if devices[uuid]['type']=='clock':
+            if devices[uuid][u'type']==u'clock':
                 self.__clock_uuid = uuid
-            elif devices[uuid]['type']=='monitorcpu':
+            elif devices[uuid][u'type']==u'monitorcpu':
                 self.__monitor_cpu_uuid = uuid
-            elif devices[uuid]['type']=='monitormemory':
+            elif devices[uuid][u'type']==u'monitormemory':
                 self.__monitor_memory_uuid = uuid
 
         #launch monitoring thread
@@ -150,12 +149,12 @@ class System(RaspIotModule):
             a = Astral(GoogleGeocoder)
             pattern = city
             if country and len(country)>0:
-                pattern = '%s,%s' % (city, country)
+                pattern = u'%s,%s' % (city, country)
             return a.geocoder[pattern]
 
         except AstralError as e:
-            if e.message and e.message.find('Unable to locate')>=0:
-                raise Exception('Unable to find city. Please specify a more important city.')
+            if e.message and e.message.find(u'Unable to locate')>=0:
+                raise Exception(u'Unable to find city. Please specify a more important city.')
             else:
                 raise Exception(e.message)
 
@@ -174,28 +173,28 @@ class System(RaspIotModule):
 
         #force city from configurated one if city not specified
         if city is None:
-            if self._config.has_key('city') and self._config['city'] is not None:
-                city = self._config['city']
-                country = self._config['country']
+            if self._config.has_key(u'city') and self._config[u'city'] is not None:
+                city = self._config[u'city']
+                country = self._config[u'country']
             else:
                 #no city available
                 city = None
-                country = ''
+                country = u''
                 
         if city:
             loc = self.__search_city(city, country)
             city = loc.name
             country = loc.region
             sun = loc.sun()
-            self.sunset = sun['sunset']
-            self.sunrise = sun['sunrise']
-            self.logger.debug('Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
+            self.sunset = sun[u'sunset']
+            self.sunrise = sun[u'sunrise']
+            self.logger.debug(u'Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
             return True, city, country
             
         else:
             self.sunset = None
             self.sunrise = None
-            self.logger.warning('No city configured, only current time will be returned')
+            self.logger.warning(u'No city configured, only current time will be returned')
             return False, None, None
 
     def __format_time(self, now=None):
@@ -211,19 +210,19 @@ class System(RaspIotModule):
         dt = datetime.fromtimestamp(now)
         weekday = dt.weekday()
         if weekday==0:
-            weekday_literal = 'monday'
+            weekday_literal = u'monday'
         elif weekday==1:
-            weekday_literal = 'tuesday'
+            weekday_literal = u'tuesday'
         elif weekday==2:
-            weekday_literal = 'wednesday'
+            weekday_literal = u'wednesday'
         elif weekday==3:
-            weekday_literal = 'thursday'
+            weekday_literal = u'thursday'
         elif weekday==4:
-            weekday_literal = 'friday'
+            weekday_literal = u'friday'
         elif weekday==5:
-            weekday_literal = 'saturday'
+            weekday_literal = u'saturday'
         elif weekday==6:
-            weekday_literal = 'sunday'
+            weekday_literal = u'sunday'
 
         #sunset and sunrise
         sunset = None
@@ -234,16 +233,16 @@ class System(RaspIotModule):
             sunrise = time.mktime(self.sunrise.timetuple())
 
         return {
-            'time': now,
-            'year': dt.year,
-            'month': dt.month,
-            'day': dt.day,
-            'hour': dt.hour,
-            'minute': dt.minute,
-            'weekday': weekday,
-            'weekday_literal': weekday_literal,
-            'sunset': sunset,
-            'sunrise': sunrise
+            u'time': now,
+            u'year': dt.year,
+            u'month': dt.month,
+            u'day': dt.day,
+            u'hour': dt.hour,
+            u'minute': dt.minute,
+            u'weekday': weekday,
+            u'weekday_literal': weekday_literal,
+            u'sunset': sunset,
+            u'sunrise': sunrise
         }
 
     def __send_time_event(self):
@@ -255,29 +254,29 @@ class System(RaspIotModule):
         now_formatted = self.__format_time()
 
         #push now event
-        self.send_event('system.time.now', now_formatted, self.__clock_uuid)
-        self.render_event('system.time.now', now_formatted, ['sound', 'display'])
+        self.send_event(u'system.time.now', now_formatted, self.__clock_uuid)
+        self.render_event(u'system.time.now', now_formatted, [u'sound', u'display'])
 
         #handle sunset
         if self.sunset:
-            if self.sunset.hour==now_formatted['hour'] and self.sunset.minute==now_formatted['minute']:
+            if self.sunset.hour==now_formatted[u'hour'] and self.sunset.minute==now_formatted[u'minute']:
                 #sunset time
-                self.send_event('system.time.sunset', None, self.__clock_uuid)
-                self.render_event('system.time.sunset', None, ['display', 'sound'])
+                self.send_event(u'system.time.sunset', None, self.__clock_uuid)
+                self.render_event(u'system.time.sunset', None, [u'display', u'sound'])
 
         #handle sunrise
         if self.sunrise:
-            if self.sunrise.hour==now_formatted['hour'] and self.sunrise.minute==now_formatted['minute']:
+            if self.sunrise.hour==now_formatted[u'hour'] and self.sunrise.minute==now_formatted[u'minute']:
                 #sunrise time
-                self.send_event('system.time.sunrise', None, self.__clock_uuid)
-                self.render_event('system.time.sunrise', None, ['display', 'sound'])
+                self.send_event(u'system.time.sunrise', None, self.__clock_uuid)
+                self.render_event(u'system.time.sunrise', None, [u'display', u'sound'])
 
         #compute some stuff at midnight
-        if now_formatted['hour']==0 and now_formatted['minute']==0:
+        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0:
             #compute sunset/sunrise at midnight
             self.__compute_sun()
             #purge data
-            if self.is_module_loaded('database'):
+            if self.is_module_loaded(u'database'):
                 self.__purge_cpu_data()
                 self.__purge_memory_data()
 
@@ -289,11 +288,11 @@ class System(RaspIotModule):
             dict: configuration
         """
         config = {}
-        config['sun'] = self.get_sun()
-        config['city'] = self.get_city()
-        config['monitoring'] = self.get_monitoring()
-        config['uptime'] = self.get_uptime()
-        config['needrestart'] = self.__need_restart
+        config[u'sun'] = self.get_sun()
+        config[u'city'] = self.get_city()
+        config[u'monitoring'] = self.get_monitoring()
+        config[u'uptime'] = self.get_uptime()
+        config[u'needrestart'] = self.__need_restart
 
         return config
 
@@ -307,14 +306,14 @@ class System(RaspIotModule):
         devices = super(System, self).get_module_devices()
         
         for uuid in devices:
-            if devices[uuid]['type']=='clock':
+            if devices[uuid][u'type']==u'clock':
                 data = self.get_time()
                 devices[uuid].update(data)
-            elif devices[uuid]['type']=='monitor':
+            elif devices[uuid][u'type']==u'monitor':
                 data = {}
-                data['uptime'] = self.get_uptime()
-                data['cpu'] = self.get_cpu_usage()
-                data['memory'] = self.get_memory_usage()
+                data[u'uptime'] = self.get_uptime()
+                data[u'cpu'] = self.get_cpu_usage()
+                data[u'memory'] = self.get_memory_usage()
                 devices[uuid].update(data)
 
         return devices
@@ -343,8 +342,8 @@ class System(RaspIotModule):
             sunrise = int(time.mktime(self.sunrise.timetuple()))
 
         return {
-            'sunset': sunset,
-            'sunrise': sunrise
+            u'sunset': sunset,
+            u'sunrise': sunrise
         }
 
     def set_monitoring(self, monitoring):
@@ -355,12 +354,12 @@ class System(RaspIotModule):
             monitoring (bool): monitoring flag
         """
         if monitoring is None:
-            raise MissingParameter('Monitoring parameter missing')
+            raise MissingParameter(u'Monitoring parameter missing')
 
         config = self._get_config()
-        config['monitoring'] = monitoring
+        config[u'monitoring'] = monitoring
         if self._save_config(config) is None:
-            raise CommandError('Unable to save configuration')
+            raise CommandError(u'Unable to save configuration')
 
     def get_monitoring(self):
         """
@@ -369,7 +368,7 @@ class System(RaspIotModule):
         Returns:
             dict: monitoring configuration
         """
-        return self._config['monitoring']
+        return self._config[u'monitoring']
 
     def get_city(self):
         """
@@ -379,8 +378,8 @@ class System(RaspIotModule):
             dict: city and country infos
         """
         return {
-            'city': self._config['city'],
-            'country': self._config['country']
+            u'city': self._config[u'city'],
+            u'country': self._config[u'country']
         }
 
     def set_city(self, city, country):
@@ -398,7 +397,7 @@ class System(RaspIotModule):
             CommandError
         """
         if city is None or len(city)==0:
-            raise MissingParameter('City parameter is missing')
+            raise MissingParameter(u'City parameter is missing')
 
         #compute sunset/sunrise
         (res, city, country) = self.__compute_sun(city, country)
@@ -406,10 +405,10 @@ class System(RaspIotModule):
         if res:
             #save city (exception raised before if error occured)
             config = self._get_config()
-            config['city'] = city
-            config['country'] = country
+            config[u'city'] = city
+            config[u'country'] = country
             if self._save_config(config) is None:
-                raise CommandError('Unable to save configuration')
+                raise CommandError(u'Unable to save configuration')
 
         return True
 
@@ -420,10 +419,10 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event('system.system.reboot')
+        self.send_event(u'system.system.reboot')
 
         #and reboot system
-        console.command_delayed('reboot', 5.0)
+        console.command_delayed(u'reboot', 5.0)
 
     def halt_system(self):
         """
@@ -432,10 +431,10 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event('system.system.halt')
+        self.send_event(u'system.system.halt')
 
         #and reboot system
-        console.command_delayed('halt', 5.0)
+        console.command_delayed(u'halt', 5.0)
 
     def restart(self):
         """
@@ -444,10 +443,10 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event('system.system.restart')
+        self.send_event(u'system.system.restart')
 
         #and restart raspiot
-        console.command_delayed('/etc/raspiot/raspiot_helper.sh restart', 3.0)
+        console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', 3.0)
 
     def install_module(self, module):
         """
@@ -460,7 +459,7 @@ class System(RaspIotModule):
             bool: True if module installed
         """
         if module is None or len(module)==0:
-            raise MissingParameter('Module parameter is missing')
+            raise MissingParameter(u'Module parameter is missing')
 
         raspiot = RaspiotConf()
         if raspiot.install_module(module):
@@ -479,7 +478,7 @@ class System(RaspIotModule):
             bool: True if module uninstalled
         """
         if module is None or len(module)==0:
-            raise MissingParameter('Module parameter is missing')
+            raise MissingParameter(u'Module parameter is missing')
 
         raspiot = RaspiotConf()
         if raspiot.uninstall_module(module):
@@ -503,14 +502,14 @@ class System(RaspIotModule):
         system = psutil.virtual_memory()
         raspiot = self.__process.memory_info()[0]
         return {
-            'total': system.total,
-            #'total_hr': self.__hr_bytes(system.total),
-            'available': system.available,
-            'available_hr': self.__hr_bytes(system.available),
-            #'used_percent': system.percent,
-            'raspiot': raspiot,
-            #'raspiot_hr': self.__hr_bytes(raspiot),
-            #'others': system.total - system.available - raspiot
+            u'total': system.total,
+            #u'total_hr': self.__hr_bytes(system.total),
+            u'available': system.available,
+            u'available_hr': self.__hr_bytes(system.available),
+            #u'used_percent': system.percent,
+            u'raspiot': raspiot,
+            #u'raspiot_hr': self.__hr_bytes(raspiot),
+            #u'others': system.total - system.available - raspiot
         }
 
     def get_cpu_usage(self):
@@ -531,8 +530,8 @@ class System(RaspIotModule):
         if raspiot>100.0:
             raspiot = 100.0
         return {
-            'system': system,
-            'raspiot': raspiot
+            u'system': system,
+            u'raspiot': raspiot
         }
 
     def get_uptime(self):
@@ -544,8 +543,8 @@ class System(RaspIotModule):
         """
         uptime = int(time.time() - psutil.boot_time())
         return {
-            'uptime': uptime,
-            'uptime_hr': self.__hr_uptime(uptime)
+            u'uptime': uptime,
+            u'uptime_hr': self.__hr_uptime(uptime)
         }
 
     def __is_interface_wired(self, interface):
@@ -556,11 +555,11 @@ class System(RaspIotModule):
             interface (string): interface name
         """
         console = Console()
-        res = console.command('iwconfig %s 2>&1' % interface)
-        if res['error'] or res['killed'] or len(res['output'])==0:
+        res = console.command(u'/sbin/iwconfig %s 2>&1' % interface)
+        if res['error'] or res[u'killed'] or len(res[u'output'])==0:
             return False
 
-        if res['output'][0].lower().find('no wireless')==-1:
+        if res[u'output'][0].lower().find(u'no wireless')==-1:
             return False
 
         return True
@@ -586,7 +585,7 @@ class System(RaspIotModule):
 
         for interface in nets:
             #drop local interface
-            if interface=='lo':
+            if interface==u'lo':
                 continue
 
             #read infos
@@ -600,10 +599,10 @@ class System(RaspIotModule):
 
             #save infos
             infos[interface] = {
-                'ip': ip,
-                'mac': mac,
-                'interface': interface,
-                'wired': self.__is_interface_wired(interface)
+                u'ip': ip,
+                u'mac': mac,
+                u'interface': interface,
+                u'wired': self.__is_interface_wired(interface)
             }
 
         return infos
@@ -637,8 +636,8 @@ class System(RaspIotModule):
         config = self._get_config()
 
         #send event if monitoring activated
-        if config['monitoring']:
-            self.send_event('system.monitoring.cpu', self.get_cpu_usage(), self.__monitor_cpu_uuid)
+        if config[u'monitoring']:
+            self.send_event(u'system.monitoring.cpu', self.get_cpu_usage(), self.__monitor_cpu_uuid)
 
     def __monitoring_memory_thread(self):
         """
@@ -649,13 +648,13 @@ class System(RaspIotModule):
         memory = self.get_memory_usage()
 
         #detect memory leak
-        percent = (float(memory['total'])-float(memory['available']))/float(memory['total'])*100.0
+        percent = (float(memory[u'total'])-float(memory[u'available']))/float(memory[u'total'])*100.0
         if percent>=self.THRESHOLD_MEMORY:
-            self.send_event('system.alert.memory', {'percent':percent, 'threshold':self.THRESHOLD_MEMORY})
+            self.send_event(u'system.alert.memory', {u'percent':percent, u'threshold':self.THRESHOLD_MEMORY})
 
         #send event if monitoring activated
-        if config['monitoring']:
-            self.send_event('system.monitoring.memory', memory, self.__monitor_memory_uuid)
+        if config[u'monitoring']:
+            self.send_event(u'system.monitoring.memory', memory, self.__monitor_memory_uuid)
 
     def __monitoring_disks_thread(self):
         """
@@ -664,12 +663,12 @@ class System(RaspIotModule):
         """
         disks = self.get_filesystem_infos()
         for disk in disks:
-            if disk['mounted']:
-                if disk['mountpoint']=='/' and disk['percent']>=self.THRESHOLD_DISK_SYSTEM:
-                    self.send_event('system.alert.disk', {'percent':disk['percent'], 'threshold':self.THRESHOLD_DISK_SYSTEM, 'mountpoint':disk['mountpoint']})
+            if disk[u'mounted']:
+                if disk[u'mountpoint']==u'/' and disk[u'percent']>=self.THRESHOLD_DISK_SYSTEM:
+                    self.send_event(u'system.alert.disk', {u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DISK_SYSTEM, u'mountpoint':disk[u'mountpoint']})
 
-                elif disk['mountpoint'] not in ('/', '/boot') and disk['percent']>=self.THRESHOLD_DISK_EXTERNAL:
-                    self.send_event('system.alert.disk', {'percent':disk['percent'], 'threshold':self.THRESHOLD_DIST_EXTERNAL, 'mountpoint':disk['mountpoint']})
+                elif disk[u'mountpoint'] not in (u'/', u'/boot') and disk[u'percent']>=self.THRESHOLD_DISK_EXTERNAL:
+                    self.send_event(u'system.alert.disk', {u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DIST_EXTERNAL, u'mountpoint':disk[u'mountpoint']})
 
     def __hr_bytes(self, n):
         """
@@ -684,7 +683,7 @@ class System(RaspIotModule):
         Returns:
             string: human readable bytes value
         """
-        symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+        symbols = (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y')
         prefix = {}
 
         for i, s in enumerate(symbols):
@@ -693,9 +692,9 @@ class System(RaspIotModule):
         for s in reversed(symbols):
             if n >= prefix[s]:
                 value = float(n) / prefix[s]
-                return '%.1f%s' % (value, s)
+                return u'%.1f%s' % (value, s)
 
-        return "%sB" % n
+        return u'%sB' % n
 
     def __hr_uptime(self, uptime):
         """
@@ -715,7 +714,7 @@ class System(RaspIotModule):
         hours = uptime / 60 / 60 % 24
         minutes = uptime / 60 % 60
 
-        return '%dd %dh %dm' % (days, hours, minutes)
+        return u'%dd %dh %dm' % (days, hours, minutes)
 
     def get_filesystem_infos(self):
         """
@@ -743,53 +742,53 @@ class System(RaspIotModule):
         #get mounted partitions and all devices
         fstab = Fstab()
         mounted_partitions = fstab.get_mountpoints()
-        self.logger.debug('mounted_partitions=%s' % mounted_partitions)
+        self.logger.debug(u'mounted_partitions=%s' % mounted_partitions)
         all_devices = fstab.get_all_devices()
-        self.logger.debug('all_devices=%s' % all_devices)
+        self.logger.debug(u'all_devices=%s' % all_devices)
 
         #build output
         fsinfos = []
         for device in all_devices:
             #check if partition is mounted
-            mounted = {'mounted':False, 'mountpoint':'', 'mounttype':'-', 'options':'', 'uuid':None}
+            mounted = {u'mounted':False, u'mountpoint':u'', u'mounttype':'-', u'options':'', u'uuid':None}
             system = False
             for partition in mounted_partitions:
-                if mounted_partitions[partition]['device']==device:
-                    mounted['mounted'] = True
-                    mounted['mountpoint'] = mounted_partitions[partition]['mountpoint']
-                    mounted['device'] = mounted_partitions[partition]['device']
-                    mounted['uuid'] = mounted_partitions[partition]['uuid']
-                    mounted['mounttype'] = mounted_partitions[partition]['mounttype']
-                    mounted['options'] = mounted_partitions[partition]['options']
-                    if mounted_partitions[partition]['mountpoint'] in ('/', '/boot'):
+                if mounted_partitions[partition][u'device']==device:
+                    mounted[u'mounted'] = True
+                    mounted[u'mountpoint'] = mounted_partitions[partition][u'mountpoint']
+                    mounted[u'device'] = mounted_partitions[partition][u'device']
+                    mounted[u'uuid'] = mounted_partitions[partition][u'uuid']
+                    mounted[u'mounttype'] = mounted_partitions[partition][u'mounttype']
+                    mounted[u'options'] = mounted_partitions[partition][u'options']
+                    if mounted_partitions[partition][u'mountpoint'] in (u'/', u'/boot'):
                         system = True
 
             #get mounted partition usage
-            usage = {'total':0, 'used':0, 'free':0, 'percent':0.0}
-            if mounted['mounted']:
-                sdiskusage = psutil.disk_usage(mounted['mountpoint'])
-                self.logger.debug('diskusage for %s: %s' % (device, sdiskusage));
-                usage['total'] = sdiskusage.total
-                usage['used'] = sdiskusage.used
-                usage['free'] = sdiskusage.free
-                usage['percent'] = sdiskusage.percent
+            usage = {u'total':0, u'used':0, u'free':0, u'percent':0.0}
+            if mounted[u'mounted']:
+                sdiskusage = psutil.disk_usage(mounted[u'mountpoint'])
+                self.logger.debug(u'diskusage for %s: %s' % (device, sdiskusage));
+                usage[u'total'] = sdiskusage.total
+                usage[u'used'] = sdiskusage.used
+                usage[u'free'] = sdiskusage.free
+                usage[u'percent'] = sdiskusage.percent
 
             #fill infos
             fsinfos.append({
-                'device': device,
-                'uuid': mounted['uuid'],
-                'system': system,
-                'mountpoint': mounted['mountpoint'],
-                'mounted': mounted['mounted'],
-                'mounttype': mounted['mounttype'],
-                'options': mounted['options'],
-                'total': usage['total'],
-                'used': usage['used'],
-                'free': usage['free'],
-                'percent': usage['percent']
+                u'device': device,
+                u'uuid': mounted[u'uuid'],
+                u'system': system,
+                u'mountpoint': mounted[u'mountpoint'],
+                u'mounted': mounted[u'mounted'],
+                u'mounttype': mounted[u'mounttype'],
+                u'options': mounted[u'options'],
+                u'total': usage[u'total'],
+                u'used': usage[u'used'],
+                u'free': usage[u'free'],
+                u'percent': usage[u'percent']
             })
 
-        self.logger.debug('Filesystem infos: %s' % fsinfos)
+        self.logger.debug(u'Filesystem infos: %s' % fsinfos)
         return fsinfos
 
     def __purge_cpu_data(self):
@@ -797,35 +796,35 @@ class System(RaspIotModule):
         Purge cpu data (keep 1 week)
         """
         params = {
-            'uuid': self.__monitor_cpu_uuid,
-            'timestamp_until': int(time.time()) - 604800
+            u'uuid': self.__monitor_cpu_uuid,
+            u'timestamp_until': int(time.time()) - 604800
         }
         try:
-            self.send_command('purge_data', 'database', params, 10.0)
+            self.send_command(u'purge_data', u'database', params, 10.0)
         except InvalidModule:
             #database module not loaded, drop
             pass
         except NoResponse:
-            self.logger.warning('Unable to purge CPU usage from database')
+            self.logger.warning(u'Unable to purge CPU usage from database')
         except:
-            self.logger.exception('Unable to purge CPU usage from database:')
+            self.logger.exception(u'Unable to purge CPU usage from database:')
 
     def __purge_memory_data(self):
         """
         Purge memory data (keep 1 month)
         """
         params = {
-            'uuid': self.__monitor_memory_uuid,
-            'timestamp_until': int(time.time()) - 2592000
+            u'uuid': self.__monitor_memory_uuid,
+            u'timestamp_until': int(time.time()) - 2592000
         }
         try:
-            self.send_command('purge_data', 'database', params, 10.0)
+            self.send_command(u'purge_data', u'database', params, 10.0)
         except InvalidModule:
             #database module not loaded, drop
             pass
         except NoResponse:
-            self.logger.warning('Unable to purge memory usage from database')
+            self.logger.warning(u'Unable to purge memory usage from database')
         except:
-            self.logger.exception('Unable to purge memory usage from database:')
+            self.logger.exception(u'Unable to purge memory usage from database:')
 
 

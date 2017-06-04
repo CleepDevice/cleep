@@ -15,7 +15,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-__all__ = ['Smtp']
+__all__ = [u'Smtp']
 
 
 class Smtp(RaspIotRenderer):
@@ -23,25 +23,25 @@ class Smtp(RaspIotRenderer):
     Smtp module
     """
 
-    MODULE_CONFIG_FILE = 'smtp.conf'
+    MODULE_CONFIG_FILE = u'smtp.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Sends you alerts by email.'
+    MODULE_DESCRIPTION = u'Sends you alerts by email.'
     MODULE_LOCKED = False
-    MODULE_URL = 'https://github.com/tangb/Cleep/wiki/ModuleSmtp'
-    MODULE_TAGS = ['email', 'smtp', 'alert']
+    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModuleSmtp'
+    MODULE_TAGS = [u'email', u'smtp', u'alert']
 
     DEFAULT_CONFIG = {
-        'smtp_server': None,
-        'smtp_port': '',
-        'smtp_login': '',
-        'smtp_password': '',
-        'smtp_tls': False,
-        'smtp_ssl': False,
-        'email_sender':''
+        u'smtp_server': None,
+        u'smtp_port': u'',
+        u'smtp_login': u'',
+        u'smtp_password': u'',
+        u'smtp_tls': False,
+        u'smtp_ssl': False,
+        u'email_sender': u''
     }
 
     RENDERER_PROFILES = [EmailProfile()]
-    RENDERER_TYPE = 'alert.email'
+    RENDERER_TYPE = u'alert.email'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -72,7 +72,7 @@ class Smtp(RaspIotRenderer):
             bool: True if test succeed
         """
         try:
-            self.logger.debug('Send email: %s:%s@%s:%s from %s SSl:%s TLS:%s' % (smtp_login, smtp_password, smtp_server, str(smtp_port), email_sender, str(smtp_ssl), str(smtp_tls)))
+            self.logger.debug(u'Send email: %s:%s@%s:%s from %s SSl:%s TLS:%s' % (smtp_login, smtp_password, smtp_server, unicode(smtp_port), email_sender, unicode(smtp_ssl), unicode(smtp_tls)))
             #make sure port is int
             if isinstance(smtp_port, str) and len(smtp_port)>0:
                 smtp_port = int(smtp_port)
@@ -89,14 +89,14 @@ class Smtp(RaspIotRenderer):
                 mails.starttls()
             if len(smtp_login)>0:
                 mails.login(smtp_login, smtp_password)
-            mail = MIMEMultipart('alternative')
-            mail['Subject'] = data.subject
-            mail['From'] = email_sender
-            mail['To'] = data.recipients[0]
-            text = """%s""" % (data.message)
-            html  = "<html><head></head><body>%s</body>" % (data.message)
-            part1 = MIMEText(text, 'plain')
-            part2 = MIMEText(html, 'html')
+            mail = MIMEMultipart(u'alternative')
+            mail[u'Subject'] = data.subject
+            mail[u'From'] = email_sender
+            mail[u'To'] = data.recipients[0]
+            text = u"""%s""" % (data.message)
+            html  = u'<html><head></head><body>%s</body>' % (data.message)
+            part1 = MIMEText(text, u'plain')
+            part2 = MIMEText(html, u'html')
             mail.attach(part1)
             mail.attach(part2)
 
@@ -108,29 +108,29 @@ class Smtp(RaspIotRenderer):
                 if os.path.isfile(data.attachment):
                     ctype, encoding = mimetypes.guess_type(data.attachment)
                     if ctype is None or encoding is not None:
-                        ctype = 'application/octet-stream'
-                    maintype, subtype = ctype.split('/', 1)
-                    if maintype == 'text':
+                        ctype = u'application/octet-stream'
+                    maintype, subtype = ctype.split(u'/', 1)
+                    if maintype == u'text':
                         fp = open(data.attachment)
                         msg = MIMEText(fp.read(), _subtype=subtype)
                         fp.close()
-                    elif maintype == 'image':
-                        fp = open(data.attachment, 'rb')
+                    elif maintype == u'image':
+                        fp = open(data.attachment, u'rb')
                         msg = MIMEImage(fp.read(), _subtype=subtype)
                         fp.close()
-                    elif maintype == 'audio':
-                        fp = open(data.attachment, 'rb')
+                    elif maintype == u'audio':
+                        fp = open(data.attachment, u'rb')
                         msg = MIMEAudio(fp.read(), _subtype=subtype)
                         fp.close()
                     else:
-                        fp = open(data.attachment, 'rb')
+                        fp = open(data.attachment, u'rb')
                         msg = MIMEBase(maintype, subtype)
                         msg.set_payload(fp.read())
                         fp.close()
                         #encode the payload using Base64
                         encoders.encode_base64(msg)
                     #set the filename parameter
-                    msg.add_header('Content-Disposition', 'attachment', filename=os.path.basename(data.attachment))
+                    msg.add_header(u'Content-Disposition', u'attachment', filename=os.path.basename(data.attachment))
                     mail.attach(msg)
 
             #send email
@@ -138,32 +138,32 @@ class Smtp(RaspIotRenderer):
             mails.quit()
 
         except smtplib.SMTPServerDisconnected as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Server disconnected')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Server disconnected')
 
         except smtplib.SMTPSenderRefused as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Email sender must be a valid email address')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Email sender must be a valid email address')
 
         except smtplib.SMTPRecipientsRefused as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Some recipients were refused')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Some recipients were refused')
 
         except smtplib.SMTPDataError as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Problem with email content')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Problem with email content')
 
         except smtplib.SMTPConnectError as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Unable to establish connection with smtp server. Please check server address')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Unable to establish connection with smtp server. Please check server address')
 
         except smtplib.SMTPAuthenticationError as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception('Authentication failed. Please check credentials.')
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(u'Authentication failed. Please check credentials.')
             
         except Exception as e:
-            self.logger.exception('Failed to send test:')
-            raise Exception(str(e))
+            self.logger.exception(u'Failed to send test:')
+            raise Exception(unicode(e))
 
     def set_config(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, recipient):
         """
@@ -183,39 +183,39 @@ class Smtp(RaspIotRenderer):
             bool: True if config saved successfully
         """
         if smtp_server is None or len(smtp_server)==0:
-            raise MissingParameter('Smtp_server parameter is missing')
+            raise MissingParameter(u'Smtp_server parameter is missing')
         if smtp_port is None:
-            raise MissingParameter('smtp_port parameter is missing')
+            raise MissingParameter(u'Smtp_port parameter is missing')
         if smtp_login is None:
-            raise MissingParameter('Smtp_login parameter is missing')
+            raise MissingParameter(u'Smtp_login parameter is missing')
         if smtp_password is None:
-            raise MissingParameter('Smtp_password parameter is missing')
+            raise MissingParameter(u'Smtp_password parameter is missing')
         if smtp_tls is None:
-            raise MissingParameter('Smtp_tls parameter is missing')
+            raise MissingParameter(u'Smtp_tls parameter is missing')
         if smtp_ssl is None:
-            raise MissingParameter('Smtp_ssl parameter is missing')
+            raise MissingParameter(u'Smtp_ssl parameter is missing')
         if email_sender is None:
-            raise MissingParameter('Email_sender parameter is missing')
+            raise MissingParameter(u'Email_sender parameter is missing')
         if len(email_sender)==0:
-            email_sender = 'test@cleep.com'
+            email_sender = u'test@cleep.com'
         if recipient is None or len(recipient)==0:
-            raise MissingParameter('Recipient parameter is missing')
+            raise MissingParameter(u'Recipient parameter is missing')
 
         #test config
         try:
             self.test(recipient, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender)
         except Exception as e:
-            raise CommandError(str(e))
+            raise CommandError(unicode(e))
 
         #save config
         config = self._get_config()
-        config['smtp_server'] = smtp_server
-        config['smtp_port'] = smtp_port
-        config['smtp_login'] = smtp_login
-        config['smtp_password'] = smtp_password
-        config['smtp_tls'] = smtp_tls
-        config['smtp_ssl'] = smtp_ssl
-        config['email_sender'] = email_sender
+        config[u'smtp_server'] = smtp_server
+        config[u'smtp_port'] = smtp_port
+        config[u'smtp_login'] = smtp_login
+        config[u'smtp_password'] = smtp_password
+        config[u'smtp_tls'] = smtp_tls
+        config[u'smtp_ssl'] = smtp_ssl
+        config[u'email_sender'] = email_sender
 
         return self._save_config(config)
 
@@ -237,25 +237,25 @@ class Smtp(RaspIotRenderer):
             bool: True if test succeed
         """
         if recipient is None or len(recipient)==0:
-            raise CommandError('Recipient parameter is missing')
+            raise CommandError(u'Recipient parameter is missing')
 
         if smtp_server is None or smtp_login is None or smtp_password is None:
             config = self._get_config()
-            if config['smtp_server'] is None or len(config['smtp_server'])==0 or config['smtp_login'] is None or len(config['smtp_login'])==0 or config['smtp_password'] is None or len(config['smtp_password'])==0:
-                raise CommandError('Please fill config first')
+            if config[u'smtp_server'] is None or len(config[u'smtp_server'])==0 or config[u'smtp_login'] is None or len(config[u'smtp_login'])==0 or config[u'smtp_password'] is None or len(config[u'smtp_password'])==0:
+                raise CommandError(u'Please fill config first')
 
-            smtp_server = config['smtp_server']
-            smtp_port = config['smtp_port']
-            smtp_login = config['smtp_login']
-            smtp_password = config['smtp_password']
-            smtp_tls = config['smtp_tls']
-            smtp_ssl = config['smtp_ssl']
-            email_sender = config['email_sender']
+            smtp_server = config[u'smtp_server']
+            smtp_port = config[u'smtp_port']
+            smtp_login = config[u'smtp_login']
+            smtp_password = config[u'smtp_password']
+            smtp_tls = config[u'smtp_tls']
+            smtp_ssl = config[u'smtp_ssl']
+            email_sender = config[u'email_sender']
 
         #prepare data
         data = EmailProfile()
-        data.subject = 'Cleep test'
-        data.message = 'Hello this is Cleep'
+        data.subject = u'Cleep test'
+        data.message = u'Hello this is Cleep'
         data.recipients.append(recipient)
 
         #send email
@@ -274,12 +274,12 @@ class Smtp(RaspIotRenderer):
             bool: True if post succeed, False otherwise
         """
         config = self._get_config()
-        if config['smtp_server'] is None or config['email_sender'] is None:
+        if config[u'smtp_server'] is None or config[u'email_sender'] is None:
             #not configured
-            raise CommandError('Can\'t send email because module is not configured')
+            raise CommandError(u'Can\'t send email because module is not configured')
 
         #send email
-        self.__send_email(config['smtp_server'], config['smtp_port'], config['smtp_login'], config['smtp_password'], config['smtp_tls'], config['smtp_ssl'], config['email_sender'], data)
+        self.__send_email(config[u'smtp_server'], config[u'smtp_port'], config[u'smtp_login'], config[u'smtp_password'], config[u'smtp_tls'], config[u'smtp_ssl'], config[u'email_sender'], data)
 
         return True
 

@@ -32,12 +32,12 @@ from passlib.hash import sha256_crypt
 import functools
 from .libs.raspiotconf import RaspiotConf
 
-__all__ = ['app']
+__all__ = [u'app']
 
 #constants
-BASE_DIR = '/opt/raspiot/'
-HTML_DIR = os.path.join(BASE_DIR, 'html')
-AUTH_FILE = '/etc/raspiot/auth.conf'
+BASE_DIR = u'/opt/raspiot/'
+HTML_DIR = os.path.join(BASE_DIR, u'html')
+AUTH_FILE = u'/etc/raspiot/auth.conf'
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900 #15mins
 
@@ -58,7 +58,7 @@ def bottle_logger(func):
     """
     def wrapper(*args, **kwargs):
         req = func(*args, **kwargs)
-        logger.debug('%s %s %s %s' % (
+        logger.debug(u'%s %s %s %s' % (
                      bottle.request.remote_addr, 
                      bottle.request.method,
                      bottle.request.url,
@@ -73,15 +73,15 @@ def load_auth():
     global AUTH_FILE, auth_enabled, auth_config
     try:
         execfile(AUTH_FILE, auth_config)
-        logger.debug('auth.conf: %s' % auth_config['accounts'])
+        logger.debug(u'auth.conf: %s' % auth_config[u'accounts'])
 
-        if len(auth_config['accounts'])>0 and auth_config['enabled']:
+        if len(auth_config[u'accounts'])>0 and auth_config[u'enabled']:
             auth_enabled = True
         else:
             auth_enabled = False
-        logger.debug('Auth enabled: %s' % auth_enabled)
+        logger.debug(u'Auth enabled: %s' % auth_enabled)
     except:
-        logger.exception('Unable to load auth file. Auth disabled:')
+        logger.exception(u'Unable to load auth file. Auth disabled:')
 
 def get_app(debug_enabled):
     """
@@ -93,8 +93,8 @@ def get_app(debug_enabled):
     global logger, app
 
     #logging (in raspiot.conf file, module name is 'rpcserver')
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
-    logger = logging.getLogger('RpcServer')
+    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+    logger = logging.getLogger(u'RpcServer')
     if debug_enabled:
         logger.setLevel(logging.DEBUG)
 
@@ -103,7 +103,7 @@ def get_app(debug_enabled):
 
     return app
 
-def start(host='0.0.0.0', port=80, key=None, cert=None):
+def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """
     Start RPC server. This function is blocking.
     Start by default unsecure web server
@@ -120,15 +120,15 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
             #start HTTPS server
-            logger.info('Starting HTTPS server on %s:%d' % (host, port))
+            logger.info(u'Starting HTTPS server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(logger, logging.DEBUG)
             server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
             server.serve_forever()
 
         else:
             #start HTTP server
-            logger.info('Starting HTTP server on %s:%d' % (host, port))
-            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+            logger.info(u'Starting HTTP server on %s:%d' % (host, port))
+            app.run(server=u'gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
 
     except KeyboardInterrupt:
         #user stops raspiot, close server properly
@@ -146,26 +146,26 @@ def check_auth(username, password):
     global auth_config_loaded, auth_config, sessions, SESSION_TIMEOUT
 
     #check session
-    ip = bottle.request.environ.get('REMOTE_ADDR')
-    session_key = '%s-%s' % (ip, username)
+    ip = bottle.request.environ.get(u'REMOTE_ADDR')
+    session_key = u'%s-%s' % (ip, username)
     if sessions.has_key(session_key) and sessions[session_key]>=time.time():
         #user still logged, update session timeout
         sessions[session_key] = time.time() + SESSION_TIMEOUT
         return True
 
     #check auth
-    if auth_config['accounts'].has_key(username):
-        if sha256_crypt.verify(password, auth_config['accounts'][username]):
+    if auth_config[u'accounts'].has_key(username):
+        if sha256_crypt.verify(password, auth_config[u'accounts'][username]):
             #auth is valid, save session
             sessions[session_key] = time.time() + SESSION_TIMEOUT
             return True
         else:
             #invalid password
-            logger.warning('Invalid password for user "%s"' % username)
+            logger.warning(u'Invalid password for user "%s"' % username)
             return False
     else:
         #username doesn't exist
-        logger.warning('Invalid username "%s"' % username)
+        logger.warning(u'Invalid username "%s"' % username)
         return False
 
 def authenticate():
@@ -179,10 +179,10 @@ def authenticate():
         def wrapper(*args, **kwargs):
             if auth_enabled:
                 username, password = bottle.request.auth or (None, None)
-                logger.debug('username=%s password=%s' % (username, password))
+                logger.debug(u'username=%s password=%s' % (username, password))
                 if username is None or not check_auth(username, password):
-                    err = bottle.HTTPError(401, 'Access denied')
-                    err.add_header('WWW-Authenticate', 'Basic realm="private"')
+                    err = bottle.HTTPError(401, u'Access denied')
+                    err.add_header(u'WWW-Authenticate', u'Basic realm="private"')
                     return err 
             return func(*args, **kwargs)
 
@@ -204,13 +204,13 @@ def send_command(command, to, params, timeout=None):
         MessageResonse: command response (None if broadcasted message)
     """
     #get bus
-    bus = app.config['sys.bus']
+    bus = app.config[u'sys.bus']
 
     #prepare and send command
     request = MessageRequest()
     request.command = command
     request.to = to
-    request.from_ = 'rpcserver'
+    request.from_ = u'rpcserver'
     request.params = params
 
     if timeout is not None:
@@ -219,7 +219,7 @@ def send_command(command, to, params, timeout=None):
         return bus.push(request)
 
 
-@app.route('/upload', method='POST')
+@app.route(u'/upload', method=u'POST')
 @authenticate()
 def upload():
     """
@@ -237,12 +237,12 @@ def upload():
     path = None
     try:
         #get form fields
-        command = bottle.request.forms.get('command')
-        logger.debug('command=%s' % str(command))
+        command = bottle.request.forms.get(u'command')
+        logger.debug(u'command=%s' % unicode(command))
         to = bottle.request.forms.get('to')
-        logger.debug('to=%s' % str(to))
-        params = bottle.request.forms.get('params')
-        logger.debug('params=%s' % str(params))
+        logger.debug(u'to=%s' % unicode(to))
+        params = bottle.request.forms.get(u'params')
+        logger.debug(u'params=%s' % unicode(params))
         if params is None:
             params = {}
 
@@ -250,14 +250,14 @@ def upload():
         if command is None or to is None:
             #not allowed, missing parameters
             msg = MessageResponse()
-            msg.message = 'Missing parameters'
+            msg.message = u'Missing parameters'
             msg.error = True
             resp = msg.to_dict()
 
         else:
             #get file
-            upload = bottle.request.files.get('file')
-            path = os.path.join('/tmp', upload.filename)
+            upload = bottle.request.files.get(u'file')
+            path = os.path.join(u'/tmp', upload.filename)
 
             #remove file if already exists
             if os.path.exists(path):
@@ -268,28 +268,28 @@ def upload():
             upload.save(path)
 
             #add filepath in params
-            params['filepath'] = path
+            params[u'filepath'] = path
 
             #execute specified command
-            logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
+            logger.debug(u'Upload command:%s to:%s params:%s' % (unicode(command), unicode(to), unicode(params)))
             resp = send_command(command, to, params, 10.0)
 
     except Exception as e:
-        logger.exception('Exception in upload:')
+        logger.exception(u'Exception in upload:')
         #something went wrong
         msg = MessageResponse()
-        msg.message = str(e)
+        msg.message = unicode(e)
         msg.error = True
         resp = msg.to_dict()
 
         #delete uploaded file if possible
         if path:
-            logger.debug('Delete uploaded file')
+            logger.debug(u'Delete uploaded file')
             os.remove(path)
 
     return resp
 
-@app.route('/download', method='GET')
+@app.route(u'/download', method=u'GET')
 @authenticate()
 def download():
     """
@@ -309,41 +309,41 @@ def download():
         command = bottle.request.query.command
         to = bottle.request.query.to
         params = {}
-        logger.debug('Download params: command=%s to=%s params=%s' % (command, to, params))
+        logger.debug(u'Download params: command=%s to=%s params=%s' % (command, to, params))
 
         try:
             params = dict(bottle.request.query)
             #remove useless parameters
-            if params.has_key('command'):
-                del params['command']
-            if params.has_key('to'):
-                del params['to']
+            if params.has_key(u'command'):
+                del params[u'command']
+            if params.has_key(u'to'):
+                del params[u'to']
         except:
             params = {}
 
         #request full filepath from module (string format)
         resp = send_command(command, to, params)
-        logger.debug('response: %s' % resp)
-        if not resp['error']:
-            filename = os.path.basename(resp['data'])
-            root = os.path.dirname(resp['data'])
-            logger.debug('Download file root=%s filename=%s' % (root, filename))
+        logger.debug(u'response: %s' % resp)
+        if not resp[u'error']:
+            filename = os.path.basename(resp[u'data'])
+            root = os.path.dirname(resp[u'data'])
+            logger.debug(u'Download file root=%s filename=%s' % (root, filename))
             return bottle.static_file(filename=filename, root=root, download=True)
         else:
             #error during filepath retrieving
-            raise Exception(resp['message'])
+            raise Exception(resp[u'message'])
 
     except Exception as e:
-        logger.exception('Exception in download:')
+        logger.exception(u'Exception in download:')
         #something went wrong
         msg = MessageResponse()
-        msg.message = str(e)
+        msg.message = unicode(e)
         msg.error = True
         resp = msg.to_dict()
 
     return resp
 
-@app.route('/command', method=['POST','GET'])
+@app.route(u'/command', method=[u'POST',u'GET'])
 @authenticate()
 def command():
     """
@@ -358,7 +358,7 @@ def command():
     Returns:
         MessageResponse: command response
     """
-    logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
+    logger.debug(u'COMMAND method=%s data=[%d]: %s' % (unicode(bottle.request.method), len(bottle.request.params), unicode(bottle.request.json)))
 
     try:
         command = None
@@ -367,7 +367,7 @@ def command():
         timeout = None
 
         #prepare data to push
-        if bottle.request.method=='GET':
+        if bottle.request.method==u'GET':
             #GET request
             command = bottle.request.query.command
             to = bottle.request.query.to
@@ -380,10 +380,10 @@ def command():
                 #no params value specified, use all query string
                 params = dict(bottle.request.query)
                 #remove useless parameters
-                if params.has_key('command'):
-                    del params['command']
-                if params.has_key('to'):
-                    del params['to']
+                if params.has_key(u'command'):
+                    del params[u'command']
+                if params.has_key(u'to'):
+                    del params[u'to']
             else:
                 #params specified in query string, unjsonify it
                 try:
@@ -394,33 +394,32 @@ def command():
         else:
             #POST request (need json)
             tmp_params = bottle.request.json
-            if tmp_params.has_key('to'):
-                to = tmp_params['to']
-                del tmp_params['to']
-            if tmp_params.has_key('command'):
-                command = tmp_params['command']
-                del tmp_params['command']
-            if tmp_params.has_key('timeout') and tmp_params['timeout'] is not None and type(tmp_params['timeout']).__name__ in ('float', 'int'):
-                logger.debug(' ==> timeout=%d' % tmp_params['timeout'])
-                timeout = float(tmp_params['timeout'])
-                del tmp_params['timeout']
+            if tmp_params.has_key(u'to'):
+                to = tmp_params[u'to']
+                del tmp_params[u'to']
+            if tmp_params.has_key(u'command'):
+                command = tmp_params[u'command']
+                del tmp_params[u'command']
+            if tmp_params.has_key(u'timeout') and tmp_params[u'timeout'] is not None and type(tmp_params[u'timeout']).__name__ in (u'float', u'int'):
+                timeout = float(tmp_params[u'timeout'])
+                del tmp_params[u'timeout']
             if len(tmp_params)>0:
-                params = tmp_params['params']
+                params = tmp_params[u'params']
 
         #execute command
         resp = send_command(command, to, params, timeout)
 
     except Exception as e:
-        logger.exception('Exception in command:')
+        logger.exception(u'Exception in command:')
         #something went wrong
         msg = MessageResponse()
-        msg.message = str(e)
+        msg.message = unicode(e)
         msg.error = True
         resp = msg.to_dict()
 
     return resp
 
-@app.route('/modules', method='POST')
+@app.route(u'/modules', method=u'POST')
 @authenticate()
 def modules():
     """
@@ -429,30 +428,30 @@ def modules():
     Returns:
         Dict: map of modules with their configuration, devices, commands...
     """
-    logger.debug('Request inventory for available modules')
-    modules = app.config['sys.inventory'].get_modules()
+    logger.debug(u'Request inventory for available modules')
+    modules = app.config[u'sys.inventory'].get_modules()
     
     #inject config of installed modules
     for module in modules:
-        if modules[module]['installed']:
-            modules[module]['config'] = app.config['mod.%s' % module].get_module_config()
+        if modules[module][u'installed']:
+            modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
 
     #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
     conf = RaspiotConf()
     config = conf.as_dict()
     for module in modules:
-        modules[module]['pending'] = False
-        if module in config['general']['modules'] and not modules[module]['installed']:
+        modules[module][u'pending'] = False
+        if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
             #install pending
-            modules[module]['pending'] = True
-        if module not in config['general']['modules'] and modules[module]['installed']:
+            modules[module][u'pending'] = True
+        if module not in config[u'general'][u'modules'] and modules[module][u'installed']:
             #uninstall pending
-            modules[module]['pending'] = True
+            modules[module][u'pending'] = True
 
-    logger.debug('Modules: %s' % modules)
+    logger.debug(u'Modules: %s' % modules)
     return json.dumps(modules)
 
-@app.route('/devices', method='POST')
+@app.route(u'/devices', method=u'POST')
 @authenticate()
 def devices():
     """
@@ -464,33 +463,33 @@ def devices():
     #request each loaded module for its devices
     devices = {}
     for module in app.config:
-        if module.startswith('mod.'):
-            _module = module.replace('mod.', '')
-            logger.debug('Request "%s" config' % _module)
-            response = send_command('get_module_devices', _module, {})
-            if not response['error']:
-                devices[_module] = response['data']
+        if module.startswith(u'mod.'):
+            _module = module.replace(u'mod.', '')
+            logger.debug(u'Request "%s" config' % _module)
+            response = send_command(u'get_module_devices', _module, {})
+            if not response[u'error']:
+                devices[_module] = response[u'data']
             else:
                 devices[_module] = None
-    logger.debug('Devices: %s' % devices)
+    logger.debug(u'Devices: %s' % devices)
 
     return json.dumps(devices)
 
-@app.route('/renderers', method='POST')
+@app.route(u'/providers', method=u'POST')
 @authenticate()
-def renderers():
+def providers():
     """
-    Returns all renderers
+    Returns all providers
 
     Returns:
-        dict: all renderers by type
+        dict: all providers by type
     """
-    renderers = app.config['sys.inventory'].get_renderers()
+    providers = app.config[u'sys.inventory'].get_providers()
 
-    logger.debug('renderers: %s' % renderers)
-    return json.dumps(renderers)
+    logger.debug(u'Providers: %s' % providers)
+    return json.dumps(providers)
 
-@app.route('/registerpoll', method='POST')
+@app.route(u'/registerpoll', method=u'POST')
 @authenticate()
 def registerpoll():
     """
@@ -500,14 +499,14 @@ def registerpoll():
         dict: {'pollkey':''}
     """
     #subscribe to bus
-    poll_key = str(uuid.uuid4())
-    if app.config.has_key('sys.bus'):
-        logger.debug('subscribe %s' % poll_key)
-        app.config['sys.bus'].add_subscription('rpc-%s' % poll_key)
+    poll_key = unicode(uuid.uuid4())
+    if app.config.has_key(u'sys.bus'):
+        logger.debug(u'subscribe %s' % poll_key)
+        app.config[u'sys.bus'].add_subscription(u'rpc-%s' % poll_key)
 
     #return response
-    bottle.response.content_type = 'application/json'
-    return json.dumps({'pollKey':poll_key})
+    bottle.response.content_type = u'application/json'
+    return json.dumps({u'pollKey':poll_key})
 
 @contextmanager
 def pollcounter():
@@ -516,7 +515,7 @@ def pollcounter():
     yield
     polling -= 1
 
-@app.route('/poll', method='POST')
+@app.route(u'/poll', method=u'POST')
 @authenticate()
 def poll():
     """
@@ -528,58 +527,58 @@ def poll():
     with pollcounter():
         params = bottle.request.json
         #response content type.
-        bottle.response.content_type = 'application/json'
+        bottle.response.content_type = u'application/json'
 
         #get message bus
-        bus = app.config['sys.bus']
+        bus = app.config[u'sys.bus']
 
         #init message
-        message = {'error':True, 'data':None, 'message':''}
+        message = {u'error':True, u'data':None, u'message':''}
 
         #process poll
         if not bus:
             #bus not available yet
-            logger.debug('polling: bus not available')
-            message['message'] = 'Bus not available'
+            logger.debug(u'polling: bus not available')
+            message[u'message'] = u'Bus not available'
             time.sleep(1.0)
 
-        elif not params.has_key('pollKey'):
+        elif not params.has_key(u'pollKey'):
             #rpc client no registered yet
-            logger.debug('polling: registration key must be sent to poll request')
-            message['message'] = 'Polling key is missing'
+            logger.debug(u'polling: registration key must be sent to poll request')
+            message[u'message'] = u'Polling key is missing'
             time.sleep(1.0)
 
-        elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
+        elif not bus.is_subscribed(u'rpc-%s' % params[u'pollKey']):
             #rpc client no registered yet
-            logger.debug('polling: rpc client must be registered before polling')
-            message['message'] = 'Client not registered'
+            logger.debug(u'polling: rpc client must be registered before polling')
+            message[u'message'] = u'Client not registered'
             time.sleep(1.0)
 
         else:
             #wait for event (blocking by default) until end of timeout
             try:
                 #wait for message
-                poll_key = 'rpc-%s' % params['pollKey']
+                poll_key = u'rpc-%s' % params[u'pollKey']
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
 
                 #prepare output
-                message['error'] = False
-                message['data'] = msg['message']
-                logger.debug('polling received %s' % message)
+                message[u'error'] = False
+                message[u'data'] = msg[u'message']
+                logger.debug(u'polling received %s' % message)
 
             except NoMessageAvailable:
-                message['message'] = 'No message available'
+                message[u'message'] = u'No message available'
                 time.sleep(1.0)
 
             except:
-                logger.exception('poll exception')
-                message['message'] = 'Internal error'
+                logger.exception(u'poll exception')
+                message[u'message'] = u'Internal error'
                 time.sleep(5.0)
 
     #and return it
     return json.dumps(message)
 
-@app.route('/<path:path>')
+@app.route(u'/<path:path>')
 @authenticate()
 def default(path):
     """
@@ -587,23 +586,23 @@ def default(path):
     """
     return bottle.static_file(path, HTML_DIR)
 
-@app.route('/')
+@app.route(u'/')
 @authenticate()
 def index():
     """
     Return a default document if no path was specified.
     """
-    return bottle.static_file('index.html', HTML_DIR)
+    return bottle.static_file(u'index.html', HTML_DIR)
 
-@app.route('/debug')
+@app.route(u'/debug')
 def debug():
     """
     This lets us see how many /sub requests are active.
     """
-    bottle.response.content_type = 'text/plain'
+    bottle.response.content_type = u'text/plain'
 
     # Using yield because this makes it easier to add
     # additional output.
-    yield('polling = %d\n' % polling)
+    yield(u'polling = %d\n' % polling)
 
 

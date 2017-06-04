@@ -14,8 +14,8 @@ class RendererProfile():
         Returns printable profile string
         """
         #exclude private members
-        members = [item for item in self.__dict__.keys() if not item.startswith('_')]
-        return '%s: %s' % (self.__class__.__name__, members)
+        members = [item for item in self.__dict__.keys() if not item.startswith(u'_')]
+        return u'%s: %s' % (self.__class__.__name__, members)
 
     def to_dict(self):
         """ 
@@ -24,7 +24,7 @@ class RendererProfile():
         Returns:
             dict: profile
         """
-        return {k:v for k,v in self.__dict__.iteritems() if not k.startswith('_')}
+        return {k:v for k,v in self.__dict__.iteritems() if not k.startswith(u'_')}
 
 
 class SmsProfile(RendererProfile):

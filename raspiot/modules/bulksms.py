@@ -13,61 +13,63 @@ __all__ = ['Bulksms']
 class Bulksms(RaspIotRenderer):
     """
     BulkSms module
-    @see http://developer.bulksms.com/eapi/submission/send_sms/
+
+    Note:
+        see http://developer.bulksms.com/eapi/submission/send_sms/
     """
 
-    MODULE_CONFIG_FILE = 'bulksms.conf'
+    MODULE_CONFIG_FILE = u'bulksms.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Sends you SMS alerts using BulkSms gateway.'
+    MODULE_DESCRIPTION = u'Sends you SMS alerts using BulkSms gateway.'
     MODULE_LOCKED = False
-    MODULE_URL = 'https://github.com/tangb/Cleep/wiki/BulkSms'
-    MODULE_TAGS = ['sms', 'alert']
+    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/BulkSms'
+    MODULE_TAGS = [u'sms', u'alert']
 
     DEFAULT_CONFIG = {
-        'username': None,
-        'password': None,
-        'phone_numbers': [],
-        'credits': 0
+        u'username': None,
+        u'password': None,
+        u'phone_numbers': [],
+        u'credits': 0
     }
 
     RENDERER_PROFILES = [SmsProfile()]
-    RENDERER_TYPE = 'alert.sms'
+    RENDERER_TYPE = u'alert.sms'
 
-    BULKSMS_API_URL = 'https://bulksms.vsms.net/eapi/submission/send_sms/2/2.0'
-    BULKSMS_CREDITS_URL = 'https://bulksms.vsms.net/eapi/user/get_credits/1/1.1'
+    BULKSMS_API_URL = u'https://bulksms.vsms.net/eapi/submission/send_sms/2/2.0'
+    BULKSMS_CREDITS_URL = u'https://bulksms.vsms.net/eapi/user/get_credits/1/1.1'
     BULKSMS_RESPONSE = {
-        '0': 'In progress',
-        '1': 'Scheduled',
-        '10': 'Delivered upstream',
-        '11': 'Delivered to mobile',
-        '12': 'Delivered upstream unacknowledged',
-        '22': 'Internal fatal error',
-        '23': 'Authentication failure',
-        '24': 'Data validation failed',
-        '25': 'You do not have sufficient credits',
-        '26': 'Upstream credits not available',
-        '27': 'You have exceeded your daily quota',
-        '28': 'Upstream quota exceeded',
-        '29': 'Message sending cancelled',
-        '31': 'Unroutable',
-        '32': 'Blocked',
-        '33': 'Failed: censored',
-        '40': 'Temporarily unavailable',
-        '50': 'Delivery failed - generic failure',
-        '51': 'Delivery to phone failed',
-        '52': 'Delivery to network failed',
-        '53': 'Message expired',
-        '54': 'Failed on remote network',
-        '55': 'Failed: remotely blocked',
-        '56': 'Failed: remotely censored',
-        '57': 'Failed due to fault on handset',
-        '60': 'Transient upstream failure',
-        '61': 'Upstream status update',
-        '62': 'Upstream cancel failed',
-        '63': 'Queued for retry after temporary failure delivering',
-        '64': 'Queued for retry after temporary failure delivering, due to fault on handset',
-        '70': 'Unknown upstream status',
-        '201': 'Maximum batch size exceeded'
+        u'0': u'In progress',
+        u'1': u'Scheduled',
+        u'10': u'Delivered upstream',
+        u'11': u'Delivered to mobile',
+        u'12': u'Delivered upstream unacknowledged',
+        u'22': u'Internal fatal error',
+        u'23': u'Authentication failure',
+        u'24': u'Data validation failed',
+        u'25': u'You do not have sufficient credits',
+        u'26': u'Upstream credits not available',
+        u'27': u'You have exceeded your daily quota',
+        u'28': u'Upstream quota exceeded',
+        u'29': u'Message sending cancelled',
+        u'31': u'Unroutable',
+        u'32': u'Blocked',
+        u'33': u'Failed: censored',
+        u'40': u'Temporarily unavailable',
+        u'50': u'Delivery failed - generic failure',
+        u'51': u'Delivery to phone failed',
+        u'52': u'Delivery to network failed',
+        u'53': u'Message expired',
+        u'54': u'Failed on remote network',
+        u'55': u'Failed: remotely blocked',
+        u'56': u'Failed: remotely censored',
+        u'57': u'Failed due to fault on handset',
+        u'60': u'Transient upstream failure',
+        u'61': u'Upstream status update',
+        u'62': u'Upstream cancel failed',
+        u'63': u'Queued for retry after temporary failure delivering',
+        u'64': u'Queued for retry after temporary failure delivering, due to fault on handset',
+        u'70': u'Unknown upstream status',
+        u'201': u'Maximum batch size exceeded'
     }
 
     def __init__(self, bus, debug_enabled):
@@ -94,22 +96,22 @@ class Bulksms(RaspIotRenderer):
             bool: True if credentials saved successfully
         """
         if username is None or len(username)==0:
-            raise MissingParameter('Username parameter is missing')
+            raise MissingParameter(u'Username parameter is missing')
         if password is None or len(password)==0:
-            raise MissingParameter('Password parameter is missing')
+            raise MissingParameter(u'Password parameter is missing')
         if phone_numbers is None or len(phone_numbers)==0:
-            raise MissingParameter('Phone_numbers parameter is missing')
-        if phone_numbers.strip().find(' ')!=-1 or phone_numbers.strip().find(';')!=-1:
-            raise InvalidParameter('Phone numbers must be separated by coma (,)')
+            raise MissingParameter(u'Phone_numbers parameter is missing')
+        if phone_numbers.strip().find(u' ')!=-1 or phone_numbers.strip().find(u';')!=-1:
+            raise InvalidParameter(u'Phone numbers must be separated by coma (,)')
 
         #try to get credits
         credits = self.get_credits(username, password)
 
         config = self._get_config()
-        config['username'] = username
-        config['password'] = password
-        config['phone_numbers'] = phone_numbers
-        config['credits'] = credits
+        config[u'username'] = username
+        config[u'password'] = password
+        config[u'phone_numbers'] = phone_numbers
+        config[u'credits'] = credits
 
         return self._save_config(config)
 
@@ -126,15 +128,15 @@ class Bulksms(RaspIotRenderer):
         """
         if username is None or password is None:
             config = self._get_config()
-            if config['username'] is None or len(config['username'])==0 or config['password'] is None or len(config['password'])==0:
-                raise CommandError('Please fill credentials first')
+            if config[u'username'] is None or len(config[u'username'])==0 or config[u'password'] is None or len(config[u'password'])==0:
+                raise CommandError(u'Please fill credentials first')
 
-            username = config['username']
-            password = config['password']    
+            username = config[u'username']
+            password = config[u'password']    
 
         params = urllib.urlencode({
-            'username': username,
-            'password': password
+            u'username': username,
+            u'password': password
         })
 
         error = None
@@ -143,21 +145,21 @@ class Bulksms(RaspIotRenderer):
             #launch request
             req = urllib.urlopen(self.BULKSMS_CREDITS_URL, params)
             res = req.read()
-            self.logger.debug('Credit response: %s' % res)
+            self.logger.debug(u'Credit response: %s' % res)
             req.close()
 
             #parse request result
-            splits = res.split('|')
-            if splits[0]!='0':
-                self.logger.error('Unable to retrieve credits: %s - %s' % (self.BULKSMS_RESPONSE[splits[0]], splits[1]))
+            splits = res.split(u'|')
+            if splits[0]!=u'0':
+                self.logger.error(u'Unable to retrieve credits: %s - %s' % (self.BULKSMS_RESPONSE[splits[0]], splits[1]))
                 error = self.BULKSMS_RESPONSE[splits[0]]
             else:
                 #get credits
                 credits = float(splits[1].strip())
 
         except:
-            self.logger.exception('Unable to retrieve credits:')
-            error = 'Internal error'
+            self.logger.exception(u'Unable to retrieve credits:')
+            error = u'Internal error'
 
         if error is not None:
             raise CommandError(error)
@@ -176,10 +178,10 @@ class Bulksms(RaspIotRenderer):
         """
         config = self._get_config()
         params = urllib.urlencode({
-            'username': config['username'],
-            'password': config['password'],
-            'message': data.message,
-            'msisdn' : config['phone_numbers']
+            u'username': config[u'username'],
+            u'password': config[u'password'],
+            u'message': data.message,
+            u'msisdn' : config[u'phone_numbers']
         })
 
         error = False
@@ -187,17 +189,17 @@ class Bulksms(RaspIotRenderer):
             #launch request
             req = urllib.urlopen(self.BULKSMS_API_URL, params)
             res = req.read()
-            self.logger.debug('Send sms response: %s' % res)
+            self.logger.debug(u'Send sms response: %s' % res)
             req.close()
 
             #parse request result
             (status_code, status_description, batch_id) = res.split('|')
-            if status_code!='0':
-                self.logger.error('Unable to send sms: %s - %s' % (self.BULKSMS_RESPONSE[status_code], status_description))
+            if status_code!=u'0':
+                self.logger.error(u'Unable to send sms: %s - %s' % (self.BULKSMS_RESPONSE[status_code], status_description))
                 error = True
 
         except:
-            self.logger.exception('Unable to send sms:')
+            self.logger.exception(u'Unable to send sms:')
             error = True
 
         return error

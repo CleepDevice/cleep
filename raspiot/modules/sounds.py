@@ -12,7 +12,7 @@ from threading import Thread
 from gtts import gTTS
 import time
 
-__all__ = ['Sounds']
+__all__ = [u'Sounds']
 
 class PlaySound(Thread):
     """
@@ -49,12 +49,12 @@ class PlaySound(Thread):
         """
         try:
             #init player
-            self.logger.debug('init player')
+            self.logger.debug(u'init player')
             pygame.mixer.init()
             pygame.mixer.music.load(self.filepath)
 
             #play sound
-            self.logger.debug('play sound file "%s"' % self.filepath)
+            self.logger.debug(u'play sound file "%s"' % self.filepath)
             pygame.mixer.music.play()
 
             #wait until end of playback or if user stop thread
@@ -68,83 +68,83 @@ class PlaySound(Thread):
 
             #delete file
             if self.delete:
-                self.logger.debug('PlaySound: delete sound file "%s"' % self.filepath)
+                self.logger.debug(u'PlaySound: delete sound file "%s"' % self.filepath)
                 os.remove(self.filepath)
         except:
-            self.logger.exception('Exception during sound playing:')
+            self.logger.exception(u'Exception during sound playing:')
 
 
 
 
 class Sounds(RaspIotRenderer):
 
-    MODULE_CONFIG_FILE = 'sounds.conf'
+    MODULE_CONFIG_FILE = u'sounds.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Plays sounds or speech text you want'
+    MODULE_DESCRIPTION = u'Plays sounds or speech text you want'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
 
     RENDERER_PROFILES = [TextToSpeechProfile()]
-    RENDERER_TYPE = 'sound'
+    RENDERER_TYPE = u'sound'
 
     DEFAULT_CONFIG = {
-        'lang': 'en'
+        u'lang': u'en'
     }
-    SOUNDS_PATH = '/var/opt/raspiot/sounds'
-    ALLOWED_EXTS = ['mp3', 'wav', 'ogg']
+    SOUNDS_PATH = u'/var/opt/raspiot/sounds'
+    ALLOWED_EXTS = [u'mp3', u'wav', u'ogg']
     TTS_LANGS = {
-        'af' : 'Afrikaans',
-        'sq' : 'Albanian',
-        'ar' : 'Arabic',
-        'hy' : 'Armenian',
-        'bn' : 'Bengali',
-        'ca' : 'Catalan',
-        'zh' : 'Chinese',
-        'zh-cn' : 'Chinese (Mandarin/China)',
-        'zh-tw' : 'Chinese (Mandarin/Taiwan)',
-        'zh-yue' : 'Chinese (Cantonese)',
-        'hr' : 'Croatian',
-        'cs' : 'Czech',
-        'da' : 'Danish',
-        'nl' : 'Dutch',
-        'en' : 'English',
-        'en-au' : 'English (Australia)',
-        'en-uk' : 'English (United Kingdom)',
-        'en-us' : 'English (United States)',
-        'eo' : 'Esperanto',
-        'fi' : 'Finnish',
-        'fr' : 'French',
-        'de' : 'German',
-        'el' : 'Greek',
-        'hi' : 'Hindi',
-        'hu' : 'Hungarian',
-        'is' : 'Icelandic',
-        'id' : 'Indonesian',
-        'it' : 'Italian',
-        'ja' : 'Japanese',
-        'ko' : 'Korean',
-        'la' : 'Latin',
-        'lv' : 'Latvian',
-        'mk' : 'Macedonian',
-        'no' : 'Norwegian',
-        'pl' : 'Polish',
-        'pt' : 'Portuguese',
-        'pt-br' : 'Portuguese (Brazil)',
-        'ro' : 'Romanian',
-        'ru' : 'Russian',
-        'sr' : 'Serbian',
-        'sk' : 'Slovak',
-        'es' : 'Spanish',
-        'es-es' : 'Spanish (Spain)',
-        'es-us' : 'Spanish (United States)',
-        'sw' : 'Swahili',
-        'sv' : 'Swedish',
-        'ta' : 'Tamil',
-        'th' : 'Thai',
-        'tr' : 'Turkish',
-        'vi' : 'Vietnamese',
-        'cy' : 'Welsh'
+        u'af' : u'Afrikaans',
+        u'sq' : u'Albanian',
+        u'ar' : u'Arabic',
+        u'hy' : u'Armenian',
+        u'bn' : u'Bengali',
+        u'ca' : u'Catalan',
+        u'zh' : u'Chinese',
+        u'zh-cn' : u'Chinese (Mandarin/China)',
+        u'zh-tw' : u'Chinese (Mandarin/Taiwan)',
+        u'zh-yue' : u'Chinese (Cantonese)',
+        u'hr' : u'Croatian',
+        u'cs' : u'Czech',
+        u'da' : u'Danish',
+        u'nl' : u'Dutch',
+        u'en' : u'English',
+        u'en-au' : u'English (Australia)',
+        u'en-uk' : u'English (United Kingdom)',
+        u'en-us' : u'English (United States)',
+        u'eo' : u'Esperanto',
+        u'fi' : u'Finnish',
+        u'fr' : u'French',
+        u'de' : u'German',
+        u'el' : u'Greek',
+        u'hi' : u'Hindi',
+        u'hu' : u'Hungarian',
+        u'is' : u'Icelandic',
+        u'id' : u'Indonesian',
+        u'it' : u'Italian',
+        u'ja' : u'Japanese',
+        u'ko' : u'Korean',
+        u'la' : u'Latin',
+        u'lv' : u'Latvian',
+        u'mk' : u'Macedonian',
+        u'no' : u'Norwegian',
+        u'pl' : u'Polish',
+        u'pt' : u'Portuguese',
+        u'pt-br' : u'Portuguese (Brazil)',
+        u'ro' : u'Romanian',
+        u'ru' : u'Russian',
+        u'sr' : u'Serbian',
+        u'sk' : u'Slovak',
+        u'es' : u'Spanish',
+        u'es-es' : u'Spanish (Spain)',
+        u'es-us' : u'Spanish (United States)',
+        u'sw' : u'Swahili',
+        u'sv' : u'Swedish',
+        u'ta' : u'Tamil',
+        u'th' : u'Thai',
+        u'tr' : u'Turkish',
+        u'vi' : u'Vietnamese',
+        u'cy' : u'Welsh'
     }
 
     def __init__(self, bus, debug_enabled):
@@ -159,7 +159,7 @@ class Sounds(RaspIotRenderer):
         RaspIotRenderer.__init__(self, bus, debug_enabled)
 
         #disable urllib info logs
-        url_log = logging.getLogger("urllib3")
+        url_log = logging.getLogger(u'urllib3')
         if url_log:
             url_log.setLevel(logging.WARNING)
 
@@ -175,9 +175,9 @@ class Sounds(RaspIotRenderer):
         Get full module configuration
         """
         config = {}
-        config['langs'] = self.get_langs()
-        config['volume'] = self.get_volume()
-        config['sounds'] = self.get_sounds()
+        config[u'langs'] = self.get_langs()
+        config[u'volume'] = self.get_volume()
+        config[u'sounds'] = self.get_sounds()
         return config
 
     def get_langs(self):
@@ -192,8 +192,8 @@ class Sounds(RaspIotRenderer):
                 }
         """
         return {
-            'langs': Sounds.TTS_LANGS,
-            'lang': self._config['lang']
+            u'langs': Sounds.TTS_LANGS,
+            u'lang': self._config[u'lang']
         }
 
     def set_lang(self, lang):
@@ -205,11 +205,11 @@ class Sounds(RaspIotRenderer):
         """
         #check params
         if lang not in Sounds.TTS_LANGS.keys():
-            raise InvalidParameter('Specified lang "%s" is invalid' % lang)
+            raise InvalidParameter(u'Specified lang "%s" is invalid' % lang)
 
         #save lang
         config = self._get_config()
-        config['lang'] = lang
+        config[u'lang'] = lang
         self._save_config(config)
 
     def get_volume(self):
@@ -251,12 +251,12 @@ class Sounds(RaspIotRenderer):
         #check file validity
         if not os.path.exists(filepath):
             #invalid file specified
-            raise InvalidParameter('Specified file "%s" is invalid' % filename)
+            raise InvalidParameter(u'Specified file "%s" is invalid' % filename)
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
             #sound already is playing, reject action
-            raise Exception('A sound is already playing')
+            raise Exception(u'A sound is already playing')
 
         #play sound
         self.__sound_thread = PlaySound(filepath)
@@ -275,19 +275,19 @@ class Sounds(RaspIotRenderer):
         """
         #check parameters
         if text is None:
-            raise MissingParameter('Text parameter is missing')
+            raise MissingParameter(u'Text parameter is missing')
         if lang is None:
-            raise MissingParameter('Lang parameter is missing')
+            raise MissingParameter(u'Lang parameter is missing')
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
             #sound already is playing, reject action
-            raise Exception('A sound is already playing')
+            raise Exception(u'A sound is already playing')
 
         #text to speech
         try:
             tts = gTTS(text=text, lang=lang)
-            path = '/tmp/sound_%d.mp3' % int(time.time())
+            path = u'/tmp/sound_%d.mp3' % int(time.time())
             tts.save(path)
         
             #play sound
@@ -295,7 +295,7 @@ class Sounds(RaspIotRenderer):
             self.__sound_thread.start()
             return True
         except:
-            self.logger.exception('Exception when TTSing text "%s":' % text)
+            self.logger.exception(u'Exception when TTSing text "%s":' % text)
 
         return False
 
@@ -317,7 +317,7 @@ class Sounds(RaspIotRenderer):
             os.remove(filepath)
             return True
 
-        raise InvalidParameter('Invalid sound file')
+        raise InvalidParameter(u'Invalid sound file')
 
     def get_sounds(self):
         """
@@ -336,7 +336,7 @@ class Sounds(RaspIotRenderer):
         for root, dirs, sounds in os.walk(Sounds.SOUNDS_PATH):
             for sound in sounds:
                 out.append({
-                    'name': os.path.basename(sound)
+                    u'name': os.path.basename(sound)
                 })
         return out
 
@@ -355,21 +355,21 @@ class Sounds(RaspIotRenderer):
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
-        self.logger.debug('Add sound of extension: %s' % file_ext[1])
+        self.logger.debug(u'Add sound of extension: %s' % file_ext[1])
         if file_ext[1][1:] not in Sounds.ALLOWED_EXTS:
-            raise InvalidParameter('Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
+            raise InvalidParameter(u'Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
 
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
             path = os.path.join(Sounds.SOUNDS_PATH, name)
-            self.logger.debug('Name=%s path=%s' % (name, path))
+            self.logger.debug(u'Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
-            self.logger.info('File "%s" uploaded successfully' % name)
+            self.logger.info(u'File "%s" uploaded successfully' % name)
         else:
             #file doesn't exists
-            self.logger.error('Sound file "%s" doesn\'t exist' % filepath)
-            raise Exception('Sound file "%s"  doesn\'t exists' % filepath)
+            self.logger.error(u'Sound file "%s" doesn\'t exist' % filepath)
+            raise Exception(u'Sound file "%s"  doesn\'t exists' % filepath)
 
         return True
 
@@ -392,5 +392,5 @@ class Sounds(RaspIotRenderer):
         Args:
             data (any supported profile): data to speech
         """
-        self.speak_text(data.text, self._config['lang'])
+        self.speak_text(data.text, self._config[u'lang'])
 

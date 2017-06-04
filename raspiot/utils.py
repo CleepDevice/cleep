@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ['CommandError', 'CommandInfo', 'NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 
-           'InvalidMessage', 'Unauthorized', 'BusError', 'MessageResponse', 'MessageRequest']
+__all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter', u'MissingParameter', 
+           u'InvalidMessage', u'Unauthorized', u'BusError', u'MessageResponse', u'MessageRequest']
 
 class CommandError(Exception):
     def __init__(self, value):
@@ -18,11 +18,11 @@ class CommandInfo(Exception):
 
 class NoResponse(Exception):
     def __str__(self):
-        return repr('No response')
+        return repr(u'No response')
 
 class NoMessageAvailable(Exception):
     def __str__(self):
-        return repr('No message available')
+        return repr(u'No message available')
 
 class InvalidParameter(Exception):
     def __init__(self, value):
@@ -38,17 +38,17 @@ class MissingParameter(Exception):
 
 class InvalidMessage(Exception):
     def __str__(self):
-        return repr('Invalid message')
+        return repr(u'Invalid message')
 
 class BusNotReady(Exception):
     def __str__(self):
-        return repr('Bus is not ready yet. Please handle system.application.ready event before sending events.')
+        return repr(u'Bus is not ready yet. Please handle system.application.ready event before sending events.')
 
 class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
     def __str__(self):
-        return repr('Invalid module %s (not loaded or unknown)' % module)
+        return repr(u'Invalid module %s (not loaded or unknown)' % module)
 
 class Unauthorized(Exception):
     def __init__(self, value):
@@ -72,17 +72,17 @@ class MessageResponse():
     """
     def __init__(self):
         self.error = False
-        self.message = ''
+        self.message = u''
         self.data = None
 
     def __str__(self):
-        return '{error:%r, message:%s, data:%s}' % (self.error, self.message, str(self.data))
+        return u'{error:%r, message:%s, data:%s}' % (self.error, self.message, unicode(self.data))
 
     def to_dict(self):
         """ 
         Return message response
         """
-        return {'error':self.error, 'message':self.message, 'data':self.data}
+        return {u'error':self.error, u'message':self.message, u'data':self.data}
 
 class MessageRequest():
     """
@@ -108,11 +108,11 @@ class MessageRequest():
 
     def __str__(self):
         if self.command:
-            return '{command:%s, params:%s, to:%s}' % (self.command, str(self.params), self.to)
+            return u'{command:%s, params:%s, to:%s}' % (self.command, unicode(self.params), self.to)
         elif self.event:
-            return '{event:%s, params:%s, to:%s}' % (self.event, str(self.params), self.to)
+            return u'{event:%s, params:%s, to:%s}' % (self.event, unicode(self.params), self.to)
         else:
-            return 'Invalid message'
+            return u'Invalid message'
 
     def is_broadcast(self):
         """
@@ -130,9 +130,9 @@ class MessageRequest():
         @raise InvalidMessage if message is not valid
         """
         if self.command:
-            return {'command':self.command, 'params':self.params, 'from':self.from_}
+            return {u'command':self.command, u'params':self.params, u'from':self.from_}
         elif self.event:
-            return {'event':self.event, 'params':self.params, 'startup':startup, 'uuid':self.uuid}
+            return {u'event':self.event, u'params':self.params, u'startup':startup, u'uuid':self.uuid}
         else:
             raise InvalidMessage()
 

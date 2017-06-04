@@ -15,12 +15,12 @@ class DhcpcdConf():
         see https://wiki.archlinux.org/index.php/dhcpcd
     """
 
-    CONF = '/etc/dhcpcd.conf'
-    BACKUP = '/etc/dhcpcd.conf.backup'
+    CONF = u'/etc/dhcpcd.conf'
+    BACKUP = u'/etc/dhcpcd.conf.backup'
 
-    MODE_WRITE = 'w'
-    MODE_READ = 'r'
-    MODE_APPEND = 'a'
+    MODE_WRITE = u'w'
+    MODE_READ = u'r'
+    MODE_APPEND = u'a'
 
     def __init__(self):
         """
@@ -53,7 +53,7 @@ class DhcpcdConf():
             Exception: if file doesn't exist
         """
         if not os.path.exists(self.CONF):
-            raise Exception('dhcpcd.conf file does not exist')
+            raise Exception(u'dhcpcd.conf file does not exist')
 
         self.__fd = open(self.CONF, mode)
         return self.__fd
@@ -97,57 +97,57 @@ class DhcpcdConf():
         for group in groups:
             group = filter(None, group)
             if group[0] is not None and len(group[0])>0:
-                if group[0]=='interface':
+                if group[0]==u'interface':
                     key = group[1]
                     interfaces_[key] = {
-                        'ip_address': None,
-                        'router_address': None,
-                        'name_server': None,
-                        'fallback': None
+                        u'ip_address': None,
+                        u'router_address': None,
+                        u'name_server': None,
+                        u'fallback': None
                     }
                     current_item = interfaces_[key]
-                elif group[0]=='profile':
+                elif group[0]==u'profile':
                     key = group[1]
                     profiles_[key] = {
-                        'ip_address': None,
-                        'router_address': None,
-                        'name_server': None
+                        u'ip_address': None,
+                        u'router_address': None,
+                        u'name_server': None
                     }
                     current_item = profiles_[key]
-                elif group[0].endswith('ip_address'):
-                    current_item['ip_address'] = group[1].replace('/24', '')
-                elif group[0].endswith('routers'):
-                    current_item['router_address'] = group[1]
-                elif group[0].endswith('domain_name_servers'):
-                    current_item['name_server'] = group[1]
-                elif group[0]=='fallback':
-                    current_item['fallback'] = group[1]
+                elif group[0].endswith(u'ip_address'):
+                    current_item[u'ip_address'] = group[1].replace(u'/24', u'')
+                elif group[0].endswith(u'routers'):
+                    current_item[u'router_address'] = group[1]
+                elif group[0].endswith(u'domain_name_servers'):
+                    current_item[u'name_server'] = group[1]
+                elif group[0]==u'fallback':
+                    current_item[u'fallback'] = group[1]
 
         #join profiles and interfaces
         for interface in interfaces_:
             interfaces[interface] = {
-                'interface': interface,
-                'ip_address': None,
-                'router_address': None,
-                'name_server': None,
-                'fallback': False
+                u'interface': interface,
+                u'ip_address': None,
+                u'router_address': None,
+                u'name_server': None,
+                u'fallback': False
             }
 
-            if interfaces_[interface]['fallback'] is not None and len(interfaces_[interface]['fallback'])>0:
-                if profiles_.has_key(interfaces_[interface]['fallback']):
+            if interfaces_[interface][u'fallback'] is not None and len(interfaces_[interface][u'fallback'])>0:
+                if profiles_.has_key(interfaces_[interface][u'fallback']):
                     #get data from profile
-                    interfaces[interface]['ip_address'] = profiles_[interfaces_[interface]['fallback']]['ip_address']
-                    interfaces[interface]['router_address'] = profiles_[interfaces_[interface]['fallback']]['router_address']
-                    interfaces[interface]['name_server'] = profiles_[interfaces_[interface]['fallback']]['name_server']
-                    interfaces[interface]['fallback'] = True
+                    interfaces[interface][u'ip_address'] = profiles_[interfaces_[interface][u'fallback']][u'ip_address']
+                    interfaces[interface][u'router_address'] = profiles_[interfaces_[interface][u'fallback']][u'router_address']
+                    interfaces[interface][u'name_server'] = profiles_[interfaces_[interface][u'fallback']][u'name_server']
+                    interfaces[interface][u'fallback'] = True
                 else:
                     #malformed file: interface profile not found
                     break
             else:
                 #get data directly from interface
-                interfaces[interface]['ip_address'] = interfaces_[interface]['ip_address']
-                interfaces[interface]['router_address'] = interfaces_[interface]['router_address']
-                interfaces[interface]['name_server'] = interfaces_[interface]['name_server']
+                interfaces[interface][u'ip_address'] = interfaces_[interface][u'ip_address']
+                interfaces[interface][u'router_address'] = interfaces_[interface][u'router_address']
+                interfaces[interface][u'name_server'] = interfaces_[interface][u'name_server']
 
         return interfaces
 
@@ -167,7 +167,7 @@ class DhcpcdConf():
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter('Interface parameter is missing')
+            raise MissingParameter(u'Interface parameter is missing')
 
         interfaces = self.get_interfaces()
         if interfaces.has_key(interface):
@@ -192,23 +192,23 @@ class DhcpcdConf():
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter('Interface parameter is missing')
+            raise MissingParameter(u'Interface parameter is missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter('Ip_address parameter is missing')
+            raise MissingParameter(u'Ip_address parameter is missing')
         if router_address is None or len(router_address)==0:
-            raise MissingParameter('Router_address parameter is missing')
+            raise MissingParameter(u'Router_address parameter is missing')
         if name_server is None or len(name_server)==0:
-            raise MissingParameter('Name_server parameter is missing')
+            raise MissingParameter(u'Name_server parameter is missing')
 
         #check if interface is not already configured
         if self.get_interface(interface) is not None:
-            raise InvalidParameter('Interface %s is already configured' % interface)
+            raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #prepare configuration content
-        output = '\ninterface %s\n' % interface
-        output += 'static ip_address=%s/24\n' % ip_address
-        output += 'static routers=%s\n' % router_address
-        output += 'static domain_name_servers=%s\n' % name_server
+        output = u'\ninterface %s\n' % interface
+        output += u'static ip_address=%s/24\n' % ip_address
+        output += u'static routers=%s\n' % router_address
+        output += u'static domain_name_servers=%s\n' % name_server
 
         #write configuration
         fd = self.__open(self.MODE_APPEND)
@@ -232,7 +232,7 @@ class DhcpcdConf():
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter('Interface parameter is missing')
+            raise MissingParameter(u'Interface parameter is missing')
 
         #check if interface is configured
         if self.get_interface(interface) is None:
@@ -257,7 +257,7 @@ class DhcpcdConf():
             elif count==4:
                 #number of line to delete reached, stop
                 break
-            elif start and line.strip().startswith('#'):
+            elif start and line.strip().startswith(u'#'):
                 #commented line
                 continue
             #elif start and not line.strip().startswith('static'):
@@ -300,25 +300,25 @@ class DhcpcdConf():
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter('Interface parameter is missing')
+            raise MissingParameter(u'Interface parameter is missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter('Ip_address parameter is missing')
+            raise MissingParameter(u'Ip_address parameter is missing')
         if router_address is None or len(router_address)==0:
-            raise MissingParameter('Router_address parameter is missing')
+            raise MissingParameter(u'Router_address parameter is missing')
         if name_server is None or len(name_server)==0:
-            raise MissingParameter('Name_server parameter is missing')
+            raise MissingParameter(u'Name_server parameter is missing')
 
         #check if interface is not already configured
         if self.get_interface(interface) is not None:
-            raise InvalidParameter('Interface %s is already configured' % interface)
+            raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #prepare configuration content
-        output = '\nprofile fallback_%s\n' % interface
-        output += 'static ip_address=%s/24\n' % ip_address
-        output += 'static routers=%s\n' % router_address
-        output += 'static domain_name_servers=%s\n' % name_server
-        output += '\ninterface %s\n' % interface
-        output += 'fallback fallback_%s\n' % interface
+        output = u'\nprofile fallback_%s\n' % interface
+        output += u'static ip_address=%s/24\n' % ip_address
+        output += u'static routers=%s\n' % router_address
+        output += u'static domain_name_servers=%s\n' % name_server
+        output += u'\ninterface %s\n' % interface
+        output += u'fallback fallback_%s\n' % interface
 
         #write configuration
         fd = self.__open(self.MODE_APPEND)
@@ -342,7 +342,7 @@ class DhcpcdConf():
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter('Interface parameter is missing')
+            raise MissingParameter(u'Interface parameter is missing')
 
         #check if interface is configured
         if self.get_interface(interface) is None:
@@ -368,7 +368,7 @@ class DhcpcdConf():
             elif count==2:
                 #number of line to delete reached, stop
                 break
-            elif start and line.strip().startswith('#'):
+            elif start and line.strip().startswith(u'#'):
                 #commented line
                 continue
             elif start:

@@ -9,7 +9,7 @@ import json
 from threading import Timer, Thread
 import time
 
-__all__ = ['Task', 'BackgroundTask', 'CountTask']
+__all__ = [u'Task', u'BackgroundTask', u'CountTask']
 
 class Task:
     """
@@ -154,7 +154,7 @@ class BackgroundTask(Thread):
 if __name__ == '__main__':
     #testu
     def tick(msg):
-        print 'msg=%s' % str(msg)
+        print 'msg=%s' % unicode(msg)
 
     def tock():
         print 'tock'

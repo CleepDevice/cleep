@@ -8,7 +8,7 @@ from utils import CommandError, MissingParameter, InvalidParameter
 import importlib
 import inspect
 
-__all__ = ['Inventory']
+__all__ = [u'Inventory']
 
 class Inventory(RaspIotModule):
     """
@@ -45,8 +45,8 @@ class Inventory(RaspIotModule):
 
         #fill installed modules list
         for module in installed_modules:
-            if module.startswith('mod.'):
-                _module = module.replace('mod.', '')
+            if module.startswith(u'mod.'):
+                _module = module.replace(u'mod.', '')
                 self.installed_modules.append(_module)
 
     def _start(self):
@@ -61,89 +61,89 @@ class Inventory(RaspIotModule):
         Load all available modules and their devices
         """
         #list all modules
-        path = os.path.join(os.path.dirname(__file__), 'modules')
+        path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
-            raise CommandError('Invalid modules path')
+            raise CommandError(u'Invalid modules path')
         for f in os.listdir(path):
             fpath = os.path.join(path, f)
             (module, ext) = os.path.splitext(f)
-            if os.path.isfile(fpath) and ext=='.py' and module!='__init__':
-                module_ = importlib.import_module('raspiot.modules.%s' % module)
+            if os.path.isfile(fpath) and ext==u'.py' and module!=u'__init__':
+                module_ = importlib.import_module(u'raspiot.modules.%s' % module)
                 class_ = getattr(module_, module.capitalize())
                 self.modules[module] = {
-                    'description': class_.MODULE_DESCRIPTION,
-                    'locked': class_.MODULE_LOCKED,
-                    'tags': class_.MODULE_TAGS,
-                    'url': class_.MODULE_URL,
-                    'installed': False
+                    u'description': class_.MODULE_DESCRIPTION,
+                    u'locked': class_.MODULE_LOCKED,
+                    u'tags': class_.MODULE_TAGS,
+                    u'url': class_.MODULE_URL,
+                    u'installed': False
                 }
 
-        self.logger.info('Installed modules: %s' % self.installed_modules)
+        self.logger.info(u'Installed modules: %s' % self.installed_modules)
         for module in self.installed_modules:
             #update installed flag
-            self.modules[module]['installed'] = True
+            self.modules[module][u'installed'] = True
 
             #fill installed modules
-            self.logger.debug('Request commands of module "%s"' % module)
-            resp = self.send_command('get_module_commands', module, None, 15)
-            if not resp['error']:
-                self.modules[module]['commands'] = resp['data']
+            self.logger.debug(u'Request commands of module "%s"' % module)
+            resp = self.send_command(u'get_module_commands', module, None, 15)
+            if not resp[u'error']:
+                self.modules[module][u'commands'] = resp[u'data']
             else:
-                self.logger.error('Unable to get commands of module "%s"' % module)
+                self.logger.error(u'Unable to get commands of module "%s"' % module)
 
             #fill devices
-            self.logger.debug('Request devices of module "%s"' % module)
-            resp = self.send_command('get_module_devices', module)
-            if not resp['error']:
-                for uuid in resp['data']:
+            self.logger.debug(u'Request devices of module "%s"' % module)
+            resp = self.send_command(u'get_module_devices', module)
+            if not resp[u'error']:
+                for uuid in resp[u'data']:
                     #save new device entry (module name and device name)
                     self.devices[uuid] = {
-                        'module': module,
-                        'name': resp['data'][uuid]['name']
+                        u'module': module,
+                        u'name': resp[u'data'][uuid][u'name']
                     }
             else:
-                self.logger.error('Unable to get devices of module "%s"' % module)
+                self.logger.error(u'Unable to get devices of module "%s"' % module)
 
-        self.logger.debug('DEVICES=%s' % self.devices)
-        self.logger.debug('MODULES=%s' % self.modules)
+        self.logger.debug(u'DEVICES=%s' % self.devices)
+        self.logger.debug(u'MODULES=%s' % self.modules)
 
     def __load_formatters(self):
         """
         Load all available formatters
         """
         #list all formatters in formatters folder
-        path = os.path.join(os.path.dirname(__file__), 'formatters')
+        path = os.path.join(os.path.dirname(__file__), u'formatters')
         if not os.path.exists(path):
-            raise CommandError('Invalid formatters path')
+            raise CommandError(u'Invalid formatters path')
 
         #iterates over formatters
         for f in os.listdir(path):
             #build path
             fpath = os.path.join(path, f)
             (formatter, ext) = os.path.splitext(f)
-            self.logger.debug('formatter=%s ext=%s' % (formatter, ext))
+            self.logger.debug(u'formatter=%s ext=%s' % (formatter, ext))
 
             #filter files
-            if os.path.isfile(fpath) and ext=='.py' and formatter!='__init__' and formatter!='formatter':
+            if os.path.isfile(fpath) and ext==u'.py' and formatter!=u'__init__' and formatter!=u'formatter':
 
-                formatters_ = importlib.import_module('raspiot.formatters.%s' % formatter)
+                formatters_ = importlib.import_module(u'raspiot.formatters.%s' % formatter)
                 for name, class_ in inspect.getmembers(formatters_):
 
                     #filter imports
                     if name is None:
                         continue
-                    if not str(class_).startswith('raspiot.formatters.%s.' % formatter):
+                    if not unicode(class_).startswith(u'raspiot.formatters.%s.' % formatter):
                         continue
                     instance_ = class_()
 
                     #save formatter
-                    self.logger.debug('Found class %s in %s' % (str(class_), formatter) )
+                    self.logger.debug(u'Found class %s in %s' % (unicode(class_), formatter) )
                     if not self.formatters.has_key(instance_.input):
                         self.formatters[instance_.input] = {}
                     self.formatters[instance_.input][instance_.output] = instance_
-                    self.logger.debug('  %s => %s' % (instance_.input, instance_.output))
+                    self.logger.debug(u'  %s => %s' % (instance_.input, instance_.output))
 
-        self.logger.debug('FORMATTERS: %s' % self.formatters)
+        self.logger.debug(u'FORMATTERS: %s' % self.formatters)
 
     def get_device_module(self, uuid):
         """
@@ -184,7 +184,7 @@ class Inventory(RaspIotModule):
         Return module devices
         
         Args:
-            module (strng): module name
+            module (string): module name
         
         Returns:
             array: list of devices 
@@ -195,15 +195,15 @@ class Inventory(RaspIotModule):
         """
         #check values
         if self.modules.has_key(module):
-            raise CommandError('Module %s doesn\'t exist' % module)
+            raise CommandError(u'Module %s doesn\'t exist' % module)
 
         #search module devices
         devices = []
         for uuid in self.devices:
-            if self.devices[uuid]['module']==module:
+            if self.devices[uuid][u'module']==module:
                 devices.append({
-                    'uuid': uuid,
-                    'name': self.devices[uuid]['name']
+                    u'uuid': uuid,
+                    u'name': self.devices[uuid][u'name']
                 })
 
         return devices
@@ -294,14 +294,14 @@ class Inventory(RaspIotModule):
         Raises:
             MissingParameter, InvalidParameter
         """
-        self.logger.debug('Register new renderer %s' % (type))
+        self.logger.debug(u'Register new renderer %s' % (type))
         #check values
         if type is None or len(type)==0:
-            raise MissingParameter('Type parameter is missing')
+            raise MissingParameter(u'Type parameter is missing')
         if profiles is None:
-            raise MissingParameter('Profiles is missing')
+            raise MissingParameter(u'Profiles is missing')
         if len(profiles)==0:
-            raise InvalidParameter('Profiles must contains at least one profile')
+            raise InvalidParameter(u'Profiles must contains at least one profile')
 
         #update renderers list
         if not self.renderers.has_key(type):
@@ -315,8 +315,8 @@ class Inventory(RaspIotModule):
                 self.renderer_profiles[command_sender] = []
             self.renderer_profiles[command_sender].append(profile_name)
 
-        self.logger.debug('RENDERERS: %s' % self.renderers)
-        self.logger.debug('RENDERERS PROFILES: %s' % self.renderer_profiles)
+        self.logger.debug(u'RENDERERS: %s' % self.renderers)
+        self.logger.debug(u'RENDERERS PROFILES: %s' % self.renderer_profiles)
         
         return True
 
@@ -343,7 +343,7 @@ class Inventory(RaspIotModule):
             types (list<string>): existing renderer type
         """
         if not isinstance(types, list):
-            raise InvalidParameter('Types must be a list')
+            raise InvalidParameter(u'Types must be a list')
 
         #iterates over registered types
         for type in types:
@@ -351,21 +351,21 @@ class Inventory(RaspIotModule):
                 #renderer exists for current type
 
                 #get formatters
-                self.logger.debug('Searching formatters...')
+                self.logger.debug(u'Searching formatters...')
                 formatters = {}
                 for formatter in self.formatters:
                     if formatter.endswith(event):
                         formatters.update(self.formatters[formatter])
                 if len(formatters)==0:
                     #no formatter found, exit
-                    self.logger.debug('No formatter found for event %s' % event)
+                    self.logger.debug(u'No formatter found for event %s' % event)
                     return False
 
                 #find match with formatters and renderer profiles
                 for renderer in self.renderers[type]:
                     for profile in self.renderer_profiles[renderer]:
                         if profile in formatters:
-                            self.logger.debug('Found match, post profile data to renderer %s' % renderer)
+                            self.logger.debug(u'Found match, post profile data to renderer %s' % renderer)
                             #found match, format event to profile
                             data = formatters[profile].format(event_values)
 
@@ -374,13 +374,13 @@ class Inventory(RaspIotModule):
                                 continue
 
                             #and post profile data to renderer
-                            resp = self.send_command('render', renderer, {'data':data})
-                            if resp['error']:
-                                self.logger.error('Unable to post data to "%s" renderer: %s' % (renderer, resp['message']))
+                            resp = self.send_command(u'render', renderer, {u'data':data})
+                            if resp[u'error']:
+                                self.logger.error(u'Unable to post data to "%s" renderer: %s' % (renderer, resp[u'message']))
 
             else:
                 #no renderer for current type
-                self.logger.debug('No renderer registered for %s' % type)
+                self.logger.debug(u'No renderer registered for %s' % type)
 
 
 

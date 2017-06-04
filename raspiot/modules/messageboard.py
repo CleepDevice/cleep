@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-    
+
 import os
 import logging
-from raspiot.raspiot import RaspIotProvider
+from raspiot.raspiot import RaspIotRenderer
 import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
@@ -24,54 +24,54 @@ class Message():
         self.end = end
         self.displayed_time = 0
         self.dynamic = False
-        self.uuid = str(uuid.uuid4())
+        self.uuid = unicode(uuid.uuid4())
 
     def from_dict(self, message):
         """
         Load message from dict
         """
-        self.message = message['message']
-        self.start = message['start']
-        self.end = message['end']
-        self.uuid = message['uuid']
+        self.message = message[u'message']
+        self.start = message[u'start']
+        self.end = message[u'end']
+        self.uuid = message[u'uuid']
 
     def to_dict(self):
         """
         Return message as dict
         """
         return {
-            'uuid': self.uuid,
-            'message': self.message,
-            'start': self.start,
-            'end': self.end,
-            'displayed_time': self.displayed_time
+            u'uuid': self.uuid,
+            u'message': self.message,
+            u'start': self.start,
+            u'end': self.end,
+            u'displayed_time': self.displayed_time
         }
 
     def __str__(self):
-        return 'Message "%s" [%d:%d] %d' % (self.message, self.start, self.end, self.displayed_time)
+        return u'Message "%s" [%d:%d] %d' % (self.message, self.start, self.end, self.displayed_time)
 
 
 
 
-class Messageboard(RaspIotProvider):
+class Messageboard(RaspIotRenderer):
     """
     Messageboard allows user to display message on single line board
     Icons are directly handled inside message
     """
 
-    MODULE_CONFIG_FILE = 'messageboard.conf'
+    MODULE_CONFIG_FILE = u'messageboard.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Displays your own infos on a single line LED panel.'
+    MODULE_DESCRIPTION = u'Displays your own infos on a single line LED panel.'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
 
-    PROVIDER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
-    PROVIDER_TYPE = 'display'
+    RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
+    RENDERER_TYPE = u'display'
 
-    SPEED_SLOW = 'slow'
-    SPEED_NORMAL = 'normal'
-    SPEED_FAST = 'fast'
+    SPEED_SLOW = u'slow'
+    SPEED_NORMAL = u'normal'
+    SPEED_FAST = u'fast'
     SPEEDS = {
         SPEED_SLOW: 0.0025,
         SPEED_NORMAL: 0.005,
@@ -79,9 +79,9 @@ class Messageboard(RaspIotProvider):
     }
 
     DEFAULT_CONFIG = {
-        'duration': 60,
-        'messages' : [],
-        'speed': 'normal'
+        u'duration': 60,
+        u'messages' : [],
+        u'speed': 'normal'
     }
 
     def __init__(self, bus, debug_enabled):
@@ -93,7 +93,7 @@ class Messageboard(RaspIotProvider):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotProvider.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled)
 
         #members
         self.__current_message = None
@@ -107,7 +107,7 @@ class Messageboard(RaspIotProvider):
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
         self.__set_board_units()
-        self.board.set_scroll_speed(self.SPEEDS[self._config['speed']])
+        self.board.set_scroll_speed(self.SPEEDS[self._config[u'speed']])
         self.__display_task = None
 
     def _start(self):
@@ -115,7 +115,7 @@ class Messageboard(RaspIotProvider):
         Start module
         """
         #load messages
-        for msg in self._config['messages']:
+        for msg in self._config[u'messages']:
             message = Message()
             message.from_dict(msg)
             self.messages.append(message)
@@ -124,19 +124,19 @@ class Messageboard(RaspIotProvider):
         if self._get_device_count()==0:
             #add default device to get a valid uuid
             self._add_device({
-                'name': 'MessageBoard',
-                'type': 'messageboard'
+                u'name': u'MessageBoard',
+                u'type': u'messageboard'
             })
 
         #init display task
-        self.__display_task = BackgroundTask(self.__display_message, float(self._config['duration']))
+        self.__display_task = BackgroundTask(self.__display_message, float(self._config[u'duration']))
         self.__display_task.start()
 
         #display ip at startup during 1 minute
         #@see http://stackoverflow.com/a/1267524
         ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
         now = int(time.time())
-        self.add_message('IP: %s' % str(ip), now, now+60)
+        self.add_message(u'IP: %s' % unicode(ip), now, now+60)
 
     def _stop(self):
         """
@@ -156,7 +156,7 @@ class Messageboard(RaspIotProvider):
         try:
             #now
             now = time.time()
-            self.logger.debug('__display_message at %d' % now)
+            self.logger.debug(u'__display_message at %d' % now)
 
             #get messages to display
             messages_to_display = []
@@ -166,12 +166,12 @@ class Messageboard(RaspIotProvider):
                     messages_to_display.append(msg)
 
                 elif now>msg.end:
-                    self.logger.debug('Remove obsolete message %s' % unicode(msg))
+                    self.logger.debug(u'Remove obsolete message %s' % unicode(msg))
                     #remove obsolete message from config
                     config = self._get_config()
-                    for msg_conf in config['messages']:
-                        if msg_conf['uuid']==msg.uuid:
-                            config['messages'].remove(msg_conf)
+                    for msg_conf in config[u'messages']:
+                        if msg_conf[u'uuid']==msg.uuid:
+                            config[u'messages'].remove(msg_conf)
                             self._save_config(config)
                             break
 
@@ -185,22 +185,22 @@ class Messageboard(RaspIotProvider):
             messages_to_display.sort(key=lambda msg:msg.displayed_time, reverse=False)
 
             if self.logger.getEffectiveLevel()==logging.DEBUG:
-                self.logger.debug('Messages to display:')
+                self.logger.debug(u'Messages to display:')
                 for msg in messages_to_display:
-                    self.logger.debug(' - %s' % str(msg))
+                    self.logger.debug(u' - %s' % unicode(msg))
 
             #display first list message
             if len(messages_to_display)>0:
                 #get first list message
                 msg = messages_to_display[0]
                 if msg!=self.__current_message or msg.dynamic==True:
-                    self.logger.debug(' ==> Display message %s' % str(msg))
+                    self.logger.debug(u' ==> Display message %s' % unicode(msg))
                     msg.dynamic = self.board.display_message(msg.message)
                     msg.displayed_time = now
                     self.__current_message = msg
 
                     #push event
-                    self.send_event('messageboard.message.update', self.get_current_message())
+                    self.send_event(u'messageboard.message.update', self.get_current_message())
 
             else:
                 #no message to display, clear screen
@@ -208,7 +208,7 @@ class Messageboard(RaspIotProvider):
                 self.board.clear()
 
         except:
-            self.logger.exception('Exception on message displaying:')
+            self.logger.exception(u'Exception on message displaying:')
 
     def get_module_config(self):
         """
@@ -224,10 +224,10 @@ class Messageboard(RaspIotProvider):
                 }
         """
         config = {}
-        config['messages'] = self.get_messages()
-        config['duration'] = self._config['duration']
-        config['speed'] = self._config['speed']
-        config['status'] = self.get_current_message()
+        config[u'messages'] = self.get_messages()
+        config[u'duration'] = self._config[u'duration']
+        config[u'speed'] = self._config[u'speed']
+        config[u'status'] = self.get_current_message()
 
         return config;
 
@@ -250,7 +250,7 @@ class Messageboard(RaspIotProvider):
         Set board units
         """
         #set board unit
-        self.board.set_time_units('minutes', 'hours', 'days')
+        self.board.set_time_units(u'minutes', u'hours', u'days')
 
     def _post(self, data):
         """
@@ -280,11 +280,11 @@ class Messageboard(RaspIotProvider):
         """
         #create message object
         msg = Message(message, start, end)
-        self.logger.debug('Add new message: %s' % unicode(msg))
+        self.logger.debug(u'Add new message: %s' % unicode(msg))
 
         #save it to config
         config = self._get_config()
-        config['messages'].append(msg.to_dict())
+        config[u'messages'].append(msg.to_dict())
         self._save_config(config)
 
         #save it to internaly
@@ -305,9 +305,9 @@ class Messageboard(RaspIotProvider):
         deleted = False
         #delete message from config
         config = self._get_config()
-        for msg in config['messages']:
-            if msg['uuid']==uuid:
-                config['messages'].remove(msg)
+        for msg in config[u'messages']:
+            if msg[u'uuid']==uuid:
+                config[u'messages'].remove(msg)
                 deleted = True
                 break
         if deleted:
@@ -319,7 +319,7 @@ class Messageboard(RaspIotProvider):
                 self.messages.remove(msg)
                 break
 
-        self.logger.debug('Message "%s" deleted' % msg.message)
+        self.logger.debug(u'Message "%s" deleted' % msg.message)
 
         return deleted
 
@@ -335,23 +335,23 @@ class Messageboard(RaspIotProvider):
         Returns:
             bool: True if message replaced
         """
-        self.logger.debug('Replacing message uuid "%s" with message "%s"' % (uuid, message))
+        self.logger.debug(u'Replacing message uuid "%s" with message "%s"' % (uuid, message))
         #replace message in config
         replaced = False
         config = self._get_config()
         start = int(time.time())
         end = start + 604800 #1 week
-        for msg in config['messages']:
-            if msg['uuid']==uuid:
+        for msg in config[u'messages']:
+            if msg[u'uuid']==uuid:
                 #message found, replace infos by new ones
-                msg['message'] = message
-                msg['start'] = start
-                msg['end'] = end
+                msg[u'message'] = message
+                msg[u'start'] = start
+                msg[u'end'] = end
                 replaced = True
 
         if replaced:
             #message found and replaced
-            self.logger.debug('Message replaced')
+            self.logger.debug(u'Message replaced')
             self._save_config(config)
 
             #replace message internaly
@@ -366,7 +366,7 @@ class Messageboard(RaspIotProvider):
 
         else:
             #message not found
-            self.logger.debug('Message added instead of replaced')
+            self.logger.debug(u'Message added instead of replaced')
             
             #create message object
             msg = Message(message, start, end)
@@ -374,7 +374,7 @@ class Messageboard(RaspIotProvider):
 
             #save it to config
             config = self._get_config()
-            config['messages'].append(msg.to_dict())
+            config[u'messages'].append(msg.to_dict())
             self._save_config(config)
 
             #save it to internaly
@@ -407,20 +407,20 @@ class Messageboard(RaspIotProvider):
                 }
         """
         out = {
-            'nomessage': False,
-            'off': False,
-            'message': None
+            u'nomessage': False,
+            u'off': False,
+            u'message': None
         }
 
         if self.__current_message is None:
             #no message displayed for now, return empty string
-            out['nomessage'] = True
+            out[u'nomessage'] = True
         elif not self.board.is_on():
             #board is off
-            out['off'] = True
+            out[u'off'] = True
         else:
             #send message
-            out['message'] = self.__current_message.to_dict()
+            out[u'message'] = self.__current_message.to_dict()
 
         return out
 
@@ -435,7 +435,7 @@ class Messageboard(RaspIotProvider):
         self.__current_message = None
 
         #push event
-        self.send_event('messageboard.message.update', self.get_current_message())
+        self.send_event(u'messageboard.message.update', self.get_current_message())
 
     def turn_off(self):
         """
@@ -448,7 +448,7 @@ class Messageboard(RaspIotProvider):
         self.board.turn_off()
 
         #push event
-        self.send_event('messageboard.message.update', self.get_current_message())
+        self.send_event(u'messageboard.message.update', self.get_current_message())
 
     def is_on(self):
         """
@@ -471,18 +471,18 @@ class Messageboard(RaspIotProvider):
             InvalidParameter, MissingParameter
         """
         if duration is None:
-            raise MissingParameter('Duration parameter is missing')
+            raise MissingParameter(u'Duration parameter is missing')
         if duration<5 or duration>60:
-            raise InvalidParameter('Duration value must be between 5 and 60 seconds')
+            raise InvalidParameter(u'Duration value must be between 5 and 60 seconds')
         if speed is None or len(speed)==0:
-            raise MissingParameter('Speed parameter is missing')
+            raise MissingParameter(u'Speed parameter is missing')
         if speed not in self.SPEEDS:
-            raise InvalidParameter('Speed value is not valid')
+            raise InvalidParameter(u'Speed value is not valid')
 
         #save config
         config = self._get_config()
-        config['duration'] = float(duration)
-        config['speed'] = speed
+        config[u'duration'] = float(duration)
+        config[u'speed'] = speed
         self._save_config(config)
 
         #update board configuration

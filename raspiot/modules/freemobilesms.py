@@ -9,7 +9,7 @@ import urllib
 import urllib2
 import ssl
 
-__all__ = ['Freemobilesms']
+__all__ = [u'Freemobilesms']
 
 
 class Freemobilesms(RaspIotRenderer):
@@ -20,28 +20,28 @@ class Freemobilesms(RaspIotRenderer):
         http://developer.bulksms.com/eapi/submission/send_sms/
     """
 
-    MODULE_CONFIG_FILE = 'freemobilesms.conf'
+    MODULE_CONFIG_FILE = u'freemobilesms.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Sends you SMS alerts using french Freemobile provider.'
+    MODULE_DESCRIPTION = u'Sends you SMS alerts using french Freemobile provider.'
     MODULE_LOCKED = False
-    MODULE_URL = 'https://github.com/tangb/Cleep/wiki/FreemobileSms'
-    MODULE_TAGS = ['sms', 'alert']
+    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/FreemobileSms'
+    MODULE_TAGS = [u'sms', u'alert']
 
     DEFAULT_CONFIG = {
-        'userid': None,
-        'apikey': None
+        u'userid': None,
+        u'apikey': None
     }
 
     RENDERER_PROFILES = [SmsProfile()]
-    RENDERER_TYPE = 'alert.sms'
+    RENDERER_TYPE = u'alert.sms'
 
-    FREEMOBILESMS_API_URL = 'https://smsapi.free-mobile.fr/sendmsg'
+    FREEMOBILESMS_API_URL = u'https://smsapi.free-mobile.fr/sendmsg'
     FREEMOBILESMS_RESPONSE = {
-        200: 'Message sent',
-        400: 'Missing parameter',
-        402: 'Limit reached',
-        403: 'Service not enabled',
-        500: 'Server error'
+        200: u'Message sent',
+        400: u'Missing parameter',
+        402: u'Limit reached',
+        403: u'Service not enabled',
+        500: u'Server error'
     }
 
     def __init__(self, bus, debug_enabled):
@@ -67,18 +67,18 @@ class Freemobilesms(RaspIotRenderer):
             bool: True if credentials saved successfully
         """
         if userid is None or len(userid)==0:
-            raise MissingParameter('Userid parameter is missing')
+            raise MissingParameter(u'Userid parameter is missing')
         if apikey is None or len(apikey)==0:
-            raise MissingParameter('Apikey parameter is missing')
+            raise MissingParameter(u'Apikey parameter is missing')
 
         #test credentials
         if not self.test(userid, apikey):
-            raise CommandError('Unable to send test')
+            raise CommandError(u'Unable to send test')
 
         #save config
         config = self._get_config()
-        config['userid'] = userid
-        config['apikey'] = apikey
+        config[u'userid'] = userid
+        config[u'apikey'] = apikey
 
         return self._save_config(config)
 
@@ -95,37 +95,37 @@ class Freemobilesms(RaspIotRenderer):
         """
         if userid is None or apikey is None:
             config = self._get_config()
-            if config['userid'] is None or len(config['userid'])==0 or config['apikey'] is None or len(config['apikey'])==0:
-                raise CommandError('Please fill credentials first')
+            if config[u'userid'] is None or len(config[u'userid'])==0 or config[u'apikey'] is None or len(config[u'apikey'])==0:
+                raise CommandError(u'Please fill credentials first')
 
-            userid = config['userid']
-            apikey = config['apikey']    
+            userid = config[u'userid']
+            apikey = config[u'apikey']    
 
         params = urllib.urlencode({
-            'user': userid,
-            'pass': apikey,
-            'msg': 'Hello this is Cleep'
+            u'user': userid,
+            u'pass': apikey,
+            u'msg': u'Hello this is Cleep'
         })
-        self.logger.debug('Request params: %s' % params)
+        self.logger.debug(u'Request params: %s' % params)
 
         error = None
         try:
             #launch request
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            req = urllib2.urlopen('%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
             res = req.read()
             status = req.getcode()
-            self.logger.debug('Test response: %s [%s]' % (res, status))
+            self.logger.debug(u'Test response: %s [%s]' % (res, status))
             req.close()
 
             #parse request result
             if status!=200:
-                self.logger.error('Unable to test: %s [%s]' % (self.FREEMOBILESMS_RESPONSE[status], status))
+                self.logger.error(u'Unable to test: %s [%s]' % (self.FREEMOBILESMS_RESPONSE[status], status))
                 error = self.FREEMOBILESMS_RESPONSE[status]
 
         except:
-            self.logger.exception('Unable to test:')
-            error = 'Internal error'
+            self.logger.exception(u'Unable to test:')
+            error = u'Internal error'
 
         if error is not None:
             raise CommandError(error)
@@ -144,28 +144,28 @@ class Freemobilesms(RaspIotRenderer):
         """
         config = self._get_config()
         params = urllib.urlencode({
-            'user': config['userid'],
-            'pass': config['apikey'],
-            'msg': data.message
+            u'user': config[u'userid'],
+            u'pass': config[u'apikey'],
+            u'msg': data.message
         })
 
         error = False
         try:
             #launch request
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            req = urllib2.urlopen('%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
             res = req.read()
             status = req.getcode()
-            self.logger.debug('Send sms response: %s [%s]' % (res, status))
+            self.logger.debug(u'Send sms response: %s [%s]' % (res, status))
             req.close()
 
             #parse request result
             if status!=200:
-                self.logger.error('Unable to send sms: %s [%s]' % (self.FREEMOBILESMS_RESPONSE[status], status))
+                self.logger.error(u'Unable to send sms: %s [%s]' % (self.FREEMOBILESMS_RESPONSE[status], status))
                 error = True
 
         except:
-            self.logger.exception('Unable to send sms:')
+            self.logger.exception(u'Unable to send sms:')
             error = True
 
         return error

@@ -61,8 +61,8 @@ class Network(RaspIotModule):
         """
         config = {}
         self.interfaces = self.get_interfaces_configurations()
-        config['interfaces'] = self.interfaces
-        config['wifi_networks'] = self.wifi_networks
+        config[u'interfaces'] = self.interfaces
+        config[u'wifi_networks'] = self.wifi_networks
 
         return config
 
@@ -74,11 +74,11 @@ class Network(RaspIotModule):
             interface (string): network interface name
         """
         c = Console()
-        res = c.command('/bin/ip link set %s up' % interface)
+        res = c.command(u'/bin/ip link set %s up' % interface)
         self.logger.debug(res)
-        res = c.command('/sbin/ifdown %s' % interface)
+        res = c.command(u'/sbin/ifdown %s' % interface)
         self.logger.debug(res)
-        res = c.command('/sbin/ifup %s' % interface)
+        res = c.command(u'/sbin/ifup %s' % interface)
         self.logger.debug(res)
 
     def __get_interface_names(self):
@@ -89,14 +89,14 @@ class Network(RaspIotModule):
             list: network interface names
         """
         c = Console()
-        res = c.command('/bin/ls -1 /sys/class/net')
+        res = c.command(u'/bin/ls -1 /sys/class/net')
 
-        if res['error'] or res['killed']:
-            raise Exception('Unable to get interfaces names')
+        if res[u'error'] or res[u'killed']:
+            raise Exception(u'Unable to get interfaces names')
 
-        output = [line.strip() for line in res['stdout']]
-        output.remove('lo')
-        self.logger.debug('Interface names=%s' % output)
+        output = [line.strip() for line in res[u'stdout']]
+        output.remove(u'lo')
+        self.logger.debug(u'Interface names=%s' % output)
 
         return output
 
@@ -110,7 +110,7 @@ class Network(RaspIotModule):
         #get interfaces from dhcpcd.conf file
         d = DhcpcdConf()
         interfaces = d.get_interfaces()
-        self.logger.debug('Wired interfaces: %s' % interfaces)
+        self.logger.debug(u'Wired interfaces: %s' % interfaces)
 
         return interfaces
 
@@ -123,36 +123,36 @@ class Network(RaspIotModule):
         """
         interfaces = {}
         c = Console()
-        res = c.command('/sbin/iw dev | grep Interface')
+        res = c.command(u'/sbin/iw dev | grep Interface')
 
-        if res['error'] or res['killed']:
-            self.logger.info('Unable to get interfaces names (certainly iw bin not exists)')
+        if res[u'error'] or res[u'killed']:
+            self.logger.info(u'Unable to get interfaces names (certainly iw bin not exists)')
             return interfaces
 
-        output = [line.strip() for line in res['stdout']]
-        names = [line.replace('Interface ', '') for line in output]
-        self.logger.debug('Wifi interfaces: %s' % interfaces)
+        output = [line.strip() for line in res[u'stdout']]
+        names = [line.replace(u'Interface ', '') for line in output]
+        self.logger.debug(u'Wifi interfaces: %s' % interfaces)
 
         #get connection status
         regex = r'(SSID):\s*(.*?)\s'
         for name in names:
             connected = False
             network = None
-            res = c.command('/sbin/iw %s link' % name)
-            if not res['error'] and not res['killed']:
-                groups = re.findall(regex, ''.join(res['stdout']), re.DOTALL)
+            res = c.command(u'/sbin/iw %s link' % name)
+            if not res[u'error'] and not res[u'killed']:
+                groups = re.findall(regex, ''.join(res[u'stdout']), re.DOTALL)
                 for group in groups:
                     group = filter(None, group)
                     self.logger.debug(group)
                     if group[0] is not None and len(group[0])>0:
-                        if group[0]=='SSID':
+                        if group[0]==u'SSID':
                             connected = True
                             network = group[1]
 
             interfaces[name] = {
-                'name': name,
-                'connected': connected,
-                'network': network
+                u'name': name,
+                u'connected': connected,
+                u'network': network
             }
 
         return interfaces
@@ -179,10 +179,10 @@ class Network(RaspIotModule):
         for name in names:
             #get infos
             c = Console()
-            res = c.command('/sbin/ifconfig %s' % name)
-            if res['error'] or res['killed']:
-                raise CommandError('Unable to get network configuration')
-            self.logger.debug(''.join(res['stdout']))
+            res = c.command(u'/sbin/ifconfig %s' % name)
+            if res[u'error'] or res[u'killed']:
+                raise CommandError(u'Unable to get network configuration')
+            self.logger.debug(u''.join(res[u'stdout']))
 
             #add wifi status
             wifi = False
@@ -191,11 +191,11 @@ class Network(RaspIotModule):
             wifi_signal_level = 0
             if name in wifis:
                 wifi = True
-                if wifis[name]['connected']:
-                    wifi_network = wifis[name]['network']
+                if wifis[name][u'connected']:
+                    wifi_network = wifis[name][u'network']
                     if wifi_network in self.wifi_networks:
-                        wifi_encryption = self.wifi_networks[wifi_network]['encryption']
-                        wifi_signal_level = self.wifi_networks[wifi_network]['signal_level']
+                        wifi_encryption = self.wifi_networks[wifi_network][u'encryption']
+                        wifi_signal_level = self.wifi_networks[wifi_network][u'signal_level']
 
             #add wired status
             dhcp = True
@@ -205,10 +205,10 @@ class Network(RaspIotModule):
             name_server = None
             if name in wired_configs:
                 dhcp = False
-                fallback = wired_configs[name]['fallback']
-                ip_address = wired_configs[name]['ip_address']
-                router_address = wired_configs[name]['router_address']
-                name_server = wired_configs[name]['name_server']
+                fallback = wired_configs[name][u'fallback']
+                ip_address = wired_configs[name][u'ip_address']
+                router_address = wired_configs[name][u'router_address']
+                name_server = wired_configs[name][u'name_server']
 
             #extract useful data
             ipv4 = None
@@ -216,38 +216,38 @@ class Network(RaspIotModule):
             broadcast = None
             mac = None
             mask = None
-            groups = re.findall(regex, ''.join(res['stdout']), re.DOTALL)
+            groups = re.findall(regex, ''.join(res[u'stdout']), re.DOTALL)
             for group in groups:
                 group = filter(None, group)
                 if group[0] is not None and len(group[0])>0:
-                    if group[0]=='HWaddr':
+                    if group[0]==u'HWaddr':
                         mac = group[1]
-                    elif group[0]=='inet addr':
+                    elif group[0]==u'inet addr':
                         ipv4 = group[1]
-                    elif group[0]=='Bcast':
+                    elif group[0]==u'Bcast':
                         broadcast = group[1]
-                    elif group[0]=='Mask':
+                    elif group[0]==u'Mask':
                         mask = group[1]
-                    elif group[0]=='inet6 addr':
+                    elif group[0]==u'inet6 addr':
                         ipv6 = group[1]
             
             #save data
             interfaces[name] = {
-                'interface': name,
-                'ipv4': ipv4,
-                'ipv6': ipv6,
-                'mask': mask,
-                'broadcast': broadcast,
-                'mac': mac,
-                'wifi': wifi,
-                'wifi_network': wifi_network,
-                'wifi_encryption': wifi_encryption,
-                'wifi_signal_level': wifi_signal_level,
-                'dhcp': dhcp,
-                'fallback': fallback,
-                'ip_address': ip_address,
-                'router_address': router_address,
-                'name_server': name_server
+                u'interface': name,
+                u'ipv4': ipv4,
+                u'ipv6': ipv6,
+                u'mask': mask,
+                u'broadcast': broadcast,
+                u'mac': mac,
+                u'wifi': wifi,
+                u'wifi_network': wifi_network,
+                u'wifi_encryption': wifi_encryption,
+                u'wifi_signal_level': wifi_signal_level,
+                u'dhcp': dhcp,
+                u'fallback': fallback,
+                u'ip_address': ip_address,
+                u'router_address': router_address,
+                u'name_server': name_server
             }
 
         return interfaces
@@ -359,12 +359,12 @@ class Network(RaspIotModule):
         #get current interface configuration
         d = DhcpcdConf()
         config = d.get_interface(interface)
-        self.logger.debug('Interface config: %s' % config)
+        self.logger.debug(u'Interface config: %s' % config)
         if config is None:
-            raise CommandError('Interface %s is not configured' % interface)
+            raise CommandError(u'Interface %s is not configured' % interface)
 
         #delete configuration for specified interface
-        if not config['fallback']:
+        if not config[u'fallback']:
             self.__delete_static_interface(interface)
         else:
             self.__delete_fallback_interface(interface)
@@ -390,11 +390,11 @@ class Network(RaspIotModule):
         for name in names:
             #get infos
             c = Console()
-            res = c.command('/sbin/iwlist %s scan' % name, 15.0)
-            if res['error'] or res['killed']:
+            res = c.command(u'/sbin/iwlist %s scan' % name, 15.0)
+            if res[u'error'] or res[u'killed']:
                 #error occured, but it's maybe because interface is not wifi
                 continue
-            self.logger.debug(''.join(res['stdout']))
+            self.logger.debug(''.join(res[u'stdout']))
 
             #extract interesting data
             essid = None
@@ -403,21 +403,21 @@ class Network(RaspIotModule):
             network_wpa2 = False
             encryption = None
             signal_level = None
-            groups = re.findall(regex, '\n'.join(res['stdout']))
+            groups = re.findall(regex, '\n'.join(res[u'stdout']))
             self.logger.debug(groups)
             for group in groups:
                 group = filter(None, group)
                 self.logger.debug(group)
                 if group[0] is not None and len(group[0])>0:
-                    if group[0]=='ESSID':
+                    if group[0]==u'ESSID':
                         essid = group[1]
-                    elif group[0]=='IE' and group[1].lower().find('wpa2'):
+                    elif group[0]==u'IE' and group[1].lower().find(u'wpa2'):
                         network_wpa2 = True
-                    elif group[0]=='IE' and group[1].lower().find('wpa'):
+                    elif group[0]==u'IE' and group[1].lower().find(u'wpa'):
                         network_wpa = True
-                    elif group[0]=='Encryption key':
+                    elif group[0]==u'Encryption key':
                         security = group[1]
-                    elif group[0]=='Signal level':
+                    elif group[0]==u'Signal level':
                         if group[1].isdigit():
                             signal_level = float(group[1])
                         else:
@@ -428,19 +428,19 @@ class Network(RaspIotModule):
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
             elif network_wpa:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
-            elif security=='on':
+            elif security==u'on':
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
-            elif security=='off':
+            elif security==u'off':
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
             else:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
             
             #save data
             networks[essid] = {
-                'interface': name,
-                'network': essid,
-                'encryption': encryption,
-                'signal_level': signal_level
+                u'interface': name,
+                u'network': essid,
+                u'encryption': encryption,
+                u'signal_level': signal_level
             }
 
         #save found networks
@@ -470,17 +470,17 @@ class Network(RaspIotModule):
             time.sleep(1.0)
 
             #stop wpa_supplicant daemon
-            res = c.command('/usr/bin/pkill -f wpa_supplicant')
+            res = c.command(u'/usr/bin/pkill -f wpa_supplicant')
             self.logger.debug(res)
     
             #try to connect
-            wpafile = '/tmp/wpa_%s.log' % str(uuid.uuid4())
-            res = c.command('/sbin/wpa_supplicant -i %s -c /etc/wpa_supplicant/wpa_supplicant.conf -f %s' % (interface, wpafile), 8.0)
+            wpafile = u'/tmp/wpa_%s.log' % unicode(uuid.uuid4())
+            res = c.command(u'/sbin/wpa_supplicant -i %s -c /etc/wpa_supplicant/wpa_supplicant.conf -f %s' % (interface, wpafile), 8.0)
             self.logger.debug(res)
 
             #wpa_supplicant command can only be killed by CTRL-C because it uses wpa_cli
             #so we need to kill it explicitely
-            res = c.command('/usr/bin/pkill -f wpa_supplicant')
+            res = c.command(u'/usr/bin/pkill -f wpa_supplicant')
             self.logger.debug(res)
 
             #parse result
@@ -493,19 +493,19 @@ class Network(RaspIotModule):
                 group = filter(None, group)
                 self.logger.debug(group)
                 if group[0] is not None and len(group[0])>0:
-                    if group[0]=='CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]=='WRONG_KEY':
+                    if group[0]==u'CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]==u'WRONG_KEY':
                         #invalid password detected
-                        raise Exception('Invalid password')
-                    elif group[0]=='CTRL-EVENT-CONNECTED':
+                        raise Exception(u'Invalid password')
+                    elif group[0]==u'CTRL-EVENT-CONNECTED':
                         #connection successful
                         break
 
         except Exception as e:
-            error = str(e)
+            error = unicode(e)
     
         finally:
             #always delete wifi config
-            self.logger.debug('Delete wifi config for %s' % interface)
+            self.logger.debug(u'Delete wifi config for %s' % interface)
             self.__delete_wifi_network(network)
 
             #and relaunch wpa_supplicant
@@ -513,7 +513,7 @@ class Network(RaspIotModule):
 
         if error:
             raise CommandError(error)
-        raise CommandInfo('Connection to %s successful' % network)
+        raise CommandInfo(u'Connection to %s successful' % network)
 
     def save_wifi_network(self, interface, network, encryption, password, hidden):
         """
@@ -540,14 +540,14 @@ class Network(RaspIotModule):
             self.__restart_interface(interface)
 
         except Exception as e:
-            error = str(e)
+            error = unicode(e)
 
         #wait few seconds to make sure interface is refreshed
         time.sleep(4.0)
     
         if error:
             raise CommandError(error)
-        raise CommandInfo('Connected to %s' % network)
+        raise CommandInfo(u'Connected to %s' % network)
 
     def disconnect_wifi(self, network):
         """
@@ -561,12 +561,12 @@ class Network(RaspIotModule):
         #get network interface
         interface = None
         for name in self.interfaces:
-            if self.interfaces[name]['wifi_network']==network:
+            if self.interfaces[name][u'wifi_network']==network:
                 interface = name
                 break
-        self.logger.debug('Found interface to restart %s' % interface)
+        self.logger.debug(u'Found interface to restart %s' % interface)
         if interface is None:
-            raise CommandError('No network interface found for network %s' % network)
+            raise CommandError(u'No network interface found for network %s' % network)
 
         #delete network from configuration
         self.__delete_wifi_network(network)
@@ -580,5 +580,5 @@ class Network(RaspIotModule):
         #reload configuration
         self.get_interfaces_configurations()
 
-        raise CommandInfo('Disconnected from %s' % network)
+        raise CommandInfo(u'Disconnected from %s' % network)
 

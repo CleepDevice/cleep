@@ -12,17 +12,17 @@ class WpaSupplicantConf():
     Helper class to update and read /etc/wpa_supplicant/wpa_supplicant.conf file
     """
 
-    CONF = '/etc/wpa_supplicant/wpa_supplicant.conf'
+    CONF = u'/etc/wpa_supplicant/wpa_supplicant.conf'
 
-    MODE_WRITE = 'w'
-    MODE_READ = 'r'
-    MODE_APPEND = 'a'
+    MODE_WRITE = u'w'
+    MODE_READ = u'r'
+    MODE_APPEND = u'a'
 
-    ENCRYPTION_TYPE_WPA = 'wpa'
-    ENCRYPTION_TYPE_WPA2 = 'wpa2'
-    ENCRYPTION_TYPE_WEP = 'wep'
-    ENCRYPTION_TYPE_UNSECURED = 'unsecured'
-    ENCRYPTION_TYPE_UNKNOWN = 'unknown'
+    ENCRYPTION_TYPE_WPA = u'wpa'
+    ENCRYPTION_TYPE_WPA2 = u'wpa2'
+    ENCRYPTION_TYPE_WEP = u'wep'
+    ENCRYPTION_TYPE_UNSECURED = u'unsecured'
+    ENCRYPTION_TYPE_UNKNOWN = u'unknown'
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
     def __init__(self):
@@ -48,7 +48,7 @@ class WpaSupplicantConf():
             Exception if file doesn't exist
         """
         if not os.path.exists(self.CONF):
-            raise Exception('wpa_supplicant.conf file does not exist')
+            raise Exception(u'wpa_supplicant.conf file does not exist')
 
         self.__fd = open(self.CONF, mode)
         return self.__fd
@@ -69,33 +69,33 @@ class WpaSupplicantConf():
         fd = self.__open()
         content = fd.read()
         self.__close()
-        groups = re.findall('network\s*=\s*\{\s*(.*?)\s*\}', content, re.S)
+        groups = re.findall(u'network\s*=\s*\{\s*(.*?)\s*\}', content, re.S)
         for group in groups:
             ssid = None
             scan_ssid = None
             key_mgmt = None
             hidden = False
             encryption = self.ENCRYPTION_TYPE_UNSECURED
-            res = re.search('ssid="(.*?)"\s', group+'\n')
+            res = re.search(u'ssid="(.*?)"\s', group+'\n')
             if res:
                 ssid = res.group(1).strip()
-            res = re.search('scan_ssid="(.*?)"\s', group+'\n')
+            res = re.search(u'scan_ssid="(.*?)"\s', group+'\n')
             if res:
                 scan_ssid = res.group(1).strip()
                 if scan_ssid is not None and scan_ssid.isdigit() and scan_ssid=='1':
                     hidden = True
-            res = re.search('key_mgmt="(.*?)"\s', group+'\n')
+            res = re.search(u'key_mgmt="(.*?)"\s', group+'\n')
             if res:
                 key_mgmt = res.group(1).strip()
-                if key_mgmt=='WPA-PSK':
+                if key_mgmt==u'WPA-PSK':
                     encryption = self.ENCRYPTION_TYPE_WPA2
-                elif key_mgmt=='NONE':
+                elif key_mgmt==u'NONE':
                     encryption = self.ENCRYPTION_TYPE_WEP
 
             networks.append({
-                'network': ssid,
-                'hidden': hidden,
-                'encryption': encryption
+                u'network': ssid,
+                u'hidden': hidden,
+                u'encryption': encryption
             })
 
         return networks
@@ -113,7 +113,7 @@ class WpaSupplicantConf():
         """
         networks = self.get_networks()
         for network_ in networks:
-            if network_['network']==network:
+            if network_[u'network']==network:
                 return network_
 
         return None
@@ -169,52 +169,52 @@ class WpaSupplicantConf():
         """
         #check params
         if network is None or len(network)==0:
-            raise MissingParameter('Network parameter is missing')
+            raise MissingParameter(u'Network parameter is missing')
         if encryption is None or len(encryption)==0:
-            raise MissingParameter('Encryption parameter is missing')
+            raise MissingParameter(u'Encryption parameter is missing')
         if encryption not in self.ENCRYPTION_TYPES:
-            raise InvalidParameter('Encryption "%s" does not exist (available: %s)' % (encryption, ','.join(self.ENCRYPTION_TYPES)))
+            raise InvalidParameter(u'Encryption "%s" does not exist (available: %s)' % (encryption, u','.join(self.ENCRYPTION_TYPES)))
         if encryption!=self.ENCRYPTION_TYPE_UNSECURED and password is None or len(password)==0:
-            raise MissingParameter('Password parameter is missing')
+            raise MissingParameter(u'Password parameter is missing')
 
         #check if network doesn't already exist
         if self.get_network(network) is not None:
-            raise InvalidParameter('Network "%s" is already configured')
+            raise InvalidParameter(u'Network "%s" is already configured')
     
         #get config to write with encrypted password and clear password removed
         if encryption!=self.ENCRYPTION_TYPE_UNSECURED:
             c = Console()
-            res = c.command('/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
-            if res['error'] or res['killed']:
-                self.logger.error('Error with password: %s' % ''.join(res['stderr']))
-                raise Exception('Error with password: unable to encrypt it')
-            if not ''.join(res['stdout']).startswith('network'):
-                self.logger.error('Error with password: %s' % stdout)
-                raise Exception('Error with password: %s' % stdout)
+            res = c.command(u'/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
+            if res[u'error'] or res[u'killed']:
+                self.logger.error(u'Error with password: %s' % u''.join(res[u'stderr']))
+                raise Exception(u'Error with password: unable to encrypt it')
+            if not ''.join(res[u'stdout']).startswith(u'network'):
+                self.logger.error(u'Error with password: %s' % stdout)
+                raise Exception(u'Error with password: %s' % stdout)
             password = None
-            output = [line for line in res['stdout'] if not line.startswith('\t#psk=')]
+            output = [line for line in res[u'stdout'] if not line.startswith(u'\t#psk=')]
 
             #inject hidden param if necessary
             if hidden:
-                output.insert(2, '\tscan_ssid=1')
+                output.insert(2, u'\tscan_ssid=1')
 
             #inject network type
             if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
-                output.insert(2, '\tkey_mgmt=WPA-PSK')
+                output.insert(2, u'\tkey_mgmt=WPA-PSK')
             elif encryption==self.ENCRYPTION_TYPE_WEP:
-                output.insert(2, '\tkey_mgmt=NONE')
+                output.insert(2, u'\tkey_mgmt=NONE')
 
         else:
             #handle unsecured network
             output = [
-                'network={',
-                '\tssid="%s"' % network,
-                '}'
+                u'network={',
+                u'\tssid="%s"' % network,
+                u'}'
             ]
 
         #write new network config
         fd = self.__open(self.MODE_APPEND)
-        fd.write('\n%s\n' % '\n'.join(output))
+        fd.write(u'\n%s\n' % '\n'.join(output))
         self.__close()
 
         return True

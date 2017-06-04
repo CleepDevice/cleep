@@ -8,7 +8,7 @@ from raspiot.raspiot import RaspIotModule
 from threading import Timer
 import time
 
-__all__ = ['Shutters']
+__all__ = [u'Shutters']
 
 
 class Shutters(RaspIotModule):
@@ -20,18 +20,18 @@ class Shutters(RaspIotModule):
      - close shutters at specific level (in percentage)
     """
 
-    MODULE_CONFIG_FILE = 'shutters.conf'
-    MODULE_DEPS = ['gpios']
-    MODULE_DESCRIPTION = 'Controls your roller shutters'
+    MODULE_CONFIG_FILE = u'shutters.conf'
+    MODULE_DEPS = [u'gpios']
+    MODULE_DESCRIPTION = u'Controls your roller shutters'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
 
-    STATUS_OPENED = 'opened'
-    STATUS_CLOSED = 'closed'
-    STATUS_PARTIAL = 'partial'
-    STATUS_OPENING = 'opening'
-    STATUS_CLOSING = 'closing'
+    STATUS_OPENED = u'opened'
+    STATUS_CLOSED = u'closed'
+    STATUS_PARTIAL = u'partial'
+    STATUS_OPENING = u'opening'
+    STATUS_CLOSING = u'closing'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -66,7 +66,7 @@ class Shutters(RaspIotModule):
             dict: module configuration
         """
         config = {}
-        config['raspi_gpios'] = self.get_raspi_gpios()
+        config[u'raspi_gpios'] = self.get_raspi_gpios()
         return config
 
     def event_received(self, event):
@@ -76,50 +76,50 @@ class Shutters(RaspIotModule):
         Params:
             event (MessageRequest): event data
         """
-        self.logger.debug('Event received %s' % event)
+        self.logger.debug(u'Event received %s' % event)
         #drop startup events
-        if event['startup']:
-            self.logger.debug('Drop startup event')
+        if event[u'startup']:
+            self.logger.debug(u'Drop startup event')
             return
 
         #process received event
-        if event['event']=='gpios.gpio.off':
+        if event[u'event']==u'gpios.gpio.off':
             #drop gpio init event
-            if event['params']['init']:
-                self.logger.debug('Drop gpio init event')
+            if event[u'params'][u'init']:
+                self.logger.debug(u'Drop gpio init event')
                 return
 
             #gpio turned off, get gpio device
-            gpio_uuid = event['uuid']
-            self.logger.debug('gpio_uuid=%s' % event['uuid'])
+            gpio_uuid = event[u'uuid']
+            self.logger.debug(u'gpio_uuid=%s' % event[u'uuid'])
 
             #search shutter and execute action
             shutters = self._get_devices()
-            self.logger.debug('shutters=%s' % shutters)
+            self.logger.debug(u'shutters=%s' % shutters)
             for uuid in shutters:
 
                 #execute action according to triggered gpio
-                self.logger.debug('level=%s' % str(shutters[uuid]['level']))
-                if shutters[uuid]['shutter_open_uuid']==gpio_uuid and shutters[uuid]['level'] is not None:
-                    self.logger.debug('Shutter just opened after level_shutter action. Close it now')
+                self.logger.debug(u'level=%s' % unicode(shutters[uuid][u'level']))
+                if shutters[uuid][u'shutter_open_uuid']==gpio_uuid and shutters[uuid][u'level'] is not None:
+                    self.logger.debug(u'Shutter just opened after level_shutter action. Close it now')
                     #reset shutter level value
-                    level = shutters[uuid]['level']
-                    shutters[uuid]['level'] = None
+                    level = shutters[uuid][u'level']
+                    shutters[uuid][u'level'] = None
                     self._update_device(uuid, shutters[uuid])
                     self.__execute_action(shutters[uuid], False, level)
                     break
 
-                if shutters[uuid]['switch_open_uuid']==gpio_uuid:
-                    self.logger.debug('Found switch_open_uuid')
+                if shutters[uuid][u'switch_open_uuid']==gpio_uuid:
+                    self.logger.debug(u'Found switch_open_uuid')
                     self.__execute_action(shutters[uuid], True)
                     break
 
-                elif shutters[uuid]['switch_close_uuid']==gpio_uuid:
-                    self.logger.debug('Found switch_close_uuid')
+                elif shutters[uuid][u'switch_close_uuid']==gpio_uuid:
+                    self.logger.debug(u'Found switch_close_uuid')
                     self.__execute_action(shutters[uuid], False)
                     break
 
-            self.logger.debug('Done')
+            self.logger.debug(u'Done')
 
     def reset(self):
         """
@@ -128,17 +128,17 @@ class Shutters(RaspIotModule):
         - shutters that are opening/closing are set to opened/closed
         """
         #reset gpios
-        resp = self.send_command('reset_gpios', 'gpios')
-        if resp['error']:
-            self.logger.error(resp['message'])
+        resp = self.send_command(u'reset_gpios', u'gpios')
+        if resp[u'error']:
+            self.logger.error(resp[u'message'])
             return
 
         #and reset shutter
         devices = self.get_module_devices()
         for uuid in devices:
-            if devices[uuid]['status']==Shutters.STATUS_OPENING:
+            if devices[uuid][u'status']==Shutters.STATUS_OPENING:
                 self.change_status(uuid, Shutters.STATUS_OPENED)
-            elif devices[uuid]['status']==Shutters.STATUS_CLOSING:
+            elif devices[uuid][u'status']==Shutters.STATUS_CLOSING:
                 self.change_status(uuid, Shutters.STATUS_CLOSED)
 
     def get_raspi_gpios(self):
@@ -148,12 +148,12 @@ class Shutters(RaspIotModule):
         Returns:
             dict: raspi gpios
         """
-        resp = self.send_command('get_raspi_gpios', 'gpios')
+        resp = self.send_command(u'get_raspi_gpios', u'gpios')
         if resp['error']:
-            self.logger.error(resp['message'])
+            self.logger.error(resp[u'message'])
             return {}
         else:
-            return resp['data']
+            return resp[u'data']
 
     def get_assigned_gpios(self):
         """
@@ -162,12 +162,12 @@ class Shutters(RaspIotModule):
         Returns:
             dict: assigned gpios
         """
-        resp = self.send_command('get_assigned_gpios', 'gpios')
-        if resp['error']:
-            self.logger.error(resp['message'])
+        resp = self.send_command(u'get_assigned_gpios', u'gpios')
+        if resp[u'error']:
+            self.logger.error(resp[u'message'])
             return {}
         else:
-            return resp['data']
+            return resp[u'data']
 
     def __stop_action(self, shutter):
         """
@@ -177,34 +177,34 @@ class Shutters(RaspIotModule):
             shutter (dict): shutter data
         """
         #first of all cancel timer if necessary
-        if self.__timers.has_key(shutter['uuid']):
-            self.logger.debug('Cancel timer of shutter "%s"' % shutter['uuid'])
-            self.__timers[shutter['uuid']].cancel()
-            del self.__timers[shutter['uuid']]
+        if self.__timers.has_key(shutter[u'uuid']):
+            self.logger.debug(u'Cancel timer of shutter "%s"' % shutter[u'uuid'])
+            self.__timers[shutter[u'uuid']].cancel()
+            del self.__timers[shutter[u'uuid']]
 
         #then reset level if necessary
-        if shutter['level'] is not None:
-            shutter['level'] = None
-            self._update_device(shutter['uuid'], shutter)
+        if shutter[u'level'] is not None:
+            shutter[u'level'] = None
+            self._update_device(shutter[u'uuid'], shutter)
 
         #then get gpio
-        if shutter['status']==Shutters.STATUS_OPENING:
-            gpio_uuid = shutter['shutter_open_uuid']
-        elif shutter['status']==Shutters.STATUS_CLOSING:
-            gpio_uuid = shutter['shutter_close_uuid']
+        if shutter[u'status']==Shutters.STATUS_OPENING:
+            gpio_uuid = shutter[u'shutter_open_uuid']
+        elif shutter[u'status']==Shutters.STATUS_CLOSING:
+            gpio_uuid = shutter[u'shutter_close_uuid']
         else:
             #shutter is already stopped, nothing to do
-            self.logger.info('Shutter already stopped. Stop action dropped')
+            self.logger.info(u'Shutter already stopped. Stop action dropped')
             return
-        self.logger.debug('stop shutter: gpio=%s' % str(gpio_uuid))
+        self.logger.debug(u'stop shutter: gpio=%s' % unicode(gpio_uuid))
 
         #and turn off gpio
-        resp = self.send_command('turn_off', 'gpios', {'uuid':gpio_uuid})
-        if resp['error']:
-            raise CommandError(resp['message'])
+        resp = self.send_command(u'turn_off', u'gpios', {u'uuid':gpio_uuid})
+        if resp[u'error']:
+            raise CommandError(resp[u'message'])
         
         #change status
-        self.change_status(shutter['uuid'], Shutters.STATUS_PARTIAL)
+        self.change_status(shutter[u'uuid'], Shutters.STATUS_PARTIAL)
 
     def __open_action(self, shutter):
         """
@@ -214,18 +214,18 @@ class Shutters(RaspIotModule):
             shutter (dict): shutter data
         """
         #turn on gpio
-        gpio_uuid = shutter['shutter_open_uuid']
-        resp = self.send_command('turn_on', 'gpios', {'uuid':gpio_uuid})
-        if resp['error']:
-            raise CommandError(resp['message'])
+        gpio_uuid = shutter[u'shutter_open_uuid']
+        resp = self.send_command(u'turn_on', u'gpios', {u'uuid':gpio_uuid})
+        if resp[u'error']:
+            raise CommandError(resp[u'message'])
 
         #change status
-        self.change_status(shutter['uuid'], Shutters.STATUS_OPENING)
+        self.change_status(shutter[u'uuid'], Shutters.STATUS_OPENING)
 
         #launch turn off timer
-        self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
-        self.__timers[shutter['uuid']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['uuid'], gpio_uuid, Shutters.STATUS_OPENED])
-        self.__timers[shutter['uuid']].start()
+        self.logger.debug(u'Launch timer with duration=%s' % (unicode(shutter[u'delay'])))
+        self.__timers[shutter[u'uuid']] = Timer(float(shutter[u'delay']), self.__end_of_timer, [shutter[u'uuid'], gpio_uuid, Shutters.STATUS_OPENED])
+        self.__timers[shutter[u'uuid']].start()
 
     def __close_action(self, shutter, level):
         """
@@ -236,29 +236,29 @@ class Shutters(RaspIotModule):
             level (int): level to close shutter (percentage)
         """
         #turn on gpio
-        gpio_uuid = shutter['shutter_close_uuid']
-        resp = self.send_command('turn_on', 'gpios', {'uuid':gpio_uuid})
-        if resp['error']:
-            raise Exception(resp['message'])
+        gpio_uuid = shutter[u'shutter_close_uuid']
+        resp = self.send_command(u'turn_on', u'gpios', {u'uuid':gpio_uuid})
+        if resp[u'error']:
+            raise Exception(resp[u'message'])
 
         #change status
-        self.change_status(shutter['uuid'], Shutters.STATUS_CLOSING)
+        self.change_status(shutter[u'uuid'], Shutters.STATUS_CLOSING)
 
         if level is not None:
             #compute timer duration according to specified level
-            duration = float(shutter['delay']) * float(level) / 100.0
-            self.logger.debug('Level duration=%s' % str(duration))
+            duration = float(shutter[u'delay']) * float(level) / 100.0
+            self.logger.debug(u'Level duration=%s' % unicode(duration))
 
             #launch close timer
-            self.logger.debug('Launch timer with level duration=%s' % (str(duration)))
-            self.__timers[shutter['uuid']] = Timer(duration, self.__end_of_timer, [shutter['uuid'], gpio_uuid, Shutters.STATUS_PARTIAL])
-            self.__timers[shutter['uuid']].start()
+            self.logger.debug(u'Launch timer with level duration=%s' % (unicode(duration)))
+            self.__timers[shutter[u'uuid']] = Timer(duration, self.__end_of_timer, [shutter[u'uuid'], gpio_uuid, Shutters.STATUS_PARTIAL])
+            self.__timers[shutter[u'uuid']].start()
         
         else:
             #launch close timer
-            self.logger.debug('Launch timer with duration=%s' % (str(shutter['delay'])))
-            self.__timers[shutter['uuid']] = Timer(float(shutter['delay']), self.__end_of_timer, [shutter['uuid'], gpio_uuid, Shutters.STATUS_CLOSED])
-            self.__timers[shutter['uuid']].start()
+            self.logger.debug(u'Launch timer with duration=%s' % (unicode(shutter[u'delay'])))
+            self.__timers[shutter[u'uuid']] = Timer(float(shutter[u'delay']), self.__end_of_timer, [shutter[u'uuid'], gpio_uuid, Shutters.STATUS_CLOSED])
+            self.__timers[shutter[u'uuid']].start()
 
     def __execute_action(self, shutter, open_action, close_level=None):
         """
@@ -271,58 +271,58 @@ class Shutters(RaspIotModule):
             close_level (int): open or close shutter at specified level value (percentage)
         """
         if not shutter:
-            self.logger.error('__execute_action: shutter is not defined')
+            self.logger.error(u'__execute_action: shutter is not defined')
             return
 
         if close_level is not None:
             #level requested
-            if shutter['status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
+            if shutter[u'status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
                 #shutter is in opening or closing state, stop it
-                self.logger.debug('Shutter is in action, stop it')
+                self.logger.debug(u'Shutter is in action, stop it')
                 self.__stop_action(shutter)
 
-            elif shutter['status'] in [Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL]:
+            elif shutter[u'status'] in [Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL]:
                 #shutter is closed or partially closed, open it completely first
-                self.logger.debug('Shutter is partially or completely closed, open it')
+                self.logger.debug(u'Shutter is partially or completely closed, open it')
                 #keep in mind level to open it after it will be opened completely
-                shutter['level'] = close_level
-                if not self._update_device(shutter['uuid'], shutter):
-                    raise CommandError('Unable to update device %s' % shutter['uuid'])
+                shutter[u'level'] = close_level
+                if not self._update_device(shutter[u'uuid'], shutter):
+                    raise CommandError(u'Unable to update device %s' % shutter['uuid'])
                 self.__open_action(shutter)
 
             else:
                 #shutter is already opened, close it at specified level
-                self.logger.debug('Shutter already opened, close it at %s level' % close_level)
+                self.logger.debug(u'Shutter already opened, close it at %s level' % close_level)
                 self.__close_action(shutter, close_level)
 
         elif open_action:
             #open action triggered
-            if shutter['status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
+            if shutter[u'status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
                 #shutter is in opening or closing state, stop it
                 self.__stop_action(shutter)
 
-            elif shutter['status'] in [Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL]:
+            elif shutter[u'status'] in [Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL]:
                 #shutter is not completely opened or closed, open it
                 self.__open_action(shutter)
             else:
                 #shutter is already opened, do nothing
-                self.logger.debug('Shutter %s is already opened' % shutter['uuid'])
-                raise CommandInfo('Shutter is already opened');
+                self.logger.debug(u'Shutter %s is already opened' % shutter[u'uuid'])
+                raise CommandInfo(u'Shutter is already opened');
 
         else:
             #close action triggered
-            if shutter['status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
+            if shutter[u'status'] in [Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
                 #shutter is in opening or closing state, stop it
                 self.__stop_action(shutter)
 
-            elif shutter['status'] in [Shutters.STATUS_OPENED, Shutters.STATUS_PARTIAL]:
+            elif shutter[u'status'] in [Shutters.STATUS_OPENED, Shutters.STATUS_PARTIAL]:
                 #close shutter action
                 self.__close_action(shutter, close_level)
 
             else:
                 #shutter is already closed
-                self.logger.debug('Shutter %s is already closed' % shutter['uuid'])
-                raise CommandInfo('Shutter is already closed');
+                self.logger.debug(u'Shutter %s is already closed' % shutter['uuid'])
+                raise CommandInfo(u'Shutter is already closed');
         
 
     def add_shutter(self, name, shutter_open, shutter_close, delay, switch_open, switch_close):
@@ -345,87 +345,87 @@ class Shutters(RaspIotModule):
 
         #check values
         if not name:
-            raise MissingParameter('Name parameter is missing')
+            raise MissingParameter(u'Name parameter is missing')
         elif not shutter_open:
-            raise MissingParameter('Open shutter parameter is missing')
+            raise MissingParameter(u'Open shutter parameter is missing')
         elif not shutter_close:
-            raise MissingParameter('Close shutter parameter is missing')
+            raise MissingParameter(u'Close shutter parameter is missing')
         elif not switch_open:
-            raise MissingParameter('Open switch parameter is missing')
+            raise MissingParameter(u'Open switch parameter is missing')
         elif not switch_close:
-            raise MissingParameter('Close switch parameter is missing')
+            raise MissingParameter(u'Close switch parameter is missing')
         elif not delay:
-            raise MissingParameter('Delay parameter is missing')
+            raise MissingParameter(u'Delay parameter is missing')
         elif delay<=0:
-            raise InvalidParameter('Delay must be greater than 0')
+            raise InvalidParameter(u'Delay must be greater than 0')
         elif shutter_open==shutter_close or shutter_open==switch_open or shutter_open==switch_close or shutter_close==switch_open or shutter_close==switch_close or switch_open==switch_close:
-            raise InvalidParameter('Gpios must all be differents')
+            raise InvalidParameter(u'Gpios must all be differents')
         elif shutter_open in assigned_gpios:
-            raise InvalidParameter('Open shutter is already assigned')
+            raise InvalidParameter(u'Open shutter is already assigned')
         elif shutter_close in assigned_gpios:
-            raise InvalidParameter('Close shutter is already assigned')
+            raise InvalidParameter(u'Close shutter is already assigned')
         elif switch_open in assigned_gpios:
-            raise InvalidParameter('Open switch is already assigned')
+            raise InvalidParameter(u'Open switch is already assigned')
         elif switch_close in assigned_gpios:
-            raise InvalidParameter('Close switch is already assigned')
-        elif self._search_device('name', name):
-            raise InvalidParameter('Shutter name is already assigned')
+            raise InvalidParameter(u'Close switch is already assigned')
+        elif self._search_device(u'name', name):
+            raise InvalidParameter(u'Shutter name is already assigned')
         elif shutter_open not in self.raspi_gpios:
-            raise InvalidParameter('Open shutter does not exist for this raspberry pi')
+            raise InvalidParameter(u'Open shutter does not exist for this raspberry pi')
         elif shutter_close not in self.raspi_gpios:
-            raise InvalidParameter('Close shutter does not exist for this raspberry pi')
+            raise InvalidParameter(u'Close shutter does not exist for this raspberry pi')
         elif switch_open not in self.raspi_gpios:
-            raise InvalidParameter('Open switch does not exist for this raspberry pi')
+            raise InvalidParameter(u'Open switch does not exist for this raspberry pi')
         elif switch_close not in self.raspi_gpios:
-            raise InvalidParameter('Close switch does not exist for this raspberry pi')
+            raise InvalidParameter(u'Close switch does not exist for this raspberry pi')
         else:
             #configure open shutter
-            resp_shutter_open = self.send_command('add_gpio', 'gpios', {'name':name+'_shutteropen', 'gpio':shutter_open, 'mode':'out', 'keep':False, 'reverted':False})
-            if resp_shutter_open['error']:
-                raise CommandError(resp_shutter_open['message'])
-            resp_shutter_open = resp_shutter_open['data']
+            resp_shutter_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutteropen', u'gpio':shutter_open, u'mode':u'out', u'keep':False, u'reverted':False})
+            if resp_shutter_open[u'error']:
+                raise CommandError(resp_shutter_open[u'message'])
+            resp_shutter_open = resp_shutter_open[u'data']
                 
             #configure close shutter
-            resp_shutter_close = self.send_command('add_gpio', 'gpios', {'name':name+'_shutterclose', 'gpio':shutter_close, 'mode':'out', 'keep':False, 'reverted':False})
-            if resp_shutter_close['error']:
-                raise CommandError(resp_shutter_close['message'])
-            resp_shutter_close = resp_shutter_close['data']
+            resp_shutter_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutterclose', u'gpio':shutter_close, u'mode':u'out', u'keep':False, u'reverted':False})
+            if resp_shutter_close[u'error']:
+                raise CommandError(resp_shutter_close[u'message'])
+            resp_shutter_close = resp_shutter_close[u'data']
 
             #configure open switch
-            resp_switch_open = self.send_command('add_gpio', 'gpios', {'name':name+'_switchopen', 'gpio':switch_open, 'mode':'in', 'keep':False, 'reverted':False})
-            if resp_switch_open['error']:
-                raise CommandError(resp_switch_open['message'])
-            resp_switch_open = resp_switch_open['data']
+            resp_switch_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchopen', u'gpio':switch_open, u'mode':u'in', u'keep':False, u'reverted':False})
+            if resp_switch_open[u'error']:
+                raise CommandError(resp_switch_open[u'message'])
+            resp_switch_open = resp_switch_open[u'data']
 
             #configure close switch
-            resp_switch_close = self.send_command('add_gpio', 'gpios', {'name':name+'_switchclose', 'gpio':switch_close, 'mode':'in', 'keep':False, 'reverted':False})
-            if resp_switch_close['error']:
-                raise CommandError(resp_switch_close['message'])
-            resp_switch_close = resp_switch_close['data']
+            resp_switch_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchclose', u'gpio':switch_close, u'mode':u'in', u'keep':False, u'reverted':False})
+            if resp_switch_close[u'error']:
+                raise CommandError(resp_switch_close[u'message'])
+            resp_switch_close = resp_switch_close[u'data']
 
             #shutter is valid, prepare new entry
-            self.logger.debug('name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (str(name), str(delay), str(shutter_open), str(shutter_close), str(switch_open), str(switch_close)))
+            self.logger.debug(u'name=%s delay=%s shutter_open=%s shutter_close=%s switch_open=%s switch_close=%s' % (unicode(name), unicode(delay), unicode(shutter_open), unicode(shutter_close), unicode(switch_open), unicode(switch_close)))
             data = {
-                'name': name,
-                'delay': delay,
-                'shutter_open': shutter_open,
-                'shutter_open_uuid': resp_shutter_open['uuid'],
-                'shutter_close': shutter_close,
-                'shutter_close_uuid': resp_shutter_close['uuid'],
-                'switch_open': switch_open,
-                'switch_open_uuid': resp_switch_open['uuid'],
-                'switch_close': switch_close,
-                'switch_close_uuid': resp_switch_close['uuid'],
-                'status': Shutters.STATUS_OPENED,
-                'lastupdate': int(time.time()),
-                'type': 'shutter',
-                'level': None
+                u'name': name,
+                u'delay': delay,
+                u'shutter_open': shutter_open,
+                u'shutter_open_uuid': resp_shutter_open[u'uuid'],
+                u'shutter_close': shutter_close,
+                u'shutter_close_uuid': resp_shutter_close[u'uuid'],
+                u'switch_open': switch_open,
+                u'switch_open_uuid': resp_switch_open[u'uuid'],
+                u'switch_close': switch_close,
+                u'switch_close_uuid': resp_switch_close[u'uuid'],
+                u'status': Shutters.STATUS_OPENED,
+                u'lastupdate': int(time.time()),
+                u'type': u'shutter',
+                u'level': None
             }
     
             #add device
             device = self._add_device(data)
             if device is None:
-                raise CommandError('Unale to add device')
+                raise CommandError(u'Unable to add device')
 
         return True
 
@@ -441,33 +441,33 @@ class Shutters(RaspIotModule):
         """
         device = self._get_device(uuid)
         if not uuid:
-            raise MissingParameter('"uuid" parameter is missing')
+            raise MissingParameter(u'Uuid parameter is missing')
         elif device is None:
-            raise InvalidParameter('Shutter doesn\'t exist')
+            raise InvalidParameter(u'Shutter doesn\'t exist')
         else:
             #unconfigure open shutter
-            resp = self.send_command('delete_gpio', 'gpios', {'uuid':device['shutter_open_uuid']})
-            if resp['error']:
-                raise CommandError(resp['message'])
+            resp = self.send_command(u'delete_gpio',u'gpios', {u'uuid':device[u'shutter_open_uuid']})
+            if resp[u'error']:
+                raise CommandError(resp[u'message'])
 
             #unconfigure close shutter
-            resp = self.send_command('delete_gpio', 'gpios', {'uuid':device['shutter_close_uuid']})
-            if resp['error']:
-                raise CommandError(resp['message'])
+            resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'shutter_close_uuid']})
+            if resp[u'error']:
+                raise CommandError(resp[u'message'])
 
             #unconfigure open switch
-            resp = self.send_command('delete_gpio', 'gpios', {'uuid':device['switch_open_uuid']})
-            if resp['error']:
-                raise CommandError(resp['message'])
+            resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'switch_open_uuid']})
+            if resp[u'error']:
+                raise CommandError(resp[u'message'])
 
             #unconfigure close switch
-            resp = self.send_command('delete_gpio', 'gpios', {'uuid':device['switch_close_uuid']})
-            if resp['error']:
-                raise CommandError(resp['message'])
+            resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'switch_close_uuid']})
+            if resp[u'error']:
+                raise CommandError(resp[u'message'])
 
             #shutter is valid, remove it
             if not self._delete_device(uuid):
-                raise CommandError('Unable to delete device')
+                raise CommandError(u'Unable to delete device')
 
         return True
 
@@ -485,22 +485,22 @@ class Shutters(RaspIotModule):
         """
         shutter = self._get_device(uuid)
         if not uuid:
-            raise MissingParameter('"uuid" parameter is missing')
+            raise MissingParameter(u'Uuid parameter is missing')
         elif shutter is None:
-            raise InvalidParameter('Shutter doesn\'t exist')
+            raise InvalidParameter(u'Shutter doesn\'t exist')
         if not name:
-            raise MissingParameter('Name parameter is missing')
+            raise MissingParameter(u'Name parameter is missing')
         elif not delay:
-            raise MissingParameter('Delay parameter is missing')
+            raise MissingParameter(u'Delay parameter is missing')
         elif delay<=0:
-            raise InvalidParameter('Delay must be greater than 0')
+            raise InvalidParameter(u'Delay must be greater than 0')
         else:
             #shutter is valid, update it
-            shutter['name'] = name
-            shutter['delay'] = delay
+            shutter[u'name'] = name
+            shutter[u'delay'] = delay
 
             if not self._update_device(uuid, shutter):
-                raise CommandError('Unable to update device')
+                raise CommandError(u'Unable to update device')
 
         return True
 
@@ -512,24 +512,24 @@ class Shutters(RaspIotModule):
             uuid (string): device identifier
             status (string): shutter status
         """
-        self.logger.debug('change_status for shutter "%s" to "%s"' % (str(uuid), str(status)))
+        self.logger.debug(u'Change_status for shutter "%s" to "%s"' % (unicode(uuid), unicode(status)))
         device = self._get_device(uuid)
         if not status in [Shutters.STATUS_OPENED, Shutters.STATUS_CLOSED, Shutters.STATUS_PARTIAL, Shutters.STATUS_OPENING, Shutters.STATUS_CLOSING]:
-            raise InvalidParameter('Status value is invalid')
+            raise InvalidParameter(u'Status value is invalid')
         elif device is None:
-            raise InvalidParameter('Shutter doesn\'t exist')
+            raise InvalidParameter(u'Shutter doesn\'t exist')
         else:
             #get current time
             now = int(time.time())
 
             #save new status
-            device['status'] = status
-            device['lastupdate'] = now
+            device[u'status'] = status
+            device[u'lastupdate'] = now
             if not self._update_device(uuid, device):
-                raise CommandError('Unable to change shutter status')
+                raise CommandError(u'Unable to change shutter status')
 
             #and broadcast new shutter status
-            self.send_event('shutters.shutter.%s' % status, {'shutter': device['name'], 'lastupdate':now}, uuid)
+            self.send_event(u'shutters.shutter.%s' % status, {u'shutter': device[u'name'], u'lastupdate':now}, uuid)
 
     def __end_of_timer(self, uuid, gpio_uuid, new_status):
         """
@@ -544,10 +544,10 @@ class Shutters(RaspIotModule):
             CommandError
         """
         #turn off specified gpio
-        self.logger.debug('end_of_timer for gpio "%s"' % gpio_uuid)
-        resp = self.send_command('turn_off', 'gpios', {'uuid':gpio_uuid})
-        if resp['error']:
-            raise CommandError(resp['message'])
+        self.logger.debug(u'end_of_timer for gpio "%s"' % gpio_uuid)
+        resp = self.send_command(u'turn_off', u'gpios', {u'uuid':gpio_uuid})
+        if resp[u'error']:
+            raise CommandError(resp[u'message'])
 
         #and update status to specified one
         self.change_status(uuid, new_status)
@@ -562,10 +562,10 @@ class Shutters(RaspIotModule):
         Raises:
             InvalidParameter
         """
-        self.logger.debug('Open shutter %s' % (uuid))
+        self.logger.debug(u'Open shutter %s' % (uuid))
         device = self._get_device(uuid)
         if device is None:
-            raise InvalidParameter('Shutter %s doesn\'t exist' % uuid)
+            raise InvalidParameter(u'Shutter %s doesn\'t exist' % uuid)
         self.__execute_action(device, True)
 
     def close_shutter(self, uuid):
@@ -578,10 +578,10 @@ class Shutters(RaspIotModule):
         Raises:
             InvalidParameter
         """
-        self.logger.debug('Close shutter %s' % (uuid))
+        self.logger.debug('uClose shutter %s' % (uuid))
         device = self._get_device(uuid)
         if device is None:
-            raise InvalidParameter('Shutter %s doesn\'t exist' % uuid)
+            raise InvalidParameter(u'Shutter %s doesn\'t exist' % uuid)
         self.__execute_action(device, False)
 
     def stop_shutter(self, uuid):
@@ -594,10 +594,10 @@ class Shutters(RaspIotModule):
         Raises:
             InvalidParameter
         """
-        self.logger.debug('stop_shutter %s' % uuid)
+        self.logger.debug(u'stop_shutter %s' % uuid)
         device = self._get_device(uuid)
         if device is None:
-            raise InvalidParameter('Shutter %s doesn\'t exist' % uuid)
+            raise InvalidParameter(u'Shutter %s doesn\'t exist' % uuid)
         self.__stop_action(device)
 
     def level_shutter(self, uuid, level):
@@ -612,13 +612,13 @@ class Shutters(RaspIotModule):
         Raises:
             InvalidParameter
         """
-        self.logger.debug('level_shutter %s' % uuid)
+        self.logger.debug(u'level_shutter %s' % uuid)
         device = self._get_device(uuid)
         if device is None:
-            raise InvalidParameter('Shutter %s doesn\'t exist' % uuid)
+            raise InvalidParameter(u'Shutter %s doesn\'t exist' % uuid)
         if not isinstance(level, int):
-            raise InvalidParameter('Level must be an integer')
+            raise InvalidParameter(u'Level must be an integer')
         if level<0 or level>100:
-            raise InvalidParameter('Level value must be between 0 and 100')
+            raise InvalidParameter(u'Level value must be between 0 and 100')
         self.__execute_action(device, True, level)
 

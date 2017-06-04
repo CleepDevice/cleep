@@ -6,8 +6,8 @@ class Fstab():
     Handles /etc/fstab file
     """
 
-    MODE_RO = 'r'
-    MODE_RW = 'w'
+    MODE_RO = u'r'
+    MODE_RW = u'w'
 
     def __init__(self):
         """
@@ -38,7 +38,7 @@ class Fstab():
             self.__fd.close()
             
         #open and return file descriptor
-        self.__fd = open('/etc/fstab', mode)
+        self.__fd = open(u'/etc/fstab', mode)
         return self.__fd
 
     def get_uuid_by_device(self, device):
@@ -52,13 +52,13 @@ class Fstab():
             string: uuid
             None: if nothing found
         """
-        res = self.console.command('blkid | grep "%s"' % device)
-        if res['error'] or res['killed']:
+        res = self.console.command(u'/sbin/blkid | grep "%s"' % device)
+        if res[u'error'] or res[u'killed']:
             return None
         else:
-            items = res['stdout'][0].split()
+            items = res[u'stdout'][0].split()
             for item in items:
-                if item.lower().startswith('uuid='):
+                if item.lower().startswith(u'uuid='):
                     return item[5:].replace('"', '').strip()
 
         return None
@@ -74,11 +74,11 @@ class Fstab():
             string: device
             None: if nothing found
         """
-        res = self.console.command('blkid | grep "%s"' % uuid)
-        if res['error'] or res['killed']:
+        res = self.console.command(u'/sbin/blkid | grep "%s"' % uuid)
+        if res[u'error'] or res['ukilled']:
             return None
         else:
-            items = res['stdout'].split()
+            items = res[u'stdout'].split()
             return items[0].replace(':', '').strip()
 
         return None
@@ -99,23 +99,23 @@ class Fstab():
         """
         devices = {}
 
-        res = self.console.command('blkid')
-        if res['error'] or res['killed']:
+        res = self.console.command(u'/sbin/blkid')
+        if res[u'error'] or res[u'killed']:
             return None
 
         else:
-            for line in res['stdout']:
+            for line in res[u'stdout']:
                 device = {
-                    'device': None,
-                    'uuid': None
+                    u'device': None,
+                    u'uuid': None
                 }
                 items = line.split()
-                device['device'] = items[0].replace(':', '').strip()
+                device[u'device'] = items[0].replace(u':', u'').strip()
                 for item in items:
-                    if item.lower().startswith('uuid='):
-                        device['uuid'] = item[5:].replace('"', '').strip()
+                    if item.lower().startswith(u'uuid='):
+                        device[u'uuid'] = item[5:].replace(u'"', u'').strip()
                         break
-                devices[device['device']] = device
+                devices[device[u'device']] = device
 
         return devices
 
@@ -142,33 +142,33 @@ class Fstab():
         for line in fd.readlines():
             line = line.strip()
 
-            if line.startswith('#'):
+            if line.startswith(u'#'):
                 #drop comment line
                 continue
 
-            elif line.startswith('/dev/'):
+            elif line.startswith(u'/dev/'):
                 #device specified
                 (device, mountpoint, mounttype, options, _, _) = line.split()
                 uuid = self.get_uuid_by_device(device)
                 mountpoints[mountpoint] = {
-                    'device': device,
-                    'uuid': uuid,
-                    'mountpoint': mountpoint,
-                    'mounttype': mounttype,
-                    'options': options
+                    u'device': device,
+                    u'uuid': uuid,
+                    u'mountpoint': mountpoint,
+                    u'mounttype': mounttype,
+                    u'options': options
                 }
 
-            elif line.strip().lower()[:4]=='uuid':
+            elif line.strip().lower()[:4]==u'uuid':
                 #uuid specified
                 (uuid, mountpoint, mounttype, options, _, _) = line.split()
-                uuid = uuid.split('=')[1].strip()
+                uuid = uuid.split(u'=')[1].strip()
                 device = self.get_device_by_uuid(uuid)
                 mountpoints[mountpoint] = {
-                    'device': device,
-                    'uuid': uuid.split('=')[1].strip(),
-                    'mountpoint': mountpoint,
-                    'mounttype': mounttype,
-                    'options': options
+                    u'device': device,
+                    u'uuid': uuid.split(u'=')[1].strip(),
+                    u'mountpoint': mountpoint,
+                    u'mounttype': mounttype,
+                    u'options': options
                 }
 
         return mountpoints
@@ -190,13 +190,13 @@ class Fstab():
             MissingParameter
         """
         if mountpoint is None or len(mountpoint)==0:
-            raise MissingParameter('Mountpoint parameter is missing')
+            raise MissingParameter(u'Mountpoint parameter is missing')
         if device is None or len(device)==0:
-            raise MissingParameter('Device parameter is missing')
+            raise MissingParameter(u'Device parameter is missing')
         if mounttype is None or len(mounttype)==0:
-            raise MissingParameter('Mounttype parameter is missing')
+            raise MissingParameter(u'Mounttype parameter is missing')
         if options is None or len(options)==0:
-            raise MissingParameter('Options parameter is missing')
+            raise MissingParameter(u'Options parameter is missing')
         return False
 
     def delete_mountpoint(self, mountpoint):
@@ -213,7 +213,7 @@ class Fstab():
             MissingParameter
         """
         if options is None or len(options)==0:
-            raise MissingParameter('Mountpoint parameter is missing')
+            raise MissingParameter(u'Mountpoint parameter is missing')
         return False
 
     def reload_fstab(self):
@@ -223,8 +223,8 @@ class Fstab():
         Returns:
             bool: True if command successful, False otherwise
         """
-        res = self.console.command('/bin/mount -a')
-        if res['error'] or res['killed']:
+        res = self.console.command(u'/bin/mount -a')
+        if res[u'error'] or res[u'killed']:
             return False
         else:
             return True

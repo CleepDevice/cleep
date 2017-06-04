@@ -12,7 +12,7 @@ from raspiot.utils import InvalidParameter, Unauthorized, MissingParameter, Comm
 from raspiot.raspiot import RaspIotModule
 import time
 
-__all__ = ['Gpios']
+__all__ = [u'Gpios']
 
 
 class GpioInputWatcher(Thread):
@@ -70,7 +70,7 @@ class GpioInputWatcher(Thread):
                 #get level
                 level = GPIO.input(self.pin)
                 if self.pin==self.__debug_pin:
-                    self.logger.debug('thread=%s level=%s last_level=%s' % (str(self.ident), str(level), str(last_level)))
+                    self.logger.debug(u'thread=%s level=%s last_level=%s' % (unicode(self.ident), unicode(level), unicode(last_level)))
 
                 if last_level is None:
                     #first run, nothing to do except init values
@@ -78,14 +78,14 @@ class GpioInputWatcher(Thread):
 
                 elif level!=last_level and level==self.level:
                     if self.pin==self.__debug_pin:
-                        self.logger.debug('input %s on' % str(self.pin))
+                        self.logger.debug(u'input %s on' % unicode(self.pin))
                     time_on = time.time()
                     self.on_callback(self.uuid)
                     time.sleep(self.debounce)
 
                 elif level!=last_level:
                     if self.pin==self.__debug_pin:
-                        self.logger.debug('input %s off' % str(self.pin))
+                        self.logger.debug(u'input %s off' % unicode(self.pin))
                     if self.off_callback:
                         self.off_callback(self.uuid, time.time()-time_on)
                     time.sleep(self.debounce)
@@ -96,7 +96,7 @@ class GpioInputWatcher(Thread):
                 #update last level
                 last_level = level
         except:
-            self.logger.exception('Exception in GpioInputWatcher')
+            self.logger.exception(u'Exception in GpioInputWatcher:')
 
 
 
@@ -138,165 +138,165 @@ class Gpios(RaspIotModule):
     Raspberry pi gpios class
     """
 
-    MODULE_CONFIG_FILE = 'gpios.conf'
+    MODULE_CONFIG_FILE = u'gpios.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Gives you access to raspberry pins to configure your inputs/ouputs as you wish.'
+    MODULE_DESCRIPTION = u'Gives you access to raspberry pins to configure your inputs/ouputs as you wish.'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
 
-    GPIOS_REV1 = {'GPIO0' : 3,
-                  'GPIO1' : 5,
-                  'GPIO4' : 7,
-                  'GPIO14': 8,
-                  'GPIO15': 10,
-                  'GPIO17': 11,
-                  'GPIO18': 12,
-                  'GPIO21': 13,
-                  'GPIO22': 15,
-                  'GPIO23': 16,
-                  'GPIO24': 18,
-                  'GPIO10': 19,
-                  'GPIO9' : 21,
-                  'GPIO25': 22,
-                  'GPIO11': 23,
-                  'GPIO8' : 24,
-                  'GPIO7' : 26
+    GPIOS_REV1 = {u'GPIO0' : 3,
+                  u'GPIO1' : 5,
+                  u'GPIO4' : 7,
+                  u'GPIO14': 8,
+                  u'GPIO15': 10,
+                  u'GPIO17': 11,
+                  u'GPIO18': 12,
+                  u'GPIO21': 13,
+                  u'GPIO22': 15,
+                  u'GPIO23': 16,
+                  u'GPIO24': 18,
+                  u'GPIO10': 19,
+                  u'GPIO9' : 21,
+                  u'GPIO25': 22,
+                  u'GPIO11': 23,
+                  u'GPIO8' : 24,
+                  u'GPIO7' : 26
     }
-    GPIOS_REV2 = {'GPIO4' : 7,
-                  'GPIO17': 11,
-                  'GPIO18': 12,
-                  'GPIO22': 15,
-                  'GPIO23': 16,
-                  'GPIO24': 18,
-                  'GPIO25': 22,
-                  'GPIO27': 13,
-                  'GPIO2' : 3,
-                  'GPIO3' : 5,
-                  'GPIO7' : 26,
-                  'GPIO8' : 24,
-                  'GPIO9' : 21,
-                  'GPIO10': 19,
-                  'GPIO11': 23,
-                  'GPIO14': 8,
-                  'GPIO15': 10
+    GPIOS_REV2 = {u'GPIO4' : 7,
+                  u'GPIO17': 11,
+                  u'GPIO18': 12,
+                  u'GPIO22': 15,
+                  u'GPIO23': 16,
+                  u'GPIO24': 18,
+                  u'GPIO25': 22,
+                  u'GPIO27': 13,
+                  u'GPIO2' : 3,
+                  u'GPIO3' : 5,
+                  u'GPIO7' : 26,
+                  u'GPIO8' : 24,
+                  u'GPIO9' : 21,
+                  u'GPIO10': 19,
+                  u'GPIO11': 23,
+                  u'GPIO14': 8,
+                  u'GPIO15': 10
     }
-    GPIOS_REV3 = {'GPIO5' : 29,
-                  'GPIO6' : 31,
-                  'GPIO12': 32,
-                  'GPIO13': 33,
-                  'GPIO26': 37,
-                  'GPIO0' : 27,
-                  'GPIO1' : 28,
-                  'GPIO19': 35,
-                  'GPIO16': 36,
-                  'GPIO20': 38,
-                  'GPIO21': 40
+    GPIOS_REV3 = {u'GPIO5' : 29,
+                  u'GPIO6' : 31,
+                  u'GPIO12': 32,
+                  u'GPIO13': 33,
+                  u'GPIO26': 37,
+                  u'GPIO0' : 27,
+                  u'GPIO1' : 28,
+                  u'GPIO19': 35,
+                  u'GPIO16': 36,
+                  u'GPIO20': 38,
+                  u'GPIO21': 40
     }
-    PINS_REV1 = {1 : '3.3V',
-                 2 : '5V',
-                 3 : 'GPIO0',
-                 4 : '5V',
-                 5 : 'GPIO1',
-                 6 : 'GND',
-                 7 : 'GPIO4',
-                 8 : 'GPIO14',
-                 9 : 'GND',
-                 10: 'GPIO15',
-                 11: 'GPIO17',
-                 12: 'GPIO18',
-                 13: 'GPIO21',
-                 14: 'GND',
-                 15: 'GPIO22',
-                 16: 'GPIO23',
-                 17: '3.3V',
-                 18: 'GPIO24',
-                 19: 'GPIO10',
-                 20: 'GND',
-                 21: 'GPIO9',
-                 22: 'GPIO25',
-                 23: 'GPIO11',
-                 24: 'GPIO8',
-                 25: 'GND',
-                 26: 'GPIO7'
+    PINS_REV1 = {1 : u'3.3V',
+                 2 : u'5V',
+                 3 : u'GPIO0',
+                 4 : u'5V',
+                 5 : u'GPIO1',
+                 6 : u'GND',
+                 7 : u'GPIO4',
+                 8 : u'GPIO14',
+                 9 : u'GND',
+                 10: u'GPIO15',
+                 11: u'GPIO17',
+                 12: u'GPIO18',
+                 13: u'GPIO21',
+                 14: u'GND',
+                 15: u'GPIO22',
+                 16: u'GPIO23',
+                 17: u'3.3V',
+                 18: u'GPIO24',
+                 19: u'GPIO10',
+                 20: u'GND',
+                 21: u'GPIO9',
+                 22: u'GPIO25',
+                 23: u'GPIO11',
+                 24: u'GPIO8',
+                 25: u'GND',
+                 26: u'GPIO7'
     }
-    PINS_REV2 = {1 : '3.3V',
-                 2 : '5V',
-                 3 : 'GPIO2',
-                 4 : '5V',
-                 5 : 'GPIO3',
-                 6 : 'GND',
-                 7 : 'GPIO4',
-                 8 : 'GPIO14',
-                 9 : 'GND',
-                 10: 'GPIO15',
-                 11: 'GPIO17',
-                 12: 'GPIO18',
-                 13: 'GPIO27',
-                 14: 'GND',
-                 15: 'GPIO22',
-                 16: 'GPIO23',
-                 17: '3.3V',
-                 18: 'GPIO24',
-                 19: 'GPIO10',
-                 20: 'GND',
-                 21: 'GPIO9',
-                 22: 'GPIO25',
-                 23: 'GPIO11',
-                 24: 'GPIO8',
-                 25: 'GND',
-                 26: 'GPIO7'
+    PINS_REV2 = {1 : u'3.3V',
+                 2 : u'5V',
+                 3 : u'GPIO2',
+                 4 : u'5V',
+                 5 : u'GPIO3',
+                 6 : u'GND',
+                 7 : u'GPIO4',
+                 8 : u'GPIO14',
+                 9 : u'GND',
+                 10: u'GPIO15',
+                 11: u'GPIO17',
+                 12: u'GPIO18',
+                 13: u'GPIO27',
+                 14: u'GND',
+                 15: u'GPIO22',
+                 16: u'GPIO23',
+                 17: u'3.3V',
+                 18: u'GPIO24',
+                 19: u'GPIO10',
+                 20: u'GND',
+                 21: u'GPIO9',
+                 22: u'GPIO25',
+                 23: u'GPIO11',
+                 24: u'GPIO8',
+                 25: u'GND',
+                 26: u'GPIO7'
     }
-    PINS_REV3 = {1: '3.3V',
-                 2: '5V',
-                 3: 'GPIO2',
-                 4: '5V',
-                 5: 'GPIO3',
-                 6: 'GND',
-                 7: 'GPIO4',
-                 8: 'GPIO14',
-                 9: 'GND',
-                 10: 'GPIO15',
-                 11: 'GPIO17',
-                 12: 'GPIO18',
-                 13: 'GPIO27',
-                 14: 'GND',
-                 15: 'GPIO22',
-                 16: 'GPIO23',
-                 17: '3.3V',
-                 18: 'GPIO24',
-                 19: 'GPIO10',
-                 20: 'GND',
-                 21: 'GPIO9',
-                 22: 'GPIO25',
-                 23: 'GPIO11',
-                 24: 'GPIO8',
-                 25: 'GND',
-                 26: 'GPIO7',
-                 27: 'DNC',
-                 28: 'DNC',
-                 29: 'GPIO5',
-                 30: 'GND',
-                 31: 'GPIO6',
-                 32: 'GPIO12',
-                 33: 'GPIO13',
-                 34: 'GND',
-                 35: 'GPIO19',
-                 36: 'GPIO16',
-                 37: 'GPIO26',
-                 38: 'GPIO20',
-                 39: 'GND',
-                 40: 'GPIO21'
+    PINS_REV3 = {1: u'3.3V',
+                 2: u'5V',
+                 3: u'GPIO2',
+                 4: u'5V',
+                 5: u'GPIO3',
+                 6: u'GND',
+                 7: u'GPIO4',
+                 8: u'GPIO14',
+                 9: u'GND',
+                 10: u'GPIO15',
+                 11: u'GPIO17',
+                 12: u'GPIO18',
+                 13: u'GPIO27',
+                 14: u'GND',
+                 15: u'GPIO22',
+                 16: u'GPIO23',
+                 17: u'3.3V',
+                 18: u'GPIO24',
+                 19: u'GPIO10',
+                 20: u'GND',
+                 21: u'GPIO9',
+                 22: u'GPIO25',
+                 23: u'GPIO11',
+                 24: u'GPIO8',
+                 25: u'GND',
+                 26: u'GPIO7',
+                 27: u'DNC',
+                 28: u'DNC',
+                 29: u'GPIO5',
+                 30: u'GND',
+                 31: u'GPIO6',
+                 32: u'GPIO12',
+                 33: u'GPIO13',
+                 34: u'GND',
+                 35: u'GPIO19',
+                 36: u'GPIO16',
+                 37: u'GPIO26',
+                 38: u'GPIO20',
+                 39: u'GND',
+                 40: u'GPIO21'
     }
 
-    MODE_INPUT = 'input'
-    MODE_OUTPUT = 'output'
-    MODE_RESERVED = 'reserved'
+    MODE_INPUT = u'input'
+    MODE_OUTPUT = u'output'
+    MODE_RESERVED = u'reserved'
 
     INPUT_DROP_THRESHOLD = 0.150 #in ms
 
-    USAGE_ONEWIRE = 'onewire'
-    USAGE_LIRC = 'lirc'
+    USAGE_ONEWIRE = u'onewire'
+    USAGE_LIRC = u'lirc'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -348,49 +348,49 @@ class Gpios(RaspIotModule):
         self.logger.debug('configuregpio: device=%s' % (device))
 
         #check if gpio is not reserved
-        if device['mode']==self.MODE_RESERVED:
-            self.logger.debug('Reserved gpio is not configured')
+        if device[u'mode']==self.MODE_RESERVED:
+            self.logger.debug(u'Reserved gpio is not configured')
             return True
 
         try:
             #get gpio pin
-            if device['mode']==self.MODE_OUTPUT:
-                self.logger.debug('Configure gpio %s pin %d as OUTPUT' % (device['gpio'], device['pin']))
+            if device[u'mode']==self.MODE_OUTPUT:
+                self.logger.debug(u'Configure gpio %s pin %d as OUTPUT' % (device[u'gpio'], device[u'pin']))
                 #configure it
-                if device['on']:
+                if device[u'on']:
                     initial = GPIO.LOW
-                    event = 'gpios.gpio.on'
+                    event = u'gpios.gpio.on'
                 else:
                     initial = GPIO.HIGH
-                    event = 'gpios.gpio.off'
-                self.logger.debug('event=%s initial=%s' % (str(event), str(initial)))
-                GPIO.setup(device['pin'], GPIO.OUT, initial=initial)
+                    event = u'gpios.gpio.off'
+                self.logger.debug(u'event=%s initial=%s' % (unicode(event), unicode(initial)))
+                GPIO.setup(device[u'pin'], GPIO.OUT, initial=initial)
 
                 #and broadcast gpio status at startup
-                self.logger.debug('broadcast event %s for gpio %s' % (event, device['gpio']))
-                self.send_event(event, {'gpio':'gpio', 'init':True}, device['uuid'])
+                self.logger.debug(u'broadcast event %s for gpio %s' % (event, device[u'gpio']))
+                self.send_event(event, {u'gpio':u'gpio', u'init':True}, device[u'uuid'])
 
-            elif device['mode']==self.MODE_INPUT:
-                if not device['reverted']:
-                    self.logger.debug('Configure gpio %s (pin %s) as INPUT' % (device['gpio'], device['pin']))
+            elif device[u'mode']==self.MODE_INPUT:
+                if not device[u'reverted']:
+                    self.logger.debug(u'Configure gpio %s (pin %s) as INPUT' % (device[u'gpio'], device[u'pin']))
                 else:
-                    self.logger.debug('Configure gpio %s (pin %s) as INPUT reverted' % (device['gpio'], device['pin']))
+                    self.logger.debug(u'Configure gpio %s (pin %s) as INPUT reverted' % (device[u'gpio'], device[u'pin']))
 
                 #configure it
-                GPIO.setup(device['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                GPIO.setup(device[u'pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
                 #and launch input watcher
-                if not device['reverted']:
-                    w = GpioInputWatcher(device['pin'], device['uuid'], self.__input_on_callback, self.__input_off_callback, GPIO.LOW)
+                if not device[u'reverted']:
+                    w = GpioInputWatcher(device[u'pin'], device[u'uuid'], self.__input_on_callback, self.__input_off_callback, GPIO.LOW)
                 else:
-                    w = GpioInputWatcher(device['pin'], device['uuid'], self.__input_on_callback, self.__input_off_callback, GPIO.HIGH)
+                    w = GpioInputWatcher(device[u'pin'], device[u'uuid'], self.__input_on_callback, self.__input_off_callback, GPIO.HIGH)
                 self.__input_watchers.append(w)
                 w.start()
 
             return True
 
         except:
-            self.logger.exception('Exception during GPIO configuration:')
+            self.logger.exception(u'Exception during GPIO configuration:')
             return False
 
     def __input_on_callback(self, uuid):
@@ -400,13 +400,13 @@ class Gpios(RaspIotModule):
         Params: 
             uuid (string): device uuid
         """
-        self.logger.debug('on_callback for gpio %s triggered' % uuid)
+        self.logger.debug(u'on_callback for gpio %s triggered' % uuid)
         device = self._get_device(uuid)
         if device is None:
-            raise Exception('Device %s not found' % uuid)
+            raise Exception(u'Device %s not found' % uuid)
 
         #broadcast event
-        self.send_event('gpios.gpio.on', {'gpio':device['gpio'], 'init':False}, uuid)
+        self.send_event(u'gpios.gpio.on', {u'gpio':device[u'gpio'], u'init':False}, uuid)
 
     def __input_off_callback(self, uuid, duration):
         """
@@ -416,13 +416,13 @@ class Gpios(RaspIotModule):
             uuid (string): device uuid
             duration (float): trigger duration
         """
-        self.logger.debug('off_callback for gpio %s triggered' % uuid)
+        self.logger.debug(u'off_callback for gpio %s triggered' % uuid)
         device = self._get_device(uuid)
         if device is None:
-            raise Exception('Device %s not found' % uuid)
+            raise Exception(u'Device %s not found' % uuid)
 
         #broadcast event
-        self.send_event('gpios.gpio.off', {'gpio':device['gpio'], 'init':False, 'duration':duration}, uuid)
+        self.send_event(u'gpios.gpio.off', {u'gpio':device[u'gpio'], u'init':False, u'duration':duration}, uuid)
 
     def get_module_config(self):
         """
@@ -439,19 +439,19 @@ class Gpios(RaspIotModule):
             assigned = False
             owner = None
             for uuid in devices:
-                if devices[uuid]['gpio']==gpio:
+                if devices[uuid][u'gpio']==gpio:
                     assigned = True
-                    owner = devices[uuid]['owner']
+                    owner = devices[uuid][u'owner']
                     break
 
             #add new entry
             gpios[gpio] = {
-                'gpio': gpio,
-                'pin': all_gpios[gpio],
-                'assigned': assigned,
-                'owner': owner
+                u'gpio': gpio,
+                u'pin': all_gpios[gpio],
+                u'assigned': assigned,
+                u'owner': owner
             }
-        config['gpios'] = gpios
+        config[u'gpios'] = gpios
 
         return config
 
@@ -486,7 +486,7 @@ class Gpios(RaspIotModule):
         devices = self.get_module_devices()
         gpios = []
         for uuid in devices:
-            gpios.append(devices[uuid]['gpio'])
+            gpios.append(devices[uuid][u'gpio'])
         
         return gpios
 
@@ -500,7 +500,7 @@ class Gpios(RaspIotModule):
                     <gpio name>, <pin number>
                 }
         """
-        rev = GPIO.RPI_INFO['P1_REVISION']
+        rev = GPIO.RPI_INFO[u'P1_REVISION']
 
         if rev==1:
             return self.GPIOS_REV1
@@ -520,7 +520,7 @@ class Gpios(RaspIotModule):
         Returns:
             int: pins number
         """
-        rev = GPIO.RPI_INFO['P1_REVISION']
+        rev = GPIO.RPI_INFO[u'P1_REVISION']
 
         if rev==1 or rev==2:
             return 26
@@ -547,47 +547,47 @@ class Gpios(RaspIotModule):
             CommandError, MissingParameter, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
-        if command_sender=='rpcserver':
-            command_sender = 'gpios'
+        if command_sender==u'rpcserver':
+            command_sender = u'gpios'
 
         #search for gpio device
-        found_gpio = self._search_device('gpio', gpio)
+        found_gpio = self._search_device(u'gpio', gpio)
 
         #check values
         if not gpio:
-            raise MissingParameter('Gpio parameter is missing')
-        elif found_gpio is not None and found_gpio['mode']!=usage:
-            raise InvalidParameter('Gpio is already reserved for %s usage' % found_gpio['mode'])
-        elif found_gpio is not None and found_gpio['mode']==usage:
+            raise MissingParameter(u'Gpio parameter is missing')
+        elif found_gpio is not None and found_gpio[u'mode']!=usage:
+            raise InvalidParameter(u'Gpio is already reserved for %s usage' % found_gpio[u'mode'])
+        elif found_gpio is not None and found_gpio[u'mode']==usage:
             return found_gpio
         elif not name:
-            raise MissingParameter('Name parameter is missing')
-        elif self._search_device('name', name) is not None:
-            raise InvalidParameter('Name "%s" already used' % name)
+            raise MissingParameter(u'Name parameter is missing')
+        elif self._search_device(u'name', name) is not None:
+            raise InvalidParameter(u'Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
-            raise InvalidParameter('Gpio does not exist for this raspberry pi')
+            raise InvalidParameter(u'Gpio does not exist for this raspberry pi')
         elif usage not in [self.USAGE_ONEWIRE]:
-            raise InvalidParameter('Usage is invalid')
+            raise InvalidParameter(u'Usage is invalid')
         else:
             #gpio is valid, prepare new entry
             data = {
-                'name': name,
-                'mode': usage,
-                'pin': self.get_raspi_gpios()[gpio],
-                'gpio': gpio,
-                'keep': False,
-                'on': False,
-                'reverted': False,
-                'owner': command_sender,
-                'type': 'gpio',
-                'subtype': self.MODE_RESERVED
+                u'name': name,
+                u'mode': usage,
+                u'pin': self.get_raspi_gpios()[gpio],
+                u'gpio': gpio,
+                u'keep': False,
+                u'on': False,
+                u'reverted': False,
+                u'owner': command_sender,
+                u'type': u'gpio',
+                u'subtype': self.MODE_RESERVED
             }
 
             #add device
-            self.logger.debug("data=%s" % data)
+            self.logger.debug(u'data=%s' % data)
             device = self._add_device(data)
             if device is None:
-                raise CommandError('Unable to add device')
+                raise CommandError(u'Unable to add device')
     
             return device
 
@@ -603,10 +603,10 @@ class Gpios(RaspIotModule):
         """
         device = self._get_device(uuid)
         if device is None:
-            raise CommandError('Device %s not found' % uuid)
+            raise CommandError(u'Device %s not found' % uuid)
 
-        self.logger.debug('is_reserved_gpio: %s' % device)
-        if device['subtype']==self.MODE_RESERVED:
+        self.logger.debug(u'is_reserved_gpio: %s' % device)
+        if device[u'subtype']==self.MODE_RESERVED:
             return True
 
         return False
@@ -630,46 +630,46 @@ class Gpios(RaspIotModule):
             CommandError, MissingParameter, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
-        if command_sender=='rpcserver':
-            command_sender = 'gpios'
+        if command_sender==u'rpcserver':
+            command_sender = u'gpios'
 
         #check values
         if not gpio:
-            raise MissingParameter('Gpio parameter is missing')
+            raise MissingParameter(u'Gpio parameter is missing')
         elif not name:
-            raise MissingParameter('Name parameter is missing')
+            raise MissingParameter(u'Name parameter is missing')
         elif not mode:
-            raise MissingParameter('Mode parameter is missing')
+            raise MissingParameter(u'Mode parameter is missing')
         elif keep is None:
-            raise MissingParameter('Keep parameter is missing')
-        elif self._search_device('name', name) is not None:
-            raise InvalidParameter('Name "%s" already used' % name)
+            raise MissingParameter(u'Keep parameter is missing')
+        elif self._search_device(u'name', name) is not None:
+            raise InvalidParameter(u'Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
-            raise InvalidParameter('Gpio does not exist for this raspberry pi')
+            raise InvalidParameter(u'Gpio does not exist for this raspberry pi')
         elif mode not in (self.MODE_INPUT, self.MODE_OUTPUT):
-            raise InvalidParameter('Mode "%s" is invalid' % mode)
-        elif self._search_device('gpio', gpio) is not None:
-            raise InvalidParameter('Gpio "%s" is already configured' % gpio)
+            raise InvalidParameter(u'Mode "%s" is invalid' % mode)
+        elif self._search_device(u'gpio', gpio) is not None:
+            raise InvalidParameter(u'Gpio "%s" is already configured' % gpio)
         else:
             #gpio is valid, prepare new entry
             data = {
-                'name': name,
-                'mode': mode,
-                'pin': self.get_raspi_gpios()[gpio],
-                'gpio': gpio,
-                'keep': keep,
-                'on': False,
-                'reverted': reverted,
-                'owner': command_sender,
-                'type': 'gpio',
-                'subtype': mode
+                u'name': name,
+                u'mode': mode,
+                u'pin': self.get_raspi_gpios()[gpio],
+                u'gpio': gpio,
+                u'keep': keep,
+                u'on': False,
+                u'reverted': reverted,
+                u'owner': command_sender,
+                u'type': 'gpio',
+                u'subtype': mode
             }
 
             #add device
-            self.logger.debug("data=%s" % data)
+            self.logger.debug(u'data=%s' % data)
             device = self._add_device(data)
             if device is None:
-                raise CommandError('Unable to add device')
+                raise CommandError(u'Unable to add device')
     
             #configure it
             self.__configure_gpio(device)
@@ -691,21 +691,21 @@ class Gpios(RaspIotModule):
             CommandError, MissingParameter, Unauthorized, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
-        if command_sender=='rpcserver':
-            command_sender = 'gpios'
+        if command_sender==u'rpcserver':
+            command_sender = u'gpios'
 
         #check values
         device = self._get_device(uuid)
         if not uuid:
-            raise MissingParameter('Uuid parameter is missing')
+            raise MissingParameter(u'Uuid parameter is missing')
         elif device is None:
-            raise InvalidParameter('Device does not exist')
-        elif device['owner']!=command_sender:
-            raise Unauthorized('Device can only be deleted by module that created it')
+            raise InvalidParameter(u'Device does not exist')
+        elif device[u'owner']!=command_sender:
+            raise Unauthorized(u'Device can only be deleted by module that created it')
         else:
             #device is valid, remove entry
             if not self._delete_device(uuid):
-                raise CommandError('Failed to delete device')
+                raise CommandError(u'Failed to delete device')
 
             return True
 
@@ -729,24 +729,24 @@ class Gpios(RaspIotModule):
             CommandError, MissingParameter, Unauthorized, InvalidParameter
         """
         #fix command_sender: rpcserver is the default gpio entry point
-        if command_sender=='rpcserver':
-            command_sender = 'gpios'
+        if command_sender==u'rpcserver':
+            command_sender = u'gpios'
 
         #check values
         device = self._get_device(uuid)
         if not uuid:
-            raise MissingParameter('Uuid parameter is missing')
+            raise MissingParameter(u'Uuid parameter is missing')
         elif device is None:
-            raise InvalidParameter('Device does not exist')
-        elif device['owner']!=command_sender:
-            raise Unauthorized('Device can only be deleted by module that created it')
+            raise InvalidParameter(u'Device does not exist')
+        elif device[u'owner']!=command_sender:
+            raise Unauthorized(u'Device can only be deleted by module that created it')
         else:
             #device is valid, update entry
-            device['name'] = name
-            device['keep'] = keep
-            device['reverted'] = reverted
+            device[u'name'] = name
+            device[u'keep'] = keep
+            device[u'reverted'] = reverted
             if self._update_device(uuid, device)==None:
-                raise CommandError('Unable to update device')
+                raise CommandError(u'Unable to update device')
 
             return True
 
@@ -765,21 +765,21 @@ class Gpios(RaspIotModule):
         #check values
         device = self._get_device(uuid)
         if device is None:
-            raise CommandError('Device not found')
-        if device['mode']!=self.MODE_OUTPUT:
-            raise CommandError('Gpio %s configured as %s cannot be turned on' % (device['uuid'], device['mode']))
+            raise CommandError(u'Device not found')
+        if device[u'mode']!=self.MODE_OUTPUT:
+            raise CommandError(u'Gpio %s configured as %s cannot be turned on' % (device[u'uuid'], device[u'mode']))
 
         #turn on relay
-        self.logger.debug('Turn on GPIO %s' % device['gpio'])
-        GPIO.output(device['pin'], GPIO.LOW)
+        self.logger.debug(u'Turn on GPIO %s' % device[u'gpio'])
+        GPIO.output(device[u'pin'], GPIO.LOW)
 
         #save current state
-        device['on'] = True
-        if device['keep']:
+        device[u'on'] = True
+        if device[u'keep']:
             self._update_device(uuid, device)
 
         #broadcast event
-        self.send_event('gpios.gpio.on', {'gpio':device['gpio'], 'init':False}, uuid)
+        self.send_event(u'gpios.gpio.on', {u'gpio':device[u'gpio'], u'init':False}, uuid)
 
         return True
 
@@ -798,21 +798,21 @@ class Gpios(RaspIotModule):
         """
         device = self._get_device(uuid)
         if device is None:
-            raise CommandError('Device not found')
-        if device['mode']!=self.MODE_OUTPUT:
-            raise CommandError('Gpio %s configured as %s cannot be turned off' % (device['uuid'], device['mode']))
+            raise CommandError(u'Device not found')
+        if device[u'mode']!=self.MODE_OUTPUT:
+            raise CommandError(u'Gpio %s configured as %s cannot be turned off' % (device[u'uuid'], device[u'mode']))
                 
         #turn off relay
-        self.logger.debug('Turn off GPIO %s' % device['gpio'])
-        GPIO.output(device['pin'], GPIO.HIGH)
+        self.logger.debug(u'Turn off GPIO %s' % device[u'gpio'])
+        GPIO.output(device[u'pin'], GPIO.HIGH)
 
         #save current state
-        device['on'] = False
-        if device['keep']:
+        device[u'on'] = False
+        if device[u'keep']:
             self._update_device(uuid, device)
 
         #broadcast event
-        self.send_event('gpios.gpio.off', {'gpio':device['gpio'], 'init':False}, uuid)
+        self.send_event(u'gpios.gpio.off', {u'gpio':device[u'gpio'], u'init':False}, uuid)
 
         return True
 
@@ -832,9 +832,9 @@ class Gpios(RaspIotModule):
         #check values
         device = self._get_device(uuid)
         if device is None:
-            raise CommandError('Device not found')
-        if device['mode']==self.MODE_RESERVED:
-            raise CommandError('Gpio %s configured as %s cannot be checked' % (device['uuid'], device['mode']))
+            raise CommandError(u'Device not found')
+        if device[u'mode']==self.MODE_RESERVED:
+            raise CommandError(u'Gpio %s configured as %s cannot be checked' % (device[u'uuid'], device[u'mode']))
 
         return device['on']
 
@@ -844,7 +844,7 @@ class Gpios(RaspIotModule):
         """
         devices = self.get_module_devices()
         for uuid in devices:
-            if devices[uuid]['mode']==Gpios.MODE_OUTPUT:
+            if devices[uuid][u'mode']==Gpios.MODE_OUTPUT:
                 self.turn_off(uuid)
 
 

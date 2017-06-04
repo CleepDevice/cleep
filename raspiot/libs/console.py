@@ -142,7 +142,7 @@ class Console():
         """
         #check params
         if timeout is None or timeout<=0.0:
-            raise InvalidParameter('Timeout is mandatory and must be greater than 0')
+            raise InvalidParameter(u'Timeout is mandatory and must be greater than 0')
 
         #launch command
         p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
@@ -172,22 +172,22 @@ class Console():
        
         #prepare result
         result = {
-            'error': False,
-            'killed': killed,
-            'stdout': [],
-            'stderr': []
+            u'error': False,
+            u'killed': killed,
+            u'stdout': [],
+            u'stderr': []
         }
         if not killed:
             err = self.__remove_eol(p.stderr.readlines())
             if len(err)>0:
-                result['error'] = True
-                result['stderr'] = err
+                result[u'error'] = True
+                result[u'stderr'] = err
             else:
-                result['stdout'] = self.__remove_eol(p.stdout.readlines())
+                result[u'stdout'] = self.__remove_eol(p.stdout.readlines())
 
         #make sure process is really killed
         try:
-            subprocess.Popen('/bin/kill -9 %s' % pid, shell=True)
+            subprocess.Popen(u'/bin/kill -9 %s' % pid, shell=True)
         except:
             pass
 

@@ -40,11 +40,11 @@ class ScriptDebugLogger():
         """
         #push message
         request = MessageRequest()
-        request.event = 'actions.debug.message'
+        request.event = u'actions.debug.message'
         request.params = {
-            'message': message,
-            'level': level.upper(),
-            'timestamp': time.time()
+            u'message': message,
+            u'level': level.upper(),
+            u'timestamp': time.time()
         }
 
         #push message
@@ -61,7 +61,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'DEBUG')
+        self.__add_message(message, u'DEBUG')
 
     def info(self, message):
         """
@@ -70,7 +70,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'INFO')
+        self.__add_message(message, u'INFO')
 
     def warning(self, message):
         """
@@ -79,7 +79,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'WARNING')
+        self.__add_message(message, u'WARNING')
 
     def warn(self, message):
         """
@@ -88,7 +88,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'WARNING')
+        self.__add_message(message, u'WARNING')
 
     def error(self, message):
         """
@@ -97,7 +97,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'ERROR')
+        self.__add_message(message, u'ERROR')
 
     def fatal(self, message):
         """
@@ -106,7 +106,7 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'CRITICAL')
+        self.__add_message(message, u'CRITICAL')
 
     def critical(self, message):
         """
@@ -115,17 +115,17 @@ class ScriptDebugLogger():
         Params:
             message (string): message
         """
-        self.__add_message(message, 'CRITICAL')
+        self.__add_message(message, u'CRITICAL')
 
     def exception(self, message):
         """
         Handle exception message
         """
-        lines = traceback.format_exc().split('\n')
-        self.__add_message(message, 'EXCEPTION')
+        lines = traceback.format_exc().split(u'\n')
+        self.__add_message(message, u'EXCEPTION')
         for line in lines:
             if len(line.strip())>0:
-                self.__add_message(line, 'EXCEPTION')
+                self.__add_message(line, u'EXCEPTION')
 
 
 
@@ -228,7 +228,7 @@ class Script(Thread):
         """
         #configure logger
         self.logger.setLevel(self.logger_level)
-        self.logger.debug('Thread started')
+        self.logger.debug(u'Thread started')
 
         #send command helper
         def command(command, to, params=None):
@@ -242,10 +242,10 @@ class Script(Thread):
             try:
                 resp = self.__bus_push(request)
             except InvalidModule:
-                raise Exception('Module "%" does not exit (loaded?)' % to)
+                raise Exception(u'Module "%" does not exit (loaded?)' % to)
             except NoResponse:
                 #handle long response
-                raise Exception('No response from "%s" module' % to)
+                raise Exception(u'No response from "%s" module' % to)
 
             if resp!=None and isinstance(resp, MessageResponse):
                 return resp.to_dict()
@@ -254,7 +254,7 @@ class Script(Thread):
 
         if self.__debug:
             #event in queue, get event
-            self.logger.debug('Script execution')
+            self.logger.debug(u'Script execution')
 
             #special logger for debug to store trace
             logger = self.__debug_logger
@@ -263,11 +263,11 @@ class Script(Thread):
             try:
                 execfile(self.script)
             except:
-                logger.exception('Fatal error in script "%s"' % self.script)
+                logger.exception(u'Fatal error in script "%s"' % self.script)
 
             #send end event
             request = MessageRequest()
-            request.event = 'actions.debug.end'
+            request.event = u'actions.debug.end'
             resp = self.__bus_push(request)
 
         else:
@@ -279,7 +279,7 @@ class Script(Thread):
                 if len(self.__events)>0:
                     #check if file exists
                     if not os.path.exists(self.script):
-                        self.logger.error('Script does not exist. Stop thread')
+                        self.logger.error(u'Script does not exist. Stop thread')
                         break
 
                     #event in queue, process it
@@ -288,26 +288,26 @@ class Script(Thread):
                     #drop script execution if script disabled
                     if self.__disabled:
                         #script is disabled
-                        self.logger.debug('Script is disabled. Drop execution')
+                        self.logger.debug(u'Script is disabled. Drop execution')
                         continue
 
                     #event helpers
-                    event = current_event['event']
-                    event_values = current_event['params']
+                    event = current_event[u'event']
+                    event_values = current_event[u'params']
                     
                     #and execute file
-                    self.logger.debug('Script execution')
+                    self.logger.debug(u'Script execution')
                     try:
                         execfile(self.script)
                         self.last_execution = int(time.time())
                     except:
-                        self.logger.exception('Fatal error in script "%s"' % self.script)
+                        self.logger.exception(u'Fatal error in script "%s"' % self.script)
 
                 else:
                     #no event, pause
                     time.sleep(0.25)
 
-        self.logger.debug('Thread is stopped')
+        self.logger.debug(u'Thread is stopped')
 
 
 
@@ -317,17 +317,17 @@ class Actions(RaspIotModule):
     Action allows user to execute its own python scripts interacting with RaspIot
     """
 
-    MODULE_CONFIG_FILE = 'actions.conf'
+    MODULE_CONFIG_FILE = u'actions.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Helps you trigger custom action to fit your needs'
+    MODULE_DESCRIPTION = u'Helps you trigger custom action to fit your needs'
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
 
-    SCRIPTS_PATH = '/var/opt/raspiot/scripts'
-    DATA_FILE = 'raspiot.data.conf'
+    SCRIPTS_PATH = u'/var/opt/raspiot/scripts'
+    DATA_FILE = u'raspiot.data.conf'
     DEFAULT_CONFIG = {
-        'scripts': {}
+        u'scripts': {}
     }
 
     def __init__(self, bus, debug_enabled):
@@ -382,7 +382,7 @@ class Actions(RaspIotModule):
             #check file existance
             if not os.path.exists(os.path.join(Actions.SCRIPTS_PATH, script)):
                 #file doesn't exist from filesystem, clear config entry
-                self.logger.info('Delete infos from removed script "%s"' % script)
+                self.logger.info(u'Delete infos from removed script "%s"' % script)
 
                 if self.__scripts.has_key(script):
                     #stop running thread if necessary
@@ -392,8 +392,8 @@ class Actions(RaspIotModule):
                     #clear config entry
                     del self.__scripts[script]
                     config = self._get_config()
-                    if config['scripts'].has_key(script):
-                        del config['scripts'][script]
+                    if config[u'scripts'].has_key(script):
+                        del config[u'scripts'][script]
                         self._save_config(config)
                     
         #launch thread for new script
@@ -401,20 +401,20 @@ class Actions(RaspIotModule):
             for script in scripts:
                 #drop files that aren't python script
                 ext = os.path.splitext(script)[1]
-                if ext!='.py':
-                    self.logger.debug('Drop bad extension file "%s"' % script)
+                if ext!=u'.py':
+                    self.logger.debug(u'Drop bad extension file "%s"' % script)
                     continue
 
                 if not self.__scripts.has_key(script):
-                    self.logger.info('Discover new script "%s"' % script)
+                    self.logger.info(u'Discover new script "%s"' % script)
                     #get disable status
                     disabled = False
-                    if self._config['scripts'].has_key(script):
-                        disabled = self._config['scripts'][script]['disabled']
+                    if self._config[u'scripts'].has_key(script):
+                        disabled = self._config[u'scripts'][script][u'disabled']
                     else:
                         config = self._get_config()
-                        config['scripts'][script] = {
-                            'disabled': disabled
+                        config[u'scripts'][script] = {
+                            u'disabled': disabled
                         }
                         self._save_config(config)
 
@@ -432,7 +432,7 @@ class Actions(RaspIotModule):
             dict: module configuration
         """
         config = {}
-        config['scripts'] = self.get_scripts()
+        config[u'scripts'] = self.get_scripts()
         return config
 
     def event_received(self, event):
@@ -442,7 +442,7 @@ class Actions(RaspIotModule):
         Args:
             event (MessageRequest): an event
         """
-        self.logger.debug('Event received %s' % str(event))
+        self.logger.debug(u'Event received %s' % unicode(event))
         #push event to all script threads
         for script in self.__scripts:
             self.__scripts[script].push_event(event)
@@ -466,45 +466,45 @@ class Actions(RaspIotModule):
             InvalidParameter: if script not found
             CommandError: if error occured processing script
         """
-        self.logger.debug('Config: %s' % self._config)
+        self.logger.debug(u'Config: %s' % self._config)
         if not self.__scripts.has_key(script):
-            raise InvalidParameter('Unknown script "%s"' % script)
+            raise InvalidParameter(u'Unknown script "%s"' % script)
         path = os.path.join(Actions.SCRIPTS_PATH, script)
         if not os.path.exists(path):
-            raise InvalidParameter('Script "%s" does not exist' % script)
+            raise InvalidParameter(u'Script "%s" does not exist' % script)
 
         output = {
-            'visual': None,
-            'code': None,
-            'header': None
+            u'visual': None,
+            u'code': None,
+            u'header': None
         }
 
         #read file content
-        self.logger.debug('Loading script: %s' % path)
+        self.logger.debug(u'Loading script: %s' % path)
         fd = open(path)
         content = fd.read()
         fd.close()
 
         #parse file
-        groups = re.findall('^(?:\"\"\"(.*)\"\"\"\s)?(.*)$', content, re.S)
+        groups = re.findall(u'^(?:\"\"\"(.*)\"\"\"\s)?(.*)$', content, re.S)
         self.logger.debug(groups)
         if len(groups)==1:
             #seems good
             try:
-                output['header'] = groups[0][0]
-                output['code'] = groups[0][1]
-                self.logger.debug('header=%s' % output['header'])
-                groups = re.findall('^\seditor:(.*?)\s(.*)$', output['header'], re.S)
+                output[u'header'] = groups[0][0]
+                output[u'code'] = groups[0][1]
+                self.logger.debug(u'header=%s' % output[u'header'])
+                groups = re.findall(u'^\seditor:(.*?)\s(.*)$', output[u'header'], re.S)
                 self.logger.debug(groups)
-                output['editor'] = None
+                output[u'editor'] = None
                 if groups and len(groups)==1:
-                    output['editor'] = groups[0][0]
-                    output['header'] = groups[0][1]
+                    output[u'editor'] = groups[0][0]
+                    output[u'header'] = groups[0][1]
             except Exception as e:
-                self.logger.exception('Exception when loading script %s:' % path)
-                raise CommandError('Unable to load script')
+                self.logger.exception(u'Exception when loading script %s:' % path)
+                raise CommandError(u'Unable to load script')
         else:
-            self.logger.warning('Unhandled source code: %s' % groups)
+            self.logger.warning(u'Unhandled source code: %s' % groups)
 
         return output
 
@@ -526,21 +526,21 @@ class Actions(RaspIotModule):
             CommandError: if error processing script
         """
         if script is None or len(script)==0:
-            raise InvalidParameter('Script parameter is missing')
+            raise InvalidParameter(u'Script parameter is missing')
         if editor is None or len(editor)==0:
-            raise InvalidParameter('editor parameter is missing')
+            raise InvalidParameter(u'editor parameter is missing')
         if header is None:
-            raise InvalidParameter('Header parameter is missing')
+            raise InvalidParameter(u'Header parameter is missing')
         if code is None:
-            raise InvalidParameter('Code parameter is missing')
+            raise InvalidParameter(u'Code parameter is missing')
 
         #open script for writing
         path = os.path.join(Actions.SCRIPTS_PATH, script)
-        self.logger.debug('Opening script: %s' % path)
-        fd = open(path, 'w')
+        self.logger.debug(u'Opening script: %s' % path)
+        fd = open(path, u'w')
         
         #write content
-        content = '"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
+        content = u'"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
         fd.write(content)
         fd.close()
 
@@ -565,9 +565,9 @@ class Actions(RaspIotModule):
         scripts = []
         for script in self.__scripts:
             script = {
-                'name': script,
-                'lastexecution': self.__scripts[script].get_last_execution(),
-                'disabled': self.__scripts[script].is_disabled()
+                u'name': script,
+                u'lastexecution': self.__scripts[script].get_last_execution(),
+                u'disabled': self.__scripts[script].is_disabled()
             }
             scripts.append(script)
 
@@ -585,11 +585,11 @@ class Actions(RaspIotModule):
             InvalidParameter: if parameter is invalid
         """
         if not self.__scripts.has_key(script):
-            raise InvalidParameter('Script not found')
+            raise InvalidParameter(u'Script not found')
 
         #enable/disable script
         config = self._get_config()
-        config['scripts'][script]['disabled'] = disabled
+        config[u'scripts'][script][u'disabled'] = disabled
         self._save_config(config)
         self.__scripts[script].set_disabled(disabled)
 
@@ -624,24 +624,24 @@ class Actions(RaspIotModule):
         """
         #check parameters
         file_ext = os.path.splitext(filepath)
-        self.logger.info('uploaded file extension: %s - %s' % (str(file_ext), str(file_ext[1])))
-        if file_ext[1]!='.py':
-            self.logger.info('uploaded file extension: %s' % str(file_ext[1][1:]))
-            raise InvalidParameter('Invalid script file uploaded (only python script are supported)')
+        self.logger.info(u'uploaded file extension: %s - %s' % (unicode(file_ext), unicode(file_ext[1])))
+        if file_ext[1]!=u'.py':
+            self.logger.info(u'uploaded file extension: %s' % unicode(file_ext[1][1:]))
+            raise InvalidParameter(u'Invalid script file uploaded (only python script are supported)')
 
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
             path = os.path.join(Actions.SCRIPTS_PATH, name)
-            self.logger.info('Name=%s path=%s' % (name, path))
+            self.logger.info(u'Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
-            self.logger.info('File "%s" uploaded successfully' % name)
+            self.logger.info(u'File "%s" uploaded successfully' % name)
             #reload scripts
             self.__load_scripts()
         else:
             #file doesn't exists
-            self.logger.error('Script file "%s" doesn\'t exist' % filepath)
-            raise Exception('Script file "%s"  doesn\'t exists' % filepath)
+            self.logger.error(u'Script file "%s" doesn\'t exist' % filepath)
+            raise Exception(u'Script file "%s"  doesn\'t exists' % filepath)
 
     def download_script(self, script):
         """
@@ -662,7 +662,7 @@ class Actions(RaspIotModule):
             return filepath
         else:
             #script doesn't exist, raise exception
-            raise Exception('Script "%s" doesn\'t exist' % script)
+            raise Exception(u'Script "%s" doesn\'t exist' % script)
 
     def debug_script(self, script, event_name=None, event_values=None):
         """
@@ -677,10 +677,10 @@ class Actions(RaspIotModule):
             InvalidParameter
         """
         if not self.__scripts.has_key(script):
-            raise InvalidParameter('Unknown script "%s"' % script)
+            raise InvalidParameter(u'Unknown script "%s"' % script)
         path = os.path.join(Actions.SCRIPTS_PATH, script)
         if not os.path.exists(path):
-            raise InvalidParameter('Script "%s" does not exist' % script)
+            raise InvalidParameter(u'Script "%s" does not exist' % script)
         
         #TODO handle event
         debug = Script(os.path.join(Actions.SCRIPTS_PATH, script), self.push, False, True)
@@ -698,15 +698,15 @@ class Actions(RaspIotModule):
             MissingParameter, InvalidParameter
         """
         if old_script is None or len(old_script)==0:
-            raise MissingParameter('Old_script parameter is missing')
+            raise MissingParameter(u'Old_script parameter is missing')
         if new_script is None or len(new_script)==0:
-            raise MissingParameter('New_script parameter is missing')
+            raise MissingParameter(u'New_script parameter is missing')
         if old_script==new_script:
-            raise InvalidParameter('Script names must be differents')
+            raise InvalidParameter(u'Script names must be differents')
         if not self.__scripts.has_key(old_script):
-            raise InvalidParameter('Script "%s" does not exist' % old_script)
+            raise InvalidParameter(u'Script "%s" does not exist' % old_script)
         if self.__scripts.has_key(new_script):
-            raise InvalidParameter('Script "%s" already exists' % new_script)
+            raise InvalidParameter(u'Script "%s" already exists' % new_script)
 
         #rename script in filesystem
         shutil.move(os.path.join(Actions.SCRIPTS_PATH, old_script), os.path.join(Actions.SCRIPTS_PATH, new_script))
@@ -714,9 +714,9 @@ class Actions(RaspIotModule):
 
         #rename script in config
         config = self._get_config()
-        old = config['scripts'][old_script]
-        config['scripts'][new_script] = old
-        del config['scripts'][old_script]
+        old = config[u'scripts'][old_script]
+        config[u'scripts'][new_script] = old
+        del config[u'scripts'][old_script]
         self._save_config(config)
 
         #reload scripts
