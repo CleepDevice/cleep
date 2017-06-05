@@ -556,10 +556,10 @@ class System(RaspIotModule):
         """
         console = Console()
         res = console.command(u'/sbin/iwconfig %s 2>&1' % interface)
-        if res['error'] or res[u'killed'] or len(res[u'output'])==0:
+        if res['error'] or res[u'killed'] or len(res[u'stdout'])==0:
             return False
 
-        if res[u'output'][0].lower().find(u'no wireless')==-1:
+        if res[u'stdout'][0].lower().find(u'no wireless')==-1:
             return False
 
         return True
