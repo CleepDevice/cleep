@@ -92,6 +92,20 @@ var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Install onewire driver
+     */
+    self.installOnewire = function() {
+        return rpcService.sendCommand('install_onewire', 'sensors');
+    };
+
+    /**
+     * Uninstall onewire driver
+     */
+    self.uninstallOnewire = function() {
+        return rpcService.sendCommand('uninstall_onewire', 'sensors');
+    };
+
+    /**
      * Catch motion on event
      */
     $rootScope.$on('sensors.motion.on', function(event, uuid, params) {

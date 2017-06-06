@@ -7,6 +7,8 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
     var sensorsController = [function() {
         var self = this;
         self.raspiGpios = [];
+        self.driverOnewire = false;
+        self.installingDriver = false;
         self.devices = raspiotService.devices;
         self.name = '';
         self.selectedGpios = [{'gpio':null, 'label':'wire'}];
@@ -209,6 +211,33 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
                     //fill onewire devices
                     self.onewires = resp.data;
                     self.onewire = self.onewires[0];
+
+                    //toast
+                    if( self.onewires.length===0 )
+                    {
+                        toast.info('No device detected. Please check connections or reboot raspberry if not already done.');
+                    }
+                });
+        };
+
+        /**
+         * Install onewire driver
+         */
+        self.installOnewire = function()
+        {
+            self.installingDriver = true;
+
+            sensorsService.installOnewire()
+                .then(function(resp) {
+                    //reload system config to handle restart
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function() {
+                    self.driverOnewire = true;
+                    toast.success('Driver installed. Please restart.');
+                })
+                .finally(function() {
+                    self.installingDriver = false;
                 });
         };
 
@@ -219,11 +248,12 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
             raspiotService.getModuleConfig('sensors')
                 .then(function(config) {
                     self.raspiGpios = config.raspi_gpios;
+                    self.driverOnewire = config.drivers.onewire;
                 });
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle_outline',
+                icon: 'add',
                 callback: self.openAddDialog,
                 tooltip: 'Add sensor'
             }];

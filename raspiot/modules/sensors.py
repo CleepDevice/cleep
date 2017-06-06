@@ -6,6 +6,8 @@ import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
 from raspiot.raspiot import RaspIotModule
 from raspiot.libs.task import Task
+from raspiot.libs.configtxt import ConfigTxt
+from raspiot.libs.etcmodules import EtcModules
 import time
 import glob
 
@@ -50,6 +52,7 @@ class Sensors(RaspIotModule):
         #members
         self.__tasks = {}
         self.raspi_gpios = {}
+        self.driver_onewire = False
 
     def _start(self):
         """
@@ -57,6 +60,9 @@ class Sensors(RaspIotModule):
         """
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()
+        
+        #onewire driver
+        self.is_onewire_installed()
 
         #launch temperature reading tasks
         devices = self.get_module_devices()
@@ -162,6 +168,60 @@ class Sensors(RaspIotModule):
                 if sensor[u'type']==self.TYPE_MOTION:
                     #motion sensor
                     self.__process_motion_sensor(event, sensor)
+
+    def is_onewire_installed(self):
+        """
+        Return True if onewire drivers are installed
+
+        Returns:
+            bool: True if onewire drivers installed
+        """
+        configtxt = ConfigTxt()
+        etcmodules = EtcModules()
+
+        installed_configtxt = configtxt.is_onewire_enabled()
+        installed_etcmodules = etcmodules.is_onewire_enabled()
+        self.logger.info('========>installed_configtxt=%s installed_etcmodules=%s' % (installed_configtxt, installed_etcmodules))
+
+        self.driver_onewire = installed_configtxt and installed_etcmodules
+
+        return self.driver_onewire
+
+    def install_onewire(self):
+        """
+        Install onewire drivers
+
+        Returns:
+            bool: True if onewire drivers installed successfully
+        """
+        configtxt = ConfigTxt()
+        etcmodules = EtcModules()
+        result = etcmodules.enable_onewire() and configtxt.enable_onewire()
+        self.driver_onewire = result
+
+        #send event
+        if result:
+            self.send_event('sensors.system.needreboot', to='system')
+
+        return result
+
+    def uninstall_onewire(self):
+        """
+        Uninstall onewire drivers
+
+        Returns:
+            bool: True if onewire drivers uninstalled successfully
+        """
+        configtxt = ConfigTxt()
+        etcmodules = EtcModules()
+        result = etcmodules.disable_onewire() and configtxt.disable_onewire()
+        self.driver_onewire = result
+
+        #send event
+        if result:
+            self.send_event('sensors.system.needreboot', to='system')
+
+        return result
 
     def get_onewire_devices(self):
         """
@@ -350,6 +410,10 @@ class Sensors(RaspIotModule):
         """
         config = {}
         config[u'raspi_gpios'] = self.get_raspi_gpios()
+        config[u'drivers'] = {
+            u'onewire': self.driver_onewire
+        }
+
         return config
 
     def get_raspi_gpios(self):

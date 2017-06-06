@@ -14,6 +14,7 @@
         </md-toolbar>
 
         <md-dialog-content layout-padding>
+        <div class="md-dialog-content">
 
             <!-- name -->
             <md-input-container class="md-block" flex-gt-sm>
@@ -31,12 +32,6 @@
 
             <!-- motion -->
             <div ng-if="sensorsCtl.type===sensorsCtl.TYPE_MOTION_GENERIC">
-                <!--<md-input-container class="md-block" flex-gt-sm>
-                    <label>Gpio</label>
-                    <md-select ng-model="sensorsCtl.gpio" ng-disabled="sensorsCtl.updateDevice">
-                        <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
-                    </md-select>
-                </md-input-container>-->
                 <div gpios-pins-config readonly="sensorsCtl.updateDevice" selected-gpios="sensorsCtl.selectedGpios"></div>
                 <md-input-container class="md-block" flex-gt-sm>
                     <md-checkbox ng-model="sensorsCtl.reverted" aria-label="Revert state">
@@ -47,7 +42,21 @@
 
             <!-- onewire temperature -->
             <div ng-if="sensorsCtl.type===sensorsCtl.TYPE_TEMPERATURE_ONEWIRE">
-                <div layout-gt-sm="row">
+
+                <!-- driver not installed -->
+                <div layout-gt-sm="row" ng-if="!sensorsCtl.driverOnewire">
+                    <div class="padding-row-with-input">
+                        <span>Onewire driver is not installed</span>
+                    </div>
+                    <div>
+                        <md-button class="md-raised md-primary" ng-disabled="sensorsCtl.installingDriver" ng-click="sensorsCtl.installOnewire()">
+                            Install drivers
+                        </md-button>
+                    </div>
+                </div>
+
+                <!-- driver installed -->
+                <div layout-gt-sm="row" ng-if="sensorsCtl.driverOnewire">
                     <div>
                         <md-button class="md-raised md-primary" ng-disabled="sensorsCtl.updateDevice" ng-click="sensorsCtl.getOnewires()">
                             Scan onewire bus
@@ -59,14 +68,8 @@
                             <md-option ng-disabled="onewire.disable" ng-repeat="onewire in sensorsCtl.onewires" ng-value="onewire">{{onewire.device}}</md-option>
                         </md-select>
                     </md-input-container>
-                    <!--<md-input-container class="md-block" flex-gt-sm>
-                        <label>Onewire gpio</label>
-                        <md-select ng-model="sensorsCtl.gpio" ng-disabled="sensorsCtl.updateDevice">
-                            <md-option ng-repeat="(gpio,pin) in sensorsCtl.raspiGpios" ng-value="gpio">{{gpio}}</md-option>
-                        </md-select>
-                    </md-input-container>-->
                 </div>
-                <div layout-gt-sm="row">
+                <div layout-gt-sm="row" ng-if="sensorsCtl.driverOnewire">
                     <md-input-container class="md-block" flex-gt-sm>
                         <label>Interval</label>
                         <md-select ng-model="sensorsCtl.interval">
@@ -84,8 +87,10 @@
                         </md-select>
                     </md-input-container>
                 </div>
+
             </div>
 
+        </div>
         </md-dialog-content>
 
         <md-dialog-actions layout="row">
