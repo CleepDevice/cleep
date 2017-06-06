@@ -403,12 +403,12 @@ class Network(RaspIotModule):
             network_wpa2 = False
             encryption = None
             signal_level = None
-            groups = re.findall(regex, '\n'.join(res[u'stdout']))
+            groups = re.findall(regex, u'\n'.join(res[u'stdout']))
             self.logger.debug(groups)
             for group in groups:
                 group = filter(None, group)
                 self.logger.debug(group)
-                if group[0] is not None and len(group[0])>0:
+                if group[0] is not None and len(group[0])>0 and len(group)>=2:
                     if group[0]==u'ESSID':
                         essid = group[1]
                     elif group[0]==u'IE' and group[1].lower().find(u'wpa2'):
