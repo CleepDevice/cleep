@@ -13,10 +13,11 @@ var RaspIot = angular.module(
 var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, systemService, blockUI, toast) {
 
     var self = this;
-    self.restart = false;
+    self.needRestart = false;
+    self.needReboot = false;
+    self.rebooting = false;
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
-    self.reboot = false;
 
     /**
      * Handle polling
@@ -25,15 +26,18 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     {
          rpcService.poll()
             .then(function(response) {
-                if( self.reboot )
+                if( self.rebooting )
                 {
                     //system has started
                     toast.success('System has rebooted.');
-                    self.reboot = false;
+                    self.rebooting = false;
+                    self.needRestart = false;
+                    self.needReboot = false;
 
-                    //reload module configs
-                    self.loadModules();
+                    //reload system module config
+                    raspiotService.reloadModuleConfig();
 
+                    //unblock ui
                     blockUI.stop();
                 }
 
@@ -44,12 +48,12 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                         //handle system events
                         if( response.data.event.endsWith('reboot') )
                         {
-                            self.reboot = true;
+                            self.rebooting = true;
                             blockUI.start('System is rebooting. It might take some time.');
                         }
                         else if( response.data.event.endsWith('restart') )
                         {
-                            self.reboot = true;
+                            self.rebooting = true;
                             blockUI.start('System is restarting. Please wait few seconds.');
                         }
                     }
@@ -67,7 +71,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 window.setTimeout(self.polling, 0);
             }, 
             function(err) {
-                if( !self.reboot )
+                if( !self.rebooting )
                 {
                     //error occured, differ next polling
                     self.nextPollingTimeout *= 2;
@@ -134,6 +138,22 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     };
 
     /**
+     * Restart raspiot
+     */
+    self.restart = function()
+    {
+        systemService.restart();
+    };
+
+    /**
+     * Reboot raspberry
+     */
+    self.reboot = function()
+    {
+        systemService.reboot();
+    };
+
+    /**
      * Init main controller
      */
     self.init = function()
@@ -156,7 +176,8 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         function(newValue) {
             if( !angular.isUndefined(newValue) )
             {
-                self.restart = newValue.config.needrestart;
+                self.needRestart = newValue.config.needrestart;
+                self.needReboot = newValue.config.needreboot;
             }
         }
     );

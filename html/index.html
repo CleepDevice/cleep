@@ -24,8 +24,11 @@
                     Cleep
                 </h2>
                 <span flex></span>
-                <md-button ng-if="mainCtl.restart" class="md-raised md-accent" aria-label="Restart">
+                <md-button ng-if="mainCtl.needRestart && !mainCtl.needReboot" class="md-raised md-accent" aria-label="Restart" ng-click="mainCtl.restart()">
                     Restart to apply changes
+                </md-button>
+                <md-button ng-if="mainCtl.needReboot" class="md-raised md-accent" aria-label="Reboot" ng-click="mainCtl.reboot()">
+                    Reboot to load changes
                 </md-button>
                 <md-button href="#!dashboard" class="md-icon-button" aria-label="Dashboard">
                     <md-tooltip md-direction="bottom">Dashboard</md-tooltip>
