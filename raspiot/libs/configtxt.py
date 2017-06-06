@@ -46,7 +46,7 @@ class ConfigTxt(Config):
         """
         entries = {}
 
-        results = self.search(u'(#?)%s=(.*?)\s' % key)
+        results = self.search(u'(#?)%s=(.*?)(\s|\Z)' % key)
         for group, groups in results.iteritems():
             disabled = False
             if groups[0]==u'#':
@@ -215,8 +215,7 @@ coucou
 dtparam=audio=on
 
 # Enable 1wire
-#dtoverlay=w1-gpio
-""")
+#dtoverlay=w1-gpio""")
         fd.close()
         
         self.c = ConfigTxt()
