@@ -105,7 +105,8 @@ class EtcModules(Config):
 
             return True
 
-        return False
+        #module already enabled
+        return True
 
     def __disable_module(self, module):
         """
@@ -115,7 +116,7 @@ class EtcModules(Config):
             module (string): module to disable
 
         Returns:
-            bool: Return True if module disabled. False if module already disabled
+            bool: Return True if module disabled
         """
         entries = self.__get_entries()
         if entries.has_key(module):
@@ -126,7 +127,8 @@ class EtcModules(Config):
 
             return True
 
-        return False
+        #module already disabled
+        return True
 
     def is_onewire_enabled(self):
         """
