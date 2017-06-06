@@ -46,10 +46,6 @@ class CmdlineTxt(Config):
 
         results = self.search(u'(.*?)(?:=(.*?))?(?:\s|\Z)')
         for group, groups in results.iteritems():
-            #filter
-            if group is None or len(group)==0:
-                continue
-
             #add new entry
             entry = {
                 u'group': group,
@@ -71,9 +67,9 @@ class CmdlineTxt(Config):
         content = u''
         for key, entry in entries.iteritems():
             if entry['value'] is not None:
-                content += '%s=%s ' % (entry['key'], entry['value'])
+                content += u'%s=%s ' % (entry[u'key'], entry[u'value'])
             else:
-                content += '%s ' % entry['key']
+                content += u'%s ' % entry[u'key']
 
         #write content
         fd = self._open(self.MODE_WRITE)

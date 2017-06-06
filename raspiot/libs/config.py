@@ -73,17 +73,28 @@ class Config():
             self.__fd.close()
             self.__fd = None
 
-    def search(self, pattern):
+    def search(self, pattern, options=re.UNICODE | re.MULTILINE):
         """
+        Search all pattern matches in config files
+
+        Args:
+            pattern (string): search pattern
+            options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+
+        Returns:
+            dict: list of matches::
+                {
+                    group (string): subgroups (tuple)
+                }
         """
         results = {}
         fd = self._open()
         content = fd.read()
         self._close()
-        matches = re.finditer(pattern, content, re.UNICODE | re.MULTILINE)
+        matches = re.finditer(pattern, content, options)
 
         for matchNum, match in enumerate(matches):
-            if len(match.groups())>0:
+            if len(match.group())>0 and len(match.groups())>0:
                 results[match.group()] = match.groups()
 
         return results
