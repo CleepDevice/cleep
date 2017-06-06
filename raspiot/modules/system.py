@@ -63,6 +63,7 @@ class System(RaspIotModule):
         self.__monitoring_disks_task = None
         self.__process = None
         self.__need_restart = False
+        self.__need_reboot = False
 
     def _start(self):
         """
@@ -293,6 +294,7 @@ class System(RaspIotModule):
         config[u'monitoring'] = self.get_monitoring()
         config[u'uptime'] = self.get_uptime()
         config[u'needrestart'] = self.__need_restart
+        config[u'needreboot'] = self.__need_reboot
 
         return config
 
@@ -317,6 +319,21 @@ class System(RaspIotModule):
                 devices[uuid].update(data)
 
         return devices
+
+    def event_received(self, event):
+        """
+        Watch for specific event
+
+        Args:
+            event (MessageRequest): event data
+        """
+        if event[u'event'].endswith('system.needrestart'):
+            #a module requests a raspiot restart, enable flag
+            self.__need_restart = True
+
+        elif event[u'event'].endswith('system.needreboot'):
+            #a module requests a reboot, enable flag
+            self.__need_reboot = True
 
     def get_time(self):
         """
