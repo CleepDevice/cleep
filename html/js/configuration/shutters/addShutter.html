@@ -14,7 +14,7 @@
         </md-toolbar>
 
         <md-dialog-content>
-        <md-content layout-padding>
+        <div class="md-dialog-content">
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Name</label>
                 <input ng-model="shuttersCtl.name">
@@ -51,7 +51,7 @@
                 <label>Delay (in seconds)</label>
                 <input type="number" min="2" max="120" ng-model="shuttersCtl.delay">
             </md-input-container>
-        </md-content>
+        </div>
         </md-dialog-content>
 
         <md-dialog-actions layout="row">
