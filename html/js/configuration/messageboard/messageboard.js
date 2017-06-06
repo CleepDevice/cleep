@@ -151,7 +151,7 @@ var messageboardDirective = function($rootScope, raspiotService, toast, messageb
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle_outline',
+                icon: 'add',
                 callback: self.openAddDialog,
                 tooltip: 'Add message'
             }]; 

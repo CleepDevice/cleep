@@ -140,7 +140,7 @@ var shuttersConfigDirective = function($rootScope, shuttersService, raspiotServi
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle_outline',
+                icon: 'add',
                 callback: self.openAddDialog,
                 tooltip: 'Add shutter'
             }]; 

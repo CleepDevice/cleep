@@ -136,7 +136,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add_circle_outline',
+                icon: 'add',
                 callback: self.openAddDialog,
                 tooltip: 'Add gpio'
             }]; 
