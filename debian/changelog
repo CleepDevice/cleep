@@ -5,6 +5,7 @@ raspiot (0.0.8) UNRELEASED; urgency=low
   providers/profiles/formatters
   * Better unicode handling to prevent encoding errors
   * Handle /boot/config.txt file
+  * Handle /boot/cmdline.txt file
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
 

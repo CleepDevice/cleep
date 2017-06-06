@@ -18,10 +18,6 @@ class ConfigTxt(Config):
 
     CONF = u'/boot/config.txt'
 
-    MODE_WRITE = u'w'
-    MODE_READ = u'r'
-    MODE_APPEND = u'a'
-
     KEY_DTOVERLAY = u'dtoverlay'
 
     ENTRY_ONEWIRE = u'w1-gpio'
@@ -228,7 +224,6 @@ dtparam=audio=on
 
     def tearDown(self):
         os.remove('config.txt')
-        pass
 
     def test_enable_then_disable_onewire(self):
         self.assertFalse(self.c.is_onewire_enabled())

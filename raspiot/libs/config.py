@@ -39,7 +39,7 @@ class Config():
         """
         Destructor
         """
-        self.__close()
+        self._close()
 
     def __get_backup_path(self, path):
         """
@@ -49,7 +49,7 @@ class Config():
         filename = os.path.split(base)[1]
         return os.path.join(base_path, '%s.backup%s' % (filename, ext))
 
-    def __open(self, mode=u'r'):
+    def _open(self, mode=u'r'):
         """
         Open config file
 
@@ -65,7 +65,7 @@ class Config():
         self.__fd = io.open(self.CONF, mode, encoding=u'utf-8')
         return self.__fd
 
-    def __close(self):
+    def _close(self):
         """
         Close file descriptor is still opened
         """
@@ -77,9 +77,9 @@ class Config():
         """
         """
         results = {}
-        fd = self.__open()
+        fd = self._open()
         content = fd.read()
-        self.__close()
+        self._close()
         matches = re.finditer(pattern, content, re.UNICODE | re.MULTILINE)
 
         for matchNum, match in enumerate(matches):
@@ -98,13 +98,17 @@ class Config():
         Returns:
             bool: True if line commented
         """
+        if self.comment_tag is None:
+            #no way to add comment
+            return False
         if not comment.startswith(self.comment_tag):
+            #line already uncommented
             return False
 
         #read file content
-        fd = self.__open()
+        fd = self._open()
         lines = fd.readlines()
-        self.__close()
+        self._close()
 
         #get line indexes to remove
         found = False
@@ -118,9 +122,9 @@ class Config():
 
         if found:
             #write config file
-            fd = self.__open(self.MODE_WRITE)
+            fd = self._open(self.MODE_WRITE)
             fd.write(u''.join(lines))
-            self.__close()
+            self._close()
 
             return True
 
@@ -137,13 +141,17 @@ class Config():
         Returns:
             bool: True if line commented
         """
+        if self.comment_tag is None:
+            #no way to add comment
+            return False
         if comment.startswith(self.comment_tag):
+            #line already commented
             return False
 
         #read file content
-        fd = self.__open()
+        fd = self._open()
         lines = fd.readlines()
-        self.__close()
+        self._close()
 
         #get line indexes to remove
         found = False
@@ -157,9 +165,9 @@ class Config():
 
         if found:
             #write config file
-            fd = self.__open(self.MODE_WRITE)
+            fd = self._open(self.MODE_WRITE)
             fd.write(u''.join(lines))
-            self.__close()
+            self._close()
 
             return True
 
@@ -176,9 +184,9 @@ class Config():
         Returns:
             bool: True if at least one line removed, False otherwise
         """
-        fd = self.__open()
+        fd = self._open()
         lines = fd.readlines()
-        self.__close()
+        self._close()
 
         #get line indexes to remove
         indexes = []
@@ -198,9 +206,9 @@ class Config():
 
         if len(indexes)>0:
             #write config file
-            fd = self.__open(self.MODE_WRITE)
+            fd = self._open(self.MODE_WRITE)
             fd.write(u''.join(lines))
-            self.__close()
+            self._close()
 
             return True
 
@@ -219,9 +227,9 @@ class Config():
             int: number of lines deleted (blank and commented lines not counted)
         """
         #read content
-        fd = self.__open()
+        fd = self._open()
         lines = fd.readlines()
-        self.__close()
+        self._close()
 
         #get line indexes to remove
         start = False
@@ -237,7 +245,7 @@ class Config():
             elif count==4:
                 #number of line to delete reached, stop
                 break
-            elif start and line.strip().startswith(self.comment_tag):
+            elif start and self.comment_tag is not None and line.strip().startswith(self.comment_tag):
                 #commented line
                 continue
             elif start and re.match(regex_line, line):
@@ -254,9 +262,9 @@ class Config():
 
         #write config file
         if len(indexes)>0:
-            fd = self.__open(self.MODE_WRITE)
+            fd = self._open(self.MODE_WRITE)
             fd.write(u''.join(lines))
-            self.__close()
+            self._close()
 
         return count
         
@@ -268,20 +276,20 @@ class Config():
             lines (list): list of lines to add
         """
         #read content
-        fd = self.__open()
+        fd = self._open()
         content = fd.readlines()
-        self.__close()
+        self._close()
 
         #add new line
         if len(lines[len(lines)-1])!=0:
-            content.append('\n')
+            content.append(u'\n')
         for line in lines:
             content.append(line)
 
         #write config file
-        fd = self.__open(self.MODE_WRITE)
+        fd = self._open(self.MODE_WRITE)
         fd.write(u''.join(content))
-        self.__close()
+        self._close()
 
         return True
 
