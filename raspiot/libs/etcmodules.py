@@ -18,11 +18,11 @@ class EtcModules(Config):
     MODULE_ONEWIRETHERM = u'w1-therm'
     MODULE_ONEWIREGPIO = u'w1-gpio'
 
-    def __init__(self):
+    def __init__(self, backup=True):
         """
         Constructor
         """
-        Config.__init__(self, self.CONF, u'#')
+        Config.__init__(self, self.CONF, u'#', backup)
 
     def __get_entries(self):
         """
@@ -52,23 +52,6 @@ class EtcModules(Config):
 
         return entries
 
-    def __save_entries(self, entries):
-        """
-        Save all specified entries
-
-        Args:
-            entries (dict): dict as returned with __get_entries
-        """
-        #prepare content
-        content = u''
-        for key, entry in entries.iteritems():
-            content += u'%s\n' % entry['module']
-
-        #write content
-        fd = self._open(self.MODE_WRITE)
-        fd.write(content)
-        self._close()
-
     def __is_module_enabled(self, module):
         """
         Return True if module is enabled
@@ -94,16 +77,7 @@ class EtcModules(Config):
         """
         entries = self.__get_entries()
         if not entries.has_key(module):
-            #add entry
-            entries[module] = {
-                u'group': u'%s' % (module),
-                u'module': module
-            }
-
-            #save changes
-            self.__save_entries(entries)
-
-            return True
+            return self.add([u'%s' % module])
 
         #module already enabled
         return True
@@ -120,12 +94,7 @@ class EtcModules(Config):
         """
         entries = self.__get_entries()
         if entries.has_key(module):
-            #delete entry
-            del entries[module]
-            #save changes
-            self.__save_entries(entries)
-
-            return True
+            return self.remove([u'%s' % module])
 
         #module already disabled
         return True
@@ -171,15 +140,15 @@ w1-gpio
 bcm4522""")
         fd.close()
         
-        self.e = EtcModules()
+        self.e = EtcModules(backup=False)
         self.e.CONF = 'modules.conf'
 
     def tearDown(self):
         os.remove('modules.conf')
 
-    def test_console(self):
+    def test_onewire(self):
         self.assertTrue(self.e.is_onewire_enabled())
-        self.assertFalse(self.e.enable_onewire())
+        self.assertTrue(self.e.enable_onewire())
         self.assertTrue(self.e.disable_onewire())
         self.assertFalse(self.e.is_onewire_enabled())
         self.assertTrue(self.e.enable_onewire())

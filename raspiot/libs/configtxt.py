@@ -15,6 +15,7 @@ class ConfigTxt(Config):
     Notes:
         * https://www.raspberrypi.org/documentation/configuration/config-txt/README.md
         * http://elinux.org/RPiconfig
+        * http://raspi.tv/how-to-enable-spi-on-the-raspberry-pi
     """
 
     CONF = u'/boot/config.txt'
@@ -29,11 +30,11 @@ class ConfigTxt(Config):
     DTPARAM_I2C = u'i2c_arm'
     DTPARAM_I2C_VALUE = u'on'
 
-    def __init__(self):
+    def __init__(self, backup=True):
         """
         Constructor
         """
-        Config.__init__(self, self.CONF, u'#')
+        Config.__init__(self, self.CONF, u'#', backup)
 
     def __get_entries(self, key):
         """
@@ -118,7 +119,7 @@ class ConfigTxt(Config):
                 return True
             else:
                 #add new dtoverlay entry
-                return self.add(u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay))
+                return self.add([u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay)])
 
         return False
 
@@ -224,7 +225,7 @@ class ConfigTxt(Config):
                 return True
             else:
                 #add new dtparam entry
-                return self.add(u'%s=%s' % (self.KEY_DTPARAM, key))
+                return self.add([u'%s=%s' % (self.KEY_DTPARAM, key)])
 
         return False
 
@@ -340,7 +341,7 @@ dtparam=audio=on
 #dtoverlay=w1-gpio""")
         fd.close()
         
-        self.c = ConfigTxt()
+        self.c = ConfigTxt(backup=False)
         self.c.CONF = 'config.txt'
 
     def tearDown(self):

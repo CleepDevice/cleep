@@ -6,6 +6,7 @@ import unittest
 import os
 import re
 import io
+import shutil
 
 class Config():
     """
@@ -22,24 +23,46 @@ class Config():
     MODE_READ = u'r'
     MODE_APPEND = u'a'
 
-    def __init__(self, path, comment_tag):
+    def __init__(self, path, comment_tag, backup=True):
         """
         Constructor
 
         Args:
             path (string): configuration file path
             comment_tag (string): comment tag
+            backup (bool): auto backup original file (default True)
         """
         self.path = path
         self.backup_path = self.__get_backup_path(path)
         self.comment_tag = comment_tag
         self.__fd = None
 
+        #backup original file
+        if backup:
+            self.__make_backup()
+
     def __del__(self):
         """
         Destructor
         """
         self._close()
+
+    def __make_backup(self):
+        """
+        Backup original file if necessary
+        """
+        if not os.path.exists(self.backup_path):
+            shutil.copy2(self.path, self.backup_path)
+
+    def restore_backup(self):
+        """
+        Overwrite original config file by backup one
+        """
+        if os.path.exists(self.backup_path):
+            shutil.copy2(self.backup_path, self.path)
+            return True
+
+        return False
 
     def __get_backup_path(self, path):
         """
@@ -196,6 +219,10 @@ class Config():
         Returns:
             bool: True if at least one line removed, False otherwise
         """
+        #check params
+        if not isinstance(removes, list):
+            raise Exception('Removes parameter must be list of string')
+
         fd = self._open()
         lines = fd.readlines()
         self._close()
@@ -287,6 +314,10 @@ class Config():
         Args:
             lines (list): list of lines to add
         """
+        #check params
+        if not isinstance(lines, list):
+            raise Exception('Lines parameter must be list of string')
+
         #read content
         fd = self._open()
         content = fd.readlines()
