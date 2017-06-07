@@ -10,11 +10,11 @@ import os
 import signal
 import logging
 
-class InfiniteConsole(Thread):
+class EndlessConsole(Thread):
     """
     Helper class to execute long command line (system update...)
     This kind of console doesn't kill command line after timeout. It just let command line running
-    until end of it or if user explicitely requests to kill (or stop) it.
+    until end of it or if user explicitely requests to stop (or kill) it.
     """
 
     def __init__(self, command, callback, logger):
