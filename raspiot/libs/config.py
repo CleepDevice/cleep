@@ -94,8 +94,9 @@ class Config():
         matches = re.finditer(pattern, content, options)
 
         for matchNum, match in enumerate(matches):
-            if len(match.group())>0 and len(match.groups())>0:
-                results[match.group()] = match.groups()
+            group = match.group().strip()
+            if len(group)>0 and len(match.groups())>0:
+                results[group] = match.groups()
 
         return results
 

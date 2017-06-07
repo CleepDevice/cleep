@@ -13,15 +13,21 @@ class ConfigTxt(Config):
     Helper class to update and read /boot/config.txt file
 
     Notes:
-        https://www.raspberrypi.org/documentation/configuration/config-txt/README.md
+        * https://www.raspberrypi.org/documentation/configuration/config-txt/README.md
+        * http://elinux.org/RPiconfig
     """
 
     CONF = u'/boot/config.txt'
 
     KEY_DTOVERLAY = u'dtoverlay'
+    KEY_DTPARAM = u'dtparam'
 
-    ENTRY_ONEWIRE = u'w1-gpio'
-    ENTRY_LIRC = u'lirc-rpi'
+    DTOVERLAY_ONEWIRE = u'w1-gpio'
+    DTOVERLAY_LIRC = u'lirc-rpi'
+    DTPARAM_SPI = u'spi'
+    DTPARAM_SPI_VALUE = u'on'
+    DTPARAM_I2C = u'i2c_arm'
+    DTPARAM_I2C_VALUE = u'on'
 
     def __init__(self):
         """
@@ -63,6 +69,12 @@ class ConfigTxt(Config):
         return entries
 
     def __is_dtoverlay_enabled(self, dtoverlay):
+        """
+        Is DTOVERLAY is enabled
+
+        Returns:
+            bool: True if specified dtoverlay enabled
+        """
         entries = self.__get_entries(self.KEY_DTOVERLAY)
 
         if entries.has_key(dtoverlay):
@@ -82,18 +94,18 @@ class ConfigTxt(Config):
 
         if entries.has_key(dtoverlay):
             if entries[dtoverlay][u'disabled']:
-                #onewire is disabled
+                #dtoverlay is disabled
                 if disable:
-                    #onewire already disabled
+                    #dtoverlay already disabled
                     return True
                 else:
                     #uncomment line
                     return self.uncomment(entries[dtoverlay]['group'])
 
             else:
-                #onewire not disabled
+                #dtoverlay not disabled
                 if disable:
-                    #disable onewire
+                    #disable dtoverlay
                     return self.comment(entries[dtoverlay]['group'])
                 else:
                     #entry already enabled
@@ -105,7 +117,7 @@ class ConfigTxt(Config):
                 #do nothing
                 return True
             else:
-                #add new onewire entry
+                #add new dtoverlay entry
                 return self.add(u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay))
 
         return False
@@ -117,40 +129,151 @@ class ConfigTxt(Config):
         Returns:
             bool: True if onewire enabled
         """
-        return self.__is_dtoverlay_enabled(self.ENTRY_ONEWIRE)
+        return self.__is_dtoverlay_enabled(self.DTOVERLAY_ONEWIRE)
 
     def enable_onewire(self):
         """
         Enable onewire support
         """
-        return self.__enable_dtoverlay(self.ENTRY_ONEWIRE)
+        return self.__enable_dtoverlay(self.DTOVERLAY_ONEWIRE)
 
     def disable_onewire(self):
         """
         Disable onewire support
         """
-        return self.__enable_dtoverlay(self.ENTRY_ONEWIRE, True)
+        return self.__enable_dtoverlay(self.DTOVERLAY_ONEWIRE, True)
 
     def is_lirc_enabled(self):
         """
         Return True if LIRC is enabled
 
         Returns:
-            bool: True if onewire enabled
+            bool: True if LIRC enabled
         """
-        return self.__is_dtoverlay_enabled(self.ENTRY_LIRC)
+        return self.__is_dtoverlay_enabled(self.DTOVERLAY_LIRC)
 
     def enable_lirc(self):
         """
         Enable LIRC support
         """
-        return self.__enable_dtoverlay(self.ENTRY_LIRC)
+        return self.__enable_dtoverlay(self.DTOVERLAY_LIRC)
 
     def disable_lirc(self):
         """
         Disable LIRC support
         """
-        return self.__enable_dtoverlay(self.ENTRY_LIRC, True)
+        return self.__enable_dtoverlay(self.DTOVERLAY_LIRC, True)
+
+    def __is_dtparam_enabled(self, dtparam, dtvalue):
+        """
+        Is DTPARAM is enabled
+
+        Returns:
+            bool: True if specified dtparam enabled
+        """
+        entries = self.__get_entries(self.KEY_DTPARAM)
+        
+        if dtvalue is not None:
+            key = u'%s=%s' % (dtparam, dtvalue)
+        else:
+            key = u'%s' % dtparam
+
+        if entries.has_key(key):
+            return not entries[key][u'disabled']
+        else:
+            return False
+
+    def __enable_dtparam(self, dtparam, dtvalue, disable=False):
+        """
+        Enable/disable specified dtparam
+
+        Args:
+            dtparam (string): existing dtparam
+            disable (bool): True to disable instead of enable
+        """
+        entries = self.__get_entries(self.KEY_DTPARAM)
+
+        if dtvalue is not None:
+            key = u'%s=%s' % (dtparam, dtvalue)
+        else:
+            key = u'%s' % dtparam
+
+        if entries.has_key(key):
+            if entries[key][u'disabled']:
+                #dtparam is disabled
+                if disable:
+                    #dtparam already disabled
+                    return True
+                else:
+                    #uncomment line
+                    return self.uncomment(entries[key]['group'])
+
+            else:
+                #dtparam not disabled
+                if disable:
+                    #disable dtparam
+                    return self.comment(entries[key]['group'])
+                else:
+                    #entry already enabled
+                    return True
+
+        else:
+            #entry does not exist yet
+            if disable:
+                #do nothing
+                return True
+            else:
+                #add new dtparam entry
+                return self.add(u'%s=%s' % (self.KEY_DTPARAM, key))
+
+        return False
+
+    def is_spi_enabled(self):
+        """
+        Return True if SPI is enabled
+
+        Returns:
+            bool: True if SPI enabled
+        """
+        return self.__is_dtparam_enabled(self.DTPARAM_SPI, self.DTPARAM_SPI_VALUE)
+
+    def enable_spi(self):
+        """
+        Enable SPI support
+        """
+        return self.__enable_dtparam(self.DTPARAM_SPI, self.DTPARAM_SPI_VALUE)
+
+    def disable_spi(self):
+        """
+        Disable SPI support
+        """
+        return self.__enable_dtparam(self.DTPARAM_SPI, self.DTPARAM_SPI_VALUE, True)
+
+    def is_i2c_enabled(self):
+        """
+        Return True if i2c is enabled
+
+        Returns:
+            bool: True if i2c enabled
+        """
+        return self.__is_dtparam_enabled(self.DTPARAM_I2C, self.DTPARAM_I2C_VALUE)
+
+    def enable_i2c(self):
+        """
+        Enable i2c support
+        """
+        return self.__enable_dtparam(self.DTPARAM_I2C, self.DTPARAM_I2C_VALUE)
+
+    def disable_i2c(self):
+        """
+        Disable i2c support
+        """
+        return self.__enable_dtparam(self.DTPARAM_I2C, self.DTPARAM_I2C_VALUE, True)
+
+
+
+
+
 
 class configtxtTests(unittest.TestCase):
     def setUp(self):
@@ -182,7 +305,6 @@ class configtxtTests(unittest.TestCase):
 
 # uncomment if hdmi display is not detected and composite is being output
 #hdmi_force_hotplug=1
-coucou
 # uncomment to force a specific HDMI mode (this will force VGA)
 #hdmi_group=1
 #hdmi_mode=1
@@ -224,32 +346,51 @@ dtparam=audio=on
     def tearDown(self):
         os.remove('config.txt')
 
-    def test_enable_then_disable_onewire(self):
+    def test_remove_dtoverlays(self):
+        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertTrue(results.has_key(u'#dtoverlay=lirc-rpi'))
+        self.assertTrue(results.has_key(u'#dtoverlay=w1-gpio'))
+        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio']))
+        self.assertTrue(self.c.remove([u'#dtoverlay=lirc-rpi']))
+        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertFalse(results.has_key(u'#dtoverlay=lirc-rpi'))
+        self.assertFalse(results.has_key(u'#dtoverlay=w1-gpio'))
+
+    def test_add_dtoverlays(self):
+        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio', u'#dtoverlay=lirc-rpi']))
+        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertFalse(results.has_key(u'#dtoverlay=lirc-rpi'))
+        self.assertFalse(results.has_key(u'#dtoverlay=w1-gpio'))
+        self.assertTrue(self.c.add([u'dtoverlay=w1-gpio', u'dtoverlay=lirc-rpi']))
+        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertFalse(results.has_key(u'dtoverlay=lirc-rpi'))
+        self.assertFalse(results.has_key(u'dtoverlay=w1-gpio'))
+
+    def test_enable_disable_onewire(self):
         self.assertFalse(self.c.is_onewire_enabled())
         self.assertTrue(self.c.enable_onewire())
         self.assertTrue(self.c.is_onewire_enabled())
         self.assertTrue(self.c.disable_onewire())
         self.assertFalse(self.c.is_onewire_enabled())
 
-    def test_remove_dtoverlays(self):
-        results = self.c.search(u'(#?)%s=(.*?)\s' % self.c.KEY_DTOVERLAY)
-        self.assertTrue(results.has_key(u'#dtoverlay=lirc-rpi\n'))
-        self.assertTrue(results.has_key(u'#dtoverlay=w1-gpio\n'))
-        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio']))
-        self.assertTrue(self.c.remove([u'#dtoverlay=lirc-rpi']))
-        results = self.c.search(u'(#?)%s=(.*?)\s' % self.c.KEY_DTOVERLAY)
-        self.assertFalse(results.has_key(u'#dtoverlay=lirc-rpi\n'))
-        self.assertFalse(results.has_key(u'#dtoverlay=w1-gpio\n'))
+    def test_enable_disable_lirc(self):
+        self.assertFalse(self.c.is_lirc_enabled())
+        self.assertTrue(self.c.enable_lirc())
+        self.assertTrue(self.c.is_lirc_enabled())
+        self.assertTrue(self.c.disable_lirc())
+        self.assertFalse(self.c.is_lirc_enabled())
 
-    def test_add_dtoverlays(self):
-        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio', u'#dtoverlay=lirc-rpi']))
-        results = self.c.search(u'(#?)%s=(.*?)\s' % self.c.KEY_DTOVERLAY)
-        self.assertFalse(results.has_key(u'#dtoverlay=lirc-rpi\n'))
-        self.assertFalse(results.has_key(u'#dtoverlay=w1-gpio\n'))
-        self.assertTrue(self.c.add([u'dtoverlay=w1-gpio', u'dtoverlay=lirc-rpi']))
-        results = self.c.search(u'(#?)%s=(.*?)\s' % self.c.KEY_DTOVERLAY)
-        self.assertFalse(results.has_key(u'dtoverlay=lirc-rpi\n'))
-        self.assertFalse(results.has_key(u'dtoverlay=w1-gpio\n'))
+    def test_spi(self):
+        self.assertFalse(self.c.is_spi_enabled())
+        self.assertTrue(self.c.enable_spi())
+        self.assertTrue(self.c.is_spi_enabled())
+        self.assertTrue(self.c.disable_spi())
+        self.assertFalse(self.c.is_spi_enabled())
 
-
+    def test_i2c(self):
+        self.assertFalse(self.c.is_i2c_enabled())
+        self.assertTrue(self.c.enable_i2c())
+        self.assertTrue(self.c.is_i2c_enabled())
+        self.assertTrue(self.c.disable_i2c())
+        self.assertFalse(self.c.is_i2c_enabled())
 
