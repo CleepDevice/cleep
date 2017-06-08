@@ -7,6 +7,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
     var systemController = function()
     {
         var self = this;
+        self.tabIndex = 'general';
         self.sunset = null;
         self.sunrise = null;
         self.city = null;
@@ -84,6 +85,13 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 .then(function() {
                     toast.success('Raspiot will restart');
                 });
+        };
+
+        /**
+         * Download logs
+         */
+        self.downloadLogs = function() {
+            systemService.downloadLogs();
         };
 
         /**

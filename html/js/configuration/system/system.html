@@ -1,5 +1,15 @@
 <div layout="column" layout-padding ng-cloak>
 
+    <!-- navigation tabs -->
+    <md-nav-bar md-selected-nav-item="systemCtl.tabIndex" nav-bar-aria-label="System tabs">
+        <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
+        <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
+        <md-nav-item md-nav-click="goto('troubleshoot')" name="troubleshoot">Troubleshoot</md-nav-item>
+    </md-nav-bar>
+
+    <!-- general tab -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='general'">
+
         <!-- city + sunset/sunrise -->
         <div class="md-title">
             Sunset/sunrise configuration
@@ -28,7 +38,11 @@
                 <input type="text" ng-model="systemCtl.sunset" disabled></input>
             </md-input-container>
         </div>
-        <md-divider></md-divider>
+
+    </div>
+
+    <!-- advanced -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced'">
 
         <!-- monitoring -->
         <div class="md-title">
@@ -57,6 +71,21 @@
                 Halt system properly
             </md-button>
         </div>
+   
+    </div>
+
+    <!-- troubleshoot -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
+        
+        <!-- download logs file -->
+        <div layout="row" flex-gt-sm>
+            <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
+                <md-icon md-font-set="material-icons">file_download</md-icon>
+                Download logs
+            </md-button>
+        </div>
+
+    </div>
 
 </div>
 

@@ -100,6 +100,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Download logs
+     */
+    self.downloadLogs = function() {
+        rpcService.download('download_logs', 'system');
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

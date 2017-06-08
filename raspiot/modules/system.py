@@ -27,6 +27,9 @@ class System(RaspIotModule):
     MODULE_URL = None
     MODULE_TAGS = []
 
+    #TODO get log file path from bin/raspiot
+    LOG_FILE = u'/var/log/raspiot.log'
+
     DEFAULT_CONFIG = {
         u'city': None,
         u'country': '',
@@ -843,5 +846,22 @@ class System(RaspIotModule):
             self.logger.warning(u'Unable to purge memory usage from database')
         except:
             self.logger.exception(u'Unable to purge memory usage from database:')
+
+    def download_logs(self):
+        """
+        Download logs file
+
+        Returns:
+            string: script full path
+
+        Raises:
+            Exception: if error occured
+        """
+        if os.path.exists(self.LOG_FILE):
+            #log file exists
+            return self.LOG_FILE
+        else:
+            #file doesn't exist, raise exception
+            raise Exception(u'Logs file doesn\'t exist')
 
 

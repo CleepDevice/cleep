@@ -249,6 +249,10 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param params: parameters to command (typically a filename)
      */
     self.download = function(command, to, params) {
+        if( angular.isUndefined(params) )
+        {
+            params = {};
+        }
         params = angular.extend(params, {'to':to, 'command':command});
         var queryString = $httpParamSerializer(params);
         $window.open(self.uriDownload + '?' + queryString, '_blank');
