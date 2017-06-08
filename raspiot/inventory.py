@@ -37,17 +37,23 @@ class Inventory(RaspIotModule):
         self.modules = {}
         #list of installed modules
         self.installed_modules = []
+        #list of libraries
+        self.libraries = []
         #renderers
         self.renderer_profiles = {}
         self.renderers = {}
         #formatters
         self.formatters = {}
 
-        #fill installed modules list
+        #fill installed and library modules list
         for module in installed_modules:
             if module.startswith(u'mod.'):
                 _module = module.replace(u'mod.', '')
                 self.installed_modules.append(_module)
+            elif module.startswith(u'lib.'):
+                _module = module.replace(u'lib.', '')
+                self.installed_modules.append(_module)
+                self.libraries.append(_module)
 
     def _start(self):
         """
@@ -75,13 +81,17 @@ class Inventory(RaspIotModule):
                     u'locked': class_.MODULE_LOCKED,
                     u'tags': class_.MODULE_TAGS,
                     u'url': class_.MODULE_URL,
-                    u'installed': False
+                    u'installed': False,
+                    u'library': False
                 }
 
         self.logger.info(u'Installed modules: %s' % self.installed_modules)
         for module in self.installed_modules:
-            #update installed flag
-            self.modules[module][u'installed'] = True
+            #update installed/library flag
+            if module not in self.libraries:
+                self.modules[module][u'installed'] = True
+            else:
+                self.modules[module][u'library'] = True
 
             #fill installed modules
             self.logger.debug(u'Request commands of module "%s"' % module)

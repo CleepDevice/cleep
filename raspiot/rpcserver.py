@@ -435,6 +435,8 @@ def modules():
     for module in modules:
         if modules[module][u'installed']:
             modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
+        if modules[module][u'library']:
+            modules[module][u'config'] = app.config[u'lib.%s' % module].get_module_config()
 
     #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
     conf = RaspiotConf()
