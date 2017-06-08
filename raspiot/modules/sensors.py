@@ -181,7 +181,6 @@ class Sensors(RaspIotModule):
 
         installed_configtxt = configtxt.is_onewire_enabled()
         installed_etcmodules = etcmodules.is_onewire_enabled()
-        self.logger.info('========>installed_configtxt=%s installed_etcmodules=%s' % (installed_configtxt, installed_etcmodules))
 
         self.driver_onewire = installed_configtxt and installed_etcmodules
 
