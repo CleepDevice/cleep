@@ -2,6 +2,7 @@ var gpiosPinsDirective = function(raspiotService, gpiosService, toast, confirm) 
 
     var gpiosPinsController = ['$scope', function($scope) {
         var self = this;
+        self.revision = 3;
         self.evens = [];
         self.odds = [];
         self.maxPins = 1;
@@ -270,6 +271,7 @@ var gpiosPinsDirective = function(raspiotService, gpiosService, toast, confirm) 
             raspiotService.getModuleConfig('gpios')
                 .then(function(config) {
                     gpios = config.gpios;
+                    self.revision = config.revision;
 
                     //get list of pins
                     return gpiosService.getPinsDescription();

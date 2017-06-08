@@ -427,6 +427,14 @@ class Gpios(RaspIotModule):
     def get_module_config(self):
         """
         Return module full config
+
+        Returns:
+            dict: gpios configuration::
+                {
+                    gpios (dict): list of pin
+                    revision (int): revision number (1|2|3)
+                    pinsnumber (int): number of board pins
+                }
         """
         config = {}
 
@@ -452,6 +460,8 @@ class Gpios(RaspIotModule):
                 u'owner': owner
             }
         config[u'gpios'] = gpios
+        config[u'revision'] = GPIO.RPI_INFO[u'P1_REVISION']
+        config[u'pinsnumber'] = self.get_pins_number()
 
         return config
 

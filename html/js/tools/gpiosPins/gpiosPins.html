@@ -6,9 +6,9 @@
         <span ng-if="pinsCtl.readonly" class="board-text board-text-readonly">Readonly: update disabled</span>
     </div>
 
-    <div class="board">
+    <div class="board-rev{{pinsCtl.revision}}">
         <div class="pin-board-readonly" ng-if="pinsCtl.readonly"></div>
-        <div class="pin-board">
+        <div class="pin-board-rev{{pinsCtl.revision}}">
             <div ng-click="pinsCtl.click(pin)" style="background-color: {{pin.color}} !important;" class="default-pin" ng-repeat="pin in pinsCtl.odds" ng-class="{'pin-dnc':pin.dnc, 'pin-5v':pin.v5, 'pin-33v':pin.v33, 'pin-gnd':pin.gnd, 'pin-assigned':pin.assigned, 'pin-selected':pin.selected, 'pin-gpio':pin.gpio}">
                 <md-tooltip ng-if="pin.v33" md-direction="top">Pin#{{pin.pin}} +3.3v</md-tooltip>
                 <md-tooltip ng-if="pin.v5" md-direction="top">Pin#{{pin.pin}} +5.0v</md-tooltip>
