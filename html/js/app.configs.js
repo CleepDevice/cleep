@@ -43,8 +43,8 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
 RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
-        .primaryPalette('amber')
-        .accentPalette('blue')
+        .primaryPalette('blue-grey')
+        .accentPalette('pink')
         .backgroundPalette('grey');
     $mdThemingProvider
         .theme('dark')
