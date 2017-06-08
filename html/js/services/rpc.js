@@ -282,7 +282,10 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             method: 'POST',
             data: {'pollKey': self.pollKey},
             url: self.uriPoll,
-            responseType:'json'
+            responseType:'json',
+            config: {
+                ignoreLoadingBar: true
+            }
         })
         .then(function(resp) {
             if( resp && resp.data.error!==undefined && resp.data.error===true )
