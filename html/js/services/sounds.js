@@ -51,10 +51,10 @@ var soundsService = function($q, $rootScope, rpcService) {
     };
 
     /**
-     * Speak message
+     * Speak text
      */
-    self.speakMessage = function(text, lang) {
-        return rpcService.sendCommand('speak_message', 'sounds', {'text':text, 'lang':lang});
+    self.speakText = function(text, lang) {
+        return rpcService.sendCommand('speak_text', 'sounds', {'text':text, 'lang':lang});
     };
 
     /**

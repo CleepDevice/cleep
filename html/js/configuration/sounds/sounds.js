@@ -111,7 +111,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
         /**
          * Speak message
          */
-        self.speakMessage = function(message, lang) {
+        self.speakText = function(message, lang) {
             if( angular.isUndefined(lang) )
             {
                 lang = self.lang;
@@ -119,7 +119,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
             if( message.length>0 )
             {
                 toast.loading('Playing sound...');
-                soundsService.speakMessage(message, lang)
+                soundsService.speakText(message, lang)
                     .then(function() {
                         self.tts = '';
                         toast.hide();
