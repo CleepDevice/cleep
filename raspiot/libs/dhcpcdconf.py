@@ -33,7 +33,7 @@ class DhcpcdConf():
         self.__fd = None
 
         #make copy of original file if not exists
-        if not os.path.exists(self.BACKUP):
+        if os.path.exists(self.CONF) and not os.path.exists(self.BACKUP):
             copy2(self.CONF, self.BACKUP)
 
     def __del__(self):
