@@ -44,7 +44,7 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
         .primaryPalette('blue-grey')
-        .accentPalette('pink')
+        .accentPalette('red')
         .backgroundPalette('grey');
     $mdThemingProvider
         .theme('dark')
