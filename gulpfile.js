@@ -28,15 +28,21 @@ gulp.task('js-checkcode', function() {
         .pipe(jshint.reporter());
 });
 
-gulp.task('js-minify', function() {
-    return gulp.src([
+gulp.task('js-uglify', function() {
+    //uglify raspiot sources
+    gulp.src([
             source + '/js/**/*.js',
             '!' + source + '/js/libs/**/*.js'
         ])
-        .pipe(concat('raspiot.js'))
-        .pipe(rename('raspiot.min.js'))
         .pipe(uglify())
+        .pipe(rename({ extname: '.min.js'}))
         .pipe(gulp.dest(destination + '/html/js/'));
+
+    //and copy libs that should be already minified
+    return gulp.src([
+            source + '/js/libs/**/*.js'
+        ])
+        .pipe(gulp.dest(destination + '/html/js/libs/'));
 });
 
 gulp.task('deb-build', function(cb) {
