@@ -260,3 +260,9 @@ md-toast.info .md-toast-content {
     border: 1px solid #eee;
     height: 500px !important;
 }
+
+/********* fix search input in toolbar: when no results, scrollbar appears *********/
+.fix-search-toolbar-scrollbar {
+    height: 68px !important;
+}
+
