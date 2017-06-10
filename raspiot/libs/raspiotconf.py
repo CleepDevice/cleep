@@ -5,7 +5,9 @@ from raspiot.utils import InvalidParameter, MissingParameter
 import unittest
 from ConfigParser import SafeConfigParser
 import ast
+import io
 import os
+import codecs
 
 class RaspiotConf():
     """
@@ -27,7 +29,7 @@ class RaspiotConf():
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
             raise Exception(u'Config file "%s" does not exist' % self.CONF)
-        self.__conf.read(self.CONF)
+        self.__conf.readfp(io.open(self.CONF, u'r', encoding=u'utf-8'))
 
         return self.__conf
 
@@ -38,8 +40,9 @@ class RaspiotConf():
         Args:
             write (bool): write new content if set to True
         """
-        if self.__conf and write: 
-            self.__conf.write(open(self.CONF, 'w'))
+        if self.__conf and write:
+            #workaround for unicode writing http://bugs.python.org/msg187829
+            self.__conf.write(codecs.open(self.CONF, u'w', u'utf-8'))
 
     def check(self):
         """
@@ -76,7 +79,11 @@ class RaspiotConf():
         for section in conf.sections():
             config[section] = {}
             for option, val in conf.items(section):
-                config[section][option] = ast.literal_eval(val)
+                try:
+                    config[section][option] = ast.literal_eval(val)
+                except:
+                    #unable to eval option, consider it as a string
+                    config[section][option] = u'%s' % val
 
         return config
 
@@ -162,7 +169,7 @@ class RaspiotConf():
 
         return True
 
-    def module_is_installed(self, module):
+    def is_module_installed(self, module):
         """
         Return True if specified module is installed
         
@@ -228,7 +235,7 @@ class RaspiotConf():
 
         return True
 
-    def module_is_debugged(self, module):
+    def is_module_debugged(self, module):
         """
         Return True if module debug is enabled
 
@@ -347,33 +354,33 @@ class RaspiotConfTests(unittest.TestCase):
 
     def test_install_module(self):
         self.assertTrue(self.rc.install_module('newmodule'))
-        self.assertTrue(self.rc.module_is_installed('newmodule'))
+        self.assertTrue(self.rc.is_module_installed('newmodule'))
 
     def test_install_already_installed_module(self):
         self.rc.install_module('newmodule')
-        self.assertTrue(self.rc.module_is_installed('newmodule'))
+        self.assertTrue(self.rc.is_module_installed('newmodule'))
         self.assertRaises(InvalidParameter, self.rc.install_module, 'newmodule')
 
     def test_uninstall_module(self):
         self.rc.install_module('mymodule')
-        self.assertTrue(self.rc.module_is_installed('mymodule'))
+        self.assertTrue(self.rc.is_module_installed('mymodule'))
         self.assertTrue(self.rc.uninstall_module('mymodule'))
-        self.assertFalse(self.rc.module_is_installed('mymodule'))
+        self.assertFalse(self.rc.is_module_installed('mymodule'))
 
     def test_uninstall_unknown_module(self):
         self.rc.install_module('mymodule1')
         self.rc.install_module('mymodule2')
         self.assertRaises(InvalidParameter, self.rc.uninstall_module, 'mymodule3')
-        self.assertFalse(self.rc.module_is_installed('mymodule3'))
+        self.assertFalse(self.rc.is_module_installed('mymodule3'))
 
     def test_enable_module_debug(self):
         self.assertTrue(self.rc.enable_module_debug('mymodule'))
-        self.assertTrue(self.rc.module_is_debugged('mymodule'))
+        self.assertTrue(self.rc.is_module_debugged('mymodule'))
 
     def test_disable_module_debug(self):
         self.rc.enable_module_debug('mymodule')
         self.assertTrue(self.rc.disable_module_debug('mymodule'))
-        self.assertFalse(self.rc.module_is_debugged('mymodule'))
+        self.assertFalse(self.rc.is_module_debugged('mymodule'))
 
     def test_rpc_get_config(self):
         rpc = self.rc.get_rpc_config()
