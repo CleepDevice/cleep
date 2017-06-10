@@ -12,31 +12,31 @@ from raspiot.modules import system
 from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
 
-LOG_FILE = '/var/log/raspiot.log'
+LOG_FILE = u'/var/log/raspiot.log'
 LOG_SETTINGS = { 
-    'version': 1,
-    'root': {
-        'level': 'INFO',
-        'handlers': [],
+    u'version': 1,
+    u'root': {
+        u'level': u'INFO',
+        u'handlers': [],
     },  
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'detailed',
-            'stream': 'ext://sys.stdout',
+    u'handlers': {
+        u'console': {
+            u'class': u'logging.StreamHandler',
+            u'formatter': u'detailed',
+            u'stream': u'ext://sys.stdout',
         },  
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'detailed',
-            'filename': LOG_FILE,
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+        u'file': {
+            u'class': u'logging.handlers.RotatingFileHandler',
+            u'formatter': u'detailed',
+            u'filename': LOG_FILE,
+            u'mode': u'a',
+            u'maxBytes': 10485760,
+            u'backupCount': 5,
         }   
     },  
-    'formatters': {
-        'detailed': {
-            'format': '%(asctime)s %(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s'
+    u'formatters': {
+        u'detailed': {
+            u'format': u'%(asctime)s %(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s'
         }   
     },  
 }
@@ -49,10 +49,10 @@ class ConfigException(Exception):
 
 
 def usage():
-    print("RaspIot usage: raspiot [-d|--debug] [-s|--stdout [-h|--help]]")
-    print(" -d|--debug  : enable debug log level")
-    print(" -s|--stdout : dump log in console instead of log file")
-    print(" -h|--help   : this help")
+    print(u'RaspIot usage: raspiot [-d|--debug] [-s|--stdout [-h|--help]]')
+    print(u' -d|--debug  : enable debug log level')
+    print(u' -s|--stdout : dump log in console instead of log file')
+    print(u' -h|--help   : this help')
 
 
 def load_config():
@@ -62,16 +62,16 @@ def load_config():
     @raise ConfigException when error occured
     """
     #load config
-    logger.info('Loading configuration raspiot.conf file')
+    logger.info(u'Loading configuration raspiot.conf file')
     conf = RaspiotConf()
     conf.check()
     config = conf.as_dict()
-    logger.info('config: %s' % config)
+    logger.info(u'config: %s' % config)
 
     return config
 
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     logger = None
     app = None
     try:
@@ -80,155 +80,155 @@ if __name__ == '__main__':
         log_level = logging.INFO
         log_stdout = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv,"hsd", ['help','stdout','debug'])
+        opts, args = getopt.getopt(argv, u'hsd', [u'help', u'stdout', u'debug'])
         for opt, arg in opts:
-            if opt in ('-h','--help'):
+            if opt in (u'-h', u'--help'):
                 usage()
                 sys.exit(2)
-            elif opt in ('-s','--stdout'):
+            elif opt in (u'-s', u'--stdout'):
                 log_stdout = True
-            elif opt in ('-d','--debug'):
+            elif opt in (u'-d', u'--debug'):
                 debug_enabled = True
                 log_level = logging.DEBUG
         
         #configure main logger
         if not log_stdout:
             #log to file
-            LOG_SETTINGS['root']['handlers'] = ['file']
+            LOG_SETTINGS[u'root'][u'handlers'] = [u'file']
         else:
             #log to stdout
-            LOG_SETTINGS['root']['handlers'] = ['console']
+            LOG_SETTINGS[u'root'][u'handlers'] = [u'console']
         dictConfig(LOG_SETTINGS)
-        logger = logging.getLogger('Raspiot')
+        logger = logging.getLogger(u'Raspiot')
 
         #load and check config file
         config = load_config()
 
         #set debug level after config reading
-        if config['debug']['debug_enabled']:
+        if config[u'debug'][u'debug_enabled']:
             debug_enabled = True
         if debug_enabled:
             logger.setLevel(logging.DEBUG)
 
         #get webserver app (used to store application objects)
         debug = False
-        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('rpcserver')==1):
+        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'rpcserver')==1):
             debug = True
         app = rpcserver.get_app(debug)
 
         #create message bus
-        logger.debug('Initializing message bus')
+        logger.debug(u'Initializing message bus')
         debug = False
-        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('bus')==1):
+        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'bus')==1):
             debug = True
         bus = bus.MessageBus(debug)
-        app.config['sys.bus'] = bus
+        app.config[u'sys.bus'] = bus
 
         #create system module by default
-        logger.debug('Initializing system module')
+        logger.debug(u'Initializing system module')
         debug = False
-        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('system')==1):
+        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'system')==1):
             debug = True
         system = system.System(bus, debug)
-        app.config['mod.system'] = system
+        app.config[u'mod.system'] = system
         system.start()
 
         #load user modules
-        logger.debug('Loading user modules:')
+        logger.debug(u'Loading user modules:')
         loaded_modules = {}
-        for module_name in config['general']['modules']:
-            logger.debug(' - %s:' % (module_name));
+        for module_name in config[u'general'][u'modules']:
+            logger.debug(u' - %s:' % (module_name));
 
             #check if not already loaded
             if module_name in loaded_modules.keys():
                 #update module name if necessary
                 if loaded_modules[module_name]:
                     #module already loaded as library, set loaded as module
-                    logger.debug('   - Module already loaded as library. Set it as module')
-                    app.config['mod.%s' % module_name] = app.config.pop('lib.%s' % module_name)
+                    logger.debug(u'   - Module already loaded as library. Set it as module')
+                    app.config[u'mod.%s' % module_name] = app.config.pop(u'lib.%s' % module_name)
                     loaded_modules[module_name] = False
                 else:
-                    logger.debug('   - Module already loaded')
+                    logger.debug(u'   - Module already loaded')
                 continue
 
             #get module class
-            logger.debug('   - loading module...')
-            module_ = importlib.import_module('raspiot.modules.%s' % module_name)
+            logger.debug(u'   - loading module...')
+            module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
             class_ = getattr(module_, module_name.capitalize())
 
             #load dependencies
-            logger.debug('   - loading module dependencies:')
+            logger.debug(u'   - loading module dependencies:')
             if class_.MODULE_DEPS:
                 for dep in class_.MODULE_DEPS:
                     if dep not in loaded_modules.keys():
-                        logger.debug('     - loading dependency "%s"' % dep)
-                        dep_ = importlib.import_module('raspiot.modules.%s' % dep)
+                        logger.debug(u'     - loading dependency "%s"' % dep)
+                        dep_ = importlib.import_module(u'raspiot.modules.%s' % dep)
                         dep_class_ = getattr(dep_, dep.capitalize())
                     
-                        logger.debug('     - starting dependency...')
-                        logger.debug('===============BEGIN %s===============', dep)
+                        logger.debug(u'     - starting dependency...')
+                        logger.debug(u'===============BEGIN %s===============', dep)
                         debug = False
-                        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count(dep)==1):
-                            logger.debug('Debug enabled for this module')
+                        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(dep)==1):
+                            logger.debug(u'Debug enabled for this module')
                             debug = True
-                        app.config['lib.%s' % dep] = dep_class_(bus, debug)
-                        app.config['lib.%s' % dep].start()
-                        logger.debug('===============END %s===============', dep)
+                        app.config[u'lib.%s' % dep] = dep_class_(bus, debug)
+                        app.config[u'lib.%s' % dep].start()
+                        logger.debug(u'===============END %s===============', dep)
                         loaded_modules[dep] = True
                     
             #and run instance
-            logger.debug('   - starting module...')
-            logger.debug('---------------BEGIN %s---------------', module_name)
+            logger.debug(u'   - starting module...')
+            logger.debug(u'---------------BEGIN %s---------------', module_name)
             debug = False
-            if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count(module_name)==1):
-                logger.debug('Debug enabled for this module')
+            if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(module_name)==1):
+                logger.debug(u'Debug enabled for this module')
                 debug = True
-            app.config['mod.%s' % module_name] = class_(bus, debug)
-            app.config['mod.%s' % module_name].start()
-            logger.debug('---------------END %s---------------', module_name)
+            app.config[u'mod.%s' % module_name] = class_(bus, debug)
+            app.config[u'mod.%s' % module_name].start()
+            logger.debug(u'---------------END %s---------------', module_name)
             loaded_modules[module_name] = False
 
         #create inventory
-        logger.debug('Initializing inventory')
+        logger.debug(u'Initializing inventory')
         debug = False
-        if debug_enabled and (len(config['debug']['debug_modules'])==0 or config['debug']['debug_modules'].count('inventory')==1):
+        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
             debug = True
         db = inventory.Inventory(bus, debug, app.config)
-        app.config['sys.inventory'] = db
+        app.config[u'sys.inventory'] = db
         db.start()
 
         #unlock bus and launch webserver (blocking)
-        logger.info('Raspiot running...')
+        logger.info(u'Raspiot running...')
         bus.app_configured()
-        rpcserver.start(config['rpc']['rpc_host'], config['rpc']['rpc_port'], config['rpc']['rpc_key'], config['rpc']['rpc_cert'])
+        rpcserver.start(config[u'rpc'][u'rpc_host'], config[u'rpc'][u'rpc_port'], config[u'rpc'][u'rpc_key'], config[u'rpc'][u'rpc_cert'])
 
     except getopt.GetoptError:
         #display usage
         usage()
  
     except:
-        logger.exception('Exception on main:')
+        logger.exception(u'Exception on main:')
 
     #clean all stuff
     if logger:
-        logger.debug('Stopping user modules:')
+        logger.debug(u'Stopping user modules:')
     if app:
         for module in app.config:
-            if module[:3] in ['mod']:
+            if module[:3] in [u'mod']:
                 if logger:
-                    logger.debug(' - %s' % module)
+                    logger.debug(u' - %s' % module)
                 app.config[module].stop()
         for module in app.config:
-            if module[:3] in ['lib']:
+            if module[:3] in [u'lib']:
                 if logger:
-                    logger.debug(' - %s' % module)
+                    logger.debug(u' - %s' % module)
                 app.config[module].stop()
         for module in app.config:
-            if module[:3] in ['sys']:
+            if module[:3] in [u'sys']:
                 if logger:
-                    logger.debug(' - %s' % module)
+                    logger.debug(u' - %s' % module)
                 app.config[module].stop()
     
     if logger:
-        logger.info('Raspiot stopped')
+        logger.info(u'Raspiot stopped')
 
