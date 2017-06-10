@@ -19,7 +19,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
             format: function(v) {
                 return d3.format(".1")(v);
             },
-            title: 'CPU usage'
+            title: 'CPU usage',
+            showControls: false
         };
         self.graphMemoryOptions = {
             type: 'line',
@@ -29,7 +30,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
             },
             label: 'Mo',
             height: 200,
-            title: 'Memory usage'
+            title: 'Memory usage',
+            showControls: false
         };
         self.graphDiskSystemDeferred = null;
         self.graphDiskSystemOptions = {
@@ -48,7 +50,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                 }
                 return tmp;
             },
-            title: 'System partition (/)'
+            title: 'System partition (/)',
+            showControls: false
         };
         self.graphDistExt1Show = true;
         self.graphDiskExt1Deferred = null;
@@ -68,7 +71,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                 }
                 return tmp;
             },
-            title: 'External1 ()'
+            title: 'External1 ()',
+            showControls: false
         };
         self.graphDistExt2Show = true;
         self.graphDiskExt2Deferred = null;
@@ -88,7 +92,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
                 }
                 return tmp;
             },
-            title: 'External2 ()'
+            title: 'External2 ()',
+            showControls: false
         };
 
         /**

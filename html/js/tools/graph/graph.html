@@ -23,7 +23,7 @@
             </md-input-container>
         </div>
         <!-- controls -->
-        <div>
+        <div ng-if="graphCtl.showControls">
             <md-input-container>
                 <md-select class="md-no-underline" ng-model="graphCtl.rangeSelector">
                     <md-option value="86400">Last day</md-option>

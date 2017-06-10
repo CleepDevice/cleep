@@ -8,21 +8,24 @@
  * @param device: device object
  * @param options: chart options. An object with the following format
  *  {
- *    'type': <'bar', 'line'> : type of graph (string) (optional, default line)
- *    'filters': ['fieldname1', ...]: list of field names to display (array) (optional, default all fields)
- *    'timerange': {
- *      'start': <timestamp>: start range timestamp (integer)
- *      'end': <timestamp>: end range timestamp (integer)
- *    } (optional, default timerange 1 day until now),
- *    'format': function(value) : callback to convert value to specific format (optional, default is raw value)
- *              @see https://github.com/d3/d3-format
- *    'label': string: value label,
- *    'height': int : graph height (optional, default 400px)
- *    'color': string  : color hex code (starting with #). Only used for single data
- *    'loadData': function: callback that returns data to display (mandatory for pie chart).
- *                @param start: start timestamp
- *                @param end: end timestamp
- *                @return promise. The callback must return a promise
+ *    type (bar|line)     : type of graph (optional, default line)
+ *    filters (array)     : list of field names to display (optional, default all fields)
+ *    timerange (obj)     : timerange to display at opening (optional, default 1 day until now)
+ *                          { 
+ *                              start (timestamp): start range timestamp
+ *                              end (timestamp)  : end range timestamp
+ *                          }
+ *    format (callback)   : callback to convert value to specific format (optional, default is raw value) 
+ *                          Format infos available here https://github.com/d3/d3-format
+ *    label (string)      : value label,
+ *    height (int)        : graph height (optional, default 400px)
+ *    color (string)      : color hex code (starting with #). Only used for single data
+ *    loadData (callback) : callback that returns data to display (mandatory for pie chart).
+ *                          Callback parameters:
+ *                              - start (timestamp): start timestamp
+ *                              - end (timestamp)  : end timestamp
+ *                          Returns: callback must return a promise
+ *    showControls (bool) : display or not controls (time range...) (optional, default is true)
  *  }
  */
 var graphDirective = function($q, $rootScope, graphService, toast) {
@@ -38,6 +41,7 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         self.rangeEnd = 0;
         self.timestampStart = 0;
         self.timestampEnd = 0;
+        self.showControls = true;
 
         //dynamic time format according to zoom
         self.customTimeFormat = d3.time.format.multi([
@@ -392,6 +396,12 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
                 //set default timestamp range
                 self.timestampEnd = Number(moment().format('X'));
                 self.timestampStart = self.timestampEnd - self.rangeSelector;
+            }
+
+            //show controls
+            if( !angular.isUndefined(self.options.showControls) )
+            {
+                self.showControls = self.options.showControls;
             }
 
             //load graph data
