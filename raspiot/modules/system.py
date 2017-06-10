@@ -14,6 +14,7 @@ import time
 from raspiot.libs.console import Console
 from raspiot.libs.fstab import Fstab
 from raspiot.libs.raspiotconf import RaspiotConf
+import io
 
 __all__ = [u'System']
 
@@ -864,4 +865,15 @@ class System(RaspIotModule):
             #file doesn't exist, raise exception
             raise Exception(u'Logs file doesn\'t exist')
 
+    def get_logs(self):
+        """
+        Return logs file content
+        """
+        lines = []
+        if os.path.exists(self.LOG_FILE):
+            fd = io.open(self.LOG_FILE, u'r', encoding=u'utf-8')
+            lines = fd.read()
+            fd.close()
+
+        return lines
 

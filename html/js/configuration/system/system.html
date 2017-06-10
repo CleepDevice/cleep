@@ -77,12 +77,19 @@
     <!-- troubleshoot -->
     <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
         
-        <!-- download logs file -->
-        <div layout="row" flex-gt-sm>
+        <div layout="row">
+            <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()">
+                <md-icon md-font-set="material-icons">refresh</md-icon>
+                Refresh logs
+            </md-button>
+            <span flex></span>
             <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
                 <md-icon md-font-set="material-icons">file_download</md-icon>
                 Download logs
             </md-button>
+        </div>
+        <div>
+            <div ui-codemirror ui-codemirror-opts="systemCtl.codemirrorOptions" ng-model="systemCtl.logs" class="codemirror-code"></div>
         </div>
 
     </div>

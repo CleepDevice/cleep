@@ -13,6 +13,17 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         self.city = null;
         self.country = '';
         self.monitoring = false;
+        self.logs = '';
+        self.codemirrorInstance = null;
+        self.codemirrorOptions = {
+            lineNumbers: true,
+            tabSize: 2,
+            readOnly: true,
+            onLoad: function(cmInstance) {
+                self.codemirrorInstance = cmInstance;
+                cmInstance.focus();
+            }
+        };
 
         /**
          * Set city
@@ -92,6 +103,25 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          */
         self.downloadLogs = function() {
             systemService.downloadLogs();
+        };
+
+        /**
+         * Get logs
+         */
+        self.getLogs = function() {
+            systemService.getLogs()
+                .then(function(resp) {
+                    self.logs = resp.data;
+                    self.refreshEditor();
+                });
+        };
+
+        /**
+         * Refresh editor
+         */
+        self.refreshEditor = function()
+        {
+            self.codemirrorInstance.refresh();
         };
 
         /**
