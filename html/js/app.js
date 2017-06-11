@@ -123,7 +123,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 raspiotService._setModules(resp);
     
                 //load devices
-                return raspiotService.reloadDevices();
+                return raspiotService.reloadDevices('system');
             })
             .then(function() {
                 //load renderers
