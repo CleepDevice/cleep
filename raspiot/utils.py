@@ -17,8 +17,10 @@ class CommandInfo(Exception):
         return repr(self.value)
 
 class NoResponse(Exception):
+    def __init__(self, value):
+        self.value = value
     def __str__(self):
-        return repr(u'No response')
+        return repr(u'No response for request: %s' % self.value)
 
 class NoMessageAvailable(Exception):
     def __str__(self):

@@ -131,7 +131,7 @@ class MessageBus():
                     else:
                         #no response in time
                         self.logger.debug(u' - timeout')
-                        raise NoResponse()
+                        raise NoResponse(request_dict)
                 else:
                     #no timeout given, return nothing
                     return None
