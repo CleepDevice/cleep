@@ -4,7 +4,7 @@
  */
 var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService, confirm) {
 
-    var systemController = function()
+    var systemController = ['$scope', function($scope)
     {
         var self = this;
         self.tabIndex = 'general';
@@ -24,6 +24,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 cmInstance.focus();
             }
         };
+        self.debugs = {};
 
         /**
          * Set city
@@ -113,6 +114,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 .then(function(resp) {
                     self.logs = resp.data;
                     self.refreshEditor();
+                    toast.info('coucou');
                 });
         };
 
@@ -125,21 +127,36 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         };
 
         /**
+         * Debug changed
+         */
+        self.debugChanged = function(module)
+        {
+            systemService.setModuleDebug(module, self.debugs[module].debug);
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
         {
             raspiotService.getModuleConfig('system')
                 .then(function(config) {
+                    //save data
                     self.city = config.city.city;
                     self.country = config.city.country;
                     self.sunset = $filter('hrTime')(config.sun.sunset);
                     self.sunrise = $filter('hrTime')(config.sun.sunrise);
                     self.monitoring = config.monitoring;
+
+                    //request for modules debug status
+                    return raspiotService.getModulesDebug();
+                })
+                .then(function(debug) {
+                    self.debugs = debug.data;
                 });
         };
 
-    };
+    }];
 
     var systemLink = function(scope, element, attrs, controller) {
         controller.init();

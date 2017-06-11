@@ -75,21 +75,36 @@
     </div>
 
     <!-- troubleshoot -->
-    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
+    <div layout="row" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
         
-        <div layout="row">
-            <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()">
-                <md-icon md-font-set="material-icons">refresh</md-icon>
-                Refresh logs
-            </md-button>
-            <span flex></span>
-            <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
-                <md-icon md-font-set="material-icons">file_download</md-icon>
-                Download logs
-            </md-button>
+        <div layout="column" layout-padding flex="75">
+            <div layout="row">
+                <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()">
+                    <md-icon md-font-set="material-icons">refresh</md-icon>
+                    Refresh logs
+                </md-button>
+                <span flex></span>
+                <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
+                    <md-icon md-font-set="material-icons">file_download</md-icon>
+                    Download logs
+                </md-button>
+            </div>
+            <div>
+                <div ui-codemirror ui-codemirror-opts="systemCtl.codemirrorOptions" ng-model="systemCtl.logs" class="codemirror-code"></div>
+            </div>
         </div>
-        <div>
-            <div ui-codemirror ui-codemirror-opts="systemCtl.codemirrorOptions" ng-model="systemCtl.logs" class="codemirror-code"></div>
+
+        <div layout="column" layout-padding flex="25">
+            <div class="md-title">
+                Modules to debug
+            </div>
+            <div>
+                <div ng-repeat="(module, debug) in systemCtl.debugs">
+                    <md-checkbox ng-model="debug.debug" aria-label="Debug enabled" ng-change="systemCtl.debugChanged(module)">
+                        {{module}}
+                    </md-checkbox>
+                </div>
+            </div>
         </div>
 
     </div>

@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule
+from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError
 from raspiot.raspiot import RaspIotModule
 from datetime import datetime
 import time
@@ -876,4 +876,31 @@ class System(RaspIotModule):
             fd.close()
 
         return lines
+
+    def set_module_debug(self, module, debug):
+        """
+        Set module debug flag
+
+        Args:
+            module (string): module name
+            debug (bool): debug flag
+        """
+        if module is None or len(module)==0:
+            raise MissingParameter(u'Module parameter is missing')
+        if debug is None:
+            raise MissingParameter(u'Debug parameter is missing')
+
+        #save log level in conf file
+        conf = RaspiotConf()
+        if debug:
+            conf.enable_module_debug(module)
+        else:
+            conf.disable_module_debug(module)
+
+        #set debug on module
+        resp = self.send_command(u'set_debug', module, {u'debug':debug})
+        if resp[u'error']:
+            self.logger.error(u'Unable to set debug on module %s: %s' % (module, resp[u'message']))
+            raise CommandError(u'Update debug failed')
+
 

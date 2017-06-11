@@ -252,6 +252,13 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
         return {};
     };
 
+    /** 
+     * Get modules debug
+     */
+    self.getModulesDebug = function() {
+        return rpcService.sendCommand('get_modules_debug', 'inventory');
+    }; 
+
 };
     
 var RaspIot = angular.module('RaspIot');

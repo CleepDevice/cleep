@@ -114,6 +114,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set module debug
+     */
+    self.setModuleDebug = function(module, debug) {
+        return rpcService.sendCommand('set_module_debug', 'system', {'module':module, 'debug':debug});
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

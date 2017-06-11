@@ -41,6 +41,7 @@ class RaspIot(BusClient):
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
+        self.debug_enabled = debug_enabled
 
         #load and check configuration
         self.__configLock = Lock()
@@ -206,6 +207,31 @@ class RaspIot(BusClient):
             string: new unique id (uuid4 format).
         """
         return unicode(uuid.uuid4())
+
+    def is_debug_enabled(self):
+        """
+        Return True if debug is enabled
+
+        Returns:
+            bool: True if debug enabled
+        """
+        return self.debug_enabled
+
+    def set_debug(self, debug):
+        """
+        Enable or disable debug level. It changes logger level on the fly.
+
+        Args:
+            debug (bool): debug enabled if True, otherwise info level
+        """
+        #change current logger debug level
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
+        #update debug flag
+        self.debug_enabled = debug
 
     def get_module_config(self):
         """

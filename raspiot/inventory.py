@@ -266,6 +266,27 @@ class Inventory(RaspIotModule):
         """
         return self.modules.has_key(module)
 
+    def get_modules_debug(self):
+        """
+        Return dict of installed modules or libraries debug flag
+
+        Returns:
+            dict: modules/libraries debug flag::
+                {
+                    modulename (bool): debug flag
+                    ...
+                }
+        """
+        debugs = {}
+        for module in self.installed_modules:
+            #get debug status
+            resp = self.send_command(u'is_debug_enabled', module)
+            if resp[u'error']:
+                self.logger.error(u'Unable to get debug status of module %s: %s' % (module, resp[u'message']))
+            debugs[module] = {u'debug': resp[u'data']}
+    
+        return debugs
+
     def get_renderers(self):
         """
         Returns list of renderers
