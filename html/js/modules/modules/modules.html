@@ -23,8 +23,8 @@
     </md-toolbar>
 
     <!-- modules list -->
-    <div layout="row" layout-align="start stretch" layout-xs="column" layout-align-xs="space-between stretch" layout-wrap="">
-        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25">
+    <div layout="row" layout-wrap>
+        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex="25" flex-xs="100" flex-sm="50">
 
             <md-card>
                 <md-card-title>

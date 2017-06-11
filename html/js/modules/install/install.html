@@ -25,8 +25,8 @@
     </md-toolbar>
 
     <!-- modules list -->
-    <div layout="row" layout-xs="column" layout-wrap="">
-        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex="25" flex-xs="100">
+    <div layout="row" layout-wrap>
+        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex="25" flex-xs="100" flex-sm="50">
             <md-card>
                 <md-card-title>
                     <md-card-title-text>
