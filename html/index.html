@@ -16,6 +16,9 @@
 </head>
 <body ng-app="RaspIot" layout-fill ng-cloak>
 
+    <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
+    <md-content flex="100">
+
     <div ng-controller="mainController as mainCtl" layout="column" layout-fill>
 
         <!-- menu -->
@@ -50,6 +53,8 @@
         <div fab-button></div>
 
     </div>
+
+    </md-content>
 
     <!-- system -->
     <script src="js/libs/jquery.min.js"></script>
