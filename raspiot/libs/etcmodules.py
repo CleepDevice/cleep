@@ -3,7 +3,6 @@
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.config import Config
-import unittest
 import os
 import re
 import io
@@ -42,7 +41,7 @@ class EtcModules(Config):
         entries = {}
 
         results = self.search(u'^(?!#)(.*?)$', re.UNICODE | re.MULTILINE)
-        for group, groups in results.iteritems():
+        for group, groups in results:
             #add new entry
             entry = {
                 u'group': group,
@@ -125,34 +124,5 @@ class EtcModules(Config):
             bool: True if onewire has been disabled
         """
         return self.__disable_module(self.MODULE_ONEWIRETHERM) and self.__disable_module(self.MODULE_ONEWIREGPIO)
-
-
-class etcmodulesTests(unittest.TestCase):
-    def setUp(self):
-        #fake config file
-        fd = open('modules.conf', 'w')
-        fd.write("""# /etc/modules: kernel modules to load at boot time.
-#
-# This file contains the names of kernel modules that should be loaded
-# at boot time, one per line. Lines beginning with "#" are ignored.
-w1-therm
-w1-gpio
-bcm4522""")
-        fd.close()
-        
-        self.e = EtcModules(backup=False)
-        self.e.CONF = 'modules.conf'
-
-    def tearDown(self):
-        os.remove('modules.conf')
-
-    def test_onewire(self):
-        self.assertTrue(self.e.is_onewire_enabled())
-        self.assertTrue(self.e.enable_onewire())
-        self.assertTrue(self.e.disable_onewire())
-        self.assertFalse(self.e.is_onewire_enabled())
-        self.assertTrue(self.e.enable_onewire())
-        self.assertTrue(self.e.is_onewire_enabled())
-
 
 

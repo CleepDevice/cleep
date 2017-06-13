@@ -201,14 +201,14 @@ class Network(RaspIotModule):
             dhcp = True
             fallback = False
             ip_address = None
-            router_address = None
+            routers = None
             name_server = None
             if name in wired_configs:
                 dhcp = False
                 fallback = wired_configs[name][u'fallback']
                 ip_address = wired_configs[name][u'ip_address']
-                router_address = wired_configs[name][u'router_address']
-                name_server = wired_configs[name][u'name_server']
+                routers = wired_configs[name][u'routers']
+                domain_name_servers = wired_configs[name][u'domain_name_servers']
 
             #extract useful data
             ipv4 = None
@@ -246,37 +246,37 @@ class Network(RaspIotModule):
                 u'dhcp': dhcp,
                 u'fallback': fallback,
                 u'ip_address': ip_address,
-                u'router_address': router_address,
-                u'name_server': name_server
+                u'routess': routers,
+                u'domain_name_servers': domain_name_servers
             }
 
         return interfaces
 
-    def __add_static_interface(self, interface, ip_address, router_address, name_server):
+    def __add_static_interface(self, interface, ip_address, routers, domain_name_servers):
         """
         Configure wired static interface
 
         Params:
             interface (string): interface name
             ip_address (string): ip address
-            router_address (string): router address
-            name_server (string): name server
+            routers (string): router address
+            domain_name_servers (string): domain name servers
         """
         conf = DhcpcdConf()
-        return conf.add_static_interface(interface, ip_address, router_address, name_server)
+        return conf.add_static_interface(interface, ip_address, routers, domain_name_servers)
 
-    def __add_fallback_interface(self, interface, ip_address, router_address, name_server):
+    def __add_fallback_interface(self, interface, ip_address, routers, domain_name_servers):
         """
         Configure wired fallback interface
 
         Params:
             interface (string): interface name
             ip_address (string): ip address
-            router_address (string): router address
-            name_server (string): name server
+            routers (string): router address
+            domain_name_servers (string): domain name servers
         """
         conf = DhcpcdConf()
-        return conf.add_fallback_interface(interface, ip_address, router_address, name_server)
+        return conf.add_fallback_interface(interface, ip_address, routers, domain_name_servers)
 
     def __delete_static_interface(self, interface):
         """
@@ -319,16 +319,16 @@ class Network(RaspIotModule):
         conf = WpaSupplicantConf()
         return conf.delete_network(network)
 
-    def save_wired_static_configuration(self, interface, ip_address, router_address, name_server, fallback):
+    def save_wired_static_configuration(self, interface, ip_address, routers, domain_name_servers, fallback):
         """
         Save wired static configuration
 
         Params:
-            interface (string): interface to configure (string)
-            ip_address (string): desired ip address (string)
-            router_address (string): router address (usually gateway) (string)
-            name_server (string): domain name server (usually gateway) (string)
-            fallback (bool): is configuration used as fallback (bool)
+            interface (string): interface to configure
+            ip_address (string): desired ip address
+            routers (string): router address (usually gateway)
+            domain_name_servers (string): domain name server (usually gateway)
+            fallback (bool): is configuration used as fallback
         """
         res = False
 
@@ -337,9 +337,9 @@ class Network(RaspIotModule):
 
         #then add new one
         if not fallback:
-            res = self.__add_static_interface(interface, ip_address, router_address, name_server)
+            res = self.__add_static_interface(interface, ip_address, routers, domain_name_servers)
         else:
-            res = self.__add_fallback_interface(interface, ip_address, router_address, name_server)
+            res = self.__add_fallback_interface(interface, ip_address, routers, domain_name_servers)
 
         #restart interface
         #self.__restart_interface(interface)

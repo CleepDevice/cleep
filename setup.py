@@ -18,3 +18,5 @@ setup(
     url = 'http://www.github.com/tangb/raspiot'
 )
 
+#test_suite = 'nose.collector',
+#tests_require = ['nose']

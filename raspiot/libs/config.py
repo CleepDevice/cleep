@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
-import unittest
 import os
 import re
 import io
@@ -96,21 +95,43 @@ class Config():
             self.__fd.close()
             self.__fd = None
 
+    def _write(self, content):
+        """
+        Write content to config file.
+        This function apply automatically remove spaces at end of content
+
+        Args:
+            content (string): content to write
+        """
+        fd = self._open(self.MODE_WRITE)
+        fd.write(content.rstrip())
+        self._close()
+
+    def exists(self):
+        """
+        Return True if config file exists
+        
+        Returns:
+            bool: True if config file exists
+        """
+        return os.path.exists(self.path)
+
     def search(self, pattern, options=re.UNICODE | re.MULTILINE):
         """
-        Search all pattern matches in config files
+        Search all pattern matches in config files. Found order is respected.
 
         Args:
             pattern (string): search pattern
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
 
         Returns:
-            dict: list of matches::
-                {
-                    group (string): subgroups (tuple)
-                }
+            list: list of matches::
+                [
+                    (group (string), subgroups (tuple)),
+                    ...
+                ]
         """
-        results = {}
+        results = []
         fd = self._open()
         content = fd.read()
         self._close()
@@ -119,7 +140,8 @@ class Config():
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
-                results[group] = match.groups()
+                #results[group] = match.groups()
+                results.append((group, match.groups()))
 
         return results
 
@@ -157,9 +179,7 @@ class Config():
 
         if found:
             #write config file
-            fd = self._open(self.MODE_WRITE)
-            fd.write(u''.join(lines))
-            self._close()
+            self._write(u''.join(lines))
 
             return True
 
@@ -200,9 +220,7 @@ class Config():
 
         if found:
             #write config file
-            fd = self._open(self.MODE_WRITE)
-            fd.write(u''.join(lines))
-            self._close()
+            self._write(u''.join(lines))
 
             return True
 
@@ -245,22 +263,21 @@ class Config():
 
         if len(indexes)>0:
             #write config file
-            fd = self._open(self.MODE_WRITE)
-            fd.write(u''.join(lines))
-            self._close()
+            self._write(u''.join(lines))
 
             return True
 
         else:
             return False
 
-    def remove_after(self, header_pattern, line_pattern):
+    def remove_after(self, header_regexp, line_regexp, lines_to_delete):
         """
-        Remove line matching pattern after header pattern found
+        Remove line matching pattern after header pattern
 
         Args:
             header_pattern (pattern): regexp header pattern
             line_pattern (pattern): regexp line pattern
+            lines_to_delete (int): number of lines to delete
 
         Returns:
             int: number of lines deleted (blank and commented lines not counted)
@@ -276,18 +293,18 @@ class Config():
         index = 0
         count = 0
         for line in lines:
-            if re.match(regex_header, line):
+            if re.match(header_regexp, line):
                 #header found, start
                 indexes.append(index)
                 start = True
                 count += 1
-            elif count==4:
+            elif count==lines_to_delete:
                 #number of line to delete reached, stop
                 break
             elif start and self.comment_tag is not None and line.strip().startswith(self.comment_tag):
                 #commented line
                 continue
-            elif start and re.match(regex_line, line):
+            elif start and re.match(line_regexp, line):
                 #save index of line to delete
                 indexes.append(index)
                 count += 1
@@ -301,9 +318,8 @@ class Config():
 
         #write config file
         if len(indexes)>0:
-            fd = self._open(self.MODE_WRITE)
-            fd.write(u''.join(lines))
-            self._close()
+            #write config file
+            self._write(u''.join(lines))
 
         return count
         
@@ -330,9 +346,21 @@ class Config():
             content.append(line)
 
         #write config file
-        fd = self._open(self.MODE_WRITE)
-        fd.write(u''.join(content))
-        self._close()
+        self._write(u''.join(content))
 
         return True
+
+    def dump_content(self):
+        """
+        Dump file content to stdout
+        For debug and test purpose only
+        """
+        #read content
+        fd = self._open()
+        lines = fd.readlines()
+        self._close()
+
+        #print lines
+        print u''.join(lines)
+
 
