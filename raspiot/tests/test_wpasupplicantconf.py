@@ -10,7 +10,21 @@ class WpaSupplicantConfTests_validConf(unittest.TestCase):
     def setUp(self):
         #fake conf file
         fd = file('wpasupplicant.fake.conf', 'w')
-        fd.write('country=GB\nctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\n\nnetwork = {\n\tssid="mynetwork1"\n\tpsk="mypassword1"\n}\nnetwork={\n\tssid="mynetwork2"\n\tscan_ssid=1\n\t#psk="helloworld"\n\tpsk="mypassword2"\n}\n')
+        #fd.write('country=GB\nctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\n\nnetwork = {\n\tssid="mynetwork1"\n\tpsk="mypassword1"\n}\nnetwork={\n\tssid="mynetwork2"\n\tscan_ssid=1\n\t#psk="helloworld"\n\tpsk="mypassword2"\n}\n')
+        fd.write("""country=GB
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network = {
+    ssid="mynetwork1"
+    psk="mypassword1"
+}
+network={
+    ssid="mynetwork2"
+    scan_ssid=1
+    #psk="helloworld"
+    psk="mypassword2"
+}""")
         fd.close()
         self.w = WpaSupplicantConf()
         self.w.CONF = 'wpasupplicant.fake.conf'
@@ -54,7 +68,7 @@ class WpaSupplicantConfTests_validConf(unittest.TestCase):
     def test_delete_unknown_network(self):
         self.assertFalse(self.w.delete_network('network666'))
         self.assertEqual(len(self.w.get_networks()), 2)
-
+    
 
 class WpaSupplicantConfTests_emptyConf(unittest.TestCase):
     def setUp(self):

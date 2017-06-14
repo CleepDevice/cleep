@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
+from raspiot.libs.config import Config
 from console import Console
 import os
 import re
 
-class WpaSupplicantConf():
+class WpaSupplicantConf(Config):
     """
     Helper class to update and read /etc/wpa_supplicant/wpa_supplicant.conf file
+
+    Infos:
+        https://w1.fi/cgit/hostap/plain/wpa_supplicant/wpa_supplicant.conf
     """
 
     CONF = u'/etc/wpa_supplicant/wpa_supplicant.conf'
-
-    MODE_WRITE = u'w'
-    MODE_READ = u'r'
-    MODE_APPEND = u'a'
 
     ENCRYPTION_TYPE_WPA = u'wpa'
     ENCRYPTION_TYPE_WPA2 = u'wpa2'
@@ -24,78 +24,57 @@ class WpaSupplicantConf():
     ENCRYPTION_TYPE_UNKNOWN = u'unknown'
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
-    def __init__(self):
+    def __init__(self, backup=True):
         """
         Constructor
         """
-        self.__fd = None
+        Config.__init__(self, self.CONF, None, backup)
 
-    def __del__(self):
-        """
-        Destructor
-        """
-        self.__close()
-
-    def __open(self, mode='r'):
-        """
-        Open config file
-
-        Returns:
-            file: file descriptor as returned by open() function
-
-        Raises:
-            Exception if file doesn't exist
-        """
-        if not os.path.exists(self.CONF):
-            raise Exception(u'wpa_supplicant.conf file does not exist')
-
-        self.__fd = open(self.CONF, mode)
-        return self.__fd
-
-    def __close(self):
-        """
-        Close file descriptor is still opened
-        """
-        if self.__fd:
-            self.__fd.close()
-            self.__fd = None
-    
     def get_networks(self):
         """
         Return networks found in conf file
         """
         networks = []
-        fd = self.__open()
-        content = fd.read()
-        self.__close()
-        groups = re.findall(u'network\s*=\s*\{\s*(.*?)\s*\}', content, re.S)
-        for group in groups:
-            ssid = None
-            scan_ssid = None
-            key_mgmt = None
-            hidden = False
-            encryption = self.ENCRYPTION_TYPE_UNSECURED
-            res = re.search(u'ssid="(.*?)"\s', group+'\n')
-            if res:
-                ssid = res.group(1).strip()
-            res = re.search(u'scan_ssid="(.*?)"\s', group+'\n')
-            if res:
-                scan_ssid = res.group(1).strip()
-                if scan_ssid is not None and scan_ssid.isdigit() and scan_ssid=='1':
-                    hidden = True
-            res = re.search(u'key_mgmt="(.*?)"\s', group+'\n')
-            if res:
-                key_mgmt = res.group(1).strip()
-                if key_mgmt==u'WPA-PSK':
-                    encryption = self.ENCRYPTION_TYPE_WPA2
-                elif key_mgmt==u'NONE':
-                    encryption = self.ENCRYPTION_TYPE_WEP
 
-            networks.append({
-                u'network': ssid,
-                u'hidden': hidden,
-                u'encryption': encryption
-            })
+        results = self.find(r'network\s*=\s*\{\s*(.*?)\s*\}', re.UNICODE | re.DOTALL)
+        for group, groups in results:
+            #prepare values
+            ssid = None
+
+            #filter none values
+            groups = filter(None, groups)
+
+            #create new entry
+            current_entry = {
+                u'group': group,
+                u'network': None,
+                u'hidden': False,
+                u'encryption': None
+            }
+            networks.append(current_entry)
+
+            #fill entry
+            pattern = r'^\s*(\w+)=(.*?)\s*$'
+            for content in groups:
+                sub_results = self.find_in_string(pattern, content, re.UNICODE | re.MULTILINE)
+                
+                #filter none values
+                for sub_group, sub_groups in sub_results:
+                    if len(sub_groups)==2:
+                        if sub_groups[0].startswith(u'ssid'):
+                            current_entry[u'network'] = sub_groups[1].replace('"','').replace('\'', '')
+                        if sub_groups[0].startswith(u'scan_ssid'):
+                            if sub_groups[1] is not None and sub_groups[1].isdigit() and sub_groups[1]=='1':
+                                current_entry[u'hidden'] = True
+                        if sub_groups[0].startswith(u'key_mgmt'):
+                            if sub_groups[1]==u'WPA-PSK':
+                                current_entry[u'encryption'] = self.ENCRYPTION_TYPE_WPA2
+                            elif sub_groups[1]==u'NONE':
+                                current_entry[u'encryption'] = self.ENCRYPTION_TYPE_WEP
+
+                    else:
+                        #invalid content, drop this item
+                        continue
 
         return networks
 
@@ -127,30 +106,16 @@ class WpaSupplicantConf():
         Returns:
             bool: True if network deleted, False otherwise
         """
-        fd = self.__open()
-        content = fd.read()
-        self.__close()
-        groups = re.findall('(network\s*=\s*\{\s*(.*?)\s*\})', content, re.S)
-        found = False
-        for group in groups:
-            res = re.search('ssid="(.*?)"\s', group[1]+'\n')
-            if res:
-                ssid = res.group(1).strip()
-                if ssid==network:
-                    #network found, remove it
-                    found = True
-                    content = content.replace(group[0], '').strip()
-                    break
+        #check params
+        if network is None or len(network)==0:
+            raise MissingParameter(u'Network parameter is missing')
 
-        if found:
-            #save new content
-            fd = self.__open(self.MODE_WRITE)
-            fd.write(content)
-            self.__close()
-        else:
+        #check if network exists
+        network_ = self.get_network(network)
+        if network_ is None:
             return False
 
-        return True
+        return self.remove(network_[u'group'])
 
     def add_network(self, network, encryption, password, hidden=False):
         """
@@ -191,32 +156,28 @@ class WpaSupplicantConf():
                 self.logger.error(u'Error with password: %s' % stdout)
                 raise Exception(u'Error with password: %s' % stdout)
             password = None
-            output = [line for line in res[u'stdout'] if not line.startswith(u'\t#psk=')]
+            output = [line+u'\n' for line in res[u'stdout'] if not line.startswith(u'\t#psk=')]
 
             #inject hidden param if necessary
             if hidden:
-                output.insert(2, u'\tscan_ssid=1')
+                output.insert(2, u'\tscan_ssid=1\n')
 
             #inject network type
             if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
-                output.insert(2, u'\tkey_mgmt=WPA-PSK')
+                output.insert(2, u'\tkey_mgmt=WPA-PSK\n')
             elif encryption==self.ENCRYPTION_TYPE_WEP:
-                output.insert(2, u'\tkey_mgmt=NONE')
+                output.insert(2, u'\tkey_mgmt=NONE\n')
 
         else:
             #handle unsecured network
             output = [
-                u'network={',
-                u'\tssid="%s"' % network,
-                u'}'
+                u'\nnetwork={\n',
+                u'\tssid="%s"\n' % network,
+                u'}\n'
             ]
 
         #write new network config
-        fd = self.__open(self.MODE_APPEND)
-        fd.write(u'\n%s\n' % '\n'.join(output))
-        self.__close()
-
-        return True
+        return self.add_lines(output)
 
     
 
