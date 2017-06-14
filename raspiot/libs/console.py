@@ -8,6 +8,7 @@ from threading import Timer, Thread
 import os
 import signal
 import logging
+import sys
 
 class EndlessConsole(Thread):
     """
@@ -107,10 +108,21 @@ class Console():
     """
     Helper class to execute command lines
     """
+    def __init__(self):
+        self.timer = None
+        self.__callback = None
+        self.encoding = sys.getfilesystemencoding()
 
-    def __remove_eol(self, lines):
+    def __del__(self):
         """
-        Remove end of line char for given lines
+        Destroy console object
+        """
+        if self.timer:
+            self.timer.cancel()
+
+    def __process_lines(self, lines):
+        """
+        Remove end of line char for given lines and convert lines to unicode
         
         Args:
             lines (list): list of lines
@@ -133,10 +145,10 @@ class Console():
         Returns:
             dict: result of command::
                 {
-                    'error': True if error occured,
-                    'killed': True if command was killed,
-                    'stdout': command line output (list(string))
-                    'stderr': command line error (list(string))
+                    error (bool): True if error occured,
+                    killed (bool): True if command was killed,
+                    stdout (list): command line output
+                    stderr (list): command line error
                 }
         """
         #check params
@@ -190,9 +202,13 @@ class Console():
         except:
             pass
 
+        #trigger callback
+        if self.__callback:
+            self.__callback(result)
+
         return result
 
-    def command_delayed(self, command, delay, timeout=2.0):
+    def command_delayed(self, command, delay, timeout=2.0, callback=None):
         """
         Execute specified command line after specified delay
 
@@ -200,6 +216,7 @@ class Console():
             command (string): command to execute
             delay (int): time to wait before executing command (milliseconds)
             timeout (float): timeout before killing command
+            callback (function): function called when command is over. Command result is passed as function parameter
 
         Note:
             Command function to have more details
@@ -207,8 +224,9 @@ class Console():
         Returns:
             bool: True if command delayed succesfully or False otherwise
         """
-        timer = Timer(delay, self.command, [command])
-        timer.start()
+        self.__callback = callback
+        self.timer = Timer(delay, self.command, [command, timeout])
+        self.timer.start()
 
 
 

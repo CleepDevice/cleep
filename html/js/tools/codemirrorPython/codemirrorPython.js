@@ -56,12 +56,17 @@ var codemirrorPythonDirective = function($rootScope, actionsService, toast, rasp
 
                         //launch debug
                         actionsService.debugScript(self.script);
+                    }, function() {
+                        self.debugging = false;
                     });
             }
             else
             {
                 //launch debug
-                actionsService.debugScript(self.script);
+                actionsService.debugScript(self.script)
+                    .catch(function() {
+                        self.debugging = false;
+                    });
             }
         };
 
