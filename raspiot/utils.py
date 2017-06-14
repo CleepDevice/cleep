@@ -8,61 +8,61 @@ class CommandError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class CommandInfo(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class NoResponse(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(u'No response for request: %s' % self.value)
+        return u'No response for request: %s' % self.value
 
 class NoMessageAvailable(Exception):
     def __str__(self):
-        return repr(u'No message available')
+        return u'No message available'
 
 class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class MissingParameter(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class InvalidMessage(Exception):
     def __str__(self):
-        return repr(u'Invalid message')
+        return u'Invalid message'
 
 class BusNotReady(Exception):
     def __str__(self):
-        return repr(u'Bus is not ready yet. Please handle system.application.ready event before sending events.')
+        return u'Bus is not ready yet. Please handle system.application.ready event before sending events.'
 
 class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
     def __str__(self):
-        return repr(u'Invalid module %s (not loaded or unknown)' % module)
+        return u'Invalid module %s (not loaded or unknown)' % module
 
 class Unauthorized(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class BusError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
-        return repr(self.value)
+        return u'%s' % self.value
 
 class MessageResponse():
     """ 
