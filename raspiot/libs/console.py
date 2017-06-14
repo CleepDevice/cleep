@@ -130,9 +130,7 @@ class Console():
         Results:
             list: input list of lines with eol removed
         """
-        for i in range(len(lines)):
-            lines[i] = lines[i].rstrip()
-        return lines
+        return [line.decode('utf-8').rstrip() for line in lines]
 
     def command(self, command, timeout=2.0):
         """
@@ -188,13 +186,14 @@ class Console():
             u'stdout': [],
             u'stderr': []
         }
+        print p.stdout.encoding
         if not killed:
-            err = self.__remove_eol(p.stderr.readlines())
+            err = self.__process_lines(p.stderr.readlines())
             if len(err)>0:
                 result[u'error'] = True
                 result[u'stderr'] = err
             else:
-                result[u'stdout'] = self.__remove_eol(p.stdout.readlines())
+                result[u'stdout'] = self.__process_lines(p.stdout.readlines())
 
         #make sure process is really killed
         try:
