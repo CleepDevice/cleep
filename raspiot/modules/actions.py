@@ -13,6 +13,7 @@ from raspiot.libs.task import Task
 import shutil
 import re
 import traceback
+import io
 
 __all__ = ['Actions']
 
@@ -481,28 +482,20 @@ class Actions(RaspIotModule):
 
         #read file content
         self.logger.debug(u'Loading script: %s' % path)
-        fd = open(path)
+        fd = io.open(path, u'r', encoding=u'utf-8')
         content = fd.read()
         fd.close()
 
         #parse file
-        groups = re.findall(u'^(?:\"\"\"(.*)\"\"\"\s)?(.*)$', content, re.S)
+        groups = re.findall(u'# -\*- coding: utf-8 -\*-\n(?:\"\"\"\neditor:(\w+)\n(.*)\n\"\"\"\s)?(.*)', content, re.S | re.U)
         self.logger.debug(groups)
         if len(groups)==1:
-            #seems good
-            try:
-                output[u'header'] = groups[0][0]
-                output[u'code'] = groups[0][1]
-                self.logger.debug(u'header=%s' % output[u'header'])
-                groups = re.findall(u'^\seditor:(.*?)\s(.*)$', output[u'header'], re.S)
-                self.logger.debug(groups)
-                output[u'editor'] = None
-                if groups and len(groups)==1:
-                    output[u'editor'] = groups[0][0]
-                    output[u'header'] = groups[0][1]
-            except Exception as e:
-                self.logger.exception(u'Exception when loading script %s:' % path)
-                raise CommandError(u'Unable to load script')
+            if len(groups[0])==3:
+                output[u'editor'] = groups[0][0]
+                output[u'header'] = groups[0][1]
+                output[u'code'] = groups[0][2]
+            else:
+                raise CommandError(u'Unable to load script: invalid format')
         else:
             self.logger.warning(u'Unhandled source code: %s' % groups)
 
@@ -537,10 +530,10 @@ class Actions(RaspIotModule):
         #open script for writing
         path = os.path.join(Actions.SCRIPTS_PATH, script)
         self.logger.debug(u'Opening script: %s' % path)
-        fd = open(path, u'w')
+        fd = io.open(path, u'w', encoding=u'utf-8')
         
         #write content
-        content = u'"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
+        content = u'# -*- coding: utf-8 -*-\n"""\neditor:%s\n%s\n"""\n%s' % (editor, header, code)
         fd.write(content)
         fd.close()
 

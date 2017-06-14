@@ -46,27 +46,27 @@
             <md-list>
                 <md-list-item ng-repeat="debug in codeCtl.debugs" class="debug-line">
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='DEBUG'" class="debug-icon-debug">
-                        <md-tooltip md-direction="right">Debug</md-tooltip>
+                        <md-tooltip md-direction="left">Debug</md-tooltip>
                         bug_report
                     </md-icon>
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='INFO'" class="debug-icon-info">
-                        <md-tooltip md-direction="right">Info</md-tooltip>
+                        <md-tooltip md-direction="left">Info</md-tooltip>
                         lightbulb_outline
                     </md-icon>
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='WARNING'" class="debug-icon-warning">
-                        <md-tooltip md-direction="right">Warning</md-tooltip>
+                        <md-tooltip md-direction="left">Warning</md-tooltip>
                         warning
                     </md-icon>
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='ERROR'" class="debug-icon-error">
-                        <md-tooltip md-direction="right">Error</md-tooltip>
+                        <md-tooltip md-direction="left">Error</md-tooltip>
                         error
                     </md-icon>
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='CRITICAL'" class="debug-icon-critical">
-                        <md-tooltip md-direction="right">Critical</md-tooltip>
+                        <md-tooltip md-direction="left">Critical</md-tooltip>
                         healing
                     </md-icon>
                     <md-icon md-font-set="material-icons" ng-if="debug.level==='EXCEPTION'" class="debug-icon-exception">
-                        <md-tooltip md-direction="right">Exception</md-tooltip>
+                        <md-tooltip md-direction="left">Exception</md-tooltip>
                         thumb_down
                     </md-icon>
                     <p>
