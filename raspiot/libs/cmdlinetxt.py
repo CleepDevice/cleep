@@ -43,7 +43,7 @@ class CmdlineTxt(Config):
         """
         entries = {}
 
-        results = self.search(u'(.*?)(?:=(.*?))?(?:\s|\Z)')
+        results = self.find(u'(.*?)(?:=(.*?))?(?:\s|\Z)')
         for group, groups in results:
             #add new entry
             entry = {

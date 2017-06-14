@@ -52,7 +52,7 @@ class ConfigTxt(Config):
         """
         entries = {}
 
-        results = self.search(u'(#?)%s=(.*?)(\s|\Z)' % key)
+        results = self.find(u'(#?)%s=(.*?)(\s|\Z)' % key)
         for group, groups in results:
             disabled = False
             if groups[0]==u'#':
@@ -118,7 +118,7 @@ class ConfigTxt(Config):
                 return True
             else:
                 #add new dtoverlay entry
-                return self.add([u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay)])
+                return self.add_lines([u'%s=%s' % (self.KEY_DTOVERLAY, dtoverlay)])
 
         return False
 
@@ -224,7 +224,7 @@ class ConfigTxt(Config):
                 return True
             else:
                 #add new dtparam entry
-                return self.add([u'%s=%s' % (self.KEY_DTPARAM, key)])
+                return self.add_lines([u'%s=%s' % (self.KEY_DTPARAM, key)])
 
         return False
 

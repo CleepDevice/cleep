@@ -53,7 +53,7 @@ class EtcNetworkInterfaces(Config):
         Return network interfaces
         """
         entries = {}
-        results = self.search(u'^\s*(?:iface\s*(\S+)\s*inet\s*(\S+))\s*$|^\s*(?:(\S+)\s(\S+))\s*$', re.UNICODE | re.MULTILINE)
+        results = self.find(u'^\s*(?:iface\s*(\S+)\s*inet\s*(\S+))\s*$|^\s*(?:(\S+)\s(\S+))\s*$', re.UNICODE | re.MULTILINE)
         current_entry = None
         for group, groups in results:
             #init variables
@@ -206,7 +206,7 @@ class EtcNetworkInterfaces(Config):
         if wpa_conf is not None and len(wpa_conf)>0:
             lines.append(u'  wpa-conf %s\n' % wpa_conf)
 
-        return self.add(lines)
+        return self.add_lines(lines)
 
     def __delete_interface(self, interface, mode):
         """
@@ -385,7 +385,7 @@ class EtcNetworkInterfaces(Config):
         self.__append_option(option, lines, interface)
         lines.append(u'iface %s inet dhcp\n' % interface)
 
-        return self.add(lines)
+        return self.add_lines(lines)
 
     def delete_dhcp_interface(self, interface):
         """
@@ -457,7 +457,7 @@ class EtcNetworkInterfaces(Config):
         lines.append(u'iface %s inet manual\n' % interface)
         lines.append(u'  wpa-conf')
 
-        return self.add(lines)
+        return self.add_lines(lines)
 
     def delete_dhcp_interface(self, interface):
         """

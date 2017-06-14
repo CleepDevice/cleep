@@ -84,24 +84,24 @@ dtparam=audio=on
         return False
 
     def test_remove_dtoverlays(self):
-        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
         self.assertTrue(self.__find_key(u'#dtoverlay=lirc-rpi', results))
         self.assertTrue(self.__find_key(u'#dtoverlay=w1-gpio', results))
-        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio']))
-        self.assertTrue(self.c.remove([u'#dtoverlay=lirc-rpi']))
+        self.assertTrue(self.c.remove_lines([u'#dtoverlay=w1-gpio']))
+        self.assertTrue(self.c.remove_lines([u'#dtoverlay=lirc-rpi']))
 
-        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
         self.assertFalse(self.__find_key(u'#dtoverlay=lirc-rpi', results))
         self.assertFalse(self.__find_key(u'#dtoverlay=w1-gpio', results))
 
     def test_add_dtoverlays(self):
-        self.assertTrue(self.c.remove([u'#dtoverlay=w1-gpio', u'#dtoverlay=lirc-rpi']))
-        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertTrue(self.c.remove_lines([u'#dtoverlay=w1-gpio', u'#dtoverlay=lirc-rpi']))
+        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
         self.assertFalse(self.__find_key(u'#dtoverlay=lirc-rpi', results))
         self.assertFalse(self.__find_key(u'#dtoverlay=w1-gpio', results))
 
-        self.assertTrue(self.c.add([u'dtoverlay=w1-gpio', u'dtoverlay=lirc-rpi']))
-        results = self.c.search(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        self.assertTrue(self.c.add_lines([u'dtoverlay=w1-gpio', u'dtoverlay=lirc-rpi']))
+        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
         self.assertFalse(self.__find_key(u'#dtoverlay=lirc-rpi', results))
         self.assertFalse(self.__find_key(u'#dtoverlay=w1-gpio', results))
 

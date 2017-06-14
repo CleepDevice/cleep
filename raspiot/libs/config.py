@@ -103,9 +103,14 @@ class Config():
         Args:
             content (string): content to write
         """
-        fd = self._open(self.MODE_WRITE)
-        fd.write(content.rstrip())
-        self._close()
+        try:
+            fd = self._open(self.MODE_WRITE)
+            fd.write(content.rstrip())
+            self._close()
+            return True
+
+        except:
+            return False
 
     def exists(self):
         """
@@ -116,9 +121,9 @@ class Config():
         """
         return os.path.exists(self.path)
 
-    def search(self, pattern, options=re.UNICODE | re.MULTILINE):
+    def find(self, pattern, options=re.UNICODE | re.MULTILINE):
         """
-        Search all pattern matches in config files. Found order is respected.
+        Find all pattern matches in config files. Found order is respected.
 
         Args:
             pattern (string): search pattern
@@ -144,6 +149,34 @@ class Config():
                 results.append((group, match.groups()))
 
         return results
+
+    def find_in_string(self, pattern, content, options=re.UNICODE | re.MULTILINE):
+        """
+        Find all pattern matches in specified string. Found order is respected.
+
+        Args:
+            pattern (string): search pattern
+            content (string): string to search in
+            options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+
+        Returns:
+            list: list of matches::
+                [
+                    (group (string), subgroups (tuple)),
+                    ...
+                ]
+        """
+        results = []
+        matches = re.finditer(pattern, content, options)
+
+        for matchNum, match in enumerate(matches):
+            group = match.group().strip()
+            if len(group)>0 and len(match.groups())>0:
+                #results[group] = match.groups()
+                results.append((group, match.groups()))
+
+        return results
+   
 
     def uncomment(self, comment):
         """
@@ -179,12 +212,9 @@ class Config():
 
         if found:
             #write config file
-            self._write(u''.join(lines))
+            return self._write(u''.join(lines))
 
-            return True
-
-        else:
-            return False
+        return False
 
     def comment(self, comment):
         """
@@ -220,14 +250,40 @@ class Config():
 
         if found:
             #write config file
-            self._write(u''.join(lines))
+            return self._write(u''.join(lines))
 
-            return True
+        return False
 
-        else:
-            return False
+    def remove(self, content):
+        """
+        Remove specified content (must be exactly the same string!)
 
-    def remove(self, removes):
+        Args:
+            content (string): string to remove
+
+        Returns:
+            bool: True if content removed
+        """
+        #check params
+        if not isinstance(content, unicode):
+            raise Exception('Content parameter must be unicode')
+
+        fd = self._open()
+        lines = fd.read()
+        self._close()
+
+        #remove content
+        before = len(lines)
+        lines = lines.replace(content, '')
+        after = len(lines)
+
+        if before!=after:
+            #write config file
+            return self._write(u''.join(lines))
+            
+        return False
+
+    def remove_lines(self, removes):
         """
         Remove specified lines
 
@@ -263,12 +319,9 @@ class Config():
 
         if len(indexes)>0:
             #write config file
-            self._write(u''.join(lines))
+            return self._write(u''.join(lines))
 
-            return True
-
-        else:
-            return False
+        return False
 
     def remove_after(self, header_regexp, line_regexp, lines_to_delete):
         """
@@ -319,13 +372,16 @@ class Config():
         #write config file
         if len(indexes)>0:
             #write config file
-            self._write(u''.join(lines))
+            if self._write(u''.join(lines)):
+                return count
+            else:
+                return 0
 
         return count
         
-    def add(self, lines):
+    def add_lines(self, lines):
         """
-        Add new line at end of file
+        Add new lines at end of file
 
         Args:
             lines (list): list of lines to add
@@ -346,11 +402,34 @@ class Config():
             content.append(line)
 
         #write config file
-        self._write(u''.join(content))
+        return self._write(u''.join(content))
 
-        return True
+    def add(self, content):
+        """
+        Add specified content at end of file
 
-    def dump_content(self):
+        Args:
+            content (string): string to append
+
+        Returns:
+            bool: True if content added
+        """
+        #check params
+        if not isinstance(lines, list):
+            raise Exception('Lines parameter must be list of string')
+
+        #read content
+        fd = self._open()
+        content_ = fd.read()
+        self._close()
+
+        #add new content
+        content_ += content
+
+        #write config file
+        return self._write(content_)
+
+    def dump(self): # pragma: no cover
         """
         Dump file content to stdout
         For debug and test purpose only

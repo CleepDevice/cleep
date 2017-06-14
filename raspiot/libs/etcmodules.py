@@ -40,7 +40,7 @@ class EtcModules(Config):
         """
         entries = {}
 
-        results = self.search(u'^(?!#)(.*?)$', re.UNICODE | re.MULTILINE)
+        results = self.find(u'^(?!#)(.*?)$', re.UNICODE | re.MULTILINE)
         for group, groups in results:
             #add new entry
             entry = {
@@ -76,7 +76,7 @@ class EtcModules(Config):
         """
         entries = self.__get_entries()
         if not entries.has_key(module):
-            return self.add([u'%s' % module])
+            return self.add_lines([u'%s' % module])
 
         #module already enabled
         return True
@@ -93,7 +93,7 @@ class EtcModules(Config):
         """
         entries = self.__get_entries()
         if entries.has_key(module):
-            return self.remove([u'%s' % module])
+            return self.remove_lines([u'%s' % module])
 
         #module already disabled
         return True

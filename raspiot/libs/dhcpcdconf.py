@@ -28,7 +28,7 @@ class DhcpcdConf(Config):
         Return network interfaces
         """
         entries = {}
-        results = self.search(r'^(?:interface\s(.*?))$|^(?:static (.*?)=(.*?))$|^(?:fallback\s(\w+_\w+))$|^(?:profile\s(\w+_\w+))$', re.UNICODE | re.MULTILINE)
+        results = self.find(r'^(?:interface\s(.*?))$|^(?:static (.*?)=(.*?))$|^(?:fallback\s(\w+_\w+))$|^(?:profile\s(\w+_\w+))$', re.UNICODE | re.MULTILINE)
         current_entry = None
         for group, groups in results:
             #init variables
@@ -149,7 +149,7 @@ class DhcpcdConf(Config):
         lines.append(u'static routers=%s\n' % routers)
         lines.append(u'static domain_name_servers=%s\n' % domain_name_servers)
 
-        return self.add(lines)
+        return self.add_lines(lines)
 
     def delete_static_interface(self, interface):
         """
@@ -217,7 +217,7 @@ class DhcpcdConf(Config):
         lines.append(u'\ninterface %s\n' % interface)
         lines.append(u'fallback fallback_%s\n' % interface)
 
-        return self.add(lines)
+        return self.add_lines(lines)
 
     def delete_fallback_interface(self, interface):
         """

@@ -186,7 +186,6 @@ class Console():
             u'stdout': [],
             u'stderr': []
         }
-        print p.stdout.encoding
         if not killed:
             err = self.__process_lines(p.stderr.readlines())
             if len(err)>0:
