@@ -9,12 +9,12 @@
     <!-- multiple actions -->
     <md-fab-speed-dial ng-if="fabButtonCtl.actions.length>1" md-direction="left" class="md-scale md-fab-bottom-right" style="position:fixed !important;">
         <md-fab-trigger>
-            <md-button class="md-fab md-primary" aria-label="More">
+            <md-button class="md-accent md-fab md-primary" aria-label="More">
                 <md-icon md-font-set="material-icons">more_vert</md-icon>
             </md-button>
         </md-fab-trigger>
         <md-fab-actions>
-            <md-button ng-repeat="action in fabButtonCtl.actions" ng-click="action.callback()" class="md-fab md-mini md-primary" aria-label="{{action.aria}}">
+            <md-button ng-repeat="action in fabButtonCtl.actions" ng-click="action.callback()" class="md-accent md-fab md-mini md-primary" aria-label="{{action.aria}}">
                 <md-tooltip md-direction="top">{{action.tooltip}}</md-tooltip>
                 <md-icon md-font-set="material-icons">{{action.icon}}</md-icon>
             </md-button>
