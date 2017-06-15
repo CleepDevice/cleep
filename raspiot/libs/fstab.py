@@ -1,87 +1,127 @@
-from console import Console
-from raspiot.utils import MissingParameter
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-class Fstab():
+from raspiot.libs.config import Config
+from console import Console
+from raspiot.utils import MissingParameter, InvalidParameter
+import re
+import time
+
+class Blkid():
+
+    CACHE_DURATION = 5.0
+
+    def __init__(self):
+        self.console = Console()
+        self.timestamp = None
+        self.__devices = {}
+        self.__uuids = {}
+
+    def __refresh(self):
+        #check if refresh is needed
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+            return
+
+        res = self.console.command(u'/sbin/blkid')
+        if not res[u'error'] and not res[u'killed']:
+            #parse data
+            matches = re.finditer(r'^(\/dev\/.*?):.*UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            for matchNum, match in enumerate(matches):
+                groups = match.groups()
+                if len(groups)==2:
+                    self.__devices[groups[0]] = groups[1]
+                    self.__uuids[groups[1]] = groups[0]
+
+        self.timestamp = time.time()
+
+    def get_devices(self):
+        self.__refresh()
+
+        return self.__devices
+
+    def get_device(self, uuid):
+        self.__refresh()
+
+        if self.__uuids.has_key(uuid):
+            return self.__uuids[uuid]
+
+        return None
+
+    def get_uuid(self, device):
+        self.__refresh()
+
+        if self.__devices.has_key(device):
+            return self.__devices[device]
+
+        return None
+
+
+class Fstab(Config):
     """
     Handles /etc/fstab file
     """
 
-    MODE_RO = u'r'
-    MODE_RW = u'w'
+    CONF = u'/etc/fstab'
 
-    def __init__(self):
+    def __init__(self, backup=True):
         """
         Constructor
         """
-        self.__fd = None
-        self.console = Console()
+        Config.__init__(self, self.CONF, None, backup)
+        self.blkid = Blkid()
 
-    def __del__(self):
-        """
-        Destructor
-        """
-        if self.__fd is not None:
-            self.__fd.close()
+    #def get_uuid_by_device(self, device):
+    #    """
+    #    Return uuid corresponding to device
 
-    def __open_file(self, mode):
-        """
-        Open file on specified mode
+    #    Args:
+    #        device (string): device as presented in fstab
 
-        Args:
-            mode (r|w): opening mode
+    #    Returns:
+    #        string: uuid
+    #        None: if nothing found
+    #    """
+    #    if device is None or len(device)==0:
+    #        raise MissingParameter('Device parameter is missing')
 
-        Returns:
-            file: file descriptor
-        """
-        #close existing file descriptor first
-        if self.__fd is not None:
-            self.__fd.close()
-            
-        #open and return file descriptor
-        self.__fd = open(u'/etc/fstab', mode)
-        return self.__fd
+    #    #get blkid data
+    #    if self.blkid_cache.need_update():
+    #        res = self.console.command(u'/sbin/blkid | grep "%s"' % device)
+    #        if res[u'error'] or res[u'killed']:
+    #            return None
 
-    def get_uuid_by_device(self, device):
-        """
-        Return uuid corresponding to device
+    #        self.blkid_cache.set_lines(res[u'stdout'])
 
-        Args:
-            device (string): device as presented in fstab
+    #        items = res[u'stdout'][0].split()
+    #        for item in items:
+    #            if item.lower().startswith(u'uuid='):
+    #                return item[5:].replace('"', '').strip()
 
-        Returns:
-            string: uuid
-            None: if nothing found
-        """
-        res = self.console.command(u'/sbin/blkid | grep "%s"' % device)
-        if res[u'error'] or res[u'killed']:
-            return None
-        else:
-            items = res[u'stdout'][0].split()
-            for item in items:
-                if item.lower().startswith(u'uuid='):
-                    return item[5:].replace('"', '').strip()
+    #    return None
 
-        return None
+    #def get_device_by_uuid(self, uuid):
+    #    """
+    #    Return device corresponding to uuid
 
-    def get_device_by_uuid(self, uuid):
-        """
-        Return device corresponding to uuid
+    #    Args:
+    #        uuid (string): device uuid
 
-        Args:
-            uuid (string): device uuid
+    #    Returns:
+    #        string: device
+    #        None: if nothing found
+    #    """
+    #    if uuid is None or len(uuid)==0:
+    #        raise MissingParameter('Uuid parameter is missing')
 
-        Returns:
-            string: device
-            None: if nothing found
-        """
-        res = self.console.command(u'/sbin/blkid | grep "%s"' % uuid)
-        if res[u'error'] or res['ukilled']:
-            return None
-        else:
-            items = res[u'stdout'].split()
-            return items[0].replace(':', '').strip()
+    #    res = self.console.command(u'/sbin/blkid | grep "%s"' % uuid)
+    #    print res
+    #    if res[u'error'] or res[u'killed']:
+    #        return None
+    #    else:
+    #        items = res[u'stdout'].split()
+    #        return items[0].replace(':', '').strip()
 
-        return None
+    #    return None
 
     def get_all_devices(self):
         """
@@ -99,23 +139,12 @@ class Fstab():
         """
         devices = {}
 
-        res = self.console.command(u'/sbin/blkid')
-        if res[u'error'] or res[u'killed']:
-            return None
-
-        else:
-            for line in res[u'stdout']:
-                device = {
-                    u'device': None,
-                    u'uuid': None
-                }
-                items = line.split()
-                device[u'device'] = items[0].replace(u':', u'').strip()
-                for item in items:
-                    if item.lower().startswith(u'uuid='):
-                        device[u'uuid'] = item[5:].replace(u'"', u'').strip()
-                        break
-                devices[device[u'device']] = device
+        for device, uuid in self.blkid.get_devices().iteritems():
+            entry = {
+                u'device': device,
+                u'uuid': uuid
+            }
+            devices[device] = entry
 
         return devices
 
@@ -137,49 +166,76 @@ class Fstab():
                 }
         """
         mountpoints = {}
+        pattern_type = r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:)(.*?)$|^(UUID)(=)(.*?)$|^\/(dev)(\/)(.*?)$|^(.*?)(:)(.*?)$'
 
-        fd = self.__open_file(self.MODE_RO)
-        for line in fd.readlines():
-            line = line.strip()
+        results = self.find(r'^(?!#)(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s*$', re.MULTILINE | re.UNICODE)
+        for group, groups in results:
+            #remove none values
+            groups = filter(None, groups)
 
-            if line.startswith(u'#'):
-                #drop comment line
+            if len(groups)==6:
+                #get type of mount point
+                sub_results = self.find_in_string(pattern_type, groups[0], re.UNICODE)
+                for sub_group, sub_groups in sub_results:
+                    #remove none values
+                    sub_groups = filter(None, sub_groups)
+                    
+                    if len(sub_groups)==3:
+                        if sub_groups[0].startswith(u'UUID') and sub_groups[1]=='=':
+                            #uuid
+                            uuid = sub_groups[2]
+                            device = self.blkid.get_device(uuid)
+                            mountpoint = groups[1]
+                            mounttype = groups[2]
+                            options = groups[3]
+                            local = True
+                        elif sub_groups[0].startswith(u'dev') and sub_groups[1]=='/':
+                            #device
+                            device = sub_group
+                            uuid = self.blkid.get_uuid(device)
+                            mountpoint = groups[1]
+                            mounttype = groups[2]
+                            options = groups[3]
+                            local = True
+                        elif (sub_groups[0][1].isdigit() and sub_groups[1]==':') or sub_groups[1]==':':
+                            #ip or hostname
+                            device = sub_group
+                            uuid = None
+                            mountpoint = groups[1]
+                            mounttype = groups[2]
+                            options = groups[3]
+                            local = False
+                        else:
+                            #unknown entry
+                            continue
+
+                        #add entry
+                        mountpoints[mountpoint] = {
+                            u'group': group,
+                            u'local': local,
+                            u'device': device,
+                            u'uuid': uuid,
+                            u'mountpoint': mountpoint,
+                            u'mounttype': mounttype,
+                            u'options': options
+                        }
+                    else:
+                        #invalid type, drop line
+                        continue
+                
+            else:
+                #invalid line, drop result
                 continue
-
-            elif line.startswith(u'/dev/'):
-                #device specified
-                (device, mountpoint, mounttype, options, _, _) = line.split()
-                uuid = self.get_uuid_by_device(device)
-                mountpoints[mountpoint] = {
-                    u'device': device,
-                    u'uuid': uuid,
-                    u'mountpoint': mountpoint,
-                    u'mounttype': mounttype,
-                    u'options': options
-                }
-
-            elif line.strip().lower()[:4]==u'uuid':
-                #uuid specified
-                (uuid, mountpoint, mounttype, options, _, _) = line.split()
-                uuid = uuid.split(u'=')[1].strip()
-                device = self.get_device_by_uuid(uuid)
-                mountpoints[mountpoint] = {
-                    u'device': device,
-                    u'uuid': uuid.split(u'=')[1].strip(),
-                    u'mountpoint': mountpoint,
-                    u'mounttype': mounttype,
-                    u'options': options
-                }
 
         return mountpoints
 
-    def add_mountpoint(self, mountpoint, device, mounttype, options):
+    def add_mountpoint(self, device, mountpoint, mounttype, options):
         """
         Add specified mount point to /etc/fstab file
 
         Args:
-            mountpoint (string): mountpoint
             device (string): device path
+            mountpoint (string): mountpoint
             mounttype (string): type of mountpoint (ext4, ext3...)
             options (string): specific options for mountpoint
                               
@@ -189,6 +245,7 @@ class Fstab():
         Raises:
             MissingParameter
         """
+        #check params
         if mountpoint is None or len(mountpoint)==0:
             raise MissingParameter(u'Mountpoint parameter is missing')
         if device is None or len(device)==0:
@@ -197,7 +254,14 @@ class Fstab():
             raise MissingParameter(u'Mounttype parameter is missing')
         if options is None or len(options)==0:
             raise MissingParameter(u'Options parameter is missing')
-        return False
+
+        #check if mountpoint not already exists
+        mountpoints = self.get_mountpoints()
+        if mountpoints.has_key(mountpoint):
+            return False
+
+        line = u'\n%s\t%s\t%s\t%s\t0\t0\n' % (device, mountpoint, mounttype, options)
+        return self.add(line)
 
     def delete_mountpoint(self, mountpoint):
         """
@@ -212,9 +276,17 @@ class Fstab():
         Raises:
             MissingParameter
         """
-        if options is None or len(options)==0:
+        #check params
+        if mountpoint is None or len(mountpoint)==0:
             raise MissingParameter(u'Mountpoint parameter is missing')
-        return False
+
+        #check if mountpoint exists
+        mountpoints = self.get_mountpoints()
+        if not mountpoints.has_key(mountpoint):
+            return False
+
+        #delete mountpoint
+        return self.remove(mountpoints[mountpoint][u'group'])
 
     def reload_fstab(self):
         """
@@ -226,6 +298,7 @@ class Fstab():
         res = self.console.command(u'/bin/mount -a')
         if res[u'error'] or res[u'killed']:
             return False
+
         else:
             return True
 

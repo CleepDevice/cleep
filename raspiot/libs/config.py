@@ -415,7 +415,7 @@ class Config():
             bool: True if content added
         """
         #check params
-        if not isinstance(lines, list):
+        if not isinstance(content, unicode):
             raise Exception('Lines parameter must be list of string')
 
         #read content
@@ -428,6 +428,20 @@ class Config():
 
         #write config file
         return self._write(content_)
+
+    def get_content(self):
+        """
+        Get config file content
+
+        Returns:
+            list: list of lines
+        """
+        #read content
+        fd = self._open()
+        lines = fd.readlines()
+        self._close()
+        
+        return lines
 
     def dump(self): # pragma: no cover
         """
