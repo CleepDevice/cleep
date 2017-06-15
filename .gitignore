@@ -7,4 +7,5 @@ node_modules/
 docs/_build
 dist/
 **/*.swp
-raspiot/tests/.coverage
+.*
+!/.gitignore
