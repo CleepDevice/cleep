@@ -39,15 +39,15 @@ var soundsService = function($q, $rootScope, rpcService) {
     /**
      * Delete sound
      */
-    self.deleteSound = function(name) {
-        return rpcService.sendCommand('delete_sound', 'sounds', {'filename':name});
+    self.deleteSound = function(fullname) {
+        return rpcService.sendCommand('delete_sound', 'sounds', {'fullname':fullname});
     };
 
     /**
      * Play sound
      */
-    self.playSound = function(name) {
-        return rpcService.sendCommand('play_sound', 'sounds', {'filename':name});
+    self.playSound = function(fullname) {
+        return rpcService.sendCommand('play_sound', 'sounds', {'fullname':fullname});
     };
 
     /**

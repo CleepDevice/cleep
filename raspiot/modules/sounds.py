@@ -23,9 +23,10 @@ class PlaySound(Thread):
         """
         Constructor
         
-        Params:
+        Args:
             filepath (string): sound filepath
             filedesc (file): file descriptor. Closed at end of playback
+            delete (bool): delete filepath after playing it
         """
         #init
         Thread.__init__(self)
@@ -70,6 +71,7 @@ class PlaySound(Thread):
             if self.delete:
                 self.logger.debug(u'PlaySound: delete sound file "%s"' % self.filepath)
                 os.remove(self.filepath)
+
         except:
             self.logger.exception(u'Exception during sound playing:')
 
@@ -204,6 +206,8 @@ class Sounds(RaspIotRenderer):
             lang (string): tts lang (see TTS_LANGS)
         """
         #check params
+        if lang is None or len(lang)==0:
+            raise MissingParameter(u'Lang parameter is missing')
         if lang not in Sounds.TTS_LANGS.keys():
             raise InvalidParameter(u'Specified lang "%s" is invalid' % lang)
 
@@ -222,36 +226,43 @@ class Sounds(RaspIotRenderer):
         pygame.mixer.init()
         volume = pygame.mixer.music.get_volume()
         pygame.quit()
+
         return volume*100
 
     def set_volume(self, volume):
         """
         Set volume
 
-        Params:
+        Args:
             volume (int): volume value
         """
+        if volume is None or len(volume)==0:
+            raise MissingParameter(u'Volume parameter is missing')
+
         pygame.mixer.init()
         pygame.mixer.music.set_volume(int(volume/100.0))
         pygame.quit()
 
-    def play_sound(self, filename):
+    def play_sound(self, fullname):
         """
         Play specified file
 
-        Params:
-            filename: filename to play
+        Args:
+            fullname: sound file to play
 
         Raises:
             Exception, InvalidParameter
         """
+        if fullname is None or len(fullname)==0:
+            raise MissingParameter(u'Fullname parameter is missing')
+
         #build filepath
-        filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
+        filepath = os.path.join(Sounds.SOUNDS_PATH, fullname)
 
         #check file validity
         if not os.path.exists(filepath):
             #invalid file specified
-            raise InvalidParameter(u'Specified file "%s" is invalid' % filename)
+            raise InvalidParameter(u'Specified file "%s" is invalid' % fullname)
 
         #check if sound is already playing
         if self.__sound_thread!=None and self.__sound_thread.is_alive():
@@ -266,7 +277,7 @@ class Sounds(RaspIotRenderer):
         """
         Speak specified message
 
-        Params:
+        Args:
             text (string): text to say
             lang (string): spoken lang
 
@@ -274,9 +285,9 @@ class Sounds(RaspIotRenderer):
             Exception, InvalidParameter
         """
         #check parameters
-        if text is None:
+        if text is None or len(text)==0:
             raise MissingParameter(u'Text parameter is missing')
-        if lang is None:
+        if lang is None or len(lang)==0:
             raise MissingParameter(u'Lang parameter is missing')
 
         #check if sound is already playing
@@ -294,23 +305,26 @@ class Sounds(RaspIotRenderer):
             self.__sound_thread = PlaySound(path, True)
             self.__sound_thread.start()
             return True
+
         except:
             self.logger.exception(u'Exception when TTSing text "%s":' % text)
 
         return False
 
-    def delete_sound(self, filename):
+    def delete_sound(self, fullname):
         """
         Delete sound
 
-        Params:
-            filename (string): filename to delete
+        Args:
+            fullname (string): sound file (with file extension) to delete
 
         Raises:
             InvalidParameter
         """
+        if fullname is None or len(fullname)==0:
+            raise MissingParameter(u'Fullname parameter is missing')
         #build filepath
-        filepath = os.path.join(Sounds.SOUNDS_PATH, filename)
+        filepath = os.path.join(Sounds.SOUNDS_PATH, fullname)
     
         #delete file
         if os.path.exists(filepath):
@@ -327,7 +341,8 @@ class Sounds(RaspIotRenderer):
             list: list of sounds::
                 [
                     {
-                        name (string): filename
+                        name (string): filename without extension
+                        fullname (string): filename with file extension
                     },
                     ...
                 ]
@@ -336,7 +351,8 @@ class Sounds(RaspIotRenderer):
         for root, dirs, sounds in os.walk(Sounds.SOUNDS_PATH):
             for sound in sounds:
                 out.append({
-                    u'name': os.path.basename(sound)
+                    u'name': os.path.splitext(os.path.basename(sound))[0],
+                    u'fullname': os.path.basename(sound)
                 })
         return out
 
@@ -344,7 +360,7 @@ class Sounds(RaspIotRenderer):
         """
         Add new sound
 
-        Params:
+        Args:
             filepath (string): uploaded and local filepath
 
         Returns:
@@ -381,7 +397,7 @@ class Sounds(RaspIotRenderer):
 
         if len(sounds)>0:
             num = random.randrange(0, len(sounds), 1)
-            self.play_sound(sounds[num])
+            self.play_sound(sounds[num][u'fullname'])
 
         return True
 

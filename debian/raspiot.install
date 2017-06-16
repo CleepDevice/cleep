@@ -6,3 +6,4 @@ scripts/raspiot.service lib/systemd/system/
 scripts/raspiot etc/init.d/
 scripts/raspiot_helper.sh etc/raspiot/
 requirements.txt etc/raspiot/
+medias/sounds/* opt/raspiot/sounds/

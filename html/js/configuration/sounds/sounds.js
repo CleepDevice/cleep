@@ -104,7 +104,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
         self.playSound = function(filename) {
             soundsService.playSound(filename)
                 .then(function() {
-                    toast.success('Sounds is playing');
+                    toast.success('Sound is playing');
                 });
         };
 
