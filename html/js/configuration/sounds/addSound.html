@@ -14,15 +14,35 @@
 
         <md-dialog-content layout-padding>
             <div layout-gt-sm="row" class="md-dialog-content">
+
+                <!-- upload -->
                 <md-input-container class="md-block" flex-gt-sm>
                     <div upload-file selected-file="soundsCtl.uploadFile" label="Select sound file"></div>
                 </md-input-container>
-                <md-input-container class="md-block" flex-gt-sm>
-                    <md-button href="http://www.universal-soundbank.com/" target="_blank">
-                        <md-icon md-font-set="material-icons">link</md-icon>
-                        <span>Upload new sound from Universal-soundbank</span>
-                    </md-button>
-                </md-input-container>
+
+                <!-- external links -->
+                <div layout="column">
+
+                    <div>
+                        <span class="md-subhead">Download new free sounds from:</span>
+                    </div>
+
+                    <div>
+                        <md-button href="http://www.universal-soundbank.com/" target="_blank">
+                            <md-icon md-font-set="material-icons">link</md-icon>
+                            <span>universal-soundbank.com</span>
+                        </md-button>
+                    </div>
+
+                    <div>
+                        <md-button href="http://www.soundbible.com/" target="_blank">
+                            <md-icon md-font-set="material-icons">link</md-icon>
+                            <span>soundbible.com</span>
+                        </md-button>
+                    <div>
+
+                </div>
+
             </div>
         </md-dialog-content>
 
