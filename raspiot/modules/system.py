@@ -27,6 +27,7 @@ class System(RaspIotModule):
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = []
+    MODULE_COUNTRY = 'any'
 
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'

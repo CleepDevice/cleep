@@ -18,6 +18,7 @@ class Database(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
+    MODULE_COUNTRY = 'any'
 
     DATABASE_PATH = u'/var/opt/raspiot/databases'
     DATABASE_NAME = u'raspiot.db'

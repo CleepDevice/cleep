@@ -26,6 +26,7 @@ class Shutters(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
+    MODULE_COUNTRY = 'any'
 
     STATUS_OPENED = u'opened'
     STATUS_CLOSED = u'closed'

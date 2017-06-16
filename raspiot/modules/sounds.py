@@ -86,6 +86,7 @@ class Sounds(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
+    MODULE_COUNTRY = 'any'
 
     RENDERER_PROFILES = [TextToSpeechProfile()]
     RENDERER_TYPE = u'sound'

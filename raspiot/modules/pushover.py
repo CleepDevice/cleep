@@ -24,6 +24,7 @@ class Pushover(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModulePushover'
     MODULE_TAGS = [u'push', u'alert']
+    MODULE_COUNTRY = 'any'
 
     DEFAULT_CONFIG = {
         u'apikey': None,

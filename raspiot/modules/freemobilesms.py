@@ -26,6 +26,7 @@ class Freemobilesms(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = u'https://github.com/tangb/Cleep/wiki/FreemobileSms'
     MODULE_TAGS = [u'sms', u'alert']
+    MODULE_COUNTRY = 'france'
 
     DEFAULT_CONFIG = {
         u'userid': None,

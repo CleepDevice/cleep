@@ -30,6 +30,7 @@ class Network(RaspIotModule):
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = []
+    MODULE_COUNTRY = 'any'
 
     def __init__(self, bus, debug_enabled):
         """
