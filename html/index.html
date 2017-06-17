@@ -24,8 +24,11 @@
         <!-- menu -->
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
-                <h2>
+                <h2 ng-if="!mainCtl.hostname">
                     Cleep
+                </h2>
+                <h2 ng-if="mainCtl.hostname.length>0">
+                    {{mainCtl.hostname}}
                 </h2>
                 <span flex></span>
                 <md-button ng-if="mainCtl.needRestart && !mainCtl.needReboot" class="md-raised md-accent" aria-label="Restart" ng-click="mainCtl.restart()">

@@ -121,6 +121,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set hostname
+     */
+    self.setHostname = function(hostname) {
+        return rpcService.sendCommand('set_hostname', 'system', {'hostname':hostname});
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

@@ -32,6 +32,8 @@ class System(RaspIotModule):
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'
 
+    HOSTNAME_FILE = u'/etc/hostname'
+
     DEFAULT_CONFIG = {
         u'city': None,
         u'country': '',
@@ -69,6 +71,7 @@ class System(RaspIotModule):
         self.__process = None
         self.__need_restart = False
         self.__need_reboot = False
+        self.hostname = None
 
     def _start(self):
         """
@@ -300,6 +303,7 @@ class System(RaspIotModule):
         config[u'uptime'] = self.get_uptime()
         config[u'needrestart'] = self.__need_restart
         config[u'needreboot'] = self.__need_reboot
+        config[u'hostname'] = self.get_hostname()
 
         return config
 
@@ -903,5 +907,40 @@ class System(RaspIotModule):
         if resp[u'error']:
             self.logger.error(u'Unable to set debug on module %s: %s' % (module, resp[u'message']))
             raise CommandError(u'Update debug failed')
+
+    def set_hostname(self, hostname):
+        """
+        Set raspi hostname
+
+        Args:
+            hostname (string): hostname
+        """
+        if hostname is None or len(hostname)==0:
+            raise MissingParameter('Hostname parameter is missing')
+
+        self.hostname = hostname
+
+        with io.open(self.HOSTNAME_FILE, u'w') as fd:
+            fd.write(u'%s' % self.hostname)
+
+        return True
+
+    def get_hostname(self):
+        """
+        Return raspi hostname
+
+        Returns:
+            string: raspi hostname
+        """
+        if self.hostname is None:
+            with io.open(self.HOSTNAME_FILE, u'r') as fd:
+                content = fd.readlines()
+
+            if len(content)>0:
+                self.hostname = content[0].strip()
+        
+        return self.hostname
+
+
 
 

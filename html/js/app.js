@@ -16,6 +16,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     self.needRestart = false;
     self.needReboot = false;
     self.rebooting = false;
+    self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
 
@@ -178,6 +179,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
             {
                 self.needRestart = newValue.config.needrestart;
                 self.needReboot = newValue.config.needreboot;
+                self.hostname = newValue.config.hostname;
             }
         }
     );

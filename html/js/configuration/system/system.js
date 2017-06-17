@@ -14,6 +14,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         self.country = '';
         self.monitoring = false;
         self.logs = '';
+        self.hostname = '';
         self.codemirrorInstance = null;
         self.codemirrorOptions = {
             lineNumbers: true,
@@ -114,7 +115,6 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 .then(function(resp) {
                     self.logs = resp.data;
                     self.refreshEditor();
-                    toast.info('coucou');
                 });
         };
 
@@ -135,6 +135,20 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         };
 
         /**
+         * Set hostname
+         */
+        self.setHostname = function()
+        {
+            systemService.setHostname(self.hostname)
+                .then(function(resp) {
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function() {
+                    toast.success('Device name saved');
+                });
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
@@ -147,6 +161,7 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                     self.sunset = $filter('hrTime')(config.sun.sunset);
                     self.sunrise = $filter('hrTime')(config.sun.sunrise);
                     self.monitoring = config.monitoring;
+                    self.hostname = config.hostname;
 
                     //request for modules debug status
                     return raspiotService.getModulesDebug();
