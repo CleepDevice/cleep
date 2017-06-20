@@ -35,14 +35,14 @@ network={
     def test_get_networks(self):
         networks = self.w.get_networks()
         self.assertEqual(len(networks), 2)
-        self.assertEqual(networks[0]['network'], 'mynetwork1')
-        self.assertEqual(networks[1]['network'], 'mynetwork2')
+        self.assertEqual(networks['mynetwork1']['network'], 'mynetwork1')
+        self.assertEqual(networks['mynetwork2']['network'], 'mynetwork2')
 
     def test_add_network(self):
         self.assertTrue(self.w.add_network('mynetwork3', 'wpa', 'mypassword3'))
         networks = self.w.get_networks()
         self.assertEqual(len(networks), 3)
-        self.assertEqual(networks[2]['network'], 'mynetwork3')
+        self.assertEqual(networks['mynetwork3']['network'], 'mynetwork3')
 
     def test_add_existing_network(self):
         self.assertRaises(Exception, self.w.add_network, 'mynetwork2', 'wpa', 'mypassword2')
@@ -90,5 +90,5 @@ class WpaSupplicantConfTests_emptyConf(unittest.TestCase):
         self.assertTrue(self.w.add_network('mynetwork3', 'wpa', 'mypassword3'))
         networks = self.w.get_networks()
         self.assertEqual(len(networks), 1)
-        self.assertEqual(networks[0]['network'], 'mynetwork3')
+        self.assertEqual(networks['mynetwork3']['network'], 'mynetwork3')
 

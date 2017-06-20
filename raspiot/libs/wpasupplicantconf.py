@@ -34,7 +34,8 @@ class WpaSupplicantConf(Config):
         """
         Return networks found in conf file
         """
-        networks = []
+        networks = {}
+        entries = []
 
         results = self.find(r'network\s*=\s*\{\s*(.*?)\s*\}', re.UNICODE | re.DOTALL)
         for group, groups in results:
@@ -51,7 +52,7 @@ class WpaSupplicantConf(Config):
                 u'hidden': False,
                 u'encryption': None
             }
-            networks.append(current_entry)
+            entries.append(current_entry)
 
             #fill entry
             pattern = r'^\s*(\w+)=(.*?)\s*$'
@@ -76,6 +77,9 @@ class WpaSupplicantConf(Config):
                         #invalid content, drop this item
                         continue
 
+        for entry in entries:
+            networks[entry[u'network']] = entry
+
         return networks
 
     def get_network(self, network):
@@ -90,9 +94,9 @@ class WpaSupplicantConf(Config):
             None: if network is not found
         """
         networks = self.get_networks()
-        for network_ in networks:
-            if network_[u'network']==network:
-                return network_
+
+        if networks.has_key(network):
+            return networks[network]
 
         return None
 
