@@ -3,6 +3,7 @@
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.config import Config
+from raspiot.libs.console import Console
 import os
 import re
 from shutil import copy2
@@ -89,6 +90,22 @@ class DhcpcdConf(Config):
         
         return entries
 
+    def exists(self):
+        """
+        Check if config file exists and dhcpcd daemon is running
+
+        Returns:
+            bool: True if all is fine
+        """
+        if os.path.exists(self.CONF):
+            c = Console()
+            res = c.command(u'/usr/bin/pgrep dhcpcd | /usr/bin/wc -l')
+            print res
+            if not res[u'error'] and not res[u'killed'] and res[u'stdout'][0]=='1':
+                return True
+
+        return False
+
     def get_interface(self, interface):
         """
         Return specified interface config
@@ -151,7 +168,7 @@ class DhcpcdConf(Config):
 
         return self.add_lines(lines)
 
-    def delete_static_interface(self, interface):
+    def __delete_static_interface(self, interface):
         """
         Delete new static interface
 
@@ -219,7 +236,7 @@ class DhcpcdConf(Config):
 
         return self.add_lines(lines)
 
-    def delete_fallback_interface(self, interface):
+    def __delete_fallback_interface(self, interface):
         """
         Delete fallback configuration for specified interface
 
@@ -253,6 +270,27 @@ class DhcpcdConf(Config):
                 return False
 
         return True
+
+    def delete_interface(self, interface):
+        """
+        Delete specified interface
+
+        Args:
+            interface (string): interface name
+
+        Returns:
+            bool: True if interface deleted, False otherwise
+        """
+        #get interface
+        interface_ = self.get_interface(interface)
+        if interface_ is None:
+            #interface not found
+            return False
+
+        if interface_[u'fallback'] is not None:
+            return self.__delete_fallback_interface(interface)
+        else:
+            return self.__delete_static_interface(interface)
 
 
 

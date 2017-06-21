@@ -98,16 +98,16 @@ static domain_name_servers=192.168.1.1""")
         self.assertEqual(interface['domain_name_servers'], '10.30.1.2')
 
     def test_delete_interface_missing_parameter(self):
-        self.assertRaises(MissingParameter, self.d.delete_static_interface, None)
-        self.assertRaises(MissingParameter, self.d.delete_static_interface, '')
+        self.assertRaises(MissingParameter, self.d.delete_interface, None)
+        self.assertRaises(MissingParameter, self.d.delete_interface, '')
 
     def test_delete_interface_invalid_parameter(self):
-        self.assertFalse(self.d.delete_static_interface('eth1'))
+        self.assertFalse(self.d.delete_interface('eth1'))
         
     def test_delete_interface(self):
         self.assertTrue(self.d.add_static_interface('eth1', '10.30.1.255', '10.30.1.1', '10.30.1.2'))
         self.assertEqual(len(self.d.get_interfaces()), 2)
-        self.assertTrue(self.d.delete_static_interface('eth1'))
+        self.assertTrue(self.d.delete_interface('eth1'))
         self.assertEqual(len(self.d.get_interfaces()), 1)
 
 
@@ -215,16 +215,16 @@ fallback fallback_eth1""")
         self.assertEqual(interface['domain_name_servers'], '10.30.1.2')
 
     def test_delete_interface_missing_parameter(self):
-        self.assertRaises(MissingParameter, self.d.delete_static_interface, None)
-        self.assertRaises(MissingParameter, self.d.delete_static_interface, '')
+        self.assertRaises(MissingParameter, self.d.delete_interface, None)
+        self.assertRaises(MissingParameter, self.d.delete_interface, '')
 
     def test_delete_interface_invalid_parameter(self):
-        self.assertFalse(self.d.delete_static_interface('eth4'))
+        self.assertFalse(self.d.delete_interface('eth4'))
         
     def test_delete_interface(self):
         self.assertTrue(self.d.add_static_interface('eth3', '10.30.1.255', '10.30.1.1', '10.30.1.2'))
         self.assertEqual(len(self.d.get_interfaces()), 3)
-        self.assertTrue(self.d.delete_static_interface('eth3'))
+        self.assertTrue(self.d.delete_interface('eth3'))
         self.assertEqual(len(self.d.get_interfaces()), 2)
 
     def test_add_fallback_interface(self):
@@ -242,6 +242,6 @@ fallback fallback_eth1""")
     def test_delete_fallback_interface(self):
         self.assertTrue(self.d.add_fallback_interface('eth6', '12.12.12.12', '12.12.12.14', '12.12.12.16'))
         self.assertEqual(len(self.d.get_interfaces()), 3)
-        self.assertTrue(self.d.delete_fallback_interface('eth6'))
+        self.assertTrue(self.d.delete_interface('eth6'))
         self.assertEqual(len(self.d.get_interfaces()), 2)
 
