@@ -35,74 +35,79 @@ iface eth3 inet static
         os.remove('interfaces.fake.conf')
 
     def test_static_interface(self):
-        self.assertTrue(self.e.add_static_interface('eth10', u'none', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface('eth10',  u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_NONE))
         self.assertIsNotNone(self.e.get_interface('eth10'))
         self.assertTrue(self.e.delete_static_interface('eth10'))
         self.assertIsNone(self.e.get_interface('eth10'))
 
-        self.assertTrue(self.e.add_static_interface('eth11', u'auto', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface('eth11', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_AUTO,))
         self.assertIsNotNone(self.e.get_interface(u'eth11'))
         self.assertTrue(self.e.delete_static_interface(u'eth11'))
         self.assertIsNone(self.e.get_interface(u'eth11'))
 
-        self.assertTrue(self.e.add_static_interface('eth12', u'hotplug', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface('eth12', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_HOTPLUG))
         self.assertIsNotNone(self.e.get_interface(u'eth12'))
         self.assertTrue(self.e.delete_static_interface(u'eth12'))
         self.assertIsNone(self.e.get_interface(u'eth12'))
 
     def test_dhcp_interface(self):
-        self.assertTrue(self.e.add_dhcp_interface(u'eth10', u'none'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth10', self.e.OPTION_NONE))
         self.assertIsNotNone(self.e.get_interface(u'eth10'))
         self.assertTrue(self.e.delete_dhcp_interface(u'eth10'))
         self.assertIsNone(self.e.get_interface(u'eth10'))
 
-        self.assertTrue(self.e.add_dhcp_interface(u'eth11', u'auto'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth11', self.e.OPTION_AUTO))
         self.assertIsNotNone(self.e.get_interface(u'eth11'))
         self.assertTrue(self.e.delete_dhcp_interface(u'eth11'))
         self.assertIsNone(self.e.get_interface(u'eth11'))
 
-        self.assertTrue(self.e.add_dhcp_interface(u'eth12', u'hotplug'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth12', self.e.OPTION_HOTPLUG))
         self.assertIsNotNone(self.e.get_interface(u'eth12'))
         self.assertTrue(self.e.delete_dhcp_interface(u'eth12'))
         self.assertIsNone(self.e.get_interface(u'eth12'))
 
     def test_check_static_options(self):
-        self.assertTrue(self.e.add_static_interface(u'eth10', u'auto', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface(u'eth10', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_AUTO))
         interface = self.e.get_interface(u'eth10')
         self.assertIsNotNone(interface)
         self.assertTrue(interface[u'auto'])
         self.assertFalse(interface[u'hotplug'])
 
-        self.assertTrue(self.e.add_static_interface(u'eth11', u'hotplug', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface(u'eth11', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_HOTPLUG))
         interface = self.e.get_interface(u'eth11')
         self.assertIsNotNone(interface)
         self.assertFalse(interface[u'auto'])
         self.assertTrue(interface[u'hotplug'])
 
-        self.assertTrue(self.e.add_static_interface(u'eth12', u'none', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
+        self.assertTrue(self.e.add_static_interface(u'eth12', u'10.10.10.10', u'255.255.255.0', u'10.10.10.1', self.e.OPTION_NONE))
         interface = self.e.get_interface(u'eth12')
         self.assertIsNotNone(interface)
         self.assertFalse(interface[u'auto'])
         self.assertFalse(interface[u'hotplug'])
 
     def test_check_dhcp_options(self):
-        self.assertTrue(self.e.add_dhcp_interface(u'eth10', u'auto'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth10', self.e.OPTION_AUTO))
         interface = self.e.get_interface(u'eth10')
         self.assertIsNotNone(interface)
         self.assertTrue(interface[u'auto'])
         self.assertFalse(interface[u'hotplug'])
 
-        self.assertTrue(self.e.add_dhcp_interface(u'eth11', u'hotplug'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth11', self.e.OPTION_HOTPLUG))
         interface = self.e.get_interface(u'eth11')
         self.assertIsNotNone(interface)
         self.assertFalse(interface[u'auto'])
         self.assertTrue(interface[u'hotplug'])
 
-        self.assertTrue(self.e.add_dhcp_interface(u'eth12', u'none'))
+        self.assertTrue(self.e.add_dhcp_interface(u'eth12', self.e.OPTION_NONE))
         interface = self.e.get_interface(u'eth12')
         self.assertIsNotNone(interface)
         self.assertFalse(interface[u'auto'])
         self.assertFalse(interface[u'hotplug'])
 
-
+    def test_multiple_options(self):
+        self.assertTrue(self.e.add_dhcp_interface(u'eth10', self.e.OPTION_AUTO | self.e.OPTION_HOTPLUG))
+        interface = self.e.get_interface(u'eth10')
+        self.assertIsNotNone(interface)
+        self.assertTrue(interface[u'auto'])
+        self.assertTrue(interface[u'hotplug'])
 
