@@ -9,6 +9,7 @@ import os
 import signal
 import logging
 import sys
+import re
 
 class EndlessConsole(Thread):
     """
@@ -227,4 +228,71 @@ class Console():
         self.timer.start()
 
 
+class AdvancedConsole(Console):
+    """
+    Create console with advanced feature like find function
+    """
+    def __init__(self):
+        Console.__init__(self)
+
+    def find(self, command, pattern, options=re.UNICODE | re.MULTILINE, timeout=2.0):
+        """
+        Find all pattern matches in command stdout. Found order is respected.
+
+        Args:
+            pattern (string): search pattern
+            options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+
+        Returns:
+            list: list of matches::
+                [
+                    (group (string), subgroups (tuple)),
+                    ...
+                ]
+        """
+        results = []
+
+        #execute command
+        res = self.command(command, timeout)
+        if res[u'error'] or res[u'killed']:
+            #command failed
+            return {}
+
+        #parse command output
+        content = u'\n'.join(res[u'stdout'])
+        matches = re.finditer(pattern, content, options)
+
+        for matchNum, match in enumerate(matches):
+            group = match.group().strip()
+            if len(group)>0 and len(match.groups())>0:
+                #results[group] = match.groups()
+                results.append((group, match.groups()))
+
+        return results
+
+    def find_in_string(self, string, pattern, options=re.UNICODE | re.MULTILINE):
+        """
+        Find all pattern matches in specified string. Found order is respected.
+
+        Args:
+            pattern (string): search pattern
+            content (string): string to search in
+            options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+
+        Returns:
+            list: list of matches::
+                [
+                    (group (string), subgroups (tuple)),
+                    ...
+                ]
+        """
+        result = []
+        matches = re.finditer(pattern, content, options)
+
+        for matchNum, match in enumerate(matches):
+            group = match.group().strip()
+            if len(group)>0 and len(match.groups())>0:
+                results.append((group, match.groups()))
+
+        return results
 
