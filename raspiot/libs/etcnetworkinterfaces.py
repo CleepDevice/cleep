@@ -5,6 +5,7 @@ from raspiot.utils import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.config import Config
 import os
 import re
+import time
 from shutil import copy2
 
 class EtcNetworkInterfaces(Config):
@@ -18,6 +19,8 @@ class EtcNetworkInterfaces(Config):
     """
 
     CONF = u'/etc/network/interfaces'
+
+    CACHE_DURATION = 60.0
 
     OPTION_NONE = 0
     OPTION_AUTO = 1
@@ -33,6 +36,10 @@ class EtcNetworkInterfaces(Config):
         Constructor
         """
         Config.__init__(self, self.CONF, None, backup)
+
+        #members
+        self.__last_update = None
+        self.__cache = None
 
     def __append_option(self, option, lines, interface):
         """
@@ -54,6 +61,10 @@ class EtcNetworkInterfaces(Config):
         """
         Return network interfaces
         """
+        #check cache
+        if self.__last_update is not None and (time.time()-self.__last_update)<self.CACHE_DURATION:
+            return self.__cache
+
         entries = {}
         results = self.find(u'^\s*(?:iface\s*(\S+)\s*inet\s*(\S+))\s*$|^\s*(?:(\S+)\s(\S+))\s*$', re.UNICODE | re.MULTILINE)
         current_entry = None
@@ -128,6 +139,10 @@ class EtcNetworkInterfaces(Config):
                 }
                 entries[new_entry] = current_entry
 
+        #handle cache
+        self.__cache = entries
+        self.__last_update = time.time()
+
         return entries
 
     def get_interface(self, interface):
@@ -147,6 +162,8 @@ class EtcNetworkInterfaces(Config):
         #check params
         if interface is None or len(interface)==0:
             raise MissingParameter(u'Interface parameter is missing')
+        if not isinstance(interface, unicode):
+            raise InvalidParameter(u'Interface parameter must be unicode not %s' % type(interface))
 
         interfaces = self.get_interfaces()
         if interfaces.has_key(interface):
@@ -211,6 +228,9 @@ class EtcNetworkInterfaces(Config):
             lines.append(u'  broadcast %s\n' % broadcast)
         if wpa_conf is not None and len(wpa_conf)>0:
             lines.append(u'  wpa-conf %s\n' % wpa_conf)
+
+        #handle cache
+        self.__last_update = 0
 
         return self.add_lines(lines)
 
@@ -282,113 +302,12 @@ class EtcNetworkInterfaces(Config):
         if res!=count:
             return False
 
+        #handle cache
+        self.__last_update = 0
+
         return True
 
-    def add_static_interface(self, interface, address, netmask, gateway, option=1, dns_nameservers=None, dns_domain=None, broadcast=None, wpa_conf=None):
-        """
-        Add new static interface
-        
-        Args:
-            interface (string): interface name
-            address (string): static ip address
-            gateway (string): gateway ip address
-            netmask (string): netmask (default 255.255.255.0)
-            option (string): interface option (none|auto|hotplug) (default auto)
-            dns_nameservers (string): domain name servers
-            dns_domain (string): dns domain
-            broadcast (string): broadcast ip address
-            wpa_conf (string): wpa configuration (usually path to wpa_supplicant.conf file)
-        
-        Returns
-            bool: True if interface added successfully
-                
-        Raises:
-            MissingParameter, InvalidParameter
-        """
-        return self.__add_interface(interface, self.MODE_STATIC, option, address, netmask, gateway, dns_nameservers, dns_domain, broadcast, wpa_conf)
-
-    def delete_static_interface(self, interface):
-        """
-        Delete static interface
-
-        Args:
-            interface (string): interface name
-    
-        Returns:
-            bool: True if interface is deleted, False otherwise
-
-        Raises:
-            MissingParameter
-        """
-        return self.__delete_interface(interface, self.MODE_STATIC)
-
-    def add_manual_interface(self, interface, address, netmask, gateway, option=1, dns_nameservers=None, dns_domain=None, broadcast=None, wpa_conf=None):
-        """
-        Add new manual interface
-        
-        Args:
-            interface (string): interface name
-            option (string): interface option (none|auto|hotplug)
-            address (string): static ip address
-            netmask (string): netmask
-            gateway (string): gateway ip address
-            dns_nameservers (string): domain name servers
-            dns_domain (string): dns domain
-            broadcast (string): broadcast ip address
-            wpa_conf (string): wpa configuration (usually path to wpa_supplicant.conf file)
-        
-        Returns
-            bool: True if interface added successfully
-                
-        Raises:
-            MissingParameter, InvalidParameter
-        """
-        return self.__add_interface(interface, self.MODE_MANUAL, option, address, netmask, gateway, dns_nameservers, dns_domain, broadcast, wpa_conf)
-
-    def delete_manual_interface(self, interface):
-        """
-        Delete manual interface
-
-        Args:
-            interface (string): interface name
-    
-        Returns:
-            bool: True if interface is deleted, False otherwise
-
-        Raises:
-            MissingParameter
-        """
-        return self.__delete_interface(interface, self.MODE_MANUAL)
-
-    def add_dhcp_interface(self, interface, option):
-        """
-        Add dhcp interface
-
-        Args:
-            interface (string): interface name
-            option (string): interface option (none=0|hotplug=1|auto=2)
-
-        Returns:
-            bool: True if interface added
-        """
-        #check params
-        if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
-        if option is None:
-            raise MissingParameter(u'Option parameter is missing')
-
-        #check if interface is not already configured
-        if self.get_interface(interface) is not None:
-            return False
-
-        #add new configuration
-        lines = []
-        self.__append_option(option, lines, interface)
-        lines.append(u'iface %s inet dhcp\n' % interface)
-
-        return self.add_lines(lines)
-
-    def delete_dhcp_interface(self, interface):
+    def __delete_dhcp_interface(self, interface):
         """
         Delete dhcp interface
 
@@ -421,11 +340,90 @@ class EtcNetworkInterfaces(Config):
             line = r'dummy'
             count = 1
         res = self.remove_after(header, line, count)
+
         if res!=count:
             return False
 
+        #handle cache
+        self.__last_update = 0
+
         return True
+
+    def add_static_interface(self, interface, address, netmask, gateway, option=1, dns_nameservers=None, dns_domain=None, broadcast=None, wpa_conf=None):
+        """
+        Add new static interface
         
+        Args:
+            interface (string): interface name
+            address (string): static ip address
+            gateway (string): gateway ip address
+            netmask (string): netmask (default 255.255.255.0)
+            option (string): interface option (none|auto|hotplug) (default auto)
+            dns_nameservers (string): domain name servers
+            dns_domain (string): dns domain
+            broadcast (string): broadcast ip address
+            wpa_conf (string): wpa configuration (usually path to wpa_supplicant.conf file)
+        
+        Returns
+            bool: True if interface added successfully
+                
+        Raises:
+            MissingParameter, InvalidParameter
+        """
+        return self.__add_interface(interface, self.MODE_STATIC, option, address, netmask, gateway, dns_nameservers, dns_domain, broadcast, wpa_conf)
+
+    def add_manual_interface(self, interface, address, netmask, gateway, option=1, dns_nameservers=None, dns_domain=None, broadcast=None, wpa_conf=None):
+        """
+        Add new manual interface
+        
+        Args:
+            interface (string): interface name
+            option (string): interface option (none|auto|hotplug)
+            address (string): static ip address
+            netmask (string): netmask
+            gateway (string): gateway ip address
+            dns_nameservers (string): domain name servers
+            dns_domain (string): dns domain
+            broadcast (string): broadcast ip address
+            wpa_conf (string): wpa configuration (usually path to wpa_supplicant.conf file)
+        
+        Returns
+            bool: True if interface added successfully
+                
+        Raises:
+            MissingParameter, InvalidParameter
+        """
+        return self.__add_interface(interface, self.MODE_MANUAL, option, address, netmask, gateway, dns_nameservers, dns_domain, broadcast, wpa_conf)
+
+
+    def add_dhcp_interface(self, interface, option):
+        """
+        Add dhcp interface
+
+        Args:
+            interface (string): interface name
+            option (string): interface option (none=0|hotplug=1|auto=2)
+
+        Returns:
+            bool: True if interface added
+        """
+        #check params
+        if interface is None or len(interface)==0:
+            raise MissingParameter(u'Interface parameter is missing')
+        if option is None:
+            raise MissingParameter(u'Option parameter is missing')
+
+        #check if interface is not already configured
+        if self.get_interface(interface) is not None:
+            return False
+
+        #add new configuration
+        lines = []
+        self.__append_option(option, lines, interface)
+        lines.append(u'iface %s inet dhcp\n' % interface)
+
+        return self.add_lines(lines)
+
     def add_manual_interface(self, interface, option, wpa_conf):
         """
         Add manual interface
@@ -458,41 +456,29 @@ class EtcNetworkInterfaces(Config):
 
         return self.add_lines(lines)
 
-    def delete_dhcp_interface(self, interface):
+    def delete_interface(self, interface):
         """
-        Delete dhcp interface
+        Delete specified interface
 
         Args:
-            interface (string) interface name
-
+            interface (string): interface name
+        
         Returns:
-            bool: True if interface deleted
+            bool: Ture if interface deleted
         """
-        #check params
-        if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
-
-        #check if interface is configured
+        #get interface
         interface_ = self.get_interface(interface)
         if interface_ is None:
+            #interface not found
             return False
 
-        #build patterns
-        if interface_[u'auto']:
-            header = r'^\s*auto\s*%s\s*' % interface
-            line = r'^\s*iface\s*%s\s*inet dhcp\s*$' % interface
-            count = 2
-        elif interface_[u'hotplug']:
-            header = r'^\s*allow-hotplug\s*%s\s*' % interface
-            line = r'^\s*iface\s*%s\s*inet dhcp\s*$' % interface
-            count = 2
+        #find interface mode
+        if interface_[u'mode']==self.MODE_DHCP:
+            return self.__delete_dhcp_interface(interface)
+        elif interface_[u'mode'] in (self.MODE_STATIC, self.MODE_MANUAL):
+            return self.__delete_interface(interface, interface_[u'mode'])
         else:
-            header = r'^\s*iface\s*%s\s*inet dhcp\s*$' % interface
-            line = r'dummy'
-            count = 1
-        res = self.remove_after(header, line, count)
-        if res!=count:
+            #undeleteable interface (loopback) or unknown interface
             return False
 
-        return True
-        
+
