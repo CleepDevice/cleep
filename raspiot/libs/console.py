@@ -3,7 +3,6 @@
 
 import subprocess
 import time
-from raspiot.utils import InvalidParameter
 from threading import Timer, Thread
 import os
 import signal
@@ -152,7 +151,7 @@ class Console():
         """
         #check params
         if timeout is None or timeout<=0.0:
-            raise InvalidParameter(u'Timeout is mandatory and must be greater than 0')
+            raise Exception(u'Timeout is mandatory and must be greater than 0')
 
         #launch command
         p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
