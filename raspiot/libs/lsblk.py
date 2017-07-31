@@ -28,24 +28,26 @@ class Lsblk():
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
-        res = self.console.command(u'/bin/lsblk --list --bytes')
+        res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
         if not res[u'error'] and not res[u'killed']:
             self.partitions = []
 
             #parse data
-            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+\d+\s+(.*?)\s+(\d)\s+(.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
-                if len(groups)==6:
+                if len(groups)==10:
                     #name
                     name = groups[0]
                     
-                    #drive
+                    #drive properties
                     partition = True
-                    if groups[5].find('disk')!=-1:
-                        current_drive = groups[0]
+                    model = None
+                    if groups[3].find('disk')!=-1:
+                        current_drive = name
+                        model = groups[9]
                         partition = False
-                        total_size = groups[3]
+                        total_size = groups[5]
                         try:
                             total_size = int(total_size)
                         except:
@@ -53,17 +55,19 @@ class Lsblk():
 
                     #readonly flag
                     readonly = True
-                    if groups[4]=='0':
+                    if groups[6]=='0':
                         readonly = False
 
+                    #removable flag
+                    removable = True
+                    if groups[4]=='0':
+                        removable = False
+
                     #mountpoint
-                    splits = groups[5].split()
-                    mountpoint = None
-                    if len(splits)==2:
-                        mountpoint = splits[1]
+                    mountpoint = groups[7]
 
                     #size and percent
-                    size = groups[3]
+                    size = groups[5]
                     percent = None
                     try:
                         size = int(size)
@@ -81,7 +85,9 @@ class Lsblk():
                         u'percent': percent,
                         u'readonly': readonly,
                         u'mountpoint': mountpoint,
-                        u'partition': partition
+                        u'partition': partition,
+                        u'removable': removable,
+                        u'drivemodel': model
                     }
 
                     #save device
