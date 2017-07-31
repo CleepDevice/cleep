@@ -23,7 +23,7 @@ class Blkid():
         res = self.console.command(u'/sbin/blkid')
         if not res[u'error'] and not res[u'killed']:
             #parse data
-            matches = re.finditer(r'^(\/dev\/.*?):.*UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==2:
@@ -40,7 +40,7 @@ class Blkid():
     def get_device(self, uuid):
         self.__refresh()
 
-        if self.__uuids.has_key(uuid):
+        if uuid in self.__uuids:
             return self.__uuids[uuid]
 
         return None
@@ -48,7 +48,7 @@ class Blkid():
     def get_uuid(self, device):
         self.__refresh()
 
-        if self.__devices.has_key(device):
+        if device in self.__devices:
             return self.__devices[device]
 
         return None
