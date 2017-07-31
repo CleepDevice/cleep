@@ -3,20 +3,25 @@
 
 from console import Console
 from blkid import Blkid
+from lsblk import Lsblk
 import re
 import time
 
 class Cmdline():
 
-    CACHE_DURATION = 5.0
+    CACHE_DURATION = 3600.0
 
     def __init__(self):
         self.console = Console()
         self.blkid = Blkid()
+        self.lsblk = Lsblk()
         self.timestamp = None
         self.root_device = None
 
     def __refresh(self):
+        """
+        Refresh data
+        """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
@@ -31,15 +36,41 @@ class Cmdline():
                     if groups[0].startswith(u'UUID='):
                         #get device from uuid
                         uuid = groups[0].replace(u'UUID=', u'')
-                        self.root_device = self.blkid.get_device_by_uuid(uuid)
+                        root_device = self.blkid.get_device_by_uuid(uuid)
                     else:
                         #get device from path
-                        self.root_device = groups[0]
+                        root_device = groups[0]
+
+                    #get file system infos
+                    drives = self.lsblk.get_drives()
+
+                    #save data
+                    self.root_partition = root_device.replace(u'/dev/', u'')
+                    self.root_drive = None
+                    for drive in drives:
+                        if self.root_partition.find(drive)!=-1:
+                            self.root_drive = drive
+                            break
 
         self.timestamp = time.time()
 
-    def get_root_device(self):
-        self.__refresh()
+    def get_root_drive(self):
+        """
+        Return root drive
 
-        return self.root_device
+        Return:
+            string: root drive
+        """
+        self.__refresh()
+        return self.root_drive
+
+    def get_root_partition(self):
+        """
+        Return root partition
+
+        Return:
+            string: root partition
+        """
+        self.__refresh()
+        return self.root_partition
 
