@@ -12,10 +12,13 @@ class Blkid():
     def __init__(self):
         self.console = Console()
         self.timestamp = None
-        self.__devices = {}
-        self.__uuids = {}
+        self.devices = {}
+        self.uuids = {}
 
     def __refresh(self):
+        """
+        Refresh data
+        """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
@@ -27,29 +30,52 @@ class Blkid():
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==2:
-                    self.__devices[groups[0]] = groups[1]
-                    self.__uuids[groups[1]] = groups[0]
+                    self.devices[groups[0]] = groups[1]
+                    self.uuids[groups[1]] = groups[0]
 
         self.timestamp = time.time()
 
     def get_devices(self):
+        """
+        Get all devices infos
+
+        Return:
+            dict: dict of devices
+        """
+        self.__refresh()
+        return self.devices
+
+    def get_device_by_uuid(self, uuid):
+        """
+        Get device specified by uuid
+
+        Args:
+            uuid (string): device uuid
+
+        Return:
+            dict: dict of device infos
+        """
         self.__refresh()
 
-        return self.__devices
-
-    def get_device(self, uuid):
-        self.__refresh()
-
-        if uuid in self.__uuids:
-            return self.__uuids[uuid]
+        if uuid in self.uuids:
+            return self.uuids[uuid]
 
         return None
 
-    def get_uuid(self, device):
+    def get_device(self, device):
+        """
+        Get device
+
+        Args:
+            device (string): device to search for
+
+        Return:
+            dict: dict of device infos
+        """
         self.__refresh()
 
-        if device in self.__devices:
-            return self.__devices[device]
+        if device in self.devices:
+            return self.devices[device]
 
         return None
 

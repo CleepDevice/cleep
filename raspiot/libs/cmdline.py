@@ -31,7 +31,7 @@ class Cmdline():
                     if groups[0].startswith(u'UUID='):
                         #get device from uuid
                         uuid = groups[0].replace(u'UUID=', u'')
-                        self.root_device = self.blkid.get_device(uuid)
+                        self.root_device = self.blkid.get_device_by_uuid(uuid)
                     else:
                         #get device from path
                         self.root_device = groups[0]
