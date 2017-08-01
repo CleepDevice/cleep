@@ -43,7 +43,7 @@ class WpaSupplicantConf(Config):
             ssid = None
 
             #filter none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             #create new entry
             current_entry = {

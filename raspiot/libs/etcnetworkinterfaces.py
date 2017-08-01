@@ -76,7 +76,7 @@ class EtcNetworkInterfaces(Config):
             mode = None
 
             #filter none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if group.startswith(u'allow-hotplug'):
                 if not entries.has_key(groups[1]):

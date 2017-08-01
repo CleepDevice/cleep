@@ -12,7 +12,7 @@ class Udevadm():
     udevadm is used to determine device type. Device type can be ATA, USB or SDCARD
     """
 
-    CACHE_DURATION = 5.0
+    CACHE_DURATION = 2.0
 
     TYPE_UNKNOWN = 0
     TYPE_ATA = 1
@@ -49,7 +49,7 @@ class Udevadm():
             for matchNum, match in enumerate(matches):
                 #get values and filter None values
                 groups = match.groups()
-                groups = filter(None, groups)
+                groups = list(filter(None, groups))
 
                 if len(groups)==2:
                     if groups[0]==u'ID_BUS' and groups[1]=='usb':

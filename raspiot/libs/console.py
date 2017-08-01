@@ -25,15 +25,14 @@ class EndlessConsole(Thread):
     Note: Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
-    def __init__(self, command, callback, logger):
+    def __init__(self, command, callback, callback_end=None):
         """
         Constructor
 
         Args:
             command (string): command to execute
             callback (function): callback when message is received
-            logger (Logger): logger
-
+            callback_end (function): callback when process is over
         """
         Thread.__init__(self)
         Thread.daemon = True
@@ -41,7 +40,9 @@ class EndlessConsole(Thread):
         #members
         self.command = command
         self.callback = callback
-        self.logger = logger
+        self.callback_end = callback_end
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
         self.running = True
         self.__start_time = 0
         self.__stdout_queue = Queue()
@@ -145,6 +146,10 @@ class EndlessConsole(Thread):
 
         #process is over
         self.running = False
+
+        #stop callback
+        if self.callback_end:
+            self.callback_end()
 
 
 class Console():

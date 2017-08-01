@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from console import Console
+from libs.console import Console
 import re
 import time
+import logging
 
 class Lsblk():
     """
     """
 
-    CACHE_DURATION = 5.0
+    CACHE_DURATION = 2.0
 
     def __init__(self):
         """
         Constructor
         """
         self.console = Console()
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.timestamp = None
         self.devices = {}
         self.partitions = []
@@ -26,9 +28,11 @@ class Lsblk():
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+            self.logger.debug('Don\'t refresh')
             return
 
         res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
+        devices = {}
         if not res[u'error'] and not res[u'killed']:
             self.partitions = []
 
@@ -91,45 +95,66 @@ class Lsblk():
                     }
 
                     #save device
-                    if current_drive not in self.devices:
-                        self.devices[current_drive] = {}
-                    self.devices[current_drive][name] = device
+                    if current_drive not in devices:
+                        devices[current_drive] = {}
+                    devices[current_drive][name] = device
 
                     #partition
                     if partition:
                         self.partitions.append(name)
 
+        #save devices
+        self.devices = devices
+
+        #update timestamp
         self.timestamp = time.time()
 
     def get_devices_infos(self):
         """
-        Return all devices
+        Return all devices ordered by drive/partition
 
         Return:
             dict: dict of devices
         """
         self.__refresh()
+
         return self.devices
 
     def get_drives(self):
         """
-        Return only drives names
+        Return drives infos only
 
         Return:
-            list: list of drivess names
+            dict: dict of drives
         """
         self.__refresh()
-        return self.devices.keys()
+
+        drives = {}
+        for drive in self.devices:
+            for device in self.devices[drive]:
+                if not self.devices[drive][device]['partition']:
+                    #it's a drive
+                    drives[drive] = self.devices[drive][device]
+                
+        return drives
 
     def get_partitions(self):
         """
-        Return only partitions names
+        Return partitions infos only
 
         Return:
-            list: list of partitions names
+            dict: dict of partitions
         """
         self.__refresh()
-        return self.partitions
+
+        partitions = {}
+        for drive in self.devices:
+            for device in self.devices[drive]:
+                if self.devices[drive][device]['partition']:
+                    #it's a partition
+                    partitions[device] = self.devices[drive][device]
+                
+        return partitions
 
     def get_device_infos(self, device):
         """
@@ -142,6 +167,7 @@ class Lsblk():
             dict: dict of device infos or None if device not found
         """
         self.__refresh()
+
         for drive in self.devices.keys():
             if device in self.devices[drive]:
                 return self.devices[drive][device]

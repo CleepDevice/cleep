@@ -122,14 +122,14 @@ class Fstab(Config):
         results = self.find(r'^(?!#)(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s*$', re.MULTILINE | re.UNICODE)
         for group, groups in results:
             #remove none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if len(groups)==6:
                 #get type of mount point
                 sub_results = self.find_in_string(pattern_type, groups[0], re.UNICODE)
                 for sub_group, sub_groups in sub_results:
                     #remove none values
-                    sub_groups = filter(None, sub_groups)
+                    sub_groups = list(filter(None, sub_groups))
                     
                     if len(sub_groups)==3:
                         if sub_groups[0].startswith(u'UUID') and sub_groups[1]=='=':

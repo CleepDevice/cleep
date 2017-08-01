@@ -36,7 +36,7 @@ class DhcpcdConf(Config):
             new_entry = None
 
             #filter none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if group.startswith(u'interface'):
                 new_entry = groups[0]
