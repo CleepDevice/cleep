@@ -118,7 +118,15 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     global server, app
 
     try:
+        run_https = False
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
+            #check files
+            if os.path.exists(key) and os.path.exists(cert):
+                run_https = True
+            else:
+                logger.error('Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.' % (key, cert))
+            
+        if run_https:
             #start HTTPS server
             logger.info(u'Starting HTTPS server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(logger, logging.DEBUG)
@@ -132,6 +140,11 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
 
     except KeyboardInterrupt:
         #user stops raspiot, close server properly
+        if not server.closed:
+            server.close()
+
+    except:
+        logger.exception(u'Fatal error starting rpcserver:')
         if not server.closed:
             server.close()
 
