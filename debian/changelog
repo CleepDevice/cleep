@@ -8,6 +8,7 @@ raspiot (0.0.8) UNRELEASED; urgency=low
   * Handle /boot/cmdline.txt file
   * Improve system module: handle logs
   * Add default sounds during install
+  * Register device using zeroconf
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
 
