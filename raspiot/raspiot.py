@@ -183,7 +183,7 @@ class RaspIot(BusClient):
         Save new configuration file if necessary.
 
         Args:
-            keys (dict): dict ov keys-default values {'key1':'default value1', ...}.
+            keys (dict): dict of keys-default values {'key1':'default value1', ...}.
 
         Returns:
             None: nothing, only check configuration file consistency.

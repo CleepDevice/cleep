@@ -26,11 +26,11 @@ class Network(RaspIotModule):
     """
 
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Network configuration helper'
+    MODULE_DESCRIPTION = u'Network configuration helper'
     MODULE_LOCKED = True
     MODULE_URL = None
-    MODULE_TAGS = ['wireless', 'wifi', 'ethernet']
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'wireless', u'wifi', u'ethernet']
+    MODULE_COUNTRY = u'any'
 
     def __init__(self, bus, debug_enabled):
         """
@@ -51,6 +51,7 @@ class Network(RaspIotModule):
         """
         Module start
         """
+        #get wifi networks
         self.wifi_networks = self.scan_wifi_networks()
 
     def get_module_config(self):
