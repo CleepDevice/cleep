@@ -5,6 +5,7 @@ import os
 import logging
 from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError
 from raspiot.raspiot import RaspIotModule
+import raspiot
 from datetime import datetime
 import time
 from raspiot.libs.task import Task
@@ -169,7 +170,8 @@ class System(RaspIotModule):
         description = {
             u'uuid': config[u'device_uuid'],
             u'hostname': self.get_hostname(),
-            u'ssl': config[u'ssl']
+            u'ssl': config[u'ssl'],
+            u'version': raspiot.__version__
         }
 
         #device ip/port
