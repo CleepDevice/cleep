@@ -17,7 +17,6 @@ from raspiot.libs.fstab import Fstab
 from raspiot.libs.raspiotconf import RaspiotConf
 import io
 import uuid
-from zeroconf import ServiceInfo, Zeroconf
 import socket
 
 __all__ = [u'System']
@@ -80,8 +79,6 @@ class System(RaspIotModule):
         self.__need_restart = False
         self.__need_reboot = False
         self.hostname = None
-        self.zeroconf = None
-        self.zeroconf_infos = None
 
     def _start(self):
         """
@@ -142,54 +139,16 @@ class System(RaspIotModule):
         #launch monitoring thread
         self.__start_monitoring_threads()
 
-        #register device with zeroconf
-        self.__register_zeroconf()
-
     def _stop(self):
         """
         Stop module
         """
-        #unregister zeroconf
-        if self.zeroconf:
-            self.zeroconf.unregister_service(self.zeroconf_infos)
-            self.zeroconf.close()
-
         #stop time task
         if self.time_task:
             self.time_task.stop()
 
         #stop monitoring task
         self.__stop_monitoring_threads()
-
-    def __register_zeroconf(self):
-        """
-        Register device using zeroconf
-        """
-        #prepare device description
-        config = self._get_config()
-        description = {
-            u'uuid': config[u'device_uuid'],
-            u'hostname': self.get_hostname(),
-            u'ssl': config[u'ssl'],
-            u'version': raspiot.__version__
-        }
-
-        #device ip/port
-        #TODO use lib ifconfig that doesn't exist yet instead of this piece of code
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('10.255.255.255', 1))
-        ip = s.getsockname()[0]
-
-        #zeroconf infos
-        self.zeroconf_infos = ServiceInfo(u'_http._tcp.local.', 
-                u'Cleep[%s]._http._tcp.local.' % description[u'uuid'],
-                socket.inet_aton(ip), 
-                config[u'rpc_port'], 0, 0,
-                description, u'ash-2.local.')
-
-        #start zeroconf
-        self.zeroconf = Zeroconf()
-        self.zeroconf.register_service(self.zeroconf_infos)
 
     def __search_city(self, city, country):
         """
