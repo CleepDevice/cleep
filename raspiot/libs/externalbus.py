@@ -167,11 +167,14 @@ class PyreBus(ExternalBus):
         """
         ExternalBus.__init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report)
         
-        #bus logger
-        self.pyre_logger = logging.getLogger('Pyre')
-        self.pyre_logger.setLevel(logging.WARN)
-        self.pyre_logger.addHandler(logging.StreamHandler())
-        self.pyre_logger.propagate = False
+        #pyre logger
+        pyre_logger = logging.getLogger('pyre')
+        if debug_enabled:
+            pyre_logger.setLevel(logging.DEBUG)
+        else:
+            pyre_logger.setLevel(logging.WARN)
+        pyre_logger.addHandler(logging.StreamHandler())
+        pyre_logger.propagate = False
 
         #members
         self.headers = {}
@@ -281,7 +284,7 @@ class PyreBus(ExternalBus):
                                 'ssl': bool(eval(headers['ssl']))
                             }
                             self._add_peer(data_peer, infos)
-                            self.on_peer_connected(infos)
+                            self.on_peer_connected(data_peer, infos)
                         except:
                             self.logger.exception('Unable to add new peer:')
 
