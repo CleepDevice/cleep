@@ -364,7 +364,16 @@ if __name__ == '__main__':
    
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
-    bus = PyreBus(True, None)
+    def on_message(message):
+        print(message)
+
+    def peer_connected(peer, msg):
+        print('%s: %s' % (peer, msg))
+
+    def peer_disconnected(peer, msg):
+        print('%s' % peer)
+
+    bus = PyreBus(on_message, peer_connected, peer_disconnected, True, None)
     def run():
         bus.start('0.0.0', 'myhostname', 80, False)
     t = Thread()
