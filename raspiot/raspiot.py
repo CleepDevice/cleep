@@ -288,8 +288,8 @@ class RaspIot(BusClient):
         """
         Start module.
         """
-        BusClient.start(self)
         self._start()
+        BusClient.start(self)
 
     def _start(self):
         """
