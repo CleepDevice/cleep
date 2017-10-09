@@ -47,14 +47,14 @@ var systemService = function($rootScope, rpcService, raspiotService) {
      * Get filesystem infos
      */
     self.getFilesystemInfos = function() {
-        return rpcService.sendCommand('get_filesystem_infos', 'system');
+        return rpcService.sendCommand('get_filesystem_infos', 'system', 30000);
     };
 
     /**
      * Get network infos
      */
     self.getNetworkInfos = function() {
-        return rpcService.sendCommand('get_network_infos', 'system');
+        return rpcService.sendCommand('get_network_infos', 'system', 30000);
     };
 
     /**

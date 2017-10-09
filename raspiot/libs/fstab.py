@@ -21,59 +21,6 @@ class Fstab(Config):
         Config.__init__(self, self.CONF, None, backup)
         self.blkid = Blkid()
 
-    #def get_uuid_by_device(self, device):
-    #    """
-    #    Return uuid corresponding to device
-
-    #    Args:
-    #        device (string): device as presented in fstab
-
-    #    Returns:
-    #        string: uuid
-    #        None: if nothing found
-    #    """
-    #    if device is None or len(device)==0:
-    #        raise MissingParameter('Device parameter is missing')
-
-    #    #get blkid data
-    #    if self.blkid_cache.need_update():
-    #        res = self.console.command(u'/sbin/blkid | grep "%s"' % device)
-    #        if res[u'error'] or res[u'killed']:
-    #            return None
-
-    #        self.blkid_cache.set_lines(res[u'stdout'])
-
-    #        items = res[u'stdout'][0].split()
-    #        for item in items:
-    #            if item.lower().startswith(u'uuid='):
-    #                return item[5:].replace('"', '').strip()
-
-    #    return None
-
-    #def get_device_by_uuid(self, uuid):
-    #    """
-    #    Return device corresponding to uuid
-
-    #    Args:
-    #        uuid (string): device uuid
-
-    #    Returns:
-    #        string: device
-    #        None: if nothing found
-    #    """
-    #    if uuid is None or len(uuid)==0:
-    #        raise MissingParameter('Uuid parameter is missing')
-
-    #    res = self.console.command(u'/sbin/blkid | grep "%s"' % uuid)
-    #    print res
-    #    if res[u'error'] or res[u'killed']:
-    #        return None
-    #    else:
-    #        items = res[u'stdout'].split()
-    #        return items[0].replace(':', '').strip()
-
-    #    return None
-
     def get_all_devices(self):
         """
         Return all devices as returned by command blkid
@@ -143,7 +90,7 @@ class Fstab(Config):
                         elif sub_groups[0].startswith(u'dev') and sub_groups[1]=='/':
                             #device
                             device = sub_group
-                            uuid = self.blkid.get_uuid(device)
+                            uuid = self.blkid.get_device_by_uuid(device)
                             mountpoint = groups[1]
                             mounttype = groups[2]
                             options = groups[3]
