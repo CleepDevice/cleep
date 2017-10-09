@@ -9,9 +9,10 @@ from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
 from raspiot import rpcserver, bus, inventory
 from raspiot.modules import system
-from raspiot.modules import externalbus
+from raspiot.modules import cleepbus
 from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
+from raspiot import __version__ as VERSION
 
 LOG_FILE = u'/var/log/raspiot.log'
 LOG_SETTINGS = { 
@@ -113,14 +114,14 @@ if __name__ == u'__main__':
 
         #get webserver app (used to store application objects)
         debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'rpcserver')==1):
+        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'rpcserver')==1:
             debug = True
         app = rpcserver.get_app(debug)
 
         #create message bus
         logger.debug(u'Initializing message bus')
         debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'bus')==1):
+        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'bus')==1:
             debug = True
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
@@ -128,15 +129,17 @@ if __name__ == u'__main__':
         #create external message bus
         logger.debug('Initializing external message bus')
         debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'extbus')==1):
+        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'extbus')==1:
             debug = True
-        bus = bus.PyreBus(debug, None)
-        app.config[u'sys.extbus'] = bus
+        extbus = cleepbus.Cleepbus(bus, debug)
+        app.config[u'sys.extbus'] = extbus
+        #extbus.configure(VERSION, 'hostname', 80, False, False)
+        extbus.start()
 
         #create system module by default
         logger.debug(u'Initializing system module')
         debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'system')==1):
+        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'system')==1:
             debug = True
         system = system.System(bus, debug)
         app.config[u'mod.system'] = system

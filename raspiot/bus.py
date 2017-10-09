@@ -440,6 +440,13 @@ class BusClient(threading.Thread):
 
         return self.push(request, timeout)
 
+    def _custom_process(self):
+        """
+        Overwrite this function to execute something during bus message polling
+        This function mustn't be blocking!
+        """
+        pass
+
     def run(self):
         """
         Bus reading process.
@@ -449,6 +456,10 @@ class BusClient(threading.Thread):
         #check messages
         while self.__continue:
             try:
+
+                #custom process
+                self._custom_process()
+
                 #self.logger.debug('BusClient: pull message')
                 msg = {}
                 try:
@@ -459,6 +470,8 @@ class BusClient(threading.Thread):
                 except NoMessageAvailable:
                     #no message available
                     #self.logger.debug('BusClient no msg avail')
+                    #release CPU
+                    time.sleep(.25)
                     continue
 
                 except KeyboardInterrupt:
