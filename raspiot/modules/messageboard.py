@@ -111,9 +111,9 @@ class Messageboard(RaspIotRenderer):
         self.board.set_scroll_speed(self.SPEEDS[self._config[u'speed']])
         self.__display_task = None
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #load messages
         for msg in self._config[u'messages']:

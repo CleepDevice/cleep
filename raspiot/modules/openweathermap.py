@@ -131,9 +131,9 @@ class Openweathermap(RaspIotModule):
         self.__owm_uuid = None
         self.__forecast = []
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #add openweathermap device
         if self._get_device_count()==0:

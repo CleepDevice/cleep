@@ -35,17 +35,17 @@ class Cleepbus(RaspIotModule):
         self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, debug_enabled, None)
         self.devices = {}
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
-        self.logger.debug('_start %s' % self.external_bus)
         if self.external_bus:
             version = '0.0.0'
             hostname = 'hostname'
             port = 80
             ssl = False
-            self.external_bus.configure(version, hostname, port, ssl, False)
+            mac = 'xx:xx:xx:xx:xx:xx'
+            self.external_bus.configure(version, mac, hostname, port, ssl, False)
 
     def _stop(self):
         """
@@ -76,8 +76,7 @@ class Cleepbus(RaspIotModule):
         """
         Handle received message from external bus
         """
-        #TODO
-        pass
+        self.logger.debug('Message received: ' % message)
 
     def __on_peer_connected(self, peer_id, infos):
         """

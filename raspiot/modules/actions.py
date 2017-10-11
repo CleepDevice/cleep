@@ -351,9 +351,9 @@ class Actions(RaspIotModule):
         self.__scripts = {}
         self.__load_scripts_lock = Lock()
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #launch scripts threads
         self.__load_scripts()

@@ -288,17 +288,8 @@ class RaspIot(BusClient):
         """
         Start module.
         """
-        self._start()
+        #start thread (non blocking)
         BusClient.start(self)
-
-    def _start(self):
-        """
-        Post start: called just after module is started.
-        This function is used to launch processes that requests cpu time and cannot be launched during init.
-        At this time application is starting up and bus is not operational. If you need to push message to
-        bus you should implement event_received method and handle system.application.ready event.
-        """
-        pass
 
     def stop(self):
         """
@@ -578,7 +569,7 @@ class RaspIotRenderer(RaspIotModule):
         for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__class__.__name__)
 
-        resp = self.send_command(u'register_renderer', u'inventory', {u'type':self.RENDERER_TYPE, u'profiles':self.RENDERER_PROFILES})
+        resp = self.send_command(u'register_renderer', u'inventory', {u'type':self.RENDERER_TYPE, u'profiles':self.RENDERER_PROFILES}, 30.0)
         if resp[u'error']:
             self.logger.error(u'Unable to register renderer to inventory: %s' % resp[u'message'])
 

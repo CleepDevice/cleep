@@ -47,9 +47,9 @@ class Network(RaspIotModule):
         self.wifi_networks = {}
         self.interfaces = {}
 
-    def _start(self):
+    def _configure(self):
         """
-        Module start
+        Configure module
         """
         #get wifi networks
         self.wifi_networks = self.scan_wifi_networks()

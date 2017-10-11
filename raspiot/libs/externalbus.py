@@ -21,6 +21,7 @@ class ExternalBusMessage():
         self.event = None
         self.to = None
         self.params = None
+        self.sender = None
 
         if len(data)!=0:
             for item in data:
@@ -32,19 +33,35 @@ class ExternalBusMessage():
                     self.to = to
                 elif item=='params':
                     self.params = params
+                elif item=='sender':
+                    self.sender = sender
+
+    def __str__(self):
+        """
+        To string
+        """
+        return '%s' % self.to_dict()
 
     def to_dict(self):
+        """
+        Transform members to dict
+
+        Return:
+            dict: members on a dict
+        """
         if self.event:
             return {
                 'event': self.event,
                 'params': self.params, 
-                'to': self.to
+                'to': self.to,
+                'sender': self.sender
             }
         else:
             return {
                 'command': self.command,
                 'params': self.params, 
-                'to': self.to
+                'to': self.to,
+                'sender': self.sender
             }
 
 class ExternalBus():
@@ -199,12 +216,13 @@ class PyreBus(ExternalBus):
             self.logger.debug('Send STOP on pipe')
             self.pipe.send(self.BUS_STOP.encode('utf-8'))
 
-    def configure(self, version, hostname, port, ssl, cleepdesktop):
+    def configure(self, version, mac, hostname, port, ssl, cleepdesktop):
         """
         Configure bus
 
         Args:
             version (string): software version
+            mac (string): mac address
             hostname (string): hostname
             port (int): web port
             ssl (bool): True if ssl enabled
@@ -239,6 +257,7 @@ class PyreBus(ExternalBus):
         self.node.set_header('version', version)
         self.node.set_header('hostname', hostname)
         self.node.set_header('cleepdesktop', str(port))
+        self.node.set_header('mac', mac)
         if ssl:
             self.node.set_header('ssl', '1')
         else:
@@ -298,10 +317,12 @@ class PyreBus(ExternalBus):
             self.logger.debug('type=%s peer=%s name=%s' % (data_type, data_peer, data_name))
 
             if data_type=='SHOUT' or data_type=='WHISPER':
-                #message received
-                message = data.pop(0)
-                #TODO decode json to get externalbusmessage instance
-                self.on_message_received(message)
+                #message received, decode it and trigger callback
+                message = data.pop(0).decode('utf-8')
+                try:
+                    self.on_message_received(ExternalBusMessage(json.loads(message)))
+                except:
+                    self.logger.exception('Unable to parse message:')
 
             elif data_type=='ENTER':
                 #new peer connected

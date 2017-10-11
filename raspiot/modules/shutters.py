@@ -49,9 +49,9 @@ class Shutters(RaspIotModule):
         self.__timers = {}
         self.raspi_gpios = {}
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()

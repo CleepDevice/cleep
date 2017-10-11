@@ -55,9 +55,9 @@ class Sensors(RaspIotModule):
         self.raspi_gpios = {}
         self.driver_onewire = False
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #raspi gpios
         self.raspi_gpios = self.get_raspi_gpios()

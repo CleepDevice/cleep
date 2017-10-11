@@ -80,9 +80,9 @@ class System(RaspIotModule):
         self.__need_reboot = False
         self.hostname = None
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #compute sun times
         self.__compute_sun()

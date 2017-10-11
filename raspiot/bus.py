@@ -16,6 +16,9 @@ from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidPa
 __all__ = [u'MessageBus', u'BusClient']
 
 class MessageBus():
+
+    STARTUP_TIMEOUT = 30.0
+
     """
     Message bus
     Used to send messages to subscribed clients
@@ -153,9 +156,31 @@ class MessageBus():
     
                 return None
 
-            elif not self.__app_configured:
-                #surely a message with recipient, but app is not configured yet
-                raise BusNotReady()
+            elif not self.__app_configured and request.to is not None:
+                #handle startup event
+                self.logger.debug(u'Handle startup event')
+
+                #prepare event
+                event = Event()
+
+                #prepare message
+                msg = {u'message':request_dict, u'event':event, u'response':None}
+                self.logger.debug(u'MessageBus: push to "%s" delayed message %s' % (request.to, unicode(msg)))
+
+                #append message to queue
+                self.__queues[request.to] = deque()
+                self.__queues[request.to].appendleft(msg)
+
+                #wait for response
+                self.logger.debug(u'MessageBus: push wait for startup event response (%s seconds)....' % unicode(self.STARTUP_TIMEOUT))
+                if event.wait(self.STARTUP_TIMEOUT):
+                    #response received
+                    self.logger.debug(u' - resp received %s' % unicode(msg))
+                    return msg[u'response']
+                else:
+                    #no reponse in time
+                    self.logger.debug(u' - timeout')
+                    raise NoResponse(request_dict)
 
             else:
                 #app is configured but recipient is unknown
@@ -443,7 +468,19 @@ class BusClient(threading.Thread):
     def _custom_process(self):
         """
         Overwrite this function to execute something during bus message polling
-        This function mustn't be blocking!
+
+        Note:
+            This function mustn't be blocking!
+        """
+        pass
+
+    def _configure(self):
+        """
+        Module configuration. This method is called at beginning of thread.
+        You can execute long process but your module will not be available quickly
+
+        Note:
+            This function mustn't be blocking!
         """
         pass
 
@@ -452,6 +489,12 @@ class BusClient(threading.Thread):
         Bus reading process.
         """
         self.logger.debug(u'BusClient %s started' % self.__name)
+
+        #configuration
+        try:
+            self._configure()
+        except:
+            self.logger.exception('Exception during module configuration:')
 
         #check messages
         while self.__continue:

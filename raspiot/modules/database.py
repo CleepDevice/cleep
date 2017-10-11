@@ -42,9 +42,9 @@ class Database(RaspIotModule):
         if not os.path.exists(Database.DATABASE_PATH):
             os.makedirs(Database.DATABASE_PATH)
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #make sure database file exists
         if not os.path.exists(os.path.join(Database.DATABASE_PATH, Database.DATABASE_NAME)):

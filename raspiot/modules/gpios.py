@@ -316,9 +316,9 @@ class Gpios(RaspIotModule):
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         #configure gpios
         devices = self.get_module_devices()

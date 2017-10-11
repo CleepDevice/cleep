@@ -55,9 +55,9 @@ class Inventory(RaspIotModule):
                 self.installed_modules.append(_module)
                 self.libraries.append(_module)
 
-    def _start(self):
+    def _configure(self):
         """
-        Start module
+        Configure module
         """
         self.__load_modules()
         self.__load_formatters()
