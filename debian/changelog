@@ -1,3 +1,10 @@
+raspiot (0.0.9) UNRELEASED; urgency=low
+  * Implement external bus for communication between all cleep devices. It
+  also allows CleepDesktop to detect Cleep devices connected (This replace
+  Zeroconf use)
+  * Improve Raspiot startup
+  * Fix bugs
+
 raspiot (0.0.8) UNRELEASED; urgency=low
 
   * Update messageboard module to fit new ui style
