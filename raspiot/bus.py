@@ -134,7 +134,7 @@ class MessageBus():
                     else:
                         #no response in time
                         self.logger.debug(u' - timeout')
-                        raise NoResponse(request_dict)
+                        raise NoResponse(request.to, request_dict)
                 else:
                     #no timeout given, return nothing
                     return None
@@ -180,7 +180,7 @@ class MessageBus():
                 else:
                     #no reponse in time
                     self.logger.debug(u' - timeout')
-                    raise NoResponse(request_dict)
+                    raise NoResponse(request.to, request_dict)
 
             else:
                 #app is configured but recipient is unknown
@@ -323,6 +323,7 @@ class BusClient(threading.Thread):
     """
     def __init__(self, bus):
         threading.Thread.__init__(self)
+        threading.Thread.daemon = True
         self.__continue = True
         self.bus = bus
         self.__name = self.__class__.__name__
@@ -627,6 +628,7 @@ class TestPolling(threading.Thread):
     """
     def __init__(self, bus):
         threading.Thread.__init__(self)
+        threading.Thread.daemon = True
         self.bus = bus
         self.c = True
 
