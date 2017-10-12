@@ -14,6 +14,7 @@ import psutil
 import time
 from raspiot.libs.console import Console
 from raspiot.libs.fstab import Fstab
+from raspiot.libs.hostname import Hostname
 from raspiot.libs.raspiotconf import RaspiotConf
 import io
 import uuid
@@ -34,8 +35,6 @@ class System(RaspIotModule):
 
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'
-
-    HOSTNAME_FILE = u'/etc/hostname'
 
     DEFAULT_CONFIG = {
         u'city': None,
@@ -78,7 +77,7 @@ class System(RaspIotModule):
         self.__process = None
         self.__need_restart = False
         self.__need_reboot = False
-        self.hostname = None
+        self.hostname = Hostname()
 
     def _configure(self):
         """
@@ -922,16 +921,11 @@ class System(RaspIotModule):
 
         Args:
             hostname (string): hostname
+
+        Return:
+            bool: True if hostname saved successfully, False otherwise
         """
-        if hostname is None or len(hostname)==0:
-            raise MissingParameter('Hostname parameter is missing')
-
-        self.hostname = hostname
-
-        with io.open(self.HOSTNAME_FILE, u'w') as fd:
-            fd.write(u'%s' % self.hostname)
-
-        return True
+        self.hostname.set_hostname(hostname)
 
     def get_hostname(self):
         """
@@ -940,14 +934,7 @@ class System(RaspIotModule):
         Returns:
             string: raspi hostname
         """
-        if self.hostname is None:
-            with io.open(self.HOSTNAME_FILE, u'r') as fd:
-                content = fd.readlines()
-
-            if len(content)>0:
-                self.hostname = content[0].strip()
-        
-        return self.hostname
+        return self.hostname.get_hostname()
 
 
 
