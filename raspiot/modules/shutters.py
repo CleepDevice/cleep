@@ -34,7 +34,7 @@ class Shutters(RaspIotModule):
     STATUS_OPENING = u'opening'
     STATUS_CLOSING = u'closing'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -43,7 +43,7 @@ class Shutters(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #internal timers
         self.__timers = {}

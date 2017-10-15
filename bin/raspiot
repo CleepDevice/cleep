@@ -13,6 +13,7 @@ from raspiot.modules import cleepbus
 from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
 from raspiot import __version__ as VERSION
+from threading import Event
 
 LOG_FILE = u'/var/log/raspiot.log'
 LOG_SETTINGS = { 
@@ -78,6 +79,7 @@ if __name__ == u'__main__':
     app = None
     try:
         #handle command line parameters
+        join_events = []
         debug_enabled = False
         log_level = logging.INFO
         log_stdout = False
@@ -131,7 +133,9 @@ if __name__ == u'__main__':
         debug = False
         if debug_enabled and config[u'debug'][u'debug_modules'].count(u'extbus')==1:
             debug = True
-        extbus = cleepbus.Cleepbus(bus, debug)
+        join_event = Event()
+        join_events.append(join_event)
+        extbus = cleepbus.Cleepbus(bus, debug, join_event)
         app.config[u'sys.extbus'] = extbus
         #extbus.configure(VERSION, 'hostname', 80, False, False)
         extbus.start()
@@ -141,7 +145,9 @@ if __name__ == u'__main__':
         debug = False
         if debug_enabled and config[u'debug'][u'debug_modules'].count(u'system')==1:
             debug = True
-        system = system.System(bus, debug)
+        join_event = Event()
+        join_events.append(join_event)
+        system = system.System(bus, debug, join_event)
         app.config[u'mod.system'] = system
         system.start()
 
@@ -184,7 +190,9 @@ if __name__ == u'__main__':
                         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(dep)==1):
                             logger.debug(u'Debug enabled for this module')
                             debug = True
-                        app.config[u'lib.%s' % dep] = dep_class_(bus, debug)
+                        join_event = Event()
+                        join_events.append(join_event)
+                        app.config[u'lib.%s' % dep] = dep_class_(bus, debug, join_event)
                         app.config[u'lib.%s' % dep].start()
                         logger.debug(u'===============END %s===============', dep)
                         loaded_modules[dep] = True
@@ -196,17 +204,27 @@ if __name__ == u'__main__':
             if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(module_name)==1):
                 logger.debug(u'Debug enabled for this module')
                 debug = True
-            app.config[u'mod.%s' % module_name] = class_(bus, debug)
+            join_event = Event()
+            join_events.append(join_event)
+            app.config[u'mod.%s' % module_name] = class_(bus, debug, join_event)
             app.config[u'mod.%s' % module_name].start()
             logger.debug(u'---------------END %s---------------', module_name)
             loaded_modules[module_name] = False
+
+        #wait for all modules completely loaded
+        logger.debug('Waiting for end of module loading...')
+        for join_event in join_events:
+            join_event.wait()
+        logger.debug('All modules are loaded')
 
         #create inventory at end because it needs to know installed modules
         logger.debug(u'Initializing inventory')
         debug = False
         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
             debug = True
-        inv = inventory.Inventory(bus, debug, app.config)
+        join_event = Event()
+        join_events.append(join_event)
+        inv = inventory.Inventory(bus, debug, app.config, join_event)
         app.config[u'sys.inventory'] = inv
         inv.start()
 

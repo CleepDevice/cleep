@@ -44,7 +44,7 @@ class Smtp(RaspIotRenderer):
     RENDERER_PROFILES = [EmailProfile()]
     RENDERER_TYPE = u'alert.email'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -53,7 +53,7 @@ class Smtp(RaspIotRenderer):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
 
     def __send_email(self, smtp_server, smtp_port, smtp_login, smtp_password, smtp_tls, smtp_ssl, email_sender, data):
         """

@@ -85,7 +85,7 @@ class Messageboard(RaspIotRenderer):
         u'speed': 'normal'
     }
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -94,7 +94,7 @@ class Messageboard(RaspIotRenderer):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.__current_message = None
@@ -135,9 +135,9 @@ class Messageboard(RaspIotRenderer):
 
         #display ip at startup during 1 minute
         #@see http://stackoverflow.com/a/1267524
-        ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
-        now = int(time.time())
-        self.add_message(u'IP: %s' % unicode(ip), now, now+60)
+        #ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
+        #now = int(time.time())
+        #self.add_message(u'IP: %s' % unicode(ip), now, now+60)
 
     def _stop(self):
         """

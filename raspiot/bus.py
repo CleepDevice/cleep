@@ -134,7 +134,7 @@ class MessageBus():
                     else:
                         #no response in time
                         self.logger.debug(u' - timeout')
-                        raise NoResponse(request.to, request_dict)
+                        raise NoResponse(request.to, timeout, request_dict)
                 else:
                     #no timeout given, return nothing
                     return None
@@ -180,7 +180,7 @@ class MessageBus():
                 else:
                     #no reponse in time
                     self.logger.debug(u' - timeout')
-                    raise NoResponse(request.to, request_dict)
+                    raise NoResponse(request.to, self.STARTUP_TIMEOUT, request_dict)
 
             else:
                 #app is configured but recipient is unknown
@@ -321,15 +321,26 @@ class BusClient(threading.Thread):
     It reads module message, read command and execute module command.
     Finally it returns command response to message originator.
     """
-    def __init__(self, bus):
+    def __init__(self, bus, join_event):
+        """
+        Constructor
+
+        Args:
+            bus (MessageBus): message bus instance
+            join_event (threading.Event): event instance
+        """
         threading.Thread.__init__(self)
         threading.Thread.daemon = True
+
+        #members
         self.__continue = True
         self.bus = bus
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
+        self.join_event = join_event
+        self.join_event.clear()
 
-        #add subscription
+        #subscribe module to bus
         self.bus.add_subscription(self.__name)
 
     def __del__(self):
@@ -496,6 +507,8 @@ class BusClient(threading.Thread):
             self._configure()
         except:
             self.logger.exception('Exception during module configuration:')
+        finally:
+            self.join_event.set()
 
         #check messages
         while self.__continue:

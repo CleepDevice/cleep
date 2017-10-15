@@ -23,7 +23,7 @@ class Database(RaspIotModule):
     DATABASE_PATH = u'/var/opt/raspiot/databases'
     DATABASE_NAME = u'raspiot.db'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -32,7 +32,7 @@ class Database(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #member
         self.__cnx = None

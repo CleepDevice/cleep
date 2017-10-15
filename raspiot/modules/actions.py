@@ -332,7 +332,7 @@ class Actions(RaspIotModule):
         u'scripts': {}
     }
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -341,7 +341,7 @@ class Actions(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #make sure sounds path exists
         if not os.path.exists(Actions.SCRIPTS_PATH):

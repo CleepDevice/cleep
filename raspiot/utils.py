@@ -17,11 +17,12 @@ class CommandInfo(Exception):
         return u'%s' % self.value
 
 class NoResponse(Exception):
-    def __init__(self, to, value):
+    def __init__(self, to, timeout, value):
         self.value = value
-        self.value['to'] = to
+        self.timeout = timeout
+        self.to = to
     def __str__(self):
-        return u'No response for request: %s' % self.value
+        return u'No response from %s (%d seconds) for request: %s' % (self.to, self.timeout, self.value)
 
 class NoMessageAvailable(Exception):
     def __str__(self):

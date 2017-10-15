@@ -115,7 +115,7 @@ class Openweathermap(RaspIotModule):
     }
     OWM_WIND_DIRECTIONS = [u'N',u'NNE',u'NE',u'ENE',u'E',u'ESE',u'SE',u'SSE',u'S',u'SSW',u'SW',u'WSW',u'W',u'WNW',u'NW',u'NNW',u'N']
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -124,7 +124,7 @@ class Openweathermap(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.weather_task = None

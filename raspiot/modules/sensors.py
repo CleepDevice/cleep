@@ -39,7 +39,7 @@ class Sensors(RaspIotModule):
     TYPE_TEMPERATURE = u'temperature'
     TYPE_MOTION = u'motion'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -48,7 +48,7 @@ class Sensors(RaspIotModule):
             debug_enabled (bool): debug status
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.__tasks = {}

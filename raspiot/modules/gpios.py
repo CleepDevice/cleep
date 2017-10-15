@@ -299,7 +299,7 @@ class Gpios(RaspIotModule):
     USAGE_ONEWIRE = u'onewire'
     USAGE_LIRC = u'lirc'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -307,7 +307,7 @@ class Gpios(RaspIotModule):
             bus: message bus instance
             debug_enabled: debug status
         """
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.__input_watchers = []

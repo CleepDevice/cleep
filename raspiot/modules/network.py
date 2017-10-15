@@ -32,7 +32,7 @@ class Network(RaspIotModule):
     MODULE_TAGS = [u'wireless', u'wifi', u'ethernet']
     MODULE_COUNTRY = u'any'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -41,7 +41,7 @@ class Network(RaspIotModule):
             debug_enabled (bool): debug status
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.wifi_networks = {}

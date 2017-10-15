@@ -54,7 +54,7 @@ class System(RaspIotModule):
     THRESHOLD_DISK_SYSTEM = 80.0
     THRESHOLD_DISK_EXTERNAL = 90.0
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -62,7 +62,7 @@ class System(RaspIotModule):
             bus (MessageBus): MessageBus instance
             debug_enabled (bool): flag to set debug level to logger
         """
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         self.time_task = None

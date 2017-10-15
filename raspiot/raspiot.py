@@ -26,7 +26,7 @@ class RaspIot(BusClient):
     CONFIG_DIR = u'/etc/raspiot/'
     MODULE_DEPS = []
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor.
 
@@ -35,7 +35,7 @@ class RaspIot(BusClient):
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init bus
-        BusClient.__init__(self, bus)
+        BusClient.__init__(self, bus, join_event)
 
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -332,7 +332,7 @@ class RaspIotModule(RaspIot):
      - device helpers
     """
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor.
 
@@ -341,7 +341,7 @@ class RaspIotModule(RaspIot):
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIot.__init__(self, bus, debug_enabled, join_event)
 
     def _add_device(self, data):
         """
@@ -541,7 +541,7 @@ class RaspIotRenderer(RaspIotModule):
      - post function to post data to renderer
     """
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor.
 
@@ -550,30 +550,29 @@ class RaspIotRenderer(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
-        RaspIot.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+
+        #members
         self.profiles_types = []
 
-    def register_renderer(self):
+    def get_module_renderers(self):
         """
-        Register renderer to inventory.
-
-        Returns:
-            bool: True if renderer registered successfully
+        Register internally available profiles and return it.
+        This method is called by inventory at startup
         """
         if getattr(self, u'RENDERER_PROFILES', None) is None:
-            raise CommandError(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
+            raise Exception(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
         if getattr(self, u'RENDERER_TYPE', None) is None:
-            raise CommandError(u'RENDERER_TYPE is not defined in %s' % self.__class__.__name__)
+            raise Exception(u'RENDERER_TYPE is not defined in %s' % self.__class__.__name__)
 
         #cache profile types as string
         for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__class__.__name__)
 
-        resp = self.send_command(u'register_renderer', u'inventory', {u'type':self.RENDERER_TYPE, u'profiles':self.RENDERER_PROFILES}, 30.0)
-        if resp[u'error']:
-            self.logger.error(u'Unable to register renderer to inventory: %s' % resp[u'message'])
-
-        return True
+        return {
+            u'type':self.RENDERER_TYPE,
+            u'profiles':self.RENDERER_PROFILES
+        }
 
     def render(self, data):
         """
@@ -600,15 +599,4 @@ class RaspIotRenderer(RaspIotModule):
         Fake render method
         """
         pass
-
-    def event_received(self, event):
-        """ 
-        Event received from bus
-
-        Args:
-            event (MessageRequest): received event
-        """
-        if event[u'event']==u'system.application.ready':
-            #application is ready, register renderer
-            self.register_renderer()
 

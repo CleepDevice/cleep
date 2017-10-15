@@ -150,7 +150,7 @@ class Sounds(RaspIotRenderer):
         u'cy' : u'Welsh'
     }
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -159,7 +159,7 @@ class Sounds(RaspIotRenderer):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled)
+        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
 
         #disable urllib info logs
         url_log = logging.getLogger(u'urllib3')

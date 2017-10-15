@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot import RaspIotModule
+from raspiot import RaspIotModule, RaspIotRenderer
 from utils import CommandError, MissingParameter, InvalidParameter
 import importlib
 import inspect
@@ -18,7 +18,7 @@ class Inventory(RaspIotModule):
      - existing renderers (sms, email, sound...)
     """  
 
-    def __init__(self, bus, debug_enabled, installed_modules):
+    def __init__(self, bus, debug_enabled, installed_modules, join_event):
         """
         Constructor
 
@@ -28,15 +28,17 @@ class Inventory(RaspIotModule):
             modules (array): available modules
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
         #list devices: uuid => module name
         self.devices = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
         self.modules = {}
-        #list of installed modules
-        self.installed_modules = []
+        #list of installed modules names with reference to real name
+        self.installed_modules_names = {}
+        #direct access to installed modules
+        self.installed_modules = installed_modules
         #list of libraries
         self.libraries = []
         #renderers
@@ -49,10 +51,10 @@ class Inventory(RaspIotModule):
         for module in installed_modules:
             if module.startswith(u'mod.'):
                 _module = module.replace(u'mod.', '')
-                self.installed_modules.append(_module)
+                self.installed_modules_names[_module] = module
             elif module.startswith(u'lib.'):
                 _module = module.replace(u'lib.', '')
-                self.installed_modules.append(_module)
+                self.installed_modules_names[_module] = module
                 self.libraries.append(_module)
 
     def _configure(self):
@@ -85,34 +87,39 @@ class Inventory(RaspIotModule):
                     u'library': False
                 }
 
-        self.logger.info(u'Installed modules: %s' % self.installed_modules)
-        for module in self.installed_modules:
+        self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())
+        for module in self.installed_modules_names.keys():
             #update installed/library flag
             if module not in self.libraries:
                 self.modules[module][u'installed'] = True
             else:
                 self.modules[module][u'library'] = True
 
-            #fill installed modules
-            self.logger.debug(u'Request commands of module "%s"' % module)
-            resp = self.send_command(u'get_module_commands', module, None, 15)
-            if not resp[u'error']:
-                self.modules[module][u'commands'] = resp[u'data']
-            else:
-                self.logger.error(u'Unable to get commands of module "%s"' % module)
+            #fill installed modules commands
+            try:
+                self.modules[module][u'command'] = self.installed_modules[self.installed_modules_names[module]].get_module_commands()
+            except:
+                self.logger.exception('Unable to get commands of module "%s":' % module)
 
-            #fill devices
-            self.logger.debug(u'Request devices of module "%s"' % module)
-            resp = self.send_command(u'get_module_devices', module)
-            if not resp[u'error']:
-                for uuid in resp[u'data']:
+            #fill install modules devices
+            try:
+                devices = self.installed_modules[self.installed_modules_names[module]].get_module_devices()
+                for uuid in devices:
                     #save new device entry (module name and device name)
                     self.devices[uuid] = {
                         u'module': module,
-                        u'name': resp[u'data'][uuid][u'name']
+                        u'name': devices[uuid][u'name']
                     }
-            else:
-                self.logger.error(u'Unable to get devices of module "%s"' % module)
+            except:
+                self.logger.exception('Unable to get devices of module "%s"' % module)
+
+            #fill renderers
+            if issubclass(self.installed_modules[self.installed_modules_names[module]].__class__, RaspIotRenderer):
+                try:
+                    renderers = self.installed_modules[self.installed_modules_names[module]].get_module_renderers()
+                    self.register_renderer(renderers[u'type'], renderers[u'profiles'], module)
+                except:
+                    self.logger.exception('Unable to get renderers of module "%s"' % module)
 
         self.logger.debug(u'DEVICES=%s' % self.devices)
         self.logger.debug(u'MODULES=%s' % self.modules)
@@ -278,7 +285,7 @@ class Inventory(RaspIotModule):
                 }
         """
         debugs = {}
-        for module in self.installed_modules:
+        for module in self.installed_modules_names.keys():
             #get debug status
             resp = self.send_command(u'is_debug_enabled', module)
             if resp[u'error']:
