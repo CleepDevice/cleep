@@ -1,14 +1,24 @@
 #!/bin/sh
 
+#install pip
+echo "Installing pip..."
+wget "https://bootstrap.pypa.io/get-pip.py"
+python get-pip.py
+echo "Done"
+echo ""
+
 #install python dependencies
 echo "Installing python dependencies..."
 pip install -r /etc/raspiot/requirements.txt
 rm -f /etc/raspiot/requirements.txt
 echo "Done"
+echo ""
 
 #enabling raspiot at startup
 /etc/raspiot/raspiot_helper.sh enable
+echo ""
 
 #restarting raspiot
 /etc/raspiot/raspiot_helper.sh restart
+echo ""
 
