@@ -145,14 +145,6 @@ if __name__ == u'__main__':
         app.config[u'mod.system'] = system
         system.start()
 
-        #create inventory
-        logger.debug(u'Initializing inventory')
-        debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
-            debug = True
-        db = inventory.Inventory(bus, debug, app.config)
-        app.config[u'sys.inventory'] = db
-        db.start()
 
         #load user modules
         logger.debug(u'Loading user modules:')
@@ -208,6 +200,15 @@ if __name__ == u'__main__':
             app.config[u'mod.%s' % module_name].start()
             logger.debug(u'---------------END %s---------------', module_name)
             loaded_modules[module_name] = False
+
+        #create inventory at end because it needs to know installed modules
+        logger.debug(u'Initializing inventory')
+        debug = False
+        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
+            debug = True
+        inv = inventory.Inventory(bus, debug, app.config)
+        app.config[u'sys.inventory'] = inv
+        inv.start()
 
         #unlock bus and launch webserver (blocking)
         logger.info(u'Raspiot running...')
