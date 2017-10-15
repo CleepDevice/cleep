@@ -5,6 +5,8 @@ import os
 import logging
 from raspiot.raspiot import RaspIotModule
 from raspiot.libs.externalbus import PyreBus
+from raspiot.libs.hostname import Hostname
+from raspiot import __version__ as VERSION
 import raspiot
 import time
 
@@ -20,7 +22,7 @@ class Cleepbus(RaspIotModule):
     MODULE_TAGS = ['bus']
     MODULE_COUNTRY = 'any'
 
-    def __init__(self, bus, debug_enabled):
+    def __init__(self, bus, debug_enabled, join_event):
         """
         Constructor
 
@@ -28,22 +30,26 @@ class Cleepbus(RaspIotModule):
             bus (MessageBus): MessageBus instance
             debug_enabled (bool): flag to set debug level to logger
         """
-        RaspIotModule.__init__(self, bus, debug_enabled)
-        self.logger.debug('Debug value: %s' % debug_enabled)
+        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
-        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, debug_enabled, None)
+        #self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, debug_enabled, None)
+        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, True, None)
         self.devices = {}
+        self.hostname = Hostname()
 
     def _configure(self):
         """
         Configure module
         """
         if self.external_bus:
-            version = '0.0.0'
-            hostname = 'hostname'
+            version = VERSION
+            hostname = self.hostname.get_hostname()
+            #TODO handle port when security module developped
             port = 80
+            #TODO handle SSL option when credentials supported in cleepdesktop
             ssl = False
+            #TODO get mac address, useless for now
             mac = 'xx:xx:xx:xx:xx:xx'
             self.external_bus.configure(version, mac, hostname, port, ssl, False)
 
@@ -75,8 +81,19 @@ class Cleepbus(RaspIotModule):
     def __on_message_received(self, message):
         """
         Handle received message from external bus
+
+        Args:
+            message (ExternalBusMessage): external bus message instance
         """
         self.logger.debug('Message received: ' % message)
+        if message.event:
+            #broadcast event to all modules
+            self.send_event(message.event, message.params)
+
+        else:
+            #command received
+            #TODO not implemented and useful ?
+            pass
 
     def __on_peer_connected(self, peer_id, infos):
         """

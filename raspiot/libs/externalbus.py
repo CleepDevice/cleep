@@ -15,26 +15,36 @@ try:
 except:
     from urllib.parse import urlparse
 
+
 class ExternalBusMessage():
-    def __init__(self, data={}):
+    """
+    Handle ExternalBus message data
+    """
+
+    def __init__(self, sender=None, data={}):
+        """
+        Constructor
+
+        Args:
+            sender (string): peer id
+            data (dict): member dict. This variable is iterated to look for members
+        """
         self.command = None
         self.event = None
         self.to = None
         self.params = None
-        self.sender = None
+        self.sender = sender
 
         if len(data)!=0:
             for item in data:
                 if item=='command':
-                    self.command = command
+                    self.command = data[item]
                 elif item=='event':
-                    self.event = event
+                    self.event = data[item]
                 elif item=='to':
-                    self.to = to
+                    self.to = data[item]
                 elif item=='params':
-                    self.params = params
-                elif item=='sender':
-                    self.sender = sender
+                    self.params = data[item]
 
     def __str__(self):
         """
@@ -42,9 +52,22 @@ class ExternalBusMessage():
         """
         return '%s' % self.to_dict()
 
+    def to_reduced_dict(self):
+        """
+        Build dict with minimum class content
+
+        Return:
+            dict: minimum members on dict
+        """
+        out = self.to_dict()
+        del out['to']
+        del out['sender']
+
+        return out
+
     def to_dict(self):
         """
-        Transform members to dict
+        Build dict with class content
 
         Return:
             dict: members on a dict
@@ -198,23 +221,27 @@ class PyreBus(ExternalBus):
         ExternalBus.__init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report)
         
         #bus logger
-        self.pyre_logger = logging.getLogger('Pyre')
-        self.pyre_logger.setLevel(logging.WARN)
-        self.pyre_logger.addHandler(logging.StreamHandler())
-        self.pyre_logger.propagate = False
+        pyre_logger = logging.getLogger('pyre')
+        if debug_enabled:
+            pyre_logger.setLevel(logging.DEBUG)
+        else:
+            pyre_logger.setLevel(logging.WARN)
+        pyre_logger.addHandler(logging.StreamHandler())
+        pyre_logger.propagate = False
 
         #members
         self.__externalbus_configured = False
-        self.pipe = None
+        self.pipe_in = None
+        self.pipe_out = None
 
     def stop(self):
         """
         Custom stop
         """
         #send stop message to unblock pyre task
-        if self.pipe is not None:
+        if self.pipe_in is not None:
             self.logger.debug('Send STOP on pipe')
-            self.pipe.send(self.BUS_STOP.encode('utf-8'))
+            self.pipe_in.send(json.dumps(self.BUS_STOP.encode('utf-8')))
 
     def configure(self, version, mac, hostname, port, ssl, cleepdesktop):
         """
@@ -232,31 +259,27 @@ class PyreBus(ExternalBus):
         self.context = zmq.Context()
 
         #communication pipe
-        self.pipe = self.context.socket(zmq.PAIR)
-        self.pipe.setsockopt(zmq.LINGER, 0)
-        self.pipe.setsockopt(zmq.LINGER, 0)
-        self.pipe.setsockopt(zmq.SNDHWM, 100)
-        self.pipe.setsockopt(zmq.SNDTIMEO, 5000)
-        self.pipe.setsockopt(zmq.RCVTIMEO, 5000)
-
-        #bus socket
-        self.socket = self.context.socket(zmq.PAIR)
-        self.socket.setsockopt(zmq.LINGER, 0)
-        self.socket.setsockopt(zmq.LINGER, 0)
-        self.socket.setsockopt(zmq.SNDHWM, 100)
-        self.socket.setsockopt(zmq.SNDTIMEO, 5000)
-        self.socket.setsockopt(zmq.RCVTIMEO, 5000)
-
-        #configure socket and pipe
+        self.pipe_in = self.context.socket(zmq.PAIR)
+        self.pipe_in.setsockopt(zmq.LINGER, 0)
+        self.pipe_in.setsockopt(zmq.RCVHWM, 100)
+        self.pipe_in.setsockopt(zmq.SNDHWM, 100)
+        self.pipe_in.setsockopt(zmq.SNDTIMEO, 5000)
+        self.pipe_in.setsockopt(zmq.RCVTIMEO, 5000)
+        self.pipe_out = self.context.socket(zmq.PAIR)
+        self.pipe_out.setsockopt(zmq.LINGER, 0)
+        self.pipe_out.setsockopt(zmq.RCVHWM, 100)
+        self.pipe_out.setsockopt(zmq.SNDHWM, 100)
+        self.pipe_out.setsockopt(zmq.SNDTIMEO, 5000)
+        self.pipe_out.setsockopt(zmq.RCVTIMEO, 5000)
         iface = 'inproc://%s' % binascii.hexlify(os.urandom(8))
-        self.pipe.bind(iface)
-        self.socket.connect(iface)
+        self.pipe_in.bind(iface)
+        self.pipe_out.connect(iface)
 
         #create node
         self.node = Pyre('CLEEP')
         self.node.set_header('version', version)
         self.node.set_header('hostname', hostname)
-        self.node.set_header('cleepdesktop', str(port))
+        self.node.set_header('port', str(port))
         self.node.set_header('mac', mac)
         if ssl:
             self.node.set_header('ssl', '1')
@@ -271,7 +294,7 @@ class PyreBus(ExternalBus):
 
         #poller
         self.poller = zmq.Poller()
-        self.poller.register(self.pipe, zmq.POLLIN)
+        self.poller.register(self.pipe_out, zmq.POLLIN)
         self.poller.register(self.node.socket(), zmq.POLLIN)
 
         self.__externalbus_configured = True
@@ -284,43 +307,58 @@ class PyreBus(ExternalBus):
         if not self.__externalbus_configured:
             raise Exception('Bus not configured. Please call configure function first')
 
-        self.logger.debug('Polling...')
-        items = dict(self.poller.poll())
+        try:
+            self.logger.debug(u'Polling...')
+            items = dict(self.poller.poll())
+        except KeyboardInterrupt:
+            #stop requested by user
+            return False
+        except:
+            self.logger.exception('Exception occured durring externalbus polling:')
 
-        if self.pipe in items and items[self.pipe] == zmq.POLLIN:
+        if self.pipe_out in items and items[self.pipe_out] == zmq.POLLIN:
             #message to send
-            data = self.pipe.recv()
-            message = data.decode('utf-8')
-            self.logger.debug('Data received on pipe: %s' % message)
+            data = self.pipe_out.recv()
+            self.logger.debug(u'Raw data received on pipe: %s' % data)
+            message = json.loads(data.decode(u'utf-8'))
 
             #stop node
             if message==self.BUS_STOP:
-                self.logger.debug('Stop Pyre bus')
+                self.logger.debug(u'Stop Pyre bus')
                 return False
 
             #send message
+            message = ExternalBusMessage(None, message)
             if message.to is not None:
                 #whisper message
-                self.node.whisper(uuid.UUID(message.to), message.data)
+                self.node.whisper(uuid.UUID(message.to), json.dumps(message.to_reduced_dict()).encode('utf-8'))
             else:
                 #shout message
-                self.node.shout(self.BUS_GROUP, message.data)
+                self.node.shout(self.BUS_GROUP, json.dumps(message.to_reduced_dict()).encode('utf-8'))
 
         else:
             #message received
             data = self.node.recv()
-            data_type = data.pop(0)
-            data_type = data_type.decode('utf-8')
+            data_type = data.pop(0).decode('utf-8')
             data_peer = uuid.UUID(bytes=data.pop(0))
-            data_name = data.pop(0)
-            data_name = data_name.decode('utf-8')
+            data_name = data.pop(0).decode('utf-8')
             self.logger.debug('type=%s peer=%s name=%s' % (data_type, data_peer, data_name))
 
             if data_type=='SHOUT' or data_type=='WHISPER':
                 #message received, decode it and trigger callback
-                message = data.pop(0).decode('utf-8')
+                data_group = data.pop(0).decode('utf-8')
+
+                #check message group
+                if data_group!=self.BUS_GROUP:
+                    #invalid group?!?
+                    self.logger.error('Invalid message group received (%s instaead of %s)' % (data_group, self.BUS_GROUP))
+
+                #trigger message received callback
                 try:
-                    self.on_message_received(ExternalBusMessage(json.loads(message)))
+                    data_content = data.pop(0)
+                    self.logger.debug('Raw data received on bus: %s' % data_content)
+                    message = json.loads(data_content.decode(u'utf-8'))
+                    self.on_message_received(ExternalBusMessage(data_peer, message))
                 except:
                     self.logger.exception('Unable to parse message:')
 
@@ -376,10 +414,12 @@ class PyreBus(ExternalBus):
             try:
                 if not self.run_once():
                     #stop requested
+                    self.logger.debug(' ==> stop requested programmatically')
                     break
 
             except KeyboardInterrupt:
                 #user stop
+                self.logger.debug(' ==> stop requested manually (CTRL-C)')
                 break
 
             except:
@@ -399,7 +439,7 @@ class PyreBus(ExternalBus):
         message.params = params
 
         #send message
-        self.pipe.send(message.to_dict())
+        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
     def broadcast_event(self, event, params):
         """
@@ -411,7 +451,7 @@ class PyreBus(ExternalBus):
         message.params = params
 
         #send message
-        self.pipe.send(message.to_dict())
+        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
     def send_to(self, peer_id, command, params):
         """
@@ -428,7 +468,7 @@ class PyreBus(ExternalBus):
         message.params = params
 
         #send message
-        self.pipe.send(message.to_dict())
+        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
     def send_event_to(self, peer_id, event, params):
         """
@@ -445,7 +485,7 @@ class PyreBus(ExternalBus):
         message.params = params
 
         #send message
-        self.pipe.send(message.to_dict())
+        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
 
 if __name__ == '__main__':
@@ -456,13 +496,18 @@ if __name__ == '__main__':
         def __init__(self):
             Thread.__init__(self)
             Thread.daemon = True
-            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, True, None)
+            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, False, None)
 
         def stop(self):
             self.bus.stop()
 
+        def broadcast_event(self, event, params):
+            self.bus.logger.info('broadcast event: %s %s' % (event, params))
+            self.bus.broadcast_event(event, params)
+
         def run(self):
-            self.bus.start('0.0.0', 'myhostname', 80, False)
+            self.bus.configure('0.0.0', 'XX:XX:XX:XX:XX', 'testbus', 80, False, False)
+            self.bus.run()
 
         def message_received(self, message):
             print(message)
@@ -477,8 +522,13 @@ if __name__ == '__main__':
     t.start()
 
     try:
+        count = 0
         while True:
-            time.sleep(1.0)
+            time.sleep(5.0)
+            t.broadcast_event('test.event.count', count)
+            count += 1
+    except KeyboardInterrupt:
+        pass
     except:
         logging.exception('Exception:')
         pass
