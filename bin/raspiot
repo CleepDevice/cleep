@@ -128,18 +128,6 @@ if __name__ == u'__main__':
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
 
-        #create external message bus
-        logger.debug('Initializing external message bus')
-        debug = False
-        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'extbus')==1:
-            debug = True
-        join_event = Event()
-        join_events.append(join_event)
-        extbus = cleepbus.Cleepbus(bus, debug, join_event)
-        app.config[u'sys.extbus'] = extbus
-        #extbus.configure(VERSION, 'hostname', 80, False, False)
-        extbus.start()
-
         #create system module by default
         logger.debug(u'Initializing system module')
         debug = False
@@ -150,7 +138,6 @@ if __name__ == u'__main__':
         system = system.System(bus, debug, join_event)
         app.config[u'mod.system'] = system
         system.start()
-
 
         #load user modules
         logger.debug(u'Loading user modules:')
