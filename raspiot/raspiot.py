@@ -315,11 +315,17 @@ class RaspIot(BusClient):
         Returns:
             bool: True if module is loaded, False otherwise.
         """
-        resp = self.send_command(u'is_module_loaded', u'inventory', {u'module': module})
-        if resp[u'error']:
-            self.logger.error(u'Unable to request inventory')
+        try:
+            resp = self.send_command(u'is_module_loaded', u'inventory', {u'module': module})
+            if resp[u'error']:
+                self.logger.error(u'Unable to request inventory')
+                return False
 
-        return resp[u'data']
+            return resp[u'data']
+
+        except:
+            self.logger.exception('Unable to know if module is loaded or not:')
+            return False
 
 
 
@@ -524,13 +530,17 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if post command succeed, False otherwise
         """
-        resp = self.send_command(u'render_event', u'inventory', {u'event':event, u'event_values':event_values, u'types': renderer_types})
-        if resp[u'error']:
-            self.logger.error(u'Unable to request renderers by type')
+        try:
+            resp = self.send_command(u'render_event', u'inventory', {u'event':event, u'event_values':event_values, u'types': renderer_types})
+            if resp[u'error']:
+                self.logger.error(u'Unable to request renderers by type')
+                return False
+
+        except:
+            self.logger.exception('Unable to render event. Maybe inventory is not ready yet')
             return False
 
         return True
-
 
 
 class RaspIotRenderer(RaspIotModule):
