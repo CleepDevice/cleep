@@ -248,7 +248,7 @@ class MessageBus():
         else:
             #subscriber not found
             self.logger.error(u'Module %s not found' % _module)
-            raise InvalidModule(u'Unknown module name %s, check "module" param' % _module)
+            raise InvalidModule(_module)
 
     def add_subscription(self, module):
         """
@@ -280,7 +280,7 @@ class MessageBus():
         else:
             #uuid does not exists
             self.logger.error(u'Subscriber %s not found' % _module)
-            raise InvalidModule(u'Unknown module name, check "module" param')
+            raise InvalidModule(_module)
 
     def is_subscribed(self, module):
         """
