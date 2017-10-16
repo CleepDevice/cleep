@@ -11,7 +11,7 @@ from collections import deque
 from threading import Event
 from .libs.task import Task
 from Queue import Queue
-from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, BusNotReady, InvalidModule
+from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
 
 __all__ = [u'MessageBus', u'BusClient']
 
@@ -74,11 +74,6 @@ class MessageBus():
         self.__purge = Task(60.0, self.purge_subscriptions)
         self.__purge.start()
 
-        #broadcast event application is ready
-        request = MessageRequest()
-        request.event = u'system.application.ready'
-        self.push(request)
-
         #now push function will handle new messages
 
     def push(self, request, timeout=3.0):
@@ -98,7 +93,6 @@ class MessageBus():
         Raises:
             InvalidParameter: if request is not a MessageRequest instance.
             NoResponse: if no response is received from module.
-            BusNotReady: if bus is not ready when message is pushed (catch event 'system.application.ready' if exception received).
             InvalidModule: if specified recipient is unknown.
         """
         if isinstance(request, MessageRequest):

@@ -44,10 +44,6 @@ class InvalidMessage(Exception):
     def __str__(self):
         return u'Invalid message'
 
-class BusNotReady(Exception):
-    def __str__(self):
-        return u'Bus is not ready yet. Please handle system.application.ready event before sending events.'
-
 class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
