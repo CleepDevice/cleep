@@ -287,10 +287,16 @@ class Inventory(RaspIotModule):
         debugs = {}
         for module in self.installed_modules_names.keys():
             #get debug status
-            resp = self.send_command(u'is_debug_enabled', module)
-            if resp[u'error']:
-                self.logger.error(u'Unable to get debug status of module %s: %s' % (module, resp[u'message']))
-            debugs[module] = {u'debug': resp[u'data']}
+            try:
+                resp = self.send_command(u'is_debug_enabled', module)
+                if resp[u'error']:
+                    self.logger.error(u'Unable to get debug status of module %s: %s' % (module, resp[u'message']))
+                    debugs[module] = {u'debug': False}
+                else:
+                    debugs[module] = {u'debug': resp[u'data']}
+            except:
+                self.logger.exception('Unable to get module %s debug status:' % module)
+                debugs[module] = {u'debug': False}
     
         return debugs
 
@@ -412,9 +418,12 @@ class Inventory(RaspIotModule):
                                 continue
 
                             #and post profile data to renderer
-                            resp = self.send_command(u'render', renderer, {u'data':data})
-                            if resp[u'error']:
-                                self.logger.error(u'Unable to post data to "%s" renderer: %s' % (renderer, resp[u'message']))
+                            try:
+                                resp = self.send_command(u'render', renderer, {u'data':data})
+                                if resp[u'error']:
+                                    self.logger.error(u'Unable to post data to "%s" renderer: %s' % (renderer, resp[u'message']))
+                            except:
+                                self.logger.exception(u'Unable to render event:')
 
             else:
                 #no renderer for current type

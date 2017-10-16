@@ -324,7 +324,7 @@ class RaspIot(BusClient):
             return resp[u'data']
 
         except:
-            self.logger.exception('Unable to know if module is loaded or not:')
+            self.logger.exception(u'Unable to know if module is loaded or not:')
             return False
 
 
@@ -537,7 +537,7 @@ class RaspIotModule(RaspIot):
                 return False
 
         except:
-            self.logger.exception('Unable to render event. Maybe inventory is not ready yet')
+            self.logger.exception(u'Unable to render event. Maybe inventory is not ready yet')
             return False
 
         return True
