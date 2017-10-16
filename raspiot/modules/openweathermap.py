@@ -36,8 +36,7 @@ class Openweathermap(RaspIotModule):
 
     OWM_WEATHER_URL = u'http://api.openweathermap.org/data/2.5/weather'
     OWM_FORECAST_URL = u'http://api.openweathermap.org/data/2.5/forecast'
-    OWM_TASK_DELAY = 1800
-    #OWM_TASK_DELAY = 60
+    OWM_TASK_DELAY = 900
     OWM_WEATHER_CODES = {
         200: u'Thunderstorm with light rain',
         201: u'Thunderstorm with rain',
