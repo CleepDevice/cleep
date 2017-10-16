@@ -155,10 +155,10 @@ class Inventory(RaspIotModule):
 
                     #save formatter
                     self.logger.debug(u'Found class %s in %s' % (unicode(class_), formatter) )
-                    if not self.formatters.has_key(instance_.input):
-                        self.formatters[instance_.input] = {}
-                    self.formatters[instance_.input][instance_.output] = instance_
-                    self.logger.debug(u'  %s => %s' % (instance_.input, instance_.output))
+                    if not self.formatters.has_key(instance_.input_event):
+                        self.formatters[instance_.input_event] = {}
+                    self.formatters[instance_.input_event][instance_.output_profile] = instance_
+                    self.logger.debug(u'  %s => %s' % (instance_.input_event, instance_.output_profile.__class__.__name__))
 
         self.logger.debug(u'FORMATTERS: %s' % self.formatters)
 

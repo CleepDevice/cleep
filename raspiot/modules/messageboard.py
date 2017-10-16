@@ -496,7 +496,18 @@ class Messageboard(RaspIotRenderer):
         #and restart new one
         self.__display_task = BackgroundTask(self.__display_message, duration)
         self.__display_task.start()
-        
+
+
+    def _render(self, data):
+        """ 
+        Render event
+
+        Args:
+            data (any supported profile): data to display
+        """
+        self.add_or_replace_message(data.text, )
+        self.speak_text(data.text, self._config[u'lang'])
+
 
 
 if __name__ == '__main__':
