@@ -48,7 +48,7 @@ class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
     def __str__(self):
-        return u'Invalid module %s (not loaded or unknown)' % module
+        return u'Invalid module %s (not loaded or unknown)' % self.module
 
 class Unauthorized(Exception):
     def __init__(self, value):
