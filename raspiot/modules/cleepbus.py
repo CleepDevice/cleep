@@ -16,7 +16,7 @@ __all__ = [u'Cleepbus']
 class Cleepbus(RaspIotModule):
 
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Add your device to Cleep home network'
+    MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = ['bus']
