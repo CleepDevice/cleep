@@ -402,12 +402,12 @@ class Sounds(RaspIotRenderer):
 
         return True
 
-    def _render(self, data):
+    def _render(self, profile):
         """
-        TextToSpeech specified data
+        TextToSpeech specified profile
 
         Args:
-            data (any supported profile): data to speech
+            profile (any supported profile): profile to speech
         """
-        self.speak_text(data.text, self._config[u'lang'])
+        self.speak_text(profile.text, self._config[u'lang'])
 

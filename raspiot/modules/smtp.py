@@ -264,12 +264,12 @@ class Smtp(RaspIotRenderer):
 
         return True
 
-    def _render(self, data):
+    def _render(self, profile):
         """
-        Render data
+        Render profile
 
         Params:
-            data (EmailProfile): EmailProfile instance
+            profile (EmailProfile): EmailProfile instance
 
         Returns:
             bool: True if post succeed, False otherwise
@@ -280,7 +280,7 @@ class Smtp(RaspIotRenderer):
             raise CommandError(u'Can\'t send email because module is not configured')
 
         #send email
-        self.__send_email(config[u'smtp_server'], config[u'smtp_port'], config[u'smtp_login'], config[u'smtp_password'], config[u'smtp_tls'], config[u'smtp_ssl'], config[u'email_sender'], data)
+        self.__send_email(config[u'smtp_server'], config[u'smtp_port'], config[u'smtp_login'], config[u'smtp_password'], config[u'smtp_tls'], config[u'smtp_ssl'], config[u'email_sender'], profile)
 
         return True
 

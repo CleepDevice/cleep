@@ -409,19 +409,19 @@ class Inventory(RaspIotModule):
                 for renderer in self.renderers[type]:
                     for profile in self.renderer_profiles[renderer]:
                         if profile in formatters:
-                            self.logger.debug(u'Found match, post profile data to renderer %s' % renderer)
+                            self.logger.debug(u'Found match, post profile to renderer %s' % renderer)
                             #found match, format event to profile
-                            data = formatters[profile].format(event_values)
+                            profile = formatters[profile].format(event_values)
 
-                            #handle no data
-                            if data is None:
+                            #handle no profile
+                            if profile is None:
                                 continue
 
-                            #and post profile data to renderer
+                            #and post profile to renderer
                             try:
-                                resp = self.send_command(u'render', renderer, {u'data':data})
+                                resp = self.send_command(u'render', renderer, {u'profile': profile})
                                 if resp[u'error']:
-                                    self.logger.error(u'Unable to post data to "%s" renderer: %s' % (renderer, resp[u'message']))
+                                    self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
                             except:
                                 self.logger.exception(u'Unable to render event:')
 

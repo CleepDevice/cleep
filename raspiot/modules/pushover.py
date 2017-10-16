@@ -158,12 +158,12 @@ class Pushover(RaspIotRenderer):
 
         return True
 
-    def _render(self, data):
+    def _render(self, profile):
         """
-        Render data
+        Render profile
 
         Params:
-            data (SmsData): SmsData instance
+            profile (SmsData): SmsData instance
 
         Returns:
             bool: True if post succeed, False otherwise
@@ -174,7 +174,7 @@ class Pushover(RaspIotRenderer):
             raise CommandError(u'Can\'t send push message because module is not configured')
 
         #send push
-        self.__send_push(config[u'userkey'], config[u'apikey'], data)
+        self.__send_push(config[u'userkey'], config[u'apikey'], profile)
 
         return True
 

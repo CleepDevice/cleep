@@ -133,12 +133,12 @@ class Freemobilesms(RaspIotRenderer):
 
         return True
 
-    def _render(self, data):
+    def _render(self, profile):
         """
-        Render data
+        Render profile
 
         Params:
-            data: SmsProfile instance
+            profile (SmsProfile): SmsProfile instance
 
         Returns:
             bool: True if render succeed, False otherwise
@@ -147,7 +147,7 @@ class Freemobilesms(RaspIotRenderer):
         params = urllib.urlencode({
             u'user': config[u'userid'],
             u'pass': config[u'apikey'],
-            u'msg': data.message
+            u'msg': profile.message
         })
 
         error = False

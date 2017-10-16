@@ -167,12 +167,12 @@ class Bulksms(RaspIotRenderer):
 
         return credits
 
-    def _render(self, data):
+    def _render(self, profile):
         """
-        Render data
+        Render profile
 
         Args:
-            data (SmsProfile): SmsProfile instance
+            profile (SmsProfile): SmsProfile instance
 
         Returns:
             bool: True if post succeed, False otherwise
@@ -181,7 +181,7 @@ class Bulksms(RaspIotRenderer):
         params = urllib.urlencode({
             u'username': config[u'username'],
             u'password': config[u'password'],
-            u'message': data.message,
+            u'message': profile.message,
             u'msisdn' : config[u'phone_numbers']
         })
 

@@ -253,19 +253,20 @@ class Messageboard(RaspIotRenderer):
         #set board unit
         self.board.set_time_units(u'minutes', u'hours', u'days')
 
-    def _post(self, data):
+    def _render(self, profile):
         """
-        Post message to screen
+        Render message to screen
 
         Args:
-            data (any profile): data to display
+            profile (any profile): profile to display
         """
-        if isinstance(data, DisplayAddOrReplaceMessageProfile):
-            self.add_or_replace_message(data.message, data.uuid)
+        if isinstance(profile, DisplayAddOrReplaceMessageProfile):
+            #replace (or add) message using specified uuid
+            self.add_or_replace_message(profile.message, profile.uuid)
 
-        elif isinstance(data, DisplayLimitedTimeMessageProfile):
+        elif isinstance(profile, DisplayLimitedTimeMessageProfile):
             #add message
-            self.add_message(data.message, data.start, data.end)
+            self.add_message(profile.message, profile.start, profile.end)
 
     def add_message(self, message, start, end):
         """
@@ -496,17 +497,6 @@ class Messageboard(RaspIotRenderer):
         #and restart new one
         self.__display_task = BackgroundTask(self.__display_message, duration)
         self.__display_task.start()
-
-
-    def _render(self, data):
-        """ 
-        Render event
-
-        Args:
-            data (any supported profile): data to display
-        """
-        self.add_or_replace_message(data.text, )
-        self.speak_text(data.text, self._config[u'lang'])
 
 
 
