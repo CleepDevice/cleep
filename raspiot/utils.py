@@ -28,6 +28,10 @@ class NoMessageAvailable(Exception):
     def __str__(self):
         return u'No message available'
 
+class NoCityFound(Exception):
+    def __str__(self):
+        return u'No city found'
+
 class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value

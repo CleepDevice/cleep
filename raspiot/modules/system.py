@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError
+from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError, NoCityFound
 from raspiot.raspiot import RaspIotModule
 import raspiot
 from datetime import datetime
@@ -66,8 +66,8 @@ class System(RaspIotModule):
 
         #members
         self.time_task = None
-        self.sunset = time.mktime(datetime.min.timetuple())
-        self.sunrise = time.mktime(datetime.min.timetuple())
+        self.sunset = None
+        self.sunrise = None
         self.__clock_uuid = None
         self.__monitor_cpu_uuid = None
         self.__monitor_memory_uuid = None
@@ -83,11 +83,10 @@ class System(RaspIotModule):
         """
         Configure module
         """
-        #compute sun times
-        self.__compute_sun()
+        #sunset and sunrise times are volatile and computed automacically at each time event
 
         #launch time task
-        self.time_task = Task(60.0, self.__send_time_event)
+        self.time_task = Task(60.0, self.__time_task)
         self.time_task.start()
 
         #init first cpu percent for current process
@@ -149,16 +148,19 @@ class System(RaspIotModule):
         #stop monitoring task
         self.__stop_monitoring_threads()
 
-    def __search_city(self, city, country):
+    def __get_location_infos(self, city, country):
         """
-        Search for specified city
+        Get location infos
 
         Params:
             city (string): city name
             country (string): city country
 
         Returns:
-            object: astral location (from geocoder function)
+            astral.Location: astral location (from geocoder function) (location.name=city, location.region=country)
+
+        Exceptions:
+            Exception: if error occured, new exception is raise in generic one with appropriate message
         """
         try:
             a = Astral(GoogleGeocoder)
@@ -170,48 +172,46 @@ class System(RaspIotModule):
         except AstralError as e:
             self.logger.exception('Exception during Astral request')
             if e.message and e.message.find(u'Unable to locate')>=0:
-                raise Exception(u'Unable to find city. Please specify a more important city.')
+                raise NoCityFound()
             else:
                 raise Exception(e.message)
 
-    def __compute_sun(self, city=None, country=''):
+    def __update_sun_times(self):
         """
-        Compute sunset/sunrise times
+        Update sun times
 
-        Params:
-            city (string): city name
-            country (string): country name
-
-        Returns:
-            bool: True if computation succeed, False otherwise
+        Return:
+            bool: True if data updated, False otherwise
         """
-        self.logger.debug('Compute sunset/sunrise')
+        self.logger.debug('Update sun times')
+        #reset sunset and sunrise
+        self.sunset = None
+        self.sunrise = None
 
-        #force city from configurated one if city not specified
-        if city is None:
-            if self._config.has_key(u'city') and self._config[u'city'] is not None:
-                city = self._config[u'city']
-                country = self._config[u'country']
-            else:
-                #no city available
-                city = None
-                country = u''
-                
-        if city:
-            loc = self.__search_city(city, country)
-            city = loc.name
-            country = loc.region
-            sun = loc.sun()
-            self.sunset = sun[u'sunset']
-            self.sunrise = sun[u'sunrise']
-            self.logger.debug(u'Sunset:%d:%d sunrise:%d:%d' % (self.sunset.hour, self.sunset.minute, self.sunrise.hour, self.sunrise.minute))
-            return True, city, country
-            
-        else:
-            self.sunset = None
-            self.sunrise = None
-            self.logger.warning(u'No city configured, only current time will be returned')
-            return False, None, None
+        #update sun times if possible
+        if self._config.has_key(u'city') and self._config[u'city'] and self._config.has_key(u'country'):
+            try:
+                location = self.__get_location_infos(self._config[u'city'], self._config[u'country'])
+                self.sunset = location.sunset()
+                self.sunrise = location.sunrise()
+                self.logger.debug('Found sunset=%s sunrise=%s' % (self.sunset, self.sunrise))
+
+            except Exception as e:
+                self.logger.warning('Unable to refresh suntimes (%s)' % str(e))
+                return False
+
+        return True
+
+    def __save_sun_times(self, location):
+        """
+        Save sun times
+    
+        Args:
+            location (astral.Location): data from astral/geocoder request
+        """
+        if isinstance(location, astral.Location):
+            self.sunset = location.sun()[u'sunset']
+            self.sunrise = location.sun()[u'sunrise']
 
     def __format_time(self, now=None):
         """
@@ -261,40 +261,49 @@ class System(RaspIotModule):
             u'sunrise': sunrise
         }
 
-    def __send_time_event(self):
+    def __time_task(self):
         """
-        Send time event every minute
-        Send sunset/sunrise events and purge database if possible
+        Time task: send time event every minutes. It also accomplishes somes other tasks like:
+         - sunset/sunrise computations every day at midnight
+         - send sunset/sunrise events
+         - system monitoring data purge
         """
         now = int(time.time())
         now_formatted = self.__format_time()
 
-        #push now event
+        #send now event
         self.send_event(u'system.time.now', now_formatted, self.__clock_uuid)
         self.render_event(u'system.time.now', now_formatted, [u'sound', u'display'])
 
-        #handle sunset
+        #update sun times
+        refresh_sun_times = False
+        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0:
+            #daily sun times refresh
+            refresh_sun_times = True
+        elif self.sunset is None or self.sunrise is None:
+            #handle last update failure
+            refresh_sun_times = True
+        if refresh_sun_times:
+            self.__update_sun_times()
+
+        #send sunset event
         if self.sunset:
             if self.sunset.hour==now_formatted[u'hour'] and self.sunset.minute==now_formatted[u'minute']:
                 #sunset time
                 self.send_event(u'system.time.sunset', None, self.__clock_uuid)
                 self.render_event(u'system.time.sunset', None, [u'display', u'sound'])
 
-        #handle sunrise
+        #send sunrise event
         if self.sunrise:
             if self.sunrise.hour==now_formatted[u'hour'] and self.sunrise.minute==now_formatted[u'minute']:
                 #sunrise time
                 self.send_event(u'system.time.sunrise', None, self.__clock_uuid)
                 self.render_event(u'system.time.sunrise', None, [u'display', u'sound'])
 
-        #compute some stuff at midnight
-        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0:
-            #compute sunset/sunrise at midnight
-            self.__compute_sun()
-            #purge data
-            if self.is_module_loaded(u'database'):
-                self.__purge_cpu_data()
-                self.__purge_memory_data()
+        #daily data cleanup
+        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0 and self.is_module_loaded(u'database'):
+            self.__purge_cpu_data()
+            self.__purge_memory_data()
 
     def get_module_config(self):
         """
@@ -421,7 +430,7 @@ class System(RaspIotModule):
 
         Params:
             city (string): closest city name
-            country (string): country name
+            country (string): country name (optionnal)
         
         Returns:
             bool: True if city configured
@@ -432,18 +441,34 @@ class System(RaspIotModule):
         if city is None or len(city)==0:
             raise MissingParameter(u'City parameter is missing')
 
-        #compute sunset/sunrise
-        (res, city, country) = self.__compute_sun(city, country)
-        
-        if res:
-            #save city (exception raised before if error occured)
-            config = self._get_config()
-            config[u'city'] = city
-            config[u'country'] = country
-            if self._save_config(config) is None:
-                raise CommandError(u'Unable to save configuration')
+        #search city and find if result found (try 3 times beacause geocoder returns exception sometimes :S)
+        for i in range(3):
+            try:
+                location = self.__get_location_infos(city, country)
 
-        return True
+                #save city and country
+                config[u'city'] = location.name
+                config[u'country'] = location.region
+                if self._save_config(config) is None:
+                    raise CommandError(u'Unable to save configuration')
+
+                #update sun times
+                self.__update_sun_times()
+
+                #process terminated, quit now
+                return True
+
+            except NoCityFound:
+                #no city found, it happens sometimes with geocoder ?!? so give it a new try
+                pass
+
+            except Exception as e:
+                #unexpected exception
+                raise e
+
+        #if we reach this part of code, it means process was unable to find suitable city
+        #so raise an exception
+        raise Exception(u'Unable to find city. Please specify a more important city.')
 
     def reboot_system(self):
         """
