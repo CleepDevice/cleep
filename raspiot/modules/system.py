@@ -86,7 +86,7 @@ class System(RaspIotModule):
         #sunset and sunrise times are volatile and computed automacically at each time event
 
         #launch time task
-        self.time_task = Task(60.0, self.__time_task)
+        self.time_task = Task(60.0, self.__time_task, self.logger)
         self.time_task.start()
 
         #init first cpu percent for current process
@@ -669,11 +669,11 @@ class System(RaspIotModule):
         """
         Start monitoring threads
         """
-        self.__monitoring_cpu_task = Task(self.MONITORING_CPU_DELAY, self.__monitoring_cpu_thread)
+        self.__monitoring_cpu_task = Task(self.MONITORING_CPU_DELAY, self.__monitoring_cpu_thread, self.logger)
         self.__monitoring_cpu_task.start()
-        self.__monitoring_memory_task = Task(self.MONITORING_MEMORY_DELAY, self.__monitoring_memory_thread)
+        self.__monitoring_memory_task = Task(self.MONITORING_MEMORY_DELAY, self.__monitoring_memory_thread, self.logger)
         self.__monitoring_memory_task.start()
-        self.__monitoring_disks_task = Task(self.MONITORING_DISKS_DELAY, self.__monitoring_disks_thread)
+        self.__monitoring_disks_task = Task(self.MONITORING_DISKS_DELAY, self.__monitoring_disks_thread, self.logger)
         self.__monitoring_disks_task.start()
 
     def __stop_monitoring_threads(self):

@@ -16,16 +16,18 @@ class Task:
     Run a task asynchronously
     If interval specified task is executed periodically. If interval is not specified, task is executed immediately once
     """
-    def __init__(self, interval, task, task_args=[], task_kwargs={}):
+    def __init__(self, interval, task, logger, task_args=[], task_kwargs={}):
         """
         Create new task
         
         Args:
             interval (float): interval to repeat task (in seconds)
-            task (function): function to call periodically
+            task (callback): function to call periodically
+            logger (logger): logger instance used to log message in task
         """
         self._task = task
         self._args = task_args
+        self.logger = logger
         self._kwargs = task_kwargs
         if interval is None:
             self._interval = 0.0
@@ -42,7 +44,12 @@ class Task:
         if self._run_count is not None:
             self._run_count -= 1
         run_again = False
-        self._task(*self._args, **self._kwargs)
+        try:
+            self._task(*self._args, **self._kwargs)
+        except:
+            #exception occured
+            if self.logger:
+                self.logger.exception(u'Exception occured in task execution:')
 
         #launch again the timer if periodic task
         if self._interval:
@@ -110,18 +117,22 @@ class CountTask(Task):
 class BackgroundTask(Thread):
     """
     Run background task indefinitely (thread helper)
+    Difference between Task class is BackgroundTask does not add pause between callback (task) execution.
+    It's just a thread helper
     """
 
-    def __init__(self, task, pause=0.25):
+    def __init__(self, task, logger, pause=0.25):
         """
         Constructor
         Args:
-            task (function): function to call
+            task (callback): function to call
+            logger (logger): logger instance to log task messages
             pause (int): pause between task call (in seconds)
         """
         Thread.__init__(self)
         Thread.daemon = True
         self.task = task
+        self.logger = logger
         if pause<=0.25:
             pause = 0.25
         self.pause = int(float(pause)/0.25)
@@ -138,7 +149,11 @@ class BackgroundTask(Thread):
         Run task
         """
         while self.running:
-            self.task()
+            try:
+                self.task()
+            except:
+                if self.logger:
+                    self.logger.exception(u'Exception occured during task execution:')
             for i in range(self.pause):
                 if not self.running:
                     break

@@ -164,7 +164,7 @@ class Openweathermap(RaspIotModule):
             self.__weather_task()
 
         #start weather task
-        self.weather_task = Task(self.OWM_TASK_DELAY, self.__weather_task)
+        self.weather_task = Task(self.OWM_TASK_DELAY, self.__weather_task, self.logger)
         self.weather_task.start()
 
     def _stop(self):

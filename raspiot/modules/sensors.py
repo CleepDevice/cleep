@@ -340,7 +340,7 @@ class Sensors(RaspIotModule):
 
         #start task
         self.logger.debug(u'Start temperature task (refresh every %s seconds) for sensor %s ' % (unicode(sensor[u'interval']), sensor[u'uuid']))
-        self.__tasks[sensor[u'uuid']] = Task(float(sensor[u'interval']), self.__read_temperature, [sensor])
+        self.__tasks[sensor[u'uuid']] = Task(float(sensor[u'interval']), self.__read_temperature, self.logger, [sensor])
         self.__tasks[sensor[u'uuid']].start()
 
     def __stop_temperature_task(self, sensor):

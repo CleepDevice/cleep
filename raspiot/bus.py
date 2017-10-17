@@ -71,7 +71,7 @@ class MessageBus():
         self.__app_configured = True
 
         #and finally launch purge subscriptions task
-        self.__purge = Task(60.0, self.purge_subscriptions)
+        self.__purge = Task(60.0, self.purge_subscriptions, self.logger)
         self.__purge.start()
 
         #now push function will handle new messages

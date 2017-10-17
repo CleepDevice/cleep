@@ -359,7 +359,7 @@ class Actions(RaspIotModule):
         self.__load_scripts()
 
         #refresh scripts task
-        self.__refresh_thread = Task(60.0, self.__load_scripts)
+        self.__refresh_thread = Task(60.0, self.__load_scripts, self.logger)
         self.__refresh_thread.start()
 
     def _stop(self):
