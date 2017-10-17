@@ -481,11 +481,19 @@ def devices():
         if module.startswith(u'mod.'):
             _module = module.replace(u'mod.', '')
             logger.debug(u'Request "%s" config' % _module)
-            response = send_command(u'get_module_devices', _module, {})
-            if not response[u'error']:
-                devices[_module] = response[u'data']
-            else:
-                devices[_module] = None
+            try:
+                response = send_command(u'get_module_devices', _module, {})
+                if not response[u'error']:
+                    devices[_module] = response[u'data']
+                else:
+                    devices[_module] = None
+
+            except NoResponse as e:
+                logger.warning(str(e))
+
+            except:
+                logger.exception('Fatal exception:')
+
     logger.debug(u'Devices: %s' % devices)
 
     return json.dumps(devices)
