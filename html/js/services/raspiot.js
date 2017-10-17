@@ -34,7 +34,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             freemobilesms: 'sms',
             smtp: 'mail',
             pushover: 'send',
-            openweathermap: 'cloud'
+            openweathermap: 'cloud',
+            cleepbus: 'settings input antenna'
         };
 
         if( !angular.isUndefined(icons[module]) )
