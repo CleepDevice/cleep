@@ -584,12 +584,12 @@ class RaspIotRenderer(RaspIotModule):
             u'profiles':self.RENDERER_PROFILES
         }
 
-    def render(self, data):
+    def render(self, profile):
         """
-        Post data to renderer.
+        Render profile
 
         Args:
-            data (dict): data to post.
+            profile (RendererProfile): profile to render
 
         Returns:
             bool: True if post is successful.
@@ -597,14 +597,14 @@ class RaspIotRenderer(RaspIotModule):
         Raises:
             MissingParameter, InvalidParameter
         """
-        #check data type
-        if data.__class__.__name__ not in self.profiles_types:
-            raise InvalidParameter(u'Data has invalid type "%s"' % data.__class__.__name__)
+        #check profile type
+        if profile.__class__.__name__ not in self.profiles_types:
+            raise InvalidParameter(u'Profile "%s" is not supported in this renderer' % profile.__class__.__name__)
 
         #call implementation
-        return self._render(data)
+        return self._render(profile)
 
-    def _render(self, data):
+    def _render(self, profile):
         """
         Fake render method
         """
