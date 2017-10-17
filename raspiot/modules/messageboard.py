@@ -130,7 +130,7 @@ class Messageboard(RaspIotRenderer):
             })
 
         #init display task
-        self.__display_task = BackgroundTask(self.__display_message, float(self._config[u'duration']), self.logger)
+        self.__display_task = BackgroundTask(self.__display_message, self.logger, float(self._config[u'duration']))
         self.__display_task.start()
 
         #display ip at startup during 1 minute
@@ -495,7 +495,7 @@ class Messageboard(RaspIotRenderer):
             self.__display_task.stop()
         
         #and restart new one
-        self.__display_task = BackgroundTask(self.__display_message, duration)
+        self.__display_task = BackgroundTask(self.__display_message, self.logger, float(duration))
         self.__display_task.start()
 
 
