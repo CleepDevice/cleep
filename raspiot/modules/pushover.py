@@ -163,7 +163,7 @@ class Pushover(RaspIotRenderer):
         Render profile
 
         Params:
-            profile (SmsData): SmsData instance
+            profile (PushProfile): PushProfile instance
 
         Returns:
             bool: True if post succeed, False otherwise
