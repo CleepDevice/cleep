@@ -170,7 +170,7 @@ class System(RaspIotModule):
             return a.geocoder[pattern]
 
         except AstralError as e:
-            self.logger.exception('Exception during Astral request')
+            self.logger.debug('Exception during Astral request: %s' % str(e))
             if e.message and e.message.find(u'Unable to locate')>=0:
                 raise NoCityFound()
             else:
