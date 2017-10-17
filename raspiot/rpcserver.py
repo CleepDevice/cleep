@@ -25,7 +25,7 @@ from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
-from .utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
+from .utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError, NoResponse
 import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt
@@ -489,7 +489,7 @@ def devices():
                     devices[_module] = None
 
             except NoResponse as e:
-                logger.warning(str(e))
+                logger.exception('Unexpected exception occured:')
 
             except:
                 logger.exception('Fatal exception:')
