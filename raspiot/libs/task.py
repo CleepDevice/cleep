@@ -21,7 +21,7 @@ class Task:
         Create new task
         
         Args:
-            interval (int): interval to repeat task (in seconds)
+            interval (float): interval to repeat task (in seconds)
             task (function): function to call periodically
         """
         self._task = task
