@@ -309,7 +309,7 @@ class PyreBus(ExternalBus):
 
         try:
             self.logger.debug(u'Polling...')
-            items = dict(self.poller.poll())
+            items = dict(self.poller.poll(1000))
         except KeyboardInterrupt:
             #stop requested by user
             return False
@@ -397,7 +397,8 @@ class PyreBus(ExternalBus):
                 #peer disconnected
                 self.logger.debug('Peer disconnected: peer=%s' % data_peer)
                 self._remove_peer(data_peer)
-                self.on_peer_disconnected(data_peer)
+                if self.on_peer_disconnected:
+                    self.on_peer_disconnected(data_peer)
 
         return True
 
