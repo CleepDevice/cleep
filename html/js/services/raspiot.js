@@ -35,7 +35,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             smtp: 'mail',
             pushover: 'send',
             openweathermap: 'cloud',
-            cleepbus: 'settings input antenna'
+            cleepbus: 'settings_input_antenna'
         };
 
         if( !angular.isUndefined(icons[module]) )
