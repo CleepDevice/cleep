@@ -131,7 +131,7 @@ class RaspIot(BusClient):
 
         #check if module have config file
         if not self.__has_config_file():
-            self.logger.warning(u'Module %s has no configuration file configured' % self.__class__.__name__)
+            self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return None
 
         self.__configLock.acquire(True)
@@ -167,7 +167,7 @@ class RaspIot(BusClient):
         """
         #check if module have config file
         if not self.__has_config_file():
-            self.logger.warning(u'Module %s has no configuration file configured' % self.__class__.__name__)
+            self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return {}
 
         self.__configLock.acquire(True)
