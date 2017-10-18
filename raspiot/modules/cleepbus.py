@@ -65,7 +65,6 @@ class Cleepbus(RaspIotModule):
         """
         Custom process for cleep bus: get new message on external bus
         """
-        self.logger.debug('_custom_process')
         self.external_bus.run_once()
 
     def get_network_devices(self):
@@ -85,7 +84,7 @@ class Cleepbus(RaspIotModule):
         Args:
             message (ExternalBusMessage): external bus message instance
         """
-        self.logger.debug('Message received: ' % message)
+        self.logger.debug('Message received on external bus: %s' % message)
         if message.event:
             #broadcast event to all modules
             self.send_event(message.event, message.params)
@@ -119,6 +118,6 @@ class Cleepbus(RaspIotModule):
             event (MessageRequest): event data
         """
         #handle received event and transfer it to external buf if necessary
-        pass
+        self.logger.debug('Received event %s' % event.event)
 
 

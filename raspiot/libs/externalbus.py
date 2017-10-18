@@ -292,10 +292,13 @@ class PyreBus(ExternalBus):
         self.node.join(self.BUS_GROUP)
         self.node.start()
 
+        #communication socket
+        self.node_socket = self.node.socket()
+
         #poller
         self.poller = zmq.Poller()
         self.poller.register(self.pipe_out, zmq.POLLIN)
-        self.poller.register(self.node.socket(), zmq.POLLIN)
+        self.poller.register(self.node_socket, zmq.POLLIN)
 
         self.__externalbus_configured = True
 
@@ -308,7 +311,7 @@ class PyreBus(ExternalBus):
             raise Exception('Bus not configured. Please call configure function first')
 
         try:
-            self.logger.debug(u'Polling...')
+            #self.logger.debug(u'Polling...')
             items = dict(self.poller.poll(1000))
         except KeyboardInterrupt:
             #stop requested by user
@@ -316,7 +319,7 @@ class PyreBus(ExternalBus):
         except:
             self.logger.exception('Exception occured durring externalbus polling:')
 
-        if self.pipe_out in items and items[self.pipe_out] == zmq.POLLIN:
+        if self.pipe_out in items and items[self.pipe_out]==zmq.POLLIN:
             #message to send
             data = self.pipe_out.recv()
             self.logger.debug(u'Raw data received on pipe: %s' % data)
@@ -336,7 +339,7 @@ class PyreBus(ExternalBus):
                 #shout message
                 self.node.shout(self.BUS_GROUP, json.dumps(message.to_reduced_dict()).encode('utf-8'))
 
-        else:
+        elif self.node_socket in items and items[self.node_socket]==zmq.POLLIN:
             #message received
             data = self.node.recv()
             data_type = data.pop(0).decode('utf-8')
@@ -399,6 +402,10 @@ class PyreBus(ExternalBus):
                 self._remove_peer(data_peer)
                 if self.on_peer_disconnected:
                     self.on_peer_disconnected(data_peer)
+        else:
+            #timeout occured
+            #self.logger.debug(' polling timeout')
+            pass
 
         return True
 
