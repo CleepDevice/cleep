@@ -14,6 +14,11 @@ try:
     from urlparse import urlparse
 except:
     from urllib.parse import urlparse
+from pyre.zhelper import get_ifaddrs as zhelper_get_ifaddrs
+from pyre.zhelper import u
+import netifaces
+import netaddr
+import ipaddress
 
 
 class ExternalBusMessage():
@@ -234,6 +239,70 @@ class PyreBus(ExternalBus):
         self.pipe_in = None
         self.pipe_out = None
 
+    def get_mac_addresses(self):
+        """
+        Use pyre zhelper to get list of mac addresses used to identify cleep device
+        Code from pyre-gevent
+
+        return:
+            list: list of mac addresses
+        """
+        macs = []
+        netinf = zhelper_get_ifaddrs()
+        for iface in netinf:
+            # Loop over the interfaces and their settings to try to find the broadcast address.
+            # ipv4 only currently and needs a valid broadcast address
+            for name, data in iface.items():
+                self.logger.debug("Checking out interface {0}.".format(name))
+                data_2 = data.get(netifaces.AF_INET)
+                data_17 = data.get(netifaces.AF_LINK)
+
+                if not data_2:
+                    self.logger.debug("No data_2 found for interface {0}.".format(name))
+                    continue
+                if not data_17:
+                    self.logger.debug("No data_17 found for interface {0}.".format(name))
+                    continue
+
+                address_str = data_2.get("addr")
+                netmask_str = data_2.get("netmask")
+                mac_str = data_17.get("addr")
+
+                if not address_str or not netmask_str:
+                    self.logger.debug("Address or netmask not found for interface {0}.".format(name))
+                    continue
+
+                if isinstance(address_str, bytes):
+                    address_str = address_str.decode("utf8")
+
+                if isinstance(netmask_str, bytes):
+                    netmask_str = netmask_str.decode("utf8")
+
+                if isinstance(mac_str, bytes):
+                    mac_str = mac_str.decode("utf8")
+
+                #keep only private interface
+                ip_address = netaddr.IPAddress(address_str)
+                if ip_address and not ip_address.is_private():
+                    self.logger.debug("Interface {0} refers to public ip address, drop it.".format(name))
+                    continue
+
+                interface_string = "{0}/{1}".format(address_str, netmask_str)
+
+                interface = ipaddress.ip_interface(u(interface_string))
+
+                if interface.is_loopback:
+                    logger.debug("Interface {0} is a loopback device.".format(name))
+                    continue
+
+                if interface.is_link_local:
+                    logger.debug("Interface {0} is a link-local device.".format(name))
+                    continue
+
+                macs.append(mac_str)
+
+        return macs
+
     def stop(self):
         """
         Custom stop
@@ -243,13 +312,12 @@ class PyreBus(ExternalBus):
             self.logger.debug('Send STOP on pipe')
             self.pipe_in.send(json.dumps(self.BUS_STOP.encode('utf-8')))
 
-    def configure(self, version, mac, hostname, port, ssl, cleepdesktop):
+    def configure(self, version, hostname, port, ssl, cleepdesktop):
         """
         Configure bus
 
         Args:
             version (string): software version
-            mac (string): mac address
             hostname (string): hostname
             port (int): web port
             ssl (bool): True if ssl enabled
@@ -257,6 +325,10 @@ class PyreBus(ExternalBus):
         """
         #zmq context
         self.context = zmq.Context()
+
+        #get mac addresses
+        macs = self.get_mac_addresses()
+        self.logger.debug('macs=%s' % macs)
 
         #communication pipe
         self.pipe_in = self.context.socket(zmq.PAIR)
@@ -280,7 +352,7 @@ class PyreBus(ExternalBus):
         self.node.set_header('version', version)
         self.node.set_header('hostname', hostname)
         self.node.set_header('port', str(port))
-        self.node.set_header('mac', mac)
+        self.node.set_header('macs', json.dumps(macs))
         if ssl:
             self.node.set_header('ssl', '1')
         else:
@@ -381,6 +453,7 @@ class PyreBus(ExternalBus):
                     try:
                         infos = {
                             'id': str(data_peer),
+                            'macs': json.loads(headers['macs']),
                             'version': headers['version'],
                             'hostname': headers['hostname'],
                             'ip': peer_endpoint.hostname,
@@ -388,7 +461,7 @@ class PyreBus(ExternalBus):
                             'ssl': bool(eval(headers['ssl']))
                         }
                         self._add_peer(data_peer, infos)
-                        self.on_peer_connected(data_peer, infos)
+                        self.on_peer_connected(str(data_peer), infos)
                     except:
                         self.logger.exception('Unable to add new peer:')
 
@@ -401,7 +474,7 @@ class PyreBus(ExternalBus):
                 self.logger.debug('Peer disconnected: peer=%s' % data_peer)
                 self._remove_peer(data_peer)
                 if self.on_peer_disconnected:
-                    self.on_peer_disconnected(data_peer)
+                    self.on_peer_disconnected(str(data_peer))
         else:
             #timeout occured
             #self.logger.debug(' polling timeout')
@@ -514,14 +587,14 @@ if __name__ == '__main__':
             self.bus.broadcast_event(event, params)
 
         def run(self):
-            self.bus.configure('0.0.0', 'XX:XX:XX:XX:XX', 'testbus', 80, False, False)
+            self.bus.configure('0.0.0', 'testbus', 80, False, False)
             self.bus.run()
 
         def message_received(self, message):
             print(message)
 
-        def on_connection(self, peer, infos):
-            print(peer, infos)
+        def on_connection(self, peer_id, infos):
+            print(peer_id, infos)
 
         def on_disconnection(self, peer):
             print(peer)

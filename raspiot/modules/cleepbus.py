@@ -51,7 +51,7 @@ class Cleepbus(RaspIotModule):
             ssl = False
             #TODO get mac address, useless for now
             mac = 'xx:xx:xx:xx:xx:xx'
-            self.external_bus.configure(version, mac, hostname, port, ssl, False)
+            self.external_bus.configure(version, hostname, port, ssl, False)
 
     def _stop(self):
         """
