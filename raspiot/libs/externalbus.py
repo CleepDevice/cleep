@@ -26,29 +26,38 @@ class ExternalBusMessage():
     Handle ExternalBus message data
     """
 
-    def __init__(self, sender=None, data={}):
+    def __init__(self, peer_infos=None, data={}):
         """
         Constructor
 
         Args:
-            sender (string): peer id
-            data (dict): member dict. This variable is iterated to look for members
+            peer_infos (dict): infos about peer that sends message
+            data (dict): message content. This parameter is iterated to look for useful members (command, event...)
         """
         self.command = None
         self.event = None
         self.to = None
         self.params = None
-        self.sender = sender
+        self.peer_macs = []
+        self.peer_hostname = None
+        self.peer_ip = None
 
+        #fill peer infos
+        if peer_infos and isinstance(peer_infos, dict):
+            self.peer_hostname = peer_infos[u'hostname']
+            self.peer_macs = peer_infos[u'macs']
+            self.peer_ip = peer_infos[u'ip']
+
+        #fill members from message content
         if len(data)!=0:
             for item in data:
-                if item=='command':
+                if item==u'command':
                     self.command = data[item]
-                elif item=='event':
+                elif item==u'event':
                     self.event = data[item]
-                elif item=='to':
+                elif item==u'to':
                     self.to = data[item]
-                elif item=='params':
+                elif item==u'params':
                     self.params = data[item]
 
     def __str__(self):
@@ -59,14 +68,17 @@ class ExternalBusMessage():
 
     def to_reduced_dict(self):
         """
-        Build dict with minimum class content
+        Build dict with minimum class content.
+        It's useful to get reduced dict when you send message through external bus
 
         Return:
             dict: minimum members on dict
         """
         out = self.to_dict()
         del out['to']
-        del out['sender']
+        del out['peer_macs']
+        del out['peer_hostname']
+        del out['peer_ip']
 
         return out
 
@@ -82,14 +94,18 @@ class ExternalBusMessage():
                 'event': self.event,
                 'params': self.params, 
                 'to': self.to,
-                'sender': self.sender
+                'peer_macs': self.peer_macs,
+                'peer_hostname': self.peer_hostname,
+                'peer_ip': self.peer_ip
             }
         else:
             return {
                 'command': self.command,
                 'params': self.params, 
                 'to': self.to,
-                'sender': self.sender
+                'peer_macs': self.peer_macs,
+                'peer_hostname': self.peer_hostname,
+                'peer_ip': self.peer_ip
             }
 
 class ExternalBus():
@@ -127,32 +143,55 @@ class ExternalBus():
         """
         Run external bus process
         """
-        raise NotImplementedError('broadcast function is not implemented')
+        raise NotImplementedError('run function is not implemented')
 
     def run_once(self):
         """
         Run external bus process once
         """
-        raise NotImplementedError('broadcast function is not implemented')
+        raise NotImplementedError('run_once function is not implemented')
 
-    def broadcast(self, message):
+    def broadcast_command(self, command, params):
         """
-        broadcast message to all connected peers
+        broadcast command message to all connected peers
 
         Args:
-            message (ExternalBusMessage): message to broadcast
+            command (string): command name
+            params (dict): event parameters
         """
-        raise NotImplementedError('broadcast function is not implemented')
+        raise NotImplementedError('broadcast_command function is not implemented')
 
-    def send_to(self, peer_id, message):
+    def broadcast_event(self, event, params):
         """
-        Send message to specified peer
+        broadcast event message to all connected peers
+
+        Args:
+            event (string): event name
+            params (dict): event parameters
+        """
+        raise NotImplementedError('broadcast_event function is not implemented')
+
+    def send_command_to(self, peer_id, command, params):
+        """
+        Send command message to specified peer
 
         Args:
             peer_id (string): message recipient
-            message (ExternalBusMessage): message to send
+            command (string): command name
+            params (dict): command parameters
         """
-        raise NotImplementedError('send_to function is not implemented')
+        raise NotImplementedError('send_command_to function is not implemented')
+
+    def send_event_to(self, peer_id, event, params):
+        """
+        Send event message to specified peer
+
+        Args:
+            peer_id (string): message recipient
+            event (string): event name
+            params (dict): event parameters
+        """
+        raise NotImplementedError('send_event_to function is not implemented')
 
     def get_peers(self):
         """
@@ -404,6 +443,7 @@ class PyreBus(ExternalBus):
 
             #send message
             message = ExternalBusMessage(None, message)
+            self.logger.debug('Send message: %s' % message.to_reduced_dict())
             if message.to is not None:
                 #whisper message
                 self.node.whisper(uuid.UUID(message.to), json.dumps(message.to_reduced_dict()).encode('utf-8'))
@@ -433,7 +473,8 @@ class PyreBus(ExternalBus):
                     data_content = data.pop(0)
                     self.logger.debug('Raw data received on bus: %s' % data_content)
                     message = json.loads(data_content.decode(u'utf-8'))
-                    self.on_message_received(ExternalBusMessage(data_peer, message))
+                    peer_infos = self.get_peer_infos(data_peer)
+                    self.on_message_received(ExternalBusMessage(peer_infos, message))
                 except:
                     self.logger.exception('Unable to parse message:')
 
@@ -534,9 +575,14 @@ class PyreBus(ExternalBus):
         #send message
         self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
-    def send_to(self, peer_id, command, params):
+    def send_command_to(self, peer_id, command, params):
         """
-        Send command to specified peer
+        Send command message to specified peer
+
+        Args:
+            peer_id (string): message recipient
+            command (string): command name
+            params (dict): command parameters
         """
         #check params
         if peer_id not in self.peers.keys():
@@ -553,7 +599,12 @@ class PyreBus(ExternalBus):
 
     def send_event_to(self, peer_id, event, params):
         """
-        Send event to specified peer
+        Send event message to specified peer
+
+        Args:
+            peer_id (string): message recipient
+            event (string): event name
+            params (dict): event parameters
         """
         #check params
         if peer_id not in self.peers.keys():
@@ -577,7 +628,7 @@ if __name__ == '__main__':
         def __init__(self):
             Thread.__init__(self)
             Thread.daemon = True
-            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, False, None)
+            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, True, None)
 
         def stop(self):
             self.bus.stop()
