@@ -120,14 +120,8 @@ class Cleepbus(RaspIotModule):
             message (ExternalBusMessage): external bus message instance
         """
         self.logger.debug(u'Message received on external bus: %s' % message)
-        if message.event:
-            #broadcast event to all modules
-            self.send_event(message.event, message.params)
-
-        else:
-            #command received
-            #TODO to implement!
-            pass
+        #broadcast event to all modules
+        self.send_event(message.event, message.params)
 
     def __on_peer_connected(self, peer_id, infos):
         """
@@ -156,7 +150,7 @@ class Cleepbus(RaspIotModule):
         self.logger.debug(u'Received event %s' % event)
 
         #drop startup events and system events that should stay local
-        if not event[u'startup'] and not event[u'event'].startswith(u'system.'):
+        if not event[u'startup'] and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):
             #broadcast local event to external bus
             self.external_bus.broadcast_event(event[u'event'], event[u'uuid'], event[u'params'])
             
