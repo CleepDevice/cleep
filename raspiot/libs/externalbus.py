@@ -32,15 +32,15 @@ class ExternalBusMessage():
 
         Args:
             peer_infos (dict): infos about peer that sends message
-            data (dict): message content. This parameter is iterated to look for useful members (command, event...)
+            data (dict): message content. This parameter is iterated to look for useful members
         """
-        self.command = None
         self.event = None
         self.to = None
         self.params = None
         self.peer_macs = []
         self.peer_hostname = None
         self.peer_ip = None
+        self.device_id = None
 
         #fill peer infos
         if peer_infos and isinstance(peer_infos, dict):
@@ -51,14 +51,14 @@ class ExternalBusMessage():
         #fill members from message content
         if len(data)!=0:
             for item in data:
-                if item==u'command':
-                    self.command = data[item]
-                elif item==u'event':
+                if item==u'event':
                     self.event = data[item]
                 elif item==u'to':
                     self.to = data[item]
                 elif item==u'params':
                     self.params = data[item]
+                elif item==u'device_id':
+                    self.device_id = data[item]
 
     def __str__(self):
         """
@@ -79,6 +79,9 @@ class ExternalBusMessage():
         del out['peer_macs']
         del out['peer_hostname']
         del out['peer_ip']
+        for key in out.keys():
+            if out[key] is None:
+                del out[key]
 
         return out
 
@@ -89,31 +92,27 @@ class ExternalBusMessage():
         Return:
             dict: members on a dict
         """
-        if self.event:
-            return {
-                'event': self.event,
-                'params': self.params, 
-                'to': self.to,
-                'peer_macs': self.peer_macs,
-                'peer_hostname': self.peer_hostname,
-                'peer_ip': self.peer_ip
-            }
-        else:
-            return {
-                'command': self.command,
-                'params': self.params, 
-                'to': self.to,
-                'peer_macs': self.peer_macs,
-                'peer_hostname': self.peer_hostname,
-                'peer_ip': self.peer_ip
-            }
+        return {
+            'event': self.event,
+            'device_id': self.device_id,
+            'params': self.params, 
+            'to': self.to,
+            'peer_macs': self.peer_macs,
+            'peer_hostname': self.peer_hostname,
+            'peer_ip': self.peer_ip
+        }
 
 class ExternalBus():
     """
-    ExternalBus abstract class
-    Provide:
-        - clients list handling
-        - base bus functions implementation (send_to and broadcast)
+    ExternalBus base class
+
+    External bus is only based on event handling.
+    This way of doing forces developper to handle async requests only.
+    This also reduces bus complexity.
+
+    This class provides:
+        - peers list handling
+        - base bus functions canvas (not implementation)
         - internal logger with debug enabled or not
     """
     def __init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report):
@@ -121,6 +120,9 @@ class ExternalBus():
         Constructor
 
         Args:
+            on_message_received (callback): function called when message is received on bus
+            on_peer_connected (callback): function called when new peer connected
+            on_peer_disconnected (callback): function called when peer is disconnected
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
@@ -139,6 +141,18 @@ class ExternalBus():
         else:
             self.logger.setLevel(logging.WARN)
 
+    def _parse_headers(self, headers):
+        """
+        Parse peer connection header
+
+        Args:
+            headers (dict): received headers from peer connection
+
+        Return:
+            dict: headers dict with parsed data as needed (json=>dict|list, '1'|'0'=>True|False, '666'=>int(666), ...)
+        """
+        raise NotImplementedError('_parse_headers is not implemented')
+
     def run(self):
         """
         Run external bus process
@@ -151,47 +165,28 @@ class ExternalBus():
         """
         raise NotImplementedError('run_once function is not implemented')
 
-    def broadcast_command(self, command, params):
-        """
-        broadcast command message to all connected peers
-
-        Args:
-            command (string): command name
-            params (dict): event parameters
-        """
-        raise NotImplementedError('broadcast_command function is not implemented')
-
-    def broadcast_event(self, event, params):
+    def broadcast_event(self, event, device_id, params):
         """
         broadcast event message to all connected peers
 
         Args:
             event (string): event name
+            device_id (uuid): device identifier that emits event
             params (dict): event parameters
         """
         raise NotImplementedError('broadcast_event function is not implemented')
 
-    def send_command_to(self, peer_id, command, params):
-        """
-        Send command message to specified peer
-
-        Args:
-            peer_id (string): message recipient
-            command (string): command name
-            params (dict): command parameters
-        """
-        raise NotImplementedError('send_command_to function is not implemented')
-
-    def send_event_to(self, peer_id, event, params):
+    def send_event(self, peer_id, event, device_id, params):
         """
         Send event message to specified peer
 
         Args:
             peer_id (string): message recipient
             event (string): event name
+            device_id (uuid): device identifier that emits event
             params (dict): event parameters
         """
-        raise NotImplementedError('send_event_to function is not implemented')
+        raise NotImplementedError('send_event function is not implemented')
 
     def get_peers(self):
         """
@@ -244,7 +239,7 @@ class ExternalBus():
     
 class PyreBus(ExternalBus):
     """
-    External bus using Pyre lib
+    External bus based on Pyre library
     Pyre is python implementation of ZeroMQ ZRE concept (https://rfc.zeromq.org/spec:36/ZRE/)
 
     This code is based on chat example (https://github.com/zeromq/pyre/blob/master/examples/chat.py)
@@ -254,12 +249,17 @@ class PyreBus(ExternalBus):
     BUS_GROUP = 'CLEEP'
     BUS_STOP = '$$STOP$$'
 
-    def __init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report):
+    POLL_TIMEOUT = 1000
+
+    def __init__(self, on_message_received, on_peer_connected, on_peer_disconnected, decode_bus_headers, debug_enabled, crash_report):
         """
         Constructor
 
         Args:
-            debug_enabled (bool) True if debug is enabled
+            on_message_received (callback): function called when message is received on bus
+            on_peer_connected (callback): function called when new peer connected
+            on_peer_disconnected (callback): function called when peer is disconnected
+            debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
         ExternalBus.__init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report)
@@ -274,6 +274,7 @@ class PyreBus(ExternalBus):
         pyre_logger.propagate = False
 
         #members
+        self.decode_bus_headers = decode_bus_headers
         self.__externalbus_configured = False
         self.pipe_in = None
         self.pipe_out = None
@@ -281,7 +282,7 @@ class PyreBus(ExternalBus):
     def get_mac_addresses(self):
         """
         Use pyre zhelper to get list of mac addresses used to identify cleep device
-        Code from pyre-gevent
+        Code copied from pyre-gevent/zbeacon
 
         return:
             list: list of mac addresses
@@ -344,30 +345,26 @@ class PyreBus(ExternalBus):
 
     def stop(self):
         """
-        Custom stop
+        Stop bus
         """
         #send stop message to unblock pyre task
         if self.pipe_in is not None:
             self.logger.debug('Send STOP on pipe')
             self.pipe_in.send(json.dumps(self.BUS_STOP.encode('utf-8')))
 
-    def configure(self, version, hostname, port, ssl, cleepdesktop):
+    def configure(self, headers):
         """
         Configure bus
 
         Args:
-            version (string): software version
-            hostname (string): hostname
-            port (int): web port
-            ssl (bool): True if ssl enabled
-            cleepdesktop (bool): True if client is cleepdesktop
+            headers (dict): list of header fields
         """
+        #check params
+        if headers is None:
+            raise MissingParameter('Parameter "headers" is not specified')
+
         #zmq context
         self.context = zmq.Context()
-
-        #get mac addresses
-        macs = self.get_mac_addresses()
-        self.logger.debug('macs=%s' % macs)
 
         #communication pipe
         self.pipe_in = self.context.socket(zmq.PAIR)
@@ -387,19 +384,9 @@ class PyreBus(ExternalBus):
         self.pipe_out.connect(iface)
 
         #create node
-        self.node = Pyre('CLEEP')
-        self.node.set_header('version', version)
-        self.node.set_header('hostname', hostname)
-        self.node.set_header('port', str(port))
-        self.node.set_header('macs', json.dumps(macs))
-        if ssl:
-            self.node.set_header('ssl', '1')
-        else:
-            self.node.set_header('ssl', '0')
-        if cleepdesktop:
-            self.node.set_header('cleepdesktop', '1')
-        else:
-            self.node.set_header('cleepdesktop', '0')
+        self.node = Pyre(self.BUS_NAME)
+        for header in headers:
+            self.node.set_header(header, headers[header])
         self.node.join(self.BUS_GROUP)
         self.node.start()
 
@@ -416,6 +403,10 @@ class PyreBus(ExternalBus):
     def run_once(self):
         """
         Run pyre bus once
+
+        Return:
+            bool: return True if bus still opened, False if bus stopped.
+                  This is only useful when run_once is called by 'run' function
         """
         #check configuration
         if not self.__externalbus_configured:
@@ -423,9 +414,11 @@ class PyreBus(ExternalBus):
 
         try:
             #self.logger.debug(u'Polling...')
-            items = dict(self.poller.poll(1000))
+            items = dict(self.poller.poll(self.POLL_TIMEOUT))
         except KeyboardInterrupt:
             #stop requested by user
+            self.logger.debug(u'Stop Pyre bus')
+            self.node.stop()
             return False
         except:
             self.logger.exception('Exception occured durring externalbus polling:')
@@ -439,6 +432,8 @@ class PyreBus(ExternalBus):
             #stop node
             if message==self.BUS_STOP:
                 self.logger.debug(u'Stop Pyre bus')
+                self.node.stop()
+                #return false to allow 'run' function to end infinite loop
                 return False
 
             #send message
@@ -492,15 +487,14 @@ class PyreBus(ExternalBus):
 
                     #add new peer
                     try:
-                        infos = {
-                            'id': str(data_peer),
-                            'macs': json.loads(headers['macs']),
-                            'version': headers['version'],
-                            'hostname': headers['hostname'],
-                            'ip': peer_endpoint.hostname,
-                            'port': int(headers['port']),
-                            'ssl': bool(eval(headers['ssl']))
-                        }
+                        #decode headers
+                        infos = self.decode_bus_headers(headers)
+
+                        #fill with some extra infos
+                        infos[u'id'] = str(data_peer)
+                        infos[u'ip'] = peer_endpoint.hostname
+
+                        #save peer and trigger callback
                         self._add_peer(data_peer, infos)
                         self.on_peer_connected(str(data_peer), infos)
                     except:
@@ -549,61 +543,28 @@ class PyreBus(ExternalBus):
                 continue
 
         self.logger.debug('Pyre node terminated')
-        self.node.stop()
                 
-    def broadcast_command(self, command, params):
+    def broadcast_event(self, event, device_id, params):
         """
-        Broadcast command
-        """
-        #prepare message
-        message = ExternalBusMessage()
-        message.command = command
-        message.params = params
-
-        #send message
-        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
-
-    def broadcast_event(self, event, params):
-        """
-        Broadcast command
+        Broadcast event
         """
         #prepare message
         message = ExternalBusMessage()
         message.event = event
+        message.device_id = device_id
         message.params = params
 
         #send message
         self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
-    def send_command_to(self, peer_id, command, params):
-        """
-        Send command message to specified peer
-
-        Args:
-            peer_id (string): message recipient
-            command (string): command name
-            params (dict): command parameters
-        """
-        #check params
-        if peer_id not in self.peers.keys():
-            raise Exception('Invalid peer specified')
-
-        #prepare message
-        message = ExternalBusMessage()
-        message.command = command
-        message.to = peer_id
-        message.params = params
-
-        #send message
-        self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
-
-    def send_event_to(self, peer_id, event, params):
+    def send_event(self, peer_id, event, device_id, params):
         """
         Send event message to specified peer
 
         Args:
             peer_id (string): message recipient
             event (string): event name
+            device_id (uuid): device identifier that emits event
             params (dict): event parameters
         """
         #check params
@@ -612,8 +573,9 @@ class PyreBus(ExternalBus):
 
         #prepare message
         message = ExternalBusMessage()
-        message.event = event
         message.to = peer_id
+        message.event = event
+        message.device_id = device_id
         message.params = params
 
         #send message
@@ -628,7 +590,7 @@ if __name__ == '__main__':
         def __init__(self):
             Thread.__init__(self)
             Thread.daemon = True
-            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, True, None)
+            self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, self.decode_headers, True, None)
 
         def stop(self):
             self.bus.stop()
@@ -637,8 +599,19 @@ if __name__ == '__main__':
             self.bus.logger.info('broadcast event: %s %s' % (event, params))
             self.bus.broadcast_event(event, params)
 
+        def decode_headers(self, headers):
+            return headers
+
         def run(self):
-            self.bus.configure('0.0.0', 'testbus', 80, False, False)
+            headers = {
+                'version': '0.0.0',
+                'macs': json.dumps(['xx.xx.xx.xx.xx.xx']),
+                'hostname': 'testbus',
+                'port': '80',
+                'ssl': '0',
+                'cleepdesktop': '0'
+            }
+            self.bus.configure(headers)
             self.bus.run()
 
         def message_received(self, message):
@@ -654,11 +627,13 @@ if __name__ == '__main__':
     t.start()
 
     try:
-        count = 0
+        #count = 0
+        #while True:
+        #    time.sleep(5.0)
+        #    t.broadcast_event('test.event.count', count)
+        #    count += 1
         while True:
-            time.sleep(5.0)
-            t.broadcast_event('test.event.count', count)
-            count += 1
+            time.sleep(.5)
     except KeyboardInterrupt:
         pass
     except:

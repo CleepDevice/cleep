@@ -9,6 +9,7 @@ from raspiot.libs.hostname import Hostname
 from raspiot import __version__ as VERSION
 import raspiot
 import time
+import json
 
 __all__ = [u'Cleepbus']
 
@@ -17,7 +18,7 @@ class Cleepbus(RaspIotModule):
 
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
-    MODULE_LOCKED = True
+    MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = ['bus']
     MODULE_COUNTRY = 'any'
@@ -33,25 +34,59 @@ class Cleepbus(RaspIotModule):
         RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
-        #self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, debug_enabled, None)
-        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, True, None)
+        #self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, self.__decode_bus_headers, debug_enabled, None)
+        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, self.__decode_bus_headers, True, None)
+        #self.external_bus = None
         self.devices = {}
         self.hostname = Hostname()
+
+    def get_bus_headers(self):
+        """
+        Headers to send at bus connection (values must be in string format)
+
+        Return:
+            dict: dict of headers (only string supported)
+        """
+        macs = self.external_bus.get_mac_addresses()
+        #TODO handle port and ssl when security implemented
+        headers = {
+            u'version': VERSION,
+            u'hostname': self.hostname.get_hostname(),
+            u'port': '80',
+            u'macs': json.dumps(macs),
+            u'ssl': '0',
+            u'cleepdesktop': '0'
+        }
+
+        return headers
+
+    def __decode_bus_headers(self, headers):
+        """
+        Decode bus headers fields
+
+        Args:
+            headers (dict): dict of values as returned by bus
+
+        Return:
+            dict: dict with parsed values
+        """
+        if u'port' in headers.keys():
+            headers[u'port'] = int(headers[u'port'])
+        if u'ssl' in headers.keys():
+            headers[u'ssl'] = bool(eval(headers[u'ssl']))
+        if u'cleepdesktop' in headers.keys():
+            headers[u'cleepdesktop'] = bool(eval(headers[u'cleepdesktop']))
+        if u'macs' in headers.keys():
+            headers[u'macs'] = json.loads(headers[u'macs'])
+
+        return headers
 
     def _configure(self):
         """
         Configure module
         """
         if self.external_bus:
-            version = VERSION
-            hostname = self.hostname.get_hostname()
-            #TODO handle port when security module developped
-            port = 80
-            #TODO handle SSL option when credentials supported in cleepdesktop
-            ssl = False
-            #TODO get mac address, useless for now
-            mac = 'xx:xx:xx:xx:xx:xx'
-            self.external_bus.configure(version, hostname, port, ssl, False)
+            self.external_bus.configure(self.get_bus_headers())
 
     def _stop(self):
         """
@@ -84,14 +119,14 @@ class Cleepbus(RaspIotModule):
         Args:
             message (ExternalBusMessage): external bus message instance
         """
-        self.logger.debug('Message received on external bus: %s' % message)
+        self.logger.debug(u'Message received on external bus: %s' % message)
         if message.event:
             #broadcast event to all modules
             self.send_event(message.event, message.params)
 
         else:
             #command received
-            #TODO not implemented and useful ?
+            #TODO to implement!
             pass
 
     def __on_peer_connected(self, peer_id, infos):
@@ -102,13 +137,13 @@ class Cleepbus(RaspIotModule):
             peer_id (string): peer identifier
             infos (dict): device informations (ip, port, ssl...)
         """
-        self.logger.debug('Peer %s connected: %s' % (peer_id, infos))
+        self.logger.debug(u'Peer %s connected: %s' % (peer_id, infos))
 
     def __on_peer_disconnected(self, peer_id):
         """
         Device is disconnected
         """
-        self.logger.debug('Peer %s disconnected' % peer_id)
+        self.logger.debug(u'Peer %s disconnected' % peer_id)
 
     def event_received(self, event):
         """
@@ -118,6 +153,15 @@ class Cleepbus(RaspIotModule):
             event (MessageRequest): event data
         """
         #handle received event and transfer it to external buf if necessary
-        self.logger.debug('Received event %s' % event.event)
+        self.logger.debug(u'Received event %s' % event)
+
+        #drop startup events and system events that should stay local
+        if not event[u'startup'] and not event[u'event'].startswith(u'system.'):
+            #broadcast local event to external bus
+            self.external_bus.broadcast_event(event[u'event'], event[u'uuid'], event[u'params'])
+            
+        else:
+            #drop current event
+            self.logger.debug(u'Received event %s dropped' % event[u'event'])
 
 
