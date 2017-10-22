@@ -1,7 +1,4 @@
-try:
-    from zyre_pyzmq import Zyre as Pyre
-except Exception as e:
-    from pyre import Pyre
+from pyre_gevent import Pyre
 import zmq.green as zmq
 import json
 import logging
@@ -14,8 +11,8 @@ try:
     from urlparse import urlparse
 except:
     from urllib.parse import urlparse
-from pyre.zhelper import get_ifaddrs as zhelper_get_ifaddrs
-from pyre.zhelper import u
+from pyre_gevent.zhelper import get_ifaddrs as zhelper_get_ifaddrs
+from pyre_gevent.zhelper import u
 import netifaces
 import netaddr
 import ipaddress

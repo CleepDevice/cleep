@@ -2,4 +2,4 @@ gevent==1.2.2
 astral==1.4
 gTTS==1.2.2
 bottle==0.12.13
-https://github.com/tangb/pyre/archive/master.zip#egg=pyre-gevent
+pyre-gevent==0.1.0
