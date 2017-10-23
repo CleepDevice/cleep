@@ -450,6 +450,25 @@ class BusClient(threading.Thread):
 
         return self.push(request, None)
 
+    def send_external_event(self, event, params, peer_infos):
+        """
+        Helper function to push event message to bus.
+
+        Args:
+            event (string): event name.
+            params (dict): event parameters.
+            peer_infos (dict): infos about peer that sends the event
+
+        Returns:
+            None: event always returns None.
+        """
+        request = MessageRequest()
+        request.event = event
+        request.params = params
+        request.peer_infos = peer_infos
+
+        return self.push(request, None)
+
     def send_command(self, command, to, params=None, timeout=3.0):
         """
         Helper function to push command message to bus.

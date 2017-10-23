@@ -101,26 +101,37 @@ class MessageRequest():
        - event parameters
        - a device uuid
        - a startup flag that indicates this event was sent during raspiot startup
+       - peer infos if message comes from external device
     """
     def __init__(self):
+        """
+        Constructor
+        """
         self.command = None
         self.event = None
         self.params = {}
         self.to = None
         self.from_ = None
         self.uuid = None
+        self.peer_infos = None
 
     def __str__(self):
+        """
+        Stringify function
+        """
         if self.command:
             return u'{command:%s, params:%s, to:%s}' % (self.command, unicode(self.params), self.to)
         elif self.event:
-            return u'{event:%s, params:%s, to:%s}' % (self.event, unicode(self.params), self.to)
+            return u'{event:%s, params:%s, to:%s, peer_infos:%s}' % (self.event, unicode(self.params), self.to, self.peer_infos)
         else:
             return u'Invalid message'
 
     def is_broadcast(self):
         """
-        Return True if the request is broadcast
+        Return broadcast status
+
+        Return:
+            bool: True if the request is broadcast
         """
         if self.to==None:
             return True
@@ -129,14 +140,21 @@ class MessageRequest():
 
     def to_dict(self, startup=False):
         """
-        Return useful dict with data filled
-        Internaly usage
-        @raise InvalidMessage if message is not valid
+        Convert message request to dict object
+
+        Params:
+            startup (bool): True if the message is startup message
+
+        Raise:
+            InvalidMessage if message is not valid
         """
         if self.command:
             return {u'command':self.command, u'params':self.params, u'from':self.from_}
         elif self.event:
-            return {u'event':self.event, u'params':self.params, u'startup':startup, u'uuid':self.uuid}
+            if not self.peer_infos:
+                return {u'event':self.event, u'params':self.params, u'startup':startup, u'uuid':self.uuid}
+            else:
+                return {u'event':self.event, u'params':self.params, u'peer_infos':self.peer_infos}
         else:
             raise InvalidMessage()
 

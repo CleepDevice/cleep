@@ -120,8 +120,15 @@ class Cleepbus(RaspIotModule):
             message (ExternalBusMessage): external bus message instance
         """
         self.logger.debug(u'Message received on external bus: %s' % message)
+
         #broadcast event to all modules
-        self.send_event(message.event, message.params)
+        peer_infos = {
+            'macs': message.peer_macs,
+            'ip': message.peer_ip,
+            'hostname': message.peer_hostname,
+            'device_id': message.device_id
+        }
+        self.send_external_event(message.event, message.params, peer_infos)
 
     def __on_peer_connected(self, peer_id, infos):
         """
