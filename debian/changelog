@@ -1,9 +1,15 @@
 raspiot (0.0.9) UNRELEASED; urgency=low
+
   * Implement external bus for communication between all cleep devices. It
   also allows CleepDesktop to detect Cleep devices connected (This replace
   Zeroconf use)
-  * Improve Raspiot startup
-  * Fix bugs
+  * Improve Raspiot startup: no more BusNotReady exception if event sent too
+    quickly, modules sync before starting webserver, handle delayed events.
+  * Improve system module (particularly for astral process)
+  * Improve installation: install or update pip at install, do not remove
+  requirements.txt file after python dependencies installed.
+  * Smart raspiot.conf file handling
+  * Bugs fix
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Thu, 12 Oct 2017 18:00:00 +0100
 
