@@ -7,6 +7,7 @@ import ast
 import io
 import os
 import codecs
+import time
 
 class RaspiotConf():
     """
@@ -14,6 +15,22 @@ class RaspiotConf():
     """
 
     CONF = u'/etc/raspiot/raspiot.conf'
+
+    DEFAULT_CONFIG = {
+        u'general': {
+            u'modules': [u'gpios', u'cleepbus']
+        },
+        u'rpc': {
+            u'rpc_host': u'0.0.0.0',
+            u'rpc_port': 80,
+            u'rpc_cert': u'',
+            u'rpc_key': u''
+        },
+        u'debug': {
+            u'debug_enabled': False,
+            u'debug_modules': []
+        }
+    }
 
     def __open(self):
         """
@@ -27,7 +44,13 @@ class RaspiotConf():
         """
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
-            raise Exception(u'Config file "%s" does not exist' % self.CONF)
+            #create empty file
+            f = open(self.CONF, u'w')
+            f.write('')
+            f.close()
+            time.sleep(0.25)
+
+        #    raise Exception(u'Config file "%s" does not exist' % self.CONF)
         self.__conf.readfp(io.open(self.CONF, u'r', encoding=u'utf-8'))
 
         return self.__conf
@@ -45,23 +68,26 @@ class RaspiotConf():
 
     def check(self):
         """
-        Check configuration file content
+        Check configuration file content, adding missing section or options
         
         Returns:
-            bool: True if file is conform, False otherwise
-
-        Raises:
-            Exception: if file content is malformed
+            bool: always return True
         """
-        conf = self.__open()
-        if not conf.has_section(u'general') or not conf.has_section(u'rpc') or not conf.has_section(u'debug'):
-            raise Exception(u'Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option(u'general', u'modules'):
-            raise Exception(u'Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option(u'rpc', u'rpc_host') or not conf.has_option(u'rpc', u'rpc_port') or not conf.has_option(u'rpc', u'rpc_cert') or not conf.has_option(u'rpc', u'rpc_key'):
-            raise Exception(u'Config file "%s" is malformed' % self.CONF)
-        if not conf.has_option(u'debug', u'debug_enabled') or not conf.has_option(u'debug', u'debug_modules'):
-            raise Exception(u'Config file "%s" is malformed' % self.CONF)
+        config = self.__open()
+
+        #merge with default config
+        for section in self.DEFAULT_CONFIG.keys():
+            #fix missing section
+            if not config.has_section(section):
+                config.add_section(section)
+
+            #fix missing section keys
+            for key in self.DEFAULT_CONFIG[section].keys():
+                if not config.has_option(section, key):
+                    config.set(section, key, unicode(self.DEFAULT_CONFIG[section][key]))
+
+        #write changes to filesystem
+        self.__close(True)
 
         return True
 
