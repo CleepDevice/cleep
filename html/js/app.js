@@ -61,7 +61,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                     else
                     {
                         //broadcast received message
-                        $rootScope.$broadcast(response.data.event, response.data.uuid, response.data.params);
+                        $rootScope.$broadcast(response.data.event, response.data.device_id, response.data.params);
                     }
                 }
 
