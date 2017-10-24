@@ -162,26 +162,26 @@ class ExternalBus():
         """
         raise NotImplementedError('run_once function is not implemented')
 
-    def broadcast_event(self, event, device_id, params):
+    def broadcast_event(self, event, params, device_id):
         """
         broadcast event message to all connected peers
 
         Args:
             event (string): event name
-            device_id (uuid): device identifier that emits event
             params (dict): event parameters
+            device_id (uuid): device identifier that emits event
         """
         raise NotImplementedError('broadcast_event function is not implemented')
 
-    def send_event(self, peer_id, event, device_id, params):
+    def send_event(self, event, params, device_id, peer_id):
         """
         Send event message to specified peer
 
         Args:
-            peer_id (string): message recipient
             event (string): event name
-            device_id (uuid): device identifier that emits event
             params (dict): event parameters
+            device_id (uuid): device identifier that emits event
+            peer_id (string): message recipient
         """
         raise NotImplementedError('send_event function is not implemented')
 
@@ -541,28 +541,33 @@ class PyreBus(ExternalBus):
 
         self.logger.debug('Pyre node terminated')
                 
-    def broadcast_event(self, event, device_id, params):
+    def broadcast_event(self, event, params, device_id):
         """
         Broadcast event
+
+        Args:
+            event (string): event name
+            params (dict): event parameters
+            device_id (uuid): device identifier that emits event (device is not peer!)
         """
         #prepare message
         message = ExternalBusMessage()
         message.event = event
-        message.device_id = device_id
         message.params = params
+        message.device_id = device_id
 
         #send message
         self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))
 
-    def send_event(self, peer_id, event, device_id, params):
+    def send_event(self, event, params, device_id, peer_id):
         """
         Send event message to specified peer
 
         Args:
-            peer_id (string): message recipient
             event (string): event name
-            device_id (uuid): device identifier that emits event
             params (dict): event parameters
+            device_id (uuid): device identifier that emits event (device is not peer!)
+            peer_id (string): message recipient
         """
         #check params
         if peer_id not in self.peers.keys():
@@ -572,8 +577,8 @@ class PyreBus(ExternalBus):
         message = ExternalBusMessage()
         message.to = peer_id
         message.event = event
-        message.device_id = device_id
         message.params = params
+        message.device_id = device_id
 
         #send message
         self.pipe_in.send(json.dumps(message.to_dict()).encode(u'utf-8'))

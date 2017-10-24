@@ -99,7 +99,7 @@ class MessageRequest():
      - in case of an event:
        - an event name
        - event parameters
-       - a device uuid
+       - a device id
        - a startup flag that indicates this event was sent during raspiot startup
        - peer infos if message comes from external device
     """
@@ -112,7 +112,7 @@ class MessageRequest():
         self.params = {}
         self.to = None
         self.from_ = None
-        self.uuid = None
+        self.device_id = None
         self.peer_infos = None
 
     def __str__(self):
@@ -152,7 +152,7 @@ class MessageRequest():
             return {u'command':self.command, u'params':self.params, u'from':self.from_}
         elif self.event:
             if not self.peer_infos:
-                return {u'event':self.event, u'params':self.params, u'startup':startup, u'uuid':self.uuid}
+                return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id}
             else:
                 return {u'event':self.event, u'params':self.params, u'peer_infos':self.peer_infos}
         else:

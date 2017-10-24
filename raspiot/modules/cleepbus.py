@@ -148,7 +148,7 @@ class Cleepbus(RaspIotModule):
 
     def event_received(self, event):
         """
-        Watch for specific event
+        Automatically broadcast received events to external bus
 
         Args:
             event (MessageRequest): event data
@@ -159,8 +159,7 @@ class Cleepbus(RaspIotModule):
         #drop startup events and system events that should stay local
         if not event[u'startup'] and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):
             #broadcast local event to external bus
-            self.external_bus.broadcast_event(event[u'event'], event[u'uuid'], event[u'params'])
-            
+            self.external_bus.broadcast_event(event[u'event'], event[u'params'], event[u'device_id'])
         else:
             #drop current event
             self.logger.debug(u'Received event %s dropped' % event[u'event'])

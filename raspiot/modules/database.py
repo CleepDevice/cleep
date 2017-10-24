@@ -437,17 +437,17 @@ class Database(RaspIotModule):
             event (MessageRequest): event
         """
         self.logger.debug(u'Event received %s' % event)
-        if event[u'uuid'] is not None:
+        if event[u'device_id'] is not None:
             #split event
             (event_module, event_type, event_action) = event[u'event'].split(u'.')
 
             if event_type==u'device' and event_action==u'delete':
                 #delete device data
-                self.__delete_device(event[u'uuid'])
+                self.__delete_device(event[u'device_id'])
 
             elif event_type==u'temperature':
                 #save temperature event
-                self.save_data(event[u'uuid'], event_type, [
+                self.save_data(event[u'device_id'], event_type, [
                     {u'field':u'celsius', u'value':event[u'params'][u'celsius']},
                     {u'field':u'fahrenheit', u'value':event[u'params'][u'fahrenheit']}
                 ])
@@ -456,19 +456,19 @@ class Database(RaspIotModule):
                 #save motion event
                 if event_action==u'on':
                     #trick to make graphable motion data (inject 0 just before setting real value)
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'on', u'value':0}
                     ])
                     time.sleep(1.0)
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'on', u'value':1}
                     ])
                 else:
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'on', u'value':1}
                     ])
                     time.sleep(1.0)
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'on', u'value':0}
                     ])
 
@@ -481,7 +481,7 @@ class Database(RaspIotModule):
                     if others<0.0:
                         others = 0.0
                     idle = 100.0 - raspiot - others
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'raspiot', u'value':raspiot},
                         {u'field':u'others', u'value':others},
                         {u'field':u'idle', u'value':idle}
@@ -493,7 +493,7 @@ class Database(RaspIotModule):
                     total = float(event[u'params'][u'total'])
                     available = float(event[u'params'][u'available'])
                     others = total - available - raspiot
-                    self.save_data(event[u'uuid'], event_type, [
+                    self.save_data(event[u'device_id'], event_type, [
                         {u'field':u'raspiot', u'value':raspiot},
                         {u'field':u'others', u'value':others},
                         {u'field':u'available', u'value':available}

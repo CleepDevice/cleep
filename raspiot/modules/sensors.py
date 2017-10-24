@@ -158,7 +158,7 @@ class Sensors(RaspIotModule):
                 return
 
             #get uuid event
-            gpio_uuid = event[u'uuid']
+            gpio_uuid = event[u'device_id']
 
             #search sensor
             sensor = self.__search_by_gpio(gpio_uuid)

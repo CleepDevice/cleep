@@ -91,8 +91,8 @@ class Shutters(RaspIotModule):
                 return
 
             #gpio turned off, get gpio device
-            gpio_uuid = event[u'uuid']
-            self.logger.debug(u'gpio_uuid=%s' % event[u'uuid'])
+            gpio_uuid = event[u'device_id']
+            self.logger.debug(u'gpio_uuid=%s' % gpio_uuid)
 
             #search shutter and execute action
             shutters = self._get_devices()

@@ -429,14 +429,14 @@ class BusClient(threading.Thread):
         else:
             raise InvalidParameter(u'Request parameter must be MessageRequest instance')
 
-    def send_event(self, event, params=None, uuid=None, to=None):
+    def send_event(self, event, params=None, device_id=None, to=None):
         """
         Helper function to push event message to bus.
 
         Args:
             event (string): event name.
             params (dict): event parameters.
-            uuid (string): device uuid that send event. If not specified event cannot be monitored.
+            device_id (string): device id that send event. If not specified event cannot be monitored.
             to (string): event recipient. If not specified, event will be broadcasted.
 
         Returns:
@@ -445,7 +445,7 @@ class BusClient(threading.Thread):
         request = MessageRequest()
         request.to = to
         request.event = event
-        request.uuid = uuid
+        request.device_id = device_id
         request.params = params
 
         return self.push(request, None)
