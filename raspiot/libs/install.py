@@ -50,6 +50,7 @@ class Install():
         self.status = self.STATUS_CANCELED
         if self.__console:
             self.__console.stop()
+        self.__running = False
 
     def get_status(self):
         """
@@ -87,7 +88,7 @@ class Install():
         self.logger.debug('End of command')
 
         #update status if necessary
-        if self.status!=self.STATUS_ERROR:
+        if self.status!=self.STATUS_ERROR and self.status!=self.STATUS_CANCELED:
             self.status = self.STATUS_DONE
 
         #send for the last time current status
