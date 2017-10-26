@@ -26,17 +26,48 @@ class Github():
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
 
-    def __clean_releases(self, assets):
+    def get_release_version(self, release):
         """
-        Clean releases removing useless fields
+        Return version of specified release
 
         Args:
-            assets (list): list of assets to clean
+            release (dict): release data as returned by get_releases function
+
+        Return:
+            string: version of release
         """
+        if not isinstance(release, dict):
+            raise Exception('Invalid release format. Dict type awaited')
+
+        if u'tag_name' in release.keys():
+            return release[u'tag_name']
+        else:
+            raise Exception('Specified release has no version field')
+
+    def get_release_assets_infos(self, release):
+        """
+        Return simplified structure of all release assets
+
+        Args:
+            release (dict): release data as returned by get_releases function
+
+        Return:
+            list of tuple: list of assets infos (name, url, size)::
+                [
+                    (name (string), url (string), size (int)),
+                    (name (string), url (string), size (int)),
+                    ...
+                ]
+        """
+        if not isinstance(release, dict):
+            raise Exception(u'Invalid release format. Dict type awaited')
+        if u'assets' not in release.keys():
+            raise Exception(u'Invalid release format.')
+
         out = []
-        for asset in assets:
-            del asset[u'uploader']
-            out.append(asset)
+        for asset in release[u'assets']:
+            if u'browser_download_url' and u'size' and u'name' in asset.keys():
+                out.append((asset[u'name'], asset[u'browser_download_url'], asset[u'size']))
 
         return out
 
@@ -61,21 +92,13 @@ class Github():
                 data = json.loads(resp.data.decode('utf-8'))
                 self.logger.debug('Data: %s' % data)
 
-                if isinstance(data, list) and len(data)>0:
-                    data = data[0]
-
-                if u'assets' not in data.keys():
-                    raise Exception(u'It seems github api format for repos has changed')
-
-                elif all_releases:
+                if all_releases:
                     #return all releases
-                    return self.__clean_releases(data[u'assets'])
+                    return data
 
-                elif len(data[u'assets'])>0:
+                elif len(data)>0:
                     #return latest release
-                    assets = []
-                    assets.append(data[u'assets'][0])
-                    return self.__clean_releases(assets)
+                    return data[0:1]
 
                 else:
                     #it seems there is no release yet
