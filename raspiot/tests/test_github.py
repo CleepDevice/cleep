@@ -30,3 +30,6 @@ class GithubTests(unittest.TestCase):
         release = self.g.get_releases('resin-io', 'etcher')
         self.assertTrue(isinstance(release, list))
         self.assertNotEqual(0, len(release))
+
+    def test_unknown_repo(self):
+        self.assertRaises(Exception, self.g.get_releases, 'tangb', 'test')

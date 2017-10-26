@@ -50,7 +50,7 @@ class Github():
             all (bool): return all releases instead of latest one
 
         Return:
-            dict: releases as returned in assets by github api (https://developer.github.com/v3/repos/releases/)
+            list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
         try:
             url = self.GITHUB_URL % (owner, repository)
@@ -60,25 +60,32 @@ class Github():
                 #response successful, parse data to get current latest version
                 data = json.loads(resp.data.decode('utf-8'))
                 self.logger.debug('Data: %s' % data)
+
                 if isinstance(data, list) and len(data)>0:
                     data = data[0]
+
                 if u'assets' not in data.keys():
-                    self.logger.error(u'It seems github api format for repos has changed')
-                    return {}
+                    raise Exception(u'It seems github api format for repos has changed')
+
                 elif all_releases:
+                    #return all releases
                     return self.__clean_releases(data[u'assets'])
+
                 elif len(data[u'assets'])>0:
+                    #return latest release
                     assets = []
                     assets.append(data[u'assets'][0])
                     return self.__clean_releases(assets)
+
                 else:
-                    return {}
+                    #it seems there is no release yet
+                    return []
 
             else:
-                self.logger.error('Unable to fetch releases (status=%d)' % resp.status)
-                self.logger.error('Etcher request data: %s' % resp.data)
-                return {}
+                raise Exception('Invalid response (status=%d): %s' % (resp.status, resp.data))
 
-        except:
+        except Exception as e:
             self.logger.exception('Unable to get releases:')
+            raise Exception('Unable to get releases: %s' % str(e))
+    
 
