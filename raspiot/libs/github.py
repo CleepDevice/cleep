@@ -52,10 +52,10 @@ class Github():
             release (dict): release data as returned by get_releases function
 
         Return:
-            list of tuple: list of assets infos (name, url, size)::
+            list of dict: list of assets infos (name, url, size)::
                 [
-                    (name (string), url (string), size (int)),
-                    (name (string), url (string), size (int)),
+                    {name (string), url (string), size (int)},
+                    {name (string), url (string), size (int)},
                     ...
                 ]
         """
@@ -67,7 +67,11 @@ class Github():
         out = []
         for asset in release[u'assets']:
             if u'browser_download_url' and u'size' and u'name' in asset.keys():
-                out.append((asset[u'name'], asset[u'browser_download_url'], asset[u'size']))
+                out.append({
+                    u'name': asset[u'name'],
+                    u'url': asset[u'browser_download_url'],
+                    u'size': asset[u'size']
+                })
 
         return out
 
