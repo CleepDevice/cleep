@@ -94,7 +94,7 @@ class EndlessConsole(Thread):
         """
         #launch command
         self.__start_time = time.time()
-        p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
         self.logger.debug('PID=%d' % pid)
 
@@ -202,7 +202,7 @@ class Console():
             raise Exception(u'Timeout is mandatory and must be greater than 0')
 
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
 
         #wait for end of command line
