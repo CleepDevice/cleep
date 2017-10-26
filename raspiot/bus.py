@@ -18,6 +18,7 @@ __all__ = [u'MessageBus', u'BusClient']
 class MessageBus():
 
     STARTUP_TIMEOUT = 30.0
+    DEQUE_MAX_LEN = 50
 
     """
     Message bus
@@ -162,7 +163,7 @@ class MessageBus():
                 self.logger.debug(u'MessageBus: push to "%s" delayed message %s' % (request.to, unicode(msg)))
 
                 #append message to queue
-                self.__queues[request.to] = deque()
+                self.__queues[request.to] = deque(maxlen=self.DEQUE_MAX_LEN)
                 self.__queues[request.to].appendleft(msg)
 
                 #wait for response
@@ -259,7 +260,7 @@ class MessageBus():
         """
         _module = module.lower()
         self.logger.debug(u'Add subscription for module %s' % _module)
-        self.__queues[_module] = deque()
+        self.__queues[_module] = deque(maxlen=self.DEQUE_MAX_LEN)
         self.__activities[_module] = int(time.time())
 
     def remove_subscription(self, module):
