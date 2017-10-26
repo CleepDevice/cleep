@@ -353,12 +353,22 @@ class System(RaspIotModule):
             event (MessageRequest): event data
         """
         if event[u'event'].endswith('system.needrestart'):
-            #a module requests a raspiot restart, enable flag
-            self.__need_restart = True
+            #a module requests a raspiot restart
+            if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
+                #automatic restart requested
+                self.restart()
+            else:
+                #manual restart
+                self.__need_restart = True
 
         elif event[u'event'].endswith('system.needreboot'):
-            #a module requests a reboot, enable flag
-            self.__need_reboot = True
+            #a module requests a reboot
+            if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
+                #automatic reboot requested
+                self.reboot_system()
+            else:
+                #manual reboot
+                self.__need_reboot = True
 
     def get_time(self):
         """
