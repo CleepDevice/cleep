@@ -171,10 +171,44 @@ class Download():
         if self.status_callback:
             self.status_callback(status, size, percent)
 
-    def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
+    def download(self, url):
         """
-        Download specified url. Specify key to check if necessary.
-        This function is blocking
+        Download specified url.
+        The function is blocking and no status is reported with status_callback
+        Also no file validation is performed
+        Prefer using this function to download small file
+
+        Args:
+            url (string): url of file to download
+        
+        Return:
+            string: file content
+        """
+        #initialize download
+        try:
+            resp = self.http.request('GET', url, preload_content=False)
+        except:
+            self.logger.exception('Error initializing http request:')
+            return None
+
+        #process download
+        content = u''
+        while True:
+            #read data
+            buf = resp.read(1024)
+            if not buf:
+                #download ended or failed, stop statement
+                break
+
+            #save data 
+            content += buf
+
+        return content
+
+    def download_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
+        """
+        Download specified url. Specify key to validate file if necessary.
+        This function is blocking but status can be followed with status_callback
 
         Args:
             url (string): url to download
@@ -237,7 +271,7 @@ class Download():
                 #download ended or failed, stop statement
                 break
 
-            #save date to output file
+            #save data to output file
             downloaded_size += len(buf)
             try:
                 download.write(buf)
