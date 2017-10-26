@@ -21,24 +21,27 @@ class Install():
     STATUS_DONE = 3
     STATUS_CANCELED = 4
 
-    def __init__(self, status_callback):
+    def __init__(self, status_callback, blocking=False):
         """
         Constructor
 
         Args:
             status_callback (function): status callback. Params: status
+            blocking (bool): enable or not blocking mode. If blocking mode is enabled, all functions are blocking
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.blocking = blocking
         self.__console = None
         self.__cancel = False
         self.status = self.STATUS_IDLE
         self.status_callback = status_callback
         self.stdout = []
         self.stderr = []
+        self.__running = True
 
     def cancel(self):
         """
@@ -90,6 +93,9 @@ class Install():
         #send for the last time current status
         self.status_callback(self.get_status())
 
+        #unblock function call
+        self.__running = False
+
     def __callback_quiet(self, stdout, stderr):
         """
         Quiet output. Does nothing
@@ -111,6 +117,20 @@ class Install():
         self.logger.debug('Command: %s' % command)
         self.__console = EndlessConsole(command, self.__callback_quiet, self.__callback_end)
         self.__console.start()
+
+        #blocking mode
+        if self.blocking:
+            self.__running = True
+            while self.__running:
+                time.sleep(0.25)
+            
+            if self.status==self.STATUS_DONE:
+                return True
+            return False
+
+        else:
+            #useless result
+            return None
 
     def __callback_package(self, stdout, stderr):
         """
@@ -136,6 +156,9 @@ class Install():
 
         Args:
             package_name (string): package name to install
+
+        Return:
+            bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
             raise Exception(u'Installer is already processing')
@@ -149,6 +172,20 @@ class Install():
         self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
         self.__console.start()
 
+        #blocking mode
+        if self.blocking:
+            self.__running = True
+            while self.__running:
+                time.sleep(0.25)
+            
+            if self.status==self.STATUS_DONE:
+                return True
+            return False
+
+        else:
+            #useless result
+            return None
+
     def uninstall_package(self, package_name, purge=False):
         """
         Install package using aptitude
@@ -156,6 +193,9 @@ class Install():
         Args:
             package_name (string): package name to install
             purge (bool): purge package (remove config files)
+
+        Return:
+            bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
             raise Exception(u'Installer is already processing')
@@ -171,6 +211,20 @@ class Install():
         self.logger.debug('Command: %s' % command)
         self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
         self.__console.start()
+
+        #blocking mode
+        if self.blocking:
+            self.__running = True
+            while self.__running:
+                time.sleep(0.25)
+            
+            if self.status==self.STATUS_DONE:
+                return True
+            return False
+
+        else:
+            #useless result
+            return None
 
     def __callback_deb(self, stdout, stderr):
         """
@@ -196,6 +250,9 @@ class Install():
     def install_deb(self, deb):
         """
         Install .deb file using dpkg
+
+        Return:
+            bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
             raise Exception(u'Installer is already processing')
@@ -208,6 +265,20 @@ class Install():
         self.logger.debug('Command: %s' % command)
         self.__console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
         self.__console.start()
+
+        #blocking mode
+        if self.blocking:
+            self.__running = True
+            while self.__running:
+                time.sleep(0.25)
+            
+            if self.status==self.STATUS_DONE:
+                return True
+            return False
+
+        else:
+            #useless result
+            return None
 
     def __callback_archive(self, stdout, stderr):
         """
@@ -234,6 +305,9 @@ class Install():
         Args:
             archive (string): archive full path
             install_path (string): installation fullpath directory
+
+        Return:
+            bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
             raise Exception(u'Installer is already processing')
@@ -272,4 +346,17 @@ class Install():
             self.__console = EndlessConsole(command, self.__callback_archive, self.__callback_end)
             self.__console.start()
 
+        #blocking mode
+        if self.blocking:
+            self.__running = True
+            while self.__running:
+                time.sleep(0.25)
+            
+            if self.status==self.STATUS_DONE:
+                return True
+            return False
+
+        else:
+            #useless result
+            return None
 

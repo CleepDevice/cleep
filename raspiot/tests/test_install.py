@@ -12,6 +12,10 @@ import shutil
 logging.basicConfig(level=logging.INFO, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class InstallTests(unittest.TestCase):
+    """
+    Install tests
+    """
+
     def setUp(self):
         self.running = True
         self.deb = None
@@ -190,4 +194,128 @@ class InstallTests(unittest.TestCase):
         path, dirs, files = os.walk(self.directory).next()
         self.assertNotEqual(0, len(files))
         
-        
+
+class InstallBlockingTests(unittest.TestCase):
+    """
+    Install tests with blocking mode enabled
+    """
+
+    def setUp(self):
+        self.deb = None
+        self.status = Install.STATUS_IDLE
+        self.stdout = []
+        self.stderr = []
+        self.i = Install(self.callback, blocking=True)
+        self.archive = None
+        self.directory = None
+
+    def tearDown(self):
+        #remove files
+        if self.deb:
+            os.remove(self.deb)
+        if self.archive:
+            os.remove(self.archive)
+
+        #remove directories
+        if self.directory:
+            shutil.rmtree(self.directory)
+
+    def callback(self, status):
+        if status[u'status']==Install.STATUS_ERROR or status[u'status']==Install.STATUS_DONE:
+            self.status = status[u'status']
+            self.stdout = status[u'stdout']
+            self.stderr = status[u'stderr']
+
+    def test_install_deb(self):
+        self.running = True
+
+        #download package that will be installed
+        c = Console()
+        c.command(u'aptitude download dhex', 60)
+        self.deb = None
+        for root, dirs, files in os.walk(u'.'):
+            for file in files:
+                if file.startswith(u'dhex') and file.endswith(u'.deb'):
+                    self.deb = os.path.join(root, file)
+                    break
+        self.assertIsNotNone(self.deb)
+
+        #process install
+        res = self.i.install_deb(self.deb)
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+        self.assertEqual(0, len(self.stderr))
+        self.assertNotEqual(0, len(self.stdout))
+
+    def test_refresh_packages(self):
+        self.running = True
+
+        #process refresh
+        res = self.i.refresh_packages()
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+
+    def test_install_package(self):
+        self.running = True
+
+        #process install
+        res = self.i.install_package('dhex')
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+        self.assertEqual(0, len(self.stderr))
+        self.assertNotEqual(0, len(self.stdout))
+
+        c = Console()
+        res = c.command('dpkg -l | grep dhex')
+        self.assertFalse(res['error'])
+        self.assertTrue(res['stdout'][0].strip().startswith('ii'))
+
+    def test_uninstall_package(self):
+        self.running = True
+
+        #process uninstall
+        res = self.i.uninstall_package('dhex')
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+        self.assertEqual(0, len(self.stderr))
+        self.assertNotEqual(0, len(self.stdout))
+
+        c = Console()
+        res = c.command('dpkg -l | grep dhex')
+        self.assertFalse(res['error'])
+        self.assertNotEqual(0, len(res['stdout']))
+        self.assertTrue(res['stdout'][0].strip().startswith('rc'))
+
+    def test_uninstall_package_purge(self):
+        self.running = True
+
+        #process uninstall
+        res = self.i.uninstall_package('dhex', purge=True)
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+        self.assertEqual(0, len(self.stderr))
+        self.assertNotEqual(0, len(self.stdout))
+
+        c = Console()
+        res = c.command('dpkg -l | grep dhex')
+        self.assertFalse(res['error'])
+        self.assertEqual(0, len(res['stdout']))
+        self.assertEqual(0, len(res['stderr']))
+
+    def test_install_archive(self):
+        self.running = True
+
+        self.archive = 'dummy_archive.tar.gz'
+        self.directory = '/tmp/test_install'
+        c = Console()
+        res = c.command('tar czvf "%s" test*.py' % self.archive)
+        self.assertFalse(res['error'])
+
+        #process install
+        res = self.i.install_archive(self.archive, self.directory)
+        self.assertTrue(res)
+        self.assertEqual(Install.STATUS_DONE, self.status)
+        self.assertEqual(0, len(self.stderr))
+        self.assertTrue(os.path.exists(self.directory))
+        path, dirs, files = os.walk(self.directory).next()
+        self.assertNotEqual(0, len(files))
