@@ -19,7 +19,7 @@ class Update(RaspIotModule):
     MODULE_CONFIG_FILE = u'update.conf'
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Keep your device up-to-date with automatic updates'
-    MODULE_LOCKED = False
+    MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = [u'update', u'raspiot']
     MODULE_COUNTRY = u'any'
