@@ -37,12 +37,14 @@ class Download():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.temp_dir = tempfile.gettempdir()
         self.download = None
         self.__cancel = False
+        self.status = self.STATUS_IDLE
+        self.percent = 0
         self.status_callback = status_callback
         self.http = urllib3.PoolManager(num_pools=1)
 
@@ -171,9 +173,9 @@ class Download():
         if self.status_callback:
             self.status_callback(status, size, percent)
 
-    def download(self, url):
+    def download_file(self, url):
         """
-        Download specified url.
+        Download file from specified url.
         The function is blocking and no status is reported with status_callback
         Also no file validation is performed
         Prefer using this function to download small file
@@ -205,9 +207,9 @@ class Download():
 
         return content
 
-    def download_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
+    def download_file_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
         """
-        Download specified url. Specify key to validate file if necessary.
+        Download file from specified url. Specify key to validate file if necessary.
         This function is blocking but status can be followed with status_callback
 
         Args:
@@ -254,10 +256,12 @@ class Download():
         #get file size
         file_size = 0
         try:
-            file_size = int(resp.getheader('Content-Length'))
+            content_length = resp.getheader('Content-Length')
+            file_size = int(content_length)
             self.status = self.STATUS_DOWNLOADING
-        except:
-            self.logger.exception('Error getting content-length value from header:')
+        except Exception as e:
+            self.logger.warning('Unable to get content-length value from header. Disable filesize check: %s' % str(e))
+            self.status = self.STATUS_DOWNLOADING_NOSIZE
         self.__status_callback(self.status, 0, 0)
         self.logger.debug('Size to download: %d bytes' % file_size)
 
@@ -300,13 +304,14 @@ class Download():
         download.close()
 
         #file size
-        if downloaded_size==file_size:
-            self.logger.debug('File size is valid')
-        else:
-            self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
-            self.status = self.STATUS_ERROR_INVALIDSIZE
-            self.__status_callback(self.status, downloaded_size, self.percent)
-            return None
+        if file_size>0:
+            if downloaded_size==file_size:
+                self.logger.debug('File size is valid')
+            else:
+                self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
+                self.status = self.STATUS_ERROR_INVALIDSIZE
+                self.__status_callback(self.status, downloaded_size, self.percent)
+                return None
 
         #checksum
         checksum_computed = None
