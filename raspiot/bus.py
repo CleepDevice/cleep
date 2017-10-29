@@ -134,11 +134,28 @@ class MessageBus():
                     #no timeout given, return nothing
                     return None
 
+            elif request.to==u'rpc':
+                #broadcast message to every rpc subcribers (no response awaited)
+                if self.__app_configured:
+                    #prepare message
+                    msg = {u'message':request_dict, u'event':None, u'response':None}
+                    self.logger.debug(u'Broadcast to RPC clients message %s' % unicode(msg))
+
+                    #append message to rpc queues
+                    for q in self.__queues.keys():
+                        if q.startswith(u'rpc-'):
+                            self.__queues[q].appendleft(msg)
+                else:
+                    #application not ready, no rpc client should be connected, drop message
+                    pass
+
+                return None
+
             elif request.to==None:
                 #broadcast message to every modules, without waiting for a response
                 #prepare message
                 msg = {u'message':request_dict, u'event':None, u'response':None}
-                self.logger.debug(u'MessageBus: broadcast message %s' % unicode(msg))
+                self.logger.debug(u'Broadcast message %s' % unicode(msg))
 
                 if self.__app_configured:
                     #append message to queues
@@ -528,8 +545,11 @@ class BusClient(threading.Thread):
         while self.__continue:
             try:
 
-                #custom process
-                self._custom_process()
+                #custom process (do not crash bus on exception)
+                try:
+                    self._custom_process()
+                except Exception as e:
+                    self.logger.error('Critical error occured in custom_process: %s' % str(e))
 
                 #self.logger.debug('BusClient: pull message')
                 msg = {}
