@@ -1,0 +1,51 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <md-list ng-cloak>
+
+        <!-- installed version -->
+        <md-subheader class="md-no-sticky">Updates</md-subheader>
+        <md-list-item>
+            <p>Raspiot version {{updateCtl.version}} is installed (last check {{updateCtl.lastCheck | hrDatetime}})</p>
+            <md-button class="md-secondary" ng-click="updateCtl.checkUpdate()">Check update</md-button>
+        </md-list-item>
+
+        <!-- last update -->
+        <md-list-item>
+            <p>Last update installed {{updateCtl.lastUpdate | hrDatetime}}</p>
+            <md-button class="md-secondary" ng-click="updateCtl.showLogs()">Show logs</md-button>
+        </md-list-item>
+
+        <!-- current update -->
+        <md-list-item ng-if="updateCtl.status!==0" layout"row">
+            <div flex="50" style="text-align:left;">
+                <span ng-if="updateCtl.status===1">Downloading update... ({{updateCtl.downloadPercent}}%)</span>
+                <span ng-if="updateCtl.status===2">Download failed (internal error)</span>
+                <span ng-if="updateCtl.status===3">Download failed (invalid filesize)</span>
+                <span ng-if="updateCtl.status===4">Download failed (file is corrupted)</span>
+                <span ng-if="updateCtl.status===5">Installing update...</span>
+                <span ng-if="updateCtl.status===6">Installation failed (internal error)</span>
+                <span ng-if="updateCtl.status===7">Installation complete</span>
+                <span ng-if="updateCtl.status===8">Update canceled</span>
+                <span ng-if="updateCtl.status===9">Installation completed</span>
+                <span ng-if="updateCtl.status===10">Installation failed (internal error)</span>
+            </div>
+            <div ng-if="updateCtl.status===1" flex="50">
+                <md-progress-linear md-mode="determinate" class="md-accent" value="{{updateCtl.downloadPercent}}"></md-progress-linear>
+            </div>
+            <div ng-if="updateCtl.status===5" flex="50">
+                <md-progress-linear md-mode="indeterminate" class="md-accent"></md-progress-linear>
+            </div>
+            <md-button ng-if="updateCtl.status===1 || updateCtl.status===5" class="md-secondary" ng-click="updateCtl.cancelUpdate()">Cancel</md-button>
+        </md-list-item>
+
+        <!-- automatic install -->
+        <md-subheader class="md-no-sticky">Options</md-subheader>
+        <md-list-item>
+            <p>To enjoy new features and bug fixes automatically enable automatic update</p>
+            <md-checkbox class="md-secondary" ng-model="updateCtl.automaticUpdate" ng-change="updateCtl.setAutomaticUpdate(updateCtl.automaticUpdate)"></md-checkbox>
+        </md-list-item>
+
+    </md-list>
+
+</div>
+

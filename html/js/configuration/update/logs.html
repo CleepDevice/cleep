@@ -1,0 +1,39 @@
+<md-dialog aria-label="Last update logs" flex="75">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Last update logs</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="updateLogsCtl.closeDialog()">
+                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+                <!-- stdout -->
+                <span class="md-title">Output</span>
+                <div ng-if="updateLogsCtl.stdout.length>0" ng-repeat="line in updateLogsCtl.stdout track by $index">
+                    <code>{{line}}</code>
+                </div>
+                <div ng-if="updateLogsCtl.stdout.length===0">
+                    <code>No error</code>
+                </div>
+
+                <br/>
+
+                <!-- stderr -->
+                <span class="md-title">Errors</span>
+                <div ng-if="updateLogsCtl.stderr.length>0" ng-repeat="line in updateLogsCtl.stderr track by $index">
+                    <code>{{line}}</code>
+                </div>
+                <div ng-if="updateLogsCtl.stderr.length===0">
+                    <code>No error</code>
+                </div>
+            </div>
+        </md-dialog-content>
+
+    </form>
+</md-dialog>
+
