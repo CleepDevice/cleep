@@ -68,7 +68,7 @@ var renderersSelectorDirective = function($q, $rootScope, raspiotService) {
         );
 
         /**
-         * Init controller as soon as referers are loaded
+         * Init controller as soon as renderers are loaded
          */
         $scope.$watchCollection(
             function() {
