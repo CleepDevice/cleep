@@ -19,6 +19,7 @@ from raspiot.libs.raspiotconf import RaspiotConf
 import io
 import uuid
 import socket
+import iso3166
 
 __all__ = [u'System']
 
@@ -38,7 +39,8 @@ class System(RaspIotModule):
 
     DEFAULT_CONFIG = {
         u'city': None,
-        u'country': '',
+        u'country': u'',
+        u'alpha2': u'',
         u'monitoring': False,
         u'device_uuid': str(uuid.uuid4()),
         u'ssl': False,
@@ -164,6 +166,8 @@ class System(RaspIotModule):
         """
         try:
             a = Astral(GoogleGeocoder)
+
+            #search location info
             pattern = city
             if country and len(country)>0:
                 pattern = u'%s,%s' % (city, country)
@@ -175,6 +179,19 @@ class System(RaspIotModule):
                 raise NoCityFound()
             else:
                 raise Exception(e.message)
+
+    def __get_country_alpha2(self, country):
+        """
+        Return alpha2 country code useful for flag
+
+        Args:
+            country (string): country
+        """
+        if country.upper() in iso3166.countries_by_name.keys():
+            c = iso3166.countries_by_name[country.upper()]
+            return c.alpha2
+
+        return None
 
     def __update_sun_times(self):
         """
@@ -431,7 +448,8 @@ class System(RaspIotModule):
         """
         return {
             u'city': self._config[u'city'],
-            u'country': self._config[u'country']
+            u'country': self._config[u'country'],
+            u'alpha2': self._config[u'alpha2']
         }
 
     def set_city(self, city, country):
@@ -454,11 +472,17 @@ class System(RaspIotModule):
         #search city and find if result found (try 3 times beacause geocoder returns exception sometimes :S)
         for i in range(3):
             try:
+                #get location infos
                 location = self.__get_location_infos(city, country)
+                alpha2 = self.__get_country_alpha2(country)
+                self.logger.debug(u'location: %s' % location)
+                self.logger.debug(u'alpha2: %s' % alpha2)
 
                 #save city and country
+                config = self._get_config()
                 config[u'city'] = location.name
                 config[u'country'] = location.region
+                config[u'alpha2'] = alpha2
                 if self._save_config(config) is None:
                     raise CommandError(u'Unable to save configuration')
 

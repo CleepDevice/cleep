@@ -3,3 +3,4 @@ astral==1.4
 gTTS==1.2.2
 bottle==0.12.13
 pyre-gevent==0.1.0
+iso3166==0.8
