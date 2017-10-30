@@ -275,8 +275,8 @@ class Update(RaspIotModule):
                         #reset update process
                         self.__reset_update(self.STATUS_COMPLETED)
     
-                        #send event to request reboot
-                        #self.send_event(u'update.system.needreboot', params={u'force':True}, to=u'system')
+                        #send event to request restart
+                        self.send_event(u'update.system.needrestart', params={u'force':True}, to=u'system')
     
         except:
             #exception occured
