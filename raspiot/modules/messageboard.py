@@ -64,8 +64,8 @@ class Messageboard(RaspIotRenderer):
     MODULE_DESCRIPTION = u'Displays your own infos on a single line LED panel.'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'display', u'led']
+    MODULE_COUNTRY = u''
 
     RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
     RENDERER_TYPE = u'display'

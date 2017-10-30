@@ -31,8 +31,8 @@ class System(RaspIotModule):
     MODULE_DESCRIPTION = u'Monitor your raspberry easily'
     MODULE_LOCKED = True
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'system', u'troubleshoot', u'locale']
+    MODULE_COUNTRY = u''
 
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'
@@ -189,7 +189,7 @@ class System(RaspIotModule):
         """
         if country.upper() in iso3166.countries_by_name.keys():
             c = iso3166.countries_by_name[country.upper()]
-            return c.alpha2
+            return c.alpha2.lower()
 
         return None
 

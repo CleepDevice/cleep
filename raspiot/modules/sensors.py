@@ -26,8 +26,8 @@ class Sensors(RaspIotModule):
     MODULE_DESCRIPTION = u'Implements easily and quickly sensors you need (temperature, motion, light...)'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'sensors', u'temperature', u'motion']
+    MODULE_COUNTRY = u''
 
     ONEWIRE_PATH = u'/sys/bus/w1/devices/'
     ONEWIRE_SLAVE = u'w1_slave'

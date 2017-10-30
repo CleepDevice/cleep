@@ -25,8 +25,8 @@ class Shutters(RaspIotModule):
     MODULE_DESCRIPTION = u'Controls your roller shutters'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'shutter', u'window', u'drape']
+    MODULE_COUNTRY = u''
 
     STATUS_OPENED = u'opened'
     STATUS_CLOSED = u'closed'

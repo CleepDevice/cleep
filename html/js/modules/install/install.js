@@ -8,6 +8,8 @@ var installDirective = function($q, raspiotService, systemService, toast) {
         var self = this;
         self.modules = raspiotService.modules;
         self.search = '';
+        self.country = null;
+        self.country_alpha = null;
 
         /**
          * Clear search input
@@ -74,11 +76,21 @@ var installDirective = function($q, raspiotService, systemService, toast) {
          */
         self.init = function()
         {
+            //get configured user country
+            if( raspiotService.modules.system && raspiotService.modules.system.config && raspiotService.modules.system.config.city )
+            {
+                self.country = raspiotService.modules.system.config.city.country;
+                self.country_alpha = raspiotService.modules.system.config.city.alpha2;
+            }
+
             //flatten modules to array to allow sorting with ngrepeat
             var modules = [];
             for( var module in raspiotService.modules )
             {
-                if( !raspiotService.modules[module].installed )
+                //filter not installed modules and modules for user configured country
+                var country_alpha = raspiotService.modules[module].country;
+                console.log('module='+ module +' country_alpha='+country_alpha+ ' self.country_alpha='+self.country_alpha);
+                if( !raspiotService.modules[module].installed && (country_alpha.length===0 || country_alpha==self.country_alpha))
                 {
                     //add module name as 'name' property
                     raspiotService.modules[module].name = module;

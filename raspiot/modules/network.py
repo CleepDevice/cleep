@@ -29,8 +29,8 @@ class Network(RaspIotModule):
     MODULE_DESCRIPTION = u'Network configuration helper'
     MODULE_LOCKED = True
     MODULE_URL = None
-    MODULE_TAGS = [u'wireless', u'wifi', u'ethernet']
-    MODULE_COUNTRY = u'any'
+    MODULE_TAGS = [u'wireless', u'wifi', u'ethernet', u'network']
+    MODULE_COUNTRY = u''
 
     def __init__(self, bus, debug_enabled, join_event):
         """

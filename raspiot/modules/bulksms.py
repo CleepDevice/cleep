@@ -24,7 +24,7 @@ class Bulksms(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = u'https://github.com/tangb/Cleep/wiki/BulkSms'
     MODULE_TAGS = [u'sms', u'alert']
-    MODULE_COUNTRY = 'any'
+    MODULE_COUNTRY = u''
 
     DEFAULT_CONFIG = {
         u'username': None,

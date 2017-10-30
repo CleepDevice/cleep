@@ -17,8 +17,8 @@ class Database(RaspIotModule):
     MODULE_DESCRIPTION = u'Database module gives you access to chart feature allowing you to follow easily your devices.'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'sensors', u'graphs', u'charts']
+    MODULE_COUNTRY = u''
 
     DATABASE_PATH = u'/var/opt/raspiot/databases'
     DATABASE_NAME = u'raspiot.db'

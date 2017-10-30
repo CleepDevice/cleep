@@ -83,8 +83,9 @@ class Inventory(RaspIotModule):
                     u'locked': class_.MODULE_LOCKED,
                     u'tags': class_.MODULE_TAGS,
                     u'url': class_.MODULE_URL,
+                    u'country': class_.MODULE_COUNTRY.lower(),
                     u'installed': False,
-                    u'library': False
+                    u'library': False,
                 }
 
         self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())

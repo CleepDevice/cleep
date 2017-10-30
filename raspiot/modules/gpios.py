@@ -143,8 +143,8 @@ class Gpios(RaspIotModule):
     MODULE_DESCRIPTION = u'Gives you access to raspberry pins to configure your inputs/ouputs as you wish.'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = []
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'gpios', u'sensors']
+    MODULE_COUNTRY = u''
 
     GPIOS_REV1 = {u'GPIO0' : 3,
                   u'GPIO1' : 5,

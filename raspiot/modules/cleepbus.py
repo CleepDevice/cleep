@@ -20,8 +20,8 @@ class Cleepbus(RaspIotModule):
     MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
     MODULE_LOCKED = False
     MODULE_URL = None
-    MODULE_TAGS = ['bus']
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'bus']
+    MODULE_COUNTRY = u''
 
     def __init__(self, bus, debug_enabled, join_event):
         """

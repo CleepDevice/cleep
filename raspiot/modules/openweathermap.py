@@ -27,8 +27,8 @@ class Openweathermap(RaspIotModule):
     MODULE_DESCRIPTION = u'Gets weather conditions using OpenWeatherMap service'
     MODULE_LOCKED = False
     MODULE_URL = u'https://github.com/tangb/Cleep/wiki/OpenWeatherMap'
-    MODULE_TAGS = [u'weather']
-    MODULE_COUNTRY = 'any'
+    MODULE_TAGS = [u'weather', u'forecast']
+    MODULE_COUNTRY = u''
 
     DEFAULT_CONFIG = {
         u'apikey': None

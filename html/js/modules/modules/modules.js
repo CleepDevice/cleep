@@ -8,6 +8,8 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
         var self = this;
         self.modules = [];
         self.search = '';
+        self.country = null;
+        self.countr_alpha = null;
 
         /**
          * Clear search input
@@ -73,6 +75,7 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
             var modules = [];
             for( var module in raspiotService.modules )
             {
+                //keep only installed modules
                 if( raspiotService.modules[module].installed )
                 {
                     //add module name as 'name' property
