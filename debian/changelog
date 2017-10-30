@@ -9,7 +9,9 @@ raspiot (0.0.9) UNRELEASED; urgency=low
   * Improve installation: install or update pip at install, do not remove
   requirements.txt file after python dependencies installed.
   * Smart raspiot.conf file handling
-  * Bugs fix
+  * Handle module country: display only useful modules for user
+  * Implement raspiot automatic update
+  * Bugs fix and improvements (core and modules)
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Thu, 12 Oct 2017 18:00:00 +0100
 
