@@ -44,13 +44,16 @@ var graphDirective = function($q, $rootScope, graphService, toast) {
         self.showControls = true;
 
         //dynamic time format according to zoom
-        self.customTimeFormat = d3.time.format.multi([
+        /*self.customTimeFormat = d3.time.format.multi([
             ["%H:%M", function(d) { return d.getMinutes(); }], 
             ["%H", function(d) { return d.getHours(); }], 
             ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }], 
             ["%b %d", function(d) { return d.getDate() != 1; }], 
             ["%B", function(d) { return d.getMonth(); }], 
             ["%Y", function() { return true; }]
+        ]);*/
+        self.customTimeFormat = d3.time.format.multi([
+            ["%m/%d/%y %H:%M", function(d) { return true; }], 
         ]);
 
         //bar graph default options

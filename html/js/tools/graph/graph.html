@@ -11,35 +11,41 @@
     </div>
 
     <!-- controls -->
-    <div layout="row">
+    <div layout="row" layout-align="center center">
         <div flex></div>
+
+        <!-- information label -->
+        <div style="padding-bottom:6px; padding-right:15px;">
+            <span>Show data from:</span>
+        </div>
+
         <!-- custom range -->
         <div ng-if="graphCtl.rangeSelector===0">
-            <md-input-container>
-                <input aria-label="Range start" ng-model="graphCtl.rangeStart">
-            </md-input-container>
-            <md-input-container>
-                <input aria-label="Range end" ng-model="graphCtl.rangeEnd">
-            </md-input-container>
+            <input aria-label="Range start" ng-model="graphCtl.rangeStart">
+            <input aria-label="Range end" ng-model="graphCtl.rangeEnd">
         </div>
-        <!-- controls -->
+
+        <!-- pre-defined ranges -->
         <div ng-if="graphCtl.showControls">
-            <md-input-container>
                 <md-select class="md-no-underline" ng-model="graphCtl.rangeSelector">
-                    <md-option value="86400">Last day</md-option>
-                    <md-option value="172800">Last 2 days</md-option>
-                    <md-option value="604800">Last week</md-option>
-                    <md-option value="1209600">Last 2 weeks</md-option>
-                    <md-option value="2678400">Last month</md-option>
-                    <md-option value="7862400">Last quarter</md-option>
-                    <md-option value="15724800">Last semester</md-option>
-                    <md-option value="31449600">Last year</md-option>
+                    <md-option value="86400">last day</md-option>
+                    <md-option value="172800">last 2 days</md-option>
+                    <md-option value="604800">last week</md-option>
+                    <md-option value="1209600">last 2 weeks</md-option>
+                    <md-option value="2678400">last month</md-option>
+                    <md-option value="7862400">last quarter</md-option>
+                    <md-option value="15724800">last semester</md-option>
+                    <md-option value="31449600">last year</md-option>
                 </md-select>
-            </md-input-container>
-            <md-button class="md-raised md-accent button-raised-icon" ng-click="graphCtl.changeRange()" aria-label="Ok">
-                <md-icon md-font-set="material-icons">check</md-icon>
-            </md-button>
         </div>
+
+        <!-- button -->
+        <div>
+            <md-button class="md-raised md-primary button-raised-icon" ng-click="graphCtl.changeRange()" aria-label="Ok">
+                Ok
+            </md-button>
+        <div>
+
     </div>
 
 </div>
