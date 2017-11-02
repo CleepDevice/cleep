@@ -22,7 +22,8 @@ class Update(RaspIotModule):
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = [u'update', u'raspiot']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     DEFAULT_CONFIG = {
         u'last_update': None,

@@ -78,12 +78,22 @@ class Inventory(RaspIotModule):
             if os.path.isfile(fpath) and ext==u'.py' and module!=u'__init__':
                 module_ = importlib.import_module(u'raspiot.modules.%s' % module)
                 class_ = getattr(module_, module.capitalize())
+
+                #fix module country
+                country = class_.MODULE_COUNTRY
+                if not country:
+                    country = u''
+                else:
+                    country = country.lower()
+
+                #save module entry
                 self.modules[module] = {
                     u'description': class_.MODULE_DESCRIPTION,
                     u'locked': class_.MODULE_LOCKED,
                     u'tags': class_.MODULE_TAGS,
                     u'url': class_.MODULE_URL,
-                    u'country': class_.MODULE_COUNTRY.lower(),
+                    u'country': country,
+                    u'link': class_.MODULE_LINK,
                     u'installed': False,
                     u'library': False,
                 }

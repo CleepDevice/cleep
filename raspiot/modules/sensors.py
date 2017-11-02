@@ -27,7 +27,8 @@ class Sensors(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = [u'sensors', u'temperature', u'motion']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     ONEWIRE_PATH = u'/sys/bus/w1/devices/'
     ONEWIRE_SLAVE = u'w1_slave'

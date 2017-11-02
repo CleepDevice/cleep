@@ -65,7 +65,8 @@ class Messageboard(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = [u'display', u'led']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
     RENDERER_TYPE = u'display'

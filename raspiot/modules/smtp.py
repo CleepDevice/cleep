@@ -29,7 +29,8 @@ class Smtp(RaspIotRenderer):
     MODULE_LOCKED = False
     MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModuleSmtp'
     MODULE_TAGS = [u'email', u'smtp', u'alert']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     DEFAULT_CONFIG = {
         u'smtp_server': None,

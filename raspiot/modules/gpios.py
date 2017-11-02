@@ -144,7 +144,8 @@ class Gpios(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = [u'gpios', u'sensors']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     GPIOS_REV1 = {u'GPIO0' : 3,
                   u'GPIO1' : 5,

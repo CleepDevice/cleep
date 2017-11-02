@@ -40,11 +40,15 @@
                     </md-card-title-media>
                 </md-card-title>
                 <md-card-actions layout="row" layout-align="end center">
-                    <div ng-if="module.country.length>0">
+                    <div ng-if="module.country">
                         <img src="images/flagsBlank.gif" class="flag flag-{{module.country}}"/>
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
                     <span flex></span>
+                    <md-button ng-if="module.link" ng-href="{{module.link}}" target="_blank">
+                        <md-icon md-font-set="material-icons">help_outline</md-icon>
+                        <span>Infos</span>
+                    </md-button>
                     <md-button class="md-accent" ng-disabled="module.pending" ng-click="installCtl.install(module.name)">
                         <md-icon md-font-set="material-icons">add</md-icon>
                         <span ng-if="!module.pending">Install</span>

@@ -30,7 +30,8 @@ class Network(RaspIotModule):
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = [u'wireless', u'wifi', u'ethernet', u'network']
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     def __init__(self, bus, debug_enabled, join_event):
         """

@@ -33,6 +33,7 @@ class System(RaspIotModule):
     MODULE_URL = None
     MODULE_TAGS = [u'system', u'troubleshoot', u'locale']
     MODULE_COUNTRY = u''
+    MODULE_LINK = None
 
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'

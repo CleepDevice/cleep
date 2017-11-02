@@ -324,7 +324,8 @@ class Actions(RaspIotModule):
     MODULE_LOCKED = False
     MODULE_URL = None
     MODULE_TAGS = []
-    MODULE_COUNTRY = u''
+    MODULE_COUNTRY = None
+    MODULE_LINK = None
 
     SCRIPTS_PATH = u'/var/opt/raspiot/scripts'
     DATA_FILE = u'raspiot.data.conf'
