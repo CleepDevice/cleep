@@ -78,6 +78,10 @@ def load_config():
 if __name__ == u'__main__':
     logger = None
     app = None
+    mandatory_modules = {
+        u'system': system.System,
+        u'cleepbus': cleepbus.Cleepbus
+    }
     try:
         #handle command line parameters
         join_events = []
@@ -129,16 +133,17 @@ if __name__ == u'__main__':
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
 
-        #create system module by default
-        logger.debug(u'Initializing system module')
-        debug = False
-        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'system')==1:
-            debug = True
-        join_event = Event()
-        join_events.append(join_event)
-        system = system.System(bus, debug, join_event)
-        app.config[u'mod.system'] = system
-        system.start()
+        #create system module by default (needed to handle raspberry config)
+        for module_name in mandatory_modules.keys():
+            logger.debug(u'Initializing %s module' % module_name)
+            debug = False
+            if debug_enabled and config[u'debug'][u'debug_modules'].count(module_name)==1:
+                debug = True
+            join_event = Event()
+            join_events.append(join_event)
+            instance_ = mandatory_modules[module_name](bus, debug, join_event)
+            app.config[u'mod.%s' % module_name] = instance_
+            instance_.start()
 
         #load user modules
         logger.debug(u'Loading user modules:')
