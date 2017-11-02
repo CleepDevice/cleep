@@ -18,7 +18,7 @@ class RaspiotConf():
 
     DEFAULT_CONFIG = {
         u'general': {
-            u'modules': [u'gpios', u'cleepbus']
+            u'modules': []
         },
         u'rpc': {
             u'rpc_host': u'0.0.0.0',
