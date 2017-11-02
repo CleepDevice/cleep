@@ -138,6 +138,18 @@ class MessageRequest():
         else:
             return False
 
+    def is_external_event(self):
+        """
+        Return True if event comes from external device
+
+        Return:
+            bool: True if event comes from external device
+        """
+        if self.peer_infos is not None:
+            return True
+
+        return False
+
     def to_dict(self, startup=False):
         """
         Convert message request to dict object

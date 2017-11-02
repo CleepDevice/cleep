@@ -8,8 +8,6 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
         var self = this;
         self.modules = [];
         self.search = '';
-        self.country = null;
-        self.countr_alpha = null;
 
         /**
          * Clear search input

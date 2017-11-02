@@ -88,7 +88,7 @@ var installDirective = function($q, raspiotService, systemService, toast) {
             for( var module in raspiotService.modules )
             {
                 //filter not installed modules and modules for user configured country
-                var country_alpha = raspiotService.modules[module].country;
+                var country_alpha = raspiotService.modules[module].country_alpha;
                 if( !raspiotService.modules[module].installed && (country_alpha.length===0 || country_alpha==self.country_alpha))
                 {
                     //add module name as 'name' property
