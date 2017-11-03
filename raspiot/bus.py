@@ -644,7 +644,7 @@ class BusClient(threading.Thread):
                                 event_received(msg[u'message'])
                         except AttributeError:
                             #on_event function not implemented, drop received message
-                            self.logger.debug('AttributeError exception triggered: event_received may not be implemented (or you have this exception raised in your function). Event dropped')
+                            self.logger.debug('AttributeError exception triggered: event_received may not be implemented in %s class (or you have this exception raised in your function). Event dropped' % (self.__class__.__name__))
                         except:
                             #do not crash module
                             self.logger.exception(u'event_received exception:')
