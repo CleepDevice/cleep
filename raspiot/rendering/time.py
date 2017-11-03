@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.formatters.formatter import Formatter
-from raspiot.libs.profiles import *
+from raspiot.rendering.profiles import *
 import time
 
 __all__ = [u'TimeDisplayAddOrReplaceMessageFormatter', u'TimeSoundTextFormatter', u'SunsetSoundTextFormatter', u'SunriseSoundTextFormatter']

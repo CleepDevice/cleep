@@ -6,7 +6,7 @@ import shutil
 import logging
 from raspiot.utils import InvalidParameter
 from raspiot.raspiot import RaspIotRenderer
-from raspiot.libs.profiles import TextToSpeechProfile
+from raspiot.rendering.profiles import TextToSpeechProfile
 import pygame
 from threading import Thread
 from gtts import gTTS

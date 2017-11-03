@@ -4,7 +4,7 @@
 import logging
 from raspiot.raspiot import RaspIotRenderer
 from raspiot.utils import CommandError, MissingParameter, CommandInfo
-from raspiot.libs.profiles import PushProfile 
+from raspiot.rendering.profiles import PushProfile 
 import urllib
 import httplib
 import json
