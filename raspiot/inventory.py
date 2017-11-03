@@ -18,6 +18,8 @@ class Inventory(RaspIotModule):
      - existing renderers (sms, email, sound...)
     """  
 
+    FORMATTERS_PATH = u'rendering'
+
     def __init__(self, bus, debug_enabled, installed_modules, join_event):
         """
         Constructor
@@ -140,7 +142,7 @@ class Inventory(RaspIotModule):
         Load all available formatters
         """
         #list all formatters in formatters folder
-        path = os.path.join(os.path.dirname(__file__), u'formatters')
+        path = os.path.join(os.path.dirname(__file__), self.FORMATTERS_PATH)
         if not os.path.exists(path):
             raise CommandError(u'Invalid formatters path')
 
@@ -152,15 +154,15 @@ class Inventory(RaspIotModule):
             self.logger.debug(u'formatter=%s ext=%s' % (formatter, ext))
 
             #filter files
-            if os.path.isfile(fpath) and ext==u'.py' and formatter!=u'__init__' and formatter!=u'formatter':
+            if os.path.isfile(fpath) and ext==u'.py' and formatter not in [u'__init__', u'formatter', u'profiles']:
 
-                formatters_ = importlib.import_module(u'raspiot.formatters.%s' % formatter)
+                formatters_ = importlib.import_module(u'raspiot.%s.%s' % (self.FORMATTERS_PATH, formatter))
                 for name, class_ in inspect.getmembers(formatters_):
 
                     #filter imports
                     if name is None:
                         continue
-                    if not unicode(class_).startswith(u'raspiot.formatters.%s.' % formatter):
+                    if not unicode(class_).startswith(u'raspiot.%s.%s.' % (self.FORMATTERS_PATH, formatter)):
                         continue
                     instance_ = class_()
 

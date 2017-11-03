@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.formatters.formatter import Formatter
+from raspiot.rendering.formatter import Formatter
 from raspiot.rendering.profiles import *
 import time
 

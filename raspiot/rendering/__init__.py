@@ -1,3 +1,3 @@
-__all__ = ['weather']
+__all__ = ['weather', 'time']
 
-from raspiot.formatters import *
+from raspiot.rendering import *
