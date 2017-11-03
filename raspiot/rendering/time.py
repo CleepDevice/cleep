@@ -23,7 +23,7 @@ class TimeDisplayAddOrReplaceMessageFormatter(Formatter):
         profile.uuid = u'currenttime'
 
         #append current time
-        profile.message = u'%02d:%02d - %02d/%02d/%d' % (event_values[u'hour'], event_values[u'minute'], event_values[u'day'], event_values[u'month'], event_values[u'year'])
+        profile.message = u':clock: %02d:%02d %02d/%02d/%d' % (event_values[u'hour'], event_values[u'minute'], event_values[u'day'], event_values[u'month'], event_values[u'year'])
 
         return profile
 
