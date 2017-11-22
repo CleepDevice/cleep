@@ -1,3 +1,3 @@
-__all__ = ['actions', 'database', 'gpios', 'messageboard', 'network', 'sensors', 'shutters', 'sounds', 'system']
+__all__ = ['actions', 'database', 'gpios', 'messageboard', 'network', 'sensors', 'sounds', 'system']
 
 from raspiot.modules import *
