@@ -158,7 +158,7 @@ class Cleepbus(RaspIotModule):
         self.logger.debug(u'Received event %s' % event)
 
         #drop startup events and system events that should stay local
-        if not event[u'startup'] and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):
+        if (u'startup' in event.keys() and not event[u'startup']) and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):
             #broadcast local event to external bus
             self.external_bus.broadcast_event(event[u'event'], event[u'params'], event[u'device_id'])
         else:
