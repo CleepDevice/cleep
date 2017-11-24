@@ -343,7 +343,7 @@ class System(RaspIotModule):
 
     def get_module_devices(self):
         """
-        Return clock as system device
+        Return clock and system as system devices
 
         Returns:
             dict: devices
