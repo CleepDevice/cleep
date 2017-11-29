@@ -19,7 +19,6 @@ class Cleepbus(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
     MODULE_LOCKED = True
-    MODULE_URL = None
     MODULE_TAGS = [u'bus']
     MODULE_COUNTRY = None
     MODULE_LINK = None

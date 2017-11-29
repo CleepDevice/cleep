@@ -142,7 +142,6 @@ class Gpios(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Gives you access to raspberry pins to configure your inputs/ouputs as you wish.'
     MODULE_LOCKED = False
-    MODULE_URL = None
     MODULE_TAGS = [u'gpios', u'sensors']
     MODULE_COUNTRY = None
     MODULE_LINK = None

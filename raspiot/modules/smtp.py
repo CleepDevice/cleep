@@ -27,7 +27,6 @@ class Smtp(RaspIotRenderer):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you alerts by email.'
     MODULE_LOCKED = False
-    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModuleSmtp'
     MODULE_TAGS = [u'email', u'smtp', u'alert']
     MODULE_COUNTRY = None
     MODULE_LINK = None

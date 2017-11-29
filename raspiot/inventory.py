@@ -93,7 +93,6 @@ class Inventory(RaspIotModule):
                     u'description': class_.MODULE_DESCRIPTION,
                     u'locked': class_.MODULE_LOCKED,
                     u'tags': class_.MODULE_TAGS,
-                    u'url': class_.MODULE_URL,
                     u'country': country,
                     u'link': class_.MODULE_LINK,
                     u'installed': False,

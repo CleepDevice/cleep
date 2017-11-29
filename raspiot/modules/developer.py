@@ -25,7 +25,6 @@ class Developer(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Help you to develop on Raspiot framework.'
     MODULE_LOCKED = False
-    MODULE_URL = u'https://github.com/tangb/Raspiot/wiki/Developer'
     MODULE_TAGS = [u'developer', u'python', u'raspiot']
     MODULE_COUNTRY = None
     MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Developer'

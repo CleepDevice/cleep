@@ -24,7 +24,6 @@ class Freemobilesms(RaspIotRenderer):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you SMS alerts using french Freemobile provider.'
     MODULE_LOCKED = False
-    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/FreemobileSms'
     MODULE_TAGS = [u'sms', u'alert']
     MODULE_COUNTRY = u'fr'
     MODULE_LINK = None

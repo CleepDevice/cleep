@@ -20,7 +20,6 @@ class Update(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Keep your device up-to-date with automatic updates'
     MODULE_LOCKED = True
-    MODULE_URL = None
     MODULE_TAGS = [u'update', u'raspiot']
     MODULE_COUNTRY = None
     MODULE_LINK = None

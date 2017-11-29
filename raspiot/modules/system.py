@@ -30,7 +30,6 @@ class System(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Monitor your raspberry easily'
     MODULE_LOCKED = True
-    MODULE_URL = None
     MODULE_TAGS = [u'system', u'troubleshoot', u'locale']
     MODULE_COUNTRY = u''
     MODULE_LINK = None

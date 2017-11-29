@@ -22,7 +22,6 @@ class Bulksms(RaspIotRenderer):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you SMS alerts using BulkSms gateway.'
     MODULE_LOCKED = False
-    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/BulkSms'
     MODULE_TAGS = [u'sms', u'alert']
     MODULE_COUNTRY = None
     MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Bulksms'

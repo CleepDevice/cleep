@@ -16,7 +16,6 @@ class Database(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Database module gives you access to chart feature allowing you to follow easily your devices.'
     MODULE_LOCKED = False
-    MODULE_URL = None
     MODULE_TAGS = [u'sensors', u'graphs', u'charts']
     MODULE_COUNTRY = None
     MODULE_LINK = None

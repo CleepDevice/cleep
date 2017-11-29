@@ -22,7 +22,6 @@ class Pushover(RaspIotRenderer):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you push alerts using Pushover service.'
     MODULE_LOCKED = False
-    MODULE_URL = u'https://github.com/tangb/Cleep/wiki/ModulePushover'
     MODULE_TAGS = [u'push', u'alert']
     MODULE_COUNTRY = None
     MODULE_LINK = None

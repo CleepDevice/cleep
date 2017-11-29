@@ -25,7 +25,6 @@ class Sensors(RaspIotModule):
     MODULE_DEPS = [u'gpios']
     MODULE_DESCRIPTION = u'Implements easily and quickly sensors you need (temperature, motion, light...)'
     MODULE_LOCKED = False
-    MODULE_URL = None
     MODULE_TAGS = [u'sensors', u'temperature', u'motion']
     MODULE_COUNTRY = None
     MODULE_LINK = None

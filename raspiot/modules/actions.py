@@ -322,7 +322,6 @@ class Actions(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Helps you trigger custom action to fit your needs'
     MODULE_LOCKED = False
-    MODULE_URL = None
     MODULE_TAGS = []
     MODULE_COUNTRY = None
     MODULE_LINK = None

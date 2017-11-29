@@ -24,7 +24,6 @@ class Shutters(RaspIotModule):
     MODULE_DEPS = [u'gpios']
     MODULE_DESCRIPTION = u'Controls your roller shutters'
     MODULE_LOCKED = False
-    MODULE_URL = None
     MODULE_TAGS = [u'shutter', u'window', u'drape']
     MODULE_COUNTRY = None
     MODULE_LINK = None
