@@ -11,17 +11,24 @@
         </md-card-header-text>
     </md-card-header>
     <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
-        <div layout="row" layout-align="center center">
-            <div>
-                <md-button class="md-raised" aria-label="Restart" ng-click="widgetCtl.restartRaspiot()">
-                    <md-icon class="typcn typcn-arrow-loop"></md-icon>
-                    <span>Restart raspiot</span>
-                </md-button>
-            </div>
+        <div layout="column" layout-align="center stretch">
+            <md-button class="md-raised md-accent" aria-label="Restart raspiot" ng-click="widgetCtl.restartRaspiot()">
+                <md-icon class="typcn typcn-arrow-loop"></md-icon>
+                <span>Restart raspiot</span>
+            </md-button>
+            <md-button class="md-raised md-primary" aria-label="Start pyremotedev" ng-click="widgetCtl.startPyremotedev()">
+                <md-icon class="typcn typcn-media-play"></md-icon>
+                <span>Start Pyremotedev</span>
+            </md-button>
+            <md-button class="md-raised md-primary" aria-label="Stop pyremotedev" ng-click="widgetCtl.stopPyremotedev()">
+                <md-icon class="typcn typcn-media-stop"></md-icon>
+                <span>Stop Pyremotedev</span>
+            </md-button>
         </div>
     </md-card-content>
     <md-card-footer>
-        <span>&nbsp;</span>
+        <span ng-if="widgetCtl.device.running">Pyremotedev is running</span>
+        <span ng-if="!widgetCtl.device.running">Pyremotedev is NOT running</span>
     </md-card-footer>
 </md-card>
 
