@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Updatestatusupdate(Event):
     """
-    Developer.pyremotedev.stopped event
+    Update.status.update event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
+    EVENT_NAME = u'update.status.update'
     EVENT_SYSTEM = True
 
     def __init__(self):
@@ -27,7 +27,10 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        keys = [
+            u'status',
+            u'download_filesize',
+            u'download_percent'
+        ]
+        return all(key in keys for key in params.keys())
 

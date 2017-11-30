@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Gpiosgpiooff(Event):
     """
-    Developer.pyremotedev.stopped event
+    Gpios.gpio.off event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
-    EVENT_SYSTEM = True
+    EVENT_NAME = u'gpios.gpio.off'
+    EVENT_SYSTEM = False
 
     def __init__(self):
         """
@@ -27,7 +27,5 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        return all(key in [u'gpio', u'init'] for key in params.keys())
 

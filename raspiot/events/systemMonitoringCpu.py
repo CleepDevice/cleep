@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Systemmonitoringcpu(Event):
     """
-    Developer.pyremotedev.stopped event
+    System.monitoring.cpu event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
+    EVENT_NAME = u'system.monitoring.cpu'
     EVENT_SYSTEM = True
 
     def __init__(self):
@@ -27,7 +27,5 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        return all(key in [u'system', u'raspiot'] for key in params.keys())
 

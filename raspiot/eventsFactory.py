@@ -3,12 +3,13 @@
 
 import logging
 import os
+import importlib
 
 __all__ = []
 
-class EventFactory():
+class EventsFactory():
     """
-    Event factory
+    Events factory
     """
 
     def __init__(self):
@@ -17,13 +18,13 @@ class EventFactory():
         """
         self.events = {}
 
-    def _load_events(self):
+    def load_events(self):
         """
         Load existing events
         """
         path = os.path.join(os.path.dirname(__file__), u'events')
         if not os.path.exists(path):
-            rasie Exception(u'Invalid events path')
+            raise Exception(u'Invalid events path')
 
         for f in os.listdir(path):
             fpath = os.path.join(path, f)
@@ -63,9 +64,8 @@ class EventFactory():
 
         Return:
             list: list of used events
-            
+
         """
         return [ev for ev in self.events if ev[u'used']]
-
 
 

@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Messageboardmessageupdate(Event):
     """
-    Developer.pyremotedev.stopped event
+    Messageboard.message.update event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
-    EVENT_SYSTEM = True
+    EVENT_NAME = u'messageboard.message.update'
+    EVENT_SYSTEM = False
 
     def __init__(self):
         """
@@ -27,7 +27,4 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
-
+        return all(key in [u'nomessage', u'off', u'message'] for key in params.keys())

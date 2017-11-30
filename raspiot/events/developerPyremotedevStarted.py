@@ -9,6 +9,7 @@ class Developerpyremotedevstarted(Event):
     """
 
     EVENT_NAME = u'developer.pyremotedev.started'
+    EVENT_SYSTEM = True
 
     def __init__(self):
         """

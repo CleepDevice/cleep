@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Systemsystemneedreboot(Event):
     """
-    Developer.pyremotedev.stopped event
+    System.system.needreboot event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
+    EVENT_NAME = u'system.system.needreboot'
     EVENT_SYSTEM = True
 
     def __init__(self):
@@ -27,7 +27,8 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        keys = [
+            u'force'
+        ]
+        return all(key in keys for key in params.keys())
 

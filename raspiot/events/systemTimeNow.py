@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Systemtimenow(Event):
     """
-    Developer.pyremotedev.stopped event
+    System.time.now event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
-    EVENT_SYSTEM = True
+    EVENT_NAME = u'system.time.now'
+    EVENT_SYSTEM = False
 
     def __init__(self):
         """
@@ -27,7 +27,17 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        keys = [
+            u'time',
+            u'year',
+            u'month',
+            u'day',
+            u'hour',
+            u'minute',
+            u'weekday',
+            u'weekday_literal',
+            u'sunset',
+            u'sunrise'
+        ]
+        return all(key in keys for key in params.keys())
 

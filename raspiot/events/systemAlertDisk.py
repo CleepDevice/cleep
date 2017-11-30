@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Systemalertdisk(Event):
     """
-    Developer.pyremotedev.stopped event
+    System.alert.disk event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
+    EVENT_NAME = u'system.alert.disk'
     EVENT_SYSTEM = True
 
     def __init__(self):
@@ -27,7 +27,5 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        return all(key in [u'percent', u'threshold', u'mountpoint', u''] for key in params.keys())
 

@@ -7,6 +7,7 @@ import getopt
 import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
+from raspiot.EventsFactory import EventsFactory
 from raspiot import rpcserver, bus, inventory
 from raspiot.modules import system
 from raspiot.modules import cleepbus
@@ -133,6 +134,10 @@ if __name__ == u'__main__':
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
 
+        #events factory
+        events_factory = EventsFactory()
+        events_factory.load_events()
+
         #create system module by default (needed to handle raspberry config)
         for module_name in mandatory_modules.keys():
             logger.debug(u'Initializing %s module' % module_name)
@@ -217,7 +222,7 @@ if __name__ == u'__main__':
             debug = True
         join_event = Event()
         join_events.append(join_event)
-        inv = inventory.Inventory(bus, debug, app.config, join_event)
+        inv = inventory.Inventory(bus, debug, app.config, join_event, events_factory)
         app.config[u'sys.inventory'] = inv
         inv.start()
 

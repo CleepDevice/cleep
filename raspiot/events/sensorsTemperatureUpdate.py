@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Developerpyremotedevstopped(Event):
+class Sensorstemperatureupdate(Event):
     """
-    Developer.pyremotedev.stopped event
+    Sensors.temperature.update event
     """
 
-    EVENT_NAME = u'developer.pyremotedev.stopped'
-    EVENT_SYSTEM = True
+    EVENT_NAME = u'sensors.temperature.update'
+    EVENT_SYSTEM = False
 
     def __init__(self):
         """
@@ -27,7 +27,5 @@ class Developerpyremotedevstopped(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        #no params
-        return True
-
+        return all(key in [u'sensor', u'lastupdate', u'celsius', u'fahrenheit'] for key in params.keys())
 

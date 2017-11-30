@@ -20,7 +20,7 @@ class Inventory(RaspIotModule):
 
     FORMATTERS_PATH = u'rendering'
 
-    def __init__(self, bus, debug_enabled, installed_modules, join_event):
+    def __init__(self, bus, debug_enabled, installed_modules, join_event, events_factory):
         """
         Constructor
 
@@ -28,11 +28,14 @@ class Inventory(RaspIotModule):
             bus (MessageBus): bus instance
             debug_enabled (bool): debug status
             modules (array): available modules
+            events_factory (EventsFactory): events factory
         """
         #init
         RaspIotModule.__init__(self, bus, debug_enabled, join_event)
 
         #members
+        #events factory
+        self.events_factory = events_factory
         #list devices: uuid => module name
         self.devices = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
