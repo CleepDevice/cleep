@@ -39,9 +39,13 @@
                     </md-card-title-media>
                 </md-card-title>
                 <md-card-actions layout="row" layout-align="end center">
+                    <md-button ng-if="module.link" ng-href="{{module.link}}" target="_blank">
+                        <md-icon md-font-set="material-icons">help_outline</md-icon>
+                        <span>Infos</span>
+                    </md-button>
                     <md-button ng-if="module.hasService" href="{{'#!module/'+module.name}}" class="md-accent">
                         <md-icon md-font-set="material-icons">settings</md-icon>
-                        Configure
+                        <span>Configure</span>
                     </md-button>
                     <md-button ng-disabled="module.pending" ng-if="!module.locked" ng-click="modulesCtl.uninstall(module.name)" class="">
                         <md-icon md-font-set="material-icons">delete</md-icon>

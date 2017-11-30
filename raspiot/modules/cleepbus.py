@@ -21,7 +21,7 @@ class Cleepbus(RaspIotModule):
     MODULE_LOCKED = True
     MODULE_TAGS = [u'bus']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Cleepbus'
 
     def __init__(self, bus, debug_enabled, join_event):
         """
