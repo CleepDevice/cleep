@@ -56,15 +56,15 @@ class System(RaspIotModule):
     THRESHOLD_DISK_SYSTEM = 80.0
     THRESHOLD_DISK_EXTERNAL = 90.0
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.time_task = None
@@ -80,6 +80,18 @@ class System(RaspIotModule):
         self.__need_restart = False
         self.__need_reboot = False
         self.hostname = Hostname()
+
+        #events
+        self.systemTimeNow = self._get_event(u'system.time.now')
+        self.systemTimeSunrise = self._get_event(u'system.time.sunrise')
+        self.systemTimeSunset = self._get_event(u'system.time.sunset')
+        self.systemSystemHalt = self._get_event(u'system.system.halt')
+        self.systemSystemReboot = self._get_event(u'system.system.reboot')
+        self.systemSystemRestart = self._get_event(u'system.system.restart')
+        self.systemMonitoringCpu = self._get_event(u'system.monitoring.cpu')
+        self.systemMonitoringMemory = self._get_event(u'system.monitoring.memory')
+        self.systemAlertMemory = self._get_event(u'system.alert.memory')
+        self.systemAlertDisk = self._get_event(u'system.alert.disk')
 
     def _configure(self):
         """
@@ -289,7 +301,7 @@ class System(RaspIotModule):
         now_formatted = self.__format_time()
 
         #send now event
-        self.send_event(u'system.time.now', now_formatted, self.__clock_uuid)
+        self.systemTimeNow.send(params=now_formatted, device_id=self.__clock_uuid)
         self.render_event(u'system.time.now', now_formatted, [u'sound', u'display'])
 
         #update sun times
@@ -307,14 +319,14 @@ class System(RaspIotModule):
         if self.sunset:
             if self.sunset.hour==now_formatted[u'hour'] and self.sunset.minute==now_formatted[u'minute']:
                 #sunset time
-                self.send_event(u'system.time.sunset', None, self.__clock_uuid)
+                self.systemTimeSunset.send(device_id=self.__clock_uuid)
                 self.render_event(u'system.time.sunset', None, [u'display', u'sound'])
 
         #send sunrise event
         if self.sunrise:
             if self.sunrise.hour==now_formatted[u'hour'] and self.sunrise.minute==now_formatted[u'minute']:
                 #sunrise time
-                self.send_event(u'system.time.sunrise', None, self.__clock_uuid)
+                self.systemTimeSunrise.send(device_id=self.__clock_uuid)
                 self.render_event(u'system.time.sunrise', None, [u'display', u'sound'])
 
         #daily data cleanup
@@ -511,7 +523,7 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event(u'system.system.reboot')
+        self.systemSystemReboot.send()
 
         #and reboot system
         console.command_delayed(u'reboot', 5.0)
@@ -523,7 +535,7 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event(u'system.system.halt')
+        self.systemSystemHalt.send()
 
         #and reboot system
         console.command_delayed(u'halt', 5.0)
@@ -535,7 +547,7 @@ class System(RaspIotModule):
         console = Console()
 
         #send event
-        self.send_event(u'system.system.restart')
+        self.systemSystemRestart.send()
 
         #and restart raspiot
         console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', 3.0)
@@ -729,7 +741,7 @@ class System(RaspIotModule):
 
         #send event if monitoring activated
         if config[u'monitoring']:
-            self.send_event(u'system.monitoring.cpu', self.get_cpu_usage(), self.__monitor_cpu_uuid)
+            self.systemMonitoringCpu.send(params=self.get_cpu_usage(), device_id=self.__monitor_cpu_uuid)
 
     def __monitoring_memory_thread(self):
         """
@@ -742,11 +754,11 @@ class System(RaspIotModule):
         #detect memory leak
         percent = (float(memory[u'total'])-float(memory[u'available']))/float(memory[u'total'])*100.0
         if percent>=self.THRESHOLD_MEMORY:
-            self.send_event(u'system.alert.memory', {u'percent':percent, u'threshold':self.THRESHOLD_MEMORY})
+            self.systemAlertMemory.send(params={u'percent':percent, u'threshold':self.THRESHOLD_MEMORY})
 
         #send event if monitoring activated
         if config[u'monitoring']:
-            self.send_event(u'system.monitoring.memory', memory, self.__monitor_memory_uuid)
+            self.systemMonitoringMemory.send(params=memory, device_id=self.__monitor_memory_uuid)
 
     def __monitoring_disks_thread(self):
         """
@@ -757,10 +769,10 @@ class System(RaspIotModule):
         for disk in disks:
             if disk[u'mounted']:
                 if disk[u'mountpoint']==u'/' and disk[u'percent']>=self.THRESHOLD_DISK_SYSTEM:
-                    self.send_event(u'system.alert.disk', {u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DISK_SYSTEM, u'mountpoint':disk[u'mountpoint']})
+                    self.systemAlertDisk.send(params={u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DISK_SYSTEM, u'mountpoint':disk[u'mountpoint']})
 
                 elif disk[u'mountpoint'] not in (u'/', u'/boot') and disk[u'percent']>=self.THRESHOLD_DISK_EXTERNAL:
-                    self.send_event(u'system.alert.disk', {u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DIST_EXTERNAL, u'mountpoint':disk[u'mountpoint']})
+                    self.systemAlertDisk.send(params={u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DIST_EXTERNAL, u'mountpoint':disk[u'mountpoint']})
 
     def __hr_bytes(self, n):
         """

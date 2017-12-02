@@ -7,7 +7,7 @@ import getopt
 import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
-from raspiot.EventsFactory import EventsFactory
+from raspiot.eventsFactory import EventsFactory
 from raspiot import rpcserver, bus, inventory
 from raspiot.modules import system
 from raspiot.modules import cleepbus
@@ -75,6 +75,30 @@ def load_config():
 
     return config
 
+def get_bootstrap_objects(message_bus, events_factory):
+    """
+    Return bootstrap objects.
+
+    Args:
+        message_bus (MessageBus): message bus instance
+        events_factory (EventsFactory): events factory instance
+
+    Return:
+        dict: dict of bootstrap objects::
+            {
+                bus (MessageBus),
+                events_factory (EventsFactory),
+                join_event (Threading.Event)
+            }
+    """
+    bootstrap = {
+        u'events_factory': events_factory,
+        u'message_bus': message_bus,
+        u'join_event': Event()
+    }
+
+    return bootstrap
+
 
 if __name__ == u'__main__':
     logger = None
@@ -135,7 +159,7 @@ if __name__ == u'__main__':
         app.config[u'sys.bus'] = bus
 
         #events factory
-        events_factory = EventsFactory()
+        events_factory = EventsFactory(bus)
         events_factory.load_events()
 
         #create system module by default (needed to handle raspberry config)
@@ -144,9 +168,9 @@ if __name__ == u'__main__':
             debug = False
             if debug_enabled and config[u'debug'][u'debug_modules'].count(module_name)==1:
                 debug = True
-            join_event = Event()
-            join_events.append(join_event)
-            instance_ = mandatory_modules[module_name](bus, debug, join_event)
+            bootstrap = get_bootstrap_objects(bus, events_factory)
+            join_events.append(bootstrap[u'join_event'])
+            instance_ = mandatory_modules[module_name](bootstrap, debug)
             app.config[u'mod.%s' % module_name] = instance_
             instance_.start()
 
@@ -188,9 +212,9 @@ if __name__ == u'__main__':
                         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(dep)==1):
                             logger.debug(u'Debug enabled for this module')
                             debug = True
-                        join_event = Event()
-                        join_events.append(join_event)
-                        app.config[u'lib.%s' % dep] = dep_class_(bus, debug, join_event)
+                        bootstrap = get_bootstrap_objects(bus, events_factory)
+                        join_events.append(bootstrap[u'join_event'])
+                        app.config[u'lib.%s' % dep] = dep_class_(bootstrap, debug)
                         app.config[u'lib.%s' % dep].start()
                         logger.debug(u'===============END %s===============', dep)
                         loaded_modules[dep] = True
@@ -202,9 +226,9 @@ if __name__ == u'__main__':
             if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(module_name)==1):
                 logger.debug(u'Debug enabled for this module')
                 debug = True
-            join_event = Event()
-            join_events.append(join_event)
-            app.config[u'mod.%s' % module_name] = class_(bus, debug, join_event)
+            bootstrap = get_bootstrap_objects(bus, events_factory)
+            join_events.append(bootstrap[u'join_event'])
+            app.config[u'mod.%s' % module_name] = class_(bootstrap, debug)
             app.config[u'mod.%s' % module_name].start()
             logger.debug(u'---------------END %s---------------', module_name)
             loaded_modules[module_name] = False
@@ -220,9 +244,9 @@ if __name__ == u'__main__':
         debug = False
         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
             debug = True
-        join_event = Event()
-        join_events.append(join_event)
-        inv = inventory.Inventory(bus, debug, app.config, join_event, events_factory)
+        bootstrap = get_bootstrap_objects(bus, events_factory)
+        join_events.append(bootstrap[u'join_event'])
+        inv = inventory.Inventory(bootstrap, debug, app.config)
         app.config[u'sys.inventory'] = inv
         inv.start()
 

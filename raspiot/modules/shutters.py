@@ -34,20 +34,27 @@ class Shutters(RaspIotModule):
     STATUS_OPENING = u'opening'
     STATUS_CLOSING = u'closing'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
-        #internal timers
+        #memebrs
         self.__timers = {}
         self.raspi_gpios = {}
+
+        #events
+        self.shuttersShutterClosed = self._get_event(u'shutters.shutter.closed')
+        self.shuttersShutterClosing = self._get_event(u'shutters.shutter.closing')
+        self.shuttersShutterOpened = self._get_event(u'shutters.shutter.opened')
+        self.shuttersShutterOpening = self._get_event(u'shutters.shutter.opening')
+        self.shuttersShutterPartial = self._get_event(u'shutters.shutter.partial')
 
     def _configure(self):
         """
@@ -530,7 +537,16 @@ class Shutters(RaspIotModule):
                 raise CommandError(u'Unable to change shutter status')
 
             #and broadcast new shutter status
-            self.send_event(u'shutters.shutter.%s' % status, {u'shutter': device[u'name'], u'lastupdate':now}, uuid)
+            if status==self.STATUS_OPENED:
+                self.shuttersShutterOpened.send(params={u'shutter': device[u'name'], u'lastupdate':now}, device_id=uuid)
+            elif status==self.STATUS_OPENING:
+                self.shuttersShutterOpening.send(params={u'shutter': device[u'name'], u'lastupdate':now}, device_id=uuid)
+            elif status==self.STATUS_CLOSED:
+                self.shuttersShutterClosed.send(params={u'shutter': device[u'name'], u'lastupdate':now}, device_id=uuid)
+            elif status==self.STATUS_CLOSING:
+                self.shuttersShutterClosing.send(params={u'shutter': device[u'name'], u'lastupdate':now}, device_id=uuid)
+            elif status==self.STATUS_PARTIAL:
+                self.shuttersShutterPartial.send(params={u'shutter': device[u'name'], u'lastupdate':now}, device_id=uuid)
 
     def __end_of_timer(self, uuid, gpio_uuid, new_status):
         """

@@ -48,15 +48,15 @@ class Update(RaspIotModule):
     STATUS_COMPLETED = 9
     STATUS_ERROR = 10
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.__update = None
@@ -66,12 +66,19 @@ class Update(RaspIotModule):
             u'download_percent': 0,
         }
         self.__update_task = None
-        self.__reset_update(self.STATUS_IDLE)
+
+        #events
+        self.updateStatusUpdate = self._get_event(u'update.status.update')
+        self.systemSystemNeedrestart = self._get_event(u'system.system.needrestart')
 
     def _configure(self):
         """
         Configure module
         """
+        #reset update
+        self.__reset_update(self.STATUS_IDLE)
+
+        #start update task
         self.__update_task = BackgroundTask(self.__update_raspiot, self.logger, pause=1.0)
         self.__update_task.start()
 
@@ -100,7 +107,7 @@ class Update(RaspIotModule):
         self.status[u'download_percent'] = percent
 
         #send event to update ui
-        self.send_event(u'update.status.update', self.get_status(), to=u'rpc')
+        self.updateStatusUpdate.send(params=self.get_status(), to=u'rpc')
 
     def __install_callback(self, status):
         """
@@ -123,7 +130,7 @@ class Update(RaspIotModule):
             self._save_config(config)
 
         #send event to update ui
-        self.send_event(u'update.status.update', self.get_status(), to=u'rpc')
+        self.updateStatusUpdate.send(params=self.get_status(), to=u'rpc')
 
     def __reset_update(self, status=None):
         """
@@ -146,7 +153,7 @@ class Update(RaspIotModule):
         self.__canceled = False
 
         #send event to update ui
-        self.send_event(u'update.status.update', self.get_status(), to=u'rpc')
+        self.updateStatusUpdate.send(params=self.get_status(), to=u'rpc')
 
     def get_full_status(self):
         """
@@ -276,7 +283,7 @@ class Update(RaspIotModule):
                         self.__reset_update(self.STATUS_COMPLETED)
     
                         #send event to request restart
-                        self.send_event(u'update.system.needrestart', params={u'force':True}, to=u'system')
+                        self.systemSystemNeedrestart.send(params={u'force':True}, to=u'system')
     
         except:
             #exception occured

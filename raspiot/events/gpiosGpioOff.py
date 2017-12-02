@@ -11,11 +11,14 @@ class Gpiosgpiooff(Event):
     EVENT_NAME = u'gpios.gpio.off'
     EVENT_SYSTEM = False
 
-    def __init__(self):
+    def __init__(self, bus):
         """
         Constructor
+
+        Args:
+            bus (MessageBus): message bus instance
         """
-        Event.__init__(self)
+        Event.__init__(self, bus)
 
     def _check_params(self, params):
         """
@@ -27,5 +30,10 @@ class Gpiosgpiooff(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        return all(key in [u'gpio', u'init'] for key in params.keys())
+        keys = [
+            u'gpio',
+            u'init',
+            u'duration'
+        ]
+        return all(key in keys for key in params.keys())
 

@@ -39,21 +39,27 @@ class Sensors(RaspIotModule):
     TYPE_TEMPERATURE = u'temperature'
     TYPE_MOTION = u'motion'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Params:
-            bus (MessageBus): bus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): debug status
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.__tasks = {}
         self.raspi_gpios = {}
         self.driver_onewire = False
+
+        #events
+        self.sensorsMotionOn = self._get_event(u'sensors.motion.on')
+        self.sensorsMotionOff = self._get_event(u'sensors.motion.off')
+        self.sensorsTemperatureUpdate = self._get_event(u'sensors.temperature.update')
+        self.systemSystemNeedreboot = self._get_event(u'system.system.needreboot')
 
     def _configure(self):
         """
@@ -122,7 +128,7 @@ class Sensors(RaspIotModule):
                 self._update_device(sensor[u'uuid'], sensor)
 
                 #new motion event
-                self.send_event(u'sensors.motion.on', {u'sensor':sensor[u'name'], u'lastupdate':now}, sensor[u'uuid'])
+                self.sensorsMotionOn.send(params={u'sensor':sensor[u'name'], u'lastupdate':now}, device_id=sensor[u'uuid'])
 
         elif event[u'event']==u'gpios.gpio.off':
             if sensor[u'on']:
@@ -136,7 +142,7 @@ class Sensors(RaspIotModule):
                 self._update_device(sensor[u'uuid'], sensor)
 
                 #new motion event
-                self.send_event(u'sensors.motion.off', {u'sensor': sensor[u'name'], u'duration':sensor[u'lastduration'], u'lastupdate':now}, sensor[u'uuid'])
+                self.sensorsMotionOff.send(params={u'sensor': sensor[u'name'], u'duration':sensor[u'lastduration'], u'lastupdate':now}, device_id=sensor[u'uuid'])
 
     def event_received(self, event):
         """
@@ -201,7 +207,7 @@ class Sensors(RaspIotModule):
 
         #send event
         if result:
-            self.send_event('sensors.system.needreboot', to='system')
+            self.systemSystemNeedreboot.send(to=u'system')
 
         return result
 
@@ -219,7 +225,7 @@ class Sensors(RaspIotModule):
 
         #send event
         if result:
-            self.send_event('sensors.system.needreboot', to='system')
+            self.systemSystemNeedreboot.send(to=u'system')
 
         return result
 
@@ -321,7 +327,7 @@ class Sensors(RaspIotModule):
 
                 #and send event
                 now = int(time.time())
-                self.send_event(u'sensors.temperature.update', {u'sensor':sensor[u'name'], u'celsius':tempC, u'fahrenheit':tempF, u'lastupdate':now}, sensor[u'uuid'])
+                self.sensorsTemperatureUpdate.send(params={u'sensor':sensor[u'name'], u'celsius':tempC, u'fahrenheit':tempF, u'lastupdate':now}, device_id=sensor[u'uuid'])
 
         else:
             self.logger.warning(u'Unknown temperature subtype "%s"' % sensor[u'subtype'])

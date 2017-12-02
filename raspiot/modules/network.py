@@ -32,16 +32,16 @@ class Network(RaspIotModule):
     MODULE_COUNTRY = None
     MODULE_LINK = None
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Params:
-            bus (MessageBus): bus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): debug status
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.wifi_networks = {}

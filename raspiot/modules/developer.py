@@ -36,16 +36,16 @@ log_file_path = /var/log/raspiot.log
 html/ = /opt/raspiot/html/$_$"""
     RASPIOT_PROFILE_FILE = u'/root/.local/share/pyremotedev/slave.conf'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -53,6 +53,10 @@ html/ = /opt/raspiot/html/$_$"""
         self.console = Console()
         self.pyremotedev_is_running = False
         self.status_task = None
+
+        #events
+        self.pyremotedevStartedEvent = self._get_event('developer.pyremotedev.started')
+        self.pyremotedevStoppedEvent = self._get_event('developer.pyremotedev.stopped')
 
     def _configure(self):
         """
@@ -85,7 +89,7 @@ html/ = /opt/raspiot/html/$_$"""
                 self.logger.exception(u'Unable to create raspiot profile for pyremotedev:')
 
         #start pyremotedev status task
-        self.status_task = Task(60.0, self.status_pyremotedev, self.logger)
+        self.status_task = Task(15.0, self.status_pyremotedev, self.logger)
         self.status_task.start()
 
     def get_module_devices(self):
@@ -160,14 +164,14 @@ html/ = /opt/raspiot/html/$_$"""
                 #pyremotedev is running
                 if not self.pyremotedev_is_running:
                     #send is running event
-                    self.send_event(u'developer.pyremotedev.started', u'rpc', self.__developer_uuid)
+                    self.pyremotedevStartedEvent.send(to=u'rpc', device_id=self.__developer_uuid)
                 self.pyremotedev_is_running = True
 
             else:
                 #pyremotedev is not running
                 if self.pyremotedev_is_running:
                     #send is not running event
-                    self.send_event(u'developer.pyremotedev.stopped', u'rpc', self.__developer_uuid)
+                    self.pyremotedevStoppedEvent.send(to=u'rpc', device_id=self.__developer_uuid)
                 self.pyremotedev_is_running = False
               
         

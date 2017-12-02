@@ -23,15 +23,15 @@ class Cleepbus(RaspIotModule):
     MODULE_COUNTRY = None
     MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Cleepbus'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         #self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, self.__decode_bus_headers, debug_enabled, None)

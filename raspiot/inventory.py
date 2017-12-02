@@ -20,22 +20,21 @@ class Inventory(RaspIotModule):
 
     FORMATTERS_PATH = u'rendering'
 
-    def __init__(self, bus, debug_enabled, installed_modules, join_event, events_factory):
+    def __init__(self, bootstrap, debug_enabled, installed_modules):
         """
         Constructor
 
         Args:
-            bus (MessageBus): bus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): debug status
             modules (array): available modules
-            events_factory (EventsFactory): events factory
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         #events factory
-        self.events_factory = events_factory
+        self.events_factory = bootstrap[u'events_factory']
         #list devices: uuid => module name
         self.devices = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
@@ -444,5 +443,17 @@ class Inventory(RaspIotModule):
                 #no renderer for current type
                 self.logger.debug(u'No renderer registered for %s' % type)
 
+    def get_modules_events(self):
+        """
+        Return modules events
 
+        Return:
+            dict: list of modules events::
+                {
+                    module1: [event1, event2, ...],
+                    module2: [event1],
+                    ...
+                }
+        """
+        return self.events_factory.get_modules_events()
 

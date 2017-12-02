@@ -23,16 +23,16 @@ class Database(RaspIotModule):
     DATABASE_PATH = u'/var/opt/raspiot/databases'
     DATABASE_NAME = u'raspiot.db'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #member
         self.__cnx = None

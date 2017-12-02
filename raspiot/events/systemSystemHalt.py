@@ -11,11 +11,14 @@ class Systemsystemhalt(Event):
     EVENT_NAME = u'system.system.halt'
     EVENT_SYSTEM = True
 
-    def __init__(self):
+    def __init__(self, bus):
         """
         Constructor
+
+        Args:
+            bus (MessageBus): message bus instance
         """
-        Event.__init__(self)
+        Event.__init__(self, bus)
 
     def _check_params(self, params):
         """

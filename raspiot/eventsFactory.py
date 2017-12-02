@@ -4,19 +4,30 @@
 import logging
 import os
 import importlib
+import inspect
 
-__all__ = []
+__all__ = [u'EventsFactory']
 
 class EventsFactory():
     """
     Events factory
+    The goal of this factory is to centralize events to make only used ones available in ui.
+    It is also used to check event content before posting them and make sure it is compatible with system.
     """
 
-    def __init__(self):
+    def __init__(self, bus):
         """
         Constructor
+
+        Args:
+            bus (MessageBus): message bus instance
         """
-        self.events = {}
+        #members
+        self.events_by_event = {}
+        self.events_by_module = {}
+        self.bus = bus
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
     def load_events(self):
         """
@@ -34,10 +45,14 @@ class EventsFactory():
                 class_ = getattr(event_, event.capitalize())
 
                 #save event
-                self.events[class_.EVENT_NAME] = {
-                    u'instance': class_(),
-                    u'used': False
+                self.logger.debug('Init %s' % event)
+                self.events_by_event[class_.EVENT_NAME] = {
+                    u'instance': class_(self.bus),
+                    u'used': False,
+                    u'modules': []
                 }
+
+        self.logger.debug('Found %d events' % len(self.events_by_event))
 
     def get_event_instance(self, event_name):
         """
@@ -52,9 +67,25 @@ class EventsFactory():
         Raise:
             Exception if event not exists
         """
-        if event_name in self.events.keys():
-            self.events[event_name][u'used'] = True
-            return self.events[event_name][u'instance']
+        if event_name in self.events_by_event.keys():
+            #get module caller
+            stack = inspect.stack()
+            caller = stack[1][0].f_locals["self"].__class__.__name__
+            self.logger.debug('===> %s' % caller)
+            #module = caller.split('.')[2]
+            module = caller.lower()
+            self.logger.debug('Module %s registers event %s' % (module, event_name))
+
+            #update events by event dict
+            self.events_by_event[event_name][u'used'] = True
+            self.events_by_event[event_name][u'modules'].append(module)
+
+            #update events by module dict
+            if module not in self.events_by_module:
+                self.events_by_module[module] = []
+            self.events_by_module[module].append(event_name)
+
+            return self.events_by_event[event_name][u'instance']
 
         raise Exception(u'Event %s does not exist' % event_name)
 
@@ -63,9 +94,30 @@ class EventsFactory():
         Return list of used events
 
         Return:
-            list: list of used events
-
+            list: list of used events::
+                {
+                    event1: {
+                        used (bool),
+                        modules (list),
+                        instance (Event)
+                    },
+                    ...
+                }
         """
-        return [ev for ev in self.events if ev[u'used']]
+        return [ev for ev in self.events_by_event if ev[u'used']]
+
+    def get_modules_events(self):
+        """
+        Return list of modules events
+
+        Return:
+            dict: list of events::
+                {
+                    module1: [event1, event2,...],
+                    module2: [event1],
+                    ...
+                }
+        """
+        return self.events_by_module
 
 

@@ -35,16 +35,16 @@ class Pushover(RaspIotRenderer):
     RENDERER_PROFILES = [PushProfile()]
     RENDERER_TYPE = u'alert.push'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
+        RaspIotRenderer.__init__(self, bootstrap, debug_enabled)
 
     def __send_push(self, userkey, apikey, data):
         """

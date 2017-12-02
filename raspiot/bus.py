@@ -333,23 +333,22 @@ class BusClient(threading.Thread):
     It reads module message, read command and execute module command.
     Finally it returns command response to message originator.
     """
-    def __init__(self, bus, join_event):
+    def __init__(self, bootstrap):
         """
         Constructor
 
         Args:
-            bus (MessageBus): message bus instance
-            join_event (threading.Event): event instance
+            bootstrap (dict): bootstrap objects
         """
         threading.Thread.__init__(self)
         threading.Thread.daemon = True
 
         #members
         self.__continue = True
-        self.bus = bus
+        self.bus = bootstrap[u'message_bus']
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
-        self.join_event = join_event
+        self.join_event = bootstrap[u'join_event']
         self.join_event.clear()
 
         #subscribe module to bus

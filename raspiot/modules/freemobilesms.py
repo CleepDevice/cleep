@@ -45,16 +45,16 @@ class Freemobilesms(RaspIotRenderer):
         500: u'Server error'
     }
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Params:
-            bus: bus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled: debug status
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
+        RaspIotRenderer.__init__(self, bootstrap, debug_enabled)
 
     def set_credentials(self, userid, apikey):
         """

@@ -443,13 +443,21 @@ def modules():
     """
     logger.debug(u'Request inventory for available modules')
     modules = app.config[u'sys.inventory'].get_modules()
+    events = app.config[u'sys.inventory'].get_modules_events()
+    logger.warning('event: %s' % events)
     
-    #inject config of installed modules
+    #inject extra of installed modules (config, events)
     for module in modules:
         if modules[module][u'installed']:
             modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
-        if modules[module][u'library']:
+        elif modules[module][u'library']:
             modules[module][u'config'] = app.config[u'lib.%s' % module].get_module_config()
+        else:
+            modules[module][u'config'] = {}
+        if module in events:
+            modules[module][u'events'] = events[module]
+        else:
+            modules[module][u'event'] = []
 
     #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
     conf = RaspiotConf()

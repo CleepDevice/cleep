@@ -85,16 +85,16 @@ class Messageboard(RaspIotRenderer):
         u'speed': 'normal'
     }
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
+        RaspIotRenderer.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.__current_message = None
@@ -110,6 +110,9 @@ class Messageboard(RaspIotRenderer):
         self.__set_board_units()
         self.board.set_scroll_speed(self.SPEEDS[self._config[u'speed']])
         self.__display_task = None
+
+        #events
+        self.messageboardMessageUpdate = self._get_event('messageboard.message.update')
 
     def _configure(self):
         """
@@ -201,7 +204,7 @@ class Messageboard(RaspIotRenderer):
                     self.__current_message = msg
 
                     #push event
-                    self.send_event(u'messageboard.message.update', self.get_current_message())
+                    self.messageboardMessageUpdate.send(params=self.get_current_message())
 
             else:
                 #no message to display, clear screen
@@ -437,7 +440,7 @@ class Messageboard(RaspIotRenderer):
         self.__current_message = None
 
         #push event
-        self.send_event(u'messageboard.message.update', self.get_current_message())
+        self.messageboardMessageUpdate(params=self.get_current_message())
 
     def turn_off(self):
         """
@@ -450,7 +453,7 @@ class Messageboard(RaspIotRenderer):
         self.board.turn_off()
 
         #push event
-        self.send_event(u'messageboard.message.update', self.get_current_message())
+        self.messageboardMessageUpdate(params=self.get_current_message())
 
     def is_on(self):
         """

@@ -299,15 +299,15 @@ class Gpios(RaspIotModule):
     USAGE_ONEWIRE = u'onewire'
     USAGE_LIRC = u'lirc'
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Params:
-            bus: message bus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled: debug status
         """
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.__input_watchers = []
@@ -315,6 +315,10 @@ class Gpios(RaspIotModule):
         #configure raspberry pi
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
+
+        #events
+        self.gpiosGpioOff = self._get_event('gpios.gpio.off')
+        self.gpiosGpioOn = self._get_event('gpios.gpio.on')
 
     def _configure(self):
         """
@@ -360,16 +364,21 @@ class Gpios(RaspIotModule):
                 #configure it
                 if device[u'on']:
                     initial = GPIO.LOW
-                    event = u'gpios.gpio.on'
+                    self.logger.debug(u'Event=%s initial=%s' % (u'gpios.gpio.on', str(initial)))
+                    GPIO.setup(device[u'pin'], GPIO.OUT, initial=initial)
+
+                    #and broadcast gpio status at startup
+                    self.logger.debug(u'Broadcast event %s for gpio %s' % (u'gpios.gpio.on', device[u'gpio']))
+                    self.gpiosGpioOn.send(params={u'gpio':u'gpio', u'init':True}, device_id=device[u'gpio'])
+
                 else:
                     initial = GPIO.HIGH
-                    event = u'gpios.gpio.off'
-                self.logger.debug(u'event=%s initial=%s' % (unicode(event), unicode(initial)))
-                GPIO.setup(device[u'pin'], GPIO.OUT, initial=initial)
+                    self.logger.debug(u'Event=%s initial=%s' % (u'gpios.gpio.off', str(initial)))
+                    GPIO.setup(device[u'pin'], GPIO.OUT, initial=initial)
 
-                #and broadcast gpio status at startup
-                self.logger.debug(u'broadcast event %s for gpio %s' % (event, device[u'gpio']))
-                self.send_event(event, {u'gpio':u'gpio', u'init':True}, device[u'uuid'])
+                    #and broadcast gpio status at startup
+                    self.logger.debug(u'Broadcast event %s for gpio %s' % (u'gpios.gpio.off', device[u'gpio']))
+                    self.gpiosGpioOff.send(params={u'gpio':u'gpio', u'init':True, u'duration':0}, device_id=device[u'gpio'])
 
             elif device[u'mode']==self.MODE_INPUT:
                 if not device[u'reverted']:
@@ -407,7 +416,7 @@ class Gpios(RaspIotModule):
             raise Exception(u'Device %s not found' % uuid)
 
         #broadcast event
-        self.send_event(u'gpios.gpio.on', {u'gpio':device[u'gpio'], u'init':False}, uuid)
+        self.gpiosGpioOn.send(params={u'gpio':device[u'gpio'], u'init':False}, device_id=uuid)
 
     def __input_off_callback(self, uuid, duration):
         """
@@ -423,7 +432,7 @@ class Gpios(RaspIotModule):
             raise Exception(u'Device %s not found' % uuid)
 
         #broadcast event
-        self.send_event(u'gpios.gpio.off', {u'gpio':device[u'gpio'], u'init':False, u'duration':duration}, uuid)
+        self.gpiosGpioOff.send(params={u'gpio':device[u'gpio'], u'init':False, u'duration':duration}, device_id=uuid)
 
     def get_module_config(self):
         """
@@ -790,7 +799,7 @@ class Gpios(RaspIotModule):
             self._update_device(uuid, device)
 
         #broadcast event
-        self.send_event(u'gpios.gpio.on', {u'gpio':device[u'gpio'], u'init':False}, uuid)
+        self.gpiosGpioOn.send(params={u'gpio':device[u'gpio'], u'init':False}, device_id=uuid)
 
         return True
 
@@ -823,7 +832,7 @@ class Gpios(RaspIotModule):
             self._update_device(uuid, device)
 
         #broadcast event
-        self.send_event(u'gpios.gpio.off', {u'gpio':device[u'gpio'], u'init':False}, uuid)
+        self.gpiosGpioOff.send(params={u'gpio':device[u'gpio'], u'init':False, u'duration':0}, device_id=uuid)
 
         return True
 

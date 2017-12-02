@@ -26,16 +26,16 @@ class RaspIot(BusClient):
     CONFIG_DIR = u'/etc/raspiot/'
     MODULE_DEPS = []
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance.
+            bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init bus
-        BusClient.__init__(self, bus, join_event)
+        BusClient.__init__(self, bootstrap)
 
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -48,6 +48,9 @@ class RaspIot(BusClient):
         self._config = self._load_config()
         if getattr(self, u'DEFAULT_CONFIG', None) is not None:
             self._check_config(self.DEFAULT_CONFIG)
+
+        #members
+        self.events_factory = bootstrap[u'events_factory']
 
     def __del__(self):
         """
@@ -233,6 +236,18 @@ class RaspIot(BusClient):
         #update debug flag
         self.debug_enabled = debug
 
+    def _get_event(self, event_name):
+        """
+        Get event name
+
+        Args:
+            event_name (string): event name
+
+        Return:
+            Event instance
+        """
+        return self.events_factory.get_event_instance(event_name)
+
     def get_module_config(self):
         """
         Returns module configuration.
@@ -338,16 +353,16 @@ class RaspIotModule(RaspIot):
      - device helpers
     """
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance.
+            bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
-        RaspIot.__init__(self, bus, debug_enabled, join_event)
+        RaspIot.__init__(self, bootstrap, debug_enabled)
 
     def _add_device(self, data):
         """
@@ -551,16 +566,16 @@ class RaspIotRenderer(RaspIotModule):
      - post function to post data to renderer
     """
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor.
 
         Args:
-            bus (MessageBus): MessageBus instance.
+            bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
         #init raspiot
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.profiles_types = []

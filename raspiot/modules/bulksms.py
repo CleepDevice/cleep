@@ -73,16 +73,16 @@ class Bulksms(RaspIotRenderer):
         u'201': u'Maximum batch size exceeded'
     }
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotRenderer.__init__(self, bus, debug_enabled, join_event)
+        RaspIotRenderer.__init__(self, bootstrap, debug_enabled)
 
     def set_credentials(self, username, password, phone_numbers):
         """

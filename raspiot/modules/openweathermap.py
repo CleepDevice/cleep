@@ -114,21 +114,24 @@ class Openweathermap(RaspIotModule):
     }
     OWM_WIND_DIRECTIONS = [u'N',u'NNE',u'NE',u'ENE',u'E',u'ESE',u'SE',u'SSE',u'S',u'SSW',u'SW',u'WSW',u'W',u'WNW',u'NW',u'NNW',u'N']
 
-    def __init__(self, bus, debug_enabled, join_event):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
 
         Args:
-            bus (MessageBus): MessageBus instance
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bus, debug_enabled, join_event)
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
         self.weather_task = None
         self.__owm_uuid = None
         self.__forecast = []
+
+        #events
+        self.openweathermapWeatherUpdate = self._get_event('openweathermap.weather.update')
 
     def _configure(self):
         """
@@ -379,7 +382,7 @@ class Openweathermap(RaspIotModule):
                 self._update_device(self.__owm_uuid, device)
 
                 #and emit event
-                self.send_event(u'openweathermap.weather.update', device, self.__owm_uuid)
+                self.openweathermapWeatherUpdate.send(params=device, device_id=self.__owm_uuid)
                 self.render_event(u'openweathermap.weather.update', device, [u'display'])
 
         except Exception as e:
