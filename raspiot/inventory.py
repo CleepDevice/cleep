@@ -457,3 +457,12 @@ class Inventory(RaspIotModule):
         """
         return self.events_factory.get_modules_events()
 
+    def get_used_events(self):
+        """
+        Return used events
+
+        Return:
+            list: list of used events
+        """
+        return self.events_factory.get_used_events()
+

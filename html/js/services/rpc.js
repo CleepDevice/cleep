@@ -8,6 +8,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     self.uriModules = window.location.protocol + '//' + window.location.host + '/modules';
     self.uriDevices = window.location.protocol + '//' + window.location.host + '/devices';
     self.uriRenderers = window.location.protocol + '//' + window.location.host + '/renderers';
+    self.uriConfig = window.location.protocol + '//' + window.location.host + '/config';
     self.pollKey = null;
     self._uploading = false;
 
@@ -156,6 +157,36 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         $http({
             method: 'POST',
             url: self.uriRenderers,
+            responseType: 'json'
+        })
+        .then(function(resp) {
+            if( resp.data.error )
+            {
+                console.error('Request failed: '+resp.data.message);
+                toast.error(resp.data.message);
+                d.reject('request failed');
+            }
+            else
+            {
+                d.resolve(resp.data);
+            }
+        }, function(err) {
+            console.error('Request failed: '+err);
+            d.reject('request failed');
+        });
+
+        return d.promise;
+    };
+
+    /**
+     * Get config
+     */
+    self.getConfig = function() {
+        var d = $q.defer();
+
+        $http({
+            method: 'POST',
+            url: self.uriConfig,
             responseType: 'json'
         })
         .then(function(resp) {

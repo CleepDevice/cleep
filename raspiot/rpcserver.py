@@ -87,7 +87,7 @@ def get_app(debug_enabled):
     """
     Return web server
 
-    Returns:
+    Return:
         object: bottle instance
     """
     global logger, app
@@ -213,7 +213,7 @@ def send_command(command, to, params, timeout=None):
         params (dict): command parameters
         timeout (float): set new timeout (default no timeout)
 
-    Returns:
+    Return:
         MessageResonse: command response (None if broadcasted message)
     """
     #get bus
@@ -231,6 +231,103 @@ def send_command(command, to, params, timeout=None):
     else:
         return bus.push(request)
 
+def get_events():
+    """
+    Return used events
+
+    Return:
+        list: list of used events
+    """
+    return app.config[u'sys.inventory'].get_used_events()
+
+def get_renderers():
+    """
+    Return renderers
+
+    Return:
+        list: list of renderers by type::
+            {
+                'type1': {
+                    'subtype1':  {
+                        <profile name>: <profile instance>,
+                        ...
+                    }
+                    'subtype2': ...
+                },
+                'type2': {
+                    <profile name>: <renderer instance>
+                },
+                ...
+            }
+    """
+    return app.config[u'sys.inventory'].get_renderers()
+
+def get_modules():
+    """
+    Return configurations for all loaded modules
+
+    Return:
+        dict: map of modules with their configuration, devices, commands...
+    """
+    logger.debug(u'Request inventory for available modules')
+    modules = app.config[u'sys.inventory'].get_modules()
+    events = app.config[u'sys.inventory'].get_modules_events()
+    logger.warning('event: %s' % events)
+    
+    #inject extra of installed modules (config, events)
+    for module in modules:
+        if modules[module][u'installed']:
+            modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
+        elif modules[module][u'library']:
+            modules[module][u'config'] = app.config[u'lib.%s' % module].get_module_config()
+        else:
+            modules[module][u'config'] = {}
+        if module in events:
+            modules[module][u'events'] = events[module]
+        else:
+            modules[module][u'events'] = []
+
+    #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
+    conf = RaspiotConf()
+    config = conf.as_dict()
+    for module in modules:
+        modules[module][u'pending'] = False
+        if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
+            #install pending
+            modules[module][u'pending'] = True
+        if module not in config[u'general'][u'modules'] and modules[module][u'installed']:
+            #uninstall pending
+            modules[module][u'pending'] = True
+
+    return modules
+
+def get_devices():
+    """
+    Return all devices
+
+    Return:
+        dict: all devices by module
+    """
+    #request each loaded module for its devices
+    devices = {}
+    for module in app.config:
+        if module.startswith(u'mod.'):
+            _module = module.replace(u'mod.', '')
+            logger.debug(u'Request "%s" config' % _module)
+            try:
+                response = send_command(u'get_module_devices', _module, {})
+                if not response[u'error']:
+                    devices[_module] = response[u'data']
+                else:
+                    devices[_module] = None
+
+            except NoResponse as e:
+                logger.exception('Unexpected exception occured:')
+
+            except:
+                logger.exception('Fatal exception:')
+
+    return devices
 
 @app.route(u'/upload', method=u'POST')
 @authenticate()
@@ -244,7 +341,7 @@ def upload():
         to (string): command recipient
         params (dict): command parameters
 
-    Returns:
+    Return:
         MessageResponse: command response
     """
     path = None
@@ -314,7 +411,7 @@ def download():
         to (string): command recipient
         params (dict): command parameters
 
-    Returns:
+    Return:
         MessageResponse: command response
     """
     try:
@@ -368,7 +465,7 @@ def command():
         timeout (float): timeout
         params (dict): command parameters
 
-    Returns:
+    Return:
         MessageResponse: command response
     """
     logger.debug(u'COMMAND method=%s data=[%d]: %s' % (unicode(bottle.request.method), len(bottle.request.params), unicode(bottle.request.json)))
@@ -438,40 +535,12 @@ def modules():
     """
     Return configurations for all loaded modules
 
-    Returns:
-        Dict: map of modules with their configuration, devices, commands...
+    Return:
+        dict: map of modules with their configuration, devices, commands...
     """
-    logger.debug(u'Request inventory for available modules')
-    modules = app.config[u'sys.inventory'].get_modules()
-    events = app.config[u'sys.inventory'].get_modules_events()
-    logger.warning('event: %s' % events)
-    
-    #inject extra of installed modules (config, events)
-    for module in modules:
-        if modules[module][u'installed']:
-            modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
-        elif modules[module][u'library']:
-            modules[module][u'config'] = app.config[u'lib.%s' % module].get_module_config()
-        else:
-            modules[module][u'config'] = {}
-        if module in events:
-            modules[module][u'events'] = events[module]
-        else:
-            modules[module][u'event'] = []
-
-    #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
-    conf = RaspiotConf()
-    config = conf.as_dict()
-    for module in modules:
-        modules[module][u'pending'] = False
-        if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
-            #install pending
-            modules[module][u'pending'] = True
-        if module not in config[u'general'][u'modules'] and modules[module][u'installed']:
-            #uninstall pending
-            modules[module][u'pending'] = True
-
+    modules = get_modules()
     logger.debug(u'Modules: %s' % modules)
+
     return json.dumps(modules)
 
 @app.route(u'/devices', method=u'POST')
@@ -480,28 +549,10 @@ def devices():
     """
     Return all devices
 
-    Returns:
-        dict: all devices by modules
+    Return:
+        dict: all devices by module
     """
-    #request each loaded module for its devices
-    devices = {}
-    for module in app.config:
-        if module.startswith(u'mod.'):
-            _module = module.replace(u'mod.', '')
-            logger.debug(u'Request "%s" config' % _module)
-            try:
-                response = send_command(u'get_module_devices', _module, {})
-                if not response[u'error']:
-                    devices[_module] = response[u'data']
-                else:
-                    devices[_module] = None
-
-            except NoResponse as e:
-                logger.exception('Unexpected exception occured:')
-
-            except:
-                logger.exception('Fatal exception:')
-
+    devices = get_devices()
     logger.debug(u'Devices: %s' % devices)
 
     return json.dumps(devices)
@@ -512,13 +563,51 @@ def renderers():
     """
     Returns all renderers
 
-    Returns:
+    Return:
         dict: all renderers by type
     """
-    renderers = app.config[u'sys.inventory'].get_renderers()
-
+    renderers = get_renderers()
     logger.debug(u'Renderers: %s' % renderers)
+
     return json.dumps(renderers)
+
+@app.route(u'/events', method=u'POST')
+@authenticate()
+def events():
+    """
+    Return all used events
+
+    Return:
+        list: list of used events
+    """
+    events = get_events()
+    logger.debug(u'Used events: %s' % events)
+
+    return json.dumps(events)
+
+@app.route(u'/config', method=u'POST')
+@authenticate()
+def config():
+    """
+    Return device config
+
+    Return:
+        dict: all device config::
+            {
+                modules (dict): all devices by module
+                renderers (dict): all renderers
+                devices (dict): all devices
+                events (list): all used events
+            }
+    """
+    config = {
+        'modules': get_modules(),
+        'events': get_events(),
+        'renderers': get_renderers(),
+        'devices': get_devices()
+    }
+
+    return json.dumps(config)
 
 @app.route(u'/registerpoll', method=u'POST')
 @authenticate()
@@ -526,7 +615,7 @@ def registerpoll():
     """
     Register poll
 
-    Returns:
+    Return:
         dict: {'pollkey':''}
     """
     #subscribe to bus
@@ -552,7 +641,7 @@ def poll():
     """
     This is the endpoint for long poll clients.
 
-    Returns:
+    Return:
         dict: map of received event
     """
     with pollcounter():

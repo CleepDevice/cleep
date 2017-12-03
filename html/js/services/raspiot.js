@@ -14,6 +14,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.modules = {};
     //list of renderers
     self.renderers = {};
+    //list of events
+    self.events = [];
 
     /**
      * Set module icon (material icons)
@@ -35,7 +37,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             smtp: 'mail',
             pushover: 'send',
             openweathermap: 'cloud',
-            cleepbus: 'settings_input_antenna'
+            cleepbus: 'settings_input_antenna',
+            developer: 'bug_report'
         };
 
         if( !angular.isUndefined(icons[module]) )
@@ -146,7 +149,59 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     };
 
     /**
-     * Load devices
+     * Set devices
+     * Prepare dashboard widgets and init device using associated module
+     */
+    self._setDevices = function(devices)
+    {
+        var newDevices = [];
+        for( var module in devices )
+        {
+            //add specific ui stuff
+            for( uuid in devices[module] )
+            {
+                //add widget infos
+                devices[module][uuid].__widget = {
+                    mdcolors: '{background:"default-primary-300"}'
+                };
+
+                //add service infos
+                devices[module][uuid].__service = module;
+            }
+
+            //request module service to update specifically its device
+            if( objectsService.services[module] && typeof(objectsService.services[module].initDevices)!=='undefined' )
+            {
+                moduleDevices = objectsService.services[module].initDevices(devices[module]);
+            }
+            else
+            {
+                moduleDevices = devices[module];
+            }
+
+            //store device
+            for( uuid in moduleDevices )
+            {
+                newDevices.push(moduleDevices[uuid]);
+            }
+        }
+
+        //clear existing devices
+        for( i=self.devices.length-1; i>=0; i--)
+        {
+            self.devices.splice(i, 1);
+        }
+
+        //save new devices
+        for( i=0; i<newDevices.length; i++ )
+        {
+            self.devices.push(newDevices[i]);
+        }
+    };
+
+    /**
+     * Reload devices
+     * Call getDevices command again and set devices
      */
     self.reloadDevices = function()
     {
@@ -156,50 +211,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
 
         rpcService.getDevices()
             .then(function(devices) {
-                var newDevices = [];
-                for( var module in devices )
-                {
-                    //add specific ui stuff
-                    for( uuid in devices[module] )
-                    {
-                        //add widget infos
-                        devices[module][uuid].__widget = {
-                            mdcolors: '{background:"default-primary-300"}'
-                        };
-
-                        //add service infos
-                        devices[module][uuid].__service = module;
-                    }
-
-                    //request module service to update specifically its device
-                    if( objectsService.services[module] && typeof(objectsService.services[module].initDevices)!=='undefined' )
-                    {
-                        moduleDevices = objectsService.services[module].initDevices(devices[module]);
-                    }
-                    else
-                    {
-                        moduleDevices = devices[module];
-                    }
-
-                    //store device
-                    for( uuid in moduleDevices )
-                    {
-                        newDevices.push(moduleDevices[uuid]);
-                    }
-                }
-
-                //clear existing devices
-                for( i=self.devices.length-1; i>=0; i--)
-                {
-                    self.devices.splice(i, 1);
-                }
-
-                //save new devices
-                for( i=0; i<newDevices.length; i++ )
-                {
-                    self.devices.push(newDevices[i]);
-                }
-
+                self._setDevices(devices);
                 d.resolve(self.devices);
             });
         
@@ -207,17 +219,38 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     };
 
     /**
-     * Load renderers
+     * Set renderers
+     * Just set renderers list
      */
-    self.loadRenderers = function()
+    self._setRenderers = function(renderers)
+    {
+        self.renderers = renderers;
+    };
+
+    /**
+     * Set events
+     * Just set events list
+     */
+    self._setEvents = function(events)
+    {
+        self.events = events;
+    };
+
+    /**
+     * Load config
+     */
+    self.loadConfig = function()
     {
         var d = $q.defer();
 
-        rpcService.getRenderers()
-            .then(function(renderers) {
-                self.renderers = renderers;
+        rpcService.getConfig()
+            .then(function(config) {
+                self.renderers = config.renderers;
+                self.events = config.events;
+                self.devices = config.devices;
+                self.modules = config.modules;
 
-                d.resolve(renderers);
+                d.resolve(config);
             });
 
         return d.promise;

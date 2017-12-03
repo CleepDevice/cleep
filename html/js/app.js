@@ -90,20 +90,16 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 window.setTimeout(self.polling, self.nextPollingTimeout*1000);
             });
     };
-    //window.setTimeout(self.polling, 0);
 
     /**
-     * Get server modules with their configs
-     * And load devices
+     * Load all config
      */
     self.loadConfig = function()
     {
-        //load modules and their configs
-        rpcService.getModules()
-            .then(function(resp) {
-
-                //now inject configurations directives
-                for( var module in resp)
+        rpcService.getConfig()
+            .then(function(config) {
+                //inject configurations directives
+                for( var module in config.modules )
                 {
                     //prepare angular service and directive
                     var angularService = module + 'Service';
@@ -121,20 +117,19 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
                 //save modules configurations as soon as possible to make sure
                 //configurations directives can access their own configs when they start
-                raspiotService._setModules(resp);
-    
-                //load devices
-                return raspiotService.reloadDevices('system');
-            })
-            .then(function() {
-                //load renderers
-                return raspiotService.loadRenderers();
+                raspiotService._setModules(config.modules);
+
+                //set other stuff
+                raspiotService._setDevices(config.devices);
+                raspiotService._setRenderers(config.renderers);
+                raspiotService._setEvents(config.events);
             })
             .finally(function() {
-                console.log("DEVICES", raspiotService.devices);
-                console.log("SERVICES", objectsService.services);
-                console.log("MODULES", raspiotService.modules);
-                console.log("RENDERERS", raspiotService.renderers);
+                console.log('DEVICES', raspiotService.devices);
+                console.log('SERVICES', objectsService.services);
+                console.log('MODULES', raspiotService.modules);
+                console.log('RENDERERS', raspiotService.renderers);
+                console.log('EVENTS', raspiotService.events);
             });
     };
 

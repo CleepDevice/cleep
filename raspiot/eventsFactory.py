@@ -104,7 +104,12 @@ class EventsFactory():
                     ...
                 }
         """
-        return [ev for ev in self.events_by_event if ev[u'used']]
+        used_events = {}
+        for ev in self.events_by_event:
+            if self.events_by_event[ev][u'used']:
+                used_events[ev] = self.events_by_event[ev][u'modules'] 
+
+        return used_events
 
     def get_modules_events(self):
         """
