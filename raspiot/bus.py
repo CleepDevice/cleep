@@ -637,16 +637,14 @@ class BusClient(threading.Thread):
                     elif msg[u'message'].has_key(u'event'):
                         #event received, process it
                         try:
-                            event_received = getattr(self, u'event_received')
-                            if event_received is not None:
+                            if hasattr(self, u'event_received'):
                                 #function implemented in object, execute it
-                                event_received(msg[u'message'])
-                        except AttributeError:
-                            #on_event function not implemented, drop received message
-                            self.logger.debug('AttributeError exception triggered: event_received may not be implemented in %s class (or you have this exception raised in your function). Event dropped' % (self.__class__.__name__))
+                                event_received = getattr(self, u'event_received')
+                                if event_received is not None:
+                                    event_received(msg[u'message'])
                         except:
                             #do not crash module
-                            self.logger.exception(u'event_received exception:')
+                            self.logger.exception(u'Exception in event_received:')
 
                 else:
                     #received message is badly formatted
