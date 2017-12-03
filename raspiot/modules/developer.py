@@ -109,7 +109,6 @@ html/ = /opt/raspiot/html/$_$"""
         """
         Custom stop: stop pyremotedev thread
         """
-        self.stop_pyremotedev()
         if self.status_task:
             self.status_task.stop()
 
