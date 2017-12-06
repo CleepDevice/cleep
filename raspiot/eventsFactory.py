@@ -6,6 +6,7 @@ import os
 import importlib
 import inspect
 from utils import MissingParameter, InvalidParameter, CommandError
+from formatters.formatter import Formatter
 
 __all__ = [u'EventsFactory']
 
@@ -26,6 +27,7 @@ class EventsFactory():
         #members
         self.events_by_event = {}
         self.events_by_module = {}
+        self.events_by_formatter = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
@@ -63,7 +65,8 @@ class EventsFactory():
                 self.events_by_event[class_.EVENT_NAME] = {
                     u'instance': class_,
                     u'used': False,
-                    u'modules': []
+                    u'modules': [],
+                    u'formatters': []
                 }
 
         self.logger.debug('Found %d events' % len(self.events_by_event))
@@ -84,19 +87,37 @@ class EventsFactory():
         if event_name in self.events_by_event.keys():
             #get module caller
             stack = inspect.stack()
-            caller = stack[1][0].f_locals["self"].__class__.__name__
-            self.logger.debug('===> %s' % caller)
-            module = caller.lower()
-            self.logger.debug('Module %s registers event %s' % (module, event_name))
+            caller = stack[1][0].f_locals["self"]
+            self.logger.debug('===> %s' % caller.__class__.__name__)
+            module = None
+            formatter = None
+            if issubclass(caller.__class__, Formatter):
+                #formatter registers event
+                formatter = caller.__class__.__name__
+                self.logger.debug('Formatter %s registers event %s' % (formatter, event_name))
+            else:
+                #module registers event
+                module = caller.__class__.__name__.lower()
+                self.logger.debug('Module %s registers event %s' % (module, event_name))
 
             #update events by event dict
             self.events_by_event[event_name][u'used'] = True
-            self.events_by_event[event_name][u'modules'].append(module)
+            if module:
+                self.events_by_event[event_name][u'modules'].append(module)
+            if formatter:
+                self.events_by_event[event_name][u'formatters'].append(formatter)
 
             #update events by module dict
-            if module not in self.events_by_module:
-                self.events_by_module[module] = []
-            self.events_by_module[module].append(event_name)
+            if module:
+                if module not in self.events_by_module:
+                    self.events_by_module[module] = []
+                self.events_by_module[module].append(event_name)
+
+            #update events by formatter dict
+            if formatter:
+                if formatter not in self.events_by_formatter:
+                    self.events_by_formatter[formatter] = []
+                self.events_by_formatter[formatter].append(event_name)
 
             return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory)
 
@@ -120,7 +141,10 @@ class EventsFactory():
         used_events = {}
         for ev in self.events_by_event:
             if self.events_by_event[ev][u'used']:
-                used_events[ev] = self.events_by_event[ev][u'modules'] 
+                used_events[ev] = {
+                    u'modules': self.events_by_event[ev][u'modules'],
+                    u'formatters': self.events_by_event[ev][u'formatters']
+                }
 
         return used_events
 
