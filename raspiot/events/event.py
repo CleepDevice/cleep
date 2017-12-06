@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.utils import MessageRequest
+import logging
+from raspiot.utils import MessageRequest, InvalidParameter
 
 class Event():
     """
     Base event class
     """
 
-    def __init__(self, bus):
+    def __init__(self, bus, events_factory):
         """
         Construtor
 
@@ -16,6 +17,8 @@ class Event():
             bus (MessageBus): message bus instance
         """
         self.bus = bus
+        self.events_factory = events_factory
+        self.logger = logging.getLogger(self.__class__.__name__)
         if not hasattr(self, u'EVENT_NAME'):
             raise NotImplementedError(u'EVENT_NAME class member must be declared')
 
@@ -74,4 +77,62 @@ class Event():
         else:
             raise Exception(u'Invalid event parameters specified: %s' % (params.keys()))
 
+    def render(self, event_values, types):
+        """
+        Render event to renderer types
+
+        TODO: removes types ?
+
+        Args:
+            types (list<string>): existing renderer type
+        """
+        if not isinstance(types, list):
+            raise InvalidParameter(u'Types must be a list')
+
+        #iterates over registered types
+        for type in types:
+            if self.events_factory.has_renderer(type):
+                #renderer exists for current type
+
+                #get formatters
+                self.logger.debug(u'Searching formatters...')
+                formatters = {}
+                for formatter in self.events_factory.formatters:
+                    if formatter.endswith(self.EVENT_NAME):
+                        formatters.update(self.events_factory.formatters[formatter])
+
+                if len(formatters)==0:
+                    #no formatter found, exit
+                    self.logger.debug(u'No formatter found for event %s' % self.EVENT_NAME)
+                    return False
+
+                #find match with formatters and renderer profiles
+                for renderer in self.events_factory.renderers[type]:
+                    for profile in self.events_factory.renderer_profiles[renderer]:
+                        if profile in formatters:
+                            self.logger.debug(u'Found match, post profile to renderer %s' % renderer)
+                            #found match, format event to profile
+                            profile = formatters[profile].format(event_values)
+
+                            #handle no profile
+                            if profile is None:
+                                continue
+
+                            #and post profile to renderer
+                            try:
+                                request = MessageRequest()
+                                request.command = u'render'
+                                request.to = renderer
+                                request.params = {u'profile': profile}
+
+                                resp = self.bus.push(request, timeout)
+                                if resp[u'error']:
+                                    self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
+
+                            except:
+                                self.logger.exception(u'Unable to render event %s:' % self.EVENT_NAME)
+
+            else:
+                #no renderer for current type
+                self.logger.debug(u'No renderer registered for %s' % type)
 

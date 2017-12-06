@@ -11,14 +11,15 @@ class Shuttersshutteropening(Event):
     EVENT_NAME = u'shutters.shutter.opening'
     EVENT_SYSTEM = False
 
-    def __init__(self, bus):
-        """
+    def __init__(self, bus, events_factory):
+        """ 
         Constructor
 
         Args:
             bus (MessageBus): message bus instance
+            events_factory (EventsFactory): events factory instance
         """
-        Event.__init__(self, bus)
+        Event.__init__(self, bus, events_factory)
 
     def _check_params(self, params):
         """

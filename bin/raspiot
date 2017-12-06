@@ -160,7 +160,7 @@ if __name__ == u'__main__':
 
         #events factory
         events_factory = EventsFactory(bus)
-        events_factory.load_events()
+        events_factory.configure()
 
         #create system module by default (needed to handle raspberry config)
         for module_name in mandatory_modules.keys():

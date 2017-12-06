@@ -535,28 +535,28 @@ class RaspIotModule(RaspIot):
         else:
             return 0
 
-    def render_event(self, event, event_values, renderer_types):
-        """ 
-        Post event to specified renderers types
-
-        Args:
-            renderer_types (list): list of renderer types
-
-        Returns:
-            bool: True if post command succeed, False otherwise
-        """
-        try:
-            resp = self.send_command(u'render_event', u'inventory', {u'event':event, u'event_values':event_values, u'types': renderer_types})
-            if resp[u'error']:
-                self.logger.error(u'Unable to request renderers by type')
-                return False
-
-        except:
-            self.logger.exception(u'Unable to render event. Maybe inventory is not ready yet')
-            return False
-
-        return True
-
+    #def render_event(self, event, event_values, renderer_types):
+    #    """ 
+    #    Post event to specified renderers types
+    #
+    #    Args:
+    #        renderer_types (list): list of renderer types
+    #
+    #    Returns:
+    #        bool: True if post command succeed, False otherwise
+    #    """
+    #    try:
+    #        resp = self.send_command(u'render_event', u'inventory', {u'event':event, u'event_values':event_values, u'types': renderer_types})
+    #        if resp[u'error']:
+    #            self.logger.error(u'Unable to request renderers by type')
+    #            return False
+    #
+    #    except:
+    #        self.logger.exception(u'Unable to render event. Maybe inventory is not ready yet')
+    #        return False
+    #
+    #    return True
+ 
 
 class RaspIotRenderer(RaspIotModule):
     """
