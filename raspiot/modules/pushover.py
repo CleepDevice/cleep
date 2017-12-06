@@ -151,9 +151,9 @@ class Pushover(RaspIotRenderer):
 
         #prepare data
         data = PushProfile()
-        data.message = u'Hello this is Cleep'
+        data.message = u'Hello this is a push test from Cleep'
 
-        #send email
+        #send push
         self.__send_push(userkey, apikey, data)
 
         return True
