@@ -291,12 +291,12 @@ class Update(RaspIotModule):
             #prevent from infinite update attempts
             self.__reset_update(self.STATUS_ERROR)
 
-    def check_update(self):
+    def check_updates(self):
         """
-        Check for available update
+        Check for available updates
 
         Return:
-            bool: True if update available
+            bool: True if updates available
         """
         #update last check
         self._config[u'last_check'] = int(time.time())
