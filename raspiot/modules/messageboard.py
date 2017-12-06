@@ -8,7 +8,7 @@ import time
 from raspiot.libs.task import BackgroundTask
 from raspiot.libs.ht1632c import HT1632C
 from raspiot.utils import InvalidParameter, MissingParameter
-from raspiot.rendering.profiles import DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile
+from raspiot.profiles import DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile
 import uuid
 import socket
 

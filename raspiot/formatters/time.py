@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.rendering.formatter import Formatter
-from raspiot.rendering.profiles import *
+from raspiot.formatters.formatter import Formatter
+from raspiot.profiles import *
 import time
 
 __all__ = [u'TimeDisplayAddOrReplaceMessageFormatter', u'TimeSoundTextFormatter', u'SunsetSoundTextFormatter', u'SunriseSoundTextFormatter']

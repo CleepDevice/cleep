@@ -277,7 +277,7 @@ class Inventory(RaspIotModule):
         Returns:
             list: list of renderers by type::
         """
-        return self.events_factory.get_renderers()
+        return self.formatters_factory.get_renderers()
 
     def get_modules_events(self):
         """
