@@ -31,8 +31,9 @@ class Inventory(RaspIotModule):
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
-        #events factory
+        #factories
         self.events_factory = bootstrap[u'events_factory']
+        self.formatters_factory = bootstrap[u'formatters_factory']
         #list devices: uuid => module name
         self.devices = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
@@ -124,7 +125,7 @@ class Inventory(RaspIotModule):
             if issubclass(self.installed_modules[self.installed_modules_names[module]].__class__, RaspIotRenderer):
                 try:
                     renderers = self.installed_modules[self.installed_modules_names[module]].get_module_renderers()
-                    self.events_factory.register_renderer(renderers[u'type'], renderers[u'profiles'], module)
+                    self.formatters_factory.register_renderer(renderers[u'type'], renderers[u'profiles'], module)
                 except:
                     self.logger.exception('Unable to get renderers of module "%s"' % module)
 

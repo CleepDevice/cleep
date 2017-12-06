@@ -8,6 +8,7 @@ import logging
 from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
 from raspiot.eventsFactory import EventsFactory
+from raspiot.formattersFactory import FormattersFactory
 from raspiot import rpcserver, bus, inventory
 from raspiot.modules import system
 from raspiot.modules import cleepbus
@@ -75,13 +76,14 @@ def load_config():
 
     return config
 
-def get_bootstrap_objects(message_bus, events_factory):
+def get_bootstrap_objects(message_bus, events_factory, formatters_factory):
     """
     Return bootstrap objects.
 
     Args:
         message_bus (MessageBus): message bus instance
         events_factory (EventsFactory): events factory instance
+        formatters_factory (FormattersFactory): formatters factory instance
 
     Return:
         dict: dict of bootstrap objects::
@@ -93,6 +95,7 @@ def get_bootstrap_objects(message_bus, events_factory):
     """
     bootstrap = {
         u'events_factory': events_factory,
+        u'formatters_factory': formatters_factory,
         u'message_bus': message_bus,
         u'join_event': Event()
     }
@@ -158,9 +161,16 @@ if __name__ == u'__main__':
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
 
-        #events factory
-        events_factory = EventsFactory(bus)
-        events_factory.configure()
+        #create factories
+        events_factory = EventsFactory(debug_enabled)
+        formatters_factory = FormattersFactory(debug_enabled)
+
+        #build bootstrap objects collection
+        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory)
+
+        #configure factories
+        events_factory.configure(bootstrap)
+        formatters_factory.configure(bootstrap)
 
         #create system module by default (needed to handle raspberry config)
         for module_name in mandatory_modules.keys():
@@ -168,7 +178,6 @@ if __name__ == u'__main__':
             debug = False
             if debug_enabled and config[u'debug'][u'debug_modules'].count(module_name)==1:
                 debug = True
-            bootstrap = get_bootstrap_objects(bus, events_factory)
             join_events.append(bootstrap[u'join_event'])
             instance_ = mandatory_modules[module_name](bootstrap, debug)
             app.config[u'mod.%s' % module_name] = instance_
@@ -212,7 +221,6 @@ if __name__ == u'__main__':
                         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(dep)==1):
                             logger.debug(u'Debug enabled for this module')
                             debug = True
-                        bootstrap = get_bootstrap_objects(bus, events_factory)
                         join_events.append(bootstrap[u'join_event'])
                         app.config[u'lib.%s' % dep] = dep_class_(bootstrap, debug)
                         app.config[u'lib.%s' % dep].start()
@@ -226,7 +234,6 @@ if __name__ == u'__main__':
             if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(module_name)==1):
                 logger.debug(u'Debug enabled for this module')
                 debug = True
-            bootstrap = get_bootstrap_objects(bus, events_factory)
             join_events.append(bootstrap[u'join_event'])
             app.config[u'mod.%s' % module_name] = class_(bootstrap, debug)
             app.config[u'mod.%s' % module_name].start()
@@ -244,7 +251,6 @@ if __name__ == u'__main__':
         debug = False
         if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
             debug = True
-        bootstrap = get_bootstrap_objects(bus, events_factory)
         join_events.append(bootstrap[u'join_event'])
         inv = inventory.Inventory(bootstrap, debug, app.config)
         app.config[u'sys.inventory'] = inv

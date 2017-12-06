@@ -9,7 +9,7 @@ class Event():
     Base event class
     """
 
-    def __init__(self, bus, events_factory):
+    def __init__(self, bus, formatters_factory):
         """
         Construtor
 
@@ -17,7 +17,7 @@ class Event():
             bus (MessageBus): message bus instance
         """
         self.bus = bus
-        self.events_factory = events_factory
+        self.formatters_factory = formatters_factory
         self.logger = logging.getLogger(self.__class__.__name__)
         if not hasattr(self, u'EVENT_NAME'):
             raise NotImplementedError(u'EVENT_NAME class member must be declared')
@@ -33,25 +33,6 @@ class Event():
             bool: True if params are valid, False otherwise
         """
         raise NotImplementedError(u'_check_params method must implemented')
-
-    #def send(self, params=None, device_id=None, to=None):
-    #    """
-    #    Send event#
-    #    Args:
-    #        params (dict): event parameters
-    #        device_id (string): device id that send event. If not specified event cannot be monitored
-    #        to (string): event recipient. If not specified, event will be broadcasted
-
-    #    Return:
-    #        bool: True if event send, False if params are invalid
-    #    """
-    #    if self._check_params(params):
-    #        self.bus.send_event(self.EVENT_NAME, params=params, device_id=device_id, to=to)
-    #        return True
-
-    #    else:
-    #        self.logger.error('Invalid event parameters specified: %s' % params)
-    #        return False
 
     def send(self, params=None, device_id=None, to=None):
         """ 
@@ -91,15 +72,15 @@ class Event():
 
         #iterates over registered types
         for type in types:
-            if self.events_factory.has_renderer(type):
+            if self.formatters_factory.has_renderer(type):
                 #renderer exists for current type
 
                 #get formatters
                 self.logger.debug(u'Searching formatters...')
                 formatters = {}
-                for formatter in self.events_factory.formatters:
+                for formatter in self.formatters_factory.formatters:
                     if formatter.endswith(self.EVENT_NAME):
-                        formatters.update(self.events_factory.formatters[formatter])
+                        formatters.update(self.formatters_factory.formatters[formatter])
 
                 if len(formatters)==0:
                     #no formatter found, exit
@@ -107,8 +88,8 @@ class Event():
                     return False
 
                 #find match with formatters and renderer profiles
-                for renderer in self.events_factory.renderers[type]:
-                    for profile in self.events_factory.renderer_profiles[renderer]:
+                for renderer in self.formatters_factory.renderers[type]:
+                    for profile in self.formatters_factory.renderer_profiles[renderer]:
                         if profile in formatters:
                             self.logger.debug(u'Found match, post profile to renderer %s' % renderer)
                             #found match, format event to profile
