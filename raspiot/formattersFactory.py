@@ -58,7 +58,7 @@ class FormattersFactory():
             #build path
             fpath = os.path.join(path, f)
             (formatter, ext) = os.path.splitext(f)
-            self.logger.debug(u'formatter=%s ext=%s' % (formatter, ext))
+            self.logger.debug(u'Formatter=%s ext=%s' % (formatter, ext))
 
             #filter files
             if os.path.isfile(fpath) and ext==u'.py' and formatter not in [u'__init__', u'formatter', u'profiles']:
@@ -71,14 +71,16 @@ class FormattersFactory():
                         continue
                     if not unicode(class_).startswith(u'raspiot.%s.%s.' % (self.FORMATTERS_PATH, formatter)):
                         continue
-                    instance_ = class_()
+
+                    #create formatter instance
+                    instance_ = class_(self.events_factory)
 
                     #save formatter
                     self.logger.debug(u'Found class %s in %s' % (unicode(class_), formatter) )
-                    if not self.formatters.has_key(instance_.input_event):
-                        self.formatters[instance_.input_event] = {}
-                    self.formatters[instance_.input_event][instance_.output_profile] = instance_
-                    self.logger.debug(u'  %s => %s' % (instance_.input_event, instance_.output_profile.__class__.__name__))
+                    if not self.formatters.has_key(instance_.event_name):
+                        self.formatters[instance_.event_name] = {}
+                    self.formatters[instance_.event_name][instance_.profile_name] = instance_
+                    self.logger.debug(u'  %s => %s' % (instance_.event_name, instance_.profile_name))
 
         self.logger.debug(u'FORMATTERS: %s' % self.formatters) 
 

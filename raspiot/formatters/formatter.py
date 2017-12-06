@@ -11,20 +11,45 @@ class Formatter():
     Base formatter class
     """
 
-    def __init__(self, input_event, output_profile):
+    def __init__(self, events_factory, event_name, profile):
         """
         Constructor
 
         Args:
-            input_event (string): input event compatible with formatter
+            events_factory (EventsFactory): events factory instance
+            event_name (string): event name compatible with formatter
             output_profile (RendererProfile): Renderer profile instance
         """
-        if not isinstance(input_event, str) and not isinstance(input_event, unicode):
-            raise InvalidParameter(u'Invalid input_event specified (awaited string, found %s)' % (type(input_event)))
-        if not issubclass(output_profile.__class__, RendererProfile):
-            raise InvalidParameter(u'Invalid output_profile specified. Instance must inherits from RendererProfile.')
+        if not isinstance(event_name, str) and not isinstance(event_name, unicode):
+            raise InvalidParameter(u'Invalid event_name specified (awaited string, found %s)' % (type(event_name)))
+        if not issubclass(profile.__class__, RendererProfile):
+            raise InvalidParameter(u'Invalid profile specified. Instance must inherits from RendererProfile.')
 
-        self.input_event = input_event
-        self.output_profile = output_profile.__class__.__name__
+        #memebers
+        self.events_factory = events_factory
+        self.event_name = event_name
+        self.profile_name = profile.__class__.__name__
+        self.profile = profile
 
+        #get event instance
+        self.event = self.events_factory.get_event_instance(self.event_name)
+
+    def format(self, event_values):
+        """
+        Format event
+        
+        Args:
+            event_values (dict): event values
+        """
+        return self._fill_profile(self.event, self.profile)
+    
+    def _fill_profile(self, event_values, profile):
+        """
+        Fll profile with event data
+  
+        Args:
+           event_values (dict): event values
+           profile (Profile): profile instance
+        """
+        raise NotImplemented('_fill_profile method must be implemented')
 

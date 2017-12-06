@@ -12,14 +12,19 @@ class TimeDisplayAddOrReplaceMessageFormatter(Formatter):
     """
     Time data to DisplayAddOrReplaceProfile
     """
-    def __init__(self):
-        Formatter.__init__(self, u'system.time.now', DisplayAddOrReplaceMessageProfile())
+    def __init__(self, events_factory):
+        """
+        Constuctor
 
-    def format(self, event_values):
+        Args:
+            events_factory (EventsFactory): events factory instance
         """
-        Format event to profile
+        Formatter.__init__(self, events_factory, u'system.time.now', DisplayAddOrReplaceMessageProfile())
+
+    def _fill_profile(self, event_values, profile):
         """
-        profile = DisplayAddOrReplaceMessageProfile()
+        Fill profile with event data
+        """
         profile.uuid = u'currenttime'
 
         #append current time
@@ -27,22 +32,31 @@ class TimeDisplayAddOrReplaceMessageFormatter(Formatter):
 
         return profile
 
+
 class TimeSoundTextFormatter(Formatter):
     """
     Current time data to TextToSpeechProfile
     """
-    def __init__(self):
-        Formatter.__init__(self, u'system.time.now', TextToSpeechProfile())
-
-    def format(self, event_values):
+    def __init__(self, events_factory):
         """
-        Format event to profile
+        Constructor
+
+        Args:
+            events_factory (EventsFactory): events factory instance
+        """
+        Formatter.__init__(self, events_factory, u'system.time.now', TextToSpeechProfile())
+
+    def _fill_profile(self, event_values, profile):
+        """
+        Fill profile with event data
+
+        Args:
+            event_values (dict): event values
+            profile (Profile): profile instance
 
         Note:
             http://www.anglaisfacile.com/exercices/exercice-anglais-2/exercice-anglais-3196.php
         """
-        profile = TextToSpeechProfile()
-
         if event_values[u'hour']==0 and event_values[u'minute']==0:
             profile.text = u'It\'s midnight'
         if event_values[u'hour']==12 and event_values[u'minute']==0:
@@ -67,30 +81,49 @@ class SunsetSoundTextFormatter(Formatter):
     """
     Sunset data to TextToSpeechProfile
     """
-    def __init__(self):
-        Formatter.__init__(self, u'system.time.sunset', TextToSpeechProfile())
+    def __init__(self, events_factory):
+        """
+        Constructor
 
-    def format(self, event_values):
+        Args:
+            events_factory (EventsFactory): events factory instance
         """
-        Format event to profile
+        Formatter.__init__(self, events_factory, u'system.time.sunset', TextToSpeechProfile())
+
+    def _fill_profile(self, event_values, profile):
         """
-        profile = TextToSpeechProfile()
+        Fill profile with event data
+
+        Args:
+            event_values (dict): event values
+            profile (Profile): profile instance
+        """
         profile.text = u'It\'s sunset!'
 
         return profile
+
 
 class SunriseSoundTextFormatter(Formatter):
     """
     Sunrise data to TextToSpeechProfile
     """
-    def __init__(self):
-        Formatter.__init__(self, u'system.time.sunrise', TextToSpeechProfile())
+    def __init__(self, events_factory):
+        """
+        Contructor
 
-    def format(self, event_values):
+        Args:
+            events_factory (EventsFactory): events factory instance
         """
-        Format event to profile
+        Formatter.__init__(self, events_factory, u'system.time.sunrise', TextToSpeechProfile())
+
+    def _fill_profile(self, event_values, profile):
         """
-        profile = TextToSpeechProfile()
+        Fill profile with event data
+
+        Args:
+            event_values (dict): event values
+            profile (Profile): profile instance
+        """
         profile.text = u'It\'s sunrise!'
 
         return profile
