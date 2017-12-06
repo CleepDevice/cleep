@@ -112,8 +112,13 @@ class Freemobilesms(RaspIotRenderer):
         error = None
         try:
             #launch request
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            try:
+                #try with ssl context
+                context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+                req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            finally:
+                #fallback with no ssl context to be compatible with old python version (2.7.3)
+                req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params))
             res = req.read()
             status = req.getcode()
             self.logger.debug(u'Test response: %s [%s]' % (res, status))
@@ -153,8 +158,13 @@ class Freemobilesms(RaspIotRenderer):
         error = False
         try:
             #launch request
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            try:
+                #try with ssl context
+                context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+                req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params), context=context)
+            finally:
+                #fallback with no ssl context to be compatible with old python version (2.7.3)
+                req = urllib2.urlopen(u'%s?%s' % (self.FREEMOBILESMS_API_URL, params))
             res = req.read()
             status = req.getcode()
             self.logger.debug(u'Send sms response: %s [%s]' % (res, status))
