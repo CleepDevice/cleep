@@ -29,9 +29,6 @@ class EventsFactory():
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
-        #self.renderer_profiles = {}
-        #self.renderers = {}
-        #self.formatters = {}
         self.bus = None
         self.formatters_factory = None
 
@@ -45,7 +42,6 @@ class EventsFactory():
         self.bus = bootstrap[u'message_bus']
         self.formatters_factory = bootstrap[u'formatters_factory']
         self.__load_events()
-        #self.__load_formatters()
 
     def __load_events(self):
         """
@@ -65,7 +61,7 @@ class EventsFactory():
                 #save event
                 self.logger.debug('Init %s' % event)
                 self.events_by_event[class_.EVENT_NAME] = {
-                    u'instance': class_(self.bus, self.formatters_factory),
+                    u'instance': class_,
                     u'used': False,
                     u'modules': []
                 }
@@ -90,7 +86,6 @@ class EventsFactory():
             stack = inspect.stack()
             caller = stack[1][0].f_locals["self"].__class__.__name__
             self.logger.debug('===> %s' % caller)
-            #module = caller.split('.')[2]
             module = caller.lower()
             self.logger.debug('Module %s registers event %s' % (module, event_name))
 
@@ -103,7 +98,7 @@ class EventsFactory():
                 self.events_by_module[module] = []
             self.events_by_module[module].append(event_name)
 
-            return self.events_by_event[event_name][u'instance']
+            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory)
 
         raise Exception(u'Event %s does not exist' % event_name)
 
