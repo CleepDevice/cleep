@@ -41,7 +41,7 @@ class Smtp(RaspIotRenderer):
         u'email_sender': u''
     }
 
-    RENDERER_PROFILES = [EmailProfile()]
+    RENDERER_PROFILES = [EmailProfile]
     RENDERER_TYPE = u'alert.email'
 
     def __init__(self, bootstrap, debug_enabled):

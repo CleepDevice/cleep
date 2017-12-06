@@ -109,7 +109,7 @@ class Inventory(RaspIotModule):
             except:
                 self.logger.exception('Unable to get commands of module "%s":' % module)
 
-            #fill install modules devices
+            #fill installed modules devices
             try:
                 devices = self.installed_modules[self.installed_modules_names[module]].get_module_devices()
                 for uuid in devices:
@@ -125,7 +125,7 @@ class Inventory(RaspIotModule):
             if issubclass(self.installed_modules[self.installed_modules_names[module]].__class__, RaspIotRenderer):
                 try:
                     renderers = self.installed_modules[self.installed_modules_names[module]].get_module_renderers()
-                    self.formatters_factory.register_renderer(renderers[u'type'], renderers[u'profiles'], module)
+                    self.formatters_factory.register_renderer(module, renderers[u'type'], renderers[u'profiles'])
                 except:
                     self.logger.exception('Unable to get renderers of module "%s"' % module)
 

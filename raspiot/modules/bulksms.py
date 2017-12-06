@@ -33,7 +33,7 @@ class Bulksms(RaspIotRenderer):
         u'credits': 0
     }
 
-    RENDERER_PROFILES = [SmsProfile()]
+    RENDERER_PROFILES = [SmsProfile]
     RENDERER_TYPE = u'alert.sms'
 
     BULKSMS_API_URL = u'https://bulksms.vsms.net/eapi/submission/send_sms/2/2.0'

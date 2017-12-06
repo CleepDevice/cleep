@@ -33,7 +33,7 @@ class Freemobilesms(RaspIotRenderer):
         u'apikey': None
     }
 
-    RENDERER_PROFILES = [SmsProfile()]
+    RENDERER_PROFILES = [SmsProfile]
     RENDERER_TYPE = u'alert.sms'
 
     FREEMOBILESMS_API_URL = u'https://smsapi.free-mobile.fr/sendmsg'

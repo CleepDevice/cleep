@@ -84,15 +84,14 @@ class FormattersFactory():
 
         self.logger.debug(u'FORMATTERS: %s' % self.formatters) 
 
-    def register_renderer(self, type, profiles, command_sender):
+    def register_renderer(self, module_name, type, profiles):
         """ 
         Register new renderer
 
         Args:
+            module_name (string): name of renderer (module name)
             type (string): renderer type (ie: alert for sms/push/email renderer)
-            profiles (list of data): used to describe renderer capabilities (ie: screen can have 1 or 2 lines,
-                renderer must adapts posted data according to this capabilities)
-            command_sender (string): value automatically added by raspiot
+            profiles (list): profiles supported by renderer
 
         Returns:
             bool: True
@@ -112,14 +111,14 @@ class FormattersFactory():
         #update renderers list
         if not self.renderers.has_key(type):
             self.renderers[type] = []
-        self.renderers[type].append(command_sender)
+        self.renderers[type].append(module_name)
 
         #update renderer profiles list
         for profile in profiles:
-            profile_name = profile.__class__.__name__
-            if not self.renderer_profiles.has_key(command_sender):
-                self.renderer_profiles[command_sender] = []
-            self.renderer_profiles[command_sender].append(profile_name)
+            profile_name = profile.__name__
+            if not self.renderer_profiles.has_key(module_name):
+                self.renderer_profiles[module_name] = []
+            self.renderer_profiles[module_name].append(profile_name)
 
         self.logger.debug(u'RENDERERS: %s' % self.renderers)
         self.logger.debug(u'RENDERERS PROFILES: %s' % self.renderer_profiles)

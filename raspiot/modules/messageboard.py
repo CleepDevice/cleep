@@ -67,7 +67,7 @@ class Messageboard(RaspIotRenderer):
     MODULE_COUNTRY = None
     MODULE_LINK = None
 
-    RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile(), DisplayAddOrReplaceMessageProfile()]
+    RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile]
     RENDERER_TYPE = u'display'
 
     SPEED_SLOW = u'slow'

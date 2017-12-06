@@ -592,7 +592,7 @@ class RaspIotRenderer(RaspIotModule):
 
         #cache profile types as string
         for profile in self.RENDERER_PROFILES:
-            self.profiles_types.append(profile.__class__.__name__)
+            self.profiles_types.append(profile.__name__)
 
         return {
             u'type':self.RENDERER_TYPE,

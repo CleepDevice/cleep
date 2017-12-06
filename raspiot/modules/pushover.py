@@ -32,7 +32,7 @@ class Pushover(RaspIotRenderer):
     }
     PUSHOVER_API_URL = u'api.pushover.net:443'
 
-    RENDERER_PROFILES = [PushProfile()]
+    RENDERER_PROFILES = [PushProfile]
     RENDERER_TYPE = u'alert.push'
 
     def __init__(self, bootstrap, debug_enabled):
