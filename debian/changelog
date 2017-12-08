@@ -1,3 +1,11 @@
+raspiot (0.0.10) UNRELEASED; urgency=low
+
+  * Improve renderers: add way to tweak handled events
+  * Add developper module
+  * Bugs fix and improvments (modules)
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Fri, 08 Dec 2017 23:00:00 +0000
+
 raspiot (0.0.9) UNRELEASED; urgency=low
 
   * Implement external bus for communication between all cleep devices. It
