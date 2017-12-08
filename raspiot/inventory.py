@@ -275,9 +275,9 @@ class Inventory(RaspIotModule):
         Return renderers from events factory
 
         Returns:
-            list: list of renderers by type::
+            list: list of renderers with their handled profiles
         """
-        return self.formatters_factory.get_renderers()
+        return self.formatters_factory.get_renderers_profiles()
 
     def get_modules_events(self):
         """

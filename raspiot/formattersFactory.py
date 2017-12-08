@@ -125,6 +125,15 @@ class FormattersFactory():
      
         return True
 
+    def get_renderers_profiles(self):
+        """
+        Return list of profiles handled by renderers
+
+        Return:
+            list: list of profile handled by renderers
+        """
+        return self.renderer_profiles
+
     def get_renderers(self):
         """
         Returns list of renderers

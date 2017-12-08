@@ -66,7 +66,8 @@ class EventsFactory():
                     u'instance': class_,
                     u'used': False,
                     u'modules': [],
-                    u'formatters': []
+                    u'formatters': [],
+                    u'profiles': []
                 }
 
         self.logger.debug('Found %d events' % len(self.events_by_event))
@@ -106,6 +107,7 @@ class EventsFactory():
                 self.events_by_event[event_name][u'modules'].append(module)
             if formatter:
                 self.events_by_event[event_name][u'formatters'].append(formatter)
+                self.events_by_event[event_name][u'profiles'].append(caller.profile.__class__.__name__)
 
             #update events by module dict
             if module:
@@ -114,10 +116,10 @@ class EventsFactory():
                 self.events_by_module[module].append(event_name)
 
             #update events by formatter dict
-            if formatter:
-                if formatter not in self.events_by_formatter:
-                    self.events_by_formatter[formatter] = []
-                self.events_by_formatter[formatter].append(event_name)
+            #if formatter:
+            #    if formatter not in self.events_by_formatter:
+            #        self.events_by_formatter[formatter] = []
+            #    self.events_by_formatter[formatter].append(event_name)
 
             return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory)
 
@@ -143,7 +145,7 @@ class EventsFactory():
             if self.events_by_event[ev][u'used']:
                 used_events[ev] = {
                     u'modules': self.events_by_event[ev][u'modules'],
-                    u'formatters': self.events_by_event[ev][u'formatters']
+                    u'profiles': self.events_by_event[ev][u'profiles']
                 }
 
         return used_events

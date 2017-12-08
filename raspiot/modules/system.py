@@ -92,6 +92,7 @@ class System(RaspIotModule):
         self.systemMonitoringMemory = self._get_event(u'system.monitoring.memory')
         self.systemAlertMemory = self._get_event(u'system.alert.memory')
         self.systemAlertDisk = self._get_event(u'system.alert.disk')
+        self.alertEmailSend = self._get_event(u'alert.email.send')
 
     def _configure(self):
         """
