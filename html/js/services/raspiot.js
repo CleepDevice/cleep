@@ -6,16 +6,13 @@
  */
 var raspiotService = function($rootScope, $q, toast, rpcService, objectsService) {
     var self = this;
-    //initialized
-    self.__deferred = $q.defer();
-    //list of devices
+    self.__deferred_modules = $q.defer();
+    self.__deferred_events = $q.defer();
+    self.__deferred_renderers = $q.defer();
     self.devices = [];
-    //list of installed modules
     self.modules = {};
-    //list of renderers
     self.renderers = {};
-    //list of events
-    self.events = [];
+    self.events = {};
 
     /**
      * Set module icon (material icons)
@@ -69,8 +66,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
         }
 
         //resolve deferred
-        self.__deferred.resolve();
-        self.__deferred = null;
+        self.__deferred_modules.resolve();
+        self.__deferred_modules = null;
     };
 
     /**
@@ -82,8 +79,9 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     {
         var deferred = $q.defer();
 
-        if( self.__deferred===null )
+        if( self.__deferred_modules===null )
         {
+            //module config already loaded, resolve it if available
             if( self.modules[module] )
             {
                 deferred.resolve(self.modules[module].config);
@@ -97,7 +95,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
         else
         {
             //module not loaded, wait for it
-            self.__deferred.promise
+            self.__deferred_modules.promise
                 .then(function() {
                     deferred.resolve(self.modules[module].config);
                 }, function() {
@@ -225,6 +223,35 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self._setRenderers = function(renderers)
     {
         self.renderers = renderers;
+        self.__deferred_renderers.resolve();
+        self.__deferred_renderers = null;
+    };
+
+    /**
+     * Get renderers
+     * @return promise
+     */
+    self.getRenderers = function()
+    {
+        var deferred = $q.defer();
+
+        if( self.__deferred_renderers===null )
+        {
+            //renderers already loaded, return collection
+            deferred.resolve(self.renderers);
+        }
+        else
+        {
+            self.__deferred_renderers.promise
+                .then(function() {
+                    console.log('resolve renderers');
+                    deferred.resolve(self.renderers);
+                }, function() {
+                    deferred.reject();
+                });
+        }
+
+        return deferred.promise;
     };
 
     /**
@@ -234,26 +261,35 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self._setEvents = function(events)
     {
         self.events = events;
+        self.__deferred_events.resolve();
+        self.__deferred_events = null;
     };
 
     /**
-     * Load config
+     * Get events
+     * @return promise
      */
-    self.loadConfig = function()
+    self.getEvents = function()
     {
-        var d = $q.defer();
+        var deferred = $q.defer();
 
-        rpcService.getConfig()
-            .then(function(config) {
-                self.renderers = config.renderers;
-                self.events = config.events;
-                self.devices = config.devices;
-                self.modules = config.modules;
+        if( self.__deferred_events===null )
+        {
+            //events already loaded, return collection
+            deferred.resolve(self.events);
+        }
+        else
+        {
+            self.__deferred_events.promise
+                .then(function() {
+                    console.log('resolve events');
+                    deferred.resolve(self.events);
+                }, function() {
+                    deferred.reject();
+                });
+        }
 
-                d.resolve(config);
-            });
-
-        return d.promise;
+        return deferred.promise;
     };
 
     /**
@@ -276,7 +312,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     /**
      * Returns renderers of specified type
      */
-    self.getRenderers = function(type)
+    self.getRenderersOfType = function(type)
     {
         if( self.renderers[type] )
         {
@@ -290,7 +326,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
      * Get modules debug
      */
     self.getModulesDebug = function() {
-        return rpcService.sendCommand('get_modules_debug', 'inventory');
+        return rpcService.sendCommand('get_modules_debug', 'inventory', null, 20);
     }; 
 
 };
