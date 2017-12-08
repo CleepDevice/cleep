@@ -2,7 +2,7 @@
  * System config directive
  * Handle system configuration
  */
-var systemConfigDirective = function($filter, $timeout, toast, systemService, raspiotService, confirm) {
+var systemConfigDirective = function($filter, $timeout, $q, toast, systemService, raspiotService, confirm) {
 
     var systemController = ['$scope', function($scope)
     {
@@ -26,6 +26,11 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
             }
         };
         self.debugs = {};
+        self.renderers = [];
+
+        /*************
+         * General tab
+         *************/
 
         /**
          * Set city
@@ -45,6 +50,23 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 });
         };
 
+        /**
+         * Set hostname
+         */
+        self.setHostname = function()
+        {
+            systemService.setHostname(self.hostname)
+                .then(function(resp) {
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function() {
+                    toast.success('Device name saved');
+                });
+        };
+
+        /**************
+         * Advanced tab
+         **************/
         /**
          * Save monitoring
          */
@@ -100,6 +122,22 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
                 });
         };
 
+        
+        /***********
+         * Renderers
+         ***********/
+
+        self.enableEvent = function() {
+
+        };
+
+        self.disableEvent = function() {
+        };
+
+        /******************
+         * Troubleshoot tab
+         ******************/
+
         /**
          * Download logs
          */
@@ -135,17 +173,38 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
         };
 
         /**
-         * Set hostname
+         * Init useable renderers list
+         * @param events: list of events
+         * @param renderers: list of renderers
          */
-        self.setHostname = function()
+        self._initRenderers = function(events, renderers)
         {
-            systemService.setHostname(self.hostname)
-                .then(function(resp) {
-                    return raspiotService.reloadModuleConfig('system');
-                })
-                .then(function() {
-                    toast.success('Device name saved');
-                });
+            //prepare renderers list
+            //for each renderer search handled events via profile matching
+            for( var renderer in renderers )
+            {
+                for( i=0; i<renderers[renderer].length; i++ )
+                {
+                    var renderer_profile = renderers[renderer][i];
+                    for( var event in events )
+                    {
+                        for( var j=0; j<events[event]['profiles'].length; j++ )
+                        {
+                            var event_profile = events[event]['profiles'][j];
+                            if( event_profile===renderer_profile )
+                            {
+                                //match found
+                                self.renderers.push({
+                                    'renderer': renderer,
+                                    'event': event,
+                                    'enabled': false
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         };
 
         /**
@@ -153,6 +212,15 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
          */
         self.init = function()
         {
+            //init
+            $q.all([raspiotService.getEvents(), raspiotService.getRenderers()])
+                .then(function(resps) {
+                    self._initRenderers(resps[0], resps[1]);
+                }, 
+                function(error) {
+                });
+
+            //get system config
             raspiotService.getModuleConfig('system')
                 .then(function(config) {
                     //save data
@@ -188,5 +256,5 @@ var systemConfigDirective = function($filter, $timeout, toast, systemService, ra
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', 'toastService', 'systemService', 'raspiotService', 'confirmService', systemConfigDirective]);
+RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', '$q', 'toastService', 'systemService', 'raspiotService', 'confirmService', systemConfigDirective]);
 

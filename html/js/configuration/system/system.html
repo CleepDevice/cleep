@@ -58,19 +58,45 @@
 
     </div>
 
-    <!-- advanced -->
-    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced'">
 
-        <!-- monitoring -->
-        <div class="md-title">
-            Monitoring
-        </div>
-        <md-input-container class="md-block" flex-gt-sm>
-            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Enable monitoring">
-                Enable monitoring allows you to follow cpu and memory consumption. It is reserved for advanced user.
-            </md-checkbox>
-        </md-input-container>
-        <md-divider></md-divider>
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced'">
+        <md-list ng-cloak>
+
+            <!-- system action -->
+            <md-subheader class="md-no-sticky">Actions</md-subheader>
+            <md-list-item ng-click="systemCtl.restart()">
+                <p>Restart application</p>
+                <md-button class="md-secondary md-primary" ng-click="systemCtl.restart()">Restart</md-button>
+            </md-list-item>
+            <md-list-item ng-click="systemCtl.reboot()">
+                <p>Reboot device</p>
+                <md-button class="md-secondary md-warn" ng-click="systemCtl.reboot()">Reboot</md-button>
+            </md-list-item>
+            <md-list-item ng-click="systemCtl.halt()">
+                <p>Halt device</p>
+                <md-button class="md-secondary md-warn" ng-click="systemCtl.halt()">Halt</md-button>
+            </md-list-item>
+            <md-divider></md-divider>
+
+            <!-- monitoring -->
+            <md-subheader class="md-no-sticky">Monitoring</md-subheader>
+            <md-list-item ng-click="systemCtl.setMonitoring()">
+                <p>Enable monitoring allows you to follow cpu and memory consumption of device.</p>
+                <md-checkbox class="md-secondary" ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Monitoring option"></md-checkbox>
+            </md-list-item>
+            <md-divider></md-divider>
+
+            <!-- renderers -->
+            <md-subheader class="md-no-sticky">Renderers</md-subheader>
+            <md-list-item>
+                <p>By default supported events are handled and rendered by installed modules. Options below give you a way to tweak this events rendering</p>
+            </md-list-item>
+
+        </md-list>
+    </div>
+
+    <!-- advanced -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced2'">
 
         <!-- system action -->
         <div class="md-title">
@@ -88,6 +114,24 @@
                 Halt system properly
             </md-button>
         </div>
+        <md-divider></md-divider>
+
+        <!-- monitoring -->
+        <div class="md-title">
+            Monitoring
+        </div>
+        <md-input-container class="md-block" flex-gt-sm>
+            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Enable monitoring">
+                Enable monitoring allows you to follow cpu and memory consumption.
+            </md-checkbox>
+        </md-input-container>
+        <md-divider></md-divider>
+
+        <!-- renderers -->
+        <div class="md-title">
+            Renderers
+        </div>
+
    
     </div>
 
