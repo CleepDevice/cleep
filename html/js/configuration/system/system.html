@@ -4,6 +4,7 @@
     <md-nav-bar md-selected-nav-item="systemCtl.tabIndex" nav-bar-aria-label="System tabs">
         <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
         <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
+        <md-nav-item md-nav-click="goto('renderings')" name="renderings">Renderings</md-nav-item>
         <md-nav-item md-nav-click="goto('troubleshoot')" name="troubleshoot">Troubleshoot</md-nav-item>
     </md-nav-bar>
 
@@ -11,13 +12,13 @@
     <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='general'">
 
         <!-- city + sunset/sunrise -->
-        <div class="md-title">
-            Sunset/sunrise configuration
-        </div>
-        <div layout-xs="column" layout="row">
-            <div layout-padding>
-                System needs to know your approximative position to compute sunrise and sunset hours
-            </div>
+        <md-list ng-cloak>
+            <md-subheader class="md-no-sticky">Sunset/sunrise</md-subheader>
+            <md-list-item>
+                <p>System needs to know your approximative position to compute sunrise and sunset hours.</p>
+            </md-list-item>
+        </md-list-item>
+        <div layout="row" style="padding: 0 16px;">
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Biggest city closed to your position</label>
                 <input type="text" ng-model="systemCtl.city"></input>
@@ -27,38 +28,50 @@
                 <input type="text" ng-model="systemCtl.country"></input>
             </md-input-container>
             <div>
-                <md-button class="md-raised md-primary" ng-click="systemCtl.setCity()" aria-label="Set city">Set city</md-button>
+                <md-button class="md-raised md-primary" ng-click="systemCtl.setCity()" aria-label="Set city">Set position</md-button>
             </div>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Computed sunrise</label>
-                <input type="text" ng-model="systemCtl.sunrise" disabled></input>
-            </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Computed sunset</label>
-                <input type="text" ng-model="systemCtl.sunset" disabled></input>
-            </md-input-container>
         </div>
 
-        <!-- hostname -->
-        <div class="md-title">
-            Device name
-        </div>
-        <div layout-xs="column" layout="row">
-            <div layout-padding>
-                <span>Set this device name to identify it easily</span>
-            </div>
+        <!-- device name -->
+        <md-list ng-cloak>
+            <md-divider></md-divider>
+            <md-subheader class="md-no-sticky">Device name</md-subheader>
+            <md-list-item>
+                <p>Set device name to identify it easily on your network</p>
+            </md-list-item>
+        </md-list-item>
+        <div layout="row" style="padding: 0 16px;">
             <md-input-container class="md-block" flex-gt-sm>
-                <label>Name</label>
+                <label>Device name</label>
                 <input type="text" ng-model="systemCtl.hostname"></input>
             </md-input-container>
             <div>
                 <md-button class="md-raised md-primary" ng-click="systemCtl.setHostname()" aria-label="Set device name">Set device name</md-button>
             </div>
         </div>
-
+        
     </div>
 
+    <!-- renderings -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='renderings'">
+        <md-list ng-cloak>
 
+            <md-list-item>
+                <p>Some installed modules have capability to render several events: messageboard is capable of rendering time events (displaying it) or smtp module is capable of rendering email event (sending an email)...</p>
+            </md-list-item>
+            <md-list-item>
+                <p>Options below give you a way to disable those events handled by modules:</p>
+            </md-list-item>
+            <md-list-item ng-repeat="rendering in systemCtl.renderings" ng-click="systemCtl.updateRendering(rendering,false)">
+                <md-icon md-font-set="material-icons">label_outline</md-icon>
+                <p>Disable <b>{{rendering.event}}</b> handled by <b>{{rendering.renderer}}</b> module</p>
+                <md-checkbox class="md-secondary" ng-model="rendering.disabled" ng-click="systemCtl.updateRendering(rendering,true)" aria-label="Rendering"></md-checkbox>
+            </md-list-item>
+
+        </md-list>
+    </div>
+
+    <!-- advanced -->
     <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced'">
         <md-list ng-cloak>
 
@@ -80,59 +93,12 @@
 
             <!-- monitoring -->
             <md-subheader class="md-no-sticky">Monitoring</md-subheader>
-            <md-list-item ng-click="systemCtl.setMonitoring()">
+            <md-list-item ng-click="systemCtl.updateMonitoring(false)">
                 <p>Enable monitoring allows you to follow cpu and memory consumption of device.</p>
-                <md-checkbox class="md-secondary" ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Monitoring option"></md-checkbox>
-            </md-list-item>
-            <md-divider></md-divider>
-
-            <!-- renderers -->
-            <md-subheader class="md-no-sticky">Renderers</md-subheader>
-            <md-list-item>
-                <p>By default supported events are handled and rendered by installed modules. Options below give you a way to tweak this events rendering</p>
+                <md-checkbox class="md-secondary" ng-model="systemCtl.monitoring" ng-click="systemCtl.updateMonitoring(true)" aria-label="Monitoring option"></md-checkbox>
             </md-list-item>
 
         </md-list>
-    </div>
-
-    <!-- advanced -->
-    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='advanced2'">
-
-        <!-- system action -->
-        <div class="md-title">
-            Actions
-        </div>
-        <div layout="row" flex-gt-sm>
-            <md-button ng-click="systemCtl.restart()" class="md-raised md-accent" aria-label="Reboot system">
-                Restart RaspIot
-            </md-button>
-            <div flex></div>
-            <md-button ng-click="systemCtl.reboot()" class="md-raised md-accent" aria-label="Reboot system">
-                Reboot system
-            </md-button>
-            <md-button ng-click="systemCtl.halt()" class="md-raised md-accent" aria-label="Halt system properly">
-                Halt system properly
-            </md-button>
-        </div>
-        <md-divider></md-divider>
-
-        <!-- monitoring -->
-        <div class="md-title">
-            Monitoring
-        </div>
-        <md-input-container class="md-block" flex-gt-sm>
-            <md-checkbox ng-model="systemCtl.monitoring" ng-click="systemCtl.setMonitoring()" aria-label="Enable monitoring">
-                Enable monitoring allows you to follow cpu and memory consumption.
-            </md-checkbox>
-        </md-input-container>
-        <md-divider></md-divider>
-
-        <!-- renderers -->
-        <div class="md-title">
-            Renderers
-        </div>
-
-   
     </div>
 
     <!-- troubleshoot -->

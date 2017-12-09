@@ -45,7 +45,8 @@ class System(RaspIotModule):
         u'device_uuid': str(uuid.uuid4()),
         u'ssl': False,
         u'auth': False,
-        u'rpc_port': 80
+        u'rpc_port': 80,
+        u'eventsnotrendered': []
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -350,6 +351,7 @@ class System(RaspIotModule):
         config[u'needrestart'] = self.__need_restart
         config[u'needreboot'] = self.__need_reboot
         config[u'hostname'] = self.get_hostname()
+        config[u'eventsnotrendered'] = self.get_events_not_rendered()
 
         return config
 
@@ -1008,6 +1010,54 @@ class System(RaspIotModule):
         """
         return self.hostname.get_hostname()
 
+    def set_event_not_rendered(self, renderer, event, disabled):
+        """
+        Set event not rendered
 
+        Args:
+            renderer (string): renderer name
+            event (string): event name
+            value (bool): enable/disable value
 
+        Return:
+            list: list of events not rendered
+        """
+        if renderer is None or len(renderer)==0:
+            raise MissingParameter(u'Renderer parameter is missing')
+        if event is None or len(event)==0:
+            raise MissingParameter(u'Event parameter is missing')
+        if disabled is None:
+            raise MissingParameter(u'Disabled parameter is missing')
+        if not isinstance(disabled, bool):
+            raise InvalidParameter(u'Disabled parameter is invalid, must be bool')
+
+        config = self._get_config()
+        key = '%s__%s' % (renderer, event)
+        if key in config[u'eventsnotrendered'] and not disabled:
+            #enable renderer event
+            config[u'eventsnotrendered'].remove(key)
+        else:
+            #disable renderer event
+            config[u'eventsnotrendered'].append(key)
+        if self._save_config(config) is None:
+            raise CommandError(u'Unable to save configuration')
+
+        return self.get_events_not_rendered()
+
+    def get_events_not_rendered(self):
+        """
+        Return list of not rendered events
+        """
+        config = self._get_config()
+
+        #split items to get renderer and event splitted
+        events_not_rendered = []
+        for item in config[u'eventsnotrendered']:
+            (renderer, event) = item.split(u'__')
+            events_not_rendered.append({
+                u'renderer': renderer,
+                u'event': event
+            })
+
+        return events_not_rendered
 

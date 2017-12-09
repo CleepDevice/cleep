@@ -128,6 +128,17 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set event not rendered
+     */
+    self.setEventNotRendered = function(renderer, event, disabled) {
+        return rpcService.sendCommand('set_event_not_rendered', 'system', {'renderer':renderer, 'event':event, 'disabled':disabled})
+            .then(function(resp) {
+                //overwrite system event_not_rendered config value
+                raspiotService.modules.system.config.eventsnotrendered = resp.data;
+            });
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {

@@ -26,7 +26,8 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             }
         };
         self.debugs = {};
-        self.renderers = [];
+        self.renderings = [];
+        self.eventsNotRendered = [];
 
         /*************
          * General tab
@@ -70,7 +71,13 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         /**
          * Save monitoring
          */
-        self.setMonitoring = function() {
+        self.updateMonitoring = function(fromCheckbox) {
+            if( !fromCheckbox )
+            {
+                //row clicked, we need to update flag
+                self.monitoring = !self.monitoring;
+            }
+
             //delay update to make sure model value is updated
             $timeout(function() {
                 systemService.setMonitoring(self.monitoring)
@@ -123,15 +130,24 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         };
 
         
-        /***********
-         * Renderers
-         ***********/
+        /************
+         * Renderings
+         ************/
 
-        self.enableEvent = function() {
+        self.updateRendering = function(rendering, fromCheckbox) {
+            if( !fromCheckbox )
+            {
+                //row clicked, we need to update flag
+                rendering.disabled = !rendering.disabled;
+            }
 
-        };
-
-        self.disableEvent = function() {
+            //update events not rendered status
+            $timeout(function() {
+                systemService.setEventNotRendered(rendering.renderer, rendering.event, rendering.disabled)
+                    .then(function(resp) {
+                        return raspiotService.reloadModuleConfig('system');
+                    });
+            }, 250);
         };
 
         /******************
@@ -172,14 +188,36 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             systemService.setModuleDebug(module, self.debugs[module].debug);
         };
 
+
+
         /**
-         * Init useable renderers list
+         * Is event not rendered ?
+         * @param renderer: renderer name
+         * @param event: event name
+         * @return: true if event is not rendered, false otherwise
+         */
+        self._isEventNotRendered = function(renderer, event)
+        {
+            for( var i=0; i<self.eventsNotRendered.length; i++ )
+            {
+                if( self.eventsNotRendered[i].renderer===renderer && self.eventsNotRendered[i].event===event )
+                {
+                    //found
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        /**
+         * Init useable renderings list
          * @param events: list of events
          * @param renderers: list of renderers
          */
-        self._initRenderers = function(events, renderers)
+        self._initRenderings = function(events, renderers)
         {
-            //prepare renderers list
+            //prepare renderings list
             //for each renderer search handled events via profile matching
             for( var renderer in renderers )
             {
@@ -193,11 +231,11 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                             var event_profile = events[event]['profiles'][j];
                             if( event_profile===renderer_profile )
                             {
-                                //match found
-                                self.renderers.push({
+                                //match found, save new entry
+                                self.renderings.push({
                                     'renderer': renderer,
                                     'event': event,
-                                    'enabled': false
+                                    'disabled': self._isEventNotRendered(renderer, event)
                                 });
                                 break;
                             }
@@ -215,7 +253,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             //init
             $q.all([raspiotService.getEvents(), raspiotService.getRenderers()])
                 .then(function(resps) {
-                    self._initRenderers(resps[0], resps[1]);
+                    self._initRenderings(resps[0], resps[1]);
                 }, 
                 function(error) {
                 });
@@ -230,6 +268,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                     self.sunrise = $filter('hrTime')(config.sun.sunrise);
                     self.monitoring = config.monitoring;
                     self.hostname = config.hostname;
+                    self.eventsNotRendered = config.eventsnotrendered;
 
                     //request for modules debug status
                     return raspiotService.getModulesDebug();
