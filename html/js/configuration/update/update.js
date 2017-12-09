@@ -16,12 +16,12 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         self.status = 0;
 
         /**
-         * Check for update
+         * Check for updates
          */
-        self.checkUpdate = function() {
+        self.checkUpdates = function() {
             toast.loading('Checking update...');
             var message = '';
-            updateService.checkUpdate()
+            updateService.checkUpdates()
                 .then(function(resp) {
                     if( resp.data===false )
                     {

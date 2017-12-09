@@ -22,10 +22,10 @@ var updateService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
-     * Check for available update
+     * Check for available updates
      */
-    self.checkUpdate = function() {
-        return rpcService.sendCommand('check_update', 'update');
+    self.checkUpdates = function() {
+        return rpcService.sendCommand('check_updates', 'update');
     };
 
     /**
