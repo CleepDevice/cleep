@@ -266,3 +266,10 @@ md-toast.info .md-toast-content {
     height: 68px !important;
 }
 
+/********* modules card **********/
+.module-desc {
+    height: 50px;
+    text-overflow: ellipsis;
+    /*white-space: nowrap; <- induce all description on single line*/
+    overflow: hidden;
+}
