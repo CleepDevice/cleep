@@ -28,9 +28,9 @@ class System(RaspIotModule):
 
     MODULE_CONFIG_FILE = u'system.conf'
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Monitor your raspberry easily'
+    MODULE_DESCRIPTION = u'Device system configuration'
     MODULE_LOCKED = True
-    MODULE_TAGS = [u'system', u'troubleshoot', u'locale']
+    MODULE_TAGS = [u'system', u'troubleshoot', u'locale', u'hostname']
     MODULE_COUNTRY = u''
     MODULE_LINK = None
 
