@@ -11,15 +11,16 @@ class Systemmonitoringcpu(Event):
     EVENT_NAME = u'system.monitoring.cpu'
     EVENT_SYSTEM = True
 
-    def __init__(self, bus, events_factory):
+    def __init__(self, bus, formatters_factory, events_factory):
         """ 
         Constructor
 
         Args:
             bus (MessageBus): message bus instance
+            formatters_factory (FormattersFactory): formatters factory instance
             events_factory (EventsFactory): events factory instance
         """
-        Event.__init__(self, bus, events_factory)
+        Event.__init__(self, bus, formatters_factory, events_factory)
 
     def _check_params(self, params):
         """

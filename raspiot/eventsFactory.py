@@ -33,6 +33,7 @@ class EventsFactory():
             self.logger.setLevel(logging.DEBUG)
         self.bus = None
         self.formatters_factory = None
+        self.events_not_rendered = []
 
     def configure(self, bootstrap):
         """
@@ -89,7 +90,6 @@ class EventsFactory():
             #get module caller
             stack = inspect.stack()
             caller = stack[1][0].f_locals["self"]
-            self.logger.debug('===> %s' % caller.__class__.__name__)
             module = None
             formatter = None
             if issubclass(caller.__class__, Formatter):
@@ -115,13 +115,7 @@ class EventsFactory():
                     self.events_by_module[module] = []
                 self.events_by_module[module].append(event_name)
 
-            #update events by formatter dict
-            #if formatter:
-            #    if formatter not in self.events_by_formatter:
-            #        self.events_by_formatter[formatter] = []
-            #    self.events_by_formatter[formatter].append(event_name)
-
-            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory)
+            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory, self)
 
         raise Exception(u'Event %s does not exist' % event_name)
 
@@ -163,4 +157,27 @@ class EventsFactory():
                 }
         """
         return self.events_by_module
+
+    def update_events_not_rendered(self, events_not_rendered):
+        """
+        Update events to not render
+
+        Args:
+            events_not_rendered (list): list of events to not render (see system module)
+        """
+        self.events_not_rendered = events_not_rendered
+
+    def can_render_event(self, event, renderer):
+        """
+        Return True if event can be rendered on specified renderer
+
+        Return:
+            bool: True if event can be rendered, False otherwise
+        """
+        for item in self.events_not_rendered:
+            if item[u'event']==event and item[u'rendered']==renderer:
+                return False
+
+        return True
+
 

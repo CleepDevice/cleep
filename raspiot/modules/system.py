@@ -68,6 +68,7 @@ class System(RaspIotModule):
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
+        self.events_factory = bootstrap[u'events_factory']
         self.time_task = None
         self.sunset = None
         self.sunrise = None
@@ -1010,6 +1011,12 @@ class System(RaspIotModule):
         """
         return self.hostname.get_hostname()
 
+    def __update_events_not_rendered_in_factory(self):
+        """
+        Update events factory with list of events to not render
+        """
+        self.events_factory.update_events_not_rendered(self.get_events_not_rendered())
+
     def set_event_not_rendered(self, renderer, event, disabled):
         """
         Set event not rendered
@@ -1042,11 +1049,24 @@ class System(RaspIotModule):
         if self._save_config(config) is None:
             raise CommandError(u'Unable to save configuration')
 
+        #configure events factory with new events to not render
+        self.__update_events_not_rendered_in_factory()
+
         return self.get_events_not_rendered()
 
     def get_events_not_rendered(self):
         """
         Return list of not rendered events
+
+        Return:
+            list: list of events to not render::
+                [
+                    {
+                        event (string): event name,
+                        renderer (string): renderer name
+                    },
+                    ...
+                ]
         """
         config = self._get_config()
 

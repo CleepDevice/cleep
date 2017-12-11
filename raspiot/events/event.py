@@ -9,7 +9,7 @@ class Event():
     Base event class
     """
 
-    def __init__(self, bus, formatters_factory):
+    def __init__(self, bus, formatters_factory, events_factory):
         """
         Construtor
 
@@ -18,6 +18,7 @@ class Event():
         """
         self.bus = bus
         self.formatters_factory = formatters_factory
+        self.events_factory = events_factory
         self.logger = logging.getLogger(self.__class__.__name__)
         if not hasattr(self, u'EVENT_NAME'):
             raise NotImplementedError(u'EVENT_NAME class member must be declared')
@@ -62,7 +63,8 @@ class Event():
         """
         Render event to renderer types
 
-        TODO: removes types ?
+        Note:
+            TODO remove types?
 
         Args:
             types (list<string>): existing renderer type
@@ -92,6 +94,12 @@ class Event():
                     for profile in self.formatters_factory.renderer_profiles[renderer]:
                         if profile in formatters:
                             self.logger.debug(u'Found match, post profile to renderer %s' % renderer)
+
+                            #check if event is not configured to not be rendered
+                            if not self.events_factory.can_render_event(self.EVENT_NAME, renderer):
+                                self.logger.debug(u' -> Event %s is configured to not be rendered on renderer %s' % (self.EVENT_NAME, renderer))
+                                continue
+
                             #found match, format event to profile
                             profile = formatters[profile].format(event_values)
 
