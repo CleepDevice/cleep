@@ -350,5 +350,7 @@ class Update(RaspIotModule):
         """
         if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
             #check updates at noon
-            self.__updates = self.check_updates()
+            config = self._get_config()
+            if config[u'automatic_update']:
+                self.__updates = self.check_updates()
 
