@@ -10,8 +10,7 @@ echo ""
 
 #install python dependencies
 echo "Installing python dependencies..."
-pip install -r /etc/raspiot/requirements.txt
-#rm -f /etc/raspiot/requirements.txt
+pip install --trusted-host pypi.python.org -r /etc/raspiot/requirements.txt
 echo "Done"
 echo ""
 
