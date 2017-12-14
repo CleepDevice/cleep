@@ -11,7 +11,7 @@
     </div>
 
     <!-- controls -->
-    <div layout="row" layout-align="center center">
+    <div layout="row" layout-align="center center" ng-if="graphCtl.showControls">
         <div flex></div>
 
         <!-- information label -->
@@ -26,7 +26,7 @@
         </div>
 
         <!-- pre-defined ranges -->
-        <div ng-if="graphCtl.showControls">
+        <div>
                 <md-select class="md-no-underline" ng-model="graphCtl.rangeSelector">
                     <md-option value="86400">last day</md-option>
                     <md-option value="172800">last 2 days</md-option>
