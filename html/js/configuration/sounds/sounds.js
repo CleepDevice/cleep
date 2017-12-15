@@ -150,11 +150,11 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add',
+                icon: 'plus',
                 callback: self.openAddDialog,
                 tooltip: 'Add sound'
             }, {
-                icon: 'build',
+                icon: 'wrench',
                 callback: self.openConfigDialog,
                 tooltip: 'Advanced configuration '
             }]; 

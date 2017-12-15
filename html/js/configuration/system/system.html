@@ -63,7 +63,7 @@
                 <p>Options below give you a way to disable those events handled by modules:</p>
             </md-list-item>
             <md-list-item ng-repeat="rendering in systemCtl.renderings" ng-click="systemCtl.updateRendering(rendering,false)">
-                <md-icon md-font-set="material-icons">label_outline</md-icon>
+                <md-icon md-svg-icon="label-outline"></md-icon>
                 <p>Disable <b>{{rendering.event}}</b> handled by <b>{{rendering.renderer}}</b> module</p>
                 <md-checkbox class="md-secondary" ng-model="rendering.disabled" ng-click="systemCtl.updateRendering(rendering,true)" aria-label="Rendering"></md-checkbox>
             </md-list-item>
@@ -107,12 +107,12 @@
         <div layout="column" layout-padding flex="75" layout-sm="column" flex-sm="100">
             <div layout="row">
                 <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()">
-                    <md-icon md-font-set="material-icons">refresh</md-icon>
+                    <md-icon md-svg-icon="refresh"></md-icon>
                     Refresh logs
                 </md-button>
                 <span flex></span>
                 <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
-                    <md-icon md-font-set="material-icons">file_download</md-icon>
+                    <md-icon md-svg-icon="download"></md-icon>
                     Download logs
                 </md-button>
             </div>

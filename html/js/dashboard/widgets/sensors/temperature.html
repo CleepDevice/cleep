@@ -3,7 +3,7 @@
 <md-card class="widget-bg-color" style="width: 250px;">
     <md-card-header>
         <md-card-avatar>
-            <md-icon class="typcn typcn-thermometer"></md-icon>
+            <md-icon md-svg-icon="thermometer"></md-icon>
         </md-card-avatar>
         <md-card-header-text>
             <span class="md-title">{{widgetCtl.device.name}}</span>
@@ -19,7 +19,7 @@
         <div layout="column" layout-align="start" graph-button device="widgetCtl.device" graph-options="widgetCtl.graphOptions" button-label="Chart" button-class="md-raised"></div>
     </md-card-actions>
     <md-card-footer>
-        <md-icon class="typcn typcn-time">
+        <md-icon md-svg-icon="clock">
             <md-tooltip md-direction="top">Last update</md-tooltip>
         </md-icon>
         <span>{{widgetCtl.device.lastupdate | hrDatetime:true}}</span>

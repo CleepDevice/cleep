@@ -4,21 +4,21 @@
     <md-toolbar layout="row" class="md-hue-1">
         <div flex="66" class="md-toolbar-tools">
             <md-button href="#!module/actions" class="md-raised" aria-label="Back">
-                <md-icon md-font-set="material-icons">arrow_back</md-icon>
+                <md-icon md-svg-icon="arrow-left"></md-icon>
                 Back
             </md-button>
             <h2>Action editor: {{codeCtl.script}}</h2>
             <span flex></span>
             <md-button aria-label="Show header" ng-click="codeCtl.showHeader=!codeCtl.showHeader" ng-disabled="codeCtl.debugging">
-                <md-icon md-font-set="material-icons">view_headline</md-icon>
+                <md-icon md-svg-icon="view-headline"></md-icon>
                 Header
             </md-button>
             <md-button aria-label="Save" ng-click="codeCtl.save()" ng-disabled="codeCtl.debugging">
-                <md-icon md-font-set="material-icons">save</md-icon>
+                <md-icon md-svg-icon="content-save"></md-icon>
                 Save
             </md-button>
             <md-button aria-label="Save as" ng-click="codeCtl.saveAs()" ng-disabled="codeCtl.debugging">
-                <md-icon md-font-set="material-icons">save</md-icon>
+                <md-icon md-svg-icon="content-save-settings"></md-icon>
                 Save as
             </md-button>
         </div>
@@ -27,7 +27,7 @@
             <h2>Debug output</h2>
             <span flex></span>
             <md-button aria-label="Debug" ng-click="codeCtl.debug()" ng-disabled="codeCtl.debugging">
-                <md-icon md-font-set="material-icons">play_circle_filled</md-icon>
+                <md-icon md-svg-icon="play-circle"></md-icon>
                 Debug
             </md-button>
         </div>
@@ -45,29 +45,24 @@
             <!-- debug output -->
             <md-list>
                 <md-list-item ng-repeat="debug in codeCtl.debugs" class="debug-line">
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='DEBUG'" class="debug-icon-debug">
+                    <md-icon md-svg-icon="bug" ng-if="debug.level==='DEBUG'" class="debug-icon-debug">
                         <md-tooltip md-direction="left">Debug</md-tooltip>
-                        bug_report
                     </md-icon>
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='INFO'" class="debug-icon-info">
+                    <md-icon md-svg-icon="lightbulb-outline" ng-if="debug.level==='INFO'" class="debug-icon-info">
                         <md-tooltip md-direction="left">Info</md-tooltip>
                         lightbulb_outline
                     </md-icon>
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='WARNING'" class="debug-icon-warning">
+                    <md-icon md-svg-icon="alert" ng-if="debug.level==='WARNING'" class="debug-icon-warning">
                         <md-tooltip md-direction="left">Warning</md-tooltip>
-                        warning
                     </md-icon>
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='ERROR'" class="debug-icon-error">
+                    <md-icon md-svg-icon="alert-circle" ng-if="debug.level==='ERROR'" class="debug-icon-error">
                         <md-tooltip md-direction="left">Error</md-tooltip>
-                        error
                     </md-icon>
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='CRITICAL'" class="debug-icon-critical">
+                    <md-icon md-svg-icon="skull" ng-if="debug.level==='CRITICAL'" class="debug-icon-critical">
                         <md-tooltip md-direction="left">Critical</md-tooltip>
-                        healing
                     </md-icon>
-                    <md-icon md-font-set="material-icons" ng-if="debug.level==='EXCEPTION'" class="debug-icon-exception">
+                    <md-icon md-svg-icon="thumb-down" ng-if="debug.level==='EXCEPTION'" class="debug-icon-exception">
                         <md-tooltip md-direction="left">Exception</md-tooltip>
-                        thumb_down
                     </md-icon>
                     <p>
                         <span class="md-body-2">{{debug.timestamp | hrMilliseconds}}</span> : <span class="md-body-1">{{debug.message}}</span>

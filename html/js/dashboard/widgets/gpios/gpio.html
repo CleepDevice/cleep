@@ -3,7 +3,7 @@
 <md-card class="widget-bg-color" style="width: 250px;">
     <md-card-header>
         <md-card-avatar>
-            <md-icon class="typcn typcn-media-record-outline"></md-icon>
+            <md-icon md-svg-icon="video-input-component"></md-icon>
         </md-card-avatar>
         <md-card-header-text>
             <span class="md-title">{{widgetCtl.device.name}}</span>
@@ -12,8 +12,8 @@
     </md-card-header>
     <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
         <div>
-            <md-icon ng-if="widgetCtl.device.on" class="typcn typcn-media-record icon-xl"></md-icon>
-            <md-icon ng-if="!widgetCtl.device.on" class="typcn typcn-media-record-outline icon-xl"></md-icon>
+            <md-icon ng-if="widgetCtl.device.on" md-svg-icon="circle" class="icon-xl"></md-icon>
+            <md-icon ng-if="!widgetCtl.device.on" md-svg-icon="circle-outline" class="icon-xl"></md-icon>
         </div>
     </md-card-content>
 </md-card>

@@ -4,19 +4,19 @@
     <md-toolbar class="md-hue-1 fix-search-toolbar-scrollbar">
         <div class="md-toolbar-tools">
             <md-button href="#!dashboard" class="md-raised" aria-label="Go back">
-                <md-icon md-font-set="material-icons">arrow_back</md-icon>
+                <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to dashboard</md-tooltip>
                 Back
             </md-button>
             <div style="width:15px;"></div>
             <h2 flex md-truncate>Installed modules</h2>
             <md-input-container class="md-icon-float md-block no-error-spacer">
-                <md-icon md-font-set="material-icons">search</md-icon>
+                <md-icon md-svg-icon="magnify"></md-icon>
                 <input ng-model="modulesCtl.search" type="text" aria-label="Search">
             </md-input-container>
             <div>
                 <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()" aria-label="Clear search">
-                    <md-icon md-font-set="material-icons">clear</md-icon>
+                    <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
         </div>
@@ -34,21 +34,21 @@
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-font-set="material-icons" class="icon-xl" style="padding:4px;">{{module.icon}}</md-icon>
+                            <md-icon md-svg-icon="{{module.icon}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
                 <md-card-actions layout="row" layout-align="end center">
                     <md-button ng-if="module.link" ng-href="{{module.link}}" target="_blank">
-                        <md-icon md-font-set="material-icons">help_outline</md-icon>
+                        <md-icon md-svg-icon="help-circle"></md-icon>
                         <span>Infos</span>
                     </md-button>
                     <md-button ng-if="module.hasService" href="{{'#!module/'+module.name}}" class="md-accent">
-                        <md-icon md-font-set="material-icons">settings</md-icon>
+                        <md-icon md-svg-icon="settings"></md-icon>
                         <span>Configure</span>
                     </md-button>
                     <md-button ng-disabled="module.pending" ng-if="!module.locked" ng-click="modulesCtl.uninstall(module.name)" class="">
-                        <md-icon md-font-set="material-icons">delete</md-icon>
+                        <md-icon md-svg-icon="delete"></md-icon>
                         <span ng-if="!module.pending">Uninstall</span>
                         <span ng-if="module.pending">Please restart</span>
                     </md-button>

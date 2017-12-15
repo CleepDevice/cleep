@@ -29,27 +29,27 @@
                 </td>
                 <td md-cell>
                     <md-button ng-if="!device.on" class="md-icon-button md-primary cursor-default" aria-label="Off">
-                        <span class="material-icons">fiber_manual_record</span>
+                        <span md-svg-icon="circle"></span>
                     </md-button>
                     <md-button ng-if="device.on" class="md-icon-button md-accent cursor-default" aria-label="On">
-                        <span class="material-icons">fiber_manual_record</span>
+                        <span md-svg-icon="circle"></span>
                     </md-button>
                 </td>
                 <td md-cell>
                     <div ng-if="device.owner='gpios'">
                         <md-button class="md-icon-button" ng-click="gpiosCtl.openUpdateDialog(device)" aria-label="Edit">
                             <md-tooltip md-direction="bottom">Edit gpio</md-tooltip>
-                            <md-icon md-font-set="material-icons">mode_edit</md-icon>
+                            <md-icon md-svg-icon="pencil"></md-icon>
                         </md-button>
                         <md-button class="md-icon-button" ng-click="gpiosCtl.openDeleteDialog(device)" aria-label="Delete">
                             <md-tooltip md-direction="bottom">Delete gpio</md-tooltip>
-                            <md-icon md-font-set="material-icons">delete</md-icon>
+                            <md-icon md-svg-icon="delete"></md-icon>
                         </md-button>
                     </div>
                     <div ng-if="device.owner!='gpios'">
                         <md-button class="md-icon-button" aria-label="readonly">
                             <md-tooltip md-direction="bottom">Gpio can only be modified by module which added it</md-tooltip>
-                            <md-icon md-font-set="material-icons">lock_outline</md-icon>
+                            <md-icon md-svg-icon="lock-outline"></md-icon>
                         </md-button>
                     </div>
                 </td>

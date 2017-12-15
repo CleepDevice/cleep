@@ -145,11 +145,11 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add',
+                icon: 'plus',
                 callback: self.openAddDialog,
                 tooltip: 'Create script'
             }, {
-                icon: 'file_upload',
+                icon: 'upload',
                 callback: self.openUploadDialog,
                 tooltip: 'Upload script'
             }]; 

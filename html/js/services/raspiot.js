@@ -20,22 +20,23 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.__setModuleIcon = function(module)
     {
         var icons = {
-            actions: 'slideshow',
-            database: 'storage',
-            gpios: 'filter_center_focus',
-            messageboard: 'view_comfy',
-            sensors: 'leak_add',
-            shutters: 'format_line_spacing',
-            sounds: 'volume_up',
-            system: 'favorite',
-            network: 'network_wifi',
-            bulksms: 'sms',
-            freemobilesms: 'sms',
-            smtp: 'mail',
+            actions: 'play-box-outline',
+            database: 'database',
+            gpios: 'video-input-component',
+            messageboard: 'counter',
+            sensors: 'chip',
+            shutters: 'unfold-more-horizontal',
+            sounds: 'volume-high',
+            system: 'heart-pulse',
+            network: 'ethernet',
+            bulksms: 'message-processing',
+            freemobilesms: 'message-processing',
+            smtp: 'email',
             pushover: 'send',
             openweathermap: 'cloud',
-            cleepbus: 'settings_input_antenna',
-            developer: 'bug_report'
+            cleepbus: 'video-input-antenna',
+            developer: 'worker',
+            update: 'update'
         };
 
         if( !angular.isUndefined(icons[module]) )

@@ -82,6 +82,13 @@ RaspIot.config(['$compileProvider', function($compileProvider) {
     $compileProvider.preAssignBindingsEnabled(true);
 }]);
 
+/**
+ * MDI font configuration
+ */
+RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
+    $mdIconProvider.defaultIconSet('fonts/mdi.svg')
+}]);
+
 
 /**
  * Blockui configuration

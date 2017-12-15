@@ -32,11 +32,11 @@
                 <td md-cell ng-if="device.type==='motion'">
                     <md-button ng-if="!device.on" class="md-icon-button md-primary default-cursor" aria-label="Off">
                         <md-tooltip md-direction="bottom">Off</md-tooltip>
-                        <span class="material-icons">fiber_manual_record</span>
+                        <span md-svg-icon="circle"></span>
                     </md-button>
                     <md-button ng-if="device.on" class="md-icon-button md-accent default-cursor" aria-label="On">
                         <md-tooltip md-direction="bottom">On</md-tooltip>
-                        <span class="material-icons">fiber_manual_record</span>
+                        <span md-svg-icon="circle"></span>
                     </md-button>
                 </td>
                 <td md-cell ng-if="device.type==='temperature'">
@@ -46,11 +46,11 @@
                 <td md-cell>
                     <md-button class="md-icon-button" ng-click="sensorsCtl.openUpdateDialog(device)" aria-label="Edit">
                         <md-tooltip md-direction="bottom">Edit sensor</md-tooltip>
-                        <md-icon md-font-set="material-icons">mode_edit</md-icon>
+                        <md-icon md-svg-icon="pencil"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" ng-click="sensorsCtl.openDeleteDialog(device)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete sensor</md-tooltip>
-                        <md-icon md-font-set="material-icons">delete</md-icon>
+                        <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
                 </td>
             </tr>

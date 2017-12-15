@@ -253,7 +253,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
 
             //add module actions to fabButton
             var actions = [{
-                icon: 'add',
+                icon: 'plus',
                 callback: self.openAddDialog,
                 tooltip: 'Add sensor'
             }];

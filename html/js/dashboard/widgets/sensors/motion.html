@@ -3,7 +3,7 @@
 <md-card class="widget-bg-color" style="width: 250px;">
     <md-card-header>
         <md-card-avatar>
-            <md-icon class="typcn typcn-wi-fi-outline"></md-icon>
+            <md-icon md-svg-icon="access-point"></md-icon>
         </md-card-avatar>
         <md-card-header-text>
             <span class="md-title">{{widgetCtl.device.name}}</span>
@@ -12,14 +12,14 @@
     </md-card-header>
     <md-card-content layout="row" layout-align="space-around center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
         <div>
-            <md-icon class="typcn typcn-wi-fi icon-md"></md-icon>
+            <md-icon md-svg-icon="access-point" class="icon-md"></md-icon>
         </div>
     </md-card-content>
     <md-card-actions layout="column" layout-align="start" ng-if="widgetCtl.hasDatabase">
         <div layout="column" layout-align="start" graph-button device="widgetCtl.device" graph-options="widgetCtl.graphOptions" button-label="Chart" button-class="md-raised"></div>
     </md-card-actions>
     <md-card-footer>
-        <md-icon class="typcn typcn-time">
+        <md-icon md-svg-icon="clock">
             <md-tooltip md-direction="top">Last update</md-tooltip>
         </md-icon>
         <span>{{widgetCtl.device.lastupdate | hrDatetime:true}}</span>

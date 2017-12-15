@@ -4,7 +4,7 @@
     <md-toolbar class="md-hue-1 fix-search-toolbar-scrollbar">
         <div class="md-toolbar-tools">
             <md-button href="#!modules" class="md-raised" aria-label="Go back">
-                <md-icon md-font-set="material-icons">arrow_back</md-icon>
+                <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to installed modules</md-tooltip>
                 Back
             </md-button>
@@ -13,12 +13,12 @@
                 Installable modules
             </h2>
             <md-input-container class="md-icon-float md-block no-error-spacer">
-                <md-icon md-font-set="material-icons">search</md-icon>
+                <md-icon md-svg-icon="magnify"></md-icon>
                 <input ng-model="installCtl.search" type="text" aria-label="Search">
             </md-input-container>
             <div>
                 <md-button class="md-icon-button" ng-click="installCtl.clearSearch()" aria-label="Clear search">
-                    <md-icon md-font-set="material-icons">clear</md-icon>
+                    <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
         </div>
@@ -35,7 +35,7 @@
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-font-set="material-icons" class="icon-xl" style="padding:4px;">{{module.icon}}</md-icon>
+                            <md-icon md-svg-icon="{{module.icon}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
@@ -46,11 +46,11 @@
                     </div>
                     <span flex></span>
                     <md-button ng-if="module.link" ng-href="{{module.link}}" target="_blank">
-                        <md-icon md-font-set="material-icons">help_outline</md-icon>
+                        <md-icon md-svg-icon="help-circle"></md-icon>
                         <span>Infos</span>
                     </md-button>
                     <md-button class="md-accent" ng-disabled="module.pending" ng-click="installCtl.install(module.name)">
-                        <md-icon md-font-set="material-icons">add</md-icon>
+                        <md-icon md-svg-icon="plus-circle"></md-icon>
                         <span ng-if="!module.pending">Install</span>
                         <span ng-if="module.pending">Please restart</span>
                     </md-button>

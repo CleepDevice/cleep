@@ -20,23 +20,23 @@
                 <td md-cell>
                     <md-button class="md-icon-button" href="{{'#!module/actions/edit/'+script.name}}" aria-label="Edit script">
                         <md-tooltip md-direction="bottom">Edit script</md-tooltip>
-                        <md-icon md-font-set="material-icons">edit</md-icon>
+                        <md-icon md-svg-icon="pencil"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" ng-click="actionsCtl.disableScript(script.name, true)" ng-if="!script.disabled" aria-label="Disable script">
                         <md-tooltip md-direction="bottom">Disable script</md-tooltip>
-                        <md-icon md-font-set="material-icons">lock</md-icon>
+                        <md-icon md-svg-icon="lock"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" ng-click="actionsCtl.disableScript(script.name, false)" ng-if="script.disabled" aria-label="Enable script">
                         <md-tooltip md-direction="bottom">Enable script</md-tooltip>
-                        <md-icon md-font-set="material-icons">lock_open</md-icon>
+                        <md-icon md-svg-icon="lock-open"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" ng-click="actionsCtl.downloadScript(script.name)" aria-label="Download script">
                         <md-tooltip md-direction="bottom">Download script</md-tooltip>
-                        <md-icon md-font-set="material-icons">file_download</md-icon>
+                        <md-icon md-svg-icon="download"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" ng-click="actionsCtl.openDeleteDialog(script.name)" aria-label="Delete">
                         <md-tooltip md-direction="bottom">Delete script</md-tooltip>
-                        <md-icon md-font-set="material-icons">delete</md-icon>
+                        <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
                 </td>
             </tr>

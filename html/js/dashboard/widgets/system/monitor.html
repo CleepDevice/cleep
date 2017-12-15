@@ -3,7 +3,7 @@
 <md-card class="widget-bg-color" style="width: 250px;">
     <md-card-header>
         <md-card-avatar>
-            <md-icon class="typcn typcn-spanner-outline"></md-icon>
+            <md-icon md-svg-icon="heart-pulse"></md-icon>
         </md-card-avatar>
         <md-card-header-text>
             <span class="md-title">{{widgetCtl.device.name}}</span>
@@ -16,19 +16,20 @@
         </div>
     </md-card-content>
     <md-card-actions layout="column" layout-align="start" ng-if="widgetCtl.hasDatabase">
-        <md-button ng-click="widgetCtl.openDialog()" class="md-raised">Monitor</md-button>
+        <md-button ng-click="widgetCtl.openDialog()" class="md-raised">
+            <md-icon md-svg-icon="chart-line"></md-icon>
+            Monitor
+        </md-button>
     </md-card-actions>
     <md-card-footer layout="row">
         <div flex="50">
-            <md-icon md-font-set="material-icons">
-                wb_iridescent
+            <md-icon md-svg-icon="white-balance-iridescent">
                 <md-tooltip md-direction="top">CPU usage</md-tooltip>
             </md-icon>
             <span>{{widgetCtl.device.cpu.system}}%</span>
         </div>
         <div flex="50">
-            <md-icon md-font-set="material-icons">
-                memory
+            <md-icon md-svg-icon="memory">
                 <md-tooltip md-direction="top">Memory available</md-tooltip>
             </md-icon>
             <span>{{widgetCtl.device.memory.available_hr}}</span>

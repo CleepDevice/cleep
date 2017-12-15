@@ -89,7 +89,7 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
             //add fab action
             action = [{
                 callback: self.toInstallPage,
-                icon: 'add',
+                icon: 'plus',
                 aria: 'Install module',
                 tooltip: 'Install module'
             }];

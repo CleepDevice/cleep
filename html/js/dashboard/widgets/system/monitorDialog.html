@@ -7,7 +7,7 @@
                 <h2>System monitor</h2>
                 <span flex></span>
                 <md-button class="md-icon-button" ng-click="monitorCtl.cancelDialog()" aria-label="Close dialog">
-                    <md-icon md-font-set="material-icons" aria-label="Close dialog">close</md-icon>
+                    <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
         </md-toolbar>
@@ -30,12 +30,10 @@
                     <md-divider></md-divider>
                     <md-subheader class="md-no-sticky">Network infos</md-subheader>
                     <md-list-item ng-repeat="(interface,infos) in monitorCtl.networks">
-                        <md-icon ng-if="!infos.wired" md-font-set="material-icons">
-                            network_wifi
+                        <md-icon ng-if="!infos.wired" md-svg-icon="wifi">
                             <md-tooltip md-direction="right">Wireless interface</md-tooltip>
                         </md-icon>
-                        <md-icon ng-if="infos.wired" md-font-set="material-icons">
-                            settings_ethernet
+                        <md-icon ng-if="infos.wired" md-svg-icon="ethernet">
                             <md-tooltip md-direction="right">Wired interface</md-tooltip>
                         </md-icon>
                         <p layout="row">

@@ -3,7 +3,7 @@
 <md-card class="widget-bg-color" style="">
     <md-card-header>
         <md-card-avatar>
-            <md-icon class="typcn typcn-puzzle-outline"></md-icon>
+            <md-icon md-svg-icon="worker"></md-icon>
         </md-card-avatar>
         <md-card-header-text>
             <span class="md-title">{{widgetCtl.device.name}}</span>
@@ -13,15 +13,15 @@
     <md-card-content layout="column" layout-align="center center" md-colors="{{widgetCtl.device.__widget.mdcolors}}">
         <div layout="column" layout-align="center stretch">
             <md-button class="md-raised md-accent" aria-label="Restart raspiot" ng-click="widgetCtl.restartRaspiot()">
-                <md-icon class="typcn typcn-arrow-loop"></md-icon>
+                <md-icon md-svg-icon="refresh"></md-icon>
                 <span>Restart raspiot</span>
             </md-button>
             <md-button class="md-raised md-primary" aria-label="Start pyremotedev" ng-click="widgetCtl.startPyremotedev()">
-                <md-icon class="typcn typcn-media-play"></md-icon>
+                <md-icon md-svg-icon="play"></md-icon>
                 <span>Start Pyremotedev</span>
             </md-button>
             <md-button class="md-raised md-primary" aria-label="Stop pyremotedev" ng-click="widgetCtl.stopPyremotedev()">
-                <md-icon class="typcn typcn-media-stop"></md-icon>
+                <md-icon md-svg-icon="stop"></md-icon>
                 <span>Stop Pyremotedev</span>
             </md-button>
         </div>

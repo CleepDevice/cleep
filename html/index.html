@@ -38,13 +38,13 @@
                 <md-button ng-if="mainCtl.needReboot" class="md-raised md-accent" aria-label="Reboot" ng-click="mainCtl.reboot()">
                     Reboot to load changes
                 </md-button>
-                <md-button href="#!dashboard" class="md-icon-button" aria-label="Dashboard">
-                    <md-tooltip md-direction="bottom">Dashboard</md-tooltip>
-                    <md-icon md-font-set="material-icons">dashboard</md-icon>
+                <md-button href="#!dashboard" class="md-button" aria-label="Dashboard">
+                    <md-icon md-svg-icon="view-dashboard"></md-icon>
+                    <span>Dashboard</span>
                 </md-button>
-                <md-button href="#!modules" class="md-icon-button" aria-label="Modules">
-                    <md-tooltip md-direction="bottom">Modules</md-tooltip>
-                    <md-icon md-font-set="material-icons">settings</md-icon>
+                <md-button href="#!modules" class="md-button" aria-label="Modules">
+                    <md-icon md-svg-icon="settings"></md-icon>
+                    <span>Settings</span>
                 </md-button>
             </div>
         </md-toolbar>
