@@ -195,7 +195,9 @@ class Openweathermap(RaspIotModule):
         #get position infos from system module
         resp = self.send_command(u'get_city', u'system')
         self.logger.debug(u'Get city from system resp: %s' % resp)
-        if resp[u'error']:
+        if not resp:
+            raise CommandError('No response')
+        elif resp[u'error']:
             raise CommandError(resp[u'message'])
 
         #create city pattern
@@ -273,7 +275,9 @@ class Openweathermap(RaspIotModule):
         #get position infos from system module
         resp = self.send_command(u'get_city', u'system')
         self.logger.debug(u'Get city from system resp: %s' % resp)
-        if resp[u'error']:
+        if not resp:
+            raise CommandError('No response')
+        elif resp[u'error']:
             raise CommandError(resp[u'message'])
 
         #create city pattern

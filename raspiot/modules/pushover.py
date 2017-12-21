@@ -80,7 +80,10 @@ class Pushover(RaspIotRenderer):
                 self.logger.debug(u'Pushover response content: %s' % read)
                 resp = json.loads(read)
 
-                if resp[u'status']==0:
+                if not resp:
+                    #no response
+                    error = u'No response'
+                elif resp[u'status']==0:
                     #error occured
                     error = u','.join(resp[u'errors'])
                 elif resp.has_key(u'info'):

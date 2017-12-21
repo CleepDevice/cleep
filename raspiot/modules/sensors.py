@@ -430,7 +430,10 @@ class Sensors(RaspIotModule):
             dict: raspi gpios
         """
         resp = self.send_command(u'get_raspi_gpios', u'gpios')
-        if resp[u'error']:
+        if not resp:
+            self.logger.error(u'No response')
+            return {}
+        elif resp[u'error']:
             self.logger.error(resp[u'message'])
             return {}
         else:
@@ -444,7 +447,10 @@ class Sensors(RaspIotModule):
             dict: assigned gpios
         """
         resp = self.send_command(u'get_assigned_gpios', 'gpios')
-        if resp[u'error']:
+        if not resp:
+            self.logger.error(u'No response')
+            return {}
+        elif resp[u'error']:
             self.logger.error(resp[u'message'])
             return {}
         else:
@@ -707,7 +713,9 @@ class Sensors(RaspIotModule):
                 #is a reserved gpio (onewire?)
                 resp = self.send_command(u'is_reserved_gpio', u'gpios', {u'uuid': gpio[u'gpio_uuid']})
                 self.logger.debug(u'is_reserved_gpio: %s' % resp)
-                if resp[u'error']:
+                if not resp:
+                    raise CommandError(u'No reponse')
+                elif resp[u'error']:
                     raise CommandError(resp[u'message'])
                 
                 #if gpio is reserved, check if no other sensor is using it
@@ -722,7 +730,9 @@ class Sensors(RaspIotModule):
                 if delete:
                     self.logger.debug(u'Unconfigure gpio %s' % gpio[u'gpio_uuid'])
                     resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':gpio[u'gpio_uuid']})
-                    if resp[u'error']:
+                    if not resp:
+                        raise CommandError(u'No response')
+                    elif resp[u'error']:
                         raise CommandError(resp[u'message'])
 
             #sensor is valid, remove it

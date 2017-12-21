@@ -986,7 +986,10 @@ class System(RaspIotModule):
 
         #set debug on module
         resp = self.send_command(u'set_debug', module, {u'debug':debug})
-        if resp[u'error']:
+        if not resp:
+            self.logger.error(u'No response')
+            raise CommandError(u'No response')
+        elif resp[u'error']:
             self.logger.error(u'Unable to set debug on module %s: %s' % (module, resp[u'message']))
             raise CommandError(u'Update debug failed')
 

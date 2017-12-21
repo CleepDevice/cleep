@@ -34,6 +34,8 @@ class MessageBus():
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
 
+        #members
+        self.__stopped = False
         #module message queues
         self.__queues = {}
         #module queue activities
@@ -50,6 +52,20 @@ class MessageBus():
         """
         Stop bus
         """
+        #set flag
+        self.__stopped = True
+
+        #clear all queues
+        for q in self.__queues:
+            continu = True
+            while continu:
+                try:
+                    msg = self.__queues[q].pop()
+                    msg[u'event'].set()
+                except IndexError:
+                    continu = False
+
+        #stop purge thread
         if self.__purge:
             self.__purge.stop()
 
@@ -96,6 +112,10 @@ class MessageBus():
             NoResponse: if no response is received from module.
             InvalidModule: if specified recipient is unknown.
         """
+        #do not push request if bus is stopped
+        if self.__stopped:
+            return None
+
         if isinstance(request, MessageRequest):
             #get request as dict
             request_dict = request.to_dict(not self.__app_configured)

@@ -137,7 +137,10 @@ class Shutters(RaspIotModule):
         """
         #reset gpios
         resp = self.send_command(u'reset_gpios', u'gpios')
-        if resp[u'error']:
+        if not resp:
+            self.logger.error(u'No response')
+            return
+        elif resp[u'error']:
             self.logger.error(resp[u'message'])
             return
 
@@ -171,7 +174,10 @@ class Shutters(RaspIotModule):
             dict: assigned gpios
         """
         resp = self.send_command(u'get_assigned_gpios', u'gpios')
-        if resp[u'error']:
+        if not resp:
+            self.logger.error(u'No response')
+            return {}
+        elif resp[u'error']:
             self.logger.error(resp[u'message'])
             return {}
         else:
@@ -208,7 +214,9 @@ class Shutters(RaspIotModule):
 
         #and turn off gpio
         resp = self.send_command(u'turn_off', u'gpios', {u'uuid':gpio_uuid})
-        if resp[u'error']:
+        if not resp:
+            raise CommandError(u'No response')
+        elif resp[u'error']:
             raise CommandError(resp[u'message'])
         
         #change status
@@ -224,7 +232,9 @@ class Shutters(RaspIotModule):
         #turn on gpio
         gpio_uuid = shutter[u'shutter_open_uuid']
         resp = self.send_command(u'turn_on', u'gpios', {u'uuid':gpio_uuid})
-        if resp[u'error']:
+        if not resp:
+            raise CommandError(u'No response')
+        elif resp[u'error']:
             raise CommandError(resp[u'message'])
 
         #change status
@@ -246,7 +256,9 @@ class Shutters(RaspIotModule):
         #turn on gpio
         gpio_uuid = shutter[u'shutter_close_uuid']
         resp = self.send_command(u'turn_on', u'gpios', {u'uuid':gpio_uuid})
-        if resp[u'error']:
+        if resp:
+            raise Exception(u'No response')
+        elif resp[u'error']:
             raise Exception(resp[u'message'])
 
         #change status
@@ -455,22 +467,30 @@ class Shutters(RaspIotModule):
         else:
             #unconfigure open shutter
             resp = self.send_command(u'delete_gpio',u'gpios', {u'uuid':device[u'shutter_open_uuid']})
-            if resp[u'error']:
+            if not resp:
+                raise CommandError(u'No response')
+            elif resp[u'error']:
                 raise CommandError(resp[u'message'])
 
             #unconfigure close shutter
             resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'shutter_close_uuid']})
-            if resp[u'error']:
+            if not resp:
+                raise CommandError(u'No response')
+            elif resp[u'error']:
                 raise CommandError(resp[u'message'])
 
             #unconfigure open switch
             resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'switch_open_uuid']})
-            if resp[u'error']:
+            if not resp:
+                raise CommandError(u'No response')
+            elif resp[u'error']:
                 raise CommandError(resp[u'message'])
 
             #unconfigure close switch
             resp = self.send_command(u'delete_gpio', u'gpios', {u'uuid':device[u'switch_close_uuid']})
-            if resp[u'error']:
+            if not resp:
+                raise CommandError(u'No response')
+            elif resp[u'error']:
                 raise CommandError(resp[u'message'])
 
             #shutter is valid, remove it
@@ -563,7 +583,9 @@ class Shutters(RaspIotModule):
         #turn off specified gpio
         self.logger.debug(u'end_of_timer for gpio "%s"' % gpio_uuid)
         resp = self.send_command(u'turn_off', u'gpios', {u'uuid':gpio_uuid})
-        if resp[u'error']:
+        if not resp:
+            raise CommandError(u'No response')
+        elif resp[u'error']:
             raise CommandError(resp[u'message'])
 
         #and update status to specified one
