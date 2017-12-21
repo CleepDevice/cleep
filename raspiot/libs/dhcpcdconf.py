@@ -24,6 +24,50 @@ class DhcpcdConf(Config):
         """
         Config.__init__(self, self.CONF, u'#', backup)
 
+    def __netmask_to_cidr(self, netmask):
+        """ 
+        Convert netmask to cidr format
+
+        Note:
+            code from https://stackoverflow.com/a/43885814
+
+        Args:
+            netmask (string): netmask address
+
+        Returns:
+            int: cidr value
+        """
+        return sum([bin(int(x)).count('1') for x in netmask.split('.')])
+
+    def __cidr_to_netmask(self, cidr):
+        """
+        Convert cidr to netmask
+
+        Note:
+            http://www.linuxquestions.org/questions/blog/bittner-195120/cidr-to-netmask-conversion-with-python-convert-short-netmask-to-long-dotted-format-3147/
+
+        Args:
+            cidr (int): cidr value
+
+        Returns:
+            string: netmask (ie 255.255.255.0)
+        """
+        mask = ''
+        if not isinstance(cidr, int) or cidr<0 or cidr>32: 
+            return None
+    
+        for t in range(4):
+            if cidr>7:
+                mask += '255.'
+            else:
+                dec = 255 - (2**(8 - cidr) - 1)
+                mask += str(dec) + '.' 
+            cidr -= 8
+            if cidr< 0:
+                cidr = 0 
+    
+        return mask[:-1]
+
     def get_interfaces(self):
         """
         Return network interfaces
@@ -36,7 +80,7 @@ class DhcpcdConf(Config):
             new_entry = None
 
             #filter none values
-            groups = list(filter(None, groups))
+            groups = filter(None, groups)
 
             if group.startswith(u'interface'):
                 new_entry = groups[0]
@@ -46,22 +90,28 @@ class DhcpcdConf(Config):
                 if group.startswith(u'static ip_address'):
                     #format: X.X.X.X[/X]
                     splits = groups[1].split('/')
-                    current_entry['ip_address'] = splits[0]
+                    current_entry[u'ip_address'] = splits[0]
+                    try:
+                        netmask = self.__cidr_to_netmask(int(splits[1]))
+                        current_entry[u'netmask'] = netmask
+                    except:
+                        current_entry[u'netmask'] = '255.255.255.0'
                 if group.startswith(u'static routers'):
                     #format: X.X.X.X
-                    current_entry['routers'] = groups[1]
+                    current_entry[u'routers'] = groups[1]
                 if group.startswith(u'static domain_name_servers'):
                     #format: X.X.X.X [X.X.X.X]...
-                    current_entry['domain_name_servers'] = groups[1]
+                    current_entry[u'domain_name_servers'] = groups[1]
                 if group.startswith(u'fallback'):
                     #format: <interface id>
-                    current_entry['fallback'] = groups[0]
+                    current_entry[u'fallback'] = groups[0]
 
             if new_entry is not None:
                 #add new entry
                 current_entry = {
                     u'group': group,
                     u'interface': new_entry,
+                    u'netmask': None,
                     u'fallback': None,
                     u'ip_address': None,
                     u'routers': None,
@@ -78,6 +128,7 @@ class DhcpcdConf(Config):
                     profile = entries[entry[u'fallback']]
                     entry[u'routers'] = profile[u'routers']
                     entry[u'ip_address'] = profile[u'ip_address']
+                    entry[u'netmask'] = profile[u'netmask']
                     entry[u'domain_name_servers'] = profile[u'domain_name_servers']
                     to_del.append(entry[u'fallback'])
                 else:
@@ -100,7 +151,6 @@ class DhcpcdConf(Config):
         if os.path.exists(self.CONF):
             c = Console()
             res = c.command(u'/usr/bin/pgrep dhcpcd | /usr/bin/wc -l')
-            print res
             if not res[u'error'] and not res[u'killed'] and res[u'stdout'][0]=='1':
                 return True
 
@@ -130,12 +180,13 @@ class DhcpcdConf(Config):
 
         return None
 
-    def add_static_interface(self, interface, ip_address, routers, domain_name_servers):
+    def add_static_interface(self, interface, ip_address, netmask, routers, domain_name_servers):
         """
         Add new static interface
         
         Args:
             ip_address (string): static ip address
+            netmask (string): netmask
             routers (string): routers
             domain_name_servers (string): domain name servers
         
@@ -150,6 +201,8 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Interface parameter is missing')
         if ip_address is None or len(ip_address)==0:
             raise MissingParameter(u'Ip_address parameter is missing')
+        if netmask is None or len(netmask)==0:
+            raise MissingParameter(u'Netmask parameter is missing')
         if routers is None or len(routers)==0:
             raise MissingParameter(u'Routers parameter is missing')
         if domain_name_servers is None or len(domain_name_servers)==0:
@@ -159,10 +212,13 @@ class DhcpcdConf(Config):
         if self.get_interface(interface) is not None:
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
+        #get CIDR value
+        cidr = self.__netmask_to_cidr(netmask)
+
         #add new configuration
         lines = []
         lines.append(u'\ninterface %s\n' % interface)
-        lines.append(u'static ip_address=%s/24\n' % ip_address)
+        lines.append(u'static ip_address=%s/%s\n' % (ip_address, cidr))
         lines.append(u'static routers=%s\n' % routers)
         lines.append(u'static domain_name_servers=%s\n' % domain_name_servers)
 
@@ -196,12 +252,14 @@ class DhcpcdConf(Config):
 
         return True
 
-    def add_fallback_interface(self, interface, ip_address, routers, domain_name_servers):
+    def add_fallback_interface(self, interface, ip_address, netmask, routers, domain_name_servers):
         """
         Configure fallback static interface
 
         Args:
+            interface (string): interface name
             ip_address (string): static ip address
+            netmask (string): netmask
             routers (string): router address
             domain_name_servers (string): name server
         
@@ -216,6 +274,8 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Interface parameter is missing')
         if ip_address is None or len(ip_address)==0:
             raise MissingParameter(u'Ip_address parameter is missing')
+        if netmask is None or len(netmask)==0:
+            raise MissingParameter(u'Netmask parameter is missing')
         if routers is None or len(routers)==0:
             raise MissingParameter(u'Routers parameter is missing')
         if domain_name_servers is None or len(domain_name_servers)==0:
@@ -228,7 +288,7 @@ class DhcpcdConf(Config):
         #prepare configuration content
         lines = []
         lines.append(u'\nprofile fallback_%s\n' % interface)
-        lines.append(u'static ip_address=%s/24\n' % ip_address)
+        lines.append(u'static ip_address=%s/%s\n' % (ip_address, self.__netmask_to_cidr(netmask)))
         lines.append(u'static routers=%s\n' % routers)
         lines.append(u'static domain_name_servers=%s\n' % domain_name_servers)
         lines.append(u'\ninterface %s\n' % interface)

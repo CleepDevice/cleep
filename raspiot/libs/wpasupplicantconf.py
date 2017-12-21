@@ -6,6 +6,7 @@ from raspiot.libs.config import Config
 from console import Console
 import os
 import re
+import io
 
 class WpaSupplicantConf(Config):
     """
@@ -24,11 +25,12 @@ class WpaSupplicantConf(Config):
     ENCRYPTION_TYPE_UNKNOWN = u'unknown'
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
-    def __init__(self, backup=True):
+    def __init__(self, logger, backup=True):
         """
         Constructor
         """
         Config.__init__(self, self.CONF, None, backup)
+        self.logger = logger
 
     def get_networks(self):
         """
@@ -43,7 +45,7 @@ class WpaSupplicantConf(Config):
             ssid = None
 
             #filter none values
-            groups = list(filter(None, groups))
+            groups = filter(None, groups)
 
             #create new entry
             current_entry = {
@@ -128,7 +130,7 @@ class WpaSupplicantConf(Config):
         
         Args:
             network (string): network name (ssid)
-            encryption (wpa|wpa2|wpe|unsecured): type of network
+            encryption (string): network encryption (wpa|wpa2|wep|unsecured)
             password (string): network password
             hidden (bool): hidden network flag
 
@@ -157,8 +159,8 @@ class WpaSupplicantConf(Config):
                 self.logger.error(u'Error with password: %s' % u''.join(res[u'stderr']))
                 raise Exception(u'Error with password: unable to encrypt it')
             if not ''.join(res[u'stdout']).startswith(u'network'):
-                self.logger.error(u'Error with password: %s' % stdout)
-                raise Exception(u'Error with password: %s' % stdout)
+                self.logger.error(u'Error with password: %s' % u''.join(res[u'stdout']))
+                raise Exception(u'Error with password: %s' % u''.join(res[u'stdout']))
             password = None
             output = [line+u'\n' for line in res[u'stdout'] if not line.startswith(u'\t#psk=')]
 
@@ -183,5 +185,40 @@ class WpaSupplicantConf(Config):
         #write new network config
         return self.add_lines(output)
 
-    
+    def write_fake_wpasupplicant(self, path, network, encryption, password, hidden=False):
+        """
+        Write fake wpa_supplicant.conf content to specified file
+        This is useful to test a connection specifying new network infos
+
+        Args:
+            network (string): network name (ssid)
+            encryption (string): network encryption (wpa|wpa2|wep|unsecured)
+            password (string): network password
+            hidden (bool): hidden network flag
+
+        Returns:
+            bool: True if file generated, False otherwise
+        """
+        #write header
+        with io.open(path, u'w') as fd:
+            content  = u'country=GB\n'
+            content += u'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n'
+            content += u'update_config=1\n'
+            fd.write(content)
+        self.logger.debug('Written fake wpa_supplicant.conf file to %s' % path)
+
+        #switch to new file
+        self.default_conf = self.CONF
+        self.CONF = path
+
+        #add new network
+        if not self.add_network(network, encryption, password, hidden):
+            self.logger.error('Failed to write temp wpa_supplicant.conf file %s' % path)
+            return False
+
+        #switch to default file
+        self.CONF = self.default_conf
+
+        return True
+
 
