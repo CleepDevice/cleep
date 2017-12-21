@@ -50,7 +50,7 @@ class Config():
         """
         Backup original file if necessary
         """
-        if not os.path.exists(self.backup_path):
+        if not os.path.exists(self.backup_path) and os.path.exists(self.path):
             shutil.copy2(self.path, self.backup_path)
 
     def restore_backup(self):
