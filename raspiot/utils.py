@@ -78,9 +78,10 @@ class MessageResponse():
         self.error = False
         self.message = u''
         self.data = None
+        self.broadcast = False
 
     def __str__(self):
-        return u'{error:%r, message:%s, data:%s}' % (self.error, self.message, unicode(self.data))
+        return u'{error:%r, message:%s, data:%s, broadcast:%r}' % (self.error, self.message, unicode(self.data), self.broadcast)
 
     def to_dict(self):
         """ 

@@ -458,11 +458,17 @@ class BusClient(threading.Thread):
             if request.is_broadcast() or timeout is None or timeout==0.0:
                 #broadcast message or no timeout, so no response
                 self.bus.push(request, timeout)
-                return None
+
+                #broadcast response
+                resp = MessageResponse()
+                resp.broadcast = True
+                return resp
+
             else:
                 #response awaited
                 resp = self.bus.push(request, timeout)
                 return resp
+
         else:
             raise InvalidParameter(u'Request parameter must be MessageRequest instance')
 
