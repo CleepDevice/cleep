@@ -256,7 +256,7 @@ class Shutters(RaspIotModule):
         #turn on gpio
         gpio_uuid = shutter[u'shutter_close_uuid']
         resp = self.send_command(u'turn_on', u'gpios', {u'uuid':gpio_uuid})
-        if resp:
+        if not resp:
             raise Exception(u'No response')
         elif resp[u'error']:
             raise Exception(resp[u'message'])
