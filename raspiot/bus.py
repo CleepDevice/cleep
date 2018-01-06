@@ -61,7 +61,9 @@ class MessageBus():
             while continu:
                 try:
                     msg = self.__queues[q].pop()
-                    msg[u'event'].set()
+                    self.logger.debug('Purging %s queue message: %s' % (q, msg))
+                    if msg[u'event']:
+                        msg[u'event'].set()
                 except IndexError:
                     continu = False
 
