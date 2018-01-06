@@ -323,6 +323,48 @@ class Config():
 
         return False
 
+    def remove_pattern(self, line_regexp):
+        """
+        Remove specified line pattern
+
+        Args:
+            line_regexp (pattern): regexp line pattern
+
+        Return:
+            int: number of lines removed
+        """
+        #read content
+        fd = self._open()
+        lines = fd.readlines()
+        self._close()
+
+        #remove line
+        count = 0
+        indexes = []
+        index = 0
+        for line in lines:
+            if re.match(line_regexp, line):
+                indexes.append(index)
+                count += 1
+
+            index += 1
+
+        #delete lines
+        indexes.sort()
+        indexes.reverse()
+        for index in indexes:
+            lines.pop(index)
+
+        #write config file
+        if len(indexes)>0:
+            #write config file
+            if self._write(u''.join(lines)):
+                return count
+            else:
+                return 0
+                
+        return count
+
     def remove_after(self, header_regexp, line_regexp, lines_to_delete):
         """
         Remove line matching pattern after header pattern
@@ -385,6 +427,9 @@ class Config():
 
         Args:
             lines (list): list of lines to add
+
+        Return:
+            bool: True if succeed
         """
         #check params
         if not isinstance(lines, list):

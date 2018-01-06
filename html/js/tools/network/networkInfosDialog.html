@@ -1,0 +1,48 @@
+<md-dialog aria-label="Connection infos dialog" flex="50">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Connection infos</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="dialogCtl.cancelDialog()" aria-label="Close dialog">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+
+                <!-- connection infos -->
+                <md-list ng-cloak ng-if="dialogCtl.selectedNetwork.connected">
+                    <md-list-item>
+                        <span class="md-body-2" style="padding-right:10px;">IP address:</span>
+                        {{dialogCtl.selectedNetwork.status.ipv4}}
+                    </md-list-item>
+                    <md-list-item>
+                        <span class="md-body-2" style="padding-right:10px;">MAC:</span>
+                        {{dialogCtl.selectedNetwork.status.mac}}
+                    </md-list-item>
+                    <md-list-item>
+                        <span class="md-body-2" style="padding-right:10px;">Gateway:</span>
+                        {{dialogCtl.selectedNetwork.status.gateway_ipv4}}
+                    </md-list-item>
+                    <md-list-item>
+                        <span class="md-body-2" style="padding-right:10px;">Netmask:</span>
+                        {{dialogCtl.selectedNetwork.status.netmask_ipv4}}
+                    </md-list-item>
+                </md-list>
+
+                <!-- not connected -->
+                <div layout="row" layout-sm="column" layout-align="space-around" ng-if="!dialogCtl.selectedNetwork.connected">
+                    <div>
+                        <md-icon md-svg-icon="cancel"></md-icon>
+                        <span>Not connected</span>
+                    </div>
+                </div>
+
+            </div>
+        </md-dialog-content>
+
+    </form>
+</md-dialog>

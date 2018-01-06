@@ -160,6 +160,7 @@ class Console():
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
+        self.last_return_code = None
 
     def __del__(self):
         """
@@ -179,6 +180,15 @@ class Console():
             list: input list of lines with eol removed
         """
         return [line.decode('utf-8').rstrip() for line in lines]
+
+    def get_last_return_code(self):
+        """
+        Return last executed command return code
+
+        Return:
+            int: return code (can be None)
+        """
+        return self.last_return_code
 
     def command(self, command, timeout=2.0):
         """
@@ -209,11 +219,13 @@ class Console():
         done = False
         start = time.time()
         killed = False
+        returncode = None
         while not done:
             #check if command has finished
             p.poll()
             if p.returncode is not None:
                 #command executed
+                self.last_return_code = p.returncode
                 done = True
                 break
             
@@ -303,7 +315,7 @@ class AdvancedConsole(Console):
         res = self.command(command, timeout)
         if res[u'error'] or res[u'killed']:
             #command failed
-            return {}
+            return []
 
         #parse command output
         content = u'\n'.join(res[u'stdout'])

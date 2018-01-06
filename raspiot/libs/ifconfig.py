@@ -89,9 +89,9 @@ class Ifconfig():
         #update timestamp
         self.timestamp = time.time()
 
-    def get_interfaces(self):
+    def get_configurations(self):
         """
-        Return configurede interfaces with theirs configurations
+        Return current network configuration
 
         Return:
             dict: interfaces configurations::

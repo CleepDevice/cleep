@@ -68,7 +68,22 @@ class DhcpcdConf(Config):
     
         return mask[:-1]
 
-    def get_interfaces(self):
+    def installed(self):
+        """
+        Check if config file exists and dhcpcd daemon is running
+
+        Returns:
+            bool: True if all is fine
+        """
+        if os.path.exists(self.CONF):
+            c = Console()
+            res = c.command(u'/usr/bin/pgrep dhcpcd | /usr/bin/wc -l')
+            if not res[u'error'] and not res[u'killed'] and res[u'stdout'][0]=='1':
+                return True
+
+        return False
+
+    def get_configurations(self):
         """
         Return network interfaces
         """
@@ -141,22 +156,7 @@ class DhcpcdConf(Config):
         
         return entries
 
-    def exists(self):
-        """
-        Check if config file exists and dhcpcd daemon is running
-
-        Returns:
-            bool: True if all is fine
-        """
-        if os.path.exists(self.CONF):
-            c = Console()
-            res = c.command(u'/usr/bin/pgrep dhcpcd | /usr/bin/wc -l')
-            if not res[u'error'] and not res[u'killed'] and res[u'stdout'][0]=='1':
-                return True
-
-        return False
-
-    def get_interface(self, interface):
+    def get_configuration(self, interface):
         """
         Return specified interface config
         
@@ -174,7 +174,7 @@ class DhcpcdConf(Config):
         if interface is None or len(interface)==0:
             raise MissingParameter(u'Interface parameter is missing')
 
-        interfaces = self.get_interfaces()
+        interfaces = self.get_configurations()
         if interfaces.has_key(interface):
             return interfaces[interface]
 
@@ -209,7 +209,7 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Domain_name_servers parameter is missing')
 
         #check if interface is not already configured
-        if self.get_interface(interface) is not None:
+        if self.get_configuration(interface) is not None:
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #get CIDR value
@@ -242,7 +242,7 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Interface parameter is missing')
 
         #check if interface is configured
-        if self.get_interface(interface) is None:
+        if self.get_configuration(interface) is None:
             return False
 
         #delete interface configuration lines
@@ -282,7 +282,7 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Domain_name_servers parameter is missing')
 
         #check if interface is not already configured
-        if self.get_interface(interface) is not None:
+        if self.get_configuration(interface) is not None:
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #prepare configuration content
@@ -314,7 +314,7 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Interface parameter is missing')
 
         #check if interface is configured
-        interface_ = self.get_interface(interface)
+        interface_ = self.get_configuration(interface)
         if interface_ is None:
             return False
 
@@ -342,7 +342,7 @@ class DhcpcdConf(Config):
             bool: True if interface deleted, False otherwise
         """
         #get interface
-        interface_ = self.get_interface(interface)
+        interface_ = self.get_configuration(interface)
         if interface_ is None:
             #interface not found
             return False

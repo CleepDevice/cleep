@@ -9,40 +9,6 @@ var networkConfigDirective = function(toast, networkService, raspiotService) {
         var self = this;
         self.networkType = 'wifi';
 
-        /**
-         * Scan wifi networks
-         */
-        self.scanWifiNetworks = function()
-        {
-            networkService.scanWifiNetworks()
-                .then(function(resp) {
-                    console.log('wifi networks', resp);
-                });
-        };
-
-        /**
-         * Get interfaces configurations
-         */
-        self.getInterfacesConfigurations = function()
-        {
-            networkService.getInterfacesConfigurations()
-                .then(function(resp) {
-                    console.log('network config', resp);
-                });
-        };
-
-        /**
-         * Init controller
-         */
-        self.init = function()
-        {
-           //self.getInterfacesConfigurations();
-        };
-
-    };
-
-    var networkLink = function(scope, element, attrs, controller) {
-        controller.init();
     };
 
     return {
@@ -50,8 +16,7 @@ var networkConfigDirective = function(toast, networkService, raspiotService) {
         replace: true,
         scope: true,
         controller: networkController,
-        controllerAs: 'networkCtl',
-        link: networkLink
+        controllerAs: 'networkCtl'
     };
 };
 

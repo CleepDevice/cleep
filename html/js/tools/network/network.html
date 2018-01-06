@@ -1,0 +1,44 @@
+<div layout="column" layout-padding ng-cloak block-ui="networkBlockui">
+
+        <md-list ng-cloak>
+
+            <!-- wired connections -->
+            <md-subheader class="md-no-sticky">Wired connections</md-subheader>
+            <md-list-item ng-click="networkCtl.showConfig(network, 'wired')" ng-repeat="network in networkCtl.networks | filter: {wifi:false}">
+                <md-icon md-svg-icon="ethernet"></md-icon>
+                <p ng-if="network.connected">Ethernet: connected with ip address {{network.status.ipv4}}</p>
+                <p ng-if="!network.connected">Ethernet: not connected</p>
+                <md-button class="md-secondary" ng-click="networkCtl.editWiredConfig(network)">
+                    <md-icon md-svg-icon="pencil"></md-icon>
+                    Configure
+                </md-button>
+            </md-list-item>
+
+            <!-- wifi connections -->
+            <md-subheader class="md-no-sticky">Wifi connections</md-subheader>
+            <md-list-item ng-click="networkCtl.showConfig(network, 'wifi')" ng-repeat="network in networkCtl.networks | filter: {wifi:true}">
+                <md-icon ng-if="!network.config.hidden" md-svg-icon="wifi"></md-icon>
+                <md-icon ng-if="network.config.hidden" md-svg-icon="eye-off-outline"></md-icon>
+                <p ng-if="network.connected">{{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal): connected with ip address {{network.status.ipv4}}</p>
+                <p ng-if="!network.connected">{{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal{{network.config.disabled?', disabled':''}}): not connected</p>
+                <md-button class="md-secondary" ng-if="!network.config.configured" ng-click="networkCtl.connectWifiNetwork(network)">
+                    <md-icon md-svg-icon="wifi"></md-icon>
+                    <span>Connect</span>
+                </md-button>
+                <md-button class="md-secondary" ng-if="network.config.configured" ng-click="networkCtl.editWifiConfig(network)">
+                    <md-icon md-svg-icon="pencil"></md-icon>
+                    <span>Configure</span>
+                </md-button>
+            </md-list-item>
+            <md-list-item style="padding-top:10px;">
+                <span flex></span>
+                <md-button class="md-raised md-primary" ng-click="networkCtl.refreshWifiNetworks()">
+                    <md-icon md-svg-icon="refresh"></md-icon>
+                    Update wifi infos
+                </md-button>
+            </md-list-item>
+
+        </md-list>
+
+</div>
+

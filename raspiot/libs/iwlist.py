@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from libs.console import AdvancedConsole, Console
 import time
+from raspiot.libs.console import AdvancedConsole, Console
+from raspiot.libs.wpasupplicantconf import WpaSupplicantConf
+import raspiot.libs.converters as Converters
 
-class IwList(AdvancedConsole):
+class Iwlist(AdvancedConsole):
     """
     Command /sbin/iwlist helper
     """
@@ -22,8 +24,10 @@ class IwList(AdvancedConsole):
         self._command = u'/sbin/iwlist %s scan'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
         self.networks = {}
         self.error = False
+        self.__last_scanned_interface = None
 
     def __refresh(self, interface):
         """
@@ -37,42 +41,54 @@ class IwList(AdvancedConsole):
             self.logger.debug('Don\'t refresh')
             return
 
-        entries = {}
-        results, error = self.find(self._command % interface, r'ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100', timeout=15.0)
+        self.__last_scanned_interface = interface
+        results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm', timeout=15.0)
 
         #handle invalid interface for wifi scanning
-        if error:
+        if len(results)==0 and self.get_last_return_code()!=0:
             self.networks = {}
             self.error = True
             return
 
         current_entry = None
+        entries = {}
         for group, groups in results:
             #filter None values
             groups = filter(None, groups)
 
-            if group.startswith(u'ESSID'):
+            if group.startswith(u'Cell'):
                 current_entry = {
                     u'interface': interface,
-                    u'network': groups[0],
+                    u'network': None,
                     u'encryption': None,
-                    u'signal_level': 0,
+                    u'signallevel': 0,
                     u'wpa2': False,
                     u'wpa': False,
                     u'encryption_key': None
                 }
+            elif group.startswith(u'ESSID'):
+                current_entry[u'network'] = groups[0]
                 entries[groups[0]] = current_entry
-            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2'):
+            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2')>=0:
                 current_entry[u'wpa2'] = True
-            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa'):
+            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa')>=0:
                 current_entry[u'wpa'] = True
             elif group.startswith(u'Encryption key') and current_entry is not None:
                 current_entry[u'encryption_key'] = groups[0]
             elif group.startswith(u'Signal level') and current_entry is not None:
                 if groups[0].isdigit():
-                    current_entry[u'signal_level'] = float(groups[0])
+                    try:
+                        current_entry[u'signallevel'] = float(groups[0])
+                    except:
+                        current_entry[u'signallevel'] = 0
+                elif groups[0].startswith(u'-'):
+                    try:
+                        current_entry[u'signallevel'] = Converters.dbm_to_percent(int(groups[0]))
+                    except:
+                        current_entry[u'signallevel'] = 0
                 else:
-                    current_entry[u'signal_level'] = groups[0]
+                    current_entry[u'signallevel'] = groups[0]
+        self.logger.debug('entries: %s' % entries)
 
         #compute encryption value
         for network in entries:
@@ -120,7 +136,7 @@ class IwList(AdvancedConsole):
                         interface (string): interface scanned
                         network (string): wifi network name
                         encryption (string): encryption type (TODO)
-                        signal_level (float): wifi signal level
+                        signallevel (float): wifi signal level
                     },
                     ...
                 }

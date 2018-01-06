@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from libs.console import AdvancedConsole, Console
+from raspiot.libs.console import AdvancedConsole, Console
 import time
 
 class Iw(AdvancedConsole):
@@ -21,8 +21,26 @@ class Iw(AdvancedConsole):
         #members
         self._command = u'/sbin/iw dev'
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
         self.connections = {}
         self.timestamp = None
+
+    def installed(self):
+        """
+        Return True if iw command is installed
+
+        Return:
+            bool: True is installed
+        """
+        res = self.command(u'/usr/bin/whereis iw')
+        if res[u'error'] or res[u'killed']:
+            self.logging.error('Error during command execution: %s' % res)
+
+        stdout = ''.join(res[u'stdout'])
+        if stdout.count(u'iw')==1:
+            return False
+
+        return True
 
     def __refresh(self):
         """
@@ -33,8 +51,12 @@ class Iw(AdvancedConsole):
             self.logger.debug('Don\'t refresh')
             return
 
+        results = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')
+        if len(results)==0:
+            self.connections = {}
+            return
+    
         entries = {}
-        results, error = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')
         current_entry = None
         for group, groups in results:
             #filter non values
