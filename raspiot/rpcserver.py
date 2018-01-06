@@ -272,7 +272,6 @@ def get_modules():
     logger.debug(u'Request inventory for available modules')
     modules = app.config[u'sys.inventory'].get_modules()
     events = app.config[u'sys.inventory'].get_modules_events()
-    logger.warning('event: %s' % events)
     
     #inject extra of installed modules (config, events)
     for module in modules:
