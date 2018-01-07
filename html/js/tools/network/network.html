@@ -51,9 +51,14 @@
 
             <!-- wifi actions -->
             <md-list-item style="padding-top:10px;">
+                <md-button class="md-raised md-primary" ng-click="networkCtl.addHiddenWifiNetwork()">
+                    <md-icon md-svg-icon="plus"></md-icon>
+                    Connect to hidden network
+                </md-button>
                 <span flex></span>
                 <md-button class="md-raised md-primary" ng-click="networkCtl.refreshWifiNetworks()">
                     <md-icon md-svg-icon="refresh"></md-icon>
+                    <md-tooltip md-direction="left">Last update {{networkCtl.lastWifiScan | hrDatetime}}</md-tooltip>
                     Update wifi infos
                 </md-button>
             </md-list-item>

@@ -463,6 +463,8 @@ class Network(RaspIotModule):
             #check result
             if connection_failed and invalid_password:
                 raise Exception(u'Unable to connect: invalid password specified')
+            elif hidden:
+                raise Exception('Unable to connect: invalid infos specified for hidden network')
             elif connection_failed or not connection_succeed:
                 raise Exception(u'Unable to connect: problem with wifi')
 
