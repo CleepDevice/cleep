@@ -81,10 +81,10 @@ class Config():
         Raises:
             Exception if file doesn't exist
         """
-        if not os.path.exists(self.CONF):
-            raise Exception(u'config.txt file does not exist')
+        if not os.path.exists(self.path):
+            raise Exception(u'%s file does not exist' % self.path)
 
-        self.__fd = io.open(self.CONF, mode, encoding=u'utf-8')
+        self.__fd = io.open(self.path, mode, encoding=u'utf-8')
         return self.__fd
 
     def _close(self):
