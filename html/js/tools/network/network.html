@@ -21,11 +21,14 @@
                 <span ng-if="networkCtl.wifiInterface.length>1">on wifi adapter #{{$index}}</span>
             </md-subheader>
             <md-list-item ng-click="networkCtl.showConfig(network, 'wifi')" ng-repeat="network in networkCtl.networks | filter: {wifi:true, interface:interface}">
-                <md-icon ng-if="!network.config.hidden" md-svg-icon="wifi"></md-icon>
-                <md-icon ng-if="network.config.hidden" md-svg-icon="eye-off-outline"></md-icon>
+                <md-icon md-svg-icon="wifi"></md-icon>
                 <p ng-if="network.connected && network.status.ipv4">{{network.network}}: connected with ip address {{network.status.ipv4}}</p>
                 <p ng-if="network.connected && !network.status.ipv4">{{network.network}}: connecting...</p>
                 <p ng-if="!network.connected">{{network.network}}: not connected</p>
+                <md-button class="md-icon-button" ng-if="network.config.hidden">
+                    <md-icon md-svg-icon="ghost"></md-icon>
+                    <md-tooltip md-direction="left">Hidden network</md-tooltip>
+                </md-button>
                 <md-button class="md-icon-button" ng-if="network.config.encryption=='unsecured'">
                     <md-icon md-svg-icon="lock-open"></md-icon>
                     <md-tooltip md-direction="left">Insecured network</md-tooltip>

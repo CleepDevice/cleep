@@ -35,7 +35,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         {
             if( block )
             {
-                self.networkBlockui.start();
+                self.networkBlockui.start('Loading...');
             }
             else
             {

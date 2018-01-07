@@ -28,9 +28,13 @@ class Network(RaspIotModule):
     Network module allows user to configure wired and wifi connection
 
     Note:
-        https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/ iw versus iwconfig (deprecated)
-        https://www.raspberrypi.org/documentation/configuration/ official raspberry pi foundation configuration guide
-        https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ another super guide ;)
+        - iw versus iwconfig (which is deprecated)
+            https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/
+        - official raspberry pi foundation configuration guide
+            https://www.raspberrypi.org/documentation/configuration/
+            https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md
+        - another super guide ;)
+            https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ 
     """
 
     MODULE_DEPS = []
@@ -345,7 +349,8 @@ class Network(RaspIotModule):
                     u'interface': None,
                     u'network': wifi_config[network][u'network'],
                     u'configured': True,
-                    u'disabled': wifi_config[network][u'disabled']
+                    u'disabled': wifi_config[network][u'disabled'],
+                    u'hidden': True
                 }
                 count += 1
 
