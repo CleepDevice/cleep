@@ -2,18 +2,9 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
 
     var wiredController = ['$scope', function($scope) {
         var self = this;
-
-        self.wiredInterfaces = [];
-        self.wiredInterfaceNames = [];
-        self.wiredConfig = [];
-
-        self.wifiInterfaces = [];
-        self.wifiInterfaceNames = [];
-        self.wifiConfig = [];
-        self.wifiNetworks = [];
-
         self.networkBlockui = null;
         self.networks = [];
+        self.wifiInterfaces = [];
         self.newConfig = null;
         self.selectedNetwork = null;
         self.wifiPassword = null;
@@ -26,6 +17,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         self.__updateConfig = function(config)
         {
             self.networks = config.networks;
+            self.wifiInterfaces = config.wifiinterfaces;
         };
 
         /**
