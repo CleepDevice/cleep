@@ -17,52 +17,50 @@ var networkService = function($q, $rootScope, rpcService, raspiotService) {
         return rpcService.sendCommand('get_interfaces_configurations', 'network');
     };
 
-    /*self.testWifiNetwork = function(network, password, encryption, hidden) {
-        return rpcService.sendCommand('test_wifi_network', 'network', {'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 30);
-    };*/
+    self.testWifiNetwork = function(interface, network, password, encryption, hidden) {
+        return rpcService.sendCommand('test_wifi_network', 'network', {'interface':interface, 'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 60);
+    };
 
-    self.saveWifiNetwork = function(network, password, encryption, hidden) {
-        return rpcService.sendCommand('save_wifi_network', 'network', {'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 20)
+    self.saveWifiNetwork = function(interface, network, password, encryption, hidden) {
+        return rpcService.sendCommand('save_wifi_network', 'network', {'interface':interface, 'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 30)
             .then(function() {
                 return self.refreshWifiNetworks();
             });
     };
 
-    self.deleteWifiNetwork = function(network) {
-        return rpcService.sendCommand('delete_wifi_network', 'network', {'network':network})
+    self.deleteWifiNetwork = function(interface, network) {
+        return rpcService.sendCommand('delete_wifi_network', 'network', {'interface':interface, 'network':network}, 30)
             .then(function() {
                 return self.refreshWifiNetworks();
             });
     };
 
     self.enableWifiNetwork = function(interface, network) {
-        return rpcService.sendCommand('enable_wifi_network', 'network', {'network':network})
+        return rpcService.sendCommand('enable_wifi_network', 'network', {'interface':interface, 'network':network}, 30)
             .then(function(resp) {
-                return raspiotService.getModuleConfig('network')
-            })
-            .then(function(config) {
-                //update disabled flag
-                config.wifinetworks[interface][network].disabled = false;
+                return self.refreshWifiNetworks();
             });
     };
 
     self.disableWifiNetwork = function(interface, network) {
-        return rpcService.sendCommand('disable_wifi_network', 'network', {'network':network})
+        return rpcService.sendCommand('disable_wifi_network', 'network', {'interface':interface, 'network':network}, 30)
             .then(function(resp) {
-                return raspiotService.getModuleConfig('network')
-            })
-            .then(function(config) {
-                //update disabled flag
-                config.wifinetworks[interface][network].disabled = true;
+                return self.refreshWifiNetworks();
             });
     };
 
-    self.updateWifiNetworkPassword = function(network, password) {
-        return rpcService.sendCommand('update_wifi_network_password', 'network', {'network':network, 'password':password});
+    self.updateWifiNetworkPassword = function(interface, network, password) {
+        return rpcService.sendCommand('update_wifi_network_password', 'network', {'interface':interface, 'network':network, 'password':password}, 30)
+            .then(function(resp) {
+                return self.refreshWifiNetworks();
+            });
     };
 
     self.reconfigureWifiNetwork = function(interface) {
-        return rpcService.sendCommand('reconfigure_interface', 'network', {'interface':interface}, 30);
+        return rpcService.sendCommand('reconfigure_interface', 'network', {'interface':interface}, 30)
+            .then(function(resp) {
+                return self.refreshWifiNetworks();
+            });
     };
 
     self.refreshWifiNetworks = function() {

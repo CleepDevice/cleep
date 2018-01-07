@@ -369,12 +369,13 @@ class Wpacli(AdvancedConsole):
 
         return result
 
-    def reconfigure_interface(self, interface):
+    def reconfigure_interface(self, interface, pause=5.0):
         """
         Reconfigure specified interface
 
         Args:
             interface (string): interface name
+            pause (float): pause before returning result. The pause helps to avoid empty networks list
 
         Return:
             bool: True if reconfigure succeed
@@ -387,6 +388,10 @@ class Wpacli(AdvancedConsole):
         res = self.command(u'%s -i %s reconfigure' % (self.wpacli, interface), timeout=10.0)
         if res[u'error'] or res[u'killed']:
             return False
+
+        #pause if requested
+        if pause:
+            time.sleep(pause)
         
         return True
 

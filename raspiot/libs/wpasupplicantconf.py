@@ -256,6 +256,8 @@ class WpaSupplicantConf(Config):
             raise InvalidParameter(u'Encryption "%s" does not exist (available: %s)' % (encryption, u','.join(self.ENCRYPTION_TYPES)))
         if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (password is None or len(password)==0):
             raise MissingParameter(u'Parameter "password" is missing')
+        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (len(password)<8 or len(password)>63):
+            raise InvalidParameter(u'Parameter password must be 8..63 string length')
 
         #check if network doesn't already exist
         if self.get_configuration(network) is not None:
@@ -443,6 +445,20 @@ class WpaSupplicantConf(Config):
         Returns:
             bool: True if file generated, False otherwise
         """
+        #check params
+        if path is None or len(path)==0:
+            raise MissingParameter(u'Parameter path is missing')
+        if encryption is None or len(encryption)==0:
+            raise MissingParameter(u'Parameter encryption is missing')
+        if encryption not in self.ENCRYPTION_TYPES:
+            raise InvalidParameter(u'Encryption "%s" does not exist (available: %s)' % (encryption, u','.join(self.ENCRYPTION_TYPES)))
+        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (password is None or len(password)==0):
+            raise MissingParameter(u'Parameter "password" is missing')
+        if network is None or len(network)==0:
+            raise MissingParameter(u'Parameter network is missing')
+        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (len(password)<8 or len(password)>63):
+            raise InvalidParameter(u'Parameter password must be 8..63 string length')
+
         #write header
         with io.open(path, u'w') as fd:
             content  = u'country=GB\n'
@@ -451,17 +467,13 @@ class WpaSupplicantConf(Config):
             fd.write(content)
         self.logger.debug('Written fake wpa_supplicant.conf file to %s' % path)
 
-        #switch to new file
-        self.default_conf = self.CONF
-        self.CONF = path
+        #create new wpasupplicant instance
+        instance = WpaSupplicantConf(path, backup=False)
 
         #add new network
-        if not self.add_network(network, encryption, password, hidden):
+        if not instance.add_network(network, encryption, password, hidden):
             self.logger.error('Failed to write temp wpa_supplicant.conf file %s' % path)
             return False
-
-        #restore default file
-        self.CONF = self.default_conf
 
         return True
 

@@ -14,22 +14,31 @@
             <form name="dialogform">
                 <div class="md-dialog-content">
 
+                    <!-- message -->
                     <div layout="row">
-                        <span>Set password to connect to {{dialogCtl.selectedNetwork.network}}</span>
+                        <span>Set password to connect to {{dialogCtl.selectedNetwork.network}} and feel free to test connection before saving credentials.</span>
                     </div>
 
+                    <!-- password -->
                     <div layout="row">
                         <md-input-container class="md-block" flex-gt-sm>
-                            <label>Password</label>
-                            <input ng-attr-type="{{dialogCtl.showPassword ? 'text' : 'password'}}" ng-disabled="" ng-model="dialogCtl.wifiPassword">
+                            <input ng-attr-type="{{dialogCtl.showPassword ? 'text' : 'password'}}" ng-disabled="dialogCtl.testing" ng-model="dialogCtl.wifiPassword" placeholder="password">
                         </md-input-container>
                         <div class="padding-row-with-input">
-                            <md-button class="md-icon-button" ng-click="dialogCtl.showPassword=!dialogCtl.showPassword" ng-disabled="" aria-label="Show password">
+                            <md-button class="md-icon-button" ng-click="dialogCtl.showPassword=!dialogCtl.showPassword" ng-disabled="dialogCtl.testing" aria-label="Show password">
                                 <md-icon md-svg-icon="eye" ng-if="!dialogCtl.showPassword"></md-icon>
                                 <md-icon md-svg-icon="eye-off" ng-if="dialogCtl.showPassword"></md-icon>
                                 <md-tooltip md-direction="left" ng-if="!dialogCtl.showPassword">Show password</md-tooltip>
                                 <md-tooltip md-direction="left" ng-if="dialogCtl.showPassword">Hide password</md-tooltip>
                             </md-button>
+                        </div>
+                    </div>
+
+                    <!-- test message -->
+                    <div layout="row" layout-align="space-around" ng-if="dialogCtl.testing">
+                        <div layout="row">
+                            <md-progress-circular md-mode="indeterminate" md-diameter="20px"></md-progress-circular>
+                            <span style="padding-left:10px;">Trying to connect to network, please wait...</span>
                         </div>
                     </div>
 
@@ -39,10 +48,12 @@
 
         <md-dialog-actions layout="row">
             <span flex></span>
-            <md-button ng-click="dialogCtl.cancelDialog()" aria-label="Cancel">
-                <span>Cancel</span>
+            <md-button ng-click="dialogCtl.testWifiNetwork()" aria-label="Test" ng-disabled="dialogCtl.testing">
+                <md-icon md-svg-icon="creation"></md-icon>
+                <span>Test</span>
             </md-button>
-            <md-button ng-click="dialogCtl.validDialog()" aria-label="Connect">
+            <md-button ng-click="dialogCtl.validDialog()" aria-label="Connect" ng-disabled="dialogCtl.testing">
+                <md-icon md-svg-icon="lan-connect"></md-icon>
                 <span>Connect</span>
             </md-button>
         </md-dialog-actions>

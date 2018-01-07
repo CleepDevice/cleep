@@ -17,27 +17,15 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         self.newConfig = null;
         self.selectedNetwork = null;
         self.wifiPassword = null;
+        self.testing = false;
 
         /**
-         * Load configuration
-         */
-        self.__loadConfig = function(config)
-        {
-            //fill networks
-            self.__fillNetworks(config.networks);
-        };
-
-        /**
-         * Fill networks
+         * Update config
          * @param networks: list of networks returned by rpc
          */
-        self.__fillNetworks = function(networks)
+        self.__updateConfig = function(config)
         {
-            self.networks = [];
-            for( var network in networks )
-            {
-                self.networks.push(networks[network]);
-            }
+            self.networks = config.networks;
         };
 
         /**
@@ -66,19 +54,31 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         };
 
         /**
-         * Cancel dialog
+         * Cancel dialog (close modal and reset variables)
          */
         self.cancelDialog = function()
         {
+            if( self.testing )
+            {
+                //test in progress, cancel action
+                return;
+            }
+
             self.resetDialogVariables()
             $mdDialog.cancel();
         };
 
         /**
-         * Valid dialog
-         * Note: don't forget to clear data !
+         * Valid dialog (only close modal)
+         * Note: don't forget to reset variables !
          */
         self.validDialog = function() {
+            if( self.testing )
+            {
+                //test in progress, cancel action
+                return;
+            }
+
             $mdDialog.hide();
         };
 
@@ -192,14 +192,16 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         {
             //lock ui
             self.networkLoading(true);
+            toast.loading('Updating network informations...');
 
             networkService.refreshWifiNetworks()
                 .then(function(config) {
-                    //update networks internally
-                    self.__fillNetworks(config.networks);
+                    //update config
+                    self.__updateConfig(config);
                 })
                 .finally(function() {
                     self.networkLoading(false);
+                    toast.hide();
                 });
         };
 
@@ -208,12 +210,22 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
          */
         self.changeWifiPassword = function()
         {
-            networkService.updateWifiNetworkPassword(self.selectedNetwork.network, self.wifiPassword)
-                .then(function() {
+            //lock ui
+            self.validDialog();
+            self.networkLoading(true);
+            toast.loading('Changing password...');
+
+            networkService.updateWifiNetworkPassword(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword)
+                .then(function(config) {
+                    //update config
+                    self.__updateConfig(config);
+
+                    //user message
                     toast.success('Password updated');
                 })
                 .finally(function() {
-                    self.wifiPassword = '';
+                    self.resetDialogVariables();
+                    self.networkLoading(false);
                 });
         };
 
@@ -222,10 +234,22 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
          */
         self.enableWifiNetwork = function()
         {
+            //lock ui
+            self.validDialog();
+            self.networkLoading(true);
+            toast.loading('Enabling network...');
+
             networkService.enableWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network)
-                .then(function() {
-                    self.selectedNetwork.config.disabled = false;
+                .then(function(config) {
+                    //update config
+                    self.__updateConfig(config);
+                    
+                    //user message
                     toast.success('Network enabled');
+                })
+                .finally(function() {
+                    self.resetDialogVariables();
+                    self.networkLoading(false);
                 });
         };
 
@@ -234,10 +258,22 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
          */
         self.disableWifiNetwork = function()
         {
+            //lock ui
+            self.validDialog();
+            self.networkLoading(true);
+            toast.loading('Disabling network...');
+
             networkService.disableWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network)
-                .then(function() {
-                    self.selectedNetwork.config.disabled = true;
+                .then(function(config) {
+                    //update config
+                    self.__updateConfig(config);
+                    
+                    //user message
                     toast.success('Network disabled');
+                })
+                .finally(function() {
+                    self.resetDialogVariables();
+                    self.networkLoading(false);
                 });
         };
 
@@ -255,12 +291,13 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
                 .then(function() {
                     //block ui
                     self.networkLoading(true);
+                    toast.loading('Forgetting network...');
 
                     //perform deletion
-                    return networkService.deleteWifiNetwork(self.selectedNetwork.network)
+                    return networkService.deleteWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network)
                         .then(function(config) {
-                            //update networks internally
-                            self.__fillNetworks(config.networks);
+                            //update config
+                            self.__updateConfig(config);
 
                             //user message
                             toast.success('Network configuration has been forgotten')
@@ -290,18 +327,20 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
                     controllerAs: 'dialogCtl',
                     templateUrl: 'js/tools/network/wifiConnectionDialog.html',
                     parent: angular.element(document.body),
-                    clickOutsideToClose: true,
+                    clickOutsideToClose: false,
+                    escapeToClose: false,
                     fullscreen: true
                 })
                     .then(function() {
                         //lock ui
                         self.networkLoading(true);
+                        toast.loading('Connecting to network...');
 
                         //perform action
-                        networkService.saveWifiNetwork(self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
+                        networkService.saveWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
                             .then(function(config) {
-                                //update network internally
-                                self.__fillNetworks(config.networks);
+                                //update config
+                                self.__updateConfig(config);
 
                                 //user message
                                 toast.success('Wifi network configuration saved. Device should be able to connect to this network');
@@ -319,10 +358,12 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
             {
                 //unsecured network, directly add network
                 self.networkLoading(true);
-                networkService.saveWifiNetwork(self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
+                toast.loading('Connecting to network...');
+
+                networkService.saveWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
                     .then(function(config) {
-                        //update networks internally
-                        self.__fillNetworks(config.networks);
+                        //update config
+                        self.__updateConfig(config);
 
                         //user message
                         toast.success('Wifi network configuration saved. Device should be able to connect to this network');
@@ -347,22 +388,47 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
             confirm.open('Reconfigure network', 'This action can disconnect the device temporarly. Please wait until it connects again.', 'Reconfigure')
                 .then(function() {
                     //block ui
-                    //self.networkLoading(true);
+                    self.networkLoading(true);
+                    toast.loading('Reconfiguring network...');
 
-                    //perform deletion
+                    //execute action
                     return networkService.reconfigureWifiNetwork(self.selectedNetwork.interface)
                         .then(function(config) {
+                            //update config
+                            self.__updateConfig(config);
+
                             //user message
                             toast.success('Network has been reconfigured')
                         })
                         .finally(function() {
-                            //self.networkLoading(false);
+                            //unblock ui
+                            self.networkLoading(false);
                         });
                 })
                 .finally(function() {
                     self.resetDialogVariables();
                 });
 
+        };
+
+        /**
+         * Test wifi connection
+         */
+        self.testWifiNetwork = function()
+        {
+            //testing flag
+            self.testing = true;
+            
+            //perform action
+            networkService.testWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
+                .then(function() {
+                    //user message
+                    toast.success('Test successful. You can connect safely now');
+                 })
+                .finally(function() {
+                    //unlock ui
+                    self.testing = false;
+                });
         };
 
         /**
@@ -377,7 +443,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
             //load config
             raspiotService.getModuleConfig('network')
                 .then(function(config) {
-                    self.__loadConfig(config);
+                    self.__updateConfig(config);
                 })
                 .finally(function() {
                     self.networkLoading(false);

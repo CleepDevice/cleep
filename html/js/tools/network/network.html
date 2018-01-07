@@ -19,8 +19,15 @@
             <md-list-item ng-click="networkCtl.showConfig(network, 'wifi')" ng-repeat="network in networkCtl.networks | filter: {wifi:true}">
                 <md-icon ng-if="!network.config.hidden" md-svg-icon="wifi"></md-icon>
                 <md-icon ng-if="network.config.hidden" md-svg-icon="eye-off-outline"></md-icon>
-                <p ng-if="network.connected">{{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal): connected with ip address {{network.status.ipv4}}</p>
-                <p ng-if="!network.connected">{{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal{{network.config.disabled?', disabled':''}}): not connected</p>
+                <p ng-if="network.connected && network.status.ipv4">
+                    {{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal): connected with ip address {{network.status.ipv4}}
+                </p>
+                <p ng-if="network.connected && !network.status.ipv4">
+                    {{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal): connecting...
+                </p>
+                <p ng-if="!network.connected">
+                    {{network.network}} ({{network.config.encryption}}, {{network.config.signallevel}}% signal{{network.config.disabled?', disabled':''}}): not connected
+                </p>
                 <md-button class="md-secondary" ng-if="!network.config.configured" ng-click="networkCtl.connectWifiNetwork(network)">
                     <md-icon md-svg-icon="wifi"></md-icon>
                     <span>Connect</span>
@@ -30,6 +37,8 @@
                     <span>Configure</span>
                 </md-button>
             </md-list-item>
+
+            <!-- wifi actions -->
             <md-list-item style="padding-top:10px;">
                 <span flex></span>
                 <md-button class="md-raised md-primary" ng-click="networkCtl.refreshWifiNetworks()">

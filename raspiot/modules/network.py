@@ -115,7 +115,7 @@ class Network(RaspIotModule):
                 configured_interfaces[interface][u'connected'] = False
 
         #prepare networks list
-        networks = {}
+        networks = []
 
         #add wired interface as network
         for interface in configured_interfaces.keys():
@@ -129,14 +129,14 @@ class Network(RaspIotModule):
                     connected = True
 
                 #save entry
-                networks['%s_%s' % (interface, interface)] = {
+                networks.append({
                     u'network': interface,
                     u'interface': interface,
                     u'wifi': False,
                     u'connected': connected,
                     u'config': configured_interfaces[interface],
                     u'status': network_status
-                }
+                })
 
         #add all wifi networks on range
         for interface in self.wifi_networks:
@@ -163,21 +163,18 @@ class Network(RaspIotModule):
                     connected = True
 
                 #save entry
-                networks['%s_%s' % (interface, network_name)] = {
+                networks.append({
                     u'network': network_name,
                     u'interface': interface,
                     u'wifi': True,
                     u'connected': connected,
                     u'config': wifi_config,
                     u'status': network_status
-                }
+                })
 
         #prepare output
         output[u'networks'] = networks
         output[u'wifiinterfaces'] = self.wifi_interfaces.keys()
-        #output[u'status'] = current_status
-        #output[u'configurations'] = configured_interfaces
-        #output[u'wifinetworks'] = self.wifi_networks
         output[u'lastwifiscan'] = self.last_wifi_networks_scan
 
         return output
@@ -385,92 +382,113 @@ class Network(RaspIotModule):
 
         return self.wifi_networks
 
-    #def test_wifi_connection(self, interface, network, encryption=None, password=None, hidden=False):
-    #    """ 
-    #    Try to connect to specified wifi network. Save anything or revert back to original state after test.
+    def test_wifi_network(self, interface, network, password=None, encryption=None, hidden=False):
+        """ 
+        Try to connect to specified wifi network. Save anything and revert back to original state after test.
 
-    #    Args:
-    #        interface (string) interface name
-    #        network (string): network name
-    #        encryption (wpa|wpa2|wep|unsecured): network encryption
-    #        password (string): password
-    #        hidden (bool) hidden network
+        Args:
+            interface (string) interface name
+            network (string): network name
+            password (string): password
+            encryption (wpa|wpa2|wep|unsecured): network encryption
+            hidden (bool) hidden network
 
-    #    Raises:
-    #        CommandError, CommandInfo
-    #    """
-    #    c = Console()
-    #    error = None
-    #    try:
-    #        fake_file = u'/tmp/fake_wpa_%s.conf' % unicode(uuid.uuid4())
-    #        #add network configuration
-    #        #self.wpasupplicant.add_network(network, encryption, password, hidden)
-    #        if not self.wpasupplicant.write_fake_wpasupplicant(fake_file, network, encryption, password, hidden):
-    #            self.logger.error(u'Unable to generate fake wpasupplicant file for testing (%s)' % fake_file)
-    #            raise CommandError(u'Unable to test connection: internal error')
-    #        time.sleep(1.0)
+        Raises:
+            CommandError
+        """
+        #create test wpa_supplicant.conf file
+        test_wpasupplicant = u'/tmp/test_wpa_%s.conf' % unicode(uuid.uuid4())
+        if not self.wpasupplicant.write_fake_wpasupplicant(test_wpasupplicant, network, encryption, password, hidden):
+            self.logger.error(u'Unable to generate fake wpasupplicant file for testing (%s)' % test_wpasupplicant)
+            raise Exception(u'Unable to connect to network: internal error')
 
-    #        #stop wpa_supplicant daemon
-    #        res = c.command(u'/usr/bin/pkill -f wpa_supplicant')
-    #        self.logger.debug(u'pkill output: %s' % res)
+        c = Console()
+        error = None
+        try:
+
+            #kill wpa_supplicant and wpa_cli processes
+            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_.*%s"' % interface)
+            self.logger.debug(u'pkill output: %s' % res)
     
-    #        #try to connect
-    #        log_file = u'/tmp/wpa_%s.log' % unicode(uuid.uuid4())
-    #        error_file = u'/tmp/error_%s.log' % unicode(uuid.uuid4())
-    #        self.logger.debug('FILES = %s %s' % (log_file, error_file))
-    #        res = c.command(u'/sbin/wpa_supplicant -i %s -c %s -f %s 2> %s' % (interface, fake_file, log_file, error_file), 8.0)
-    #        if res[u'error'] or res[u'killed']:
-    #            raise CommandError(u'Connection failed: network exists?')
-    #        self.logger.debug('wpa_supplicant output: %s' % res)
+            #try to connect
+            log_file = u'/tmp/wpa_%s.log' % unicode(uuid.uuid4())
+            error_file = u'/tmp/error_%s.log' % unicode(uuid.uuid4())
+            self.logger.debug('FILES = %s %s' % (log_file, error_file))
+            res = c.command(u'/sbin/wpa_supplicant -i %s -c %s -t -f %s 2> %s' % (interface, test_wpasupplicant, log_file, error_file), 10.0)
+            #self.logger.debug('wpa_supplicant output: %s' % res)
+            #if res[u'error'] or res[u'killed']:
+            #    raise Exception(u'Unable to connect to network: is network in range?')
 
-    #        #wpa_supplicant command can only be killed by CTRL-C because it uses wpa_cli
-    #        #so we need to kill it explicitely
-    #        res = c.command(u'/usr/bin/pkill -f wpa_supplicant')
-    #        self.logger.debug(u'pkill output: %s' % res)
+            #wpa_supplicant command can only be killed by CTRL-C because it uses wpa_cli
+            #so we need to kill it explicitely
+            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_supplicant.*%s"' % interface)
+            self.logger.debug(u'pkill output: %s' % res)
 
-    #        #parse result
-    #        with open(log_file) as f:
-    #            lines = f.readlines()
-    #        with open(error_file) as f:
-    #            lines += f.readlines()
-    #        self.logger.debug(u''.join(lines))
-    #        groups = re.findall(r'(CTRL-EVENT-SSID-TEMP-DISABLED).*reason=(.*?)\s|(CTRL-EVENT-CONNECTED)', '\n'.join(lines))
-    #        for group in groups:
-    #            group = filter(None, group)
-    #            self.logger.debug(group)
-    #            if group[0] is not None and len(group[0])>0:
-    #                if group[0]==u'CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]==u'WRONG_KEY':
-    #                    #invalid password detected
-    #                    self.logger.debug(u'Test network: invalid password')
-    #                    raise Exception(u'Invalid password')
-    #                elif group[0]==u'CTRL-EVENT-CONNECTED':
-    #                    #connection successful
-    #                    self.logger.debug(u'Test network: connection successful')
-    #                    break
+            #parse result
+            with open(log_file) as f:
+                lines = f.readlines()
+            with open(error_file) as f:
+                lines += f.readlines()
+            self.logger.debug('lines: %s' % u''.join(lines))
+            groups = re.findall(r'(CTRL-EVENT-SSID-TEMP-DISABLED).*reason=(.*?)\s|(CTRL-EVENT-CONNECTED)|(CTRL-EVENT-DISCONNECTED)|(pre-shared key may be incorrect)', '\n'.join(lines))
+            connection_failed = False
+            connection_succeed = False
+            invalid_password = False
+            for group in groups:
+                group = filter(None, group)
+                self.logger.debug('group: %s' % group)
+                if group[0] is not None and len(group[0])>0:
+                    if group[0]==u'CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]==u'WRONG_KEY':
+                        #true invalid password detected, stop statement
+                        self.logger.debug(u'Test network: invalid password')
+                        invalid_password = True
+                        connection_failed = True
+                        break
 
-    #    except Exception as e:
-    #        error = unicode(e)
+                    elif group[0]==u'CTRL-EVENT-CONNECTED':
+                        #connection successful detected, stop statement
+                        self.logger.debug(u'Connection to network succeed')
+                        connection_failed = False
+                        connection_succeed = True
+                        break
 
-    #    finally:
-    #        #remove temp files
-    #        try:
-    #            os.remove(fake_file)
-    #            os.remove(log_file)
-    #            os.remove(error_file)
-    #        except:
-    #            pass
+                    elif group[0]==u'CTRL-EVENT-DISCONNECTED':
+                        #connection failure for unknow reason, continue parsing to get reason
+                        connection_failed = True
 
-    #        #always delete wifi config
-    #        #self.logger.debug(u'Delete wifi config for %s' % interface)
-    #        #self.wpasupplicant.delete_network(network)
+                    elif group[0]==u'pre-shared key may be incorrect':
+                        #maybe invalid password specified
+                        invalid_password = True
 
-    #        #and relaunch wpa_supplicant
-    #        self.__restart_interface(interface)
+            #check result
+            if connection_failed and invalid_password:
+                raise Exception(u'Unable to connect: invalid password specified')
+            elif connection_failed or not connection_succeed:
+                raise Exception(u'Unable to connect: problem with wifi')
 
-    #    if error:
-    #        raise CommandError(error)
+        except Exception as e:
+            error = unicode(e)
 
-    #    return True
+        finally:
+            #remove temp files
+            try:
+                os.remove(test_wpasupplicant)
+                os.remove(log_file)
+                os.remove(error_file)
+            except:
+                pass
+
+            #kill all wpa_ instances
+            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_.*%s"' % interface)
+            self.logger.debug(u'pkill output: %s' % res)
+
+            #reconfigure interface (stop-start-reconfigure)
+            self.reconfigure_interface(interface)
+
+        if error:
+            raise CommandError(error)
+
+        return True
 
     def save_wifi_network(self, interface, network, password=None, encryption=None, hidden=False):
         """
@@ -512,11 +530,12 @@ class Network(RaspIotModule):
         #reconfigure interface
         return self.wpacli.reconfigure_interface(interface)
 
-    def update_wifi_network_password(self, network, password):
+    def update_wifi_network_password(self, interface, network, password):
         """
         Update wifi network configuration
 
         Args:
+            interface (string): interface name
             network (string): network to connect interface to
             password (string): network connection password
 
@@ -532,11 +551,12 @@ class Network(RaspIotModule):
         #reconfigure interface
         return self.wpacli.reconfigure_interface(interface)
 
-    def enable_wifi_network(self, network):
+    def enable_wifi_network(self, interface, network):
         """
         Enable wifi network
 
         Args:
+            interface (string): interface name
             network (string): network name
 
         Return:
@@ -551,11 +571,12 @@ class Network(RaspIotModule):
         #reconfigure interface
         return self.wpacli.reconfigure_interface(interface)
 
-    def disable_wifi_network(self, network):
+    def disable_wifi_network(self, interface, network):
         """
         Disable wifi network
 
         Args:
+            interface (string): interface name
             network (string): network name
 
         Return:
