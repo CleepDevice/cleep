@@ -1,3 +1,9 @@
+/**
+ * RPC service is in charge :
+ *  - to implements rpc commands (sendCommand, upload, download, ...),
+ *  - to register client to rpc server 
+ *  - and to handle connection loss (display an overlay with message)
+ */
 var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $window) {
     var self = this;
     self.uriCommand = window.location.protocol + '//' + window.location.host + '/command';
@@ -357,6 +363,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
+            //save registration
             self.pollKey = resp.data.pollKey;
             d.resolve('registered');
         }, function(resp) {

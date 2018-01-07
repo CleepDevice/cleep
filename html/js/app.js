@@ -16,6 +16,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     self.needRestart = false;
     self.needReboot = false;
     self.rebooting = false;
+    self.notConnected = false;
     self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
@@ -40,6 +41,12 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
                     //unblock ui
                     blockUI.stop();
+                }
+                else if( self.notConnected )
+                {
+                    //unblock ui
+                    blockUI.stop();
+                    self.notConnected = false;
                 }
 
                 if( response && response.data && !response.error )
@@ -75,11 +82,20 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 if( !self.rebooting )
                 {
                     //error occured, differ next polling
-                    self.nextPollingTimeout *= 2;
+                    /*self.nextPollingTimeout *= 2;
                     if( self.nextPollingTimeout>300 )
                     {
                         //do not exceed polling timeout over 5 minutes
                         self.nextPollingTimeout /= 2;
+                    }*/
+                    self.nextPollingTimeout = 2;
+
+                    //handle connection loss
+                    if( err=='Connection problem' && !self.notConnected )
+                    {
+                        blockUI.message = 'Connection lost with the device.';
+                        blockUI.start('Connection lost with the device.');
+                        self.notConnected = true;
                     }
                 }
                 else
