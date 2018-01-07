@@ -7,7 +7,7 @@ var toastService = function($mdToast) {
      * @param duration: message duration
      */
     self.error = function(message, duration) {
-        self.__toast(message, 5000, 'error');
+        self.__toast(message, 6000, 'error');
     };
 
     /**
