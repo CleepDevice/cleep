@@ -13,6 +13,11 @@
     cursor: default;
 }
 
+/* white circular progress */
+.progress-circular-white svg path {
+    stroke: white;
+}
+
 /* toast */
 md-toast.error .md-toast-content {
     background: #E53935;
