@@ -23,6 +23,13 @@ var soundsService = function($q, $rootScope, rpcService) {
     };
 
     /**
+     * Get musics
+     */
+    self.getMusics = function() {
+        return rpcService.sendCommand('get_musics', 'sounds');
+    };
+
+    /**
      * Get langs
      */
     self.getLangs = function() {
@@ -44,10 +51,24 @@ var soundsService = function($q, $rootScope, rpcService) {
     };
 
     /**
+     * Delete music
+     */
+    self.deleteMusic = function(fullname) {
+        return rpcService.sendCommand('delete_music', 'sounds', {'fullname':fullname});
+    };
+
+    /**
      * Play sound
      */
     self.playSound = function(fullname) {
         return rpcService.sendCommand('play_sound', 'sounds', {'fullname':fullname});
+    };
+
+    /**
+     * Play music
+     */
+    self.playMusic = function(fullname) {
+        return rpcService.sendCommand('play_music', 'sounds', {'fullname':fullname});
     };
 
     /**
@@ -76,6 +97,13 @@ var soundsService = function($q, $rootScope, rpcService) {
      */
     self.uploadSound = function(file) {
         return rpcService.upload('add_sound', 'sounds', file);
+    };
+
+    /**
+     * Upload music
+     */
+    self.uploadMusic = function(file) {
+        return rpcService.upload('add_music', 'sounds', file);
     };
 };
     

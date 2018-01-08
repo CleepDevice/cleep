@@ -14,18 +14,18 @@ import time
 
 __all__ = [u'Sounds']
 
-class PlaySound(Thread):
+class PlayMusic(Thread):
     """
-    Play sound thread
+    Play music thread
     """
 
-    def __init__(self, filepath, delete=False):
+    def __init__(self, filepath, volume, delete=False):
         """
         Constructor
         
         Args:
-            filepath (string): sound filepath
-            filedesc (file): file descriptor. Closed at end of playback
+            filepath (string): music filepath
+            volume (int): mixer volume (0..100)
             delete (bool): delete filepath after playing it
         """
         #init
@@ -36,26 +36,28 @@ class PlaySound(Thread):
         #members
         self.filepath = filepath
         self.delete = delete
+        self.volume = volume
         self.__continu = True
 
     def stop(self):
         """
-        Stop current playing sound
+        Stop current playing music
         """
         self.__continu = False
 
     def run(self):
         """
-        Play sound process
+        Play music process
         """
         try:
             #init player
-            self.logger.debug(u'init player')
-            pygame.mixer.init()
+            self.logger.debug(u'Init player')
+            #pygame.mixer.init()
+            pygame.mixer.music.set_volume(float(self.volume)/100.0))
             pygame.mixer.music.load(self.filepath)
 
-            #play sound
-            self.logger.debug(u'play sound file "%s"' % self.filepath)
+            #play music
+            self.logger.debug(u'Play music file "%s"' % self.filepath)
             pygame.mixer.music.play()
 
             #wait until end of playback or if user stop thread
@@ -65,15 +67,15 @@ class PlaySound(Thread):
                     pygame.mixer.music.stop()
                     break
                 time.sleep(.1)
-            pygame.quit()
+            #pygame.quit()
 
             #delete file
             if self.delete:
-                self.logger.debug(u'PlaySound: delete sound file "%s"' % self.filepath)
+                self.logger.debug(u'PlayMusic: delete music file "%s"' % self.filepath)
                 os.remove(self.filepath)
 
         except:
-            self.logger.exception(u'Exception during sound playing:')
+            self.logger.exception(u'Exception during music playing:')
 
 
 
@@ -84,7 +86,7 @@ class Sounds(RaspIotRenderer):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Plays sounds or speech text you want'
     MODULE_LOCKED = False
-    MODULE_TAGS = [u'sound']
+    MODULE_TAGS = [u'sound', u'music']
     MODULE_COUNTRY = None
     MODULE_LINK = None
 
@@ -94,8 +96,12 @@ class Sounds(RaspIotRenderer):
     DEFAULT_CONFIG = {
         u'lang': u'en'
     }
+    MUSICS_PATH = u'/var/opt/raspiot/musics'
     SOUNDS_PATH = u'/var/opt/raspiot/sounds'
-    ALLOWED_EXTS = [u'mp3', u'wav', u'ogg']
+    ALLOWED_MUSIC_EXTS = [u'mp3', u'wav', u'ogg']
+    ALLOWED_SOUND_EXTS = [u'ogg', u'wav']
+    MIXER_FREQUENCY = 44100
+    MIXER_CHANNEL = 2
     TTS_LANGS = {
         u'af' : u'Afrikaans',
         u'sq' : u'Albanian',
@@ -167,11 +173,30 @@ class Sounds(RaspIotRenderer):
             url_log.setLevel(logging.WARNING)
 
         #members
-        self.__sound_thread = None
+        self.__music_thread = None
+        self.volume = 50
+        self.sounds_buffer = {}
 
-        #make sure sounds path exists
+        #make sure paths exist
         if not os.path.exists(Sounds.SOUNDS_PATH):
             os.makedirs(Sounds.SOUNDS_PATH)
+        if not os.path.exists(Sounds.MUSICS_PATH):
+            os.makedirs(Sounds.MUSICS_PATH)
+
+    def _configure(self):
+        """
+        Configure module
+        """
+        #init mixer
+        pygame.mixer.init(frequency=self.MIXER_FREQUENCY, channels=self.MIXER_CHANNELS)
+
+        #bufferize sounds
+        sounds = self._get_sounds()
+        for sound in sounds:
+            path = os.path.join(self.SOUNDS_PATH, sound[u'fullname'])
+            if not self.__bufferize_sound(path):
+                #invalid file, delete it
+                self.delete_sound(sound[u'fullname'])
 
     def get_module_config(self):
         """
@@ -180,8 +205,28 @@ class Sounds(RaspIotRenderer):
         config = {}
         config[u'langs'] = self.get_langs()
         config[u'volume'] = self.get_volume()
+        config[u'musics'] = self.get_musics()
         config[u'sounds'] = self.get_sounds()
+
         return config
+
+    def __bufferize_sound(self, path):
+        """
+        Bufferize specified file
+
+        Args:
+            path (string): file full path
+
+        Return:
+            bool: True if file bufferized
+        """
+        try:
+            self.sounds_buffer[sound[u'fullname']] = pygame.mixer.Sound(file=path)
+            return True
+        except:
+            self.logger.exception('Unable to bufferize file:')
+
+        return False
 
     def get_langs(self):
         """
@@ -224,11 +269,7 @@ class Sounds(RaspIotRenderer):
         Returns:
             int: volume value
         """
-        pygame.mixer.init()
-        volume = pygame.mixer.music.get_volume()
-        pygame.quit()
-
-        return volume*100
+        return self.volume
 
     def set_volume(self, volume):
         """
@@ -237,25 +278,22 @@ class Sounds(RaspIotRenderer):
         Args:
             volume (int): volume value
         """
-        if volume is None or len(volume)==0:
+        if volume is None:
             raise MissingParameter(u'Volume parameter is missing')
+        if volume<0 or volume>100:
+            raise InvalidParameter(u'Volume value must be 0..100')
 
-        pygame.mixer.init()
-        pygame.mixer.music.set_volume(int(volume/100.0))
-        pygame.quit()
+        self.volume = volume
 
     def play_sound(self, fullname):
         """
-        Play specified file
+        Play sound. Multiple sound can be played simultaneously
 
         Args:
-            fullname: sound file to play
-
-        Raises:
-            Exception, InvalidParameter
+            fullname (string): sound file to play
         """
         if fullname is None or len(fullname)==0:
-            raise MissingParameter(u'Fullname parameter is missing')
+            raise MissingParameter(u'Parameter fullname is missing')
 
         #build filepath
         filepath = os.path.join(Sounds.SOUNDS_PATH, fullname)
@@ -263,24 +301,58 @@ class Sounds(RaspIotRenderer):
         #check file validity
         if not os.path.exists(filepath):
             #invalid file specified
-            raise InvalidParameter(u'Specified file "%s" is invalid' % fullname)
-
-        #check if sound is already playing
-        if self.__sound_thread!=None and self.__sound_thread.is_alive():
-            #sound already is playing, reject action
-            raise Exception(u'A sound is already playing')
+            raise InvalidParameter(u'Specified sound file "%s" is invalid' % fullname)
+        if fullname not in self.sounds_buffer.keys():
+            raise CommandError(u'Unable to play sound: sound "%s" not found')
 
         #play sound
-        self.__sound_thread = PlaySound(filepath)
-        self.__sound_thread.start()
+        self.sounds_buffer[fullname].set_volume(float(self.volume)/100.0)
+        self.sounds_buffer[fullname].play()
 
-    def speak_text(self, text, lang):
+    def play_music(self, fullname, force=False):
+        """
+        Play specified file. Only one music can be played at once, use force to stop current playback
+
+        Args:
+            fullname (string): music file to play
+            force (bool): force playing music and stop currently playing music 
+
+        Raises:
+            Exception, InvalidParameter
+        """
+        if fullname is None or len(fullname)==0:
+            raise MissingParameter(u'Parameter fullname is missing')
+
+        #build filepath
+        filepath = os.path.join(Sounds.MUSICS_PATH, fullname)
+
+        #check file validity
+        if not os.path.exists(filepath):
+            #invalid file specified
+            raise InvalidParameter(u'Specified music file "%s" is invalid' % fullname)
+
+        #check if music is already playing
+        if self.__music_thread!=None and self.__music_thread.is_alive():
+            #music already is playing
+            if not force:
+                #rejct action
+                raise Exception(u'Can\'t play 2 musics at the same time')
+            else:
+                #stop current music
+                self.__music_thread.stop()
+
+        #play music
+        self.__music_thread = PlayMusic(filepath, self.volume)
+        self.__music_thread.start()
+
+    def speak_text(self, text, lang, force=False):
         """
         Speak specified message
 
         Args:
             text (string): text to say
             lang (string): spoken lang
+            force (bool): force text speak even if music is already playing (stop music)
 
         Raises:
             Exception, InvalidParameter
@@ -291,24 +363,29 @@ class Sounds(RaspIotRenderer):
         if lang is None or len(lang)==0:
             raise MissingParameter(u'Lang parameter is missing')
 
-        #check if sound is already playing
-        if self.__sound_thread!=None and self.__sound_thread.is_alive():
-            #sound already is playing, reject action
-            raise Exception(u'A sound is already playing')
+        #check if music is already playing
+        if self.__music_thread!=None and self.__music_thread.is_alive():
+            #music already is playing
+            if not force:
+                #reject action
+                raise Exception(u'Can\'t play 2 musics at the same time')
+            else:
+                #stop current music
+                self.__music_thread.stop()
 
         #text to speech
         try:
             tts = gTTS(text=text, lang=lang)
-            path = u'/tmp/sound_%d.mp3' % int(time.time())
+            path = u'/tmp/music_%d.mp3' % int(time.time())
             tts.save(path)
         
-            #play sound
-            self.__sound_thread = PlaySound(path, True)
-            self.__sound_thread.start()
+            #play music
+            self.__music_thread = PlayMusic(path, self.volume, True)
+            self.__music_thread.start()
             return True
 
         except:
-            self.logger.exception(u'Exception when TTSing text "%s":' % text)
+            self.logger.exception(u'Exception when converting text to music for text "%s":' % text)
 
         return False
 
@@ -334,9 +411,55 @@ class Sounds(RaspIotRenderer):
 
         raise InvalidParameter(u'Invalid sound file')
 
+    def delete_music(self, fullname):
+        """
+        Delete music
+
+        Args:
+            fullname (string): music file (with file extension) to delete
+
+        Raises:
+            InvalidParameter
+        """
+        if fullname is None or len(fullname)==0:
+            raise MissingParameter(u'Fullname parameter is missing')
+        #build filepath
+        filepath = os.path.join(Sounds.MUSICS_PATH, fullname)
+    
+        #delete file
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return True
+
+        raise InvalidParameter(u'Invalid music file')
+
+    def get_musics(self):
+        """
+        Get musics
+
+        Returns:
+            list: list of musics::
+                [
+                    {
+                        name (string): filename without extension
+                        fullname (string): filename with file extension
+                    },
+                    ...
+                ]
+        """
+        out = []
+        for root, dirs, musics in os.walk(Sounds.MUSICS_PATH):
+            for music in musics:
+                out.append({
+                    u'name': os.path.splitext(os.path.basename(music))[0],
+                    u'fullname': os.path.basename(music)
+                })
+
+        return out
+
     def get_sounds(self):
         """
-        Get sounds
+        Get all sounds
 
         Returns:
             list: list of sounds::
@@ -355,6 +478,7 @@ class Sounds(RaspIotRenderer):
                     u'name': os.path.splitext(os.path.basename(sound))[0],
                     u'fullname': os.path.basename(sound)
                 })
+
         return out
 
     def add_sound(self, filepath):
@@ -373,32 +497,74 @@ class Sounds(RaspIotRenderer):
         #check parameters
         file_ext = os.path.splitext(filepath)
         self.logger.debug(u'Add sound of extension: %s' % file_ext[1])
-        if file_ext[1][1:] not in Sounds.ALLOWED_EXTS:
-            raise InvalidParameter(u'Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_EXTS))
+        if file_ext[1][1:] not in Sounds.ALLOWED_SOUND_EXTS:
+            raise InvalidParameter(u'Invalid sound file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_SOUND_EXTS))
 
         #move file to valid dir
         if os.path.exists(filepath):
             name = os.path.basename(filepath)
-            path = os.path.join(Sounds.SOUNDS_PATH, name)
+            path = os.path.join(Sounds.MUSICS_PATH, name)
             self.logger.debug(u'Name=%s path=%s' % (name, path))
             shutil.move(filepath, path)
-            self.logger.info(u'File "%s" uploaded successfully' % name)
+            self.logger.info(u'Sound file "%s" uploaded successfully' % name)
+
+            #once copied, try to bufferize file
+            path = os.path.join(self.SOUNDS_PATH, sound[u'fullname'])
+            if not self.__bufferize_sound(path):
+                #invalid file, delete it
+                self.delete_sound(sound[u'fullname'])
+                raise Exception(u'Sound file format is not supported')
+
         else:
             #file doesn't exists
             self.logger.error(u'Sound file "%s" doesn\'t exist' % filepath)
             raise Exception(u'Sound file "%s"  doesn\'t exists' % filepath)
 
         return True
+            
 
-    def play_random_sound(self):
+    def add_music(self, filepath):
         """
-        Play random sound from list of sounds
-        """
-        sounds = self.get_sounds()
+        Add new music
 
-        if len(sounds)>0:
-            num = random.randrange(0, len(sounds), 1)
-            self.play_sound(sounds[num][u'fullname'])
+        Args:
+            filepath (string): uploaded and local filepath
+
+        Returns:
+            bool: True if file uploaded successfully
+            
+        Raises:
+            Exception, InvalidParameter
+        """
+        #check parameters
+        file_ext = os.path.splitext(filepath)
+        self.logger.debug(u'Add music of extension: %s' % file_ext[1])
+        if file_ext[1][1:] not in Sounds.ALLOWED_MUSIC_EXTS:
+            raise InvalidParameter(u'Invalid music file uploaded (only %s are supported)' % ','.join(Sounds.ALLOWED_MUSIC_EXTS))
+
+        #move file to valid dir
+        if os.path.exists(filepath):
+            name = os.path.basename(filepath)
+            path = os.path.join(Sounds.MUSICS_PATH, name)
+            self.logger.debug(u'Name=%s path=%s' % (name, path))
+            shutil.move(filepath, path)
+            self.logger.info(u'File "%s" uploaded successfully' % name)
+        else:
+            #file doesn't exists
+            self.logger.error(u'Music file "%s" doesn\'t exist' % filepath)
+            raise Exception(u'Music file "%s"  doesn\'t exists' % filepath)
+
+        return True
+
+    def play_random_music(self):
+        """
+        Play random music from list of musics
+        """
+        musics = self.get_musics()
+
+        if len(musics)>0:
+            num = random.randrange(0, len(musics), 1)
+            self.play_music(musics[num][u'fullname'])
 
         return True
 

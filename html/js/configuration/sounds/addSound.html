@@ -4,7 +4,7 @@
 
         <md-toolbar>
             <div class="md-toolbar-tools">
-                <h2>Add new sound</h2>
+                <h2>Add new {{soundsCtl.type}}</h2>
                 <span flex></span>
                 <md-button class="md-icon-button" ng-click="soundsCtl.cancelDialog()">
                     <md-icon md-svg-icon="close" aria-label="Close dialog"></md-icon>
@@ -17,14 +17,14 @@
 
                 <!-- upload -->
                 <md-input-container class="md-block" flex-gt-sm>
-                    <div upload-file selected-file="soundsCtl.uploadFile" label="Select sound file"></div>
+                    <div upload-file selected-file="soundsCtl.uploadFile" label="Select file"></div>
                 </md-input-container>
 
                 <!-- external links -->
                 <div layout="column">
 
                     <div>
-                        <span class="md-subhead">Download new free sounds from:</span>
+                        <span class="md-subhead">Download new free musics/sounds from:</span>
                     </div>
 
                     <div>

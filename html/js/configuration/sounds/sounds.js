@@ -7,12 +7,14 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
     var soundsController = ['$scope', function($scope) {
         var self = this;
         self.sounds = [];
+        self.musics = [];
         self.ttsLang = 'en';
         self.tts = '';
         self.langs = [];
         self.lang = 'en';
         self.volume = 0;
         self.uploadFile = null;
+        self.type = null;
 
         /** 
          * Cancel dialog
@@ -23,8 +25,10 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
 
         /**
          * Open add dialog
+         * @param type: file type ('music', 'sound')
          */
-        self.openAddDialog = function() {
+        self.openAddDialog = function(type) {
+            self.type = type
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'soundsCtl',
@@ -58,7 +62,15 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
             if( file )
             {
                 //launch upload
-                toast.loading('Uploading file');
+                if( self.type=='sound' )
+                {
+                    toast.loading('Uploading sound file');
+                }
+                else
+                {
+                    toast.loading('Uploading music file');
+                }
+
                 soundsService.uploadSound(file)
                     .then(function(resp) {
                         return raspiotService.reloadModuleConfig('sounds');
@@ -66,7 +78,15 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
                     .then(function(config) {
                         $mdDialog.hide();
                         self.sounds = config.sounds;
-                        toast.success('Sound file uploaded');
+                        self.musics = config.musics;
+                        if( self.type=='sound' )
+                        {
+                            toast.success('Sound file uploaded');
+                        }
+                        else
+                        {
+                            toast.success('Music file uploaded');
+                        }
                     });
             }
         });
@@ -89,6 +109,23 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
         };
 
         /**
+         * Delete music
+         */
+        self.openDeleteDialog = function(musicfile) {
+            confirm.open('Delete music?', null, 'Delete')
+                .then(function() {
+                    return soundsService.deleteMusic(musicfile);
+                })
+                .then(function() {
+                    return raspiotService.reloadModuleConfig('sounds');
+                })
+                .then(function(config) {
+                    self.musics = config.musics;
+                    toast.success('Music file deleted');
+                });
+        };
+
+        /**
          * Set lang
          */
         self.setLang = function() {
@@ -105,6 +142,16 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
             soundsService.playSound(filename)
                 .then(function() {
                     toast.success('Sound is playing');
+                });
+        };
+
+        /**
+         * Play music
+         */
+        self.playMusic = function(filename) {
+            soundsService.playMusic(filename)
+                .then(function() {
+                    toast.success('Music is playing');
                 });
         };
 
@@ -146,6 +193,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
                     self.ttsLang = config.langs.lang;
                     self.volume = config.volume;
                     self.sounds = config.sounds;
+                    self.musics = config.musics;
                 });
 
             //add module actions to fabButton
