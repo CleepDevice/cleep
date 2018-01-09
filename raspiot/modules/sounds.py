@@ -53,7 +53,7 @@ class PlayMusic(Thread):
             #init player
             self.logger.debug(u'Init player')
             #pygame.mixer.init()
-            pygame.mixer.music.set_volume(float(self.volume)/100.0))
+            pygame.mixer.music.set_volume(float(self.volume)/100.0)
             pygame.mixer.music.load(self.filepath)
 
             #play music
