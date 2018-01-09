@@ -88,23 +88,30 @@ class Network(RaspIotModule):
 
         #handle startup config if cleep wifi conf exists
         if self.cleepwifi.exists():
+            self.logger.debug('Cleepwifi config file exists. Loading its config')
             #read file content
             cleep_conf = self.cleepwifi.get_configuration()
+            self.logger.debug('cleep_conf: %s' % cleep_conf)
             if cleep_conf:
                 #search for existing config
                 interface_found = None
+                self.logger.debug('wifi networks: %s' % self.wifi_networks)
                 for interface in self.wifi_networks.keys():
                     if cleep_conf[u'network'] in self.wifi_networks[interface].keys() and not self.wifi_networks[interface][cleep_conf[u'network']][u'configured']:
+                        self.logger.debug(u'Interface %s found' % interface)
                         interface_found = interface
                         break
 
                 #add config if not already exists
                 if interface_found:
-                    if not self.wpasupplicant.add_network(network, encryption, password, hidden):
+                    #TODO handle hidden network
+                    if not self.wpasupplicant.add_network(cleep_conf[u'network'], cleep_conf[u'encryption'], cleep_conf[u'password'], False):
                         self.logger.error('Unable to use config from %s' % self.CLEEP_WIFI_CONF)
                     else:
                         self.reconfigure_wifi_interface(interface_found)
                         self.logger.info('Wifi config from Cleep loaded successfully')
+                else:
+                    self.logger.debug('No interface found or network already configured')
 
     def get_module_config(self):
         """

@@ -256,8 +256,6 @@ class WpaSupplicantConf(Config):
             raise InvalidParameter(u'Encryption "%s" does not exist (available: %s)' % (encryption, u','.join(self.ENCRYPTION_TYPES)))
         if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (password is None or len(password)==0):
             raise MissingParameter(u'Parameter "password" is missing')
-        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (len(password)<8 or len(password)>63):
-            raise InvalidParameter(u'Parameter password must be 8..63 string length')
 
         #check if network doesn't already exist
         if self.get_configuration(network) is not None:

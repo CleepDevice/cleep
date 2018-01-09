@@ -1,6 +1,14 @@
-var wiredDirective = function(raspiotService, networkService, toast, confirm, $mdDialog, blockUI) {
+/**
+ * Network directive displays list of ethernet connections and list of wifi networks.
+ * It also displays connection status with associated ip address
+ * The component takes in charge network modifications like:
+ *  - configure ethernet interface (static, dhcp)
+ *  - scan wifi networks
+ *  - configure connection to wifi networks
+ */
+var networkDirective = function(raspiotService, networkService, toast, confirm, $mdDialog, blockUI) {
 
-    var wiredController = ['$scope', function($scope) {
+    var networkController = ['$scope', function($scope) {
         var self = this;
         self.networkBlockui = null;
         self.networks = [];
@@ -547,7 +555,7 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
 
     }];
 
-    var wiredLink = function(scope, element, attrs, controller) {
+    var networkLink = function(scope, element, attrs, controller) {
         controller.init();
     };
 
@@ -555,13 +563,13 @@ var wiredDirective = function(raspiotService, networkService, toast, confirm, $m
         restrict: 'AE',
         templateUrl: 'js/tools/network/network.html',
         replace: true,
-        controller: wiredController,
+        controller: networkController,
         controllerAs: 'networkCtl',
-        link: wiredLink
+        link: networkLink
     };
 
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('networkWidget', ['raspiotService', 'networkService', 'toastService', 'confirmService', '$mdDialog', 'blockUI', wiredDirective]);
+RaspIot.directive('networkDirective', ['raspiotService', 'networkService', 'toastService', 'confirmService', '$mdDialog', 'blockUI', networkDirective]);
 
