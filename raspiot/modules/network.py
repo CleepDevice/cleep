@@ -14,6 +14,7 @@ from raspiot.libs.iwlist import Iwlist
 from raspiot.libs.iwconfig import Iwconfig
 from raspiot.libs.ifupdown import Ifupdown
 from raspiot.libs.wpacli import Wpacli
+from raspiot.libs.cleepwificonf import CleepWifiConf
 import re
 import time
 import os
@@ -33,8 +34,12 @@ class Network(RaspIotModule):
         - official raspberry pi foundation configuration guide
             https://www.raspberrypi.org/documentation/configuration/
             https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md
+        - guide from ubuntu forum
+            https://askubuntu.com/a/16588
         - another super guide ;)
             https://www.blackmoreops.com/2014/09/18/connect-to-wifi-network-from-command-line-in-linux/ 
+        - nodejs wireless-tools lib
+            https://github.com/bakerface/wireless-tools
     """
 
     MODULE_DEPS = []
@@ -66,6 +71,7 @@ class Network(RaspIotModule):
         self.iwconfig = Iwconfig()
         self.ifupdown = Ifupdown()
         self.wpacli = Wpacli()
+        self.cleepwifi = CleepWifiConf()
 
         #members
         self.wifi_networks = {}
@@ -79,6 +85,26 @@ class Network(RaspIotModule):
         """
         #refresh list of wifi networks
         self.refresh_wifi_networks()
+
+        #handle startup config if cleep wifi conf exists
+        if self.cleepwifi.exists():
+            #read file content
+            cleep_conf = self.cleepwifi.get_configuration()
+            if cleep_conf:
+                #search for existing config
+                interface_found = None
+                for interface in self.wifi_networks.keys():
+                    if cleep_conf[u'network'] in self.wifi_networks[interface].keys() and not self.wifi_networks[interface][cleep_conf[u'network']][u'configured']:
+                        interface_found = interface
+                        break
+
+                #add config if not already exists
+                if interface_found:
+                    if not self.wpasupplicant.add_network(network, encryption, password, hidden):
+                        self.logger.error('Unable to use config from %s' % self.CLEEP_WIFI_CONF)
+                    else:
+                        self.reconfigure_wifi_interface(interface_found)
+                        self.logger.info('Wifi config from Cleep loaded successfully')
 
     def get_module_config(self):
         """
@@ -183,7 +209,11 @@ class Network(RaspIotModule):
 
         return output
 
-    def __restart_interface(self, interface):
+    #----------
+    #WIRED AREA
+    #----------
+
+    def reconfigure_wired_interface(self, interface):
         """
         Restart network interface
 
@@ -191,10 +221,6 @@ class Network(RaspIotModule):
             interface (string): network interface name
         """
         self.ifupdown.restart_interface(interface)
-
-    #----------
-    #WIRED AREA
-    #----------
 
     def save_wired_static_configuration(self, interface, ip_address, gateway, netmask, fallback):
         """
@@ -234,7 +260,7 @@ class Network(RaspIotModule):
                 raise CommandError(u'Unable to save data')
 
         #restart interface
-        #self.__restart_interface(interface)
+        self.reconfigure_wired_interface(interface)
 
         return True
 
@@ -248,7 +274,7 @@ class Network(RaspIotModule):
         if self.dhcpcd.installed():
             #save config using dhcpcd
 
-            #TODO
+            #TODO handle dhcpcd
 
             #get interface config
             config = self.dhcpcd.get_configuration(interface)
@@ -282,7 +308,7 @@ class Network(RaspIotModule):
                 raise CommandError(u'Unable to save data')
 
         #restart interface
-        #self.__restart_interface(interface)
+        self.reconfigure_wired_interface(interface)
 
         return True
 
@@ -490,22 +516,22 @@ class Network(RaspIotModule):
             self.logger.debug(u'pkill output: %s' % res)
 
             #reconfigure interface (stop-start-reconfigure)
-            self.reconfigure_interface(interface)
+            self.reconfigure_wifi_interface(interface)
 
         if error:
             raise CommandError(error)
 
         return True
 
-    def save_wifi_network(self, interface, network, password=None, encryption=None, hidden=False):
+    def save_wifi_network(self, interface, network, encryption, password=None, hidden=False):
         """
         Save wifi network configuration
 
         Args:
             interface (string): interface
             network (string): network to connect interface to
-            password (string): network connection password
             encryption (string): encryption type (wpa|wpa2|wep|unsecured)
+            password (string): network connection password
             hidden (bool): True if network is hidden
 
         Returns:
@@ -514,12 +540,22 @@ class Network(RaspIotModule):
         Raises:
             CommandError
         """
+        #check prams
+        if interface is None or len(interface)==0:
+            raise MissingParameter(u'Parameter interface is missing')
+        if encryption is None or len(encryption)==0:
+            raise MissingParameter(u'Parameter interface is missing')
+
+        #encrypt password
+        if encryption in (WpaSupplicantConf.ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2):
+            password = self.wpasupplicant.encrypt_password(network, password)
+
         #save config in wpa_supplicant.conf file
         if not self.wpasupplicant.add_network(network, encryption, password, hidden):
             raise CommandError('Unable to save configuration')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_interface(interface)
+        return self.wpacli.reconfigure_wifi_interface(interface)
 
     def delete_wifi_network(self, interface, network):
         """
@@ -535,7 +571,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to delete network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_interface(interface)
+        return self.wpacli.reconfigure_wifi_interface(interface)
 
     def update_wifi_network_password(self, interface, network, password):
         """
@@ -556,7 +592,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to update password')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_interface(interface)
+        return self.wpacli.reconfigure_wifi_interface(interface)
 
     def enable_wifi_network(self, interface, network):
         """
@@ -576,7 +612,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_interface(interface)
+        return self.wpacli.reconfigure_wifi_interface(interface)
 
     def disable_wifi_network(self, interface, network):
         """
@@ -596,9 +632,9 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_interface(interface)
+        return self.wpacli.reconfigure_wifi_interface(interface)
 
-    def reconfigure_interface(self, interface):
+    def reconfigure_wifi_interface(self, interface):
         """
         Reconfigure specified interface
 

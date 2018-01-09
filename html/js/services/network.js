@@ -13,10 +13,6 @@ var networkService = function($q, $rootScope, rpcService, raspiotService) {
         return rpcService.sendCommand('save_wired_dhcp_configuration', 'network', {'interface':interface});
     };
 
-    self.getInterfacesConfigurations = function() {
-        return rpcService.sendCommand('get_interfaces_configurations', 'network');
-    };
-
     self.testWifiNetwork = function(interface, network, password, encryption, hidden) {
         return rpcService.sendCommand('test_wifi_network', 'network', {'interface':interface, 'network':network, 'encryption':encryption, 'password':password, 'hidden':hidden}, 60);
     };
@@ -57,9 +53,19 @@ var networkService = function($q, $rootScope, rpcService, raspiotService) {
     };
 
     self.reconfigureWifiNetwork = function(interface) {
-        return rpcService.sendCommand('reconfigure_interface', 'network', {'interface':interface}, 30)
+        return rpcService.sendCommand('reconfigure_wifi_interface', 'network', {'interface':interface}, 30)
             .then(function(resp) {
                 return self.refreshWifiNetworks();
+            });
+    };
+
+    self.reconfigureWiredNetwork = function(interface) {
+        return rpcService.sendCommand('reconfigure_wired_interface', 'network', {'interface':interface}, 30)
+            .then(function(resp) {
+                return raspiotService.reloadModuleConfig('network');
+            })
+            .then(function(config) {
+                return config;
             });
     };
 

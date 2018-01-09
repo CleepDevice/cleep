@@ -241,7 +241,7 @@ class WpaSupplicantConf(Config):
         Args:
             network (string): network name (ssid)
             encryption (string): network encryption (wpa|wpa2|wep|unsecured)
-            password (string): network password
+            password (string): network password (not encrypted!)
             hidden (bool): hidden network flag
 
         Raises:
@@ -263,29 +263,32 @@ class WpaSupplicantConf(Config):
         if self.get_configuration(network) is not None:
             raise InvalidParameter(u'Network "%s" is already configured')
     
-        #get config to write with encrypted password and clear password removed
-        if encryption!=self.ENCRYPTION_TYPE_UNSECURED:
-            #generate base entry using wpa_passphrase
-            output = self.wpa_passphrase(network, password)
+        #header
+        output = [
+            u'\nnetwork={\n',
+            u'\tssid="%s"\n' % network,
+        ]
 
-            #inject hidden param if necessary
-            if hidden:
-                output.insert(2, u'\tscan_ssid=1\n')
+        #inject hidden param if necessary
+        if hidden:
+            output.append(u'\tscan_ssid=1\n')
 
-            #inject network type
-            if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
-                output.insert(2, u'\tkey_mgmt=WPA-PSK\n')
-            elif encryption==self.ENCRYPTION_TYPE_WEP:
-                output.insert(2, u'\tkey_mgmt=NONE\n')
-
+        #inject network type and password
+        if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
+            #WPA/WPA2 security
+            output.append(u'\tkey_mgmt=WPA-PSK\n')
+            output.append(u'\tpsk=%s\n' % password)
+        elif encryption==self.ENCRYPTION_TYPE_WEP:
+            #WEP security
+            output.append(u'\tkey_mgmt=NONE\n')
+            output.append(u'\twep_key0=%s\n' % password)
+            output.append(u'\twep_tx_keyidx=0\n')
         else:
-            #handle unsecured network
-            output = [
-                u'\nnetwork={\n',
-                u'\tssid="%s"\n' % network,
-                u'\tkey_mgmt=NONE\n',
-                u'}\n'
-            ]
+            #unsecured network
+            output.append(u'\tkey_mgmt=NONE\n')
+
+        #footer
+        output.append(u'}\n')
 
         #write new network config
         return self.add_lines(output)
