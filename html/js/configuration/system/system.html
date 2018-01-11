@@ -3,8 +3,8 @@
     <!-- navigation tabs -->
     <md-nav-bar md-selected-nav-item="systemCtl.tabIndex" nav-bar-aria-label="System tabs">
         <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
-        <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         <md-nav-item md-nav-click="goto('renderings')" name="renderings">Renderings</md-nav-item>
+        <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         <md-nav-item md-nav-click="goto('troubleshoot')" name="troubleshoot">Troubleshoot</md-nav-item>
     </md-nav-bar>
 
@@ -28,13 +28,15 @@
                 <input type="text" ng-model="systemCtl.country"></input>
             </md-input-container>
             <div>
-                <md-button class="md-raised md-primary" ng-click="systemCtl.setCity()" aria-label="Set city">Set position</md-button>
+                <md-button class="md-raised md-primary" ng-click="systemCtl.setCity()" aria-label="Set city">
+                    <md-icon md-svg-icon="crosshairs-gps"></md-icon>
+                    Set position
+                </md-button>
             </div>
         </div>
 
         <!-- device name -->
         <md-list ng-cloak>
-            <md-divider></md-divider>
             <md-subheader class="md-no-sticky">Device name</md-subheader>
             <md-list-item>
                 <p>Set device name to identify it easily on your network</p>
@@ -46,7 +48,10 @@
                 <input type="text" ng-model="systemCtl.hostname"></input>
             </md-input-container>
             <div>
-                <md-button class="md-raised md-primary" ng-click="systemCtl.setHostname()" aria-label="Set device name">Set device name</md-button>
+                <md-button class="md-raised md-primary" ng-click="systemCtl.setHostname()" aria-label="Set device name">
+                    <md-icon md-svg-icon="rename-box"></md-icon>
+                    Set device name
+                </md-button>
             </div>
         </div>
         
@@ -63,7 +68,7 @@
                 <p>Options below give you a way to disable those events handled by modules:</p>
             </md-list-item>
             <md-list-item ng-repeat="rendering in systemCtl.renderings" ng-click="systemCtl.updateRendering(rendering,false)">
-                <md-icon md-svg-icon="label-outline"></md-icon>
+                <md-icon md-svg-icon="dots-vertical"></md-icon>
                 <p>Disable <b>{{rendering.event}}</b> handled by <b>{{rendering.renderer}}</b> module</p>
                 <md-checkbox class="md-secondary" ng-model="rendering.disabled" ng-click="systemCtl.updateRendering(rendering,true)" aria-label="Rendering"></md-checkbox>
             </md-list-item>
@@ -78,22 +83,34 @@
             <!-- system action -->
             <md-subheader class="md-no-sticky">Actions</md-subheader>
             <md-list-item ng-click="systemCtl.restart()">
+                <md-icon md-svg-icon="dots-vertical"></md-icon>
                 <p>Restart application</p>
-                <md-button class="md-secondary md-primary" ng-click="systemCtl.restart()">Restart</md-button>
+                <md-button class="md-secondary md-primary" ng-click="systemCtl.restart()">
+                    <md-icon md-svg-icon="restart"></md-icon>
+                    Restart
+                </md-button>
             </md-list-item>
             <md-list-item ng-click="systemCtl.reboot()">
+                <md-icon md-svg-icon="dots-vertical"></md-icon>
                 <p>Reboot device</p>
-                <md-button class="md-secondary md-warn" ng-click="systemCtl.reboot()">Reboot</md-button>
+                <md-button class="md-secondary md-warn" ng-click="systemCtl.reboot()">
+                    <md-icon md-svg-icon="restart"></md-icon>
+                    Reboot
+                </md-button>
             </md-list-item>
             <md-list-item ng-click="systemCtl.halt()">
+                <md-icon md-svg-icon="dots-vertical"></md-icon>
                 <p>Halt device</p>
-                <md-button class="md-secondary md-warn" ng-click="systemCtl.halt()">Halt</md-button>
+                <md-button class="md-secondary md-warn" ng-click="systemCtl.halt()">
+                    <md-icon md-svg-icon="stop"></md-icon>
+                    Halt
+                </md-button>
             </md-list-item>
-            <md-divider></md-divider>
 
             <!-- monitoring -->
             <md-subheader class="md-no-sticky">Monitoring</md-subheader>
             <md-list-item ng-click="systemCtl.updateMonitoring(false)">
+                <md-icon md-svg-icon="dots-vertical"></md-icon>
                 <p>Enable monitoring allows you to follow cpu and memory consumption of device.</p>
                 <md-checkbox class="md-secondary" ng-model="systemCtl.monitoring" ng-click="systemCtl.updateMonitoring(true)" aria-label="Monitoring option"></md-checkbox>
             </md-list-item>
