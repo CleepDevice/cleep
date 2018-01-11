@@ -129,8 +129,8 @@ class Inventory(RaspIotModule):
                 except:
                     self.logger.exception('Unable to get renderers of module "%s"' % module)
 
-        self.logger.debug(u'DEVICES=%s' % self.devices)
-        self.logger.debug(u'MODULES=%s' % self.modules)
+        #self.logger.debug(u'DEVICES=%s' % self.devices)
+        #self.logger.debug(u'MODULES=%s' % self.modules)
 
     def get_device_module(self, uuid):
         """
