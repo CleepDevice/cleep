@@ -9,3 +9,11 @@ dist/
 **/*.swp
 .*
 !/.gitignore
+build/
+debian/debhelper-build-stamp
+debian/files
+debian/raspiot.debhelper.log
+debian/raspiot.postinst.debhelper
+debian/raspiot.prerm.debhelper
+debian/raspiot.substvars
+debian/raspiot/

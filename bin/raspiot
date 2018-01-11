@@ -10,8 +10,7 @@ from raspiot.raspiot import RaspIot
 from raspiot.eventsFactory import EventsFactory
 from raspiot.formattersFactory import FormattersFactory
 from raspiot import rpcserver, bus, inventory
-from raspiot.modules import system
-from raspiot.modules import cleepbus
+from raspiot.modules import system, cleepbus, network
 from raspiot.libs.raspiotconf import RaspiotConf
 import importlib
 from raspiot import __version__ as VERSION
@@ -108,7 +107,8 @@ if __name__ == u'__main__':
     app = None
     mandatory_modules = {
         u'system': system.System,
-        u'cleepbus': cleepbus.Cleepbus
+        u'cleepbus': cleepbus.Cleepbus,
+        u'network': network.Network
     }
     try:
         #handle command line parameters
