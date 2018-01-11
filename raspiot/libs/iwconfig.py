@@ -12,6 +12,7 @@ class Iwconfig(AdvancedConsole):
 
     CACHE_DURATION = 2.0
     NOT_CONNECTED = u'off/any'
+    UNASSOCIATED = u'unassociated'
     INVALID_INTERFACE = u'no wireless extensions'
 
     def __init__(self):
@@ -24,7 +25,7 @@ class Iwconfig(AdvancedConsole):
         self._command = u'/sbin/iwconfig'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
         self.interfaces = {}
 
     def __refresh(self):
@@ -36,7 +37,7 @@ class Iwconfig(AdvancedConsole):
             self.logger.debug('Don\'t refresh')
             return
 
-        results = self.find(u'%s 2>&1' % self._command, r'^\s*(.*?)\s+(:?(?:.*ESSID:)(.*)|(no wireless extensions)).*$', timeout=5.0)
+        results = self.find(u'%s 2>&1' % self._command, r'^\s*(.*?)\s+(:?(?:(unassociated))(.*)|(?:.*ESSID:)(.*)|(no wireless extensions)).*$', timeout=5.0)
         self.logger.debug(results)
 
         current_entry = None
@@ -59,7 +60,7 @@ class Iwconfig(AdvancedConsole):
             if value==self.INVALID_INTERFACE:
                 #drop non wifi interfaces
                 continue
-            elif value==self.NOT_CONNECTED:
+            elif value==self.NOT_CONNECTED or self.UNASSOCIATED:
                 network = None
             else:
                 wifi_interface = True
