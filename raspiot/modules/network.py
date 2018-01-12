@@ -131,6 +131,8 @@ class Network(RaspIotModule):
         #TODO dhcpcd?
         configured_interfaces = self.etcnetworkinterfaces.get_configurations()
         current_status = self.ifconfig.get_configurations()
+        self.logger.error(u'configured_interfaces: %s' % configured_interfaces)
+        self.logger.debug(u'current_status: %s' % current_status)
 
         #remove lo interface from interfaces list
         if u'lo' in configured_interfaces.keys():
@@ -139,10 +141,16 @@ class Network(RaspIotModule):
         #add more infos
         for interface in configured_interfaces.keys():
             #add wifi infos
-            if interface in self.wifi_interfaces.keys() or (interface in configured_interfaces.keys() and configured_interfaces[interface][u'wpa_conf'] is not None):
+            if interface in self.wifi_interfaces.keys():
+                #interface is wifi and connected
                 configured_interfaces[interface][u'wifi'] = True
                 configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
+            elif interface in configured_interfaces.keys() and configured_interfaces[interface][u'wpa_conf'] is not None:
+                #interface is wifi but not connected
+                configured_interfaces[interface][u'wifi'] = True
+                configured_interfaces[interface][u'wifi_network'] = None
             else:
+                #interface is not wifi
                 configured_interfaces[interface][u'wifi'] = False
                 configured_interfaces[interface][u'wifi_network'] = None
 
@@ -157,8 +165,7 @@ class Network(RaspIotModule):
 
         #add wired interface as network
         for interface in configured_interfaces.keys():
-            #if not configured_interfaces[interface][u'wifi']:
-            if not interface in self.wifi_interfaces.keys():
+            if not configured_interfaces[interface][u'wifi']:
                 #get interface status
                 network_status = None
                 connected = False
