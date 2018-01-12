@@ -128,6 +128,7 @@ class Network(RaspIotModule):
         output = {}
 
         #get data
+        #TODO dhcpcd?
         configured_interfaces = self.etcnetworkinterfaces.get_configurations()
         current_status = self.ifconfig.get_configurations()
 
@@ -138,7 +139,7 @@ class Network(RaspIotModule):
         #add more infos
         for interface in configured_interfaces.keys():
             #add wifi infos
-            if interface in self.wifi_interfaces.keys():
+            if interface in self.wifi_interfaces.keys() or (interface in configured_interfaces.keys() and configured_interfaces[interface][u'wpa_conf'] is not None):
                 configured_interfaces[interface][u'wifi'] = True
                 configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
             else:
