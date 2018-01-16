@@ -256,7 +256,7 @@ class Console():
 
         #make sure process is really killed
         try:
-            subprocess.Popen(u'/bin/kill -9 %s' % pid, shell=True)
+            subprocess.Popen(u'/bin/kill -9 %s 2> /dev/null' % pid, shell=True)
         except:
             pass
 
