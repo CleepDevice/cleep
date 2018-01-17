@@ -6,6 +6,7 @@ import os
 import re
 import io
 import shutil
+import logging
 
 class Config():
     """
@@ -31,6 +32,10 @@ class Config():
             comment_tag (string): comment tag
             backup (bool): auto backup original file (default True)
         """
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
+        path = os.path.expanduser(path)
+        path = os.path.realpath(path)
         self.path = path
         self.backup_path = self.__get_backup_path(path)
         self.comment_tag = comment_tag
@@ -110,6 +115,7 @@ class Config():
             return True
 
         except:
+            self.logger.exception('Failed to write config file:')
             return False
 
     def exists(self):
@@ -141,6 +147,10 @@ class Config():
         content = fd.read()
         self._close()
         matches = re.finditer(pattern, content, options)
+
+        #concat content list if options singleline specified (DOTALL)
+        #if re.DOTALL & options:
+        #    content = u''.join(content)
 
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
