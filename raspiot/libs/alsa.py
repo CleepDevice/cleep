@@ -304,20 +304,6 @@ class Alsa(AdvancedConsole):
                     capture (int or None)
                 }
         """
-        #get current sound configuration and current device profile
-        #config = self.__get_current_audio_configuration()
-        #self.logger.debug('config: %s' % config)
-        #if config is None:
-        #    self.logger.error(u'Unable to get volumes: invalid audio configuration file (no audio config)')
-        #    raise CommandError(u'Unable to get volumes: invalid audio configuration file')
-        #card_name = self.__get_card_name(config[u'cardid'])
-        #self.logger.debug('card_name: %s' % card_name)
-        #if card_name not in self.DEVICES_PROFILES.keys():
-        #    self.logger.error(u'Unable to get volumes: unsupported sound device (card name=%s)' % card_name)
-        #    raise CommandError(u'Unable to get volumes: unsupported sound device')
-        #profile = self.DEVICES_PROFILES[card_name]
-        #self.logger.debug('Found profile: %s' % profile)
-
         #get current profile
         profile = self.__get_current_audio_profile()
         if profile is None:
