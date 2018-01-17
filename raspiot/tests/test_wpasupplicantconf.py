@@ -32,17 +32,18 @@ network={
     def tearDown(self):
         os.remove('wpasupplicant.fake.conf')
 
-    def test_get_networks(self):
-        networks = self.w.get_networks()
-        self.assertEqual(len(networks), 2)
-        self.assertEqual(networks['mynetwork1']['network'], 'mynetwork1')
-        self.assertEqual(networks['mynetwork2']['network'], 'mynetwork2')
+    def test_get_configurations(self):
+        configs = self.w.get_configurations()
+        print configs
+        self.assertEqual(len(configs), 2)
+        self.assertEqual(configs['mynetwork1']['network'], 'mynetwork1')
+        self.assertEqual(configs['mynetwork2']['network'], 'mynetwork2')
 
     def test_add_network(self):
         self.assertTrue(self.w.add_network('mynetwork3', 'wpa', 'mypassword3'))
-        networks = self.w.get_networks()
-        self.assertEqual(len(networks), 3)
-        self.assertEqual(networks['mynetwork3']['network'], 'mynetwork3')
+        configs = self.w.get_configurations()
+        self.assertEqual(len(configs), 3)
+        self.assertEqual(configs['mynetwork3']['network'], 'mynetwork3')
 
     def test_add_existing_network(self):
         self.assertRaises(Exception, self.w.add_network, 'mynetwork2', 'wpa', 'mypassword2')
@@ -61,13 +62,13 @@ network={
 
     def test_delete_existing_network(self):
         self.assertTrue(self.w.delete_network('mynetwork2'))
-        self.assertEqual(len(self.w.get_networks()), 1)
+        self.assertEqual(len(self.w.get_configurations()), 1)
         self.assertTrue(self.w.delete_network('mynetwork1'))
-        self.assertEqual(len(self.w.get_networks()), 0)
+        self.assertEqual(len(self.w.get_configurations()), 0)
 
     def test_delete_unknown_network(self):
         self.assertFalse(self.w.delete_network('network666'))
-        self.assertEqual(len(self.w.get_networks()), 2)
+        self.assertEqual(len(self.w.get_configurations()), 2)
     
 
 class WpaSupplicantConfTests_emptyConf(unittest.TestCase):
@@ -82,13 +83,13 @@ class WpaSupplicantConfTests_emptyConf(unittest.TestCase):
     def tearDown(self):
         os.remove('wpasupplicant.fake.conf')
 
-    def test_get_networks(self):
-        networks = self.w.get_networks()
+    def test_get_configurations(self):
+        networks = self.w.get_configurations()
         self.assertEqual(len(networks), 0)
 
     def test_add_network(self):
         self.assertTrue(self.w.add_network('mynetwork3', 'wpa', 'mypassword3'))
-        networks = self.w.get_networks()
+        networks = self.w.get_configurations()
         self.assertEqual(len(networks), 1)
         self.assertEqual(networks['mynetwork3']['network'], 'mynetwork3')
 
