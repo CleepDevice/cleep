@@ -335,7 +335,7 @@ class AdvancedConsole(Console):
 
         Args:
             pattern (string): search pattern
-            content (string): string to search in
+            string (string): string to search in
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
 
         Returns:
@@ -345,8 +345,8 @@ class AdvancedConsole(Console):
                     ...
                 ]
         """
-        result = []
-        matches = re.finditer(pattern, content, options)
+        results = []
+        matches = re.finditer(pattern, string, options)
 
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
