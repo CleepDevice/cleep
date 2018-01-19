@@ -31,8 +31,8 @@ class EndlessConsole(Thread):
 
         Args:
             command (string): command to execute
-            callback (function): callback when message is received
-            callback_end (function): callback when process is over
+            callback (function): callback when message is received (the function will be called with 2 arguments: stdout (string) and stderr (string))
+            callback_end (function): callback when process is terminated (the function will be called with 2 arguments: return code (string) and killed (bool))
         """
         Thread.__init__(self)
         Thread.daemon = True
@@ -93,6 +93,7 @@ class EndlessConsole(Thread):
         Console process
         """
         #launch command
+        return_code = None
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
@@ -131,7 +132,8 @@ class EndlessConsole(Thread):
 
             #check end of command
             if p.returncode is not None:
-                self.logger.debug('Process is terminated')
+                return_code = p.returncode
+                self.logger.debug('Process is terminated with return code %s' % returncode)
                 break
             
             #pause
@@ -149,7 +151,7 @@ class EndlessConsole(Thread):
 
         #stop callback
         if self.callback_end:
-            self.callback_end()
+            self.callback_end(return_code, not self.running)
 
 
 class Console():
