@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.config import Config
-#from raspiot.libs.alsa import Alsa
 import logging
 import re
 
@@ -19,20 +18,7 @@ class Asoundrc(Config):
 
     CACHE_DURATION = 5.0
 
-    """pcm.!default {
-    type asym
-    playback.pcm {
-        type plug
-            slave.pcm "hw:1,0"
-        }   
-        capture.pcm {
-            type plug
-            slave.pcm "hw:1,0"
-        }   
-    }
-    """
-
-    DEFAULT = u"""pcm.!default {
+    DEFAULT_CONF = u"""pcm.!default {
     type hw
     card %(card_id)s
     device %(device_id)s
@@ -56,32 +42,10 @@ ctl.!default {
         #self.logger.setLevel(logging.DEBUG)
         self.__playback_devices = {}
         self.timestamp = None
-        #self.alsa = Alsa()
 
-    #def get_card_name(self, card_id):
-    #    """
-    #    Return card name
-    #
-    #    Args:
-    #        card_id (int): card identifier
-    #
-    #    Return:
-    #        string or None
-    #    """
-    #    if self.timestamp is None or time.time()-self.timestamp>self.CACHE_DURATION:
-    #        #get installed devices
-    #        self.__playback_devices = self.alsa.get_playback_devices()
-    #        
-    #    #search for device id
-    #    for device_name in self.__playback_devices.keys():
-    #        if self.__playback_devices[device_name][u'cardid']==card_id:
-    #            return device_name
-    #
-    #    return None
-
-    def get_configuration(self):
+    def get_raw_configuration(self):
         """
-        Execute specified command and return parsed results
+        Get raw configuration with all sections
 
         Args:
             command (string): command to execute
@@ -151,9 +115,31 @@ ctl.!default {
 
         return entries
 
-    def set_default_card(self, card_id, device_id):
+    def get_configuration(self):
+        """
+        Return current configuration
+
+        Return:
+            dict: current pcm configuration or None if pcm section not found::
+                {
+                    section (string),
+                    type (string),
+                    cardid (int),
+                    deviceid (int)
+                }
+        """
+        raw = self.get_raw_configuration()
+
+        #return only pcm section
+        if self.PCM_SECTION in raw.keys():
+            return raw[self.PCM_SECTION]
+
+        return None
+
+    def set_default_device(self, card_id, device_id):
         """
         Set default card for both controller and playback
+        Please be aware that no verification is done
 
         Args:
             card_id (int): card identifier as returned by get_configuration
@@ -162,22 +148,8 @@ ctl.!default {
         Return:
             bool: True if config saved successfully
         """
-        #check if specified card_id and device_id exists
-        #card_name = self.get_card_name(card_id)
-        #if card_name is None:
-        #    self.logger.error(u'Specified card_id %d doesn\'t exist' % card_id)
-        #    return False
-        #found = False
-        #for device_name in self.__playback_devices.keys():
-        #    if self.__playback_devices[device_name][u'cardid']==card_id and self.__playback_devices[device_name][u'deviceid']==device_id:
-        #        found = True
-        #        break
-        #if not found:
-        #    self.logger.error(u'Specified device_id %d doesn\'t exist' % device_id)
-        #    return False
-
         #generate and write new content
-        content = self.DEFAULT % {
+        content = self.DEFAULT_CONF % {
             u'card_id': card_id,
             u'device_id': device_id
         }

@@ -36,7 +36,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             openweathermap: 'cloud',
             cleepbus: 'video-input-antenna',
             developer: 'worker',
-            update: 'update'
+            update: 'update',
+            audio: 'speaker'
         };
 
         if( !angular.isUndefined(icons[module]) )

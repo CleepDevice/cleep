@@ -5,10 +5,11 @@ from raspiot.libs.console import AdvancedConsole
 from raspiot.libs.asoundrc import Asoundrc
 import logging
 import re
+import os
 
 class Alsa(AdvancedConsole):
     """
-    Alsa commands helper (aplay,arecord,amixer).
+    Alsa commands helper (aplay, arecord, amixer).
     """
     
     OUTPUT_TYPE_JACK = 1
@@ -31,7 +32,7 @@ class Alsa(AdvancedConsole):
             u'name': u'bcm2835 ALSA',
             u'type': 1,
             u'playback_volume': u'PCM',
-            u'playback_volume_data': (u'', r''),
+            u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
             u'capture_volume': None,
             u'capture_volume_data': None
         },
@@ -39,7 +40,7 @@ class Alsa(AdvancedConsole):
             u'name': u'bcm2835 IEC958/HDMI',
             u'type': 2,
             u'playback_volume': u'PCM',
-            u'playback_volume_data': (u'', r''),
+            u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
             u'capture_volume': None,
             u'capture_volume_data': None
         },
@@ -63,7 +64,7 @@ class Alsa(AdvancedConsole):
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
         self.asoundrc = Asoundrc()
 
     def __command(self, command):
@@ -206,7 +207,7 @@ class Alsa(AdvancedConsole):
             dict: current profile (see DEVICES_PROFILES) or None if device is not supported
         """
         #TODO handle cache
-        config = self.asoundrc.get_configuration()
+        config = self.asoundrc.get_raw_configuration()
         self.logger.debug('Asoundrc config: %s' % config)
         
         #we only need pcm data (not ctl)
@@ -275,13 +276,16 @@ class Alsa(AdvancedConsole):
 
         #parse result to get volume value
         (key, pattern) = profile[u'%s_data' % get_key]
-        if key not in results[control].keys():
-            self.logger.error('Unable to get volume: no key in results: %s' % results)
+        if key is None:
+            self.logger.debug(u'No pattern specified for %s' % (get_key))
+            return None
+        elif key not in results[control].keys():
+            self.logger.error(u'Unable to get volume: no key "%s" in results: %s' % (key, results))
             return None
         sub_results = self.find_in_string(results[control][key], pattern, re.UNICODE)
-        self.logger.debug('sub_results=%s' % sub_results)
+        self.logger.debug(u'sub_results=%s' % sub_results)
         if len(sub_results)!=1 or len(sub_results[0])!=2 or len(sub_results[0][1])!=1:
-            self.logger.error('Unable to get volume: pattern "%s" seems no valid for string "%s"' % (pattern, results[control][key]))
+            self.logger.error(u'Unable to get volume: pattern "%s" seems no valid for string "%s"' % (pattern, results[control][key]))
 
         #cast value to int
         volume = None
@@ -289,7 +293,7 @@ class Alsa(AdvancedConsole):
             volume = sub_results[0][1][0]
             volume = int(volume)
         except:
-            self.logger.exception('Unable to get volume for string "%s"' % sub_results[0][1][0])
+            self.logger.exception(u'Unable to get volume for string "%s"' % sub_results[0][1][0])
 
         return volume
 
@@ -334,6 +338,12 @@ class Alsa(AdvancedConsole):
                     capture (int or None)
                 }
         """
+        #check parameters
+        if playback is not None and (playback<0 or playback>100):
+            raise InvalidParameter(u'Playback volume value must be 0..100')
+        if capture is not None and (capture<0 or capture>100):
+            raise InvalidParameter(u'Cpature volume value must be 0..100')
+
         #get current profile
         profile = self.__get_current_audio_profile()
         if profile is None:
@@ -351,4 +361,28 @@ class Alsa(AdvancedConsole):
             u'playback': playback_volume,
             u'capture': capture_volume,
         }
+
+    def play_sound(self, path):
+        """
+        Play specified sound using aplay command
+
+        Args:
+            path (string): sound file path
+        """
+        #check params
+        if not os.path.exists(path):
+            raise InvalidParameter(u'Sound file doesn\'t exist (%s)' % path)
+
+        #play sound
+        res = self.command(u'/usr/bin/aplay "%s"' % path)
+        if res[u'killed']:
+            self.logger.error(u'Unable to play sound file "%s": %s' % (path, res))
+            return False
+        elif res[u'error'] and len(res[u'stderr'])>0 and not res[u'stderr'][0].startswith(u'Playing WAVE'):
+            #for some strange reasons, aplay output is on stderr
+            self.logger.error(u'Unable to play sound file "%s": %s' % (path, res))
+            return False
+        
+        return True
+
 
