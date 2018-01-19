@@ -1,0 +1,63 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <!-- device -->
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Audio device configuration</md-subheader>
+    </md-list-item>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+	    <div>
+            <md-icon md-svg-icon="dots-vertical">dots_vertical</md-icon>
+            <span style="padding-left: 15px;">Playback device</span>
+        </div>
+        <div layout="row">
+    		<md-select ng-model="audioCtl.currentDevice" placeholder="Playback device" class="md-no-underline">
+	    	    <md-option ng-repeat="device in audioCtl.playbackDevices" ng-value="device">{{device.name}}{{!device.supported ? ' (device not supported!)' : ''}}</md-option>
+		    </md-select>
+            <div layout="row" layout-align="center center">
+                <md-button class="md-raised md-primary" ng-click="audioCtl.setDevice()" aria-label="Set device">
+                    <md-icon md-svg-icon="speaker"></md-icon>
+                    Set device
+                </md-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- volume -->
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Volume configuration</md-subheader>
+    </md-list-item>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+	    <div flex="30">
+            <md-icon md-svg-icon="dots-vertical"></md-icon>
+            <span style="padding-left: 15px;">Playback volume</span>
+        </div>
+        <md-slider flex="40" md-discrete ng-model="audioCtl.volumePlayback" step="5" min="0" max="100" aria-label="Playback volume" ng-model-options="{debounce: 1500}" ng-change="audioCtl.setVolumes()" ng-disabled="audioCtl.volumePlayback===null"></md-slider>
+    </div>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+	    <div flex="30">
+            <md-icon md-svg-icon="dots-vertical"></md-icon>
+            <span style="padding-left: 15px;">Capture volume</span>
+        </div>
+        <md-slider flex="40" md-discrete ng-model="audioCtl.volumeCapture" step="5" min="0" max="100" aria-label="Capture volume" ng-model-options="{debounce: 1500}" ng-change="audioCtl.setVolumes()" ng-disabled="audioCtl.volumeCapture===null"></md-slider>
+    </div>
+
+    <!-- test -->
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Check configuration</md-subheader>
+    </md-list-item>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+	    <div>
+            <md-icon md-svg-icon="dots-vertical">dots_vertical</md-icon>
+            <span style="padding-left: 15px;">Play sound on configured sound device to check configuration and volume</span>
+        </div>
+        <div layout="row">
+            <md-button class="md-raised md-primary" ng-click="audioCtl.test()" aria-label="Check configuration">
+                <md-icon md-svg-icon="speaker"></md-icon>
+                Play test sound
+            </md-button>
+        </div>
+    </div>
+
+
+</div>
+
