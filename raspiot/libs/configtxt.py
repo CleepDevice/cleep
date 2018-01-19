@@ -28,6 +28,8 @@ class ConfigTxt(Config):
     DTPARAM_SPI_VALUE = u'on'
     DTPARAM_I2C = u'i2c_arm'
     DTPARAM_I2C_VALUE = u'on'
+    DTPARAM_I2S = u'i2s'
+    DTPARAM_I2S_VALUE = u'on'
 
     def __init__(self, backup=True):
         """
@@ -270,6 +272,25 @@ class ConfigTxt(Config):
         """
         return self.__enable_dtparam(self.DTPARAM_I2C, self.DTPARAM_I2C_VALUE, True)
 
+    def is_i2s_enabled(self):
+        """
+        Return True if i2s is enabled
 
+        Returns:
+            bool: True if i2s enabled
+        """
+        return self.__is_dtparam_enabled(self.DTPARAM_I2S, self.DTPARAM_I2S_VALUE)
+
+    def enable_i2s(self):
+        """
+        Enable i2s support
+        """
+        return self.__enable_dtparam(self.DTPARAM_I2S, self.DTPARAM_I2S_VALUE)
+
+    def disable_i2s(self):
+        """
+        Disable i2s support
+        """
+        return self.__enable_dtparam(self.DTPARAM_I2S, self.DTPARAM_I2S_VALUE, True)
 
 
