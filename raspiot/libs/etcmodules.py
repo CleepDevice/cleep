@@ -16,6 +16,7 @@ class EtcModules(Config):
 
     MODULE_ONEWIRETHERM = u'w1-therm'
     MODULE_ONEWIREGPIO = u'w1-gpio'
+    MODULE_SOUND_BCM2835 = u'snd-bcm2835'
 
     def __init__(self, backup=True):
         """
@@ -124,5 +125,33 @@ class EtcModules(Config):
             bool: True if onewire has been disabled
         """
         return self.__disable_module(self.MODULE_ONEWIRETHERM) and self.__disable_module(self.MODULE_ONEWIREGPIO)
+
+
+    def is_embedded_sound_enabled(self):
+        """
+        Return True if embedded sound module is enabled
+
+        Returns:
+            bool: True if embedded sound module is enabled
+        """
+        return self.__is_module_enabled(self.MODULE_BCM2835) and self.__is_module_enabled(self.MODULE_BCM2835)
+
+    def enable_embedded_sound(self):
+        """
+        Enable embedded sound module
+
+        Returns:
+            bool: True if embedded sound module has been enabled
+        """
+        return self.__enable_module(self.MODULE_BCM2835) and self.__enable_module(self.MODULE_BCM2835)
+
+    def disable_embedded_sound(self):
+        """
+        Disable embedded sound module
+
+        Returns:
+            bool: True if embedded sound module has been disabled
+        """
+        return self.__disable_module(self.MODULE_BCM2835) and self.__disable_module(self.MODULE_BCM2835)
 
 
