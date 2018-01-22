@@ -6,7 +6,7 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div>
-            <md-icon md-svg-icon="dots-vertical">dots_vertical</md-icon>
+            <md-icon md-svg-icon="chevron-double-right">dots_vertical</md-icon>
             <span style="padding-left: 15px;">Playback device</span>
         </div>
         <div layout="row">
@@ -28,14 +28,14 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div flex="30">
-            <md-icon md-svg-icon="dots-vertical"></md-icon>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
             <span style="padding-left: 15px;">Playback volume</span>
         </div>
         <md-slider flex="40" md-discrete ng-model="audioCtl.volumePlayback" step="5" min="0" max="100" aria-label="Playback volume" ng-model-options="{debounce: 1500}" ng-change="audioCtl.setVolumes()" ng-disabled="audioCtl.volumePlayback===null"></md-slider>
     </div>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div flex="30">
-            <md-icon md-svg-icon="dots-vertical"></md-icon>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
             <span style="padding-left: 15px;">Capture volume</span>
         </div>
         <md-slider flex="40" md-discrete ng-model="audioCtl.volumeCapture" step="5" min="0" max="100" aria-label="Capture volume" ng-model-options="{debounce: 1500}" ng-change="audioCtl.setVolumes()" ng-disabled="audioCtl.volumeCapture===null"></md-slider>
@@ -47,7 +47,7 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div>
-            <md-icon md-svg-icon="dots-vertical">dots_vertical</md-icon>
+            <md-icon md-svg-icon="chevron-double-right">dots_vertical</md-icon>
             <span style="padding-left: 15px;">Play sound on configured sound device to check configuration and volume</span>
         </div>
         <div layout="row">
