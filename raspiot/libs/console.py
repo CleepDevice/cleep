@@ -234,6 +234,7 @@ class Console():
             #check timeout
             if time.time()>(start + timeout):
                 #timeout is over, kill command
+                self.logger.debug('Timeout over, kill command %s' % pid)
                 p.kill()
                 killed = True
                 break
@@ -259,8 +260,9 @@ class Console():
         #make sure process is really killed
         try:
             subprocess.Popen(u'/bin/kill -9 %s 2> /dev/null' % pid, shell=True)
-        except:
-            pass
+            res = subprocess.Popen(u'/usr/bin/pkill -9 -f "%s" 2> /dev/null' % command[:command.find('"')], shell=True)
+        except Exception as e:
+            self.logger.debug('Kill exception: %s' % str(e))
 
         #trigger callback
         if self.__callback:
