@@ -13,9 +13,14 @@ var audioService = function($q, $rootScope, rpcService) {
         return rpcService.sendCommand('set_default_device', 'audio', {'card_id':cardId, 'device_id':deviceId});
     };
 
-    self.test = function()
+    self.testPlaying = function()
     {
-        return rpcService.sendCommand('play_test_sound', 'audio');
+        return rpcService.sendCommand('test_playing', 'audio');
+    };
+
+    self.testRecording = function()
+    {
+        return rpcService.sendCommand('test_recording', 'audio', null, 30);
     };
 
 };

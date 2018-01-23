@@ -111,11 +111,25 @@ class Audio(RaspIotModule):
         """
         return self.alsa.set_volumes(playback, capture)
 
-    def play_test_sound(self):
+    def test_playing(self):
         """
         Play test sound to make sure audio card is correctly configured
         """
         if not self.alsa.play_sound(self.TEST_SOUND):
             raise CommandError(u'Unable to play test sound: internal error.')
+
+    def test_recording(self):
+        """
+        Record sound during few seconds and play it
+        """
+        sound = self.alsa.record_sound(timeout=5.0)
+        self.logger.debug(u'Recorded sound: %s' % sound)
+        self.alsa.play_sound(sound)
+
+        #purge file
+        time.sleep(1.0)
+        os.remove(sound)
+
+
 
 

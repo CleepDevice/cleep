@@ -44,11 +44,26 @@ var audioConfigDirective = function(toast, audioService, raspiotService) {
                 });
         };
 
-        self.test = function()
+        /**
+         * Play test sound
+         */
+        self.testPlaying = function()
         {
-            audioService.test()
+            audioService.testPlaying()
                 .then(function() {
                     toast.success('You should have heard a sound');
+                });
+        };
+
+        /**
+         * Record voice and play it
+         */
+        self.testRecording = function()
+        {
+            toast.loading('Recording 5 seconds...');
+            audioService.testRecording()
+                .then(function() {
+                    toast.success('You should have heard your recording');
                 });
         };
 

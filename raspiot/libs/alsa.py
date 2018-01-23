@@ -6,6 +6,7 @@ from raspiot.libs.asoundrc import Asoundrc
 import logging
 import re
 import os
+import uuid
 
 class Alsa(AdvancedConsole):
     """
@@ -15,6 +16,18 @@ class Alsa(AdvancedConsole):
     OUTPUT_TYPE_JACK = 1
     OUTPUT_TYPE_HDMI = 2
     OUTPUT_TYPE_EXTERNAL = 3 #external soundcard like hifiberry, respeaker...
+
+    FORMAT_S16LE = u'S16_LE'
+    FORMAT_S24LE = u'S24_LE'
+    FORMAT_S32LE = u'S32_LE'
+
+    CHANNELS_MONO = 1
+    CHANNELS_STEREO = 2
+    CHANNELS_DOLBY = 5
+
+    RATE_22K = 22050
+    RATE_44K = 44100
+    RATE_48K = 48000
 
     __KEY_PLAYBACK = u'playback_volume'
     __KEY_CAPTURE = u'capture_volume'
@@ -362,27 +375,64 @@ class Alsa(AdvancedConsole):
             u'capture': capture_volume,
         }
 
-    def play_sound(self, path):
+    def play_sound(self, path, timeout=5.0):
         """
         Play specified sound using aplay command
 
         Args:
             path (string): sound file path
+            timeout (float): max playing duration. If you want to play longer sound file, increase the timeout
         """
         #check params
         if not os.path.exists(path):
             raise InvalidParameter(u'Sound file doesn\'t exist (%s)' % path)
 
         #play sound
-        res = self.command(u'/usr/bin/aplay "%s"' % path)
-        if res[u'killed']:
-            self.logger.error(u'Unable to play sound file "%s": %s' % (path, res))
-            return False
-        elif res[u'error'] and len(res[u'stderr'])>0 and not res[u'stderr'][0].startswith(u'Playing WAVE'):
+        res = self.command(u'/usr/bin/aplay "%s"' % path, timeout=timeout)
+        if res[u'error'] and len(res[u'stderr'])>0 and not res[u'stderr'][0].startswith(u'Playing WAVE'):
             #for some strange reasons, aplay output is on stderr
             self.logger.error(u'Unable to play sound file "%s": %s' % (path, res))
             return False
         
         return True
+
+    def record_sound(self, channels=2, rate=44100, format=u'S32_LE', timeout=5.0):
+        """
+        Record sound
+
+        Args:
+            format (string): RECORD_FORMAT_XXX (default S32_LE)
+            channels (int): number of channels to record (default 2 for stereo)
+            timeout (float): max recording duration
+
+        Return:
+            string: path of recording file (wav format)
+        """
+        #check params
+        if format is None:
+            raise MissingParameter(u'Parameter format is missing')
+        if format not in (self.FORMAT_S16LE, self.FORMAT_S24LE, self.FORMAT_S32LE):
+            raise InvalidParameter(u'Parameter format is invalid. Please check supported value.')
+        if channels is None:
+            raise MissingParameter(u'Parameter channels is missing')
+        if channels not in (self.CHANNELS_MONO, self.CHANNELS_STEREO, self.CHANNELS_DOLBY):
+            raise InvalidParameter(u'Parameter channels is invalid. Please check supported value.')
+        if rate is None:
+            raise MissingParameter(u'Parameter rate is missing')
+        if rate not in (self.RATE_22K, self.RATE_44K, self.RATE_48K):
+            raise InvalidParameter(u'Parameter rate is invalid. Please check supported value.')
+
+        #record sound
+        out = u'%s.wav' % os.path.join('/tmp', str(uuid.uuid4()))
+        cmd = u'/usr/bin/arecord -f %s -c%d -r%d "%s"' % (format, channels, rate, out)
+        self.logger.debug(u'Command: %s' % cmd)
+        res = self.command(cmd, timeout=timeout)
+        
+        #check errors
+        if res[u'error']:
+            self.logger.error(u'Error occured during recording %s: %s' % (cmd, res))
+            raise Exception(u'Error during recording')
+
+        return out
 
 
