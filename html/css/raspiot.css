@@ -8,6 +8,12 @@
     padding: 0px;
 }
 
+/* default href */
+a {
+    color: rgb(244, 67, 54);
+    text-decoration: none;
+}
+
 /* default cursor */
 .default-cursor {
     cursor: default;
