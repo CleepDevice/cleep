@@ -37,7 +37,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             cleepbus: 'video-input-antenna',
             developer: 'worker',
             update: 'update',
-            audio: 'speaker'
+            audio: 'speaker',
+            speechrecognition: 'text-to-speech'
         };
 
         if( !angular.isUndefined(icons[module]) )

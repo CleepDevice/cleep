@@ -1,0 +1,132 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <!-- explanation -->
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">How it works</md-subheader>
+    </md-list-item>
+    <div style="padding: 0 16px;">
+        <p>The hot-word is the word used to trigger voice command recognition. When the hot-word is detected, your voice is recorded and sent to STT (SpeechToText) provider that transforms what you said to a text. Then this text is processed as a command.</p>
+        <p>Hot-word detection is performed locally on your device (to avoid latency) while the STT analyse is done with external provider.</p>
+        <p>Helpers below helps you to configure your own hot-word and to choose your preferred STT provider.</p>
+    </div>
+
+    <!-- hot-word -->
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Hot-word configuration</md-subheader>
+    </md-list-item>
+    <div layout="column" style="padding:0 16px;">
+        <div layout="row" layout-align="space-around center">
+            <div flex="25">
+                <img src="images/snowboy.png"/>
+            </div>
+    	    <div flex="75">
+                <p>Hot-word detection is powered by <a href="https://snowboy.kitt.ai/" target="_blank">Snowboy</a>. Before starting you need to create a <a href="https://snowboy.kitt.ai/" target="_blank">free account</a> (click on login on top right homepage corner).</p>
+                <p>Your hot-word needs to be recorded three times to build a personal voice model. For better performance make sure to record your voice in a quiet environment.</p>
+            </div>
+        </div>
+    </div>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+        <div>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <span style="padding-left: 15px;">Set Snowboy API token (available on "Profile settings > Your API token")</span>
+        </div>
+        <div layout="row">
+            <md-input-container>
+                <input ng-model="speechCtl.newHotwordToken" type="text" placeholder="Snowboy API token">
+            </md-input-container>
+            <div layout="row" layout-align="center center">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.setHotwordToken()">
+                    <md-icon md-svg-icon="content-save"></md-icon>
+                    Set
+                </md-button>
+            </div>
+        </div>
+    </div>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+        <div>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <span style="padding-left: 15px;">Record your own hot-word</span>
+        </div>
+        <div layout="row" layout-align="space-between center">
+            <div>
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken==null || speechCtl.hotwordModel">
+                    <md-icon md-svg-icon="record-rec"></md-icon>
+                    Start first recording
+                </md-button>
+            </div>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[0] || speechCtl.hotwordModel">
+                    <md-icon md-svg-icon="record-rec"></md-icon>
+                    Start second recording
+                </md-button>
+            </div>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[1] || speechCtl.hotwordModel">
+                    <md-icon md-svg-icon="record-rec"></md-icon>
+                    Start final recording
+                </md-button>
+            </div>
+            <div>
+                <md-button class="md-raised md-primary" ng-click="speechCtl.resetHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[0]">
+                    <md-icon md-svg-icon="close"></md-icon>
+                    <md-tooltip>Clear hot-word and record another one</md-tooltip>
+                    Reset
+                </md-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STT provider -->
+    <md-list ng-cloak style="padding-top: 30px;">
+        <md-subheader class="md-no-sticky">SpeechToText provider</md-subheader>
+    </md-list-item>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+        <div>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <span style="padding-left: 15px;">Choose your SpeechToText provider</span>
+        </div>
+        <div layout="row">
+            <md-select ng-model="speechCtl.provider" placeholder="Provider" class="md-no-underline">
+                <md-option ng-repeat="provider in speechCtl.providers" ng-value="provider">{{provider.provider}}</md-option>
+            </md-select>
+            <md-input-container>
+                <input ng-model="speechCtl.apikey" type="text" placeholder="Apikey">
+            </md-input-container>
+            <div layout="row" layout-align="center center">
+                <md-button class="md-raised md-primary" ng-click="audioCtl.setDevice()" aria-label="Set device">
+                    <md-icon md-svg-icon="content-save"></md-icon>
+                    Save
+                </md-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bing provider infos -->
+    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.provider==='Microsoft Bing Speech'">
+        <span>
+            Microsoft Bing Speech allows you to perform 5000 transactions per month for free, then the service costs $4 per 1000 transactions. (see <a href="https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-api/" target="_blank">pricing</a>).<br/>
+            To use this service:
+            <ul>
+                <li>Create an account on <a href="https://azure.microsoft.com/en-us/try/cognitive-services/" target="_blank">Microsoft azure website</a></li>
+                <li>Then login and subscribe to "Speech > Bing Speech API"</li>
+                <li>Accept terms and conditions</li>
+                <li>And copy/paste one of provided keys (key1 or key2) to "apikey" input above.</li>
+            </ul>
+        </span>
+    </div>
+    <!-- Google provider infos -->
+    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.provider==='Google Cloud Speech'">
+        <span>
+            Google Cloud Speech allows you to perform 240 transactions per month for free, then the service costs $0.006 per transactions. (see <a href="https://cloud.google.com/speech/pricing" target="_blank">pricing</a>).<br/>
+            To use this service:
+            <ul>
+                <li>Create an account or signin on <a href="https://cloud.google.com/speech/" target="_blank">Google Cloud Platform website</a></li>
+                <li>Then click on "Try it free" button</li>
+                <li>Fill form (credit card infos are mandatory!) and accept terms and conditions</li>
+                <li>Copy/paste your api key to "apikey" input above.</li>
+            </ul>
+        </span>
+    </div>
+    
+</div>
+
