@@ -42,7 +42,7 @@ class Event():
         Args:
             params (dict): event parameters.
             device_id (string): device id that send event. If not specified event cannot be monitored.
-            to (string): event recipient. If not specified, event will be broadcasted.
+            to (string): event recipient. If not specified, event will be broadcasted. (to send to ui client set 'rpc')
 
         Returns:
             None: event always returns None.
