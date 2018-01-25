@@ -2,11 +2,11 @@
  * Speechrecogniton service
  * Handle speechrecognition module requests
  */
-var speechrecognitionService = function($q, $rootScope, rpcService, raspiotService) {
+var speechrecognitionService = function($q, $rootScope, rpcService, raspiotService, toast) {
     var self = this;
 
-    self.setProvider = function(provider, apikey) {
-        return rpcService.sendCommand('set_provider', 'speechrecognition', {'provider':provider, 'apikey':apikey})
+    self.setProvider = function(providerId, apikey) {
+        return rpcService.sendCommand('set_provider', 'speechrecognition', {'provider_id':providerId, 'apikey':apikey})
             .then(function() {
                 return raspiotService.reloadModuleConfig('speechrecognition');
             });
@@ -27,13 +27,40 @@ var speechrecognitionService = function($q, $rootScope, rpcService, raspiotServi
     };
 
     self.resetHotword = function() {
-        return rpcService.sendCommand('reset_hotword', 'speechrecognition', null, 20)
+        return rpcService.sendCommand('reset_hotword', 'speechrecognition', null, 10)
             .then(function() {
                 return raspiotService.reloadModuleConfig('speechrecognition');
             });
     };
+
+    self.buildHotword = function() {
+        return rpcService.sendCommand('build_hotword', 'speechrecognition');
+    };
+
+    self.enableService = function() {
+        return rpcService.sendCommand('enable_service', 'speechrecognition')
+            .then(function() {
+                return raspiotService.reloadModuleConfig('speechrecognition');
+            });
+    };
+
+    self.disableService = function() {
+        return rpcService.sendCommand('disable_service', 'speechrecognition')
+            .then(function() {
+                return raspiotService.reloadModuleConfig('speechrecognition');
+            });
+    };
+
+    $rootScope.$on('speechrecognition.training.ok', function(event, uuid, params) {
+		toast.success('Your hotword voice model has been built successfully');
+    });
+
+    $rootScope.$on('speechrecognition.training.ko', function(event, uuid, params) {
+		toast.error('Error occured during hotword voice model generation');
+    });
+
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('speechrecognitionService', ['$q', '$rootScope', 'rpcService', 'raspiotService', speechrecognitionService]);
+RaspIot.service('speechrecognitionService', ['$q', '$rootScope', 'rpcService', 'raspiotService', 'toastService', speechrecognitionService]);
 

@@ -13,6 +13,48 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         self.newHotwordToken = null;
         self.hotwordRecordings = [false, false, false];
         self.hotwordModel = false;
+        self.hotwordTraining = false;
+        self.providerApiKey = null;
+        self.serviceEnabled = false;
+        self.isRecording = false;
+        self.truthTable = {
+            0b000: [false, true, true, true, true],
+            0b100: [true, false, true, true, false],
+            0b110: [true, true, false, true, false],
+            0b111: [true, true, true, false, false]
+        };
+
+        /**
+         * Return button disabled status
+         */
+        self.isRecordButtonDisabled = function(id)
+        {
+            if( self.isRecording || self.hotwordToken===null )
+            {
+                //disable button during recording and if token not specified
+                return true;
+            }
+            else if( id===3 && self.hotwordModel )
+            {
+                //special case for build model button. Disable only if model is generated
+                return true;
+            }
+            else
+            {
+                return self.truthTable[self.hotwordRecordings[0]*0b001 + self.hotwordRecordings[0]*0b010 + self.hotwordRecordings[0]*0b100][id];
+            }
+        };
+
+        /**
+         * Launch manual hotword voice model build
+         */
+        self.buildHotword = function()
+        {
+            speechrecognitionService.buildHotword()
+                .then(function() {
+                    toast.loading('Building your hotword voice model (can last few minutes)...');
+                });
+        };
 
         /**
          * Set snowboy api token
@@ -30,15 +72,29 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
          */
         self.recordHotword = function()
         {
-            toast.loading('Recording hotword...');
+            self.isRecording = true;
+            toast.loading('Recording hotword (5 seconds)...');
 
             speechrecognitionService.recordHotword()
                 .then(function(resp) {
-                    toast.success('Recording terminated');
                     self.reloadConfig();
+                    if( self.hotwordTraining )
+                    {
+                        toast.loading('Building your hotword voice model (can last few minutes)...');
+                    }
+                    else
+                    {
+                        toast.success('Recording terminated');
+                    }
+                })
+                .finally(function() {
+                    self.isRecording = false;
                 });
         };
 
+        /**
+         * Reset hotword settings
+         */
         self.resetHotword = function()
         {
             confirm.open('Reset hot-word?', 'Your hot-word voice model and all recordings will be deleted and not recoverable!', 'Reset')
@@ -46,7 +102,47 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                     return speechrecognitionService.resetHotword();
                 })
                 .then(function() {
+                    toast.success('Hotword resetted');
                     self.reloadConfig();
+                });
+        };
+
+        /**
+         * Toggle service activation
+         */
+        self.toggleServiceActivation = function()
+        {
+            var promise = null;
+            if( self.serviceEnabled )
+            {
+                promise = speechrecognitionService.disableService();
+            }
+            else
+            {
+                promise = speechrecognitionService.enableService();
+            }
+
+            promise.then(function() {
+                self.reloadConfig();
+                if( self.serviceEnabled )
+                {
+                    toast.success('Speech recognition service enabled');
+                }
+                else
+                {
+                    toast.success('Speech recognition service disabled');
+                }
+            });
+        };
+
+        /**
+         * Set provider
+         */
+        self.setProvider = function()
+        {
+            speechrecognitionService.setProvider(self.provider.id, self.provider.apikey)
+                .then(function() {
+                    toast.success('Provider saved');
                 });
         };
 
@@ -57,40 +153,28 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         {
             raspiotService.getModuleConfig('speechrecognition')
                 .then(function(config) {
-                    console.log(config);
-
-                    //fill list of providers
-                    self.providers = [];
-                    var current = null;
-                    for( var i=0; i<config.providers.length; i++ )
-                    {
-                        if( config.apikeys[self.providers[i]] )
-                        {
-                            current = self.providers.push({
-                                provider: config.providers[i],
-                                apikey: config.apikeys[self.providers[i]]
-                            });
-                        }
-                        else
-                        {
-                            current = self.providers.push({
-                                provider: config.providers[i],
-                                apikey: null
-                            });
-                        }
-
-                        //set current provider
-                        if( self.providers[i]===config.provider )
-                        {
-                            self.provider = current;
-                        }
-                    }
+                    console.log('config', config);
 
                     //other members
                     self.hotwordToken = config.hotwordtoken;
                     self.newHotwordToken = self.hotwordToken;
                     self.hotwordRecordings = config.hotwordrecordings;
                     self.hotwordModel = config.hotwordmodel;
+                    self.serviceEnabled = config.serviceenabled;
+                    self.hotwordTraining = config.hotwordtraining;
+                    self.providers = config.providers;
+
+                    //select current provider
+                    self.provider = null;
+                    for( var i=0; i<self.providers.length; i++ )
+                    {
+                        if( self.providers[i].id===config.providerid )
+                        {
+                            self.provider = self.providers[i];
+                        }
+                    }
+
+                    console.log('providers', self.providers);
                 });
         };
 

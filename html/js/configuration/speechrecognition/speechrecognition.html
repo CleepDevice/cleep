@@ -10,8 +10,18 @@
         <p>Helpers below helps you to configure your own hot-word and to choose your preferred STT provider.</p>
     </div>
 
-    <!-- hot-word -->
+    <!-- enable/disable speech recognition -->
     <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Service activation</md-subheader>
+        <md-list-item ng-click="speechCtl.toggleServiceActivation()">
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <p>Enable speech recognition service</p>
+            <md-checkbox ng-model="speechCtl.serviceEnabled" aria-label="Service enabled" ng-click="speechCtl.toggleServiceActivation()"></md-checkbox>
+        </md-list-item>
+    </md-list-item>
+
+    <!-- hot-word -->
+    <md-list ng-cloak style="padding-top: 30px;">
         <md-subheader class="md-no-sticky">Hot-word configuration</md-subheader>
     </md-list-item>
     <div layout="column" style="padding:0 16px;">
@@ -28,7 +38,7 @@
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
         <div>
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
-            <span style="padding-left: 15px;">Set Snowboy API token (available on "Profile settings > Your API token")</span>
+            <span style="padding-left: 28px;">Set Snowboy API token (available on "Profile settings > Your API token")</span>
         </div>
         <div layout="row">
             <md-input-container>
@@ -45,31 +55,47 @@
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
         <div>
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
-            <span style="padding-left: 15px;">Record your own hot-word</span>
+            <span style="padding-left: 28px;">Record your own hot-word</span>
         </div>
         <div layout="row" layout-align="space-between center">
             <div>
-                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken==null || speechCtl.hotwordModel">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.isRecordButtonDisabled(0)">
                     <md-icon md-svg-icon="record-rec"></md-icon>
                     Start first recording
                 </md-button>
             </div>
             <div>
-                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[0] || speechCtl.hotwordModel">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.isRecordButtonDisabled(1)">
                     <md-icon md-svg-icon="record-rec"></md-icon>
                     Start second recording
                 </md-button>
             </div>
             <div>
-                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[1] || speechCtl.hotwordModel">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.recordHotword()" aria-label="Check configuration" ng-disabled="speechCtl.isRecordButtonDisabled(2)">
                     <md-icon md-svg-icon="record-rec"></md-icon>
                     Start final recording
                 </md-button>
             </div>
             <div>
-                <md-button class="md-raised md-primary" ng-click="speechCtl.resetHotword()" aria-label="Check configuration" ng-disabled="speechCtl.hotwordToken===null || !speechCtl.hotwordRecordings[0]">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.buildHotword()" aria-label="Build voice model" ng-disabled="speechCtl.isRecordButtonDisabled(3)">
+                    <md-icon md-svg-icon="wrench"></md-icon>
+                    <md-tooltip>If something goes wrong, you can rebuild manually your hotword voice model without recording again voice</md-tooltip>
+                    Build
+                </md-button>
+            </div>
+        </div>
+    </div>
+    <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+        <div>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <span style="padding-left: 28px;">Reset your hotword voice model to record new one</span>
+        </div>
+        <div layout="row" layout-align="space-between center">
+            <div>
+                <span ng-if="speechCtl.hotwordModel">Your hotword is configured</span>
+                <span ng-if="!speechCtl.hotwordModel">Your hotword is not configured</span>
+                <md-button class="md-raised md-primary" ng-click="speechCtl.resetHotword()" aria-label="Reset hotword" ng-disabled="speechCtl.isRecordButtonDisabled(4)">
                     <md-icon md-svg-icon="close"></md-icon>
-                    <md-tooltip>Clear hot-word and record another one</md-tooltip>
                     Reset
                 </md-button>
             </div>
@@ -83,17 +109,21 @@
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
         <div>
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
-            <span style="padding-left: 15px;">Choose your SpeechToText provider</span>
+            <span style="padding-left: 28px;">Choose your SpeechToText provider</span>
         </div>
         <div layout="row">
-            <md-select ng-model="speechCtl.provider" placeholder="Provider" class="md-no-underline">
-                <md-option ng-repeat="provider in speechCtl.providers" ng-value="provider">{{provider.provider}}</md-option>
-            </md-select>
             <md-input-container>
-                <input ng-model="speechCtl.apikey" type="text" placeholder="Apikey">
+                <label>Provider</label>
+                <md-select ng-model="speechCtl.provider" class="md-no-underline">
+                    <md-option ng-repeat="provider in speechCtl.providers | filter:{enabled:true}" ng-value="provider">{{provider.provider}}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container>
+                <label>Apikey</label>
+                <input ng-model="speechCtl.provider.apikey" type="text">
             </md-input-container>
             <div layout="row" layout-align="center center">
-                <md-button class="md-raised md-primary" ng-click="audioCtl.setDevice()" aria-label="Set device">
+                <md-button class="md-raised md-primary" ng-click="speechCtl.setProvider()" aria-label="Set provider" ng-disabled="!speechCtl.provider || !speechCtl.provider.apikey">
                     <md-icon md-svg-icon="content-save"></md-icon>
                     Save
                 </md-button>
@@ -102,8 +132,9 @@
     </div>
 
     <!-- Bing provider infos -->
-    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.provider==='Microsoft Bing Speech'">
-        <span>
+    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.id===0">
+        <div flex></div>
+        <div flex="50">
             Microsoft Bing Speech allows you to perform 5000 transactions per month for free, then the service costs $4 per 1000 transactions. (see <a href="https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-api/" target="_blank">pricing</a>).<br/>
             To use this service:
             <ul>
@@ -112,11 +143,12 @@
                 <li>Accept terms and conditions</li>
                 <li>And copy/paste one of provided keys (key1 or key2) to "apikey" input above.</li>
             </ul>
-        </span>
+        </div>
     </div>
     <!-- Google provider infos -->
-    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.provider==='Google Cloud Speech'">
-        <span>
+    <div layout="row" style="padding: 0 16px;" ng-if="speechCtl.provider.id===1">
+        <div flex></div>
+        <div flex="50">
             Google Cloud Speech allows you to perform 240 transactions per month for free, then the service costs $0.006 per transactions. (see <a href="https://cloud.google.com/speech/pricing" target="_blank">pricing</a>).<br/>
             To use this service:
             <ul>
@@ -125,7 +157,7 @@
                 <li>Fill form (credit card infos are mandatory!) and accept terms and conditions</li>
                 <li>Copy/paste your api key to "apikey" input above.</li>
             </ul>
-        </span>
+        </div>
     </div>
     
 </div>
