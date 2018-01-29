@@ -256,15 +256,20 @@ class Respeaker2mic(AdvancedConsole):
         Args:
             led_id (int): led identifier
             color (list): RGB tuple [0,0,0]
-            brightness (int): percentage
+            brightness (int): brightness percentage (default 10%)
         """
         if led_id<0 or led_id>2:
             raise InvalidParameter(u'Led_id must be 0..2')
         if brightness<0 or brightness>100:
             raise InvalidParameter(u'Brightness must be 0..100')
+        if len(color)==4 and (color[3]<0 or color[3]>100):
+            raise InvalidParameter(u'Brightness must be 0..100')
 
         #set led color
-        self.logger.debug(u'Set led%s color R=%s G=%s B=%s with Bright=%s' % (led_id, color[0], color[1], color[2], brightness))
+        if len(color)==4:
+            #force brightness
+            brightness = color[3]
+        self.logger.debug(u'Set led%s color R=%s G=%s B=%s with Brightness=%s' % (led_id, color[0], color[1], color[2], brightness))
         self.leds_driver.set_pixel(led_id, color[0], color[1], color[2], brightness)
 
     def turn_on_leds(self, led1=None, led2=None, led3=None):
@@ -272,9 +277,9 @@ class Respeaker2mic(AdvancedConsole):
         Turn on leds with specified color. None value does nothing on led
 
         Args:
-            led1 (list): RGB tuple [0,0,0]
-            led2 (list): RGB tuple [0,0,0]
-            led3 (list): RGB tuple [0,0,0]
+            led1 (list): RGB<Brightness> list [0..255, 0..255, 0.255, <0..100>]
+            led2 (list): RGB<Brightness> list [0..255, 0..255, 0.255, <0..100>]
+            led3 (list): RGB<Brightness> list [0..255, 0..255, 0.255, <0..100>]
         """
         if led1 is not None:
             self.__set_led(0, led1)

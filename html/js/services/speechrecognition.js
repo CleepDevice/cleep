@@ -51,12 +51,30 @@ var speechrecognitionService = function($q, $rootScope, rpcService, raspiotServi
             });
     };
 
+    self.startHotwordTest = function() {
+        return rpcService.sendCommand('start_hotword_test', 'speechrecognition')
+            .then(function() {
+                return raspiotService.reloadModuleConfig('speechrecognition');
+            });
+    };
+
+    self.stopHotwordTest = function() {
+        return rpcService.sendCommand('stop_hotword_test', 'speechrecognition')
+            .then(function() {
+                return raspiotService.reloadModuleConfig('speechrecognition');
+            });
+    };
+
     $rootScope.$on('speechrecognition.training.ok', function(event, uuid, params) {
 		toast.success('Your hotword voice model has been built successfully');
     });
 
     $rootScope.$on('speechrecognition.training.ko', function(event, uuid, params) {
 		toast.error('Error occured during hotword voice model generation');
+    });
+
+    $rootScope.$on('speechrecognition.hotword.test', function(event, uuid, params) {
+		toast.info('Hotword detected');
     });
 
 };

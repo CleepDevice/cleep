@@ -16,6 +16,7 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         self.hotwordTraining = false;
         self.providerApiKey = null;
         self.serviceEnabled = false;
+        self.serviceStatus = 'notrunning';
         self.isRecording = false;
         self.truthTable = {
             0b000: [false, true, true, true, true],
@@ -146,6 +147,24 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                 });
         };
 
+        self.startHotwordTest = function()
+        {
+            speechrecognitionService.startHotwordTest()
+                .then(function() {
+                    toast.success('Hotword test started: say your hotword and you should see notification');
+                    self.reloadConfig();
+                });
+        };
+
+        self.stopHotwordTest = function()
+        {
+            speechrecognitionService.stopHotwordTest()
+                .then(function() {
+                    toast.success('Hotword test stopped');
+                    self.reloadConfig();
+                });
+        };
+
         /**
          * Reload config internally
          */
@@ -163,6 +182,20 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                     self.serviceEnabled = config.serviceenabled;
                     self.hotwordTraining = config.hotwordtraining;
                     self.providers = config.providers;
+
+                    //service status
+                    if( config.testing )
+                    {
+                        self.serviceStatus = 'testing';
+                    }
+                    else if( config.serviceRunning ) 
+                    {
+                        self.serviceStatus = 'running';
+                    }
+                    else
+                    {
+                        self.serviceStatus = 'notrunning';
+                    }
 
                     //select current provider
                     self.provider = null;
