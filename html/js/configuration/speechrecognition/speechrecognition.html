@@ -9,8 +9,19 @@
         <p>Hot-word detection is performed locally on your device (to avoid latency) while the STT analyse is done with external provider (Google Speech, Microssoft Bing Speech...)</p>
         <p>Options below helps you to configure your own hot-word and to choose your preferred STT provider.</p>
     </div>
+    <div style="padding:0 16px;">
+        <div layout="row" layout-align="space-between center">
+    	    <div>
+                <p>Hot-word detection is powered by <a href="https://snowboy.kitt.ai/" target="_blank">Snowboy</a>. Before starting you need to create a <a href="https://snowboy.kitt.ai/" target="_blank">free account</a> (click on login on top right homepage corner).</p>
+                <p>Your hot-word needs to be recorded three times to build a personal voice model. For better performance make sure to record your voice in a quiet environment.</p>
+            </div>
+            <div>
+                <img src="images/snowboy.png"/>
+            </div>
+        </div>
+    </div>
 
-    <!-- enable/disable speech recognition -->
+    <!-- speech recognition service -->
     <md-list ng-cloak>
         <md-subheader class="md-no-sticky">Speech recognition service</md-subheader>
         <md-list-item ng-click="speechCtl.toggleServiceActivation()">
@@ -40,17 +51,6 @@
     <md-list ng-cloak style="padding-top: 30px;">
         <md-subheader class="md-no-sticky">Hot-word configuration</md-subheader>
     </md-list-item>
-    <div layout="column" style="padding:0 16px;">
-        <div layout="row" layout-align="space-between center">
-    	    <div>
-                <p>Hot-word detection is powered by <a href="https://snowboy.kitt.ai/" target="_blank">Snowboy</a>. Before starting you need to create a <a href="https://snowboy.kitt.ai/" target="_blank">free account</a> (click on login on top right homepage corner).</p>
-                <p>Your hot-word needs to be recorded three times to build a personal voice model. For better performance make sure to record your voice in a quiet environment.</p>
-            </div>
-            <div>
-                <img src="images/snowboy.png"/>
-            </div>
-        </div>
-    </div>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
         <div>
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
