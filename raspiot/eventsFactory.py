@@ -94,7 +94,7 @@ class EventsFactory():
             formatter = None
             if issubclass(caller.__class__, Formatter):
                 #formatter registers event
-                formatter = caller.__class__.__name__
+                formatter = caller.__class__.__name__.lower()
                 self.logger.debug('Formatter %s registers event %s' % (formatter, event_name))
             else:
                 #module registers event

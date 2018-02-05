@@ -182,7 +182,13 @@ class MessageBus():
                 if self.__app_configured:
                     #append message to queues
                     for q in self.__queues:
+                        #do not send command to message sender
+                        if q==request.from_:
+                            continue
+
+                        #enqueue message
                         self.__queues[q].appendleft(msg)
+
                 else:
                     #defer message if app not configured yet
                     self.logger.debug(u'defer message: %s' % unicode(msg))
@@ -374,7 +380,7 @@ class BusClient(threading.Thread):
         self.join_event.clear()
 
         #subscribe module to bus
-        self.bus.add_subscription(self.__name)
+        self.bus.add_subscription(self.__module)
 
     def __del__(self):
         self.stop()
@@ -457,6 +463,11 @@ class BusClient(threading.Thread):
             #fill sender
             request.from_ = self.__module
 
+            #drop message send to the same module
+            if request.to is not None and request.to==self.__module:
+                raise Exception(u'Unable to send message to same class')
+
+            #push message
             if request.is_broadcast() or timeout is None or timeout==0.0:
                 #broadcast message or no timeout, so no response
                 self.bus.push(request, timeout)
@@ -558,7 +569,7 @@ class BusClient(threading.Thread):
         """
         Bus reading process.
         """
-        self.logger.debug(u'BusClient %s started' % self.__name)
+        self.logger.debug(u'BusClient %s started' % self.__module)
 
         #configuration
         try:
@@ -582,8 +593,8 @@ class BusClient(threading.Thread):
                 msg = {}
                 try:
                     #get message
-                    msg = self.bus.pull(self.__name)
-                    #self.logger.debug('BusClient: %s received %s' % (self.__name, msg))
+                    msg = self.bus.pull(self.__module)
+                    #self.logger.debug('BusClient: %s received %s' % (self.__module, msg))
 
                 except NoMessageAvailable:
                     #no message available
@@ -600,21 +611,21 @@ class BusClient(threading.Thread):
                 resp = MessageResponse()
        
                 #process message
-                #self.logger.debug('BusClient: %s process message' % (self.__name))
+                #self.logger.debug('BusClient: %s process message' % (self.__module))
                 if msg.has_key(u'message'):
                     if msg[u'message'].has_key(u'command'):
                         #command received, process it
                         if msg[u'message'].has_key(u'command') and msg[u'message'][u'command']!=None and len(msg[u'message'][u'command'])>0:
                             try:
                                 #get command reference
-                                self.logger.debug(u'BusClient: %s get command' % (self.__name))
                                 command = getattr(self, msg[u'message'][u'command'])
+                                self.logger.debug(u'BusClient: %s received command %s' % (self.__module, msg[u'message'][u'command']))
 
                                 #check if command was found
                                 if command is not None:
                                     #check if message contains all command parameters
                                     (ok, args) = self.__check_params(command, msg[u'message'][u'params'], msg[u'message'][u'from'])
-                                    self.logger.debug(u'BusClient: ok=%s args=%s' % (ok, args))
+                                    self.logger.debug(u'BusClient: command ok=%s args=%s' % (ok, args))
                                     if ok:
                                         #execute command
                                         try:
@@ -632,14 +643,17 @@ class BusClient(threading.Thread):
                                             resp.error = True
                                             resp.message = u'%s' % unicode(e)
                                     else:
+                                        self.logger.error(u'Some command parameters are missing')
                                         resp.error = True
                                         resp.message = u'Some command parameters are missing'
 
                             except AttributeError:
                                 #specified command doesn't exists in this module
-                                self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__name))
-                                resp.error = True
-                                resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__name)
+                                if not msg[u'message'][u'broadcast']:
+                                    #log message only for non broadcasted message
+                                    self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module))
+                                    resp.error = True
+                                    resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module)
 
                             except:
                                 #specified command is malformed
@@ -663,16 +677,16 @@ class BusClient(threading.Thread):
                             msg[u'event'].set()
                     
                     elif msg[u'message'].has_key(u'event'):
-                        #event received, process it
-                        try:
-                            if hasattr(self, u'event_received'):
-                                #function implemented in object, execute it
-                                event_received = getattr(self, u'event_received')
-                                if event_received is not None:
-                                    event_received(msg[u'message'])
-                        except:
-                            #do not crash module
-                            self.logger.exception(u'Exception in event_received:')
+                        if msg[u'message'].has_key(u'from') and msg[u'message'][u'from']==self.__module:
+                            #drop event sent to the same module
+                            pass
+                        else:
+                            #event received, process it
+                            try:
+                                self._event_received(msg[u'message'])
+                            except:
+                                #do not crash module
+                                self.logger.exception(u'Exception in event_received:')
 
                 else:
                     #received message is badly formatted
@@ -687,8 +701,8 @@ class BusClient(threading.Thread):
             #time.sleep(1.0)
 
         #remove subscription
-        self.bus.remove_subscription(self.__name)
-        self.logger.debug(u'BusClient %s stopped' % self.__name)
+        self.bus.remove_subscription(self.__module)
+        self.logger.debug(u'BusClient %s stopped' % self.__module)
 
 
 

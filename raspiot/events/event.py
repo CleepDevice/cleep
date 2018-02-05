@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import inspect
 from raspiot.utils import MessageRequest, InvalidParameter
 
 class Event():
@@ -47,9 +48,16 @@ class Event():
         Returns:
             None: event always returns None.
         """
+        #get event caller
+        stack = inspect.stack()
+        caller = stack[1][0].f_locals["self"]
+        module = caller.__class__.__name__.lower()
+
+        #check and prepare event
         if self._check_params(params):
             request = MessageRequest()
             request.to = to
+            request.from_ = module
             request.event = self.EVENT_NAME
             request.device_id = device_id
             request.params = params

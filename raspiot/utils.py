@@ -28,6 +28,12 @@ class NoMessageAvailable(Exception):
     def __str__(self):
         return u'No message available'
 
+class ResourceNotAvailable(Exception):
+    def __init__(self, resource):
+        self.resource = resource
+    def __str__(self):
+        return u'Resource %s not available' % self.resource
+
 class NoCityFound(Exception):
     def __str__(self):
         return u'No city found'
@@ -162,12 +168,14 @@ class MessageRequest():
             InvalidMessage if message is not valid
         """
         if self.command:
-            return {u'command':self.command, u'params':self.params, u'from':self.from_}
+            return {u'command':self.command, u'params':self.params, u'from':self.from_, u'broadcast': self.is_broadcast()}
+
         elif self.event:
             if not self.peer_infos:
-                return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id}
+                return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'from':self.from_}
             else:
                 return {u'event':self.event, u'params':self.params, u'peer_infos':self.peer_infos}
+
         else:
             raise InvalidMessage()
 
