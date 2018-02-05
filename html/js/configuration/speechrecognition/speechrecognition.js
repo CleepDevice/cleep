@@ -2,7 +2,7 @@
  * Speechrecognition config directive
  * Handle speech recognition configuration
  */
-var speechrecognitionConfigDirective = function(toast, speechrecognitionService, raspiotService, confirm) {
+var speechrecognitionConfigDirective = function($rootScope, toast, speechrecognitionService, raspiotService, confirm) {
 
     var speechrecognitionController = function()
     {
@@ -18,6 +18,7 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         self.serviceEnabled = false;
         self.serviceStatus = 'notrunning';
         self.isRecording = false;
+        self.testing = false;
         self.truthTable = {
             0b000: [false, true, true, true, true],
             0b100: [true, false, true, true, false],
@@ -154,6 +155,7 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         {
             speechrecognitionService.startHotwordTest()
                 .then(function() {
+                    self.testing = true;
                     toast.success('Hotword test started: say your hotword and you should see notification');
                     self.reloadConfig();
                 });
@@ -166,10 +168,21 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         {
             speechrecognitionService.stopHotwordTest()
                 .then(function() {
+                    self.testing = false;
                     toast.success('Hotword test stopped');
                     self.reloadConfig();
                 });
         };
+
+        /**
+         * Handle hotword detected event during test only
+         */
+        $rootScope.$on('speechrecognition.hotword.detected', function(event, uuid, params) {
+            if( self.testing )
+            {
+                toast.info('Hotword detected');
+            }
+        }); 
 
         /**
          * Reload config internally
@@ -238,5 +251,5 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('speechrecognitionConfigDirective', ['toastService', 'speechrecognitionService', 'raspiotService', 'confirmService', speechrecognitionConfigDirective])
+RaspIot.directive('speechrecognitionConfigDirective', ['$rootScope', 'toastService', 'speechrecognitionService', 'raspiotService', 'confirmService', speechrecognitionConfigDirective])
 

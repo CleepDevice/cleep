@@ -107,6 +107,12 @@ class SpeechRecognitionProcess(Thread):
         """
         self.test = True
 
+    def disable_test(self):
+        """
+        Disable test
+        """
+        self.test = False
+
     def is_test_enabled(self):
         """
         Return True if test mode is enabled
@@ -456,6 +462,7 @@ class Speechrecognition(RaspIotResource):
         self.alsa = Alsa()
         self.__training_task = None
         self.__speech_recognition_task = None
+        self.__stop_task_after_test = False
 
         #events
         self.training_ok_event = self._get_event('speechrecognition.training.ok')
@@ -795,13 +802,27 @@ class Speechrecognition(RaspIotResource):
         """
         Test hotword detection
         """
-        self.acquire_resource(u'audio.capture', {u'test': True})
+        if not self.__speech_recognition_task:
+            #speechrecognition task is not running, start it
+            if not self.acquire_resource(u'audio.capture'):
+                raise CommandError(u'Unable to start test')
+            self.__stop_task_after_test = True
+
+        #and enable test
+        self.__speech_recognition_task.enable_test()
 
     def stop_hotword_test(self):
         """
         Stop hotword test
         """
-        self.release_resource(u'audio.capture')
+        #disable test
+        self.__speech_recognition_task.disable_test()
+
+        #and stop task if necessary 
+        if self.__stop_task_after_test:
+            #task wasn't running before test, stop it
+            self.release_resource(u'audio.capture')
+            self.__stop_task_after_test = False
 
     def enable_service(self):
         """
@@ -861,11 +882,7 @@ class Speechrecognition(RaspIotResource):
         Return:
             bool: True if resource acquired
         """
-        test = False
-        if extra:
-            test = extra[u'test']
-
-        return self.__start_speech_recognition_task(test)
+        return self.__start_speech_recognition_task()
 
 
 
