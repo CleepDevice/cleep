@@ -613,7 +613,7 @@ class RaspIotResource(RaspIotModule):
         #no acquisition in progress, check if resource already acquired
         if self.resources[resource][u'in_use'] and self.resources[resource][u'in_use']==self.__module:
             #resource already acquired by this module, do nothing
-            self.logger.debug(u'Resource %s already acquired by %s, no nothing' % (resource, self.__module))
+            self.logger.debug(u'Resource %s already acquired by %s, do nothing' % (resource, self.__module))
             return False
 
         elif self.resources[resource][u'in_use'] and self.resources[resource][u'in_use']!=self.__module:
