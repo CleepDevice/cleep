@@ -54,10 +54,10 @@
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
         <div>
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
-            <span style="padding-left: 28px;">Set Snowboy API token (available on "Profile settings > Your API token")</span>
+            <span style="padding-left: 28px;">Set Snowboy API token (available on <a href="https://snowboy.kitt.ai/" target="_blank">Snowboy website</a> "Profile settings > Your API token")</span>
         </div>
         <div layout="row">
-            <md-input-container md-no-float class="md-block">
+            <md-input-container md-no-float class="md-block no-error-spacer">
                 <input ng-model="speechCtl.newHotwordToken" type="text" placeholder="Snowboy API token">
             </md-input-container>
             <div layout="row" layout-align="center center">
@@ -157,7 +157,7 @@
                 <md-select ng-model="speechCtl.provider" class="md-no-underline">
                     <md-option ng-repeat="provider in speechCtl.providers | filter:{enabled:true}" ng-value="provider">{{provider.provider}}</md-option>
                 </md-select>
-            <md-input-container md-no-float class="md-block">
+            <md-input-container md-no-float class="no-error-spacer md-block">
                 <input ng-model="speechCtl.provider.apikey" placeholder="Apikey" type="text">
             </md-input-container>
             <div layout="row" layout-align="center center">

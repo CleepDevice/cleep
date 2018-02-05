@@ -38,7 +38,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
             developer: 'worker',
             update: 'update',
             audio: 'speaker',
-            speechrecognition: 'text-to-speech'
+            speechrecognition: 'text-to-speech',
+            niccolometronome: 'metronome'
         };
 
         if( !angular.isUndefined(icons[module]) )

@@ -8,7 +8,7 @@ import collections
 import pyaudio
 import audioop
 from threading import Thread, Lock, Timer
-from raspiot.raspiot import RaspIotModule
+from raspiot.raspiot import RaspIotResource
 from raspiot.libs.alsa import Alsa
 from raspiot.libs.snowboy import Snowboy
 from raspiot.libs.snowboylib import snowboydetect, snowboydecoder
@@ -60,26 +60,21 @@ class BuildPersonalVoiceModelTask(Thread):
         #end of process callback
         self.callback(error, voice_model)
 
-class HotwordDetectionTestProcess(Thread):
-    """
-    Hotword detection test process
-    """
-    def __init__(self, logger, voice_model, command_event):
-        pass
-
 
 class SpeechRecognitionProcess(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, command_event, provider_token, sensitivity=0.45, audio_gain=1, record_duration=5.0):
+    def __init__(self, logger, voice_model, hotword_event, release_event, command_event, provider_token, sensitivity=0.45, audio_gain=1):
         """
         Constructor
 
         Args:
-            voice_model (string): voice model file path (pmdl or umdl)
-            command_event (Speechrecognitioncommand): event instance which will be sent when command is received
             logger (logger): logger instance
+            voice_model (string): voice model file path (pmdl or umdl)
+            command_event (Speechrecognitioncommanddetected): event instance which will be sent when command is received
+            hotword_event (Speechrecognitionhotworddetected): event instance that will be sent when hotword is detected
+            release_event (Speechrecognitionhotwordreleased): event instance that will be sent when speech recognition is terminated (but not yet processed!)
             sensitivity (float): great value make detector more sensitive to false positive
             audio_gain (int): decrease volume (<1) or boost volume (>1)
         """
@@ -90,34 +85,36 @@ class SpeechRecognitionProcess(Thread):
         self.logger = logger
         self.running = True
         self.command_event = command_event
-        self.test_event = None
+        self.hotword_event = hotword_event
+        self.release_event = release_event
         self.detector = snowboydecoder.HotwordDetector(voice_model, sensitivity=sensitivity, audio_gain=audio_gain)
         self.recognizer = speechrecognition.Recognizer()
         self.provider_token = provider_token
         self.voice_model = voice_model
         self.sensitivity = sensitivity
         self.audio_gain = audio_gain
-
-    def enable_test(self, test_event):
-        """
-        Enable hotword test (do not perform STT recognition)
-
-        Args:
-            test_event (Event): event called when hotword is detected
-        """
-        self.test_event = test_event
-
-    def is_test_enabled(self):
-        """
-        Return True if test is enabled
-        """
-        return self.test_event is not None
+        self.test = False
 
     def stop(self):
         """
         Stop recognition process
         """
         self.running = False
+
+    def enable_test(self):
+        """
+        Enable test (disable command recognition)
+        """
+        self.test = True
+
+    def is_test_enabled(self):
+        """
+        Return True if test mode is enabled
+
+        Return:
+            bool: True if test is running
+        """
+        return self.test
 
     def need_to_stop(self):
         """
@@ -129,13 +126,19 @@ class SpeechRecognitionProcess(Thread):
         """
         Record command after hotword detected
         """
-        if self.test_event is not None:
+        if self.test:
             #drop recording during test
             return
 
         #get recorded audio
-        with speechrecognition.AudioFile(recording) as source:
-            audio = self.recognizer.record(source)
+        try:
+            with speechrecognition.AudioFile(recording) as source:
+                audio = self.recognizer.record(source)
+        except:
+            self.logger.exception(u'Error during speech recognition')
+        finally:
+            #release hotword
+            self.release_event.send()
 
         #check audio
         if not audio:
@@ -149,7 +152,7 @@ class SpeechRecognitionProcess(Thread):
             self.logger.debug('Done: command=%s' % command)
 
         except speechrecognition.UnknownValueError:
-            self.logger.warning(u'STT provider doesn\'t understand command')
+            self.logger.warning(u'STT provider doesn\'t understand audio')
             return
 
         except speechrecognition.RequestError as e:
@@ -168,15 +171,18 @@ class SpeechRecognitionProcess(Thread):
         }
         self.command_event.send(params=params)
 
-
     def hotword_detected(self):
         """
         Called when hotword is detected
         """
         self.logger.debug('-> hotword detected')
-        #send event if test mode enabled
-        if self.test_event:
-            self.test_event.send()
+
+        #send hotword detected event
+        if self.test:
+            #send hotword test only to rpc during tests
+            self.hotword_event.send(to=u'rpc')
+        else:
+            self.hotword_event.send()
 
     def run(self):
         """
@@ -385,6 +391,10 @@ class SpeechRecognitionProcessOld1(Thread):
                 self.logger.error(u'Error initializing streams or reading audio data')
             elif resp>0:
                 self.logger.debug(u'Hotword detected #%s' % resp)
+                #send event that hotword was detected
+                self.hotword_event.send()
+
+                #process command detection
                 self.__hotword_detected(resp)
 
         #clean everything
@@ -396,7 +406,7 @@ class SpeechRecognitionProcessOld1(Thread):
         self.logger.debug(u'SpeechRecognitionProcess stopped')
 
 
-class Speechrecognition(RaspIotModule):
+class Speechrecognition(RaspIotResource):
     """
     Speechrecognition module implements SpeechToText feature using snowboy for local hotword detection
     and online services to translate user speech to text
@@ -419,6 +429,10 @@ class Speechrecognition(RaspIotModule):
         u'serviceenabled': True
     }
 
+    RESOURCES = {
+        u'audio.capture': 15.0
+    }
+
     PROVIDERS = [
         {u'id':0, u'label':u'Microsoft Bing Speech', u'enabled':True},
         {u'id':1, u'label':u'Google Cloud Speech', u'enabled':False},
@@ -435,7 +449,7 @@ class Speechrecognition(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+        RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -444,10 +458,11 @@ class Speechrecognition(RaspIotModule):
         self.__speech_recognition_task = None
 
         #events
-        self.trainingOkEvent = self._get_event('speechrecognition.training.ok')
-        self.trainingKoEvent = self._get_event('speechrecognition.training.ko')
-        self.commandReceivedEvent = self._get_event('speechrecognition.command.received')
-        self.testHotwordEvent = self._get_event('speechrecognition.hotword.test')
+        self.training_ok_event = self._get_event('speechrecognition.training.ok')
+        self.training_ko_event = self._get_event('speechrecognition.training.ko')
+        self.command_detected_event = self._get_event('speechrecognition.command.detected')
+        self.hotword_detected_event = self._get_event('speechrecognition.hotword.detected')
+        self.hotword_released_event = self._get_event('speechrecognition.hotword.released')
 
     def _configure(self):
         """
@@ -456,9 +471,9 @@ class Speechrecognition(RaspIotModule):
         #make sure voice model path exists
         if not os.path.exists(self.VOICE_MODEL_PATH):
             os.makedirs(self.VOICE_MODEL_PATH)
-
+    
         #start voice recognition process if possible
-        self.__start_speech_recognition_task()
+        self.acquire_resource(u'audio.capture')
 
     def get_module_config(self):
         """
@@ -523,19 +538,28 @@ class Speechrecognition(RaspIotModule):
         provider_token = self._config[u'providerapikeys'][str(self._config[u'providerid'])]
         self.logger.debug(u'provider_token=%s' % provider_token)
         self.logger.debug(u'apikeys:%s providerid:%s' % (self._config[u'providerapikeys'], self._config[u'providerid']))
-        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, self._config[u'hotwordmodel'], self.commandReceivedEvent, provider_token)
+        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, self._config[u'hotwordmodel'], self.hotword_detected_event, self.hotword_released_event, self.command_detected_event, provider_token)
         if test:
             #enable test mode
-            self.__speech_recognition_task.enable_test(self.testHotwordEvent)
+            self.__speech_recognition_task.enable_test(self.hotwordDetectedEvent)
         self.__speech_recognition_task.start()
+
+        return True
 
     def __stop_speech_recognition_task(self):
         """
         Stop speech recognition task
+
+        Return:
+            bool: True if speech recognition was running
         """
         if self.__speech_recognition_task is not None:
             self.__speech_recognition_task.stop()
             self.__speech_recognition_task = None
+
+            return True
+
+        return False
 
     def __get_hotword_recording_status(self):
         """
@@ -650,7 +674,7 @@ class Speechrecognition(RaspIotModule):
         #check errors
         if error is not None:
             #send error event to ui
-            self.trainingKoEvent.send(to=u'rpc', params={u'error': error})
+            self.training_ko_event.send(to=u'rpc', params={u'error': error})
             
         #finalize training
         try:
@@ -675,16 +699,13 @@ class Speechrecognition(RaspIotModule):
             self._save_config(config)
 
             #send event to ui model is generated
-            self.trainingOkEvent.send(to=u'rpc')
-
-            #start speech recognition task
-            self.__start_speech_recognition_task()
+            self.training_ok_event.send(to=u'rpc')
 
         except:
             self.logger.exception('Exception during model training:')
 
             #send error event to ui
-            self.trainingKoEvent.send(to=u'rpc', params={u'error': u'unable to move files'})
+            self.training_ko_event.send(to=u'rpc', params={u'error': u'unable to move files'})
 
     def record_hotword(self):
         """
@@ -699,10 +720,16 @@ class Speechrecognition(RaspIotModule):
             raise CommandError(u'This action is disabled during voice model building')
 
         #stop speech recognition thread if running
-        self.__stop_speech_recognition_task()
+        in_use = self.__stop_speech_recognition_task()
 
         #record sound
+        if not in_use:
+            #claim for resource
+            self.acquire_resource(u'audio.capture')
         record = self.alsa.record_sound(timeout=5.0)
+        if not in_use:
+            #release resource
+            self.release_resource(u'audio.capture')
 
         #save recording
         record1, record2, record3 = self.__get_hotword_recording_status()
@@ -768,13 +795,13 @@ class Speechrecognition(RaspIotModule):
         """
         Test hotword detection
         """
-        self.__start_speech_recognition_task(True)
+        self.acquire_resource(u'audio.capture', {u'test': True})
 
     def stop_hotword_test(self):
         """
         Stop hotword test
         """
-        self.__stop_speech_recognition_task()
+        self.release_resource(u'audio.capture')
 
     def enable_service(self):
         """
@@ -787,7 +814,7 @@ class Speechrecognition(RaspIotModule):
             return False
 
         #start speech recognition
-        self.__start_speech_recognition_task()
+        self.acquire_resource(u'audio.capture')
 
         return True
 
@@ -802,9 +829,43 @@ class Speechrecognition(RaspIotModule):
             return False
 
         #start speech recognition
-        self.__stop_speech_recognition_task()
+        self.release_resource(u'audio.capture')
 
         return True
+
+    def _release_resource(self, resource, extra):
+        """
+        Release resource
+
+        Args:
+            resource (string): resource name
+            extra (dict): extra parameters
+
+        Return:
+            bool: True if resource released
+        """
+        self.__stop_speech_recognition_task()
+        #wait few time to make sure resource is released
+        time.sleep(1.0)
+
+        return True
+
+    def _acquire_resource(self, resource, extra):
+        """
+        Acquire resource
+
+        Args:
+            resource (string): resource name
+            extra (dict): extra parameters
+
+        Return:
+            bool: True if resource acquired
+        """
+        test = False
+        if extra:
+            test = extra[u'test']
+
+        return self.__start_speech_recognition_task(test)
 
 
 

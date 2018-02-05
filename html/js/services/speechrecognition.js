@@ -73,7 +73,7 @@ var speechrecognitionService = function($q, $rootScope, rpcService, raspiotServi
 		toast.error('Error occured during hotword voice model generation');
     });
 
-    $rootScope.$on('speechrecognition.hotword.test', function(event, uuid, params) {
+    $rootScope.$on('speechrecognition.hotword.detected', function(event, uuid, params) {
 		toast.info('Hotword detected');
     });
 

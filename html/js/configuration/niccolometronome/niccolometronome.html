@@ -1,5 +1,59 @@
 <div layout="column" layout-padding ng-cloak>
 
-            <md-button class="md-raised md-primary" ng-click="niccolometronomeCtl.playSound()" aria-label="Save">PLAY</md-button>
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Metronome</md-subheader>
+
+		<md-list-item>
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <p>Is metronome running</p>
+            <md-button ng-if="!niccolometronomeCtl.metronomeRunning" class="md-primary default-cursor" aria-label="Not running">
+                <md-icon md-svg-icon="circle"></md-icon>
+                Not running
+            </md-button>
+            <md-button ng-if="niccolometronomeCtl.metronomeRunning" class="md-accent default-cursor" aria-label="Running">
+                <md-icon md-svg-icon="circle"></md-icon>
+                Running
+            </md-button>
+        </md-list-item>
+        <md-list-item ng-click="niccolometronomeCtl.toggleMetronome()">
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <p>Start/stop metronome manually</p>
+            <md-checkbox ng-model="niccolometronomeCtl.metronomeRunning" aria-label="Metronome running" ng-click="niccolometronomeCtl.toggleMetronome()"></md-checkbox>
+        </md-list-item>
+		<div layout="row" layout-align="space-between center" style="padding: 0 16px;">
+        	<div>
+            	<md-icon md-svg-icon="chevron-double-right"></md-icon>
+	            <span style="padding-left: 28px;">Change BPM manually</span>
+    	    </div>
+        	<div layout="row">
+	            <md-input-container md-no-float class="no-error-spacer md-block">
+    	            <input ng-model="niccolometronomeCtl.newBpm" type="text" placeholder="BPM">
+        	    </md-input-container>
+            	<div layout="row" layout-align="center center">
+	                <md-button class="md-raised md-primary" ng-click="niccolometronomeCtl.setBpm()">
+    	                <md-icon md-svg-icon="content-save"></md-icon>
+        	            Set
+            	    </md-button>
+	            </div>
+	        </div>
+    	</div>
+    </md-list>
+
+    <md-list ng-cloak>
+        <md-subheader class="md-no-sticky">Supported phrases</md-subheader>
+		<md-list-item ng-repeat="phrase in niccolometronomeCtl.phrases">
+            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <p ng-if="phrase.command===1">"{{phrase.phrase}}" will start metronome</p>
+            <p ng-if="phrase.command===2">"{{phrase.phrase}}" will stop metronome</p>
+            <p ng-if="phrase.command===3">"{{phrase.phrase}}" will set BPM to {{phrase.bpm}}</p>
+            <p ng-if="phrase.command===4">"{{phrase.phrase}}" will increase BPM of {{phrase.bpm}}</p>
+            <p ng-if="phrase.command===5">"{{phrase.phrase}}" will decrease BPM of {{phrase.bpm}}</p>
+            <md-button class="md-secondary md-warn" ng-click="niccolometronomeCtl.removePhrase(phrase)">
+                <md-icon md-svg-icon="delete"></md-icon>
+                Remove
+            </md-button>
+        </md-list-item>
+    </md-list>
+
 </div>
 

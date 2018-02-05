@@ -7,9 +7,12 @@ import time
 import pyaudio
 import wave
 import pygame
+import pyglet
+import uuid
 from fuzzywuzzy import fuzz
 from threading import Thread
 from raspiot.raspiot import RaspIotModule
+from raspiot.utils import InvalidParameter, MissingParameter
 
 __all__ = [u'Niccolo']
 
@@ -35,6 +38,7 @@ class MetronomeTask(Thread):
         self.running = True
         self.sound = sound
         self.set_bpm(bpm)
+        self.__mute = False
 
     def bpm_to_seconds(self, bpm):
         """
@@ -54,6 +58,18 @@ class MetronomeTask(Thread):
         """
         self.running = False
 
+    def mute(self):
+        """
+        Mute sound playback
+        """
+        self.__mute = True
+
+    def unmute(self):
+        """
+        Unmute sound playback
+        """
+        self.__mute = False
+
     def set_bpm(self, bpm):
         """
         Change current bpm
@@ -62,6 +78,39 @@ class MetronomeTask(Thread):
         self.__pause = self.bpm_to_seconds(bpm)
         self.__sync_gap = float(self.__pause * 0.1)
         self.logger.debug('New pause of %s for %sBPM' % (self.__pause, bpm))
+
+    def run_pyglet(self):
+        """
+        Metronome process
+        """
+        self.logger.debug(u'Metronome process started')
+
+        #prepare audio
+        audio = pyglet.media.load(self.sound, streaming=False)
+        audio.play()
+
+        #start metronome
+        next_sync = divmod(time.time() + self.__pause, 1)[1]
+        while self.running:
+            #play sound
+            self.logger.debug('Metronome tick')
+            start_playback = time.time()
+            if not self.__mute:
+                audio.play()
+            end_playback = time.time()
+
+            #major pause adjustment (0.1 it's just for precision adjustment) and pause
+            playback_duration = end_playback - start_playback
+            pause = self.__pause - playback_duration - self.__sync_gap
+            time.sleep(pause)
+            
+            #precise pause adjustment
+            while divmod(time.time(),1)[1]<next_sync:
+                pass
+            next_sync = divmod(next_sync + self.__pause, 1)[1]
+
+        #clean stuff
+        pygame.quit()
 
     def run(self):
         """
@@ -72,14 +121,13 @@ class MetronomeTask(Thread):
         #prepare audio
         wf = wave.open(self.sound, 'rb')
         channels = wf.getnchannels()
-        framerate = wf.getframerate()
+        frequency = wf.getframerate()
         wf.close()
-        self.logger.debug('channels=%s framerate=%s' % (channels, framerate))
-        pygame.mixer.init(frequency=framerate, channels=channels)
+        self.logger.debug('channels=%s frequency=%s' % (channels, frequency))
+        pygame.mixer.pre_init(frequency, -16, channels, 2048)
+        pygame.mixer.init()
+        pygame.init()
         audio = pygame.mixer.Sound(file=self.sound)
-
-        #differ startup
-        time.sleep(2.0)
 
         #start metronome
         next_sync = divmod(time.time() + self.__pause, 1)[1]
@@ -87,7 +135,8 @@ class MetronomeTask(Thread):
             #play sound
             self.logger.debug('Metronome tick')
             start_playback = time.time()
-            audio.play()
+            if not self.__mute:
+                audio.play()
             end_playback = time.time()
 
             #major pause adjustment (0.1 it's just for precision adjustment) and pause
@@ -161,8 +210,15 @@ class Niccolometronome(RaspIotModule):
     MODULE_LINK = None
 
     DEFAULT_CONFIG = {
-        u'bpm': 60
+        u'bpm': 60,
+        u'phrases': []
     }
+
+    COMMAND_START_METRONOME = 1
+    COMMAND_STOP_METRONOME = 2
+    COMMAND_SET_BPM = 3
+    COMMAND_INCREASE_BPM = 4
+    COMMAND_DECREASE_BPM = 5
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -176,48 +232,232 @@ class Niccolometronome(RaspIotModule):
 
         #members
         self.__metronome_task = None
+        self.__phrases = {}
 
     def _configure(self):
         """
         Configure module
         """
-        #start metronome
-        #self.__start_metronome_task()
+        #load phrases
+        self.__load_phrases()
+
+    def get_module_config(self):
+        """
+        Return module configuration
+        """
+        return {
+            u'bpm': self._config[u'bpm'],
+            u'phrases': self._config[u'phrases'],
+            u'metronomerunning': not self.__metronome_task is None
+        }
+
+    def __load_phrases(self):
+        """
+        Load phrases internally (from config)
+        """
+        self.__phrases = {}
+        for phrase in self._config[u'phrases']:
+            if phrase[u'command']==self.COMMAND_START_METRONOME:
+                self.logger.debug(u'"%s" phrase triggers __start_metronome_task' % phrase[u'phrase'])
+                self.__phrases[phrase[u'phrase']] = lambda: self.__start_metronome_task()
+            elif phrase[u'command']==self.COMMAND_STOP_METRONOME:
+                self.logger.debug(u'"%s" phrase triggers __stop_metronome_task' % phrase[u'phrase'])
+                self.__phrases[phrase[u'phrase']] = lambda: self.__stop_metronome_task()
+            elif phrase[u'command']==self.COMMAND_INCREASE_BPM:
+                self.logger.debug(u'"%s" phrase triggers __increase_bpm of %d' % (phrase[u'phrase'], phrase[u'bpm']))
+                self.__phrases[phrase[u'phrase']] = lambda bpm=phrase[u'bpm']: self.__increase_bpm(bpm)
+            elif phrase[u'command']==self.COMMAND_DECREASE_BPM:
+                self.logger.debug(u'"%s" phrase triggers __decrease_bpm of %d' % (phrase[u'phrase'], phrase[u'bpm']))
+                self.__phrases[phrase[u'phrase']] = lambda bpm=phrase[u'bpm']: self.__decrease_bpm(bpm)
+            elif phrase[u'command']==self.COMMAND_SET_BPM:
+                self.logger.debug(u'"%s" phrase triggers __set_bpm to %d' % (phrase[u'phrase'], phrase[u'bpm']))
+                self.__phrases[phrase[u'phrase']] = lambda bpm=phrase[u'bpm']: self.__set_bpm(bpm)
+            else:
+                self.logger.error(u'Invalid command id %s specified' % phrase[u'command'])
+
+        self.logger.debug(u'%d phrases loaded' % len(self.__phrases))
 
     def __start_metronome_task(self):
         """
         Start metronome task
+
+        Return:
+            bool: True if metronome already running
         """
         if self.__metronome_task is None:
+            self.logger.debug('Start metronome')
             self.logger.debug(u'Start Niccolo metronome')
-            self.__metronome_task = MetronomeTask(self.logger, u'/opt/raspiot/sounds/metronome1.wav', 60)
+            self.__metronome_task = MetronomeTask(self.logger, u'/opt/raspiot/sounds/metronome1.wav', self._config[u'bpm'])
             self.__metronome_task.start()
+
+            return True
+
+        return False
 
     def __stop_metronome_task(self):
         """
         Stop metronome task
         """
         if self.__metronome_task is not None:
+            self.logger.debug('Stop metronome')
             self.logger.debug(u'Stop Niccolo metronome')
             self.__metronome_task.stop()
             self.__metronome_task = None
 
-    def set_bpm(self, bpm):
+    def __set_bpm(self, bpm):
         """
         Set current bpm
+
+        Args:
+            bpm (int): new bpm to set
         """
+        #check param
+        if bpm<40 or bpm>220:
+            #no exception here to not raise exception when user increase or decrease bpm using voice
+            self.logger.debug(u'New %d BPM value is invalid: must be 40..220 ' % bpm)
+
+        #save bpm to config
         config = self._get_config()
         config[u'bpm'] = bpm
-        return self._save_config(config)
+
+        #update metronome task bpm
+        if self.__metronome_task:
+            self.__metronome_task.set_bpm(bpm)
+ 
+        if self._save_config(config):
+            return True
+
+        return False
+
+    def __increase_bpm(self, bpm):
+        """
+        Increase current bpm
+
+        Args:
+            bpm (int): bpm to use to increase current one
+        """
+        self.logger.debug('Increase BPM of %d' % bpm)
+        self.__set_bpm(self._config[u'bpm'] + bpm)
+
+    def __decrease_bpm(self, bpm):
+        """
+        Decrease current bpm
+
+        Args:
+            bpm (int): bpm to use to increase current one
+        """
+        self.logger.debug('Decrease BPM of %d' % bpm)
+        self.__set_bpm(self._config[u'bpm'] - bpm)
+
+    def add_phrase(self, phrase, command, bpm):
+        """
+        Add new phrase
+
+        Args:
+            phrase (string): phrase to detect
+            command (int): command id (see COMMAND_XXX)
+            bpm (int): associated bpm
+        """
+        #check params
+        if phrase is None or len(phrase)==0:
+            raise MissingParameter(u'Parameter phrase is missing')
+        if bpm is None:
+            raise MissingParameter(u'Parameter bpm is missing')
+        if command is None:
+            raise MissingParameter(u'Parameter command is missing')
+        #if bpm>=0 and (bpm<40 or bpm>220):
+        #    raise InvalidParameter(u'Parameter bpm must be 40..220')
+        #elif bpm<0 and bpm<-50:
+        #    raise InvalidParameter(u'Parameter bpm must negative')
+
+        #save phrase
+        config = self._get_config()
+        config[u'phrases'].append({
+            u'id': str(uuid.uuid4()),
+            u'phrase': phrase,
+            u'command': command,
+            u'bpm': bpm
+        })
+        
+        if self._save_config(config):
+            self.__load_phrases()
+
+    def remove_phrase(self, id):
+        """
+        Remove specified phrase id
+
+        Args:
+            id (uuid): phrase id
+        """
+        #check params
+        if id is None or len(id)==0:
+            raise MissingParameter(u'Parameter id is missing')
+
+        #search for phrase and delete it
+        config = self._get_config()
+        config[u'phrases'] = filter(lambda x: x[u'id']!=id, config[u'phrases'])
+
+        #save config
+        if self._save_config(config):
+            self.__load_phrases()
+
+    def start_metronome(self):
+        """
+        Start metronome
+        """
+        self.__start_metronome_task()
+
+    def stop_metronome(self):
+        """
+        Stop metronome
+        """
+        self.__stop_metronome_task()
+
+    def set_bpm(self, bpm):
+        """
+        Set bpm
+
+        Args:
+            bpm (int): new bpm
+        """
+        #check params
+        if bpm is None:
+            raise MissingParameter(u'Parameter bpm is missing')
+        if bpm<40 or bpm>220:
+            raise InvalidParameter(u'Parameter bpm must be 40..220')
+
+        self.__set_bpm(bpm)
 
     def event_received(self, event):
-        self.logger.debug('Event received: %s' % event)
-        if event[u'event']==u'speechrecognition.command.received':
-            if fuzz.ratio(u'démarre', event[u'params'][u'command'])>=70:
-                self.logger.debug(u'"démarre" command detected')
-                self.__start_metronome_task()
+        """
+        Event received
 
-            elif fuzz.ratio(u'éteins', event[u'params'][u'command'])>=70:
-                self.logger.debug(u'"éteins" command detected')
-                self.__stop_metronome_task()
+        Args:
+            event (dict): params of event
+        """
+        self.logger.debug('Event received: %s' % event)
+        if event[u'event']==u'speechrecognition.command.detected':
+            #unmute metronome
+            if self.__metronome_task:
+                self.__metronome_task.unmute()
+
+            for phrase in self.__phrases.keys():
+                ratio = fuzz.ratio(phrase, event[u'params'][u'command'])
+                self.logger.debug('Ratio for %s<=>%s: %s' % (phrase, event[u'params'][u'command'], ratio))
+                if fuzz.ratio(phrase, event[u'params'][u'command'])>=70:
+                    self.logger.debug(u'Detected command "%s"' % phrase)
+                    self.__phrases[phrase]()
+                    break
+
+        elif event[u'event']==u'speechrecognition.hotword.detected':
+            #mute metronome to improve command recording
+            self.logger.debug('Mute metronome')
+            if self.__metronome_task:
+                self.__metronome_task.mute()
+
+        elif event[u'event']==u'speechrecognition.hotword.released':
+            #unmute metronome
+            self.logger.debug('Unmute metronome')
+            if self.__metronome_task:
+                self.__metronome_task.unmute()
 

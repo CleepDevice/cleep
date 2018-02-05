@@ -147,6 +147,9 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                 });
         };
 
+        /**
+         * Start hotword test
+         */
         self.startHotwordTest = function()
         {
             speechrecognitionService.startHotwordTest()
@@ -156,6 +159,9 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                 });
         };
 
+        /**
+         * Stop hotword test
+         */
         self.stopHotwordTest = function()
         {
             speechrecognitionService.stopHotwordTest()
@@ -172,8 +178,6 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
         {
             raspiotService.getModuleConfig('speechrecognition')
                 .then(function(config) {
-                    console.log('config', config);
-
                     //other members
                     self.hotwordToken = config.hotwordtoken;
                     self.newHotwordToken = self.hotwordToken;
@@ -188,7 +192,7 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                     {
                         self.serviceStatus = 'testing';
                     }
-                    else if( config.serviceRunning ) 
+                    else if( config.servicerunning ) 
                     {
                         self.serviceStatus = 'running';
                     }
@@ -206,8 +210,6 @@ var speechrecognitionConfigDirective = function(toast, speechrecognitionService,
                             self.provider = self.providers[i];
                         }
                     }
-
-                    console.log('providers', self.providers);
                 });
         };
 

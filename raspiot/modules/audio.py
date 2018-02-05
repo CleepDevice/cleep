@@ -4,14 +4,14 @@
 import time
 import logging
 import os
-from raspiot.raspiot import RaspIotModule
+from raspiot.raspiot import RaspIotResource
 from raspiot.libs.alsa import Alsa
 from raspiot.libs.asoundrc import Asoundrc
 
 __all__ = ['Audio']
 
 
-class Audio(RaspIotModule):
+class Audio(RaspIotResource):
     """
     Audio module is in charge of configuring audio on raspberry pi
     """
@@ -26,6 +26,11 @@ class Audio(RaspIotModule):
 
     TEST_SOUND = u'/opt/raspiot/sounds/connected.wav'
 
+    RESOURCES = {
+        u'audio.capture': 15.0,
+        u'audio.playback': 10.0
+    }
+
     def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
@@ -35,7 +40,7 @@ class Audio(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         #init
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+        RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -115,21 +120,61 @@ class Audio(RaspIotModule):
         """
         Play test sound to make sure audio card is correctly configured
         """
+        #get playback resource
+        self.acquire_resource(u'playback')
+
+        #play audio
         if not self.alsa.play_sound(self.TEST_SOUND):
             raise CommandError(u'Unable to play test sound: internal error.')
+
+        #release resource
+        self.release_resource(u'playback')
 
     def test_recording(self):
         """
         Record sound during few seconds and play it
         """
+        #get capture resource
+        self.acquire_resource(u'audio.capture')
+
+        #record sound
         sound = self.alsa.record_sound(timeout=5.0)
         self.logger.debug(u'Recorded sound: %s' % sound)
         self.alsa.play_sound(sound)
 
+        #release resource
+        self.release_resource(u'audio.capture')
+
         #purge file
-        time.sleep(1.0)
+        time.sleep(0.5)
         os.remove(sound)
 
+    def _acquire_resource(self, resource, extra):
+        """
+        Acquire resource
 
+        Args:
+            resource (string): resource name
+            extra (dict): extra parameters
+
+        Return:
+            bool: True if resource acquired
+        """
+        #nothing to perform here
+        return True
+
+    def _release_resource(self, resource, extra):
+        """
+        Release resource
+
+        Args:
+            resource (string): resource name
+            extra (dict): extra parameters
+
+        Return:
+            bool: True if resource acquired
+        """
+        #resource is not acquired during too much time, so do nothing
+        return True
 
 
