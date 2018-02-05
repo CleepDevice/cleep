@@ -3,13 +3,13 @@
 
 from raspiot.events.event import Event
 
-class Speechrecognitioncommandreceived(Event):
+class Systemresourcereleased(Event):
     """
-    speechrecognition.command.received event
+    system.resource.released event
     """
 
-    EVENT_NAME = u'speechrecognition.command.received'
-    EVENT_SYSTEM = False
+    EVENT_NAME = u'system.resource.released'
+    EVENT_SYSTEM = True
 
     def __init__(self, bus, formatters_factory, events_factory):
         """
@@ -32,5 +32,5 @@ class Speechrecognitioncommandreceived(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        return all(key in [u'hotword', u'command'] for key in params.keys())
+        return all(key in [u'resource', u'module'] for key in params.keys())
 
