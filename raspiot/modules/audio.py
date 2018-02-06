@@ -19,7 +19,7 @@ class Audio(RaspIotResource):
     MODULE_CONFIG_FILE = None
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Configure audio on your device'
-    MODULE_LOCKED = False
+    MODULE_LOCKED = True
     MODULE_TAGS = [u'audio', u'sound']
     MODULE_COUNTRY = None
     MODULE_LINK = None
