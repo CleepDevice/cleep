@@ -43,7 +43,6 @@ class Audio(RaspIotResource):
         RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
-        self.logger = logging.getLogger(self.__class__.__name__)
         self.alsa = Alsa()
         self.asoundrc = Asoundrc()
 

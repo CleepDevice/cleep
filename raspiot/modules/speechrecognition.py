@@ -458,7 +458,6 @@ class Speechrecognition(RaspIotResource):
         RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
-        self.logger = logging.getLogger(self.__class__.__name__)
         self.alsa = Alsa()
         self.__training_task = None
         self.__speech_recognition_task = None

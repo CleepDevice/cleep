@@ -48,7 +48,6 @@ html/ = /opt/raspiot/html/$_$"""
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
-        self.logger = logging.getLogger(self.__class__.__name__)
         self.__developer_uuid = None
         self.console = Console()
         self.pyremotedev_is_running = False
