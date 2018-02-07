@@ -14,7 +14,7 @@ from threading import Thread
 from raspiot.raspiot import RaspIotModule
 from raspiot.utils import InvalidParameter, MissingParameter
 
-__all__ = [u'Niccolo']
+__all__ = [u'Niccolometronome']
 
 
 class MetronomeTask(Thread):
@@ -77,7 +77,7 @@ class MetronomeTask(Thread):
         """
         self.__pause = self.bpm_to_seconds(bpm)
         self.__sync_gap = float(self.__pause * 0.1)
-        self.logger.debug('New pause of %s for %sBPM' % (self.__pause, bpm))
+        self.logger.debug(u'New pause of %s for %sBPM' % (self.__pause, bpm))
 
     def run_pyglet(self):
         """
@@ -93,7 +93,7 @@ class MetronomeTask(Thread):
         next_sync = divmod(time.time() + self.__pause, 1)[1]
         while self.running:
             #play sound
-            self.logger.debug('Metronome tick')
+            self.logger.debug(u'Metronome tick')
             start_playback = time.time()
             if not self.__mute:
                 audio.play()
@@ -119,11 +119,11 @@ class MetronomeTask(Thread):
         self.logger.debug(u'Metronome process started')
 
         #prepare audio
-        wf = wave.open(self.sound, 'rb')
+        wf = wave.open(self.sound, u'rb')
         channels = wf.getnchannels()
         frequency = wf.getframerate()
         wf.close()
-        self.logger.debug('channels=%s frequency=%s' % (channels, frequency))
+        self.logger.debug(u'channels=%s frequency=%s' % (channels, frequency))
         pygame.mixer.pre_init(frequency, -16, channels, 2048)
         pygame.mixer.init()
         pygame.init()
@@ -133,7 +133,7 @@ class MetronomeTask(Thread):
         next_sync = divmod(time.time() + self.__pause, 1)[1]
         while self.running:
             #play sound
-            self.logger.debug('Metronome tick')
+            self.logger.debug(u'Metronome tick')
             start_playback = time.time()
             if not self.__mute:
                 audio.play()
@@ -160,7 +160,7 @@ class MetronomeTask(Thread):
 
         #prepare audio
         audio = pyaudio.PyAudio()
-        sound_file = wave.open(self.sound, 'rb')
+        sound_file = wave.open(self.sound, u'rb')
         sound_buffer = sound_file.readframes(sound_file.getnframes())
         sound_format = audio.get_format_from_width(sound_file.getsampwidth())
         sound_channels = sound_file.getnchannels()
@@ -172,7 +172,7 @@ class MetronomeTask(Thread):
         sync_milliseconds = divmod(time.time(),1)[1]
         while self.running:
             #play sound
-            self.logger.debug('Metronome tick')
+            self.logger.debug(u'Metronome tick')
             start_playback = time.time()
             stream = audio.open(
                 format=sound_format,
@@ -200,6 +200,9 @@ class MetronomeTask(Thread):
 
 
 class Niccolometronome(RaspIotModule):
+    """
+    Niccolo metronome module. Implement a voice controlled metronome
+    """
 
     MODULE_CONFIG_FILE = u'niccolo.conf'
     MODULE_DEPS = []
@@ -285,7 +288,7 @@ class Niccolometronome(RaspIotModule):
             bool: True if metronome already running
         """
         if self.__metronome_task is None:
-            self.logger.debug('Start metronome')
+            self.logger.debug(u'Start metronome')
             self.logger.debug(u'Start Niccolo metronome')
             self.__metronome_task = MetronomeTask(self.logger, u'/opt/raspiot/sounds/metronome1.wav', self._config[u'bpm'])
             self.__metronome_task.start()
@@ -299,7 +302,7 @@ class Niccolometronome(RaspIotModule):
         Stop metronome task
         """
         if self.__metronome_task is not None:
-            self.logger.debug('Stop metronome')
+            self.logger.debug(u'Stop metronome')
             self.logger.debug(u'Stop Niccolo metronome')
             self.__metronome_task.stop()
             self.__metronome_task = None
@@ -336,7 +339,7 @@ class Niccolometronome(RaspIotModule):
         Args:
             bpm (int): bpm to use to increase current one
         """
-        self.logger.debug('Increase BPM of %d' % bpm)
+        self.logger.debug(u'Increase BPM of %d' % bpm)
         self.__set_bpm(self._config[u'bpm'] + bpm)
 
     def __decrease_bpm(self, bpm):
@@ -346,7 +349,7 @@ class Niccolometronome(RaspIotModule):
         Args:
             bpm (int): bpm to use to increase current one
         """
-        self.logger.debug('Decrease BPM of %d' % bpm)
+        self.logger.debug(u'Decrease BPM of %d' % bpm)
         self.__set_bpm(self._config[u'bpm'] - bpm)
 
     def add_phrase(self, phrase, command, bpm):
@@ -435,7 +438,7 @@ class Niccolometronome(RaspIotModule):
         Args:
             event (dict): params of event
         """
-        self.logger.debug('Event received: %s' % event)
+        self.logger.debug(u'Event received: %s' % event)
         if event[u'event']==u'speechrecognition.command.detected':
             #unmute metronome
             if self.__metronome_task:
@@ -443,7 +446,7 @@ class Niccolometronome(RaspIotModule):
 
             for phrase in self.__phrases.keys():
                 ratio = fuzz.ratio(phrase, event[u'params'][u'command'])
-                self.logger.debug('Ratio for %s<=>%s: %s' % (phrase, event[u'params'][u'command'], ratio))
+                self.logger.debug(u'Ratio for %s<=>%s: %s' % (phrase, event[u'params'][u'command'], ratio))
                 if fuzz.ratio(phrase, event[u'params'][u'command'])>=70:
                     self.logger.debug(u'Detected command "%s"' % phrase)
                     self.__phrases[phrase]()
@@ -451,13 +454,13 @@ class Niccolometronome(RaspIotModule):
 
         elif event[u'event']==u'speechrecognition.hotword.detected':
             #mute metronome to improve command recording
-            self.logger.debug('Mute metronome')
+            self.logger.debug(u'Mute metronome')
             if self.__metronome_task:
                 self.__metronome_task.mute()
 
         elif event[u'event']==u'speechrecognition.hotword.released':
             #unmute metronome
-            self.logger.debug('Unmute metronome')
+            self.logger.debug(u'Unmute metronome')
             if self.__metronome_task:
                 self.__metronome_task.unmute()
 
