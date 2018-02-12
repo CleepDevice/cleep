@@ -34,12 +34,12 @@ var niccolometronomeConfigDirective = function($rootScope, toast, niccolometrono
                 });
         };
 
-		/**
-	     * Toggle metronome
+        /**
+         * Toggle metronome
          */
         self.toggleMetronome = function()
         {
-			var promise = null;
+            var promise = null;
             if( self.metronomeRunning )
             {
                 promise = niccolometronomeService.stopMetronome();
@@ -144,11 +144,11 @@ var niccolometronomeConfigDirective = function($rootScope, toast, niccolometrono
             $mdDialog.hide();
         };
 
-		/**
-	     * Open add phrase dialog
+        /**
+         * Open add phrase dialog
          */
-		self.openAddDialog = function()
-		{
+        self.openAddDialog = function()
+        {
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'dialogCtl',

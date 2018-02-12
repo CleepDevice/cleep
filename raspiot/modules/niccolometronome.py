@@ -11,6 +11,7 @@ import pyglet
 import uuid
 from fuzzywuzzy import fuzz
 from threading import Thread
+from raspiot.libs.sox import Sox
 from raspiot.raspiot import RaspIotModule
 from raspiot.utils import InvalidParameter, MissingParameter
 
@@ -40,18 +41,6 @@ class MetronomeTask(Thread):
         self.set_bpm(bpm)
         self.__mute = False
 
-    def bpm_to_seconds(self, bpm):
-        """
-        Convert BPM (Beat Per Minute) to real seconds
-
-        Args:
-            bpm (int): Beat Per Minute
-
-        Return:
-            float: number of seconds
-        """
-        return 60.0 / float(bpm)
-
     def stop(self):
         """
         Stop process
@@ -75,9 +64,42 @@ class MetronomeTask(Thread):
         Change current bpm
         Process will automatically adjust to new bpm
         """
-        self.__pause = self.bpm_to_seconds(bpm)
+        self.bpm = bpm
+        self.__pause = 60.0 / float(bpm)
         self.__sync_gap = float(self.__pause * 0.1)
         self.logger.debug(u'New pause of %s for %sBPM' % (self.__pause, bpm))
+
+    def run(self):
+        """
+        Metronome process
+        """
+        self.logger.debug(u'Metronome process started')
+
+        #start sox metronome sound
+        sox = Sox()
+        console = sox.metronome_sound(self.bpm)
+
+        #start metronome
+        while self.running:
+            if self.__mute and console:
+                #mute metronome killing process
+                console.kill()
+                console = None
+            elif not self.__mute and not console:
+                #unmute metronome starting new process
+                console = sox.metronome_sound(self.bpm)
+            else:
+                #nothing to do
+                pass
+
+            #pause
+            time.sleep(0.25)
+
+        #stop metronome
+        if console:
+            console.kill()
+
+        self.logger.debug(u'Metronome process stopped')
 
     def run_pyglet(self):
         """
@@ -112,7 +134,9 @@ class MetronomeTask(Thread):
         #clean stuff
         pygame.quit()
 
-    def run(self):
+        self.logger.debug(u'Metronome process stopped')
+
+    def run_pygame(self):
         """
         Metronome process
         """
@@ -151,6 +175,8 @@ class MetronomeTask(Thread):
 
         #clean stuff
         pygame.quit()
+
+        self.logger.debug(u'Metronome process stopped')
 
     def run_pyaudio(self):
         """
