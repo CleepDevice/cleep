@@ -84,7 +84,7 @@ class SpeechRecognitionProcess(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, events, provider_token, sensitivity=0.45, audio_gain=1):
+    def __init__(self, logger, voice_model, events, provider_token, sensitivity=0.40, audio_gain=1):
         """
         Constructor
 
@@ -163,12 +163,12 @@ class SpeechRecognitionProcess(Thread):
         finally:
             #release hotword
             self.hotword_released_event.send()
-            self.hotword_released_event.render([u'leds'])
+            self.hotword_released_event.render(u'leds')
 
         #check audio
         if not audio:
             self.command_error_event.send()
-            self.command_error_event.render([u'leds'])
+            self.command_error_event.render(u'leds')
             self.logger.debug(u'No audio recorded')
             return
 
@@ -180,20 +180,20 @@ class SpeechRecognitionProcess(Thread):
 
         except speechrecognition.UnknownValueError:
             self.command_error_event.send()
-            self.command_error_event.render([u'leds'])
+            self.command_error_event.render(u'leds')
             self.logger.warning(u'STT provider doesn\'t understand audio')
             return
 
         except speechrecognition.RequestError as e:
             self.command_error_event.send()
-            self.command_error_event.render([u'leds'])
+            self.command_error_event.render(u'leds')
             self.logger.error(u'STT provider service seems to be unreachable: %s' % str(e))
             return
 
         #check command
         if not command:
             self.command_error_event.send()
-            self.command_error_event.render([u'leds'])
+            self.command_error_event.render(u'leds')
             self.logger.debug(u'No command recognized')
             return
 
@@ -202,7 +202,7 @@ class SpeechRecognitionProcess(Thread):
             u'hotword': 'not implemented',
             u'command': command
         })
-        self.command_detected_event.render([u'leds'])
+        self.command_detected_event.render(u'leds')
 
     def hotword_detected(self):
         """
@@ -215,7 +215,7 @@ class SpeechRecognitionProcess(Thread):
             #send hotword test only to rpc during tests
             self.hotword_detected_event.send(to=u'rpc')
         else:
-            self.hotword_detected_event.render([u'leds'])
+            self.hotword_detected_event.render(u'leds')
             self.hotword_detected_event.send()
 
     def run(self):
@@ -264,7 +264,7 @@ class SpeechRecognitionProcessOld1(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, command_event, provider_token, sensitivity=0.45, audio_gain=1.0, record_duration=5.0):
+    def __init__(self, logger, voice_model, command_event, provider_token, sensitivity=0.40, audio_gain=1.2, record_duration=5.0):
         """
         Constructor
 
@@ -602,6 +602,17 @@ class Speechrecognition(RaspIotResource):
 
         return False
 
+    def __restart_speech_recognition_task(self):
+        """
+        Restart speech recognition task (doesn't start if it wasn't started)
+        """
+        if self.__speech_recognition_task is not None:
+            #stop task
+            self.__stop_speech_recognition_task()
+            #start task differing startup to make sure audio resource is free
+            t = Timer(10.0, self.__start_speech_recognition_task)
+            t.start()
+
     def __get_hotword_recording_status(self):
         """
         Return hotword recording status
@@ -657,12 +668,17 @@ class Speechrecognition(RaspIotResource):
         if apikey is None or len(apikey.strip())==0:
             raise MissingParameter(u'Parameter apikey is missing')
 
+        #save config
         config = self._get_config()
-        config[u'providerid'] = provider_id
-        config[u'providerapikeys'][provider_id] = apikey
-
+        #need to convert provider id to string because json does not support int as map/dict key
+        provider_id_str = str(provider_id)
+        config[u'providerid'] = provider_id_str
+        config[u'providerapikeys'][provider_id_str] = apikey
         if not self._save_config(config):
             return False
+
+        #restart speech recognition task
+        self.__restart_speech_recognition_task()
 
         return True
 
@@ -769,7 +785,7 @@ class Speechrecognition(RaspIotResource):
         if not in_use:
             #claim for resource
             self.acquire_resource(u'audio.capture')
-        record = self.sox.record_sound(Sox.CHANNELS_MONO, Sox.RATE_16K, timeout=5.0)
+        record = self.sox.record_sound(Sox.CHANNELS_STEREO, Sox.RATE_16K, timeout=5.0)
         if not in_use:
             #release resource
             self.release_resource(u'audio.capture')
