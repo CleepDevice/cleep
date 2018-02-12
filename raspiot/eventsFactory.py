@@ -62,7 +62,6 @@ class EventsFactory():
                 class_ = getattr(event_, event.capitalize())
 
                 #save event
-                self.logger.debug('Init %s' % event)
                 self.events_by_event[class_.EVENT_NAME] = {
                     u'instance': class_,
                     u'used': False,

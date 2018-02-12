@@ -58,7 +58,6 @@ class FormattersFactory():
             #build path
             fpath = os.path.join(path, f)
             (formatter, ext) = os.path.splitext(f)
-            self.logger.debug(u'Formatter=%s ext=%s' % (formatter, ext))
 
             #filter files
             if os.path.isfile(fpath) and ext==u'.py' and formatter not in [u'__init__', u'formatter', u'profiles']:
