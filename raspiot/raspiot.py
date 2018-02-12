@@ -811,8 +811,8 @@ class RaspIotRenderer(RaspIotModule):
             self.profiles_types.append(profile.__name__)
 
         return {
-            u'type':self.RENDERER_TYPE,
-            u'profiles':self.RENDERER_PROFILES
+            u'type': self.RENDERER_TYPE,
+            u'profiles': self.RENDERER_PROFILES
         }
 
     def render(self, profile):
