@@ -80,13 +80,16 @@ class MetronomeTask(Thread):
         console = sox.metronome_sound(self.bpm)
 
         #start metronome
+        last_bpm = self.bpm
         while self.running:
-            if self.__mute and console:
-                #mute metronome killing process
+            if (self.__mute or last_bpm!=self.bpm) and console:
+                #kill metronome process because bpm changed or mute enabled
+                self.logger.debug(u'Stop playing metronome sound')
                 console.kill()
                 console = None
             elif not self.__mute and not console:
                 #unmute metronome starting new process
+                self.logger.debug(u'Start playing metronome sound')
                 console = sox.metronome_sound(self.bpm)
             else:
                 #nothing to do
@@ -94,6 +97,9 @@ class MetronomeTask(Thread):
 
             #pause
             time.sleep(0.25)
+
+            #update last bpm
+            last_bpm = self.bpm
 
         #stop metronome
         if console:
@@ -466,10 +472,7 @@ class Niccolometronome(RaspIotModule):
         """
         self.logger.debug(u'Event received: %s' % event)
         if event[u'event']==u'speechrecognition.command.detected':
-            #unmute metronome
-            if self.__metronome_task:
-                self.__metronome_task.unmute()
-
+            #search and execute command
             for phrase in self.__phrases.keys():
                 ratio = fuzz.ratio(phrase, event[u'params'][u'command'])
                 self.logger.debug(u'Ratio for %s<=>%s: %s' % (phrase, event[u'params'][u'command'], ratio))
@@ -478,15 +481,19 @@ class Niccolometronome(RaspIotModule):
                     self.__phrases[phrase]()
                     break
 
+            #unmute metronome at end of command
+            if self.__metronome_task:
+                self.__metronome_task.unmute()
+
         elif event[u'event']==u'speechrecognition.hotword.detected':
             #mute metronome to improve command recording
             self.logger.debug(u'Mute metronome')
             if self.__metronome_task:
                 self.__metronome_task.mute()
 
-        elif event[u'event']==u'speechrecognition.hotword.released':
-            #unmute metronome
-            self.logger.debug(u'Unmute metronome')
-            if self.__metronome_task:
-                self.__metronome_task.unmute()
+        #elif event[u'event']==u'speechrecognition.hotword.released':
+        #    #unmute metronome
+        #    self.logger.debug(u'Unmute metronome')
+        #    if self.__metronome_task:
+        #        self.__metronome_task.unmute()
 
