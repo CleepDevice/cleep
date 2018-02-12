@@ -39,11 +39,48 @@ var speechrecognitionConfigDirective = function($rootScope, toast, speechrecogni
             else if( id===3 && self.hotwordModel )
             {
                 //special case for build model button. Disable only if model is generated
-                return true;
+                //return true;
+                return false;
             }
             else
             {
-                return self.truthTable[self.hotwordRecordings[0]*0b001 + self.hotwordRecordings[0]*0b010 + self.hotwordRecordings[0]*0b100][id];
+                if( id==0 )
+                {
+                    //record1
+                    if( self.hotwordRecordings[0] )
+                        return true;
+                    return false;
+                }
+                else if( id==1 )
+                {
+                    //record2
+                    if( self.hotwordRecordings[0] && self.hotwordRecordings[1] )
+                        return true;
+                    return false;
+                }
+                else if( id==2 )
+                {
+                    //record3
+                    if( self.hotwordRecordings[0] && self.hotwordRecordings[1] && self.hotwordRecordings[2] )
+                        return true;
+                    return false;
+                }
+                else if( id==3 )
+                {
+                    //manual build
+                    //if( !self.hotwordRecordings[0] || !self.hotwordRecordings[1]  || !self.hotwordRecordings[2] || self.hotwordModel )
+                    //    return true;
+                    return false;
+                }
+                else if( id==4 )
+                {
+                    //reset
+                    if( self.hotwordRecordings[0] && self.hotwordRecordings[1] && self.hotwordRecordings[2] && self.hotwordModel )
+                        return false;
+                    return true;
+                }
+                //console.log(id, self.hotwordRecordings[0]*0b001 + self.hotwordRecordings[1]*0b010 + self.hotwordRecordings[2]*0b100)
+                //return self.truthTable[self.hotwordRecordings[0]*0b001 + self.hotwordRecordings[1]*0b010 + self.hotwordRecordings[2]*0b100][id];
             }
         };
 

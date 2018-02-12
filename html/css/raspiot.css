@@ -289,3 +289,12 @@ md-toast.info .md-toast-content {
     /*white-space: nowrap; <- induce all description on single line*/
     overflow: hidden;
 }
+
+/********* custom list item **********/
+custom-list-item-row {
+    padding: 0 16px;
+}
+
+custom-list-item-label {
+    padding-left: 28px;
+}
