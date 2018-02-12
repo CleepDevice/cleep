@@ -58,7 +58,7 @@
                         </md-input-container>
                         <!-- pause duration -->
                         <md-slider-container ng-if="dialogCtl.newLedsProfileAction===5" flex="60">
-                            <md-slider flex min="0" max="1000" ng-model="dialogCtl.newLedsProfilePause" aria-label="Pause duration" id="pauseduration"></md-slider>
+                            <md-slider flex min="50" max="1000" step="50" ng-model="dialogCtl.newLedsProfilePause" aria-label="Pause duration" id="pauseduration"></md-slider>
                             <span>{{dialogCtl.newLedsProfilePause}}ms</span>
                         </md-slider-container>
                         <div flex="10">
