@@ -133,18 +133,17 @@ class EndlessConsole(Thread):
             #check end of command
             if p.returncode is not None:
                 return_code = p.returncode
-                self.logger.debug('Process is terminated with return code %s' % returncode)
+                self.logger.debug('Process is terminated with return code %s' % p.returncode)
                 break
             
             #pause
             time.sleep(0.25)
 
-        #make sure process is killed
+        #make sure process (and child processes) is really killed
         try:
-            self.logger.debug('Kill process with PID %d' % pid)
-            os.kill(pid, signal.SIGKILL)
-        except:
-            pass
+            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
+        except Exception as e:
+            self.logger.debug('Kill exception: %s' % str(e))
 
         #process is over
         self.running = False
@@ -156,13 +155,20 @@ class EndlessConsole(Thread):
 
 class Console():
     """
-    Helper class to execute command lines
+    Helper class to execute command lines.
+    You can execute command right now using command method or after a certain amount of time using command_delayed
     """
     def __init__(self):
+        """
+        Constructor
+        """
+        #members
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
         self.last_return_code = None
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(loggging.DEBUG)
 
     def __del__(self):
         """
@@ -257,10 +263,9 @@ class Console():
             else:
                 result[u'stdout'] = self.__process_lines(p.stdout.readlines())
 
-        #make sure process is really killed
+        #make sure process (and child processes) is really killed
         try:
-            subprocess.Popen(u'/bin/kill -9 %s 2> /dev/null' % pid, shell=True)
-            res = subprocess.Popen(u'/usr/bin/pkill -9 -f "%s" 2> /dev/null' % command[:command.find('"')], shell=True)
+            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
         except Exception as e:
             self.logger.debug('Kill exception: %s' % str(e))
 
@@ -296,6 +301,9 @@ class AdvancedConsole(Console):
     Create console with advanced feature like find function
     """
     def __init__(self):
+        """
+        Constructor
+        """
         Console.__init__(self)
 
     def find(self, command, pattern, options=re.UNICODE | re.MULTILINE, timeout=2.0):
