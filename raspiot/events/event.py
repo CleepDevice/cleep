@@ -67,7 +67,7 @@ class Event():
         else:
             raise Exception(u'Invalid event parameters specified: %s' % (params.keys()))
 
-    def render(self, event_values, types):
+    def render(self, types, params=None):
         """
         Render event to renderer types
 
@@ -75,10 +75,14 @@ class Event():
             TODO remove types?
 
         Args:
+            params (dict): list of parameters
             types (list<string>): existing renderer type
         """
         if not isinstance(types, list):
-            raise InvalidParameter(u'Types must be a list')
+            if isinstance(types, str) or isinstance(types, unicode):
+                types = [types]
+            else:
+                raise InvalidParameter(u'Types must be a list or string')
 
         #iterates over registered types
         for type in types:
@@ -109,7 +113,7 @@ class Event():
                                 continue
 
                             #found match, format event to profile
-                            profile = formatters[profile].format(event_values)
+                            profile = formatters[profile].format(params)
 
                             #handle no profile
                             if profile is None:
@@ -122,7 +126,7 @@ class Event():
                                 request.to = renderer
                                 request.params = {u'profile': profile}
 
-                                resp = self.bus.push(request, timeout)
+                                resp = self.bus.push(request)
                                 if resp[u'error']:
                                     self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
 
