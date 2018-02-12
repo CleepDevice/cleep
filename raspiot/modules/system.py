@@ -305,7 +305,7 @@ class System(RaspIotModule):
 
         #send now event
         self.systemTimeNow.send(params=now_formatted, device_id=self.__clock_uuid)
-        self.systemTimeNow.render(now_formatted, [u'sound', u'display'])
+        self.systemTimeNow.render([u'sound', u'display'], params=now_formatted)
 
         #update sun times
         refresh_sun_times = False
@@ -323,14 +323,14 @@ class System(RaspIotModule):
             if self.sunset.hour==now_formatted[u'hour'] and self.sunset.minute==now_formatted[u'minute']:
                 #sunset time
                 self.systemTimeSunset.send(device_id=self.__clock_uuid)
-                self.systemTimeSunset.render(self.__clock_uuid, [u'display', u'sound'])
+                self.systemTimeSunset.render([u'display', u'sound'], params=self.__clock_uuid)
 
         #send sunrise event
         if self.sunrise:
             if self.sunrise.hour==now_formatted[u'hour'] and self.sunrise.minute==now_formatted[u'minute']:
                 #sunrise time
                 self.systemTimeSunrise.send(device_id=self.__clock_uuid)
-                self.systemTimeSunrise.render(self.__clock_uuid, [u'display', u'sound'])
+                self.systemTimeSunrise.render([u'display', u'sound'], self.__clock_uuid)
 
         #daily data cleanup
         if now_formatted[u'hour']==0 and now_formatted[u'minute']==0 and self.is_module_loaded(u'database'):
