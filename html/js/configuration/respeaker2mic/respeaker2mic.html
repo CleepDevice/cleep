@@ -25,7 +25,7 @@
 
     <!-- leds -->
     <md-list ng-cloak>
-        <md-subheader class="md-no-sticky">Supported phrases</md-subheader>
+        <md-subheader class="md-no-sticky">LEDs profiles</md-subheader>
         <md-list-item ng-repeat="profile in respeaker2micCtl.ledsProfiles">
             <md-icon md-svg-icon="chevron-double-right"></md-icon>
             <p>{{profile.name}}: {{profile.actions.length}} actions</p>
@@ -33,7 +33,7 @@
                 <md-icon md-svg-icon="play"></md-icon>
                 Test
             </md-button>
-            <md-button class="md-secondary md-warn" ng-click="respeaker2micCtl.removeLedsProfile(profile)">
+            <md-button class="md-secondary md-warn" ng-click="respeaker2micCtl.removeLedsProfile(profile)" ng-disabled="profile.default">
                 <md-icon md-svg-icon="delete"></md-icon>
                 Remove
             </md-button>

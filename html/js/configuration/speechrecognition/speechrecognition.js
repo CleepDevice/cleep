@@ -162,15 +162,17 @@ var speechrecognitionConfigDirective = function($rootScope, toast, speechrecogni
             }
 
             promise.then(function() {
-                self.reloadConfig();
-                if( self.serviceEnabled )
-                {
-                    toast.success('Speech recognition service enabled');
-                }
-                else
-                {
-                    toast.success('Speech recognition service disabled');
-                }
+                self.reloadConfig()
+                    .then(function() {
+                        if( self.serviceEnabled )
+                        {
+                            toast.success('Speech recognition service enabled');
+                        }
+                        else
+                        {
+                            toast.success('Speech recognition service disabled');
+                        }
+                    });
             });
         };
 
@@ -226,7 +228,7 @@ var speechrecognitionConfigDirective = function($rootScope, toast, speechrecogni
          */
         self.reloadConfig = function()
         {
-            raspiotService.getModuleConfig('speechrecognition')
+            return raspiotService.getModuleConfig('speechrecognition')
                 .then(function(config) {
                     //other members
                     self.hotwordToken = config.hotwordtoken;
