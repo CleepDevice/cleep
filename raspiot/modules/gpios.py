@@ -296,9 +296,6 @@ class Gpios(RaspIotModule):
 
     INPUT_DROP_THRESHOLD = 0.150 #in ms
 
-    USAGE_ONEWIRE = u'onewire'
-    USAGE_LIRC = u'lirc'
-
     def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
@@ -557,7 +554,7 @@ class Gpios(RaspIotModule):
         Params:
             name: name of gpio
             gpio: gpio value
-            usage: gpio usage (must be a known value 'onewire', ?)
+            usage: describe gpio usage 
             command_sender: command request sender (used to set gpio in readonly mode)
 
         Returns:
@@ -586,8 +583,8 @@ class Gpios(RaspIotModule):
             raise InvalidParameter(u'Name "%s" already used' % name)
         elif gpio not in self.get_raspi_gpios().keys():
             raise InvalidParameter(u'Gpio does not exist for this raspberry pi')
-        elif usage not in [self.USAGE_ONEWIRE]:
-            raise InvalidParameter(u'Usage is invalid')
+        elif usage is None or len(usage)==0:
+            raise MissingParameter(u'Parameter usage is missing')
         else:
             #gpio is valid, prepare new entry
             data = {
