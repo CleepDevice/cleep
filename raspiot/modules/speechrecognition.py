@@ -7,9 +7,11 @@ import os
 import collections
 import pyaudio
 import audioop
+import uuid
 from threading import Thread, Lock, Timer
 from raspiot.raspiot import RaspIotResource
-from raspiot.libs.alsa import Alsa
+from raspiot.libs.sox import Sox
+from raspiot.libs.console import Console
 from raspiot.libs.snowboy import Snowboy
 from raspiot.libs.snowboylib import snowboydetect, snowboydecoder
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
@@ -23,6 +25,9 @@ class BuildPersonalVoiceModelTask(Thread):
     """
     Build snowboy personal voice model can take more than 1 minute, so we must parallelize its process
     """
+
+    TMP = u'/tmp/'
+
     def __init__(self, token, recordings, end_of_training_callback, logger):
         """
         Constructor
@@ -41,16 +46,30 @@ class BuildPersonalVoiceModelTask(Thread):
         self.callback = end_of_training_callback
         self.token = token
         self.recordings = recordings
+        self.sox = Sox()
 
     def run(self):
         """
         Task
         """
+        #remove silence in recordings
+        #command from https://unix.stackexchange.com/a/293868
+        trimmed_recordings = [
+            os.path.join(self.TMP, '%s.wav' % str(uuid.uuid4())),
+            os.path.join(self.TMP, '%s.wav' % str(uuid.uuid4())),
+            os.path.join(self.TMP, '%s.wav' % str(uuid.uuid4()))
+        ]
+        for i in range(len(self.recordings)):
+            if not self.sox.trim_audio(self.recordings[i], trimmed_recordings[i]):
+                #error during trimming fall back to original file
+                trimmed_recordings[i] = self.recordings[i]
+
+        #build personal voice model
         error = None
         voice_model = None
         snowboy = Snowboy(self.token)
         try:
-            voice_model = snowboy.train(self.recordings[0], self.recordings[1], self.recordings[2])
+            voice_model = snowboy.train(trimmed_recordings[0], trimmed_recordings[1], trimmed_recordings[2])
             self.logger.debug(u'Generated voice model: %s' % voice_model)
 
         except:
@@ -65,16 +84,14 @@ class SpeechRecognitionProcess(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, hotword_event, release_event, command_event, provider_token, sensitivity=0.45, audio_gain=1):
+    def __init__(self, logger, voice_model, events, provider_token, sensitivity=0.45, audio_gain=1):
         """
         Constructor
 
         Args:
             logger (logger): logger instance
             voice_model (string): voice model file path (pmdl or umdl)
-            command_event (Speechrecognitioncommanddetected): event instance which will be sent when command is received
-            hotword_event (Speechrecognitionhotworddetected): event instance that will be sent when hotword is detected
-            release_event (Speechrecognitionhotwordreleased): event instance that will be sent when speech recognition is terminated (but not yet processed!)
+            events (dict): events instances (keys: ('hotword_detected', 'hotword_released', 'command_detected', 'command_error'))
             sensitivity (float): great value make detector more sensitive to false positive
             audio_gain (int): decrease volume (<1) or boost volume (>1)
         """
@@ -84,9 +101,10 @@ class SpeechRecognitionProcess(Thread):
         #members
         self.logger = logger
         self.running = True
-        self.command_event = command_event
-        self.hotword_event = hotword_event
-        self.release_event = release_event
+        self.hotword_detected_event = events[u'hotword_detected']
+        self.hotword_released_event = event = events[u'hotword_released']
+        self.command_detected_event = events[u'command_detected']
+        self.command_error_event = events[u'command_error']
         self.detector = snowboydecoder.HotwordDetector(voice_model, sensitivity=sensitivity, audio_gain=audio_gain)
         self.recognizer = speechrecognition.Recognizer()
         self.provider_token = provider_token
@@ -144,38 +162,47 @@ class SpeechRecognitionProcess(Thread):
             self.logger.exception(u'Error during speech recognition')
         finally:
             #release hotword
-            self.release_event.send()
+            self.hotword_released_event.send()
+            self.hotword_released_event.render([u'leds'])
 
         #check audio
         if not audio:
+            self.command_error_event.send()
+            self.command_error_event.render([u'leds'])
             self.logger.debug(u'No audio recorded')
             return
 
         #TODO handle STT provider
 	try:
-            self.logger.debug('Recognizing audio... %s' % self.provider_token)
+            self.logger.debug('Recognizing audio... (token: %s)' % self.provider_token)
             command = self.recognizer.recognize_bing(audio, key=self.provider_token.encode(), language='fr-FR')
             self.logger.debug('Done: command=%s' % command)
 
         except speechrecognition.UnknownValueError:
+            self.command_error_event.send()
+            self.command_error_event.render([u'leds'])
             self.logger.warning(u'STT provider doesn\'t understand audio')
             return
 
         except speechrecognition.RequestError as e:
+            self.command_error_event.send()
+            self.command_error_event.render([u'leds'])
             self.logger.error(u'STT provider service seems to be unreachable: %s' % str(e))
             return
 
         #check command
         if not command:
+            self.command_error_event.send()
+            self.command_error_event.render([u'leds'])
             self.logger.debug(u'No command recognized')
             return
 
         #send event
-        params = {
+        self.command_detected_event.send(params={
             u'hotword': 'not implemented',
             u'command': command
-        }
-        self.command_event.send(params=params)
+        })
+        self.command_detected_event.render([u'leds'])
 
     def hotword_detected(self):
         """
@@ -186,9 +213,10 @@ class SpeechRecognitionProcess(Thread):
         #send hotword detected event
         if self.test:
             #send hotword test only to rpc during tests
-            self.hotword_event.send(to=u'rpc')
+            self.hotword_detected_event.send(to=u'rpc')
         else:
-            self.hotword_event.send()
+            self.hotword_detected_event.render([u'leds'])
+            self.hotword_detected_event.send()
 
     def run(self):
         """
@@ -458,7 +486,7 @@ class Speechrecognition(RaspIotResource):
         RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
-        self.alsa = Alsa()
+        self.sox = Sox()
         self.__training_task = None
         self.__speech_recognition_task = None
         self.__stop_task_after_test = False
@@ -466,9 +494,16 @@ class Speechrecognition(RaspIotResource):
         #events
         self.training_ok_event = self._get_event('speechrecognition.training.ok')
         self.training_ko_event = self._get_event('speechrecognition.training.ko')
-        self.command_detected_event = self._get_event('speechrecognition.command.detected')
         self.hotword_detected_event = self._get_event('speechrecognition.hotword.detected')
         self.hotword_released_event = self._get_event('speechrecognition.hotword.released')
+        self.command_detected_event = self._get_event('speechrecognition.command.detected')
+        self.command_error_event = self._get_event('speechrecognition.command.error')
+        self.events = {
+            u'hotword_detected': self.hotword_detected_event,
+            u'hotword_released': self.hotword_released_event,
+            u'command_detected': self.command_detected_event,
+            u'command_error': self.command_error_event
+        }
 
     def _configure(self):
         """
@@ -544,7 +579,7 @@ class Speechrecognition(RaspIotResource):
         provider_token = self._config[u'providerapikeys'][str(self._config[u'providerid'])]
         self.logger.debug(u'provider_token=%s' % provider_token)
         self.logger.debug(u'apikeys:%s providerid:%s' % (self._config[u'providerapikeys'], self._config[u'providerid']))
-        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, self._config[u'hotwordmodel'], self.hotword_detected_event, self.hotword_released_event, self.command_detected_event, provider_token)
+        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, self._config[u'hotwordmodel'], self.events, provider_token)
         if test:
             #enable test mode
             self.__speech_recognition_task.enable_test(self.hotwordDetectedEvent)
@@ -681,6 +716,7 @@ class Speechrecognition(RaspIotResource):
         if error is not None:
             #send error event to ui
             self.training_ko_event.send(to=u'rpc', params={u'error': error})
+            return
             
         #finalize training
         try:
@@ -712,6 +748,7 @@ class Speechrecognition(RaspIotResource):
 
             #send error event to ui
             self.training_ko_event.send(to=u'rpc', params={u'error': u'unable to move files'})
+            return
 
     def record_hotword(self):
         """
@@ -732,7 +769,7 @@ class Speechrecognition(RaspIotResource):
         if not in_use:
             #claim for resource
             self.acquire_resource(u'audio.capture')
-        record = self.alsa.record_sound(timeout=5.0)
+        record = self.sox.record_sound(Sox.CHANNELS_MONO, Sox.RATE_16K, timeout=5.0)
         if not in_use:
             #release resource
             self.release_resource(u'audio.capture')
@@ -784,12 +821,16 @@ class Speechrecognition(RaspIotResource):
             config = self._get_config()
             if config[u'hotwordfiles'][0] and os.path.exists(config[u'hotwordfiles'][0]):
                 os.remove(config[u'hotwordfiles'][0])
+                config[u'hotwordfiles'][0] = None
             if config[u'hotwordfiles'][1] and os.path.exists(config[u'hotwordfiles'][1]):
                 os.remove(config[u'hotwordfiles'][1])
+                config[u'hotwordfiles'][1] = None
             if config[u'hotwordfiles'][2] and os.path.exists(config[u'hotwordfiles'][2]):
                 os.remove(config[u'hotwordfiles'][2])
+                config[u'hotwordfiles'][2] = None
             if config[u'hotwordmodel'] and os.path.exists(config[u'hotwordmodel']):
                 os.remove(config[u'hotwordmodel'])
+                config[u'hotwordmodel'] = None
 
         except:
             self.logger.exception(u'Error occured during hotword resetting:')
