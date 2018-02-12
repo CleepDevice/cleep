@@ -400,25 +400,25 @@ class Shutters(RaspIotModule):
             raise InvalidParameter(u'Close switch does not exist for this raspberry pi')
         else:
             #configure open shutter
-            resp_shutter_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutteropen', u'gpio':shutter_open, u'mode':u'out', u'keep':False, u'reverted':False})
+            resp_shutter_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutteropen', u'gpio':shutter_open, u'mode':u'output', u'keep':False, u'reverted':False})
             if resp_shutter_open[u'error']:
                 raise CommandError(resp_shutter_open[u'message'])
             resp_shutter_open = resp_shutter_open[u'data']
                 
             #configure close shutter
-            resp_shutter_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutterclose', u'gpio':shutter_close, u'mode':u'out', u'keep':False, u'reverted':False})
+            resp_shutter_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_shutterclose', u'gpio':shutter_close, u'mode':u'output', u'keep':False, u'reverted':False})
             if resp_shutter_close[u'error']:
                 raise CommandError(resp_shutter_close[u'message'])
             resp_shutter_close = resp_shutter_close[u'data']
 
             #configure open switch
-            resp_switch_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchopen', u'gpio':switch_open, u'mode':u'in', u'keep':False, u'reverted':False})
+            resp_switch_open = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchopen', u'gpio':switch_open, u'mode':u'input', u'keep':False, u'reverted':False})
             if resp_switch_open[u'error']:
                 raise CommandError(resp_switch_open[u'message'])
             resp_switch_open = resp_switch_open[u'data']
 
             #configure close switch
-            resp_switch_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchclose', u'gpio':switch_close, u'mode':u'in', u'keep':False, u'reverted':False})
+            resp_switch_close = self.send_command(u'add_gpio', u'gpios', {u'name':name+u'_switchclose', u'gpio':switch_close, u'mode':u'input', u'keep':False, u'reverted':False})
             if resp_switch_close[u'error']:
                 raise CommandError(resp_switch_close[u'message'])
             resp_switch_close = resp_switch_close[u'data']
