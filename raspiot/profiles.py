@@ -98,3 +98,22 @@ class TextToSpeechProfile(RendererProfile):
         RendererProfile.__init__(self)
         self.text = None
 
+class SpeechRecognitionHotwordProfile(RendererProfile):
+    """
+    Speechrecognition hotword profile
+    Handles hotword detected and released
+    """
+    def __init__(self):
+        RendererProfile.__init__(self)
+        self.detected = True
+
+class SpeechRecognitionCommandProfile(RendererProfile):
+    """
+    Speechrecognition command profile
+    Handles speechrecognition detected and error command
+    """
+    def __init__(self):
+        RendererProfile.__init__(self)
+        self.error = False
+
+
