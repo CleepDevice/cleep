@@ -104,7 +104,11 @@ class LedsProfileTask(Thread):
 
             elif action[u'action']==5:
                 #pause
-                time.sleep(float(action[u'pause']/1000.0))
+                count = int(action[u'pause']/50)
+                for i in range(count):
+                    if not self.running:
+                        break
+                    time.sleep(0.05)
 
     def run(self):
         """
@@ -138,9 +142,12 @@ class LedsProfileTask(Thread):
 class Respeaker2mic(RaspIotRenderer):
     """
     Respeaker2mic module handles respeaker2mic configuration:
-     - led effect,
-     - button behaviour,
-     - driver installation/uninstallation
+        - led effect,
+        - button behaviour,
+        - driver installation/uninstallation
+
+    Resources:
+        - http://wiki.seeed.cc/ReSpeaker_2_Mics_Pi_HAT/
     """
 
     MODULE_CONFIG_FILE = u'respeaker2mic.conf'
@@ -209,25 +216,9 @@ class Respeaker2mic(RaspIotRenderer):
             }, {
                 u'name': 'Blink (red)',
                 u'uuid': u'2',
-                u'repeat': 2,
+                u'repeat': 8,
                 u'default': True,
                 u'actions': [
-                    {"action": 4, "color": "red", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
-                    {"action": 4, "color": "black", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0},
-                    {"action": 4, "color": "red", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
-                    {"action": 4, "color": "black", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0},
-                    {"action": 4, "color": "red", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
-                    {"action": 4, "color": "black", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0},
-                    {"action": 4, "color": "red", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
-                    {"action": 4, "color": "black", "pause": 0, "brightness": 60},
-                    {"action": 5, "color": None, "pause": 100, "brightness": 0},
                     {"action": 4, "color": "red", "pause": 0, "brightness": 60},
                     {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
                     {"action": 4, "color": "black", "pause": 0, "brightness": 60},
@@ -236,10 +227,11 @@ class Respeaker2mic(RaspIotRenderer):
             }, {
                 u'name': 'Ok (green)',
                 u'uuid': u'3',
-                u'repeat': 2,
+                u'repeat': 3,
                 u'default': True,
                 u'actions': [
-                    {"action": 4, "color": "green", "pause": 0, "brightness": 60}
+                    {"action": 4, "color": "green", "pause": 0, "brightness": 60},
+                    {"action": 5, "color": None, "pause": 500, "brightness": 0}
                 ]
             }, {
                 u'name': 'Search (yellow)',
@@ -328,7 +320,7 @@ class Respeaker2mic(RaspIotRenderer):
         #configure gpio
         params = { 
             u'name': u'button_respeaker2mic',
-            u'gpio': u'GPIO12',
+            u'gpio': u'GPIO17',
             u'mode': u'input',
             u'keep': False,
             u'reverted': False
@@ -703,6 +695,15 @@ class Respeaker2mic(RaspIotRenderer):
 
         return True
 
+    def __stop_leds_profile_task(self):
+        """
+        Stop leds profile task
+        """
+        if self.__leds_profile_task is not None:
+            self.__leds_profile_task.stop()
+            #make sure task is stopped (variable is resetted at end of task, see __leds_profile_task_terminated)
+            time.sleep(0.25)
+
     def _render(self, profile):
         """
         Render handled profiles
@@ -715,14 +716,16 @@ class Respeaker2mic(RaspIotRenderer):
             #render hotword profile
             if profile.detected:
                 #hotword detected: breathe
+                self.__stop_leds_profile_task()
                 self.play_leds_profile(self.LEDS_PROFILE_BREATHE_BLUE)
             else:
-                #hotword released: stop breathe task
-                if self.__leds_profile_task is not None:
-                    self.__leds_profile_task.stop()
+                #hotword released: search command
+                self.__stop_leds_profile_task()
+                self.play_leds_profile(self.LEDS_PROFILE_SEARCH_YELLOW)
         
         elif isinstance(profile, SpeechRecognitionCommandProfile):
             #render command profile
+            self.__stop_leds_profile_task()
             if not profile.error:
                 #command detected: ok green
                 self.play_leds_profile(self.LEDS_PROFILE_OK_GREEN)
