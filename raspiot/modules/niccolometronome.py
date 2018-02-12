@@ -231,7 +231,7 @@ class Niccolometronome(RaspIotModule):
     """
 
     MODULE_CONFIG_FILE = u'niccolo.conf'
-    MODULE_DEPS = []
+    MODULE_DEPS = [u'speechrecognition']
     MODULE_DESCRIPTION = u'Niccolo metronome'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'niccolo', u'metronome']
