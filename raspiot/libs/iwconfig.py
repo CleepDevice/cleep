@@ -60,7 +60,7 @@ class Iwconfig(AdvancedConsole):
             if value==self.INVALID_INTERFACE:
                 #drop non wifi interfaces
                 continue
-            elif value==self.NOT_CONNECTED or self.UNASSOCIATED:
+            elif value==self.NOT_CONNECTED or value==self.UNASSOCIATED:
                 network = None
             else:
                 wifi_interface = True
