@@ -68,7 +68,7 @@ class DhcpcdConf(Config):
     
         return mask[:-1]
 
-    def installed(self):
+    def is_installed(self):
         """
         Check if config file exists and dhcpcd daemon is running
 
@@ -86,6 +86,21 @@ class DhcpcdConf(Config):
     def get_configurations(self):
         """
         Return network interfaces
+
+        Return:
+            dict: interface configurations::
+                {
+                    interface (string): {
+                        group (string): regexp group
+                        interface (string): interface name
+                        netmask (string): netmask
+                        fallback (bool): True if interface is fallback one
+                        ip_address (string): configured ip address
+                        gateway (string): gateway ip address
+                        dns_address (string): dns ip address
+                    },
+                    ...
+                }
         """
         entries = {}
         results = self.find(r'^(?:interface\s(.*?))$|^(?:static (.*?)=(.*?))$|^(?:fallback\s(\w+_\w+))$|^(?:profile\s(\w+_\w+))$', re.UNICODE | re.MULTILINE)
@@ -113,10 +128,10 @@ class DhcpcdConf(Config):
                         current_entry[u'netmask'] = '255.255.255.0'
                 if group.startswith(u'static routers'):
                     #format: X.X.X.X
-                    current_entry[u'routers'] = groups[1]
+                    current_entry[u'gateway'] = groups[1]
                 if group.startswith(u'static domain_name_servers'):
                     #format: X.X.X.X [X.X.X.X]...
-                    current_entry[u'domain_name_servers'] = groups[1]
+                    current_entry[u'dns_address'] = groups[1]
                 if group.startswith(u'fallback'):
                     #format: <interface id>
                     current_entry[u'fallback'] = groups[0]
@@ -129,8 +144,8 @@ class DhcpcdConf(Config):
                     u'netmask': None,
                     u'fallback': None,
                     u'ip_address': None,
-                    u'routers': None,
-                    u'domain_name_servers': None,
+                    u'gateway': None,
+                    u'dns_address': None,
                 }
                 entries[new_entry] = current_entry
 
@@ -141,10 +156,10 @@ class DhcpcdConf(Config):
             if entry[u'fallback'] is not None:
                 if entries.has_key(entry[u'fallback']):
                     profile = entries[entry[u'fallback']]
-                    entry[u'routers'] = profile[u'routers']
+                    entry[u'gateway'] = profile[u'gateway']
                     entry[u'ip_address'] = profile[u'ip_address']
                     entry[u'netmask'] = profile[u'netmask']
-                    entry[u'domain_name_servers'] = profile[u'domain_name_servers']
+                    entry[u'dns_address'] = profile[u'dns_address']
                     to_del.append(entry[u'fallback'])
                 else:
                     #invalid file, specified profile does not exist
@@ -172,7 +187,7 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
+            raise MissingParameter(u'Parameter interface is missing')
 
         interfaces = self.get_configurations()
         if interfaces.has_key(interface):
@@ -180,15 +195,16 @@ class DhcpcdConf(Config):
 
         return None
 
-    def add_static_interface(self, interface, ip_address, netmask, routers, domain_name_servers):
+    def add_static_interface(self, interface, ip_address, gateway, netmask, dns_address=None):
         """
         Add new static interface
         
         Args:
+            interface (string): interface to configure
             ip_address (string): static ip address
+            gateway (string): gateway address
             netmask (string): netmask
-            routers (string): routers
-            domain_name_servers (string): domain name servers
+            dns_address (string): dns address
         
         Returns
             bool: True if interface added successfully
@@ -198,15 +214,13 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
+            raise MissingParameter(u'Parameter interfaceis missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter(u'Ip_address parameter is missing')
+            raise MissingParameter(u'Parameter ip_address is missing')
+        if gateway is None or len(gateway)==0:
+            raise MissingParameter(u'Parameter gateway is missing')
         if netmask is None or len(netmask)==0:
-            raise MissingParameter(u'Netmask parameter is missing')
-        if routers is None or len(routers)==0:
-            raise MissingParameter(u'Routers parameter is missing')
-        if domain_name_servers is None or len(domain_name_servers)==0:
-            raise MissingParameter(u'Domain_name_servers parameter is missing')
+            raise MissingParameter(u'Parameter netmask is missing')
 
         #check if interface is not already configured
         if self.get_configuration(interface) is not None:
@@ -215,12 +229,16 @@ class DhcpcdConf(Config):
         #get CIDR value
         cidr = self.__netmask_to_cidr(netmask)
 
+        #fix dns
+        if dns_address is None:
+            dns_address = gateway
+
         #add new configuration
         lines = []
         lines.append(u'\ninterface %s\n' % interface)
         lines.append(u'static ip_address=%s/%s\n' % (ip_address, cidr))
-        lines.append(u'static routers=%s\n' % routers)
-        lines.append(u'static domain_name_servers=%s\n' % domain_name_servers)
+        lines.append(u'static routers=%s\n' % gateway)
+        lines.append(u'static domain_name_servers=%s\n' % dns_address)
 
         return self.add_lines(lines)
 
@@ -239,7 +257,7 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
+            raise MissingParameter(u'Parameter interface is missing')
 
         #check if interface is configured
         if self.get_configuration(interface) is None:
@@ -252,16 +270,16 @@ class DhcpcdConf(Config):
 
         return True
 
-    def add_fallback_interface(self, interface, ip_address, netmask, routers, domain_name_servers):
+    def add_fallback_interface(self, interface, ip_address, gateway, netmask, dns_address=None):
         """
         Configure fallback static interface
 
         Args:
             interface (string): interface name
             ip_address (string): static ip address
+            gateway (string): gateway ip address
             netmask (string): netmask
-            routers (string): router address
-            domain_name_servers (string): name server
+            dns_address (string): dns address
         
         Returns:
             bool: True if interface added successfully
@@ -271,26 +289,28 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
+            raise MissingParameter(u'Parameter interface is missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter(u'Ip_address parameter is missing')
+            raise MissingParameter(u'Parameter ip_address is missing')
         if netmask is None or len(netmask)==0:
-            raise MissingParameter(u'Netmask parameter is missing')
-        if routers is None or len(routers)==0:
-            raise MissingParameter(u'Routers parameter is missing')
-        if domain_name_servers is None or len(domain_name_servers)==0:
-            raise MissingParameter(u'Domain_name_servers parameter is missing')
+            raise MissingParameter(u'Parameter netmask is missing')
+        if gateway is None or len(gateway)==0:
+            raise MissingParameter(u'Parameter gateway is missing')
 
         #check if interface is not already configured
         if self.get_configuration(interface) is not None:
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
+        #fix dns
+        if dns_address is None:
+            dns_address = gateway
+
         #prepare configuration content
         lines = []
         lines.append(u'\nprofile fallback_%s\n' % interface)
         lines.append(u'static ip_address=%s/%s\n' % (ip_address, self.__netmask_to_cidr(netmask)))
-        lines.append(u'static routers=%s\n' % routers)
-        lines.append(u'static domain_name_servers=%s\n' % domain_name_servers)
+        lines.append(u'static routers=%s\n' % gateway)
+        lines.append(u'static domain_name_servers=%s\n' % dns_address)
         lines.append(u'\ninterface %s\n' % interface)
         lines.append(u'fallback fallback_%s\n' % interface)
 
@@ -311,7 +331,7 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Interface parameter is missing')
+            raise MissingParameter(u'Parameter interface is missing')
 
         #check if interface is configured
         interface_ = self.get_configuration(interface)
@@ -341,6 +361,10 @@ class DhcpcdConf(Config):
         Returns:
             bool: True if interface deleted, False otherwise
         """
+        #check params
+        if interface is None or len(interface)==0:
+            raise MissingParameter(u'Parameter interface is missing')
+
         #get interface
         interface_ = self.get_configuration(interface)
         if interface_ is None:
