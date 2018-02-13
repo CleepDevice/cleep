@@ -108,7 +108,7 @@ class Network(RaspIotModule):
                     if not self.wpasupplicant.add_network(cleep_conf[u'network'], cleep_conf[u'encryption'], cleep_conf[u'password'], False):
                         self.logger.error('Unable to use config from %s' % self.CLEEP_WIFI_CONF)
                     else:
-                        self.reconfigure_wifi_interface(interface_found)
+                        self.reconfigure_interface(interface_found)
                         self.logger.info('Wifi config from Cleep loaded successfully')
                 else:
                     self.logger.debug('No interface found or network already configured')
@@ -127,38 +127,104 @@ class Network(RaspIotModule):
         """
         output = {}
 
-        #get data
-        #TODO dhcpcd?
-        configured_interfaces = self.etcnetworkinterfaces.get_configurations()
-        current_status = self.ifconfig.get_configurations()
-        self.logger.error(u'configured_interfaces: %s' % configured_interfaces)
-        self.logger.debug(u'current_status: %s' % current_status)
+        #gather network data
+        if self.dhcpcd.is_installed():
+            #dhcpcd is installed (>=stretch), use dhcpcd.conf infos
 
-        #remove lo interface from interfaces list
-        if u'lo' in configured_interfaces.keys():
-            del configured_interfaces[u'lo']
+            #see notes about network configuration in stretch and above:
+            #https://raspberrypi.stackexchange.com/questions/37920/how-do-i-set-up-networking-wifi-static-ip-address/37921#37921
 
-        #add more infos
-        for interface in configured_interfaces.keys():
-            #add wifi infos
-            if interface in self.wifi_interfaces.keys():
-                #interface is wifi and connected
-                configured_interfaces[interface][u'wifi'] = True
-                configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
-            elif interface in configured_interfaces.keys() and configured_interfaces[interface][u'wpa_conf'] is not None:
-                #interface is wifi but not connected
-                configured_interfaces[interface][u'wifi'] = True
-                configured_interfaces[interface][u'wifi_network'] = None
-            else:
-                #interface is not wifi
-                configured_interfaces[interface][u'wifi'] = False
-                configured_interfaces[interface][u'wifi_network'] = None
+            #get wired configuration from dhcpcd
+            configured_interfaces = {}
+            dhcpcd_config = self.dhcpcd.get_configurations()
+            current_status = self.ifconfig.get_configurations()
+            self.logger.debug(u'dhcpcd_config: %s' % dhcpcd_config)
+            self.logger.debug(u'current_status: %s' % current_status)
+            self.logger.debug(u'wifi_interfaces: %s' % self.wifi_interfaces)
 
-            #add connection status
-            if interface in current_status.keys():
-                configured_interfaces[interface][u'connected'] = True
-            else:
-                configured_interfaces[interface][u'connected'] = False
+            #add more infos (iterates over current status because with dhcpcd dhcp interfaces have no configuration)
+            for interface in current_status.keys():
+                #add new entry in dict. Dict entry content is imitating output of etcnetworkinterfaces library.
+                configured_interfaces[interface] = {
+                    u'interface': interface,
+                    u'mode': None,
+                    u'address': None,
+                    u'netmask': None,
+                    u'gateway': None,
+                    u'dns_nameservers': None
+                }
+
+                #fill config with dhcpcd data
+                if interface in dhcpcd_config.keys():
+                    #interface is configured
+                    configured_interfaces[interface][u'mode'] = self.etcnetworkinterfaces.MODE_STATIC
+                    configured_interfaces[interface][u'address'] = dhcpcd_config[u'ip_address']
+                    configured_interfaces[interface][u'netmask'] = dhcpcd_config[u'netmask']
+                    configured_interfaces[interface][u'gateway'] = dhcpcd_config[u'gateway']
+                    configured_interfaces[interface][u'dns_nameservers'] = dhcpcd_config[u'dns_address']
+
+                else:
+                    #interface has no configuration, set it has dhcp
+                    configured_interfaces[interface][u'mode'] = self.etcnetworkinterfaces.MODE_DHCP
+
+                #fill config with wifi config
+                if interface in self.wifi_interfaces.keys():
+                    #wifi interface
+                    configured_interfaces[interface][u'wifi'] = True
+
+                    if self.wifi_interfaces[interface][u'network'] is not None:
+                        #interface is connected
+                        configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
+                    else:
+                        #interface is not connected
+                        configured_interfaces[interface][u'wifi_network'] = None
+                else:
+                    #interface is not wifi
+                    configured_interfaces[interface][u'wifi'] = False
+                    configured_interfaces[interface][u'wifi_network'] = None
+
+                #add connection status
+                if interface in current_status.keys():
+                    configured_interfaces[interface][u'connected'] = True
+                else:
+                    configured_interfaces[interface][u'connected'] = False
+
+            self.logger.debug('Configured_interfaces: %s' % configured_interfaces)
+
+        else:
+            #dhcpcd is not installed (<=jessie), use /etc/network/interfaces conf file
+
+            #get configuration
+            configured_interfaces = self.etcnetworkinterfaces.get_configurations()
+            current_status = self.ifconfig.get_configurations()
+            self.logger.error(u'configured_interfaces: %s' % configured_interfaces)
+            self.logger.debug(u'current_status: %s' % current_status)
+
+            #remove lo interface from configured interfaces list
+            if u'lo' in configured_interfaces.keys():
+                del configured_interfaces[u'lo']
+
+            #add more infos
+            for interface in configured_interfaces.keys():
+                #add wifi infos
+                if interface in self.wifi_interfaces.keys():
+                    #interface is wifi and connected
+                    configured_interfaces[interface][u'wifi'] = True
+                    configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
+                elif interface in configured_interfaces.keys() and configured_interfaces[interface][u'wpa_conf'] is not None:
+                    #interface is wifi but not connected
+                    configured_interfaces[interface][u'wifi'] = True
+                    configured_interfaces[interface][u'wifi_network'] = None
+                else:
+                    #interface is not wifi
+                    configured_interfaces[interface][u'wifi'] = False
+                    configured_interfaces[interface][u'wifi_network'] = None
+
+                #add connection status
+                if interface in current_status.keys():
+                    configured_interfaces[interface][u'connected'] = True
+                else:
+                    configured_interfaces[interface][u'connected'] = False
 
         #prepare networks list
         networks = []
@@ -252,26 +318,35 @@ class Network(RaspIotModule):
 
 
         #then add new one
-        if self.dhcpcd.installed():
+        if self.dhcpcd.is_installed():
             #use dhcpcd
-            #TODO: handle dhcpcd + handle fallback option
-            self.__delete_static_interface(interface)
-            if not fallback:
-                res = self.__add_static_interface(interface, ip_address, gateway, netmask)
+            
+            #delete existing configuration for specified interface
+            if not self.dhcpcd.delete_interface(interface):
+                self.logger.error('Unable to save wired static configuration (dhcpcd): unable to delete interface %s' % interface)
+                raise CommandError(u'Unable to save data')
+            
+            #finally add new configuration
+            if fallback:
+                if not self.dhcpcd.add_static_interface(interface, ip_address, gateway, netmask):
+                    self.logger.error('Unable to save wired static configuration (dhcpcd): unable to add interface %s' % interface)
+                    raise CommandError(u'Unable to save data')
             else:
-                res = self.__add_fallback_interface(interface, ip_address, gateway, netmask)
+                if not self.dhcpcd.add_fallback_interface(interface, ip_address, gateway, netmask):
+                    self.logger.error('Unable to save wired fallback configuration (dhcpcd): unable to add interface %s' % interface)
+                    raise CommandError(u'Unable to save data')
 
         else:
             #use /etc/network/interfaces file
 
             #delete existing configuration for specified interface
             if not self.etcnetworkinterfaces.delete_interface(interface):
-                self.logger.error('Unable to save wired static configuration: unable to delete interface %s' % interface)
+                self.logger.error('Unable to save wired static configuration (network/interfaces): unable to delete interface %s' % interface)
                 raise CommandError(u'Unable to save data')
             
             #finally add new configuration
             if not self.etcnetworkinterfaces.add_static_interface(interface, EtcNetworkInterfaces.OPTION_HOTPLUG, ip_address, gateway, netmask):
-                self.logger.error('Unable to save wired static configuration: unable to add interface %s' % interface)
+                self.logger.error('Unable to save wired static configuration (networkÃ/interfaces): unable to add interface %s' % interface)
                 raise CommandError(u'Unable to save data')
 
         #restart interface
@@ -286,22 +361,13 @@ class Network(RaspIotModule):
         Params:
             interface (string): interface name
         """
-        if self.dhcpcd.installed():
+        if self.dhcpcd.is_installed():
             #save config using dhcpcd
 
-            #TODO handle dhcpcd
-
-            #get interface config
-            config = self.dhcpcd.get_configuration(interface)
-            self.logger.debug(u'Interface config in dhcpcd: %s' % config)
-            if config is None:
-                raise CommandError(u'Interface %s is not configured' % interface)
-
-            #delete configuration for specified interface (not configuration is needed for dhcp)
-            if not config[u'fallback']:
-                self.__delete_static_interface(interface)
-            else:
-                self.__delete_fallback_interface(interface)
+            #delete configuration for specified interface (unconfigured interface in dhcpcd is considered as DHCP)
+            if not self.dhcpcd.delete_interface(interface):
+                self.logger.error('Unable to save wired dhcp configuration (dhcpcd): unable to delete interface %s' % interface)
+                raise CommandError(u'Unable to save data')
 
         else:
             #save config using /etc/network/interface file
@@ -314,12 +380,12 @@ class Network(RaspIotModule):
 
             #delete existing configuration for specified interface
             if not self.etcnetworkinterfaces.delete_interface(interface):
-                self.logger.error('Unable to save wired dhcp configuration: unable to delete interface %s' % interface)
+                self.logger.error('Unable to save wired dhcp configuration (network/interfaces): unable to delete interface %s' % interface)
                 raise CommandError(u'Unable to save data')
             
             #finally add new configuration
             if not self.etcnetworkinterfaces.add_dhcp_interface(interface, EtcNetworkInterfaces.OPTION_AUTO + EtcNetworkInterfaces.OPTION_HOTPLUG):
-                self.logger.error('Unable to save wired dhcp configuration: unable to add interface %s' % interface)
+                self.logger.error('Unable to save wired dhcp configuration (network/interfaces): unable to add interface %s' % interface)
                 raise CommandError(u'Unable to save data')
 
         #restart interface
@@ -531,7 +597,7 @@ class Network(RaspIotModule):
             self.logger.debug(u'pkill output: %s' % res)
 
             #reconfigure interface (stop-start-reconfigure)
-            self.reconfigure_wifi_interface(interface)
+            self.reconfigure_interface(interface)
 
         if error:
             raise CommandError(error)
@@ -562,7 +628,7 @@ class Network(RaspIotModule):
             raise MissingParameter(u'Parameter interface is missing')
 
         #encrypt password
-        if encryption in (WpaSupplicantConf.ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2):
+        if encryption in (WpaSupplicantConf.ENCRYPTION_TYPE_WPA, WpaSupplicantConf.ENCRYPTION_TYPE_WPA2):
             password = self.wpasupplicant.encrypt_password(network, password)
 
         #save config in wpa_supplicant.conf file
@@ -570,7 +636,7 @@ class Network(RaspIotModule):
             raise CommandError('Unable to save configuration')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_wifi_interface(interface)
+        return self.wpacli.reconfigure_interface(interface)
 
     def delete_wifi_network(self, interface, network):
         """
@@ -586,7 +652,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to delete network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_wifi_interface(interface)
+        return self.wpacli.reconfigure_interface(interface)
 
     def update_wifi_network_password(self, interface, network, password):
         """
@@ -607,7 +673,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to update password')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_wifi_interface(interface)
+        return self.wpacli.reconfigure_interface(interface)
 
     def enable_wifi_network(self, interface, network):
         """
@@ -627,7 +693,7 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_wifi_interface(interface)
+        return self.wpacli.reconfigure_interface(interface)
 
     def disable_wifi_network(self, interface, network):
         """
@@ -647,15 +713,15 @@ class Network(RaspIotModule):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface
-        return self.wpacli.reconfigure_wifi_interface(interface)
+        return self.wpacli.reconfigure_interface(interface)
 
     def reconfigure_wifi_interface(self, interface):
         """
         Reconfigure specified interface
-
+    
         Args:
             interface (string): interface to reconfigure
-
+    
         Return:
             bool: True if command succeed
         """
@@ -663,11 +729,11 @@ class Network(RaspIotModule):
             raise MissingParameter('Parameter interface is missing')
         if interface not in self.wifi_interfaces.keys():
             raise InvalidParameter('Interface %s does\t exist or is not configured' % interface)
-
+    
         #restart network interface
         if not self.ifupdown.restart_interface(interface):
             return False
-
+    
         #reconfigure interface
         return self.wpacli.reconfigure_interface(interface)
 
