@@ -163,8 +163,10 @@ class Respeaker2mic(RaspIotRenderer):
 
     LEDS_PROFILE_BREATHE_BLUE = u'1'
     LEDS_PROFILE_BLINK_RED = u'2'
-    LEDS_PROFILE_OK_GREEN = u'3'
-    LEDS_PROFILE_SEARCH_YELLOW = u'4'
+    LEDS_PROFILE_BLINK_GREEN = u'3'
+    LEDS_PROFILE_LONG_RED = u'4'
+    LEDS_PROFILE_LONG_GREEN = u'5'
+    LEDS_PROFILE_SLIDE_YELLOW = u'6'
 
     DEFAULT_CONFIG = {
         u'button_gpio_uuid': None,
@@ -225,17 +227,37 @@ class Respeaker2mic(RaspIotRenderer):
                     {"action": 5, "color": None, "pause": 100, "brightness": 0}
                 ]
             }, {
-                u'name': 'Ok (green)',
+                u'name': 'Blink (green)',
                 u'uuid': u'3',
-                u'repeat': 3,
+                u'repeat': 8,
+                u'default': True,
+                u'actions': [
+                    {"action": 4, "color": "green", "pause": 0, "brightness": 60},
+                    {"action": 5, "color": None, "pause": 100, "brightness": 0}, 
+                    {"action": 4, "color": "black", "pause": 0, "brightness": 60},
+                    {"action": 5, "color": None, "pause": 100, "brightness": 0}
+                ]
+            }, {
+                u'name': 'Long (red)',
+                u'uuid': u'4',
+                u'repeat': 4,
+                u'default': True,
+                u'actions': [
+                    {"action": 4, "color": "red", "pause": 0, "brightness": 60},
+                    {"action": 5, "color": None, "pause": 500, "brightness": 0}
+                ]
+            }, {
+                u'name': 'Long (green)',
+                u'uuid': u'5',
+                u'repeat': 4,
                 u'default': True,
                 u'actions': [
                     {"action": 4, "color": "green", "pause": 0, "brightness": 60},
                     {"action": 5, "color": None, "pause": 500, "brightness": 0}
                 ]
             }, {
-                u'name': 'Search (yellow)',
-                u'uuid': u'4',
+                u'name': 'Slide (yellow)',
+                u'uuid': u'6',
                 u'repeat': 99,
                 u'default': True,
                 u'actions': [
@@ -721,16 +743,16 @@ class Respeaker2mic(RaspIotRenderer):
             else:
                 #hotword released: search command
                 self.__stop_leds_profile_task()
-                self.play_leds_profile(self.LEDS_PROFILE_SEARCH_YELLOW)
+                self.play_leds_profile(self.LEDS_PROFILE_SLIDE_YELLOW)
         
         elif isinstance(profile, SpeechRecognitionCommandProfile):
             #render command profile
             self.__stop_leds_profile_task()
             if not profile.error:
-                #command detected: ok green
-                self.play_leds_profile(self.LEDS_PROFILE_OK_GREEN)
+                #command detected: long green
+                self.play_leds_profile(self.LEDS_PROFILE_LONG_GREEN)
             else:
-                #command error: blink red
-                self.play_leds_profile(self.LEDS_PROFILE_BLINK_RED)
+                #command error: long red
+                self.play_leds_profile(self.LEDS_PROFILE_LONG_RED)
             
 
