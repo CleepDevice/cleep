@@ -197,12 +197,11 @@ class SpeechRecognitionProcess(Thread):
             self.logger.debug(u'No command recognized')
             return
 
-        #send event
+        #send command detected event
         self.command_detected_event.send(params={
             u'hotword': 'not implemented',
             u'command': command
         })
-        self.command_detected_event.render(u'leds')
 
     def hotword_detected(self):
         """

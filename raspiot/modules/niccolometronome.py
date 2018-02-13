@@ -269,6 +269,10 @@ class Niccolometronome(RaspIotModule):
         self.__metronome_task = None
         self.__phrases = {}
 
+        #events
+        self.speech_command_detected_event = self._get_event('speechrecognition.command.detected')
+        self.speech_command_error_event = self._get_event('speechrecognition.command.error')
+
     def _configure(self):
         """
         Configure module
@@ -471,17 +475,28 @@ class Niccolometronome(RaspIotModule):
             event (dict): params of event
         """
         self.logger.debug(u'Event received: %s' % event)
+        found = False
         if event[u'event']==u'speechrecognition.command.detected':
             #search and execute command
             for phrase in self.__phrases.keys():
                 ratio = fuzz.ratio(phrase, event[u'params'][u'command'])
                 self.logger.debug(u'Ratio for %s<=>%s: %s' % (phrase, event[u'params'][u'command'], ratio))
                 if fuzz.ratio(phrase, event[u'params'][u'command'])>=70:
+                    #command found, execute it
                     self.logger.debug(u'Detected command "%s"' % phrase)
+                    found = True
                     self.__phrases[phrase]()
                     break
 
-            #unmute metronome at end of command
+            #render command result
+            if found:
+                #command successful
+                self.speech_command_detected_event.render(u'leds')
+            else:
+                #command error: no command found
+                self.speech_command_error_event.render(u'leds')
+
+            #finally unmute metronome
             if self.__metronome_task:
                 self.__metronome_task.unmute()
 
@@ -491,9 +506,4 @@ class Niccolometronome(RaspIotModule):
             if self.__metronome_task:
                 self.__metronome_task.mute()
 
-        #elif event[u'event']==u'speechrecognition.hotword.released':
-        #    #unmute metronome
-        #    self.logger.debug(u'Unmute metronome')
-        #    if self.__metronome_task:
-        #        self.__metronome_task.unmute()
 
