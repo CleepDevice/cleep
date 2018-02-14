@@ -326,8 +326,8 @@ class Respeaker2mic(RaspIotRenderer):
         if self._config[u'button_gpio_uuid'] is None:
             self.__configure_button()
 
-        #turn off leds at startup
-        self.turn_off_leds()
+        #play blink green at startup
+        self.play_leds_profile(self.LEDS_PROFILE_LONG_GREEN)
 
     def __configure_button(self):
         """
