@@ -6,11 +6,12 @@ import logging
 import glob
 import uuid as moduuid
 import json
+import time
+import uptime
 from threading import Lock, Thread
 import RPi.GPIO as GPIO
 from raspiot.utils import InvalidParameter, Unauthorized, MissingParameter, CommandError
 from raspiot.raspiot import RaspIotModule
-import time
 
 __all__ = [u'Gpios']
 
@@ -79,7 +80,7 @@ class GpioInputWatcher(Thread):
                 elif level!=last_level and level==self.level:
                     if self.pin==self.__debug_pin:
                         self.logger.debug(u'input %s on' % unicode(self.pin))
-                    time_on = time.time()
+                    time_on = uptime.uptime()
                     self.on_callback(self.uuid)
                     time.sleep(self.debounce)
 
@@ -87,7 +88,7 @@ class GpioInputWatcher(Thread):
                     if self.pin==self.__debug_pin:
                         self.logger.debug(u'input %s off' % unicode(self.pin))
                     if self.off_callback:
-                        self.off_callback(self.uuid, time.time()-time_on)
+                        self.off_callback(self.uuid, uptime.uptime()-time_on)
                     time.sleep(self.debounce)
 
                 else:

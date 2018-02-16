@@ -20,6 +20,7 @@ import argparse
 import json
 from contextlib import contextmanager
 import time
+import uptime
 import uuid
 from gevent import queue
 from gevent import monkey; monkey.patch_all()
@@ -161,16 +162,16 @@ def check_auth(username, password):
     #check session
     ip = bottle.request.environ.get(u'REMOTE_ADDR')
     session_key = u'%s-%s' % (ip, username)
-    if sessions.has_key(session_key) and sessions[session_key]>=time.time():
+    if sessions.has_key(session_key) and sessions[session_key]>=uptime.uptime():
         #user still logged, update session timeout
-        sessions[session_key] = time.time() + SESSION_TIMEOUT
+        sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
         return True
 
     #check auth
     if auth_config[u'accounts'].has_key(username):
         if sha256_crypt.verify(password, auth_config[u'accounts'][username]):
             #auth is valid, save session
-            sessions[session_key] = time.time() + SESSION_TIMEOUT
+            sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
             return True
         else:
             #invalid password
