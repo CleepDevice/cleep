@@ -327,7 +327,7 @@ class Respeaker2mic(RaspIotRenderer):
             self.__configure_button()
 
         #play blink green at startup
-        self.play_leds_profile(self.LEDS_PROFILE_LONG_GREEN)
+        self.play_leds_profile(self.LEDS_PROFILE_BLINK_GREEN)
 
     def __configure_button(self):
         """
