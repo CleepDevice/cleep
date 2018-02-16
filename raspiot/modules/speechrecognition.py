@@ -84,7 +84,7 @@ class SpeechRecognitionProcess(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, events, provider_token, sensitivity=0.40, audio_gain=1):
+    def __init__(self, logger, voice_model, events, provider_token, sensitivity=0.4, audio_gain=1):
         """
         Constructor
 
