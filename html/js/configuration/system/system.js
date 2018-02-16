@@ -94,7 +94,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          * Reboot system
          */
         self.reboot = function() {
-            confirm.open('Confirm device reboot?', null, 'Reboot')
+            confirm.open('Confirm device reboot?', null, 'Reboot device')
                 .then(function() {
                     return systemService.reboot();
                 })
@@ -107,7 +107,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          * Halt system
          */
         self.halt = function() {
-            confirm.open('Confirm device shutdown?', null, 'Reboot')
+            confirm.open('Confirm device shutdown?', null, 'Halt device')
                 .then(function() {
                     systemService.halt();
                 })
@@ -120,12 +120,12 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          * Restart raspiot
          */
         self.restart = function() {
-            confirm.open('Confirm application restart?', null, 'Reboot')
+            confirm.open('Confirm application restart?', null, 'Restart software')
                 .then(function() {
                     systemService.restart();
                 })
                 .then(function() {
-                    toast.success('Raspiot will restart');
+                    toast.success('Software will restart');
                 });
         };
 
