@@ -165,7 +165,7 @@ class Sox(AdvancedConsole):
             raise Exception(u'Parameter bpm is invalid: must be 0..1000')
 
         #prepare command line
-        cmd = u'bpm=%d; /usr/bin/play -q -n -c2 -r44100 synth 0.001 sine 1000 pad `awk "BEGIN { print 60/$bpm -.001 }"` vol 20 repeat 9999999' % bpm
+        cmd = u'bpm=%d; /usr/bin/play -q -n -c2 -r44100 synth 0.001 sine 1000 pad `awk "BEGIN { print 60/$bpm -.001 }"` vol 40 repeat 9999999' % bpm
         self.logger.debug('Command: %s' % cmd)
 
         #launch playback
