@@ -572,7 +572,7 @@ class BusClient(threading.Thread):
                 resp.error = True
                 resp.message = u'Received command was malformed'
 
-            return resp
+            return resp.to_dict()
                         
         else:
             #prepare request
