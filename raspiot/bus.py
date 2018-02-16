@@ -4,6 +4,7 @@
 import sys
 import logging
 import threading
+import uptime
 import time
 import math
 import inspect
@@ -135,7 +136,7 @@ class MessageBus():
                 self.logger.debug(u'MessageBus: push to "%s" message %s' % (request.to, unicode(msg)))
 
                 #log module activity
-                self.__activities[request.to] = time.time()
+                self.__activities[request.to] = int(uptime.uptime())
 
                 #append message to queue
                 self.__queues[request.to].appendleft(msg)
@@ -249,7 +250,7 @@ class MessageBus():
         if self.__queues.has_key(_module):
 
             #log module activity
-            self.__activities[_module] = int(time.time())
+            self.__activities[_module] = int(uptime.uptime())
 
             if not timeout:
                 #no timeout specified, try to pop a message and return just after
@@ -306,7 +307,7 @@ class MessageBus():
         _module = module.lower()
         self.logger.debug(u'Add subscription for module %s' % _module)
         self.__queues[_module] = deque(maxlen=self.DEQUE_MAX_LEN)
-        self.__activities[_module] = int(time.time())
+        self.__activities[_module] = int(uptime.uptime())
 
     def remove_subscription(self, module):
         """
@@ -344,7 +345,7 @@ class MessageBus():
         """
         Purge old subscriptions.
         """
-        now = int(time.time())
+        now = int(uptime.uptime())
         copy = self.__activities.copy()
         for module, last_pull in copy.iteritems():
             if now>last_pull+self.lifetime:
@@ -508,7 +509,7 @@ class BusClient(threading.Thread):
 
     def send_external_event(self, event, params, peer_infos):
         """
-        Helper function to push event message to bus.
+        Helper function to push event message to cleep bus.
 
         Args:
             event (string): event name.
@@ -537,14 +538,50 @@ class BusClient(threading.Thread):
 
         Returns:
             MessageResponse: push response.
-            None; if command is broadcast.
+            None: if command is broadcast.
         """
-        request = MessageRequest()
-        request.to = to
-        request.command = command
-        request.params = params
+        if to==self.__module:
+            #message recipient is the module itself, bypass bus
+            resp = MessageResponse()
+            try:
+                #get command reference
+                module_function = getattr(self, command)
+                if module_function is not None:
+                    (ok, args) = self.__check_params(module_function, params, self.__module)
+                    if ok:
+                        try:
+                            resp.data = module_function(**args)
+                        except Exception as e:
+                            self.logger.exception(u'Exception during send_command in the same module:')
+                            resp.error = True
+                            resp.message = unicode(e)
 
-        return self.push(request, timeout)
+                    else:
+                        #invalid command
+                        self.logger.error(u'Some command "%s" parameters are missing: %s' % (command, params))
+                        resp.error = True
+                        resp.message = u'Some command parameters are missing'
+            
+            except AttributeError:
+                self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module))
+                resp.error = True
+                resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module)
+
+            except:
+                self.logger.exception(u'Command is malformed:')
+                resp.error = True
+                resp.message = u'Received command was malformed'
+
+            return resp
+                        
+        else:
+            #prepare request
+            request = MessageRequest()
+            request.to = to
+            request.command = command
+            request.params = params
+
+            return self.push(request, timeout)
 
     def _custom_process(self):
         """
@@ -643,7 +680,7 @@ class BusClient(threading.Thread):
                                             resp.error = True
                                             resp.message = u'%s' % unicode(e)
                                     else:
-                                        self.logger.error(u'Some command parameters are missing')
+                                        self.logger.error(u'Some command "%s" parameters are missing: %s' % (msg[u'message'][u'command'], msg[u'message'][u'params']))
                                         resp.error = True
                                         resp.message = u'Some command parameters are missing'
 
