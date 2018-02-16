@@ -5,7 +5,6 @@ import os
 import logging
 from raspiot.utils import MessageRequest, MessageResponse, InvalidParameter, NoResponse, CommandError, InvalidModule
 from raspiot.raspiot import RaspIotModule
-import time
 from threading import Thread, Lock
 from collections import deque
 import time

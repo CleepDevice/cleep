@@ -8,7 +8,6 @@ from raspiot.libs.externalbus import PyreBus
 from raspiot.libs.hostname import Hostname
 from raspiot import __version__ as VERSION
 import raspiot
-import time
 import json
 
 __all__ = [u'Cleepbus']
