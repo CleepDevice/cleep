@@ -149,6 +149,9 @@ class SpeechRecognitionProcess(Thread):
     def record_command(self, recording):
         """
         Record command after hotword detected
+
+        Args:
+            recording (string): recorded file path
         """
         if self.test:
             #drop recording during test
@@ -203,6 +206,13 @@ class SpeechRecognitionProcess(Thread):
             u'command': command
         })
 
+        #purge recorded file
+        if os.path.exists(recording):
+            try:
+                os.remove(recording)
+            except:
+                self.logger.exception('Unable to delete recording:')
+
     def hotword_detected(self):
         """
         Called when hotword is detected
@@ -232,6 +242,8 @@ class SpeechRecognitionProcess(Thread):
                         audio_recorder_callback=self.record_command,
                         sleep_time=0.01
                 )
+            except KeyboardInterrupt:
+                self.logger.debug(u'Word detection stopped by user')
 
             except:
                 self.logger.exception(u'Exception during hotword detection:')
@@ -263,7 +275,7 @@ class SpeechRecognitionProcessOld1(Thread):
     """
     Speech recognition process
     """
-    def __init__(self, logger, voice_model, command_event, provider_token, sensitivity=0.40, audio_gain=1.2, record_duration=5.0):
+    def __init__(self, logger, voice_model, command_event, provider_token, sensitivity=0.45, audio_gain=1.2, record_duration=5.0):
         """
         Constructor
 

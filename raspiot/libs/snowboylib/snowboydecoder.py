@@ -16,6 +16,7 @@ TOP_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCE_FILE = os.path.join(TOP_DIR, "resources/common.res")
 DETECT_DING = os.path.join(TOP_DIR, "resources/ding.wav")
 DETECT_DONG = os.path.join(TOP_DIR, "resources/dong.wav")
+TMP_DIR = '/tmp'
 
 
 class RingBuffer(object):
@@ -223,7 +224,7 @@ class HotwordDetector(object):
         """
         Save the message stored in self.recordedData to a timestamped file.
         """
-        filename = 'output' + str(int(time.time())) + '.wav'
+        filename = os.path.join(TMP_DIR, 'output' + str(int(time.time())) + '.wav')
         data = b''.join(self.recordedData)
 
         #use wave to save data
