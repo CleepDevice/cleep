@@ -433,16 +433,19 @@ class PyreBus(ExternalBus):
         """
         #check configuration
         if not self.__externalbus_configured:
-            raise Exception('Bus not configured. Please call configure function first')
+            self.logger.debug(u'External bus is not configured yet, maybe no netword connection')
+            return False
 
         try:
             #self.logger.debug(u'Polling...')
             items = dict(self.poller.poll(self.POLL_TIMEOUT))
+
         except KeyboardInterrupt:
             #stop requested by user
             self.logger.debug(u'Stop Pyre bus')
             self.node.stop()
             return False
+
         except:
             self.logger.exception('Exception occured during externalbus polling:')
 
@@ -544,21 +547,21 @@ class PyreBus(ExternalBus):
         """
         Run pyre bus in infinite loop (blocking)
         """
-        #check configuration
-        if not self.__externalbus_configured:
-            raise Exception('Bus not configured. Please call configure_bus function first')
-
         self.logger.debug('Pyre node started')
         while True:
             try:
-                if not self.run_once():
+                if not self.__externalbus_configured:
+                    #bus not configured (no network yet?), pause
+                    time.sleep(0.25)
+
+                elif not self.run_once():
                     #stop requested
-                    self.logger.debug(' ==> stop requested programmatically')
+                    self.logger.debug('Stop requested programmatically')
                     break
 
             except KeyboardInterrupt:
                 #user stop
-                self.logger.debug(' ==> stop requested manually (CTRL-C)')
+                self.logger.debug('Stop requested manually (CTRL-C)')
                 break
 
             except:
@@ -598,6 +601,9 @@ class PyreBus(ExternalBus):
         #check params
         if peer_id not in self.peers.keys():
             raise Exception('Invalid peer specified')
+        elif not self.__externalbus_configured:
+            self.logger.debug(u'External bus is not configured yet, maybe no netword connection')
+            return False
 
         #prepare message
         message = ExternalBusMessage()
