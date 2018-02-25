@@ -15,10 +15,12 @@ from raspiot.libs.iwconfig import Iwconfig
 from raspiot.libs.ifupdown import Ifupdown
 from raspiot.libs.wpacli import Wpacli
 from raspiot.libs.cleepwificonf import CleepWifiConf
+from raspiot.libs.task import Task
 import re
 import time
 import os
 import uuid
+import netifaces
 
 __all__ = ['Network']
 
@@ -78,6 +80,12 @@ class Network(RaspIotModule):
         self.wifi_network_names = []
         self.wifi_interfaces = {}
         self.last_wifi_networks_scan = 0
+        self.__network_watchdog_task = None
+        self.__network_is_down = True
+
+        #events
+        self.network_up_event = self._get_event(u'system.network.up')
+        self.network_down_event = self._get_event(u'system.network.down')
 
     def _configure(self):
         """
@@ -112,6 +120,17 @@ class Network(RaspIotModule):
                         self.logger.info('Wifi config from Cleep loaded successfully')
                 else:
                     self.logger.debug('No interface found or network already configured')
+
+        #launch network watchdog
+        self.__network_watchdog_task = Task(5.0, self.__check_network_connection, self.logger)
+        self.__network_watchdog_task.start()
+
+    def _stop(self):
+        """
+        Stop module
+        """
+        if self.__network_watchdog_task:
+            self.__network_watchdog_task.stop()
 
     def get_module_config(self):
         """
@@ -290,6 +309,31 @@ class Network(RaspIotModule):
 
         return output
 
+    def __check_network_connection(self):
+        """
+        Check network connection
+        Send event when network is up and when it is down
+        """
+        connected = False
+
+        interfaces = netifaces.interfaces()
+        for interface in interfaces:
+            #drop local interface
+            if interface==u'lo':
+                continue
+            
+            addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addresses and len(addresses[netifaces.AF_INET])==1 and addresses[netifaces.AF_INET][0]['addr'].strip():
+                connected = True
+                break
+    
+        if connected and self.__network_is_down:
+            self.__network_is_down = False
+            self.network_up_event.send()
+        elif not connected and not self.__network_is_down:
+            self.__network_is_down = True
+            self.network_down_event.send()
+            
     #----------
     #WIRED AREA
     #----------

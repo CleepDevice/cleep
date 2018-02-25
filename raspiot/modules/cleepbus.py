@@ -80,26 +80,33 @@ class Cleepbus(RaspIotModule):
 
         return headers
 
-    def _configure(self):
-        """
-        Configure module
-        """
-        if self.external_bus:
-            self.external_bus.configure(self.get_bus_headers())
-
     def _stop(self):
         """
         Stop module
         """
         #stop bus
-        if self.external_bus:
-            self.external_bus.stop()
+        self.__stop_external_bus()
 
     def _custom_process(self):
         """
         Custom process for cleep bus: get new message on external bus
         """
-        self.external_bus.run_once()
+        if self.external_bus.is_running():
+            self.external_bus.run_once()
+
+    def __start_external_bus(self):
+        """
+        Start external bus
+        """
+        self.logger.debug(u'Start external bus')
+        self.external_bus.start(self.get_bus_headers())
+
+    def __stop_external_bus(self):
+        """
+        Stop external bus
+        """
+        self.logger.debug(u'Stop external bus')
+        self.external_bus.stop()
 
     def get_network_devices(self):
         """
@@ -154,6 +161,16 @@ class Cleepbus(RaspIotModule):
         """
         #handle received event and transfer it to external buf if necessary
         self.logger.debug(u'Received event %s' % event)
+
+        #network events to start or stop bus properly and avoid invalid ip address in pyre bus (workaround)
+        if event[u'event']==u'system.network.up' and not self.external_bus.is_running():
+            #start external bus
+            self.__start_external_bus()
+            return
+        elif event[u'event']==u'system.network.down' and self.external_bus.is_running():
+            #stop external bus
+            self.__stop_external_bus()
+            return
 
         #drop startup events and system events that should stay local
         if (u'startup' in event.keys() and not event[u'startup']) and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):

@@ -273,6 +273,10 @@ class PyreBus(ExternalBus):
         #members
         self.decode_bus_headers = decode_bus_headers
         self.__externalbus_configured = False
+        self.node = None
+        self.node_socket = None
+        self.context = None
+        self.poller = None
         self.pipe_in = None
         self.pipe_out = None
 
@@ -348,8 +352,24 @@ class PyreBus(ExternalBus):
         if self.pipe_in is not None:
             self.logger.debug('Send STOP on pipe')
             self.pipe_in.send(json.dumps(self.BUS_STOP.encode('utf-8')))
+            time.sleep(0.15)
 
-    def configure(self, headers):
+            #and close everything
+            self.pipe_in.close()
+            self.pipe_in = None
+
+            self.pipe_out.close()
+            self.pipe_out = None
+
+            self.node.stop()
+            time.sleep(0.15)
+            self.node = None
+            self.node_socket = None
+            self.poller = None
+
+            self.__externalbus_configured = False
+
+    def start(self, headers):
         """
         Configure bus
 
@@ -361,7 +381,8 @@ class PyreBus(ExternalBus):
             raise MissingParameter('Parameter "headers" is not specified')
 
         #zmq context
-        self.context = zmq.Context()
+        if self.context is None:
+            self.context = zmq.Context()
 
         #communication pipe
         self.pipe_in = self.context.socket(zmq.PAIR)
@@ -370,12 +391,14 @@ class PyreBus(ExternalBus):
         self.pipe_in.setsockopt(zmq.SNDHWM, 100)
         self.pipe_in.setsockopt(zmq.SNDTIMEO, 5000)
         self.pipe_in.setsockopt(zmq.RCVTIMEO, 5000)
+
         self.pipe_out = self.context.socket(zmq.PAIR)
         self.pipe_out.setsockopt(zmq.LINGER, 0)
         self.pipe_out.setsockopt(zmq.RCVHWM, 100)
         self.pipe_out.setsockopt(zmq.SNDHWM, 100)
         self.pipe_out.setsockopt(zmq.SNDTIMEO, 5000)
         self.pipe_out.setsockopt(zmq.RCVTIMEO, 5000)
+
         iface = 'inproc://%s' % binascii.hexlify(os.urandom(8))
         self.pipe_in.bind(iface)
         self.pipe_out.connect(iface)
@@ -396,6 +419,9 @@ class PyreBus(ExternalBus):
         self.poller.register(self.node_socket, zmq.POLLIN)
 
         self.__externalbus_configured = True
+
+    def is_running(self):
+        return self.__externalbus_configured
 
     def run_once(self):
         """
@@ -418,7 +444,7 @@ class PyreBus(ExternalBus):
             self.node.stop()
             return False
         except:
-            self.logger.exception('Exception occured durring externalbus polling:')
+            self.logger.exception('Exception occured during externalbus polling:')
 
         if self.pipe_out in items and items[self.pipe_out]==zmq.POLLIN:
             #message to send
