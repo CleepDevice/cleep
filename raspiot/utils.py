@@ -174,7 +174,7 @@ class MessageRequest():
             if not self.peer_infos:
                 return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'from':self.from_}
             else:
-                return {u'event':self.event, u'params':self.params, u'peer_infos':self.peer_infos}
+                return {u'event':self.event, u'params':self.params, u'startup':False, u'device_id':None, u'from':u'PEER', u'peer_infos':self.peer_infos}
 
         else:
             raise InvalidMessage()
