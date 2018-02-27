@@ -9,18 +9,24 @@ from raspiot.libs.hostname import Hostname
 from raspiot import __version__ as VERSION
 import raspiot
 import json
+import uuid
 
 __all__ = [u'Cleepbus']
 
 
 class Cleepbus(RaspIotModule):
 
+    MODULE_CONFIG_FILE = u'cleepbus.conf'
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
     MODULE_LOCKED = True
-    MODULE_TAGS = [u'bus']
+    MODULE_TAGS = [u'bus', u'communication']
     MODULE_COUNTRY = None
     MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Cleepbus'
+
+    DEFAULT_CONFIG = {
+        u'uuid': None
+    }
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -38,6 +44,23 @@ class Cleepbus(RaspIotModule):
         #self.external_bus = None
         self.devices = {}
         self.hostname = Hostname()
+        self.uuid = None
+
+    def _configure(self):
+        """
+        Configure module
+        """
+        #set device uuid if not setted yet
+        config = self._get_config()
+        self.logger.debug('=====>Config: %s' % config)
+        if config[u'uuid'] is None:
+            self.logger.debug('Set device uuid')
+            self.uuid = str(uuid.uuid4())
+            config[u'uuid'] = self.uuid
+            self._save_config(config)
+
+        else:
+            self.uuid = config[u'uuid']
 
     def get_bus_headers(self):
         """
@@ -49,6 +72,7 @@ class Cleepbus(RaspIotModule):
         macs = self.external_bus.get_mac_addresses()
         #TODO handle port and ssl when security implemented
         headers = {
+            u'uuid': self.uuid,
             u'version': VERSION,
             u'hostname': self.hostname.get_hostname(),
             u'port': '80',
