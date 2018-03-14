@@ -47,7 +47,7 @@ class Ifconfig():
 
             #get mac address
             mac = None
-            if len(ifaddresses[netifaces.AF_LINK])>0 and u'addr' in ifaddresses[netifaces.AF_LINK][0].keys():
+            if netifaces.AF_LINK in ifaddresses and len(ifaddresses[netifaces.AF_LINK])>0 and u'addr' in ifaddresses[netifaces.AF_LINK][0].keys():
                 mac = ifaddresses[netifaces.AF_LINK][0]['addr']
 
             #ipv4
