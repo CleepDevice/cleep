@@ -1,14 +1,15 @@
 raspiot (0.0.10) UNRELEASED; urgency=low
 
-  * Improve renderers: add way to tweak handled events
+  * Improve renderers: add way to configure handled events
   * Add developper module
-  * Bugs fix and improvments (modules)
   * Add audio module
   * Add respeaker2mic module
   * Add some new libs: alsa, sox...
-  * Improve network module
+  * Network module completely rewriten
   * Fix bug in bus when raspi is connected to network after it starts: issue
   with purge when time is synced
+  * Bugs fixes
+  * Sounds module improvements
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Fri, 08 Dec 2017 23:00:00 +0000
 
