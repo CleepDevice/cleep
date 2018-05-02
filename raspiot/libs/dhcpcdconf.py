@@ -18,11 +18,15 @@ class DhcpcdConf(Config):
 
     CONF = u'/etc/dhcpcd.conf'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            backup (bool): True if backup enabled
         """
-        Config.__init__(self, self.CONF, u'#', backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
 
     def __netmask_to_cidr(self, netmask):
         """ 

@@ -22,8 +22,8 @@ from contextlib import contextmanager
 import time
 import uptime
 import uuid
-from gevent import queue
 from gevent import monkey; monkey.patch_all()
+from gevent import queue
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
 from .utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError, NoResponse
@@ -52,6 +52,7 @@ auth_enabled = False
 logger = None
 app = bottle.app()
 server = None
+cleep_filesystem = None
 
 def bottle_logger(func):
     """
@@ -104,6 +105,17 @@ def get_app(debug_enabled):
 
     return app
 
+def configure(boostrap):
+    """
+    Configure rpcserver
+
+    Args:
+        boostrap (dict): bootstrap objects
+    """
+    global cleep_filesystem
+
+    cleep_filesystem = boostrap[u'cleep_filesystem']
+
 def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """
     Start RPC server. This function is blocking.
@@ -116,7 +128,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
         key (string): SSL key file
         cert (string): SSL certificate file
     """
-    global server, app
+    global server, app, boostrap
 
     try:
         run_https = False
@@ -288,7 +300,7 @@ def get_modules():
             modules[module][u'events'] = []
 
     #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
-    conf = RaspiotConf()
+    conf = RaspiotConf(cleep_filesystem)
     config = conf.as_dict()
     for module in modules:
         modules[module][u'pending'] = False

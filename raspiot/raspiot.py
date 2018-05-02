@@ -46,7 +46,7 @@ class RaspIot(BusClient):
         #members
         self.events_factory = bootstrap[u'events_factory']
         self.logger.warning('boostrap: %s' % bootstrap)
-        self.fs = bootstrap[u'fs']
+        self.cleep_filesystem = bootstrap[u'cleep_filesystem']
 
         #load and check configuration
         self.__configLock = Lock()
@@ -102,19 +102,19 @@ class RaspIot(BusClient):
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.logger.debug(u'Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
-                #TODO f = self.fs.open(path, u'r')
+                #TODO f = self.cleep_filesystem.open(path, u'r')
                 f = open(path, u'r')
                 raw = f.read()
-                #self.fs.close(f)
+                #self.cleep_filesystem.close(f)
                 f.close()
             else:
                 #no conf file yet. Create default one
-                #f = self.fs.open(path, u'w')
+                #f = self.cleep_filesystem.open(path, u'w')
                 f = open(path, u'w')
                 default = {}
                 raw = json.dumps(default)
                 f.write(raw)
-                #self.fs.close(f)
+                #self.cleep_filesystem.close(f)
                 f.close()
                 time.sleep(.25) #make sure file is written
             self._config = json.loads(raw)
@@ -146,10 +146,10 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         try:
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
-            #f = self.fs.open(path, u'w')
+            #f = self.cleep_filesystem.open(path, u'w')
             f = open(path, u'w')
             f.write(json.dumps(config))
-            #self.fs.close(f)
+            #self.cleep_filesystem.close(f)
             f.close()
             force_reload = True
         except:

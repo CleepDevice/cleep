@@ -67,7 +67,7 @@ class BuildPersonalVoiceModelTask(Thread):
         #build personal voice model
         error = None
         voice_model = None
-        snowboy = Snowboy(self.token)
+        snowboy = Snowboy(self.cleep_filesystem, self.token)
         try:
             voice_model = snowboy.train(trimmed_recordings[0], trimmed_recordings[1], trimmed_recordings[2])
             self.logger.debug(u'Generated voice model: %s' % voice_model)

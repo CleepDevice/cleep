@@ -14,11 +14,15 @@ class Fstab(Config):
 
     CONF = u'/etc/fstab'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            backup (bool): True to enable backup
         """
-        Config.__init__(self, self.CONF, None, backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, None, backup)
         self.blkid = Blkid()
 
     def get_all_devices(self):

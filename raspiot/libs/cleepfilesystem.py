@@ -5,14 +5,18 @@ from console import Console
 from raspiot.libs.readwrite import ReadWrite
 import logging
 import os
-from threading import Lock, Timer
+from threading import Timer, Lock
+#from gevent import monkey
+#monkey.patch_all()
+import gevent.lock as glock
 import io
 import shutil
+
 
 class CleepFilesystem():
     """
     Filesystem helper with read/write filesystem support (uses readwrite lib)
-    A debounce function shifts switch to readonly mode to avoid multiple operation
+    A debounce function waits to switch to readonly mode to reduce number of switch
     """
 
     DEBOUNCE_DURATION = 10.0
@@ -28,6 +32,7 @@ class CleepFilesystem():
         self.__counter = 0;
         self.__rw_lock = Lock()
         self.__debounce_timer = None
+        #self.__rw_lock = glock.BoundedSemaphore(1)
 
     def __really_disable_write(self):
         """
@@ -40,22 +45,24 @@ class CleepFilesystem():
         if self.__debounce_timer is None:
             #debounce timer canceled
             return
+        
+        #reset flag
+        self.__debounce_timer = None
 
         #disable writings
         self.logger.debug('Disable writings')
-        self.rw.enable_write_on_root()
-        self.__debounce_timer = None
+        self.rw.disable_write_on_root()
 
         #release lock
         self.logger.debug('Release lock in really_disable_write')
-        self.__rw_lock.acquire()
+        self.__rw_lock.release()
 
     def __enable_write(self):
         """
         Enable write mode
         """
         #acquire lock
-        self.logger.debug('Acquire lock in enable_write')
+        self.logger.debug('Acquire lock in enable_write %s' % type(self.__rw_lock))
         self.__rw_lock.acquire()
 
         if self.__debounce_timer is not None:
@@ -64,9 +71,10 @@ class CleepFilesystem():
             self.__debounce_timer = None
 
         if self.__counter==0:
-            #enable write
+            #first to request writing, enable it
             self.logger.debug('Enable writings')
             self.rw.enable_write_on_root()
+            self.__counter += 1
 
         else:
             #write mode already enabled
@@ -90,6 +98,7 @@ class CleepFilesystem():
         #cancel action if necessary
         if self.__counter==0:
             #not in writing mode
+            self.logger.warning(u'Not in writing mode, a bug surely exist!')
             return
 
         #decrease usage counter
@@ -102,7 +111,7 @@ class CleepFilesystem():
             self.__debounce_timer.start()
 
         else:
-            #operation still need write mode
+            #a running action still needs write mode
             pass
 
         #release lock
@@ -122,22 +131,24 @@ class CleepFilesystem():
         path = os.path.normpath(path)
         path = os.path.realpath(path)
         parts = path.split(os.sep)
+
         return u'tmp'==parts[1]
 
-    def open(self, path, mode, encoding=None):
+    def open(self, path, mode, encoding=u'utf-8'):
         """
         Open file
 
         Args:
             path (string): file path
             mode (string): mode as builtin open() function
-            encoding (string): file encoding
+            encoding (string): file encoding (default utf8)
 
         Return:
             descriptor: file descriptor
         """
         #enable writings if necessary
-        read_mode = mode.find('r')>=0 and not mode.find('+')>=0
+        read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
+        self.logger.debug(u'Open %s read_mode=%s' % (path, read_mode))
         if not read_mode and not self.__is_on_tmp(path):
             self.__enable_write()
 
@@ -150,8 +161,11 @@ class CleepFilesystem():
         Args:
             fd (descriptor): file descriptor
         """
+        self.logger.debug('Close %s' % fd.name)
         #disable writings
-        self.__disable_write()
+        read_mode = fd.mode.find('r')>=0 and not fd.mode.find('+')>=0
+        if not read_mode:
+            self.__disable_write()
 
         #close file descriptor
         fd.close()
@@ -174,7 +188,14 @@ class CleepFilesystem():
         os.makedirs(path)
 
         #disable writings
-        self.__disable_writings()
+        self.__disable_write()
+
+    def rename(self, src, dst):
+        """
+        Rename file/dir to specified destination
+        Alias of move
+        """
+        return self.move(src, dst)
 
     def move(self, src, dst):
         """
@@ -195,7 +216,7 @@ class CleepFilesystem():
         shutil.move(src, dst)
 
         #disable writings
-        self.__disable_writings()
+        self.__disable_write()
 
     def copy(self, src, dst):
         """
@@ -216,7 +237,7 @@ class CleepFilesystem():
         shutil.copy2(src, dst)
 
         #disable writings
-        self.__disable_writings()
+        self.__disable_write()
 
     def rm(self, path):
         """
@@ -236,7 +257,7 @@ class CleepFilesystem():
         os.remove(path)
 
         #disable writings
-        self.__disable_writings()
+        self.__disable_write()
 
     def rmdir(self, path, recursive=False):
         """
@@ -260,6 +281,6 @@ class CleepFilesystem():
             os.remove(path)
 
         #disable writings
-        self.__disable_writings()
+        self.__disable_write()
 
 

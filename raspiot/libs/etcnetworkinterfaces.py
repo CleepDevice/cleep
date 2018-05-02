@@ -34,11 +34,15 @@ class EtcNetworkInterfaces(Config):
     MODE_LOOPBACK = u'loopback'
     MODE_DHCP = u'dhcp'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            backup (bool): True to enable backup
         """
-        Config.__init__(self, self.CONF, None, backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, None, backup)
 
         #members
         self.__last_update = None

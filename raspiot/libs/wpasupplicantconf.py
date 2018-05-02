@@ -26,17 +26,18 @@ class WpaSupplicantConf(Config):
     ENCRYPTION_TYPE_UNKNOWN = u'unknown'
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
 
-    def __init__(self, filepath=None, backup=True):
+    def __init__(self, cleep_filesystem, filepath=None, backup=True):
         """
         Constructor
 
         Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             filepath (string): if you want to specify another file than /etc/wpa_supplicant/wpa_supplicant.conf.
             backup (bool): backup file
         """
         if filepath is None:
             filepath = self.CONF
-        Config.__init__(self, filepath, None, backup)
+        Config.__init__(self, cleep_filesystem, filepath, None, backup)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -259,7 +260,7 @@ class WpaSupplicantConf(Config):
 
         #check if network doesn't already exist
         if self.get_configuration(network) is not None:
-            raise InvalidParameter(u'Network "%s" is already configured')
+            raise InvalidParameter(u'Network "%s" is already configured' % network)
     
         #header
         output = [

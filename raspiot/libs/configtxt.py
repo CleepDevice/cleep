@@ -31,11 +31,15 @@ class ConfigTxt(Config):
     DTPARAM_I2S = u'i2s'
     DTPARAM_I2S_VALUE = u'on'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            backup (bool): True if config.txt will backuped
         """
-        Config.__init__(self, self.CONF, u'#', backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
 
     def __get_entries(self, key):
         """

@@ -32,6 +32,16 @@ class RaspiotConf():
         }
     }
 
+    def __init__(self, cleep_filesystem):
+        """
+        Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+        """
+        #members
+        self.fs = cleep_filesystem
+
     def __open(self):
         """
         Open config file
@@ -42,29 +52,32 @@ class RaspiotConf():
         Raises:
             Exception: if file doesn't exist
         """
+        #init conf reader
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
             #create empty file
-            f = open(self.CONF, u'w')
-            f.write('')
-            f.close()
-            time.sleep(0.25)
-
-        #    raise Exception(u'Config file "%s" does not exist' % self.CONF)
-        self.__conf.readfp(io.open(self.CONF, u'r', encoding=u'utf-8'))
+            fd = self.fs.open(self.CONF, u'w')
+            fd.write(u'')
+            self.fs.close(fd)
+            time.sleep(0.10)
+        
+        #load conf content
+        fd = self.fs.open(self.CONF, u'r')
+        self.__conf.readfp(fd)
+        self.fs.close(fd)
 
         return self.__conf
 
     def __close(self, write=False):
         """
-        Close everything and write new content if specified
-
-        Args:
-            write (bool): write new content if set to True
+        Close everything and write new content if forced
         """
         if self.__conf and write:
             #workaround for unicode writing http://bugs.python.org/msg187829
-            self.__conf.write(codecs.open(self.CONF, u'w', u'utf-8'))
+            f = self.fs.open(self.CONF, u'w')
+            self.__conf.write(f.buffer)
+            self.fs.close(f)
+            #self.__conf.write(codecs.open(self.CONF, u'w', u'utf-8'))
 
     def check(self):
         """
@@ -74,20 +87,23 @@ class RaspiotConf():
             bool: always return True
         """
         config = self.__open()
+        updated = False
 
         #merge with default config
         for section in self.DEFAULT_CONFIG.keys():
             #fix missing section
             if not config.has_section(section):
                 config.add_section(section)
+                updated = True
 
             #fix missing section keys
             for key in self.DEFAULT_CONFIG[section].keys():
                 if not config.has_option(section, key):
                     config.set(section, key, unicode(self.DEFAULT_CONFIG[section][key]))
+                    updated = True
 
         #write changes to filesystem
-        self.__close(True)
+        self.__close(updated)
 
         return True
 
@@ -99,6 +115,7 @@ class RaspiotConf():
             dict: config content
         """
         conf = self.__open()
+        self.__close()
         config = {}
 
         for section in conf.sections():
@@ -120,8 +137,8 @@ class RaspiotConf():
             bool: global debug status
         """
         conf = self.__open()
-        debug = conf.getboolean(u'debug', u'debug_enabled')
         self.__close()
+        debug = conf.getboolean(u'debug', u'debug_enabled')
         return debug
 
     def set_global_debug(self, debug):
@@ -205,8 +222,9 @@ class RaspiotConf():
             bool: True if module is installed
         """
         conf = self.__open()
-
+        self.__close()
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
+
         return module in modules
 
 
@@ -271,8 +289,9 @@ class RaspiotConf():
             bool: True if module debug is enabled, False if disabled
         """
         conf = self.__open()
-
+        self.__close()
         modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
+
         return module in modules
 
     def set_rpc_config(self, host, port):
@@ -306,8 +325,9 @@ class RaspiotConf():
                 )
         """
         conf = self.__open()
-
+        self.__close()
         rpc = (conf.get(u'rpc', u'rpc_host'), conf.getint(u'rpc', u'rpc_port'))
+
         return rpc
 
     def set_rpc_security(self, cert, key):
@@ -341,8 +361,9 @@ class RaspiotConf():
                 )
         """
         conf = self.__open()
-
+        self.__close()
         rpc = (conf.get(u'rpc', u'rpc_cert'), conf.get(u'rpc', u'rpc_key'))
+
         return rpc
 
 

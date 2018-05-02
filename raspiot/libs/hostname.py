@@ -2,19 +2,26 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.utils import MissingParameter
-import io
+from raspiot.libs.config import Config
 
-class Hostname():
+class Hostname(Config):
     """
     Helper class to update and read /etc/hostname file
     """
 
     CONF = u'/etc/hostname'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            backup (bool): True to enable backup
         """
+        Config.__init__(self, cleep_filesystem, self.CONF, backup)
+
+        #members
         self.hostname = None
 
     def set_hostname(self, hostname):
@@ -33,8 +40,9 @@ class Hostname():
         self.hostname = hostname
 
         try:
-            with io.open(self.CONF, u'w') as fd:
-                fd.write(u'%s' % self.hostname)
+            fd = self.fs.open(self.conf, u'w')
+            fd.write(u'%s' % self.hostname)
+            self.fs.close(fd)
         except:
             return False
 
@@ -48,8 +56,9 @@ class Hostname():
             string: raspi hostname
         """
         if self.hostname is None:
-            with io.open(self.CONF, u'r') as fd:
-                content = fd.readlines()
+            fd = self.fs.open(self.CONF, u'r')
+            content = fd.readlines()
+            self.fs.close(fd)
 
             if len(content)>0:
                 self.hostname = content[0].strip()

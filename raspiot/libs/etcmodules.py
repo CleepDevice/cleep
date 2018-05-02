@@ -18,11 +18,14 @@ class EtcModules(Config):
     MODULE_ONEWIREGPIO = u'w1-gpio'
     MODULE_SOUND_BCM2835 = u'snd-bcm2835'
 
-    def __init__(self, backup=True):
+    def __init__(self, cleep_filesystem, backup=True):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        Config.__init__(self, self.CONF, u'#', backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
 
     def __get_entries(self):
         """

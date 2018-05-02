@@ -61,7 +61,7 @@ def usage():
     print(u' -h|--help   : this help')
 
 
-def load_config():
+def load_config(cleep_filesystem):
     """
     Load and check configuration file
     @return loaded config
@@ -69,7 +69,7 @@ def load_config():
     """
     #load config
     logger.info(u'Loading configuration raspiot.conf file')
-    conf = RaspiotConf()
+    conf = RaspiotConf(cleep_filesystem)
     conf.check()
     config = conf.as_dict()
     logger.info(u'config: %s' % config)
@@ -100,7 +100,7 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         u'formatters_factory': formatters_factory,
         u'message_bus': message_bus,
         u'join_event': Event(),
-        u'fs': cleep_filesystem
+        u'cleep_filesystem': cleep_filesystem
     }
 
     return bootstrap
@@ -142,8 +142,11 @@ if __name__ == u'__main__':
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger(u'Raspiot')
 
+        #create cleep filesystem singleton (will be saved in bootstrap context)
+        cleep_filesystem = CleepFilesystem()
+
         #load and check config file
-        config = load_config()
+        config = load_config(cleep_filesystem)
 
         #set debug level after config reading
         if config[u'debug'][u'debug_enabled']:
@@ -168,14 +171,14 @@ if __name__ == u'__main__':
         #create bootstrap objects
         events_factory = EventsFactory(debug_enabled)
         formatters_factory = FormattersFactory(debug_enabled)
-        cleep_filesystem = CleepFilesystem()
 
         #build bootstrap objects collection
         bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem)
 
-        #configure factories
+        #configure factories and rpcserver
         events_factory.configure(bootstrap)
         formatters_factory.configure(bootstrap)
+        rpcserver.configure(bootstrap)
 
         #create system module by default (needed to handle raspberry config)
         for module_name in mandatory_modules.keys():

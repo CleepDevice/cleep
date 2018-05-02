@@ -183,8 +183,8 @@ class Sensors(RaspIotModule):
         Returns:
             bool: True if onewire drivers installed
         """
-        configtxt = ConfigTxt()
-        etcmodules = EtcModules()
+        configtxt = ConfigTxt(self.cleep_filesystem)
+        etcmodules = EtcModules(self.cleep_filesystem)
 
         installed_configtxt = configtxt.is_onewire_enabled()
         installed_etcmodules = etcmodules.is_onewire_enabled()
@@ -200,8 +200,8 @@ class Sensors(RaspIotModule):
         Returns:
             bool: True if onewire drivers installed successfully
         """
-        configtxt = ConfigTxt()
-        etcmodules = EtcModules()
+        configtxt = ConfigTxt(self.cleep_filesystem)
+        etcmodules = EtcModules(self.cleep_filesystem)
         result = etcmodules.enable_onewire() and configtxt.enable_onewire()
         self.driver_onewire = result
 
@@ -218,8 +218,8 @@ class Sensors(RaspIotModule):
         Returns:
             bool: True if onewire drivers uninstalled successfully
         """
-        configtxt = ConfigTxt()
-        etcmodules = EtcModules()
+        configtxt = ConfigTxt(self.cleep_filesystem)
+        etcmodules = EtcModules(self.cleep_filesystem)
         result = etcmodules.disable_onewire() and configtxt.disable_onewire()
         self.driver_onewire = result
 
