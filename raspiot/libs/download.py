@@ -10,6 +10,7 @@ import hashlib
 import platform
 import tempfile
 import base64
+import io
 
 class Download():
     """
@@ -28,11 +29,12 @@ class Download():
     STATUS_ERROR_BADCHECKSUM = 5
     STATUS_DONE = 6
 
-    def __init__(self, status_callback=None):
+    def __init__(self, cleep_filesystem, status_callback=None):
         """
         Constructor
 
         Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance. If None does not handle R/O mode
             status_callback (function): status callback. Params: status, filesize, percent
         """
         #logger
@@ -40,6 +42,7 @@ class Download():
         self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.fs = cleep_filesystem
         self.temp_dir = tempfile.gettempdir()
         self.download = None
         self.__cancel = False
@@ -70,7 +73,10 @@ class Download():
                 if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
-                        os.remove(os.path.join(self.temp_dir, dl))
+                        if self.fs:
+                            self.fs.remove(os.path.join(self.temp_dir, dl))
+                        else:
+                            os.remove(os.path.join(self.temp_dir, dl))
                     except:
                         pass
 
@@ -78,7 +84,10 @@ class Download():
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
-                        os.remove(os.path.join(self.temp_dir, dl))
+                        if self.fs:
+                            self.fs.remove(os.path.join(self.temp_dir, dl))
+                        else:
+                            os.remove(os.path.join(self.temp_dir, dl))
                     except:
                         pass
 
@@ -118,12 +127,19 @@ class Download():
             file_path (string): file path
         """
         sha1 = hashlib.sha1()
-        with open(file_path, 'rb') as f:
-            while True:
-                buf = f.read(1024)
-                if not buf:
-                    break
-                sha1.update(buf)
+        if self.fs:
+            fd = self.fs.open(file_path, u'rb')
+        else:
+            fd = io.open(file_path, u'rb')
+        while True:
+            buf = fd.read(1024)
+            if not buf:
+                break
+            sha1.update(buf)
+        if self.fs:
+            self.fs.close(fd)
+        else:
+            fd.close()
 
         return sha1.hexdigest()
 
@@ -135,12 +151,19 @@ class Download():
             file_path (string): file path
         """
         sha256 = hashlib.sha256()
-        with open(file_path, 'rb') as f:
-            while True:
-                buf = f.read(1024)
-                if not buf:
-                    break
-                sha256.update(buf)
+        if self.fs:
+            fd = self.fs.open(file_path, u'rb')
+        else:
+            fd = io.open(file_path, u'rb')
+        while True:
+            buf = fd.read(1024)
+            if not buf:
+                break
+            sha256.update(buf)
+        if self.fs:
+            self.fs.close(fd)
+        else:
+            fd.close()
 
         return sha256.hexdigest()
 
@@ -152,12 +175,19 @@ class Download():
             file_path (string): file path
         """
         md5 = hashlib.md5()
-        with open(file_path, 'rb') as f:
-            while True:
-                buf = f.read(1024)
-                if not buf:
-                    break
-                sha1.update(buf)
+        if self.fs:
+            fd = self.fs.open(file_path, u'rb')
+        else:
+            fd = io.open(file_path, u'rb')
+        while True:
+            buf = fd.read(1024)
+            if not buf:
+                break
+            sha1.update(buf)
+        if self.fs:
+            self.fs.close(fd)
+        else:
+            fd.close()
 
         return md5.hexdigest()
 
@@ -210,7 +240,7 @@ class Download():
     def download_file_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
         """
         Download file from specified url. Specify key to validate file if necessary.
-        This function is blocking but status can be followed with status_callback
+        This function is blocking but status can be followed with status_callback (passed in constructor)
 
         Args:
             url (string): url to download
@@ -224,8 +254,8 @@ class Download():
         """
         #prepare filename
         download_uuid = str(uuid.uuid4())
-        self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
-        self.logger.debug('File will be saved to "%s"' % self.download)
+        self.download = os.path.join(self.temp_dir, u'%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
+        self.logger.debug(u'File will be saved to "%s"' % self.download)
         download = None
 
         #check if file is cached
@@ -237,18 +267,21 @@ class Download():
         
         #prepare download
         try:
-            download = open(self.download, u'wb')
+            if self.fs:
+                download = self.fs.open(self.download, u'wb')
+            else:
+                download = io.open(self.download, u'wb')
         except:
-            self.logger.exception('Unable to create file:')
+            self.logger.exception(u'Unable to create file:')
             self.status = self.STATUS_ERROR
             self.__status_callback(self.status, 0, 0)
             return None
 
         #initialize download
         try:
-            resp = self.http.request('GET', url, preload_content=False)
+            resp = self.http.request(u'GET', url, preload_content=False)
         except:
-            self.logger.exception('Error initializing http request:')
+            self.logger.exception(u'Error initializing http request:')
             self.status = self.STATUS_ERROR
             self.__status_callback(self.status, 0, 0)
             return None
@@ -283,7 +316,10 @@ class Download():
                 self.logger.exception('Unable to write to download file "%s":' % self.download)
                 self.status = self.STATUS_ERROR
                 self.__status_callback(self.status, downloaded_size, self.percent)
-                download.close()
+                if self.fs:
+                    self.fs.close(download)
+                else:
+                    download.close()
                 return None
             
             #compute percentage
@@ -296,12 +332,18 @@ class Download():
 
             #cancel download
             if self.__cancel:
-                download.close()
+                if self.fs:
+                    self.fs.close(download)
+                else:
+                    download.close()
                 self.logger.debug('Flash process canceled during download')
                 return None
 
         #download over
-        download.close()
+        if self.fs:
+            self.fs.close(download)
+        else:
+            download.close()
 
         #file size
         if file_size>0:
@@ -350,7 +392,10 @@ class Download():
             hashname = base64.urlsafe_b64encode(cache.encode('utf-8')).decode('utf-8')
             download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
         try:
-            os.rename(self.download, download)
+            if self.fs:
+                self.fs.rename(self.download, download)
+            else:
+                os.rename(self.download, download)
             self.download = download
         except:
             pass

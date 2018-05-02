@@ -7,12 +7,17 @@ from lsblk import Lsblk
 import re
 import time
 
-class Cmdline():
+class Cmdline(Console):
 
     CACHE_DURATION = 3600.0
 
     def __init__(self):
-        self.console = Console()
+        """
+        Constructor
+        """
+        Console.__init__(self)
+
+        #members
         self.blkid = Blkid()
         self.lsblk = Lsblk()
         self.timestamp = None
@@ -26,7 +31,7 @@ class Cmdline():
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
-        res = self.console.command(u'/bin/cat /proc/cmdline')
+        res = self.command(u'/bin/cat /proc/cmdline')
         if not res[u'error'] and not res[u'killed']:
             #parse data
             matches = re.finditer(r'root=(.*?)\s', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)

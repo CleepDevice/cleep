@@ -16,22 +16,24 @@ class Config():
      - to set entry
      - to load and save file content
      - to backup and restore configuration file
-    It also ensures to read file content as unicode
+    It also ensures to read file content as unicode and it uses cleep filesystem to operate on readonly cleep distribution
     """
 
     MODE_WRITE = u'w'
     MODE_READ = u'r'
     MODE_APPEND = u'a'
 
-    def __init__(self, path, comment_tag, backup=True):
+    def __init__(self, cleep_filesystem, path, comment_tag, backup=True):
         """
         Constructor
 
         Args:
+            cleep_filesystem: CleepFilesystem instance
             path (string): configuration file path
             comment_tag (string): comment tag
             backup (bool): auto backup original file (default True)
         """
+        self.fs = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         path = os.path.expanduser(path)
@@ -56,14 +58,14 @@ class Config():
         Backup original file if necessary
         """
         if not os.path.exists(self.backup_path) and os.path.exists(self.path):
-            shutil.copy2(self.path, self.backup_path)
+            self.fs.copy(self.path, self.backup_path)
 
     def restore_backup(self):
         """
         Overwrite original config file by backup one
         """
         if os.path.exists(self.backup_path):
-            shutil.copy2(self.backup_path, self.path)
+            self.fs.copy(self.backup_path, self.path)
             return True
 
         return False
@@ -74,9 +76,10 @@ class Config():
         base_path = os.path.dirname(path)
         base, ext = os.path.splitext(path)
         filename = os.path.split(base)[1]
+
         return os.path.join(base_path, '%s.backup%s' % (filename, ext))
 
-    def _open(self, mode=u'r'):
+    def _open(self, mode=u'r', encoding=u'utf-8'):
         """
         Open config file
 
@@ -89,7 +92,8 @@ class Config():
         if not os.path.exists(self.path):
             raise Exception(u'%s file does not exist' % self.path)
 
-        self.__fd = io.open(self.path, mode, encoding=u'utf-8')
+        self.__fd = self.fs.open(self.path, mode, encoding)
+
         return self.__fd
 
     def _close(self):
@@ -97,13 +101,13 @@ class Config():
         Close file descriptor is still opened
         """
         if self.__fd:
-            self.__fd.close()
+            self.fs.close(self.__fd)
             self.__fd = None
 
     def _write(self, content):
         """
         Write content to config file.
-        This function apply automatically remove spaces at end of content
+        This function removes automatically spaces at end of content
 
         Args:
             content (string): content to write
@@ -112,10 +116,12 @@ class Config():
             fd = self._open(self.MODE_WRITE)
             fd.write(content.rstrip())
             self._close()
+
             return True
 
         except:
             self.logger.exception('Failed to write config file:')
+
             return False
 
     def exists(self):

@@ -77,7 +77,7 @@ class Alsa(AdvancedConsole):
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         self.asoundrc = Asoundrc()
 
     def __command(self, command):
@@ -254,7 +254,7 @@ class Alsa(AdvancedConsole):
             string or None
         """
         #search for device id
-	playback_devices = self.get_playback_devices()
+        playback_devices = self.get_playback_devices()
         for device_name in playback_devices.keys():
             if playback_devices[device_name][u'cardid']==card_id:
                 return device_name

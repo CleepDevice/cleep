@@ -36,16 +36,18 @@ class Snowboy():
     AGE_GROUP = [u'0_9', u'10_19', u'20_29', u'30_39', u'40_49', u'50_59', u'60+']
     GENDER = [u'F', u'M']
         
-    def __init__(self, token=None):
+    def __init__(self, cleep_filesystem, token=None):
         """
         Constructor
 
         Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             token (string): api token
         """
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
+        self.fs = cleep_filesystem
         self.token = token
 
     def set_api_token(self, token):
@@ -113,8 +115,9 @@ class Snowboy():
             if resp.status_code!=201:
                 self.logger.debug('Train response %s: %s' % (resp.status_code, resp.content))
             if resp.ok:
-                with io.open(voice_model_path, u'wb') as voice_model:
-                    voice_model.write(resp.content)
+                fd = self.fs.open(voice_model_path, u'wb')
+                fd.write(resp.content)
+                self.fs.close(fd)
                 self.logger.info('Personal voice model wrote to %s' % voice_model_path)
 
                 return voice_model_path

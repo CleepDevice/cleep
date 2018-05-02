@@ -44,7 +44,7 @@ class Audio(RaspIotResource):
 
         #members
         self.alsa = Alsa()
-        self.asoundrc = Asoundrc()
+        self.asoundrc = Asoundrc(self.cleep_filesystem)
 
     def get_module_config(self):
         """

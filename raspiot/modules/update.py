@@ -236,7 +236,7 @@ class Update(RaspIotModule):
                 #new update available
 
                 #get checksum key
-                self.__downloader = Download(self.__download_callback)
+                self.__downloader = Download(self.cleep_filesystem, self.__download_callback)
                 checksum_content = self.__downloader.download_file(self.__checksum[u'url'])
                 self.logger.debug('Checksum file content: %s' % checksum_content)
                 checksum, _ = checksum_content.split()

@@ -20,11 +20,14 @@ class CmdlineTxt(Config):
     KEY_CONSOLE = u'console'
     VALUE_CONSOLE = u'serial0,115200'
 
-    def __init__(self):
+    def __init__(self, cleep_filesystem):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        Config.__init__(self, self.CONF, None)
+        Config.__init__(self, cleep_filesystem, self.CONF, None)
 
     def __get_entries(self):
         """

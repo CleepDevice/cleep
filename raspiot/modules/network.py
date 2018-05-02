@@ -64,9 +64,9 @@ class Network(RaspIotModule):
         RaspIotModule.__init__(self, bus, debug_enabled)
 
         #tools
-        self.etcnetworkinterfaces = EtcNetworkInterfaces()
-        self.dhcpcd = DhcpcdConf()
-        self.wpasupplicant = WpaSupplicantConf()
+        self.etcnetworkinterfaces = EtcNetworkInterfaces(self.cleep_filesystem)
+        self.dhcpcd = DhcpcdConf(self.cleep_filesystem)
+        self.wpasupplicant = WpaSupplicantConf(self.cleep_filesystem)
         self.iw = Iw()
         self.iwlist = Iwlist()
         self.ifconfig = Ifconfig()
@@ -96,14 +96,14 @@ class Network(RaspIotModule):
 
         #handle startup config if cleep wifi conf exists
         if self.cleepwifi.exists():
-            self.logger.debug('Cleepwifi config file exists. Loading its config')
+            self.logger.debug(u'Cleepwifi config file exists. Loading its config')
             #read file content
             cleep_conf = self.cleepwifi.get_configuration()
-            self.logger.debug('cleep_conf: %s' % cleep_conf)
+            self.logger.debug(u'cleep_conf: %s' % cleep_conf)
             if cleep_conf:
                 #search for existing config
                 interface_found = None
-                self.logger.debug('wifi networks: %s' % self.wifi_networks)
+                self.logger.debug(u'Wifi networks: %s' % self.wifi_networks)
                 for interface in self.wifi_networks.keys():
                     if cleep_conf[u'network'] in self.wifi_networks[interface].keys() and not self.wifi_networks[interface][cleep_conf[u'network']][u'configured']:
                         self.logger.debug(u'Interface %s found' % interface)
@@ -114,12 +114,12 @@ class Network(RaspIotModule):
                 if interface_found:
                     #TODO handle hidden network
                     if not self.wpasupplicant.add_network(cleep_conf[u'network'], cleep_conf[u'encryption'], cleep_conf[u'password'], False):
-                        self.logger.error('Unable to use config from %s' % self.CLEEP_WIFI_CONF)
+                        self.logger.error(u'Unable to use config from %s' % self.CLEEP_WIFI_CONF)
                     else:
                         self.reconfigure_interface(interface_found)
-                        self.logger.info('Wifi config from Cleep loaded successfully')
+                        self.logger.info(u'Wifi config from Cleep loaded successfully')
                 else:
-                    self.logger.debug('No interface found or network already configured')
+                    self.logger.debug(u'No interface found or network already configured')
 
         #launch network watchdog
         self.__network_watchdog_task = Task(5.0, self.__check_network_connection, self.logger)

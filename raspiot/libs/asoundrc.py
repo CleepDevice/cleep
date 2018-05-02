@@ -31,11 +31,14 @@ ctl.!default {
     PCM_SECTION = u'pcm.!default'
     CTL_SECTION = u'ctl.!default'
     
-    def __init__(self):
+    def __init__(self, cleep_filesystem):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        Config.__init__(self, self.CONF, u'', False)
+        Config.__init__(self, cleep_filesystem, self.CONF, u'', False)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)

@@ -6,7 +6,7 @@ import re
 import time
 import logging
 
-class Lsblk():
+class Lsblk(Console):
     """
     """
 
@@ -16,7 +16,9 @@ class Lsblk():
         """
         Constructor
         """
-        self.console = Console()
+        Console.__init__(self)
+
+        #members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.timestamp = None
         self.devices = {}
@@ -31,7 +33,7 @@ class Lsblk():
             self.logger.debug('Don\'t refresh')
             return
 
-        res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
+        res = self.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
         devices = {}
         if not res[u'error'] and not res[u'killed']:
             self.partitions = []

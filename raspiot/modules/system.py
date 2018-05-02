@@ -81,7 +81,7 @@ class System(RaspIotModule):
         self.__process = None
         self.__need_restart = False
         self.__need_reboot = False
-        self.hostname = Hostname()
+        self.hostname = Hostname(self.cleep_filesystem)
 
         #events
         self.systemTimeNow = self._get_event(u'system.time.now')
@@ -569,7 +569,7 @@ class System(RaspIotModule):
         if module is None or len(module)==0:
             raise MissingParameter(u'Module parameter is missing')
 
-        raspiot = RaspiotConf()
+        raspiot = RaspiotConf(self.cleep_filesystem)
         if raspiot.install_module(module):
             self.__need_restart = True
 
@@ -588,7 +588,7 @@ class System(RaspIotModule):
         if module is None or len(module)==0:
             raise MissingParameter(u'Module parameter is missing')
 
-        raspiot = RaspiotConf()
+        raspiot = RaspiotConf(self.cleep_filesystem)
         if raspiot.uninstall_module(module):
             self.__need_restart = True
 
@@ -848,7 +848,7 @@ class System(RaspIotModule):
                 ]
         """
         #get mounted partitions and all devices
-        fstab = Fstab()
+        fstab = Fstab(self.cleep_filesystem)
         mounted_partitions = fstab.get_mountpoints()
         self.logger.debug(u'mounted_partitions=%s' % mounted_partitions)
         all_devices = fstab.get_all_devices()
@@ -978,7 +978,7 @@ class System(RaspIotModule):
             raise MissingParameter(u'Debug parameter is missing')
 
         #save log level in conf file
-        conf = RaspiotConf()
+        conf = RaspiotConf(self.cleep_filesystem)
         if debug:
             conf.enable_module_debug(module)
         else:

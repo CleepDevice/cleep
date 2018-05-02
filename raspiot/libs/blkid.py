@@ -5,12 +5,17 @@ from console import Console
 import re
 import time
 
-class Blkid():
+class Blkid(Console):
 
     CACHE_DURATION = 5.0
 
     def __init__(self):
-        self.console = Console()
+        """
+        Constructor
+        """
+        Console.__init__(self)
+
+        #set members
         self.timestamp = None
         self.devices = {}
         self.uuids = {}
@@ -23,7 +28,7 @@ class Blkid():
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
-        res = self.console.command(u'/sbin/blkid')
+        res = self.command(u'/sbin/blkid')
         if not res[u'error'] and not res[u'killed']:
             #parse data
             matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)

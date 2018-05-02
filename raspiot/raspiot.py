@@ -43,18 +43,20 @@ class RaspIot(BusClient):
             self.logger.setLevel(logging.DEBUG)
         self.debug_enabled = debug_enabled
 
+        #members
+        self.events_factory = bootstrap[u'events_factory']
+        self.logger.warning('boostrap: %s' % bootstrap)
+        self.cleep_filesystem = bootstrap[u'cleep_filesystem']
+
         #load and check configuration
         self.__configLock = Lock()
         self._config = self._load_config()
         if getattr(self, u'DEFAULT_CONFIG', None) is not None:
             self._check_config(self.DEFAULT_CONFIG)
 
-        #members
-        self.events_factory = bootstrap[u'events_factory']
-
     def __del__(self):
         """
-        Destructor.
+        Destructor
         """
         self.stop()
 
@@ -100,15 +102,19 @@ class RaspIot(BusClient):
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.logger.debug(u'Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
+                #TODO f = self.cleep_filesystem.open(path, u'r')
                 f = open(path, u'r')
                 raw = f.read()
+                #self.cleep_filesystem.close(f)
                 f.close()
             else:
                 #no conf file yet. Create default one
+                #f = self.cleep_filesystem.open(path, u'w')
                 f = open(path, u'w')
                 default = {}
                 raw = json.dumps(default)
                 f.write(raw)
+                #self.cleep_filesystem.close(f)
                 f.close()
                 time.sleep(.25) #make sure file is written
             self._config = json.loads(raw)
@@ -140,8 +146,10 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         try:
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
+            #f = self.cleep_filesystem.open(path, u'w')
             f = open(path, u'w')
             f.write(json.dumps(config))
+            #self.cleep_filesystem.close(f)
             f.close()
             force_reload = True
         except:
