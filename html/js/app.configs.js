@@ -17,9 +17,6 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
         .when('/dashboard', {
             template: '<div dashboard-directive></div>'
         })
-        .when('/configuration', {
-            template: '<div configuration-directive></div>'
-        })
         .when('/modules', {
             template: '<div modules-directive></div>'
         })
