@@ -92,7 +92,7 @@ RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
  */
 RaspIot.config(['blockUIConfig', function(blockUIConfig) {
     //blockUIConfig.message = 'Loading';
-    blockUIConfig.template = '<div class="block-ui-overlay"></div><div class="block-ui-message-container" layout="row" layout-sm="column" layout-align="space-around"><md-progress-circular md-mode="indeterminate"></md-progress-circular></div>';
+    blockUIConfig.template = '<div class="block-ui-overlay"></div><div layout="column" layout-align="center center" class="block-ui-message-container"><div ng-if="state.spinner===undefined || state.spinner===true"><md-progress-circular md-mode="indeterminate"></md-progress-circular></div><div>&nbsp;</div><div><span class="md-subhead">{{ state.message }}</span></div></div>';
     blockUIConfig.autoBlock = false;
 }]);
 

@@ -43,7 +43,7 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         {
             if( block )
             {
-                self.networkBlockui.start('Loading...');
+                self.networkBlockui.start({message:'Loading...'});
             }
             else
             {

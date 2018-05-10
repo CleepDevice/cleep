@@ -57,12 +57,16 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                         if( response.data.event.endsWith('reboot') )
                         {
                             self.rebooting = true;
-                            blockUI.start('System is rebooting. It might take some time.');
+                            blockUI.start({message:'System is rebooting. It might take some time.'});
                         }
                         else if( response.data.event.endsWith('restart') )
                         {
                             self.rebooting = true;
-                            blockUI.start('System is restarting. Please wait few seconds.');
+                            blockUI.start({message:'System is restarting. Please wait few seconds.'});
+                        }
+                        else if( response.data.event.endsWith('halt') )
+                        {
+                            blockUI.start({message:'System is halted.', spinner:false});
                         }
                     }
                     else
@@ -93,8 +97,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                     //handle connection loss
                     if( err=='Connection problem' && !self.notConnected )
                     {
-                        blockUI.message = 'Connection lost with the device.';
-                        blockUI.start('Connection lost with the device.');
+                        blockUI.start({message:'Connection lost with the device.', spinner:false});
                         self.notConnected = true;
                     }
                 }
