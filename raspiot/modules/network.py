@@ -96,7 +96,7 @@ class Network(RaspIotModule):
 
         #handle startup config if cleep wifi conf exists
         if self.cleepwifi.exists():
-            self.logger.debug(u'Cleepwifi config file exists. Loading its config')
+            self.logger.debug(u'Cleepwifi config file exists. Load wifi config')
             #read file content
             cleep_conf = self.cleepwifi.get_configuration()
             self.logger.debug(u'cleep_conf: %s' % cleep_conf)
@@ -120,6 +120,9 @@ class Network(RaspIotModule):
                         self.logger.info(u'Wifi config from Cleep loaded successfully')
                 else:
                     self.logger.debug(u'No interface found or network already configured')
+
+                #finally delete file
+                self.cleepwifi.delete(self.cleep_filesystem)
 
         #launch network watchdog
         self.__network_watchdog_task = Task(5.0, self.__check_network_connection, self.logger)

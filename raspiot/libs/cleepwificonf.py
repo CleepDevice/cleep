@@ -70,4 +70,27 @@ class CleepWifiConf():
         """
         return cleep_filesystem.remove(self.CONF)
 
-            
+    def create_content(self, network, password, encryption, hidden):
+        """
+        Generate cleepwifi.conf file content to awaited format. Encrypt password if necessary (wpa, wpa2)
+        Args:
+            network (string): network name
+            password (string): network password
+            encryption (string): network encryption (wep|wpa|wpa2|unsecured)
+            hidden (bool): connect to hidden network
+        Return:
+            string: cleepwifi.conf file content
+        """
+        #encrypt password
+        if encryption in ('wpa', 'wpa2'):
+            password = converters.wpa_passphrase(network, password)
+        
+        config = {
+            u'network': network,
+            u'password': password,
+            u'encryption': encryption,
+            u'hidden': hidden
+        }
+
+        return json.dumps(config)
+
