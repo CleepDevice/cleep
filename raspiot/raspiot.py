@@ -45,7 +45,6 @@ class RaspIot(BusClient):
 
         #members
         self.events_factory = bootstrap[u'events_factory']
-        self.logger.warning('boostrap: %s' % bootstrap)
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
 
         #load and check configuration
