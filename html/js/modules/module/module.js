@@ -17,34 +17,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.__getConfigFilesToLoad = function(desc, module)
         {
             //init
-            /*var url = self.pluginsPath + '/' + module + '/';
-            var files = [];
-            var types = ['js', 'css', 'html'];
-
-            //check desc content
-            if( !desc || !desc.config )
-            {
-                return files;
-            }
-
-            //append files by types
-            for( var j=0; j<types.length; j++ )
-            {
-                if( desc.config[types[j]] )
-                {
-                    for( var i=0; i<desc.config[types[j]].length; i++)
-                    {
-                        files.push({
-                            'type': types[j],
-                            'path': url + desc.config[types[j]][i]
-                        });
-                    }
-                }
-            }
-
-            return files;*/
-
-            //init
             var url = self.pluginsPath + '/' + module + '/';
             var files = {
                 'html': [],

@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var installDirective = function($q, raspiotService, systemService, toast) {
+var installDirective = function($q, raspiotService, toast) {
 
     var installController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -25,7 +25,7 @@ var installDirective = function($q, raspiotService, systemService, toast) {
          */
         self.install = function(module)
         {
-            systemService.installModule(module)
+            raspiotService.installModule(module)
                 .then(function(resp) {
                     //reload system config to activate restart flag (see main controller)
                     return raspiotService.reloadModuleConfig('system');
@@ -41,7 +41,7 @@ var installDirective = function($q, raspiotService, systemService, toast) {
          */
         self.uninstall = function(module)
         {
-            systemService.uninstallModule(module)
+            raspiotService.uninstallModule(module)
                 .then(function(resp) {
                     //reload system config
                     return raspiotService.reloadModuleConfig('system');
@@ -129,5 +129,5 @@ var installDirective = function($q, raspiotService, systemService, toast) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('installDirective', ['$q', 'raspiotService', 'systemService', 'toastService', installDirective]);
+RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', installDirective]);
 

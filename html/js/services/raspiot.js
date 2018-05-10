@@ -520,7 +520,47 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
      */
     self.getModulesDebug = function() {
         return rpcService.sendCommand('get_modules_debug', 'inventory', null, 20);
-    }; 
+    };
+
+    /**
+     * Reboot system
+     * Duplicated function from system service to avoid adhesion of system service from angular app
+     */
+    self.reboot = function() {
+        return rpcService.sendCommand('reboot_system', 'system');
+    };
+
+    /**
+     * Halt system
+     * Duplicated function from system service to avoid adhesion of system service from angular app
+     */
+    self.halt = function() {
+        return rpcService.sendCommand('halt_system', 'system');
+    };
+
+    /**
+     * Restart raspiot
+     * Duplicated function from system service to avoid adhesion of system service from angular app
+     */
+    self.restart = function() {
+        return rpcService.sendCommand('restart', 'system');
+    };
+
+    /**
+     * Install module
+     * Duplicated function from system service to avoid adhesion of system service from angular app
+     */
+    self.installModule = function(module) {
+        return rpcService.sendCommand('install_module', 'system', {'module':module});
+    };
+
+    /**
+     * Uninstall module
+     * Duplicated function from system service to avoid adhesion of system service from angular app
+     */
+    self.uninstallModule = function(module) {
+        return rpcService.sendCommand('uninstall_module', 'system', {'module':module});
+    };
 
 };
     

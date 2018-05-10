@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, systemService, $window, toast, confirm) {
+var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -32,7 +32,7 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
         {
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
-                    return systemService.uninstallModule(module);
+                    return raspiotService.uninstallModule(module);
                 })
                 .then(function(resp) {
                     //reload system config to activate restart flag (see main controller)
@@ -123,5 +123,5 @@ var modulesDirective = function($rootScope, raspiotService, systemService, $wind
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', 'systemService', '$window', 'toastService', 'confirmService', modulesDirective]);
+RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', modulesDirective]);
 

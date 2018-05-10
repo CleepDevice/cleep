@@ -10,7 +10,7 @@ var RaspIot = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, /*systemService,*/ blockUI, toast) {
+var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, blockUI, toast) {
 
     var self = this;
     self.needRestart = false;
@@ -141,18 +141,18 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     /**
      * Restart raspiot
      */
-    /*self.restart = function()
+    self.restart = function()
     {
-        systemService.restart();
-    };*/
+        raspiotService.restart();
+    };
 
     /**
      * Reboot raspberry
      */
-    /*self.reboot = function()
+    self.reboot = function()
     {
-        systemService.reboot();
-    };*/
+        raspiotService.reboot();
+    };
 
     /**
      * Init main controller
@@ -186,5 +186,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', /*'systemService',*/ 'blockUI', 'toastService', mainController]);
+RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', 'blockUI', 'toastService', mainController]);
 
