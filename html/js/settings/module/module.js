@@ -6,7 +6,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
     var moduleController = ['$scope','$element', function($scope, $element) {
         var self = this;
-        self.pluginsPath = 'js/plugins'
+        self.modulesPath = 'js/modules/';
         self.module = '';
 
         /**
@@ -17,7 +17,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.__getConfigFilesToLoad = function(desc, module)
         {
             //init
-            var url = self.pluginsPath + '/' + module + '/';
+            var url = self.modulesPath + module + '/';
             var files = {
                 'html': [],
                 'jscss': []
@@ -58,7 +58,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
          */
         self.__loadJsCssFiles = function(files)
         {
-            console.log('--> load js/css files', files);
             //load js files using lazy loader
             return $ocLazyLoad.load({
                 'reconfig': false,
@@ -73,7 +72,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
          */
         self.__loadHtmlFiles = function(htmlFiles)
         {
-            console.log('--> load html files', htmlFiles);
             //init
             var promises = [];
             var d = $q.defer();
@@ -125,7 +123,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
             raspiotService.getModuleDescription(module)
                 .then(function(desc) {
                     files = self.__getConfigFilesToLoad(desc, module);
-                    console.log('DESC-CONFIG', files);
 
                     //load html templates first
                     return self.__loadHtmlFiles(files.html);
@@ -159,7 +156,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
     };
 
     return {
-        templateUrl: 'js/modules/module/module.html',
+        templateUrl: 'js/settings/module/module.html',
         replace: true,
         controller: moduleController,
         controllerAs: 'moduleCtl',

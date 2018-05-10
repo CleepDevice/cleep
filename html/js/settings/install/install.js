@@ -2,12 +2,14 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm) {
+var installDirective = function($q, raspiotService, toast) {
 
-    var modulesController = ['$scope','$element', function($scope, $element) {
+    var installController = ['$scope','$element', function($scope, $element) {
         var self = this;
-        self.modules = [];
+        self.modules = raspiotService.modules;
         self.search = '';
+        self.country = null;
+        self.country_alpha = null;
 
         /**
          * Clear search input
@@ -18,11 +20,20 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         };
 
         /**
-         * Redirect to install module page
+         * Install module
+         * @param module: module name (string)
          */
-        self.toInstallPage = function()
+        self.install = function(module)
         {
-            $window.location.href = '#!install';
+            raspiotService.installModule(module)
+                .then(function(resp) {
+                    //reload system config to activate restart flag (see main controller)
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function(config) {
+                    self.updateModulePendingStatus(module);
+                    toast.success('Module ' + module + ' will be installed after next restart.' );
+                });
         };
 
         /**
@@ -30,36 +41,32 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.uninstall = function(module)
         {
-            confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
-                .then(function() {
-                    return raspiotService.uninstallModule(module);
-                })
+            raspiotService.uninstallModule(module)
                 .then(function(resp) {
-                    //reload system config to activate restart flag (see main controller)
+                    //reload system config
                     return raspiotService.reloadModuleConfig('system');
-                })  
+                })
                 .then(function(config) {
-                    self.updateModulePendingStatus(module);
-                    toast.success('Module ' + module + ' will be uninstalled after next restart.' );
-                }); 
+                    toast.success('Module ' + module + ' is uninstalled. Please restart raspiot' );
+                });
         };
 
-        /** 
+        /**
          * Update pending module status after install
          * Everything will be reloaded automatically after page reloading
          * @param module: module name
          */
         self.updateModulePendingStatus = function(module)
-        {   
+        {
             //update pending status in local modules
             for( var i=0; i<self.modules.length; i++ )
-            {   
+            {
                 if( self.modules[i].name===module )
-                {   
+                {
                     self.modules[i].pending = true;
                 }
             }
-
+            
             //update pending status in raspiotService
             raspiotService.modules[module].pending = true;
         };
@@ -69,12 +76,20 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.init = function()
         {
+            //get configured user country
+            if( raspiotService.modules.system && raspiotService.modules.system.config && raspiotService.modules.system.config.city )
+            {
+                self.country = raspiotService.modules.system.config.city.country;
+                self.country_alpha = raspiotService.modules.system.config.city.alpha2;
+            }
+
             //flatten modules to array to allow sorting with ngrepeat
             var modules = [];
             for( var module in raspiotService.modules )
             {
-                //keep only installed modules
-                if( raspiotService.modules[module].installed )
+                //filter not installed modules and modules for user configured country
+                var country_alpha = raspiotService.modules[module].country;
+                if( !raspiotService.modules[module].installed && (country_alpha.length===0 || country_alpha==self.country_alpha))
                 {
                     //add module name as 'name' property
                     raspiotService.modules[module].name = module;
@@ -85,15 +100,6 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 
             //save modules list
             self.modules = modules;
-
-            //add fab action
-            action = [{
-                callback: self.toInstallPage,
-                icon: 'plus',
-                aria: 'Install module',
-                tooltip: 'Install module'
-            }];
-            $rootScope.$broadcast('enableFab', action);
         };
 
         /**
@@ -109,19 +115,19 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         );
     }];
 
-    var modulesLink = function(scope, element, attrs, controller) {
+    var installLink = function(scope, element, attrs, controller) {
         //see watchcollection above !
     };
 
     return {
-        templateUrl: 'js/modules/modules/modules.html',
+        templateUrl: 'js/settings/install/install.html',
         replace: true,
-        controller: modulesController,
-        controllerAs: 'modulesCtl',
-        link: modulesLink
+        controller: installController,
+        controllerAs: 'installCtl',
+        link: installLink
     };
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', modulesDirective]);
+RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', installDirective]);
 
