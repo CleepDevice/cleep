@@ -1,0 +1,10 @@
+{
+    "icon": "worker",
+    "system": {
+        "widgets": {
+            "js": ["developer.widget.js"],
+            "html": ["developer.widget.html"]
+        },
+        "services": ["developer.service.js"]
+    }
+}

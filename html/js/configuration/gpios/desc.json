@@ -1,0 +1,14 @@
+{
+    "icon": "video-input-component",
+    "system": {
+        "widgets": {
+            "js": ["gpio.widget.js"],
+            "html": ["gpio.widget.html"]
+        },
+        "services": ["gpios.service.js"]
+    },
+    "config": {
+        "js": ["gpios.directive.js"],
+        "html": ["gpios.directive.html", "addGpio.html"]
+    }
+}

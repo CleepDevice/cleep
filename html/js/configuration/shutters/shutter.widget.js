@@ -40,7 +40,7 @@ var widgetShutterDirective = function(shuttersService) {
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'levelCtl',
-                templateUrl: 'js/dashboard/widgets/shutters/levelDialog.html',
+                templateUrl: 'levelDialog.widget.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true
             });
@@ -74,7 +74,7 @@ var widgetShutterDirective = function(shuttersService) {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/shutters/shutter.html',
+        templateUrl: 'shutter.widget.html',
         replace: true,
         scope: {
             'device': '='

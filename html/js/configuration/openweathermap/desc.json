@@ -1,0 +1,14 @@
+{
+    "icon": "cloud",
+    "system": {
+        "widgets": {
+            "js": ["openweathermap.widget.js"],
+            "html": ["openweathermap.widget.html", "openweathermapDialog.widget.html"]
+        },
+        "services": ["openweathermap.service.js"]
+    },
+    "config": {
+        "js": ["openweathermap.directive.js"],
+        "html": ["openweathermap.directive.html"]
+    }
+}

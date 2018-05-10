@@ -1,0 +1,10 @@
+{
+    "icon": "text-to-speech",
+    "system": {
+        "services": ["speechrecognition.service.js"]
+    },
+    "config": {
+        "js": ["speechrecognition.directive.js"],
+        "html": ["speechrecognition.directive.html"]
+    }
+}

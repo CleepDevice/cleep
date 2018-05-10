@@ -18,7 +18,7 @@ var widgetTemperatureDirective = function(raspiotService) {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/sensors/temperature.html',
+        templateUrl: 'temperature.widget.html',
         replace: true,
         scope: {
             'device': '='

@@ -1,0 +1,7 @@
+{
+    "icon": "send",
+    "config": {
+        "js": ["pushover.directive.js", "pushover.service.js"],
+        "html": ["pushover.directive.html"]
+    }
+}

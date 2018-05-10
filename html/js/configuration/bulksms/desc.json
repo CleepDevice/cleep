@@ -1,0 +1,7 @@
+{
+    "icon": "message-processing",
+    "config": {
+        "js": ["bulksms.directive.js", "bulksms.service.js"],
+        "html": ["bulksms.directive.html"]
+    }
+}

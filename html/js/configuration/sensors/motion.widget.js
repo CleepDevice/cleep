@@ -16,7 +16,7 @@ var widgetMotionDirective = function(raspiotService) {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/sensors/motion.html',
+        templateUrl: 'motion.widget.html',
         replace: true,
         scope: {
             'device': '='

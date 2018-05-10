@@ -1,0 +1,14 @@
+{
+    "icon": "heart-pulse",
+    "system": {
+        "widgets": {
+            "js": ["clock.widget.js", "monitor.widget.js"],
+            "html": ["clock.widget.html", "monitor.widget.html", "monitorDialog.widget.html"]
+        },
+        "services": ["system.service.js"]
+    },
+    "config": {
+        "js": ["system.directive.js"],
+        "html": ["system.directive.html"]
+    }
+}

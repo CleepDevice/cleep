@@ -4,7 +4,7 @@
  *  - installed modules: module and module helpers (reload config, get config...)
  *  - devices: all devices and devices helpers (reload devices)
  */
-var raspiotService = function($rootScope, $q, toast, rpcService, objectsService) {
+var raspiotService = function($rootScope, $q, toast, rpcService, objectsService, $http, $ocLazyLoad, $templateCache) {
     var self = this;
     self.__deferred_modules = $q.defer();
     self.__deferred_events = $q.defer();
@@ -13,45 +13,223 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     self.modules = {};
     self.renderers = {};
     self.events = {};
+    self.configurationPath = 'js/configuration/';
 
     /**
-     * Set module icon (material icons)
+     * Build list of system files
+     * @param module: module name
+     * @param desc: description content file (json)
+     * @return object { js:[], html:[] }
      */
-    self.__setModuleIcon = function(module)
+    self.__getModuleSystemFiles = function(module, desc)
     {
-        var icons = {
-            actions: 'play-box-outline',
-            database: 'database',
-            gpios: 'video-input-component',
-            messageboard: 'counter',
-            sensors: 'chip',
-            shutters: 'unfold-more-horizontal',
-            sounds: 'volume-high',
-            system: 'heart-pulse',
-            network: 'ethernet',
-            bulksms: 'message-processing',
-            freemobilesms: 'message-processing',
-            smtp: 'email',
-            pushover: 'send',
-            openweathermap: 'cloud',
-            cleepbus: 'video-input-antenna',
-            developer: 'worker',
-            update: 'update',
-            audio: 'speaker',
-            speechrecognition: 'text-to-speech',
-            niccolometronome: 'metronome',
-            respeaker2mic: 'microphone-settings'
+        //init
+        var files = {
+            'js': [],
+            'html': []
         };
+        var entries = ['widgets', 'services'];
 
-        if( !angular.isUndefined(icons[module]) )
+        if( !desc || !desc.system )
         {
-            self.modules[module].icon = icons[module];
+            return files;
+        }
+
+        //get widget files
+        if( desc.system.widgets && desc.system.widgets.js )
+        {
+            for( var i=0; i<desc.system.widgets.js.length; i++ )
+            {
+                files.js.push(self.configurationPath + module + '/' + desc.system.widgets.js[i]);
+            }
+        }
+        if( desc.system.widgets && desc.system.widgets.html )
+        {
+            for( var i=0; i<desc.system.widgets.html.length; i++ )
+            {
+                files.html.push(self.configurationPath + module + '/' + desc.system.widgets.html[i]);
+            }
+        }
+
+        //get services
+        if( desc.system.services )
+        {
+            for( var i=0; i<desc.system.services.length; i++ )
+            {
+                files.js.push(self.configurationPath + module + '/' + desc.system.services[i]);
+            }
+        }
+
+        return files;
+    };
+
+    /**
+     * Load js files
+     * Use oclazyloader to inject automatically angular stuff
+     * @param jsFiles: list of js files (with full path)
+     * @return promise
+     */
+    self.__loadJsFiles = function(jsFiles)
+    {
+        //load js files using lazy loader
+        return $ocLazyLoad.load({
+            'reconfig': true,
+            'rerun': true,
+            'files': jsFiles
+        });
+    };
+
+    /**
+     * Load html files
+     * Html are considerated as templates and saved in angular templateCache for easy use
+     * @param htmlFiles: list of html files (with full path)
+     * @return promise
+     */
+    self.__loadHtmlFiles = function(htmlFiles)
+    {
+        //init
+        var promises = [];
+        var d = $q.defer();
+
+        //fill templates promises
+        for( var i=0; i<htmlFiles.length; i++ )
+        {
+            promises.push($http.get(htmlFiles[i]));
+        }
+
+        //and execute them
+        $q.all(promises)
+            .then(function(templates) {
+                //check if templates available
+                if( !templates ) 
+                    return $q.resolve();
+
+                //cache templates
+                for( var i=0; i<templates.length; i++ )
+                {
+                    var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                    $templateCache.put(templateName, templates[i].data);
+                }
+            }, function(err) {
+                console.error('Error occured loading html files:', err);
+            })
+            .finally(function() {
+                d.resolve();
+            });
+
+        return d.promise;
+    };
+
+    /**
+     * Load module
+     * @return promise
+     */
+    self.__loadModule = function(module)
+    {
+        //init
+        var url = self.configurationPath + '/' + module + '/desc.json';
+        var desc = null;
+        var d = $q.defer();
+        var files = null;
+
+        //load desc.json file from module folder
+        $http.get(url)
+            .then(function(resp) {
+                //save desc content
+                self.modules[module].desc = resp.data;
+
+                //set module icon
+                self.modules[module].icon = 'bookmark';
+                if( resp.data.icon )
+                {
+                    self.modules[module].icon = resp.data.icon;
+                }
+
+                //module "has config" flag
+                self.modules[module].hasConfig = false;
+                if( resp.data.config )
+                {
+                    self.modules[module].hasConfig = true;
+                }
+
+                //load module system objects (widgets and services)
+                files = self.__getModuleSystemFiles(module, resp.data);
+                if( files.js.length==0 && files.html.length==0 )
+                {
+                    //no files to lazyload, stop chain here
+                    return $q.reject('no-files');
+                };
+
+                //load html files first
+                return self.__loadHtmlFiles(files.html);
+
+            }, function(err) {
+                //save empty desc for module
+                self.modules[module].desc = {};
+
+                //and reject promise
+                console.error('Error occured during "' + module + '" description file', err);
+
+                //reject final promise
+                d.reject();
+            })
+            .then(function(resp) {
+                //load js files
+                return self.__loadJsFiles(files.js);
+
+            }, function(err) {
+                if( err!='no-files' )
+                {
+                    console.error('Error loading modules html files:', err);
+                }
+            })
+            .then(function() {
+                //nothing to do
+            }, function(err) {
+                console.error('Error loading modules js files:', err);
+            })
+            .finally(function() {
+                //modules are completely loaded
+                d.resolve();
+            });
+
+        return d.promise;
+    };
+
+    /**
+     * Return module description (desc.json file content)
+     * @return promise<json|null>
+     */
+    self.getModuleDescription = function(module)
+    {
+        //init
+        var deferred = $q.defer();
+
+        if( self.__deferred_modules===null )
+        {
+            //module config already loaded, resolve it if available
+            if( self.modules[module] )
+            {
+                deferred.resolve(self.modules[module].desc);
+            }
+            else
+            {
+                console.error('Unable to get description of unknown module "' + module + '"');
+                deferred.reject(null);
+            }
         }
         else
         {
-            //default icon
-            self.modules[module].icon = 'bookmark';
+            //module not loaded, wait for it
+            self.__deferred_modules.promise
+                .then(function() {
+                    deferred.resolve(self.modules[module].desc);
+                }, function() {
+                    deferred.reject(null);
+                });
         }
+
+        return deferred.promise;
     };
 
     /**
@@ -62,17 +240,25 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
     {
         self.modules = modules;
 
-        //inject module icon in each entry
+        //load description for each loaded module
+        var promises = [];
         for( module in self.modules )
         {
-            self.__setModuleIcon(module);
-
-            self.modules[module].hasService = objectsService._moduleHasService(module);
+            promises.push(self.__loadModule(module));
         }
 
-        //resolve deferred
-        self.__deferred_modules.resolve();
-        self.__deferred_modules = null;
+        //resolve deferred once all promises terminated
+        //TODO sequentially chain promises https://stackoverflow.com/a/43543665 or https://stackoverflow.com/a/24262233
+        //$q.all execute finally statement when reject is triggered in one of promises
+        return $q.all(promises)
+            .then(function(resp) {
+            }, function(err) {
+                //necessary to avoid rejection warning
+            })
+            .finally(function() {
+                self.__deferred_modules.resolve();
+                self.__deferred_modules = null;
+            });
     };
 
     /**
@@ -113,6 +299,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
 
     /**
      * Reload configuration of specified module
+     * @param module: module name
+     * @return promise
      */
     self.reloadModuleConfig = function(module)
     {
@@ -337,5 +525,5 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService)
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('raspiotService', ['$rootScope', '$q', 'toastService', 'rpcService', 'objectsService', raspiotService]);
+RaspIot.service('raspiotService', ['$rootScope', '$q', 'toastService', 'rpcService', 'objectsService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
 

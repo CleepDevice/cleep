@@ -96,3 +96,13 @@ RaspIot.config(['blockUIConfig', function(blockUIConfig) {
     blockUIConfig.autoBlock = false;
 }]);
 
+/**
+ * Lazyload configuration
+ */
+RaspIot.config(['$ocLazyLoadProvider', function($ocLazyLoadProvider) {
+    $ocLazyLoadProvider.config({
+       debug: true,
+       events: false
+    });
+}]);
+

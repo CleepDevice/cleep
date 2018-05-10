@@ -1,0 +1,10 @@
+{
+    "icon": "update",
+    "system": {
+        "services": ["update.service.js"]
+    },
+    "config": {
+        "js": ["update.directive.js"],
+        "html": ["update.directive.html", "logs.html"]
+    }
+}

@@ -3,14 +3,14 @@
  */
 var RaspIot = angular.module(
     'RaspIot',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror']
+    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror', 'oc.lazyLoad']
 );
 
 /**
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, systemService, blockUI, toast) {
+var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, /*systemService,*/ blockUI, toast) {
 
     var self = this;
     self.needRestart = false;
@@ -112,29 +112,18 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
      */
     self.loadConfig = function()
     {
+        var config;
+
         rpcService.getConfig()
-            .then(function(config) {
-                //inject configurations directives
-                for( var module in config.modules )
-                {
-                    //prepare angular service and directive
-                    var angularService = module + 'Service';
-                    if( $injector.has(angularService) )
-                    {
-                        //module has service, inject it then register it
-                        objectsService._addService(module, $injector.get(angularService));
-                    }
-                    else
-                    {
-                        //module has no associated service
-                        console.warn('Module "' + angularService + '" has no angular service');
-                    }
-                }
+            .then(function(resp) {
+                //save response as config to use it in next promise step
+                config = resp;
 
-                //save modules configurations as soon as possible to make sure
-                //configurations directives can access their own configs when they start
-                raspiotService._setModules(config.modules);
+                //set and load modules
+                return raspiotService._setModules(config.modules);
 
+            })
+            .then(function() {
                 //set other stuff
                 raspiotService._setDevices(config.devices);
                 raspiotService._setRenderers(config.renderers);
@@ -152,18 +141,18 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     /**
      * Restart raspiot
      */
-    self.restart = function()
+    /*self.restart = function()
     {
         systemService.restart();
-    };
+    };*/
 
     /**
      * Reboot raspberry
      */
-    self.reboot = function()
+    /*self.reboot = function()
     {
         systemService.reboot();
-    };
+    };*/
 
     /**
      * Init main controller
@@ -197,5 +186,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', 'systemService', 'blockUI', 'toastService', mainController]);
+RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', /*'systemService',*/ 'blockUI', 'toastService', mainController]);
 

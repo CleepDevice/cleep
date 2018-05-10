@@ -285,7 +285,7 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q, open
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'owmCtl',
-                templateUrl: 'js/dashboard/widgets/openweathermap/openweathermapDialog.html',
+                templateUrl: 'openweathermapDialog.widget.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 onComplete: self.loadDialogData
@@ -318,7 +318,7 @@ var widgetOpenweathermapDirective = function(raspiotService, $mdDialog, $q, open
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/openweathermap/openweathermap.html',
+        templateUrl: 'openweathermap.widget.html',
         replace: true,
         scope: {
             'device': '='

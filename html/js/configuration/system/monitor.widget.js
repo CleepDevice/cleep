@@ -216,7 +216,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'monitorCtl',
-                templateUrl: 'js/dashboard/widgets/system/monitorDialog.html',
+                templateUrl: 'monitorDialog.widget.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 onShowing: self.showDialog,                
@@ -251,7 +251,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/system/monitor.html',
+        templateUrl: 'monitor.widget.html',
         replace: true,
         scope: {
             'device': '='

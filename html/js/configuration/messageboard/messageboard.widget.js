@@ -11,7 +11,7 @@ var widgetMessageboardDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/messageboard/messageboard.html',
+        templateUrl: 'messageboard.widget.html',
         replace: true,
         scope: {
             'device': '='

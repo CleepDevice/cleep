@@ -1,0 +1,7 @@
+{
+    "icon": "email",
+    "config": {
+        "js": ["smtp.directive.js", "smtp.service.js"],
+        "html": ["smtp.directive.html"]
+    }
+}

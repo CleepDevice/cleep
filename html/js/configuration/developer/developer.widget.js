@@ -34,7 +34,7 @@ var widgetDeveloperDirective = function() {
 
     return {
         restrict: 'EA',
-        templateUrl: 'js/dashboard/widgets/developer/developer.html',
+        templateUrl: 'developer.widget.html',
         replace: true,
         scope: {
             'device': '='
