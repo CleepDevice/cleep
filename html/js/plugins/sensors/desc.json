@@ -9,6 +9,6 @@
     },
     "config": {
         "js": ["sensors.directive.js"],
-        "html": ["sensors.directive.html", "addSensor.html"]
+        "html": ["sensors.directive.html", "addSensor.directive.html"]
     }
 }

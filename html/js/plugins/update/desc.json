@@ -5,6 +5,6 @@
     },
     "config": {
         "js": ["update.directive.js"],
-        "html": ["update.directive.html", "logs.html"]
+        "html": ["update.directive.html", "logs.directive.html"]
     }
 }

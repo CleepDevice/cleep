@@ -57,7 +57,7 @@ var shuttersConfigDirective = function($rootScope, shuttersService, raspiotServi
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'shuttersCtl',
-                templateUrl: 'js/configuration/shutters/addShutter.html',
+                templateUrl: 'addShutter.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -154,7 +154,7 @@ var shuttersConfigDirective = function($rootScope, shuttersService, raspiotServi
     };
 
     return {
-        templateUrl: 'js/configuration/shutters/shutters.html',
+        templateUrl: 'shutters.directive.html',
         replace: true,
         scope: true,
         controller: shuttersConfigController,

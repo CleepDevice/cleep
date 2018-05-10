@@ -87,7 +87,7 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'updateLogsCtl',
-                templateUrl: 'js/configuration/update/logs.html',
+                templateUrl: 'logs.directive.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -134,7 +134,7 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
     };
 
     return {
-        templateUrl: 'js/configuration/update/update.html',
+        templateUrl: 'update.directive.html',
         replace: true,
         scope: true,
         controller: updateController,

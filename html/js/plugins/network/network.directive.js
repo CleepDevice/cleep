@@ -8,11 +8,10 @@ var networkConfigDirective = function(toast, networkService, raspiotService) {
     {
         var self = this;
         self.networkType = 'wifi';
-
     };
 
     return {
-        templateUrl: 'js/configuration/network/network.html',
+        templateUrl: 'network.directive.html',
         replace: true,
         scope: true,
         controller: networkController,

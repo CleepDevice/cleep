@@ -23,7 +23,7 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'actionsCtl',
-                templateUrl: 'js/configuration/actions/uploadAction.html',
+                templateUrl: 'uploadAction.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -163,7 +163,7 @@ var actionsConfigDirective = function($rootScope, toast, raspiotService, actions
     };
 
     return {
-        templateUrl: 'js/configuration/actions/actions.html',
+        templateUrl: 'actions.directive.html',
         replace: true,
         controller: actionController,
         controllerAs: 'actionsCtl',

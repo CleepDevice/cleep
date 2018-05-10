@@ -285,7 +285,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
     };
 
     return {
-        templateUrl: 'js/configuration/system/system.html',
+        templateUrl: 'system.directive.html',
         replace: true,
         scope: true,
         controller: systemController,

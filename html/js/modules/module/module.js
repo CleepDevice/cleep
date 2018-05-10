@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all module configuration
  */
-var moduleDirective = function($q, raspiotService, $compile, $timeout, $routeParams, $ocLazyLoad) {
+var moduleDirective = function($q, raspiotService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
 
     var moduleController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -17,7 +17,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.__getConfigFilesToLoad = function(desc, module)
         {
             //init
-            var url = self.pluginsPath + '/' + module + '/';
+            /*var url = self.pluginsPath + '/' + module + '/';
             var files = [];
             var types = ['js', 'css', 'html'];
 
@@ -42,7 +42,102 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                 }
             }
 
+            return files;*/
+
+            //init
+            var url = self.pluginsPath + '/' + module + '/';
+            var files = {
+                'html': [],
+                'jscss': []
+            };
+            var types = ['js', 'css', 'html'];
+
+            //check desc config
+            if( !desc || !desc.config )
+            {
+                return files;
+            }
+
+            //append files by types
+            for( var j=0; j<types.length; j++ )
+            {
+                if( desc.config[types[j]] )
+                {
+                    for( var i=0; i<desc.config[types[j]].length; i++)
+                    {
+                        if( types[j]=='html' )
+                        {
+                            files['html'].push(url + desc.config[types[j]][i]);
+                        }
+                        else
+                        {
+                            files['jscss'].push(url + desc.config[types[j]][i]);
+                        }
+                    }
+                }
+            }
+
             return files;
+        };
+
+        /**
+         * Load js and css files
+         * @param files: list of js files
+         */
+        self.__loadJsCssFiles = function(files)
+        {
+            console.log('--> load js/css files', files);
+            //load js files using lazy loader
+            return $ocLazyLoad.load({
+                'reconfig': false,
+                'rerun': false,
+                'files': files
+            });
+        };
+
+        /**
+         * Load html files as templates
+         * @param htmlFile: list of html files
+         */
+        self.__loadHtmlFiles = function(htmlFiles)
+        {
+            console.log('--> load html files', htmlFiles);
+            //init
+            var promises = [];
+            var d = $q.defer();
+
+            //fill templates promises
+            for( var i=0; i<htmlFiles.length; i++ )
+            {
+                //load only missing templates
+                var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                if( !$templateCache.get(templateName) )
+                {
+                    promises.push($http.get(htmlFiles[i]));
+                }
+            }
+
+            //and execute them
+            $q.all(promises)
+                .then(function(templates) {
+                    //check if templates available
+                    if( !templates )
+                        return;
+    
+                    //cache templates
+                    for( var i=0; i<templates.length; i++ )
+                    {
+                        var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                        $templateCache.put(templateName, templates[i].data);
+                    }
+                }, function(err) {
+                    console.error('Error occured loading html files:', err);
+                })
+                .finally(function() {
+                    d.resolve();
+                });
+    
+            return d.promise;
         };
 
         /**
@@ -52,30 +147,37 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         {
             //save module name
             self.module = module;
+            var files;
 
             //load module description
             raspiotService.getModuleDescription(module)
                 .then(function(desc) {
-                    var files = self.__getConfigFilesToLoad(desc, module);
+                    files = self.__getConfigFilesToLoad(desc, module);
                     console.log('DESC-CONFIG', files);
 
-                    //lazy load module files
-                    return $ocLazyLoad.load({
-                        'reconfig': false,
-                        'rerun': true,
-                        'files': files
-                    })
-                })
-                .then(function(resp) {
-                    console.log('Module completely loaded', resp);
+                    //load html templates first
+                    return self.__loadHtmlFiles(files.html);
 
-                    //inject module configuration directive
+                }, function(err) {
+                    console.error('Unable to get module "' + module + '" description');
+                })
+                .then(function() {
+                    //load js and css files
+                    return self.__loadJsCssFiles(files.jscss);
+
+                }, function(err) {
+                    //remove rejection warning
+                    console.error('error loading html files:', err);
+                })
+                .then(function() {
+                    //everything is loaded successfully, inject module directive
                     var container = $element.find('#moduleContainer');
                     var template = '<div ' + module + '-config-directive=""></div>';
                     var directive = $compile(template)($scope);
                     $element.append(directive);
+
                 }, function(err) {
-                    console.error('Error loading module files:', err);
+                    console.error('Error loading module js/css files:', err);
                 });
         };
     }];
@@ -94,5 +196,5 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('moduleDirective', ['$q', 'raspiotService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', moduleDirective]);
+RaspIot.directive('moduleDirective', ['$q', 'raspiotService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', moduleDirective]);
 

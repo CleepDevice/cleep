@@ -6,6 +6,6 @@
     },
     "config": {
         "js": ["actions.directive.js", "actions.service.js"],
-        "html": ["uploadAction.html", "actions.directive.html"]
+        "html": ["uploadAction.directive.html", "actions.directive.html"]
     }
 }

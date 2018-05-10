@@ -88,7 +88,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'sensorsCtl',
-                templateUrl: 'js/configuration/sensors/addSensor.html',
+                templateUrl: 'addSensor.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -267,7 +267,7 @@ var sensorsConfigDirective = function($rootScope, toast, raspiotService, sensors
     };
 
     return {
-        templateUrl: 'js/configuration/sensors/sensors.html',
+        templateUrl: 'sensors.directive.html',
         replace: true,
         scope: true,
         controller: sensorsController,

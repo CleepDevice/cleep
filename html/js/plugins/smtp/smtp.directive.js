@@ -136,7 +136,7 @@ var smtpConfigDirective = function(toast, smtpService, raspiotService) {
     };
 
     return {
-        templateUrl: 'js/configuration/smtp/smtp.html',
+        templateUrl: 'smtp.directive.html',
         scope: true,
         controller: smtpController,
         controllerAs: 'smtpCtl',

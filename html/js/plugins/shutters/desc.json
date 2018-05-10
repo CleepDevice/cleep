@@ -9,6 +9,6 @@
     },
     "config": {
         "js": ["shutters.directive.js"],
-        "html": ["shutters.directive.html", "addShutter.html"]
+        "html": ["shutters.directive.html", "addShutter.directive.html"]
     }
 }
