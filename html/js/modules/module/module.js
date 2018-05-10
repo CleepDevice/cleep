@@ -6,7 +6,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
     var moduleController = ['$scope','$element', function($scope, $element) {
         var self = this;
-        self.configurationPath = 'js/configuration'
+        self.pluginsPath = 'js/plugins'
         self.module = '';
 
         /**
@@ -17,7 +17,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.__getConfigFilesToLoad = function(desc, module)
         {
             //init
-            var url = self.configurationPath + '/' + module + '/';
+            var url = self.pluginsPath + '/' + module + '/';
             var files = [];
             var types = ['js', 'css', 'html'];
 

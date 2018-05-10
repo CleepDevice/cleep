@@ -13,7 +13,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
     self.modules = {};
     self.renderers = {};
     self.events = {};
-    self.configurationPath = 'js/configuration/';
+    self.pluginsPath = 'js/plugins/';
 
     /**
      * Build list of system files
@@ -40,14 +40,14 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
         {
             for( var i=0; i<desc.system.widgets.js.length; i++ )
             {
-                files.js.push(self.configurationPath + module + '/' + desc.system.widgets.js[i]);
+                files.js.push(self.pluginsPath + module + '/' + desc.system.widgets.js[i]);
             }
         }
         if( desc.system.widgets && desc.system.widgets.html )
         {
             for( var i=0; i<desc.system.widgets.html.length; i++ )
             {
-                files.html.push(self.configurationPath + module + '/' + desc.system.widgets.html[i]);
+                files.html.push(self.pluginsPath + module + '/' + desc.system.widgets.html[i]);
             }
         }
 
@@ -56,7 +56,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
         {
             for( var i=0; i<desc.system.services.length; i++ )
             {
-                files.js.push(self.configurationPath + module + '/' + desc.system.services[i]);
+                files.js.push(self.pluginsPath + module + '/' + desc.system.services[i]);
             }
         }
 
@@ -127,7 +127,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
     self.__loadModule = function(module)
     {
         //init
-        var url = self.configurationPath + '/' + module + '/desc.json';
+        var url = self.pluginsPath + '/' + module + '/desc.json';
         var desc = null;
         var d = $q.defer();
         var files = null;
