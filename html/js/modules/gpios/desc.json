@@ -9,6 +9,6 @@
     },
     "config": {
         "js": ["gpios.directive.js"],
-        "html": ["gpios.directive.html", "addGpio.html"]
+        "html": ["gpios.directive.html", "addGpio.directive.html"]
     }
 }

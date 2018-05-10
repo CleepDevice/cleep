@@ -152,7 +152,7 @@ var niccolometronomeConfigDirective = function($rootScope, toast, niccolometrono
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'dialogCtl',
-                templateUrl: 'js/configuration/niccolometronome/addPhraseDialog.html',
+                templateUrl: 'addPhraseDialog.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 fullscreen: true
@@ -181,7 +181,7 @@ var niccolometronomeConfigDirective = function($rootScope, toast, niccolometrono
     };
 
     return {
-        templateUrl: 'js/configuration/niccolometronome/niccolometronome.html',
+        templateUrl: 'niccolometronome.directive.html',
         replace: true,
         scope: true,
         controller: niccolometronomeController,

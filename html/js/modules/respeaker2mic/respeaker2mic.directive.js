@@ -259,7 +259,7 @@ var respeaker2micConfigDirective = function($rootScope, toast, respeaker2micServ
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'dialogCtl',
-                templateUrl: 'js/configuration/respeaker2mic/addLedsProfileDialog.html',
+                templateUrl: 'addLedsProfileDialog.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 fullscreen: true
@@ -275,7 +275,7 @@ var respeaker2micConfigDirective = function($rootScope, toast, respeaker2micServ
     };
 
     return {
-        templateUrl: 'js/configuration/respeaker2mic/respeaker2mic.html',
+        templateUrl: 'respeaker2mic.directive.html',
         replace: true,
         scope: true,
         controller: respeaker2micController,

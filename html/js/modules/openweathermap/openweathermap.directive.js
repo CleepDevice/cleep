@@ -42,7 +42,7 @@ var openweathermapConfigDirective = function(toast, openweathermapService, raspi
     };
 
     return {
-        templateUrl: 'js/configuration/openweathermap/openweathermap.html',
+        templateUrl: 'openweathermap.directive.html',
         replace: true,
         scope: true,
         controller: openweathermapController,

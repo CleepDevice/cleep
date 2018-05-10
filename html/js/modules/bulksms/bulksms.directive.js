@@ -63,7 +63,7 @@ var bulksmsConfigDirective = function(toast, bulksmsService, raspiotService) {
     };
 
     return {
-        templateUrl: 'js/configuration/bulksms/bulksms.html',
+        templateUrl: 'bulksms.directive.html',
         replace: true,
         scope: true,
         controller: bulksmsController,

@@ -9,6 +9,6 @@
     },
     "config": {
         "js": ["messageboard.directive.js", "messageboard.service.js"],
-        "html": ["messageboard.directive.html", "addMessage.html"]
+        "html": ["messageboard.directive.html", "addMessage.directive.html"]
     }
 }

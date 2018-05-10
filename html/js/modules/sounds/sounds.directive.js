@@ -32,7 +32,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'soundsCtl',
-                templateUrl: 'js/configuration/sounds/addSound.html',
+                templateUrl: 'addSound.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -46,7 +46,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'soundsCtl',
-                templateUrl: 'js/configuration/sounds/configSound.html',
+                templateUrl: 'configSound.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -216,7 +216,7 @@ var soundsConfigDirective = function($rootScope, $q, toast, raspiotService, soun
     };
 
     return {
-        templateUrl: 'js/configuration/sounds/sounds.html',
+        templateUrl: 'sounds.directive.html',
         replace: true,
         scope: true,
         controller: soundsController,

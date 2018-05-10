@@ -2,6 +2,6 @@
     "icon": "metronome",
     "config": {
         "js": ["niccolometronome.directive.js", "niccolometronome.service.js"],
-        "html": ["niccolometronome.directive.html", "addPhraseDialog.html"]
+        "html": ["niccolometronome.directive.html", "addPhraseDialog.directive.html"]
     }
 }

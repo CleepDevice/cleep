@@ -56,7 +56,7 @@ var pushoverConfigDirective = function(toast, pushoverService, raspiotService) {
     };
 
     return {
-        templateUrl: 'js/configuration/pushover/pushover.html',
+        templateUrl: 'pushover.directive.html',
         replace: true,
         scope: true,
         controller: pushoverController,

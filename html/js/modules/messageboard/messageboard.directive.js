@@ -55,7 +55,7 @@ var messageboardDirective = function($rootScope, raspiotService, toast, messageb
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'boardCtl',
-                templateUrl: 'js/configuration/messageboard/addMessage.html',
+                templateUrl: 'addMessage.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -164,7 +164,7 @@ var messageboardDirective = function($rootScope, raspiotService, toast, messageb
     };
 
     return {
-        templateUrl: 'js/configuration/messageboard/messageboard.html',
+        templateUrl: 'messageboard.directive.html',
         replace: true,
         scope: true,
         controller: messageboardController,

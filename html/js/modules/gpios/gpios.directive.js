@@ -55,7 +55,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
             return $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'gpiosCtl',
-                templateUrl: 'js/configuration/gpios/addGpio.html',
+                templateUrl: 'addGpio.directive.html',
                 parent: angular.element(document.body),
                 clickOutsideToClose: false,
                 fullscreen: true
@@ -150,7 +150,7 @@ var gpiosConfigDirective = function($rootScope, gpiosService, raspiotService, to
     };
 
     return {
-        templateUrl: 'js/configuration/gpios/gpios.html',
+        templateUrl: 'gpios.directive.html',
         replace: true,
         scope: true,
         controller: gpiosConfigController,

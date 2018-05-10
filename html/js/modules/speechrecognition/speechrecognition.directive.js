@@ -280,7 +280,7 @@ var speechrecognitionConfigDirective = function($rootScope, toast, speechrecogni
     };
 
     return {
-        templateUrl: 'js/configuration/speechrecognition/speechrecognition.html',
+        templateUrl: 'speechrecognition.directive.html',
         replace: true,
         scope: true,
         controller: speechrecognitionController,
