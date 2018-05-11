@@ -17,7 +17,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
             label: '%',
             height: 200,
             format: function(v) {
-                return d3.format(".1")(v);
+                return Math.round(v);
             },
             title: 'CPU usage',
             showControls: false
