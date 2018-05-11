@@ -117,6 +117,9 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     {
         var config;
 
+        //lock ui
+        blockUI.start({message:'Loading data...'});
+
         rpcService.getConfig()
             .then(function(resp) {
                 //save response as config to use it in next promise step
@@ -133,6 +136,9 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 raspiotService._setEvents(config.events);
             })
             .finally(function() {
+                //unlock ui
+                blockUI.stop();
+
                 console.log('DEVICES', raspiotService.devices);
                 console.log('SERVICES', objectsService.services);
                 console.log('MODULES', raspiotService.modules);
