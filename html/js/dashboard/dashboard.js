@@ -10,7 +10,7 @@ var dashboardDirective = function() {
     };
 
     return {
-        templateUrl: 'js/dashboard/dashboard/dashboard.html',
+        templateUrl: 'js/dashboard/dashboard.html',
         replace: true,
         scope: true,
         controller: ['$scope', 'raspiotService', dashboardController],
