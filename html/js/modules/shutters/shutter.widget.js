@@ -9,6 +9,12 @@ var widgetShutterDirective = function(shuttersService) {
         self.device = $scope.device;
         self.level = 0;
 
+        //set background color at startup
+        if( self.device && (self.device.status==='opening' || self.device.status==='closing') )
+        {   
+            self.device.__widget.mdcolors = '{background:"default-accent-400"}';
+        }
+
         /**
          * Open shutter
          */

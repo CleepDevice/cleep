@@ -12,6 +12,12 @@ var widgetMotionDirective = function(raspiotService) {
             'color': '#24A222'
         };
         self.hasDatabase = raspiotService.hasModule('database');
+
+        //set background color at startup
+        if( self.device && self.device.on )
+        {
+            self.device.__widget.mdcolors = '{background:"default-accent-400"}';
+        }
     }];
 
     return {
