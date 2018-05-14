@@ -68,7 +68,7 @@ class CleepWifiConf():
         Return:
             bool: True if cleepwifi.conf deleted
         """
-        return cleep_filesystem.remove(self.CONF)
+        return cleep_filesystem.rm(self.CONF)
 
     def create_content(self, network, password, encryption, hidden):
         """
