@@ -168,7 +168,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
                 self.modules[module].desc = {};
 
                 //and reject promise
-                console.error('Error occured during "' + module + '" description file', err);
+                console.error('Error occured loading "' + module + '" description file', err);
 
                 //reject final promise
                 d.reject();
@@ -238,18 +238,22 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
      */
     self._setModules = function(modules)
     {
+        //save modules
         self.modules = modules;
 
-        //load description for each loaded module
+        //load description for each local modules
         var promises = [];
         for( module in self.modules )
         {
-            promises.push(self.__loadModule(module));
+            if( self.modules[module].local )
+            {
+                promises.push(self.__loadModule(module));
+            }
         }
 
         //resolve deferred once all promises terminated
         //TODO sequentially chain promises https://stackoverflow.com/a/43543665 or https://stackoverflow.com/a/24262233
-        //$q.all execute finally statement when reject is triggered in one of promises
+        //$q.all execute finally statement as soon as one of promises is rejected
         return $q.all(promises)
             .then(function(resp) {
             }, function(err) {

@@ -16,7 +16,9 @@ class Inventory(RaspIotModule):
      - existing devices: knows all devices and module that handles it
      - loaded modules and their commands
      - existing renderers (sms, email, sound...)
-    """  
+    """ 
+
+    MODULES_JSON = u'/etc/raspiot/modules.json'
 
     def __init__(self, bootstrap, debug_enabled, installed_modules):
         """
@@ -66,37 +68,59 @@ class Inventory(RaspIotModule):
         """
         Load all available modules and their devices
         """
-        #list all modules
+        #list all available modules (list should be downloaded from internet) and fill default metadata
+        self.modules = self.cleep_filesystem.read_json(self.MODULES_JSON)
+        if self.modules is None:
+            #no modules loaded, fallback to empty list that will be filled only with local modules list
+            self.logger.warning(u'No module loaded from Raspiot website')
+            self.modules = {}
+        for module_name in self.modules:
+            #append metadata that doesn't exists in modules.json
+            self.modules[module_name][u'locked'] = False
+            self.modules[module_name][u'installed'] = False
+            self.modules[module_name][u'library'] = False
+            self.modules[module_name][u'local'] = False
+
+        #append local modules (that doesn't exists on internet modules list)
         path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
             raise CommandError(u'Invalid modules path')
         for f in os.listdir(path):
             fpath = os.path.join(path, f)
-            (module, ext) = os.path.splitext(f)
-            if os.path.isfile(fpath) and ext==u'.py' and module!=u'__init__':
-                module_ = importlib.import_module(u'raspiot.modules.%s' % module)
-                class_ = getattr(module_, module.capitalize())
+            (module_name, ext) = os.path.splitext(f)
+            if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
+                #valid file
+                if module_name not in self.modules:
+                    self.logger.debug(u'Add modules found locally only')
+                    #it is a local module
+                    module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
+                    class_ = getattr(module_, module_name.capitalize())
 
-                #fix module country
-                country = class_.MODULE_COUNTRY
-                if not country:
-                    country = u''
-                else:
-                    country = country.lower()
+                    #fix module country
+                    country = class_.MODULE_COUNTRY
+                    if not country:
+                        country = u''
+                    else:
+                        country = country.lower()
 
-                #save module entry
-                self.modules[module] = {
-                    u'description': class_.MODULE_DESCRIPTION,
-                    u'locked': class_.MODULE_LOCKED,
-                    u'tags': class_.MODULE_TAGS,
-                    u'country': country,
-                    u'link': class_.MODULE_LINK,
-                    u'installed': False,
-                    u'library': False,
-                }
+                    #save module entry
+                    self.modules[module_name] = {
+                        u'description': class_.MODULE_DESCRIPTION,
+                        u'locked': class_.MODULE_LOCKED,
+                        u'tags': class_.MODULE_TAGS,
+                        u'country': country,
+                        u'link': class_.MODULE_LINK,
+                        u'installed': False,
+                        u'library': False,
+                        u'local': True
+                    }
 
+        #update metadata of installed modules
         self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())
         for module in self.installed_modules_names.keys():
+            #update local flag
+            self.modules[module][u'local'] = True
+
             #update installed/library flag
             if module not in self.libraries:
                 self.modules[module][u'installed'] = True
