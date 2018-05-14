@@ -6,11 +6,10 @@ from raspiot.libs.readwrite import ReadWrite
 import logging
 import os
 from threading import Timer, Lock
-#from gevent import monkey
-#monkey.patch_all()
 import gevent.lock as glock
 import io
 import shutil
+import json
 
 
 class CleepFilesystem():
@@ -169,6 +168,25 @@ class CleepFilesystem():
 
         #close file descriptor
         fd.close()
+
+    def read_json(self, path, encoding=u'utf-8'):
+        """
+        Read file content as json
+
+        Args:
+            path (string): file path
+            encoding (string): file encofind (default utf8)
+
+        Return:
+            dict: json content as dict
+        """
+        try:
+            fp = self.open(path, u'r', encoding)
+            lines = fp.readlines()
+            return json.loads(u'\n'.join(lines), encoding)
+        except:
+            self.logger.error('Unable to get json content of "%s":' % path)
+            return None
 
     def makedirs(self, path):
         """
