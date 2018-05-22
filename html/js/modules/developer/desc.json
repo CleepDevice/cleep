@@ -6,5 +6,9 @@
             "html": ["developer.widget.html"]
         },
         "services": ["developer.service.js"]
+    },
+    "config": {
+        "js": ["developer.directive.js"],
+        "html": ["developer.directive.html"]
     }
 }

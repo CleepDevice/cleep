@@ -22,15 +22,20 @@ class Smtp(RaspIotRenderer):
     """
     Smtp module
     """
-
-    MODULE_CONFIG_FILE = u'smtp.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you alerts by email.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'email', u'smtp', u'alert']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'smtp.conf'
     DEFAULT_CONFIG = {
         u'smtp_server': None,
         u'smtp_port': u'',

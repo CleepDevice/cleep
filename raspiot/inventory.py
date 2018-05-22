@@ -69,11 +69,13 @@ class Inventory(RaspIotModule):
         Load all available modules and their devices
         """
         #list all available modules (list should be downloaded from internet) and fill default metadata
-        self.modules = self.cleep_filesystem.read_json(self.MODULES_JSON)
-        if self.modules is None:
+        modules_json = self.cleep_filesystem.read_json(self.MODULES_JSON)
+        if modules_json is None:
             #no modules loaded, fallback to empty list that will be filled only with local modules list
             self.logger.warning(u'No module loaded from Raspiot website')
             self.modules = {}
+        else:
+            self.modules = modules_json[u'list']
         for module_name in self.modules:
             #append metadata that doesn't exists in modules.json
             self.modules[module_name][u'locked'] = False
@@ -103,13 +105,21 @@ class Inventory(RaspIotModule):
                     else:
                         country = country.lower()
 
+                    #build urls
+                    urls = {
+                        u'site': getattr(class_, u'MODULE_URLSITE', None),
+                        u'bugs': getattr(class_, u'MODULE_URLBUGS', None),
+                        u'info': getattr(class_, u'MODULE_URLINFO', None),
+                        u'help': getattr(class_, u'MODULE_URLHELP', None)
+                    }
+
                     #save module entry
                     self.modules[module_name] = {
                         u'description': class_.MODULE_DESCRIPTION,
                         u'locked': class_.MODULE_LOCKED,
                         u'tags': class_.MODULE_TAGS,
                         u'country': country,
-                        u'link': class_.MODULE_LINK,
+                        u'urls': urls, 
                         u'installed': False,
                         u'library': False,
                         u'local': True

@@ -317,13 +317,20 @@ class Actions(RaspIotModule):
     Action allows user to execute its own python scripts interacting with RaspIot
     """
 
-    MODULE_CONFIG_FILE = u'actions.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Helps you trigger custom action to fit your needs'
     MODULE_LOCKED = False
     MODULE_TAGS = []
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
+
+    MODULE_CONFIG_FILE = u'actions.conf'
 
     SCRIPTS_PATH = u'/var/opt/raspiot/scripts'
     DATA_FILE = u'raspiot.data.conf'
@@ -652,7 +659,9 @@ class Actions(RaspIotModule):
         filepath = os.path.join(Actions.SCRIPTS_PATH, script)
         if os.path.exists(filepath):
             #script is valid, return full filepath
-            return filepath
+            return {
+                u'filepath': filepath
+            }
         else:
             #script doesn't exist, raise exception
             raise Exception(u'Script "%s" doesn\'t exist' % script)

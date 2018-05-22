@@ -58,14 +58,25 @@ class Messageboard(RaspIotRenderer):
     Messageboard allows user to display message on single line board
     Icons are directly handled inside message
     """
-
-    MODULE_CONFIG_FILE = u'messageboard.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Displays your own infos on a single line LED panel.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'display', u'led']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLINFO = None
+    MODULE_URLBUGS = None
+
+    MODULE_CONFIG_FILE = u'messageboard.conf'
+    DEFAULT_CONFIG = {
+        u'duration': 60,
+        u'messages' : [],
+        u'speed': 'normal'
+    }
 
     RENDERER_PROFILES = [DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile]
     RENDERER_TYPE = u'display'
@@ -77,12 +88,6 @@ class Messageboard(RaspIotRenderer):
         SPEED_SLOW: 0.0025,
         SPEED_NORMAL: 0.005,
         SPEED_FAST: 0.0075
-    }
-
-    DEFAULT_CONFIG = {
-        u'duration': 60,
-        u'messages' : [],
-        u'speed': 'normal'
     }
 
     def __init__(self, bootstrap, debug_enabled):

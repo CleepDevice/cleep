@@ -15,15 +15,23 @@ __all__ = [u'Cleepbus']
 
 
 class Cleepbus(RaspIotModule):
-
-    MODULE_CONFIG_FILE = u'cleepbus.conf'
+    """
+    Cleepbus is the external bus to communicate with other Cleep devices
+    """
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'bus', u'communication']
     MODULE_COUNTRY = None
-    MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Cleepbus'
+    MODULE_URLINFO = u'https://github.com/tangb/Raspiot/wiki/Cleepbus'
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'cleepbus.conf'
     DEFAULT_CONFIG = {
         u'uuid': None
     }

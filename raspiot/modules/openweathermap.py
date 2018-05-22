@@ -21,15 +21,20 @@ class Openweathermap(RaspIotModule):
     Note:
         https://openweathermap.org/api
     """
-
-    MODULE_CONFIG_FILE = u'openweathermap.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Gets weather conditions using OpenWeatherMap service'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'weather', u'forecast']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'openweathermap.conf'
     DEFAULT_CONFIG = {
         u'apikey': None
     }

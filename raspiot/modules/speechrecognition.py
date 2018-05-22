@@ -456,15 +456,20 @@ class Speechrecognition(RaspIotResource):
     Speechrecognition module implements SpeechToText feature using snowboy for local hotword detection
     and online services to translate user speech to text
     """
-
-    MODULE_CONFIG_FILE = u'speechrecognition.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Control your device using voice'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'audio', u'speech', u'stt', 'speechtotext']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
 
+    MODULE_CONFIG_FILE = u'speechrecognition.conf'
     DEFAULT_CONFIG = {
         u'hotwordtoken': None,
         u'hotwordfiles': [None, None, None],

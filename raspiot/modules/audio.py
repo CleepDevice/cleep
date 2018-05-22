@@ -15,14 +15,20 @@ class Audio(RaspIotResource):
     """
     Audio module is in charge of configuring audio on raspberry pi
     """
-
-    MODULE_CONFIG_FILE = None
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Configure audio on your device'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'audio', u'sound']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
+
+    MODULE_CONFIG_FILE = None
 
     TEST_SOUND = u'/opt/raspiot/sounds/connected.wav'
 

@@ -30,6 +30,13 @@ var widgetDeveloperDirective = function() {
                         self.device.running = false;
                 });
         };
+
+        self.analyzePackage = function() {
+            developerService.analyzePackage('actions', 'tangb', 'icoco', 15.0)
+                .then(function(resp) {
+                    console.log(resp);
+                });
+        };
     }];
 
     return {

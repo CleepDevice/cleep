@@ -298,3 +298,9 @@ custom-list-item-row {
 custom-list-item-label {
     padding-left: 28px;
 }
+
+/********* no margin *********/
+.no-margin {
+    margin: 0px 0px 0px 0px !important;
+}
+

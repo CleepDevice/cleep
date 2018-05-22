@@ -235,15 +235,20 @@ class Niccolometronome(RaspIotModule):
     """
     Niccolo metronome module. Implement a voice controlled metronome
     """
-
-    MODULE_CONFIG_FILE = u'niccolo.conf'
+    MODULE_AUTHOR = u'Niccolo'
+    MODULE_VERSION = u'0.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = [u'speechrecognition']
     MODULE_DESCRIPTION = u'Niccolo metronome'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'niccolo', u'metronome']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'niccolo.conf'
     DEFAULT_CONFIG = {
         u'bpm': 60,
         u'phrases': []

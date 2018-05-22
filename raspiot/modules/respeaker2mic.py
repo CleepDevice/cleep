@@ -149,14 +149,20 @@ class Respeaker2mic(RaspIotRenderer):
     Resources:
         - http://wiki.seeed.cc/ReSpeaker_2_Mics_Pi_HAT/
     """
-
-    MODULE_CONFIG_FILE = u'respeaker2mic.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = [u'gpios']
     MODULE_DESCRIPTION = u'Configure your Respeaker2mic hardware'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'audio', u'mic']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
+
+    MODULE_CONFIG_FILE = u'respeaker2mic.conf'
 
     RENDERER_PROFILES = [SpeechRecognitionHotwordProfile, SpeechRecognitionCommandProfile]
     RENDERER_TYPE = u'leds'

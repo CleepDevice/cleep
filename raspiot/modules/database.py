@@ -11,14 +11,24 @@ import time
 __all__ = [u'Database']
 
 class Database(RaspIotModule):
-
-    MODULE_CONFIG_FILE = u'database.conf'
+    """
+    Module that provides data storage in local database
+    Also unlock sensors and system charts
+    """
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Database module gives you access to chart feature allowing you to follow easily your devices.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'sensors', u'graphs', u'charts']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
+
+    MODULE_CONFIG_FILE = u'database.conf'
 
     DATABASE_PATH = u'/var/opt/raspiot/databases'
     DATABASE_NAME = u'raspiot.db'

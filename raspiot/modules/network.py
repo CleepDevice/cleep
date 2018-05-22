@@ -43,14 +43,19 @@ class Network(RaspIotModule):
         - nodejs wireless-tools lib
             https://github.com/bakerface/wireless-tools
     """
-
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = 'Network configuration helper'
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = ['wireless', 'wifi', 'ethernet']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLINFO = None
+    MODULE_URLBUGS = None
 
     def __init__(self, bus, debug_enabled):
         """

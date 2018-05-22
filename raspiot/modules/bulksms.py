@@ -17,15 +17,20 @@ class Bulksms(RaspIotRenderer):
     Note:
         see http://developer.bulksms.com/eapi/submission/send_sms/
     """
-
-    MODULE_CONFIG_FILE = u'bulksms.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you SMS alerts using BulkSms gateway.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'sms', u'alert']
     MODULE_COUNTRY = None
-    MODULE_LINK = u'https://github.com/tangb/Raspiot/wiki/Bulksms'
+    MODULE_URLINFO = u'https://github.com/tangb/Raspiot/wiki/Bulksms'
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'bulksms.conf'
     DEFAULT_CONFIG = {
         u'username': None,
         u'password': None,

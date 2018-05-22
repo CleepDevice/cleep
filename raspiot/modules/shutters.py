@@ -19,14 +19,20 @@ class Shutters(RaspIotModule):
      - configure switches
      - close shutters at specific level (in percentage)
     """
-
-    MODULE_CONFIG_FILE = u'shutters.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 5
     MODULE_DEPS = [u'gpios']
     MODULE_DESCRIPTION = u'Controls your roller shutters'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'shutter', u'window', u'drape']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
+
+    MODULE_CONFIG_FILE = u'shutters.conf'
 
     STATUS_OPENED = u'opened'
     STATUS_CLOSED = u'closed'

@@ -20,21 +20,27 @@ class Sensors(RaspIotModule):
      - motion
      - more to come...
     """
-
-    MODULE_CONFIG_FILE = u'sensors.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = [u'gpios']
     MODULE_DESCRIPTION = u'Implements easily and quickly sensors you need (temperature, motion, light...)'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'sensors', u'temperature', u'motion']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
+
+    MODULE_CONFIG_FILE = u'sensors.conf'
+    DEFAULT_CONFIG = {
+        u'sensors': {}
+    }
 
     ONEWIRE_PATH = u'/sys/bus/w1/devices/'
     ONEWIRE_SLAVE = u'w1_slave'
     TEMPERATURE_READING = 600 #in seconds
-    DEFAULT_CONFIG = {
-        u'sensors': {}
-    }
 
     TYPE_TEMPERATURE = u'temperature'
     TYPE_MOTION = u'motion'

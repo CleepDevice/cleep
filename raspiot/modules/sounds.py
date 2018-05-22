@@ -81,21 +81,30 @@ class PlayMusic(Thread):
 
 
 class Sounds(RaspIotRenderer):
-
-    MODULE_CONFIG_FILE = u'sounds.conf'
+    """
+    Add capability to play sounds or music and speech some text
+    """
+    MODULE_AUTHOR = u'Cleep'
+    MOUDLE_VERSION = u'1.0.0'
+    MOUDLE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Plays sounds or speech text you want'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'audio', u'sound', u'music', u'speech']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
+
+    MODULE_CONFIG_FILE = u'sounds.conf'
+    DEFAULT_CONFIG = {
+        u'lang': u'en'
+    }
 
     RENDERER_PROFILES = [TextToSpeechProfile]
     RENDERER_TYPE = u'sound'
 
-    DEFAULT_CONFIG = {
-        u'lang': u'en'
-    }
     MUSICS_PATH = u'/var/opt/raspiot/musics'
     SOUNDS_PATH = u'/var/opt/raspiot/sounds'
     ALLOWED_MUSIC_EXTS = [u'mp3', u'wav', u'ogg']

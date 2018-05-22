@@ -175,18 +175,55 @@ class CleepFilesystem():
 
         Args:
             path (string): file path
-            encoding (string): file encofind (default utf8)
+            encoding (string): file encoding (default utf8)
 
         Return:
             dict: json content as dict
         """
+        fp = None
+        lines = None
+
         try:
             fp = self.open(path, u'r', encoding)
             lines = fp.readlines()
-            return json.loads(u'\n'.join(lines), encoding)
+            lines = json.loads(u'\n'.join(lines), encoding)
+
         except:
-            self.logger.error('Unable to get json content of "%s":' % path)
-            return None
+            self.logger.exception(u'Unable to get json content of "%s":' % path)
+
+        finally:
+            if fp:
+                self.close(fp)
+
+        return lines
+
+    def write_json(self, path, data, encoding=u'utf-8'):
+        """
+        Write file as json format
+
+        Args:
+            path (string): file path
+            data (any): data to write as json
+            encoding (string): file encoding (default utf8)
+        """
+        fp = None
+        res = False
+
+        try:
+            fp = self.open(path, u'w', encoding)
+            #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
+            fp.write(unicode(json.dumps(data, ensure_ascii=False)))
+            res = True
+
+        except:
+            self.logger.exception(u'Unable to write json content to "%s"' % path)
+            res = False
+
+        finally:
+            if fp:
+                self.close(fp)
+
+        return res
 
     def makedirs(self, path):
         """

@@ -15,15 +15,23 @@ __all__ = [u'Update']
 
 
 class Update(RaspIotModule):
-
-    MODULE_CONFIG_FILE = u'update.conf'
+    """
+    Handle device and modules updates
+    """
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Keep your device up-to-date with automatic updates'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'update', u'raspiot']
     MODULE_COUNTRY = None
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLSITE = None
+    MODULE_URLBUGS = None
 
+    MODULE_CONFIG_FILE = u'update.conf'
     DEFAULT_CONFIG = {
         u'last_update': None,
         u'last_check': None,

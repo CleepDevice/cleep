@@ -25,14 +25,23 @@ __all__ = [u'System']
 
 
 class System(RaspIotModule):
-
-    MODULE_CONFIG_FILE = u'system.conf'
+    """
+    Helps controlling the system device (halt, reboot) and monitoring it
+    """
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Device system configuration'
+    MODULE_DESCRIPTION = u'Helps controlling and monitoring the device'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'system', u'troubleshoot', u'locale', u'hostname']
     MODULE_COUNTRY = u''
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
+
+    MODULE_CONFIG_FILE = u'system.conf'
 
     #TODO get log file path from bin/raspiot
     LOG_FILE = u'/var/log/raspiot.log'

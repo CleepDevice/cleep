@@ -15,19 +15,21 @@ __all__ = [u'Freemobilesms']
 class Freemobilesms(RaspIotRenderer):
     """
     FreemobileSms renderer
-
-    Note:
-        http://developer.bulksms.com/eapi/submission/send_sms/
     """
-
-    MODULE_CONFIG_FILE = u'freemobilesms.conf'
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Sends you SMS alerts using french Freemobile provider.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'sms', u'alert']
     MODULE_COUNTRY = u'fr'
-    MODULE_LINK = None
+    MODULE_URLINFO = None
+    MODULE_URLHELP = None
+    MODULE_URLBUGS = None
+    MODULE_URLSITE = None
 
+    MODULE_CONFIG_FILE = u'freemobilesms.conf'
     DEFAULT_CONFIG = {
         u'userid': None,
         u'apikey': None

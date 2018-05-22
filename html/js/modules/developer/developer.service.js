@@ -27,6 +27,34 @@ var developerService = function($q, $rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Analyze module
+     */
+    self.analyzeModule = function(module) {
+        return rpcService.sendCommand('analyze_module', 'developer', {'module':module}, 30);
+    };
+
+    /**
+     * Generate desc.json file
+     */
+    self.generateDescJson = function(jsFiles, icon) {
+        return rpcService.sendCommand('generate_desc_json', 'developer', {'js_files': jsFiles, 'icon':icon});
+    };
+
+    /**
+     * Build module package
+     */
+    self.buildPackage = function(module, data) {
+        return rpcService.sendCommand('build_package', 'developer', {'module': module, 'data': data});
+    };
+
+    /**
+     * Download module package
+     */
+    self.downloadPackage = function() {
+        return rpcService.download('download_package', 'developer');
+    };
+
+    /**
      * Catch pyremotedev started events
      */
     $rootScope.$on('developer.pyremotedev.started', function(event, uuid, params) {

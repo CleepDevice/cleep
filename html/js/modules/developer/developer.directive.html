@@ -1,0 +1,193 @@
+<div layout="column" layout-padding ng-cloak>
+
+    <!-- module selector -->
+    <md-list>
+        <md-list-item>
+            <p>Choose module to publish</p>
+            <md-input-container>
+                <md-select ng-model="devCtl.selectedModule" aria-label="Select module">
+                    <md-option ng-repeat="module in devCtl.modules" ng-value="module">
+                        {{module}}
+                    </md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container>
+                <md-button class="md-raised md-primary" ng-click="devCtl.analyzeModule()" ng-disabled="devCtl.loading">Analyze module</md-button>
+            </md-input-container>
+        </md-list-item>
+    </md-list>
+
+    <!-- navigation -->
+    <md-nav-bar md-selected-nav-item="devCtl.selectedNav" nav-bar-aria-label="Tabs" ng-if="devCtl.data">
+        <md-nav-item name="buildmodule" md-nav-click="devCtl.showTab('buildmodule')">
+            Build module
+        </md-nav-item>
+        <md-nav-item name="moduledesc" md-nav-click="devCtl.showTab('moduledesc')">
+            Module description
+        </md-nav-item>
+        <md-nav-item name="backendfiles" md-nav-click="devCtl.showTab('backendfiles')">
+            Backend files
+        </md-nav-item>
+        <md-nav-item name="frontendfiles" md-nav-click="devCtl.showTab('frontendfiles')">
+            Frontend files
+        </md-nav-item>
+    </md-nav-bar>
+
+    <!-- build tab -->
+    <div ng-show="devCtl.selectedNav==='buildmodule'" ng-if="devCtl.data">
+        <md-list>
+            <md-subheader class="md-no-sticky">Errors</md-subheader>
+            <md-list-item ng-repeat="error in devCtl.data.python.errors">
+                <md-icon class="md-accent" md-svg-icon="alert-circle"></md-icon>
+                <p>{{error}}</p>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.errors.length==0">
+                <md-icon md-svg-icon="thumb-up"></md-icon>
+                <p>No error</p>
+            </md-list>
+            <md-subheader class="md-no-sticky">Warnings</md-subheader>
+            <md-list-item ng-repeat="warn in devCtl.data.python.warnings">
+                <md-icon md-svg-icon="alert"></md-icon>
+                <p>{{warn}}</p>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.warnings.length==0">
+                <md-icon md-svg-icon="thumb-up"></md-icon>
+                <p>No warning</p>
+            </md-list-item>
+            <md-subheader class="md-no-sticky">Build</md-subheader>
+            <md-list-item>
+                <md-icon md-svg-icon="wrench"></md-icon>
+                <p>Build module package</p>
+                <div ng-if="devCtl.data.python.errors.length>0">
+                    <span>Build disabled, please fix errors</span>
+                </div>
+                <md-button class="md-raised md-primary" ng-click="devCtl.buildPackage()" ng-disabled="devCtl.data.python.errors.length>0">Build module</md-button>
+            </md-list-item>
+        </md-list>
+    </div>
+
+    <!-- module description -->
+    <div ng-show="devCtl.selectedNav==='moduledesc'" ng-if="devCtl.data">
+        <md-list>
+            <md-list-item ng-if="devCtl.data.python.metadata.author">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Author</p>
+                <div>
+                    <span ng-bind="devCtl.data.python.metadata.author"></span>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.description">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Description</p>
+                <div>
+                    <span ng-bind="devCtl.data.python.metadata.description"></span>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.version">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Version</p>
+                <div>
+                    <span ng-bind="devCtl.data.python.metadata.version"></span>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.price!==undefined">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Price</p>
+                <div ng-if="devCtl.data.python.metadata.price!==0">
+                    <span ng-bind="devCtl.data.python.metadata.price"></span>€
+                </div>
+                <div ng-if="devCtl.data.python.metadata.price===0">
+                    <span>Free module</span>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.country">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Country</p>
+                <div>
+                    <span ng-bind="devCtl.data.python.metadata.country"></span>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.urls.info">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Info url</p>
+                <div>
+                    <a href="{{devCtl.data.python.metadata.urls.info}}" target="_blank">{{devCtl.data.python.metadata.urls.info}}</a>
+                </div>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.tags && devCtl.data.python.metadata.tags.length>0">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Tags</p>
+                <md-input-container class="no-margin">
+                    <md-chips ng-model="devCtl.data.python.metadata.tags" readonly="true" md-removable="false" md-enable-chip-edit="false"></md-chips>
+                </md-input-container>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.metadata.deps && devCtl.data.python.metadata.deps.length>0">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Module dependencies</p>
+                <md-input-container class="no-margin">
+                    <md-chips ng-model="devCtl.data.python.metadata.deps" readonly="true" md-removable="false" md-enable-chip-edit="false"></md-chips>
+                </md-input-container>
+            </md-list-item>
+        </md-list>
+    </div>
+
+    <!-- backend files -->
+    <div ng-show="devCtl.selectedNav==='backendfiles'" ng-if="devCtl.data">
+        <md-list>
+            <md-subheader class="md-no-sticky">Main module file</md-subheader>
+            <md-list-item>
+                <md-icon md-svg-icon="language-python"></md-icon>
+                <p>{{devCtl.data.python.files.module.path}}</p>
+            </md-list-item>
+            <md-subheader class="md-no-sticky">Select your libraries only</md-subheader>
+            <md-list-item ng-repeat="lib in devCtl.data.python.files.libs">
+                <md-icon md-svg-icon="library-plus"></md-icon>
+                <p>{{lib.path}}</p>
+                <md-checkbox class="md-secondary" ng-model="lib.selected">
+                    <md-tooltip>Include this library?</md-tooltip>
+                </md-checkbox>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.python.files.libs.length===0">
+                <p>No dependency found</p>
+            </md-list-item>
+       </md-list>
+    </div>
+
+    <!-- frontend files -->
+    <div ng-show="devCtl.selectedNav==='frontendfiles'" ng-if="devCtl.data">
+        <md-list>
+            <md-subheader class="md-no-sticky">Module icon</md-subheader>
+            <md-list-item>
+                <md-icon md-svg-icon="account-box-outline"></md-icon>
+                <p>Choose icon from <a href="https://materialdesignicons.com" target="_blank">MaterialDesignIcons</a> website</p>
+                <md-input-container>
+                    <input ng-model="devCtl.data.js.icon" placeholder="icon">
+                    <md-icon md-svg-icon="{{devCtl.data.js.icon}}"></md-icon>
+                </md-input-container>
+            </md-list-item>
+            <md-subheader class="md-no-sticky">Configure files</md-subheader>
+            <md-list-item ng-repeat="file in devCtl.data.js.files">
+                <md-icon md-svg-icon="library-plus"></md-icon>
+                <p>{{file.path}}</p>
+                <md-input-container>
+                    <md-select ng-model="file.type" aria-label="Select type" ng-disabled="file.mandatory">
+                        <md-option ng-repeat="type in devCtl.data.js.filetypes" ng-value="type">{{type}}</md-option>
+                    </md-select>
+                </md-input-container>
+            </md-list-item>
+            <md-list-item ng-if="devCtl.data.js.files.length===0">
+                <p>No file found</p>
+            </md-list-item>
+            <md-subheader class="md-no-sticky">Description file</md-subheader>
+            <md-list-item>
+                <md-icon md-svg-icon="wrench"></md-icon>
+                <p>Generate desc.json file in your module dir</p>
+                <md-input-container>
+                    <md-button class="md-raised md-primary" ng-click="devCtl.generateDescJson()">Generate file</md-button>
+                </md-input-container>
+            </md-list-item>
+        </md-list>
+    </div>
+
+</div>
+
