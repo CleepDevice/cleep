@@ -445,12 +445,16 @@ def download():
 
         #request full filepath from module (string format)
         resp = send_command(command, to, params)
-        logger.debug(u'response: %s' % resp)
+        logger.debug(u'Response: %s' % resp)
         if not resp[u'error']:
-            filename = os.path.basename(resp[u'data'])
-            root = os.path.dirname(resp[u'data'])
-            logger.debug(u'Download file root=%s filename=%s' % (root, filename))
-            return bottle.static_file(filename=filename, root=root, download=True)
+            data = resp[u'data']
+            filename = os.path.basename(data[u'filepath'])
+            root = os.path.dirname(data[u'filepath'])
+            download = True
+            if data[u'filename']:
+                download = data[u'filename']
+            logger.debug(u'Download file root=%s filename=%s download=%s' % (root, filename, download))
+            return bottle.static_file(filename=filename, root=root, download=download)
         else:
             #error during filepath retrieving
             raise Exception(resp[u'message'])
