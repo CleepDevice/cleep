@@ -32,11 +32,11 @@
                 <td md-cell ng-if="device.type==='motion'">
                     <md-button ng-if="!device.on" class="md-icon-button md-primary default-cursor" aria-label="Off">
                         <md-tooltip md-direction="bottom">Off</md-tooltip>
-                        <span md-svg-icon="circle"></span>
+                        <md-icon md-svg-icon="circle"></md-icon>
                     </md-button>
                     <md-button ng-if="device.on" class="md-icon-button md-accent default-cursor" aria-label="On">
                         <md-tooltip md-direction="bottom">On</md-tooltip>
-                        <span md-svg-icon="circle"></span>
+                        <md-icon md-svg-icon="circle"></md-icon>
                     </md-button>
                 </td>
                 <td md-cell ng-if="device.type==='temperature'">
