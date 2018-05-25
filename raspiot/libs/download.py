@@ -16,7 +16,6 @@ class Download():
     """
     Download file helper
     """
-
     TMP_FILE_PREFIX = 'cleep_tmp'
     DOWNLOAD_FILE_PREFIX = 'cleep_download'
     CACHED_FILE_PREFIX = 'cleep_cached'
@@ -42,7 +41,7 @@ class Download():
         self.logger.setLevel(logging.DEBUG)
 
         #members
-        self.fs = cleep_filesystem
+        self.cleep_filesystem = cleep_filesystem
         self.temp_dir = tempfile.gettempdir()
         self.download = None
         self.__cancel = False
@@ -73,8 +72,8 @@ class Download():
                 if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
-                        if self.fs:
-                            self.fs.remove(os.path.join(self.temp_dir, dl))
+                        if self.cleep_filesystem:
+                            self.cleep_filesystem.remove(os.path.join(self.temp_dir, dl))
                         else:
                             os.remove(os.path.join(self.temp_dir, dl))
                     except:
@@ -84,8 +83,8 @@ class Download():
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
-                        if self.fs:
-                            self.fs.remove(os.path.join(self.temp_dir, dl))
+                        if self.cleep_filesystem:
+                            self.cleep_filesystem.remove(os.path.join(self.temp_dir, dl))
                         else:
                             os.remove(os.path.join(self.temp_dir, dl))
                     except:
@@ -127,8 +126,8 @@ class Download():
             file_path (string): file path
         """
         sha1 = hashlib.sha1()
-        if self.fs:
-            fd = self.fs.open(file_path, u'rb')
+        if self.cleep_filesystem:
+            fd = self.cleep_filesystem.open(file_path, u'rb')
         else:
             fd = io.open(file_path, u'rb')
         while True:
@@ -136,8 +135,8 @@ class Download():
             if not buf:
                 break
             sha1.update(buf)
-        if self.fs:
-            self.fs.close(fd)
+        if self.cleep_filesystem:
+            self.cleep_filesystem.close(fd)
         else:
             fd.close()
 
@@ -151,8 +150,8 @@ class Download():
             file_path (string): file path
         """
         sha256 = hashlib.sha256()
-        if self.fs:
-            fd = self.fs.open(file_path, u'rb')
+        if self.cleep_filesystem:
+            fd = self.cleep_filesystem.open(file_path, u'rb')
         else:
             fd = io.open(file_path, u'rb')
         while True:
@@ -160,8 +159,8 @@ class Download():
             if not buf:
                 break
             sha256.update(buf)
-        if self.fs:
-            self.fs.close(fd)
+        if self.cleep_filesystem:
+            self.cleep_filesystem.close(fd)
         else:
             fd.close()
 
@@ -175,8 +174,8 @@ class Download():
             file_path (string): file path
         """
         md5 = hashlib.md5()
-        if self.fs:
-            fd = self.fs.open(file_path, u'rb')
+        if self.cleep_filesystem:
+            fd = self.cleep_filesystem.open(file_path, u'rb')
         else:
             fd = io.open(file_path, u'rb')
         while True:
@@ -184,8 +183,8 @@ class Download():
             if not buf:
                 break
             sha1.update(buf)
-        if self.fs:
-            self.fs.close(fd)
+        if self.cleep_filesystem:
+            self.cleep_filesystem.close(fd)
         else:
             fd.close()
 
@@ -202,6 +201,15 @@ class Download():
         """
         if self.status_callback:
             self.status_callback(status, size, percent)
+
+    def get_status(self):
+        """
+        Return current status
+
+        Return:
+            int: current status code (see STATUS_XXX codes)
+        """
+        return self.status
 
     def download_file(self, url):
         """
@@ -220,20 +228,30 @@ class Download():
         try:
             resp = self.http.request('GET', url, preload_content=False)
         except:
+            self.status = self.STATUS_ERROR
             self.logger.exception('Error initializing http request:')
             return None
 
         #process download
+        self.status = self.STATUS_DOWNLOADING
         content = u''
-        while True:
-            #read data
-            buf = resp.read(1024)
-            if not buf:
-                #download ended or failed, stop statement
-                break
+        try:
+            while True:
+                #read data
+                buf = resp.read(1024)
+                if not buf:
+                    #download ended or failed, stop statement
+                    break
 
-            #save data 
-            content += buf
+                #save data 
+                content += buf
+        
+                #update final status
+                self.status = self.STATUS_DONE
+
+        except:
+            self.logger.exception(u'Error during file "%s" downloading' % url)
+            self.status = self.STATUS_ERROR
 
         return content
 
@@ -262,13 +280,14 @@ class Download():
         if os.path.exists(self.download):
             #file cached, return it
             filesize = os.path.getsize(self.download)
-            self.__status_callback(self.STATUS_DONE, filesize, 100)
+            self.status = self.STATUS_DONE
+            self.__status_callback(self.status, filesize, 100)
             return self.download
         
         #prepare download
         try:
-            if self.fs:
-                download = self.fs.open(self.download, u'wb')
+            if self.cleep_filesystem:
+                download = self.cleep_filesystem.open(self.download, u'wb')
             else:
                 download = io.open(self.download, u'wb')
         except:
@@ -316,8 +335,8 @@ class Download():
                 self.logger.exception('Unable to write to download file "%s":' % self.download)
                 self.status = self.STATUS_ERROR
                 self.__status_callback(self.status, downloaded_size, self.percent)
-                if self.fs:
-                    self.fs.close(download)
+                if self.cleep_filesystem:
+                    self.cleep_filesystem.close(download)
                 else:
                     download.close()
                 return None
@@ -332,16 +351,16 @@ class Download():
 
             #cancel download
             if self.__cancel:
-                if self.fs:
-                    self.fs.close(download)
+                if self.cleep_filesystem:
+                    self.cleep_filesystem.close(download)
                 else:
                     download.close()
                 self.logger.debug('Flash process canceled during download')
                 return None
 
         #download over
-        if self.fs:
-            self.fs.close(download)
+        if self.cleep_filesystem:
+            self.cleep_filesystem.close(download)
         else:
             download.close()
 
@@ -392,13 +411,13 @@ class Download():
             hashname = base64.urlsafe_b64encode(cache.encode('utf-8')).decode('utf-8')
             download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
         try:
-            if self.fs:
-                self.fs.rename(self.download, download)
+            if self.cleep_filesystem:
+                self.cleep_filesystem.rename(self.download, download)
             else:
                 os.rename(self.download, download)
             self.download = download
         except:
-            pass
+            self.logger.exception(u'Unable to rename downloaded file:')
 
         return self.download
 
