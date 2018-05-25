@@ -24,14 +24,37 @@ class CleepFilesystem():
         """
         Constructor
         """
-        #members
+        #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
+
+        #members
         self.rw = ReadWrite()
         self.__counter = 0;
         self.__rw_lock = Lock()
         self.__debounce_timer = None
-        #self.__rw_lock = glock.BoundedSemaphore(1)
+
+        #check if os is in readonly mode
+        self.is_readonly = self.__is_readonly_filesystem()
+        if self.is_readonly:
+            self.logger.info(u'Raspiot is running on readonly configured filesystem')
+
+    def __is_readonly_filesystem(self):
+        """
+        Check if readonly is configured in OS
+
+        Return:
+            bool: True if RO configured on OS
+        """
+        fd = io.open(u'/etc/fstab', u'r', encoding=u'utf-8')
+        lines = fd.readlines()
+        fd.close()
+        for line in lines:
+            if line.find(u',ro')>=0 or line.find(u'ro,')>=0:
+                #read only configured
+                return True
+
+        return False
 
     def __really_disable_write(self):
         """
@@ -61,7 +84,7 @@ class CleepFilesystem():
         Enable write mode
         """
         #acquire lock
-        self.logger.debug('Acquire lock in enable_write %s' % type(self.__rw_lock))
+        self.logger.debug('Acquire lock in enable_write [counter=%s]' % (self.__counter))
         self.__rw_lock.acquire()
 
         if self.__debounce_timer is not None:
@@ -73,7 +96,7 @@ class CleepFilesystem():
             #first to request writing, enable it
             self.logger.debug('Enable writings')
             self.rw.enable_write_on_root()
-            self.__counter += 1
+            #self.__counter += 1
 
         else:
             #write mode already enabled
@@ -83,7 +106,7 @@ class CleepFilesystem():
         self.__counter += 1
 
         #release lock
-        self.logger.debug('Release lock in enable_write')
+        self.logger.debug('Release lock in enable_write [counter=%s]' % self.__counter)
         self.__rw_lock.release()
 
     def __disable_write(self):
@@ -91,14 +114,16 @@ class CleepFilesystem():
         Disable write mode
         """
         #acquire lock
-        self.logger.debug('Acquire lock in disable_write')
+        self.logger.debug('Acquire lock in disable_write [counter=%s]' % self.__counter)
         self.__rw_lock.acquire()
 
         #cancel action if necessary
         if self.__counter==0:
             #not in writing mode
             self.logger.warning(u'Not in writing mode, a bug surely exist!')
-            return
+
+            self.logger.debug('Release lock in disable_write [counter=%s]' % self.__counter)
+            self.__rw_lock.release()
 
         #decrease usage counter
         self.__counter -= 1
@@ -114,7 +139,7 @@ class CleepFilesystem():
             pass
 
         #release lock
-        self.logger.debug('Release lock in disable_write')
+        self.logger.debug('Release lock in disable_write [counter=%s]' % self.__counter)
         self.__rw_lock.release()
 
     def __is_on_tmp(self, path):
@@ -147,11 +172,15 @@ class CleepFilesystem():
         """
         #enable writings if necessary
         read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
-        self.logger.debug(u'Open %s read_mode=%s' % (path, read_mode))
-        if not read_mode and not self.__is_on_tmp(path):
+        self.logger.debug(u'Open %s read_mode=%s ro=%s' % (path, read_mode, self.is_readonly))
+        if self.is_readonly and not read_mode and not self.__is_on_tmp(path):
             self.__enable_write()
 
-        return io.open(path, mode=mode, encoding=encoding)
+        #check binary mode
+        if mode.find(u'b')==-1:
+            return io.open(path, mode=mode, encoding=encoding)
+        else:
+            return io.open(path, mode=mode)
 
     def close(self, fd):
         """
@@ -160,14 +189,16 @@ class CleepFilesystem():
         Args:
             fd (descriptor): file descriptor
         """
-        self.logger.debug('Close %s' % fd.name)
-        #disable writings
-        read_mode = fd.mode.find('r')>=0 and not fd.mode.find('+')>=0
-        if not read_mode:
-            self.__disable_write()
-
         #close file descriptor
         fd.close()
+
+        #disable writings
+        read_mode = fd.mode.find(u'r')>=0 and not fd.mode.find(u'+')>=0
+        self.logger.debug(u'Close %s read_mode=%s ro=%s' % (fd.name, read_mode, self.is_readonly))
+        self.logger.debug(u'if self.is_readonly and not read_mode => %s' % (self.is_readonly and not read_mode))
+        self.logger.debug(u'if self.is_readonly and not read_mode and not in self.__is_on_tmp(path) => %s' % (self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name)))
+        if self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name):
+            self.__disable_write()
 
     def read_json(self, path, encoding=u'utf-8'):
         """
@@ -205,6 +236,9 @@ class CleepFilesystem():
             path (string): file path
             data (any): data to write as json
             encoding (string): file encoding (default utf8)
+
+        Return:
+            bool: True if operation succeed
         """
         fp = None
         res = False
@@ -225,26 +259,6 @@ class CleepFilesystem():
 
         return res
 
-    def makedirs(self, path):
-        """
-        Make directory structure
-
-        Args:
-            path (string): source
-
-        Return:
-            bool: True if operation succeed
-        """
-        #enable writings if necessary
-        if not self.__is_on_tmp(path):
-            self.__enable_write()
-
-        #create dirs
-        os.makedirs(path)
-
-        #disable writings
-        self.__disable_write()
-
     def rename(self, src, dst):
         """
         Rename file/dir to specified destination
@@ -263,15 +277,24 @@ class CleepFilesystem():
         Return:
             bool: True if operation succeed
         """
+        moved = False
+
         #enable writings if necessary
-        if not self.__is_on_tmp(src) or not self.__is_on_tmp(dst):
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             self.__enable_write()
 
         #move 
-        shutil.move(src, dst)
+        try:
+            shutil.move(src, dst)
+            moved = True
+        except:
+            self.logger.exception(u'Exception moving directory from "%s" to "%s"' % (src, dst))
 
         #disable writings
-        self.__disable_write()
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            self.__disable_write()
+
+        return moved
 
     def copy(self, src, dst):
         """
@@ -284,15 +307,24 @@ class CleepFilesystem():
         Return:
             bool: True if operation succeed
         """
+        copied = False
+
         #enable writings if necessary
-        if not self.__is_on_tmp(src) or not self.__is_on_tmp(dst):
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             self.__enable_write()
 
         #copy
-        shutil.copy2(src, dst)
+        try:
+            shutil.copy2(src, dst)
+            copied = True
+        except:
+            self.logger.exception(u'Exception copying "%s" to "%s"' % (src, dst))
 
         #disable writings
-        self.__disable_write()
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            self.__disable_write()
+
+        return copied
 
     def rm(self, path):
         """
@@ -304,38 +336,89 @@ class CleepFilesystem():
         Return:
             bool: True if operation succeed
         """
+        removed = False
+
         #enable writings if necessary
-        if not self.__is_on_tmp(path):
+        if self.is_readonly and not self.__is_on_tmp(path):
             self.__enable_write()
 
         #remove file
-        os.remove(path)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                removed = True
+        except:
+            self.logger.exception(u'Exception removing "%s"' % path)
 
         #disable writings
-        self.__disable_write()
+        if self.is_readonly and not self.__is_on_tmp(path):
+            self.__disable_write()
 
-    def rmdir(self, path, recursive=False):
+        return removed
+
+    def rmdir(self, path):
         """
         Remove directory
 
         Args:
             path (string): path
-            recursive (bool): recursive deletion (default False)
         
         Return:
             bool: True if operation succeed
         """
+        removed = False
+
         #enable writings if necessary
-        if not self.__is_on_tmp(path):
+        if self.is_readonly and not self.__is_on_tmp(path):
             self.__enable_write()
 
         #remove dir
-        if recursive:
-            os.removedirs(path)
-        else:
-            os.remove(path)
+        try:
+            if not os.path.exists(path):
+                shutil.rmtree(path)
+                removed = True
+        except:
+            self.logger.exception(u'Exception removing directory "%s"' % path)
 
         #disable writings
-        self.__disable_write()
+        if self.is_readonly and not self.__is_on_tmp(path):
+            self.__disable_write()
+
+        return removed
+
+    def mkdir(self, path, recursive=False):
+        """
+        Create directory
+
+        Args:
+            path (string): path
+            recursive (bool): recursive creation (default False)
+
+        Return:
+            bool: True if operation succeed
+        """
+        created = False
+
+        #enable writings if necessary
+        if self.is_readonly and not self.__is_on_tmp(path):
+            self.__enable_write()
+
+        #create dir
+        try:
+            if not os.path.exists(path):
+                if recursive:
+                    os.makedirs(path)
+                else:
+                    os.mkdir(path)
+                created = True
+        except:
+            self.logger.exception(u'Exception creating "%s"' % path)
+
+        #disable writings
+        if self.is_readonly and not self.__is_on_tmp(path):
+            self.__disable_write()
+
+        return created
+
 
 
