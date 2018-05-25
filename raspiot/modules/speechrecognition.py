@@ -527,7 +527,7 @@ class Speechrecognition(RaspIotResource):
         """
         #make sure voice model path exists
         if not os.path.exists(self.VOICE_MODEL_PATH):
-            os.makedirs(self.VOICE_MODEL_PATH)
+            self.cleep_filesystem.mkdir(self.VOICE_MODEL_PATH, True)
     
         #start voice recognition process if possible
         self.acquire_resource(u'audio.capture')

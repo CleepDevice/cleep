@@ -351,7 +351,7 @@ class Actions(RaspIotModule):
 
         #make sure sounds path exists
         if not os.path.exists(Actions.SCRIPTS_PATH):
-            os.makedirs(Actions.SCRIPTS_PATH)
+            self.cleep_filesystem.mkdir(Actions.SCRIPTS_PATH, True)
 
         #init members
         self.__scripts = {}

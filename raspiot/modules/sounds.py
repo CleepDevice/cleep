@@ -188,9 +188,9 @@ class Sounds(RaspIotRenderer):
 
         #make sure paths exist
         if not os.path.exists(Sounds.SOUNDS_PATH):
-            os.makedirs(Sounds.SOUNDS_PATH)
+            self.cleep_filesystem.mkdir(Sounds.SOUNDS_PATH, True)
         if not os.path.exists(Sounds.MUSICS_PATH):
-            os.makedirs(Sounds.MUSICS_PATH)
+            self.cleep_filesystem.mkdir(Sounds.MUSICS_PATH, True)
 
     def _configure(self):
         """

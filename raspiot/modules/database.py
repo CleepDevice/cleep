@@ -50,7 +50,7 @@ class Database(RaspIotModule):
 
         #make sure database path exists
         if not os.path.exists(Database.DATABASE_PATH):
-            os.makedirs(Database.DATABASE_PATH)
+            self.cleep_filesystem.mkdir(Database.DATABASE_PATH, True)
 
     def _configure(self):
         """
