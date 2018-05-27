@@ -12,7 +12,7 @@ from raspiot.libs.task import Task
 from astral import Astral, GoogleGeocoder, AstralError
 import psutil
 import time
-from raspiot.libs.console import Console
+from raspiot.libs.console import Console, EndlessConsole
 from raspiot.libs.fstab import Fstab
 from raspiot.libs.hostname import Hostname
 from raspiot.libs.raspiotconf import RaspiotConf
@@ -73,6 +73,11 @@ class InstallModule(threading.Thread):
         self.module_infos = module_infos
         self.infos = module_infos
         self.cleep_filesystem = cleep_filesystem
+        self.__script_running = True
+        self.__script_return_code = 0
+        self.__pre_script_execution = False
+        self.__pre_script_outputs = {u'stdout': [], u'stderr':[]}
+        self.__post_script_outputs = {u'stdout': [], u'stderr':[]}
 
         #make sure install log path exists
         if not os.path.exists(self.INSTALL_LOG_PATH):
@@ -93,6 +98,78 @@ class InstallModule(threading.Thread):
             int: see STATUS_XXX for available codes
         """
         return self.status
+
+    def __script_callback(self, stdout, stderr):
+        """
+        Get stdout/stderr from script execution
+
+        Args:
+            stdout (string): stdout line
+            stderr (string): stderr line
+        """
+        if self.__pre_script_execution:
+            if stdout:
+                self.__pre_script_outputs[u'stdout'].append(stdout)
+            if stderr:
+                self.__pre_script_outputs['stderr'].append(stderr)
+
+        elif self.__post_script_execution:
+            if stdout:
+                self.__post_script_outputs[u'stdout'].append(stdout)
+            if stderr:
+                self.__post_script_outputs[u'stderr'].append(stderr)
+
+    def __script_terminated_callback(self, return_code, killed):
+        """
+        Get infos when script is terminated
+
+        Note:
+            see http://www.tldp.org/LDP/abs/html/exitcodes.html for return codes
+
+        Args:
+            return_code (int): script return code
+            killed (bool): True if script killed, False otherwise
+        """
+        if killed:
+            self.__script_return_code = 130
+        else:
+            self.__script_return_code = return_code
+
+    def __execute_script(self, script):
+        """
+        Execute specified script
+
+        Args:
+            script (string): script path
+
+        Return
+        """
+        #init
+        self.logger.debug(u'Executing %s script' % path)
+        console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
+        out = False
+
+        #launch script execution
+        console.start()
+
+        #monitor end of script execution
+        while self.__script_running:
+            #handle installation canceling
+            if not self.running:
+                #kill process
+                console.kill()
+                #set output value and stop statement
+                out = False
+                break
+            
+            #pause
+            time.sleep(0.25)
+
+        #check script result
+        if self.__script_return_code==0:
+            out = True
+
+        return out
 
     def start(self):
         """
@@ -170,10 +247,10 @@ class InstallModule(threading.Thread):
             try:
                 path = os.path.join(extract_path, u'preinst.sh')
                 if os.path.exists(path):
-                    self.logger.debug(u'Executing %s script' % path)
-                    #TODO
-                    pass
-            except:
+                    self.__script_running = True
+                    self.__execute_script(path)
+
+            except Exception as e:
                 self.logger.exception(u'Exception occured during preinst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_PREINST
                 raise Exception()
@@ -245,9 +322,8 @@ class InstallModule(threading.Thread):
             try:
                 path = os.path.join(extract_path, u'postinst.sh')
                 if os.path.exists(path):
-                    self.logger.debug(u'Executing %s script' % path)
-                    #TODO
-                    pass
+                    self.__script_running = True
+                    self.__execute_script(path)
             except:
                 self.logger.exception(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_POSTINST
@@ -278,12 +354,22 @@ class InstallModule(threading.Thread):
             if self.running==False:
                 #installation canceled
                 self.status = self.STATUS_CANCELED
+
             elif error:
                 #error occured, revert installation
                 self.logger.debug('Error occured during install, revert installed files')
                 if self.status==self.STATUS_INSTALLING:
                     self.status = self.STATUS_ERROR_INTERNAL
-                #TODO
+                
+                #remove installed files
+                try:
+                    fd = self.cleep_filesystem.open(install_log)
+                    lines = fd.readlines()
+                    for line in lines:
+                        self.cleep_filesystem.rm(line)
+                except:
+                    self.logger.exception(u'Unable to revert "%s" module installation:' % self.module)
+
             else:
                 #install terminated successfully
                 self.status = self.STATUS_INSTALLED
