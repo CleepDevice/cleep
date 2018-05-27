@@ -374,7 +374,7 @@ class CleepFilesystem():
 
         #remove dir
         try:
-            if not os.path.exists(path):
+            if os.path.exists(path):
                 shutil.rmtree(path)
                 removed = True
         except:
