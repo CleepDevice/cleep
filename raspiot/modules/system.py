@@ -16,12 +16,280 @@ from raspiot.libs.console import Console
 from raspiot.libs.fstab import Fstab
 from raspiot.libs.hostname import Hostname
 from raspiot.libs.raspiotconf import RaspiotConf
+from raspiot.libs.download import Download
 import io
 import uuid
 import socket
 import iso3166
+import threading
+import tempfile
+from zipfile import ZipFile
+import inspect
+
 
 __all__ = [u'System']
+
+MODULES_JSON = u'/etc/raspiot/modules.json'
+PATH_FRONT = u'/opt/raspiot/html'
+
+class InstallModule(threading.Thread):
+    """
+    Install module in background task
+    """
+    INSTALL_LOG_PATH = u'/etc/raspiot/install/'
+    
+    STATUS_IDLE = 0
+    STATUS_INSTALLING = 1
+    STATUS_INSTALLED = 2
+    STATUS_CANCELED = 3
+    STATUS_ERROR_INTERNAL = 4
+    STATUS_ERROR_DOWNLOAD = 5
+    STATUS_ERROR_EXTRACT = 6
+    STATUS_ERROR_PREINST = 7
+    STATUS_ERROR_COPY = 8
+    STATUS_ERROR_POSTINST = 9
+
+    def __init__(self, module, module_infos, cleep_filesystem):
+        """
+        Constructor
+
+        Args:
+            module (string): module name to install
+            module_infos (dict): all module infos from modules.json file
+            cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
+        """
+        threading.Thread.__init__(self)
+        threading.Thread.daemon = True
+
+        #logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        #members
+        self.status = self.STATUS_IDLE
+        self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
+        self.running = True
+        self.module = module
+        self.module_infos = module_infos
+        self.infos = module_infos
+        self.cleep_filesystem = cleep_filesystem
+
+        #make sure install log path exists
+        if not os.path.exists(self.INSTALL_LOG_PATH):
+            self.cleep_filesystem.mkdir(self.INSTALL_LOG_PATH, True)
+
+    def cancel(self):
+        """
+        Cancel installation
+        """
+        self.logger.info(u'Module "%s" installation canceled' % self.module)
+        self.running = False
+
+    def get_status(self):
+        """
+        Return current status
+
+        Return:
+            int: see STATUS_XXX for available codes
+        """
+        return self.status
+
+    def start(self):
+        """
+        Run install
+        """
+        #init
+        self.logger.info(u'Start module "%s" installation' % self.module)
+        self.status = self.STATUS_INSTALLING
+        error = False
+        install_log = None
+        extract_path = None
+        archive_path = None
+
+        try:
+            #open file for writing installed files
+            path = os.path.join(self.INSTALL_LOG_PATH, u'%s.log' % self.module)
+            self.logger.debug(u'Create install log file "%s"' % path)
+            try:
+                install_log = self.cleep_filesystem.open(path, u'w')
+            except:
+                self.logger.exception(u'Exception occured during install log init "%s":' % path)
+                self.status = self.STATUS_ERROR_INTERNAL
+                raise Exception()
+
+            #canceled ?
+            if not self.running:
+                raise Exception()
+
+            #download module package
+            self.logger.debug(u'Download file "%s"' % self.infos[u'download'])
+            try:
+                download = Download(self.cleep_filesystem)
+                archive_path = download.download_file_advanced(self.infos[u'download'], check_sha256=self.infos[u'sha256'])
+                if archive_path is None:
+                    download_status = download.get_status()
+                    if download_status==download.STATUS_ERROR:
+                        self.error = u'Error during "%s" download: internal error' % self.infos[u'download']
+                    if download_status==download.STATUS_ERROR_INVALIDSIZE:
+                        self.error = u'Error during "%s" download: invalid filesize' % self.infos[u'download']
+                    elif download_status==download.STATUS_ERROR_BADCHECKSUM:
+                        self.error = u'Error during "%s" download: invalid checksum' % self.infos[u'download']
+                    else:
+                        self.error = u'Error during "%s" download: unknown error' % self.infos[u'download']
+    
+                    self.logger.error(error)
+                    self.status = self.STATUS_ERROR_DOWNLOAD
+                    raise Exception()
+
+            except:
+                self.logger.exception(u'Exception occured during module "%s" package download "%s"' % (self.module, self.infos[u'download']))
+                self.status = self.STATUS_ERROR_DOWNLOAD
+                raise Exception()
+
+            #canceled ?
+            if not self.running:
+                raise Exception()
+
+            #extract archive
+            self.logger.debug('Extracting archive "%s"' % archive_path)
+            try:
+                zipfile = ZipFile(archive_path, u'r')
+                extract_path = tempfile.mkdtemp()
+                zipfile.extractall(extract_path)
+                zipfile.close()
+            except:
+                self.logger.exception(u'Error decompressing module "%s" package "%s" in "%s":' % (self.module, archive_path, extract_path))
+                self.status = self.STATUS_ERROR_EXTRACT
+                raise Exception()
+
+            #canceled ?
+            if not self.running:
+                raise Exception()
+
+            #pre installation script
+            try:
+                path = os.path.join(extract_path, u'preinst.sh')
+                if os.path.exists(path):
+                    self.logger.debug(u'Executing %s script' % path)
+                    #TODO
+                    pass
+            except:
+                self.logger.exception(u'Exception occured during preinst.sh script execution of module "%s"' % self.module)
+                self.status = self.STATUS_ERROR_PREINST
+                raise Exception()
+
+            #canceled ?
+            if not self.running:
+                raise Exception()
+
+            #copy module files
+            try:
+                #list archive files
+                archive_files = []
+                for directory, _, files in os.walk(extract_path):
+                    for filename in files:
+                        full_path = os.path.join(directory, filename)
+                        rel_path = full_path.replace(extract_path, u'')
+                        if rel_path[0]==u'/':
+                            rel_path = rel_path[1:]
+                        archive_files.append(rel_path)
+                self.logger.debug(u'archive_files: %s' % archive_files)
+
+                #canceled ?
+                if not self.running:
+                    raise Exception()
+    
+                #process them according to their directory
+                for f in archive_files:
+                    if f.startswith(u'back/'):
+                        #copy python files
+                        src_path = os.path.join(extract_path, f)
+                        dst_path = os.path.join(self.raspiot_path, f).replace(u'back/', u'')
+                        self.logger.debug('src=%s dst=%s' % (src_path, dst_path))
+                        self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
+                        if not self.cleep_filesystem.copy(src_path, dst_path):
+                            raise Exception()
+
+                        #keep track of copied file for uninstall
+                        install_log.write(u'%s\n' % dst_path)
+                        install_log.flush()
+
+                    elif f.startswith(u'front/'):
+                        #copy ui files
+                        src_path = os.path.join(extract_path, f)
+                        dst_path = os.path.join(PATH_FRONT, f).replace(u'front/', u'')
+                        self.logger.debug('src=%s dst=%s' % (src_path, dst_path))
+                        self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
+                        if not self.cleep_filesystem.copy(src_path, dst_path):
+                            raise Exception()
+
+                        #keep track of copied file for uninstall
+                        install_log.write(u'%s\n' % dst_path)
+                        install_log.flush()
+
+                    else:
+                        #drop file
+                        self.logger.debug(u'Drop archive file: %s' % f)
+                
+                    #canceled ?
+                    if not self.running:
+                        raise Exception(u'canceled')
+
+            except Exception as e:
+                if e.message!=u'canceled':
+                    self.logger.exception(u'Exception occured during module "%s" files copy:' % self.module)
+                    self.status = self.STATUS_ERROR_COPY
+                raise Exception()
+
+            #post installation script
+            try:
+                path = os.path.join(extract_path, u'postinst.sh')
+                if os.path.exists(path):
+                    self.logger.debug(u'Executing %s script' % path)
+                    #TODO
+                    pass
+            except:
+                self.logger.exception(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
+                self.status = self.STATUS_ERROR_POSTINST
+                raise Exception()
+                    
+            #canceled ?
+            if not self.running:
+                raise Exception(u'canceled')
+
+        except:
+            #local exception raised, revert installation
+            error = True
+            self.logger.debug('Except statement')
+
+        finally:
+            self.logger.debug('Finally statement')
+            #clean stuff
+            try:
+                if install_log:
+                    self.cleep_filesystem.close(install_log)
+                if extract_path:
+                    self.cleep_filesystem.rmdir(extract_path)
+                if archive_path:
+                    self.cleep_filesystem.rm(archive_path)
+            except:
+                self.logger.exception(u'Exception during install cleaning:')
+
+            if self.running==False:
+                #installation canceled
+                self.status = self.STATUS_CANCELED
+            elif error:
+                #error occured, revert installation
+                self.logger.debug('Error occured during install, revert installed files')
+                if self.status==self.STATUS_INSTALLING:
+                    self.status = self.STATUS_ERROR_INTERNAL
+                #TODO
+            else:
+                #install terminated successfully
+                self.status = self.STATUS_INSTALLED
+
+        self.logger.info(u'Module "%s" installation terminated (success: %s)' % (self.module, not error))
+
 
 
 class System(RaspIotModule):
@@ -75,6 +343,8 @@ class System(RaspIotModule):
             debug_enabled (bool): flag to set debug level to logger
         """
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
+
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.events_factory = bootstrap[u'events_factory']
@@ -565,6 +835,32 @@ class System(RaspIotModule):
         #and restart raspiot
         console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', 3.0)
 
+    def __get_module_infos(self, module):
+        """
+        Return module infos from modules.json file
+
+        Args:
+            module (string): module name
+
+        Return:
+            dict: module infos
+        """
+        self.logger.debug('Load modules.json file from "%s"' % MODULES_JSON)
+        modules_json = self.cleep_filesystem.read_json(MODULES_JSON)
+
+        if u'list' not in modules_json:
+            self.logger.fatal(u'Invalid modules.json file')
+            raise Exception('Invalid modules.json')
+
+        if module not in modules_json[u'list']:
+            self.logger.error(u'Module "%s" not found in modules list' % module)
+            raise CommandError(u'Module "%s" not found in modules list' % module)
+
+        module_infos = modules_json[u'list'][module]
+        self.logger.debug('Module infos: %s' % module_infos)
+
+        return module_infos
+
     def install_module(self, module):
         """
         Install specified module
@@ -578,11 +874,45 @@ class System(RaspIotModule):
         if module is None or len(module)==0:
             raise MissingParameter(u'Module parameter is missing')
 
-        raspiot = RaspiotConf(self.cleep_filesystem)
-        if raspiot.install_module(module):
-            self.__need_restart = True
+        #raspiot = RaspiotConf(self.cleep_filesystem)
+        #if raspiot.install_module(module):
+        #    self.__need_restart = True
+            
+        #get modules infos from modules.json file
 
         return True
+
+    def install_module_from_file(self, module, archive):
+        """
+        Install module from specified file
+
+        Args:
+            module (string): module name
+            archive (string): archive full path
+        
+        Return:
+            bool: True if install successful
+        """
+        #check params
+        if module is None or len(module)==0:
+            raise MissingParameter(u'Parameter "module" is missing')
+        if archive is None or len(archive)==0:
+            raise MissingParameter(u'Parameter "archive" is missing')
+
+        #get module infos
+        infos = self.__get_module_infos(module)
+
+        #launch installation
+        install = InstallModule(module, infos, self.cleep_filesystem)
+        install.start()
+
+        #wait for end of installation
+        while install.get_status()==install.STATUS_INSTALLING:
+            time.sleep(0.25)
+
+        if install.get_status()==install.STATUS_INSTALLED:
+            return True
+        return False
 
     def uninstall_module(self, module):
         """
