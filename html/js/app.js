@@ -16,6 +16,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     self.needRestart = false;
     self.needReboot = false;
     self.rebooting = false;
+    self.restarting = false;
     self.notConnected = false;
     self.hostname = '';
     self.pollingTimeout = 0;
@@ -28,19 +29,34 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     {
          rpcService.poll()
             .then(function(response) {
-                if( self.rebooting )
+                if( self.rebooting || self.restarting )
                 {
+                    //keep flag values for toast
+                    rebooting = self.rebooting;
+                    restarting = self.restarting;
+                    
                     //system has started
-                    toast.success('System has rebooted.');
                     self.rebooting = false;
+                    self.restarting = false;
                     self.needRestart = false;
                     self.needReboot = false;
 
-                    //reload system module config
-                    raspiotService.reloadModuleConfig();
+                    //reload application config
+                    self.loadConfig(false)
+                        .then(function() {
+                            //unblock ui
+                            blockUI.stop();
 
-                    //unblock ui
-                    blockUI.stop();
+                            //toast message
+                            if( rebooting )
+                            {
+                                toast.success('System has rebooted.');
+                            }
+                            else if( restarting )
+                            {
+                                toast.success('System has restarted.');
+                            }
+                    });
                 }
                 else if( self.notConnected )
                 {
@@ -61,7 +77,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                         }
                         else if( response.data.event.endsWith('restart') )
                         {
-                            self.rebooting = true;
+                            self.restarting = true;
                             blockUI.start({message:'System is restarting. Please wait few seconds.'});
                         }
                         else if( response.data.event.endsWith('halt') )
@@ -83,7 +99,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 window.setTimeout(self.polling, 0);
             }, 
             function(err) {
-                if( !self.rebooting )
+                if( !self.rebooting && !self.restarting )
                 {
                     //error occured, differ next polling
                     /*self.nextPollingTimeout *= 2;
@@ -112,15 +128,24 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
 
     /**
      * Load all config
+     * @param withBlockUi (bool): enable or not block ui with message "loading data..."
+     * @return promise
      */
-    self.loadConfig = function()
+    self.loadConfig = function(withBlockUi)
     {
         var config;
+        if( withBlockUi===undefined || withBlockUi===null )
+        {
+            withBlockUi = true;
+        }
 
-        //lock ui
-        blockUI.start({message:'Loading data...'});
+        //block ui
+        if( withBlockUi )
+        {
+            blockUI.start({message:'Loading data...'});
+        }
 
-        rpcService.getConfig()
+        return rpcService.getConfig()
             .then(function(resp) {
                 //save response as config to use it in next promise step
                 config = resp;
@@ -136,8 +161,11 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 raspiotService._setEvents(config.events);
             })
             .finally(function() {
-                //unlock ui
-                blockUI.stop();
+                //unblock ui
+                if( withBlockUi )
+                {
+                    blockUI.stop();
+                }
 
                 console.log('DEVICES', raspiotService.devices);
                 console.log('SERVICES', objectsService.services);

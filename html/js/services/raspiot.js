@@ -260,8 +260,12 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
                 //necessary to avoid rejection warning
             })
             .finally(function() {
-                self.__deferred_modules.resolve();
-                self.__deferred_modules = null;
+                //no deferred during reboot/restart, handle this case
+                if( self.__deferred_modules )
+                {
+                    self.__deferred_modules.resolve();
+                    self.__deferred_modules = null;
+                }
             });
     };
 
@@ -420,8 +424,12 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
     self._setRenderers = function(renderers)
     {
         self.renderers = renderers;
-        self.__deferred_renderers.resolve();
-        self.__deferred_renderers = null;
+        //no deferred during reboot/restart, handle this case
+        if( self.__deferred_renderers )
+        {
+            self.__deferred_renderers.resolve();
+            self.__deferred_renderers = null;
+        }
     };
 
     /**
@@ -458,8 +466,12 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
     self._setEvents = function(events)
     {
         self.events = events;
-        self.__deferred_events.resolve();
-        self.__deferred_events = null;
+        //no deferred during reboot/restart, handle this case
+        if( self.__deferred_events )
+        {
+            self.__deferred_events.resolve();
+            self.__deferred_events = null;
+        }
     };
 
     /**
@@ -555,7 +567,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
      * Duplicated function from system service to avoid adhesion of system service from angular app
      */
     self.installModule = function(module) {
-        return rpcService.sendCommand('install_module', 'system', {'module':module});
+        return rpcService.sendCommand('install_module', 'system', {'module':module}, 300);
     };
 
     /**
@@ -563,7 +575,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
      * Duplicated function from system service to avoid adhesion of system service from angular app
      */
     self.uninstallModule = function(module) {
-        return rpcService.sendCommand('uninstall_module', 'system', {'module':module});
+        return rpcService.sendCommand('uninstall_module', 'system', {'module':module}, 300);
     };
 
 };
