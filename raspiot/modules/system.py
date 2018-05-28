@@ -1177,6 +1177,7 @@ class System(RaspIotModule):
         install.start()
 
         #wait for end of installation
+        #TODO use event to free request, thread is already developed
         while install.get_status()==install.STATUS_INSTALLING:
             time.sleep(0.25)
 
@@ -1215,6 +1216,7 @@ class System(RaspIotModule):
             time.sleep(0.25)
 
         #check uinstall status
+        #TODO use event to free request, thread is already developed
         if uninstall.get_status()==uninstall.STATUS_UNINSTALLED:
             self.__need_restart = True
             #update raspiot.conf
