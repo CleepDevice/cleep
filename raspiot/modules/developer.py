@@ -16,6 +16,7 @@ from raspiot.raspiot import RaspIotModule
 from raspiot.libs.task import Task
 from raspiot.libs.console import Console
 from raspiot.utils import CommandError, MissingParameter, InvalidParameter
+from raspiot.modules.system import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
 
 __all__ = ['Developer']
 
@@ -43,10 +44,7 @@ class Developer(RaspIotModule):
 
     MODULE_CONFIG_FILE = u'developer.conf'
 
-    ARCHIVE_BACK_PATH = u'back'
-    ARCHIVE_FRONT_PATH = u'front'
     PACKAGE_SCRIPTS = u'/opt/raspiot/scripts/'
-    PATH_JS_MODULES = u'/opt/raspiot/html/js/modules'
     RASPIOT_PROFILE = """[raspiot]
 raspiot/ = /usr/share/pyshared/raspiot/$_$/usr/lib/python2.7/dist-packages/raspiot/
 bin/ = /usr/bin/$_$
@@ -467,7 +465,7 @@ html/ = /opt/raspiot/html/$_$"""
 
         #iterate over files in supposed js module directory
         all_files = {}
-        module_path = os.path.join(self.PATH_JS_MODULES, module)
+        module_path = os.path.join(PATH_FRONTEND, u'js/modules/', module)
         if not os.path.exists(module_path):
             raise CommandError(u'Module "%s" has no javascript' % module_path)
         for f in os.listdir(module_path):
@@ -500,7 +498,7 @@ html/ = /opt/raspiot/html/$_$"""
 
         #load existing description file
         desc_json = u''
-        desc_json_path = os.path.join(self.PATH_JS_MODULES, module, u'desc.json')
+        desc_json_path = os.path.join(PATH_FRONTEND, u'js/modules/', module, u'desc.json')
         self.logger.debug('desc.json path: %s' % desc_json_path)
         if os.path.exists(desc_json_path):
             desc_json = self.cleep_filesystem.read_json(desc_json_path)
@@ -555,15 +553,19 @@ html/ = /opt/raspiot/html/$_$"""
         module_js = self.__analyze_module_js(module)
 
         #check scripts existence
-        script_pre = os.path.join(self.PACKAGE_SCRIPTS, module, u'preinst.sh')
-        script_post = os.path.join(self.PACKAGE_SCRIPTS, module, u'postinst.sh')
+        script_preinst = os.path.join(self.PACKAGE_SCRIPTS, module, u'preinst.sh')
+        script_postinst = os.path.join(self.PACKAGE_SCRIPTS, module, u'postinst.sh')
+        script_preuninst = os.path.join(self.PACKAGE_SCRIPTS, module, u'preuninst.sh')
+        script_postuninst = os.path.join(self.PACKAGE_SCRIPTS, module, u'postuninst.sh')
 
         return {
             u'python': module_python,
             u'js': module_js,
             u'scripts': {
-                u'pre': os.path.exists(script_pre),
-                u'post': os.path.exists(script_post)
+                u'preinst': os.path.exists(script_preinst),
+                u'postinst': os.path.exists(script_postinst),
+                u'preuninst': os.path.exists(script_preuninst),
+                u'posuntinst': os.path.exists(script_postuninst)
             }
         }
 
@@ -662,21 +664,27 @@ html/ = /opt/raspiot/html/$_$"""
         #add js files
         for f in data[u'js'][u'files']:
             if f[u'type']!=self.FRONT_FILE_TYPE_DROP:
-                archive.write(f[u'fullpath'], os.path.join(self.ARCHIVE_FRONT_PATH, u'js', u'modules', f['path']))
+                archive.write(f[u'fullpath'], os.path.join(FRONTEND_DIR, u'js', u'modules', f['path']))
         #add python files
         for f in data[u'python'][u'files'][u'libs']:
             if f[u'selected']:
-                archive.write(f[u'fullpath'], os.path.join(self.ARCHIVE_BACK_PATH, f[u'path']))
-        archive.write(data[u'python'][u'files'][u'module'][u'fullpath'], os.path.join(self.ARCHIVE_BACK_PATH, u'modules', data[u'python'][u'files'][u'module'][u'path']))
+                archive.write(f[u'fullpath'], os.path.join(BACKEND_DIR, f[u'path']))
+        archive.write(data[u'python'][u'files'][u'module'][u'fullpath'], os.path.join(BACKEND_DIR, u'modules', data[u'python'][u'files'][u'module'][u'path']))
         #add module.json
         archive.write(module_json, u'module.json')
         #add pre and post scripts
-        script_pre = os.path.join(self.PACKAGE_SCRIPTS, module, u'preinst.sh')
-        script_post = os.path.join(self.PACKAGE_SCRIPTS, module, u'postinst.sh')
-        if os.path.exists(script_pre):
-            archive.write(script_pre, u'preinst.sh')
-        if os.path.exists(script_post):
-            archive.write(script_post, u'postinst.sh')
+        script_preinst = os.path.join(self.PACKAGE_SCRIPTS, module, u'preinst.sh')
+        script_postinst = os.path.join(self.PACKAGE_SCRIPTS, module, u'postinst.sh')
+        script_preuninst = os.path.join(self.PACKAGE_SCRIPTS, module, u'preuninst.sh')
+        script_postuninst = os.path.join(self.PACKAGE_SCRIPTS, module, u'postuninst.sh')
+        if os.path.exists(script_preinst):
+            archive.write(script_preinst, u'preinst.sh')
+        if os.path.exists(script_postinst):
+            archive.write(script_postinst, u'postinst.sh')
+        if os.path.exists(script_preuninst):
+            archive.write(script_preuninst, u'preuninst.sh')
+        if os.path.exists(script_postuninst):
+            archive.write(script_postuninst, u'postuninst.sh')
         #close archive
         archive.close()
 

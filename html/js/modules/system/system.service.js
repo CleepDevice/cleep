@@ -89,14 +89,14 @@ var systemService = function($rootScope, rpcService, raspiotService) {
      * Install module
      */
     self.installModule = function(module) {
-        return rpcService.sendCommand('install_module', 'system', {'module':module});
+        return rpcService.sendCommand('install_module', 'system', {'module':module}, 300);
     };
 
     /**
      * Uninstall module
      */
     self.uninstallModule = function(module) {
-        return rpcService.sendCommand('uninstall_module', 'system', {'module':module});
+        return rpcService.sendCommand('uninstall_module', 'system', {'module':module}, 300);
     };
 
     /**

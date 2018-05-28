@@ -30,9 +30,10 @@ import inspect
 __all__ = [u'System']
 
 MODULES_JSON = u'/etc/raspiot/modules.json'
-PATH_FRONT = u'/opt/raspiot/html'
+PATH_FRONTEND = u'/opt/raspiot/html'
 PATH_INSTALL = u'/etc/raspiot/install/'
-
+FRONTEND_DIR = u'frontend/'
+BACKEND_DIR = u'backend/'
 
 class UninstallModule(threading.Thread):
     """
@@ -56,7 +57,7 @@ class UninstallModule(threading.Thread):
             module_infos (dict): all module infos from modules.json file
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
         """
-        threading.Thread.__init__(self):
+        threading.Thread.__init__(self)
         threading.Thread.daemon = True
 
         #logger   
@@ -163,18 +164,12 @@ class UninstallModule(threading.Thread):
         postuninst_sh = None
 
         try:
-            #open installation log file
-            except:
-                self.logger.exception(u'Exception occured during install log init "%s":' % path)
-                self.status = self.STATUS_ERROR_INTERNAL
-                raise Exception()
-
             #pre uninstallation script
             try:
                 preuninst_sh = os.path.join(os.path.join(PATH_INSTALL, u'%s_preuninst.sh' % self.module))
-                if os.path.exists(path):
+                if os.path.exists(preuninst_sh):
                     self.__script_running = True
-                    self.__execute_script(path)
+                    self.__execute_script(preuninst_sh)
 
             except Exception as e:
                 self.logger.exception(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
@@ -189,7 +184,7 @@ class UninstallModule(threading.Thread):
                 lines = install_log.readlines()
                 self.cleep_filesystem.close(install_log)
                 for line in lines:
-                    if not self.cleep_filesystem.rm(line):
+                    if not self.cleep_filesystem.rm(line.strip()):
                         self.logger.warning(u'File "%s" was not removed during "%s" module uninstallation' % (line, self.module))
 
             except:
@@ -200,9 +195,9 @@ class UninstallModule(threading.Thread):
             #post uninstallation script
             try:
                 postuninst_sh = os.path.join(os.path.join(PATH_INSTALL, u'%s_postuninst.sh' % self.module))
-                if os.path.exists(path):
+                if os.path.exists(postuninst_sh):
                     self.__script_running = True
-                    self.__execute_script(path)
+                    self.__execute_script(postuninst_sh)
 
             except Exception as e:
                 self.logger.exception(u'Exception occured during postuninst.sh script execution of module "%s"' % self.module)
@@ -506,10 +501,10 @@ class InstallModule(threading.Thread):
                         install_log.write(u'%s\n' % dst_path)
                         install_log.flush()
 
-                    elif f.startswith(u'front/'):
+                    elif f.startswith(FRONTEND_DIR):
                         #copy ui files
                         src_path = os.path.join(extract_path, f)
-                        dst_path = os.path.join(PATH_FRONT, f).replace(u'front/', u'')
+                        dst_path = os.path.join(PATH_FRONTEND, f).replace(FRONTEND_DIR, u'')
                         self.logger.debug('src=%s dst=%s' % (src_path, dst_path))
                         self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                         if not self.cleep_filesystem.copy(src_path, dst_path):
@@ -579,7 +574,7 @@ class InstallModule(threading.Thread):
                     fd = self.cleep_filesystem.open(install_log, u'r')
                     lines = fd.readlines()
                     for line in lines:
-                        self.cleep_filesystem.rm(line)
+                        self.cleep_filesystem.rm(line.strip())
                 except:
                     self.logger.exception(u'Unable to revert "%s" module installation:' % self.module)
 
@@ -1187,10 +1182,10 @@ class System(RaspIotModule):
 
         #check install status
         if install.get_status()==install.STATUS_INSTALLED:
+            self.__need_restart = True
             #update raspiot.conf
             raspiot = RaspiotConf(self.cleep_filesystem)
-            self.__need_restart = True
-            return True
+            return raspiot.install_module(module)
 
         return False
 
@@ -1216,15 +1211,15 @@ class System(RaspIotModule):
         uninstall.start()
 
         #wait for end of installation
-        while uninstall.get_status()==install.STATUS_UNINSTALLING:
+        while uninstall.get_status()==uninstall.STATUS_UNINSTALLING:
             time.sleep(0.25)
 
         #check uinstall status
-        if uninstall.get_status()==install.STATUS_UNINSTALLED:
+        if uninstall.get_status()==uninstall.STATUS_UNINSTALLED:
+            self.__need_restart = True
             #update raspiot.conf
             raspiot = RaspiotConf(self.cleep_filesystem)
-            self.__need_restart = True
-            return True
+            return raspiot.uninstall_module(module)
 
         return False
 

@@ -25,6 +25,9 @@
         <md-nav-item name="moduledesc" md-nav-click="devCtl.showTab('moduledesc')">
             Module description
         </md-nav-item>
+        <md-nav-item name="scripts" md-nav-click="devCtl.showTab('scripts')">
+            Scripts
+        </md-nav-item>
         <md-nav-item name="backendfiles" md-nav-click="devCtl.showTab('backendfiles')">
             Backend files
         </md-nav-item>
@@ -127,6 +130,44 @@
                 <md-input-container class="no-margin">
                     <md-chips ng-model="devCtl.data.python.metadata.deps" readonly="true" md-removable="false" md-enable-chip-edit="false"></md-chips>
                 </md-input-container>
+            </md-list-item>
+        </md-list>
+    </div>
+
+    <!-- scripts -->
+    <div ng-show="devCtl.selectedNav==='scripts'" ng-if="devCtl.data">
+        <md-list>
+            <md-list-item>
+                <md-icon md-svg-icon="script"></md-icon>
+                <p>Pre-installation script</p>
+                <div>
+                    <span ng-if="devCtl.data.scripts.preinst">Found</span>
+                    <span ng-if="!devCtl.data.scripts.preinst">Not found</span>
+                </div>
+            </md-list-item>
+            <md-list-item>
+                <md-icon md-svg-icon="script"></md-icon>
+                <p>Post-installation script</p>
+                <div>
+                    <span ng-if="devCtl.data.scripts.postinst">Found</span>
+                    <span ng-if="!devCtl.data.scripts.postinst">Not found</span>
+                </div>
+            </md-list-item>
+            <md-list-item>
+                <md-icon md-svg-icon="script"></md-icon>
+                <p>Pre-uninstallation script</p>
+                <div>
+                    <span ng-if="devCtl.data.scripts.preuninst">Found</span>
+                    <span ng-if="!devCtl.data.scripts.preuninst">Not found</span>
+                </div>
+            </md-list-item>
+            <md-list-item>
+                <md-icon md-svg-icon="script"></md-icon>
+                <p>Post-uninstallation script</p>
+                <div>
+                    <span ng-if="devCtl.data.scripts.postuninst">Found</span>
+                    <span ng-if="!devCtl.data.scripts.postuninst">Not found</span>
+                </div>
             </md-list-item>
         </md-list>
     </div>
