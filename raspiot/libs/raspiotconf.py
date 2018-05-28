@@ -40,7 +40,7 @@ class RaspiotConf():
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
         #members
-        self.fs = cleep_filesystem
+        self.cleep_filesystem = cleep_filesystem
 
     def __open(self):
         """
@@ -56,15 +56,15 @@ class RaspiotConf():
         self.__conf = SafeConfigParser()
         if not os.path.exists(self.CONF):
             #create empty file
-            fd = self.fs.open(self.CONF, u'w')
+            fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(u'')
-            self.fs.close(fd)
+            self.cleep_filesystem.close(fd)
             time.sleep(0.10)
         
         #load conf content
-        fd = self.fs.open(self.CONF, u'r')
+        fd = self.cleep_filesystem.open(self.CONF, u'r')
         self.__conf.readfp(fd)
-        self.fs.close(fd)
+        self.cleep_filesystem.close(fd)
 
         return self.__conf
 
@@ -74,9 +74,9 @@ class RaspiotConf():
         """
         if self.__conf and write:
             #workaround for unicode writing http://bugs.python.org/msg187829
-            f = self.fs.open(self.CONF, u'w')
+            f = self.cleep_filesystem.open(self.CONF, u'w')
             self.__conf.write(f.buffer)
-            self.fs.close(f)
+            self.cleep_filesystem.close(f)
             #self.__conf.write(codecs.open(self.CONF, u'w', u'utf-8'))
 
     def check(self):
@@ -166,16 +166,13 @@ class RaspiotConf():
 
         Returns:
             bool: True if module installed
-
-        Raises:
-            InvalidParameter
         """
         conf = self.__open()
         
         #check if module isn't already installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module in modules:
-            raise InvalidParameter(u'Module %s is already installed' % module)
+            return False
 
         #install module
         modules.append(module)
@@ -193,16 +190,13 @@ class RaspiotConf():
         
         Returns:
             bool: True if module uninstalled
-
-        Raises:
-            InvalidParameter
         """
         conf = self.__open()
         
         #check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
-            raise InvalidParameter(u'Unable to uninstall not installed module %s' % module)
+            return False
 
         #uninstall module
         modules.remove(module)
