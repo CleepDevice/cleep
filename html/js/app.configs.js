@@ -91,8 +91,8 @@ RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
  * Blockui configuration
  */
 RaspIot.config(['blockUIConfig', function(blockUIConfig) {
-    //blockUIConfig.message = 'Loading';
-    blockUIConfig.template = '<div class="block-ui-overlay"></div><div layout="column" layout-align="center center" class="block-ui-message-container"><div ng-if="state.spinner===undefined || state.spinner===true"><md-progress-circular md-mode="indeterminate"></md-progress-circular></div><div>&nbsp;</div><div><span class="md-subhead">{{ state.message }}</span></div></div>';
+    //use md-colors to set text color: md-colors="{color:'primary'}"
+    blockUIConfig.template = '<div class="block-ui-overlay"></div><div layout="column" layout-align="center center" class="block-ui-message-container"><div ng-if="state.spinner===undefined || state.spinner===true"><md-progress-circular class="md-accent" md-mode="indeterminate"></md-progress-circular></div><div ng-if="state.icon!==undefined"><md-icon class="icon-xl md-accent" md-svg-icon="{{state.icon}}"></md-icon></div><div>&nbsp;</div><div><span class="md-subhead">{{ state.message }}</span></div></div>';
     blockUIConfig.autoBlock = false;
 }]);
 

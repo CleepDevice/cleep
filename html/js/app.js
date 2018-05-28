@@ -113,7 +113,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                     //handle connection loss
                     if( err=='Connection problem' && !self.notConnected )
                     {
-                        blockUI.start({message:'Connection lost with the device.', spinner:false});
+                        blockUI.start({message:'Connection lost with the device.', spinner:false, icon:'close-network'});
                         self.notConnected = true;
                     }
                 }
