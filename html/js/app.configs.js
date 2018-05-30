@@ -91,8 +91,24 @@ RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
  * Blockui configuration
  */
 RaspIot.config(['blockUIConfig', function(blockUIConfig) {
-    //use md-colors to set text color: md-colors="{color:'primary'}"
-    blockUIConfig.template = '<div class="block-ui-overlay"></div><div layout="column" layout-align="center center" class="block-ui-message-container"><div ng-if="state.spinner===undefined || state.spinner===true"><md-progress-circular class="md-accent" md-mode="indeterminate"></md-progress-circular></div><div ng-if="state.icon!==undefined"><md-icon class="icon-xl md-accent" md-svg-icon="{{state.icon}}"></md-icon></div><div>&nbsp;</div><div><span class="md-subhead">{{ state.message }}</span></div></div>';
+    tmpl =  '<div class="block-ui-overlay"></div>';
+    tmpl += '<div layout="column" layout-align="center center" class="block-ui-message-container">';
+    tmpl += '  <md-card style="display: inline-block; text-align: left;" md-colors="::{backgroundColor: \'default-primary-100\'}">';
+    tmpl += '    <md-card-title>';
+    tmpl += '      <md-card-title-media>';
+    tmpl += '        <div class="md-media-sm card-media" layout>';
+    tmpl += '          <md-icon ng-if="state.icon!==undefined" class="icon-xl" md-svg-icon="{{state.icon}}"></md-icon>';
+    tmpl += '          <md-progress-circular ng-if="state.spinner===undefined || state.spinner===true" md-mode="indeterminate">';
+    tmpl += '        </div>';
+    tmpl += '      </md-card-title-media>';
+    tmpl += '      <md-card-title-text>';
+    tmpl += '        <span class="md-headline">{{state.message}}</span>';
+    tmpl += '        <span ng-if="state.submessage!==undefined" class="md-subhead">{{state.submessage}}</span>';
+    tmpl += '      </md-card-title-text>';
+    tmpl += '    </md-card-title>';
+    tmpl += '  </md-card>';
+    tmpl += '</div>';
+    blockUIConfig.template = tmpl;
     blockUIConfig.autoBlock = false;
 }]);
 
