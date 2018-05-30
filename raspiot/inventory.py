@@ -27,7 +27,7 @@ class Inventory(RaspIotModule):
         Args:
             bootstrap (dict): bootstrap objects
             debug_enabled (bool): debug status
-            modules (array): available modules
+            installed_modules (list): available modules (list from config)
         """
         #init
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
@@ -69,12 +69,12 @@ class Inventory(RaspIotModule):
         Load all available modules and their devices
         """
         #list all available modules (list should be downloaded from internet) and fill default metadata
-        modules_json = self.cleep_filesystem.read_json(self.MODULES_JSON)
-        if modules_json is None:
+        if not os.path.exists(self.MODULES_JSON):
             #no modules loaded, fallback to empty list that will be filled only with local modules list
             self.logger.warning(u'No module loaded from Raspiot website')
             self.modules = {}
         else:
+            modules_json = self.cleep_filesystem.read_json(self.MODULES_JSON)
             self.modules = modules_json[u'list']
         for module_name in self.modules:
             #append metadata that doesn't exists in modules.json
@@ -116,6 +116,8 @@ class Inventory(RaspIotModule):
                     #save module entry
                     self.modules[module_name] = {
                         u'description': class_.MODULE_DESCRIPTION,
+                        u'version': class_.MODULE_VERSION,
+                        u'author': class_.MODULE_AUTHOR,
                         u'locked': class_.MODULE_LOCKED,
                         u'tags': class_.MODULE_TAGS,
                         u'country': country,
@@ -215,7 +217,7 @@ class Inventory(RaspIotModule):
             CommandError: if module doesn't exists
         """
         #check values
-        if self.modules.has_key(module):
+        if module in self.modules:
             raise CommandError(u'Module %s doesn\'t exist' % module)
 
         #search module devices
