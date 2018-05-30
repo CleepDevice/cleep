@@ -129,13 +129,13 @@ class CleepFilesystem():
         self.__counter -= 1
 
         if self.__counter==0:
-            #disable write
+            #disable write after debounce time
             self.logger.debug('Launch debounce timer')
             self.__debounce_timer = Timer(self.DEBOUNCE_DURATION, self.__really_disable_write)
             self.__debounce_timer.start()
 
         else:
-            #a running action still needs write mode
+            #running action still needs write mode
             pass
 
         #release lock
@@ -157,6 +157,21 @@ class CleepFilesystem():
         parts = path.split(os.sep)
 
         return u'tmp'==parts[1]
+
+    def enable_write(self):
+        """
+        Enable write
+        This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
+        Please make sure to call disable_write after you finished your process
+        """
+        self.__enable_write()
+
+    def disable_write(self):
+        """
+        Disable write
+        Use this function only if you used enable_write function before!
+        """
+        self.__disable_write()
 
     def open(self, path, mode, encoding=u'utf-8'):
         """
