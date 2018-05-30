@@ -85,8 +85,8 @@ class Sounds(RaspIotRenderer):
     Add capability to play sounds or music and speech some text
     """
     MODULE_AUTHOR = u'Cleep'
-    MOUDLE_VERSION = u'1.0.0'
-    MOUDLE_PRICE = 0
+    MODULE_VERSION = u'1.0.0'
+    MODULE_PRICE = 0
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Plays sounds or speech text you want'
     MODULE_LOCKED = False
