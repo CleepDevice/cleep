@@ -1,3 +1,3 @@
 __all__ = ['raspiot', 'bus', 'rpcserver', 'database', 'libs', 'modules']
-__version__ = "0.0.8"
+__version__ = "0.0.10"
 
