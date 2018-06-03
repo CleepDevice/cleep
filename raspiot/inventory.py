@@ -3,10 +3,11 @@
     
 import os
 import logging
-from raspiot import RaspIotModule, RaspIotRenderer
-from utils import CommandError, MissingParameter, InvalidParameter
 import importlib
 import inspect
+import copy
+from raspiot import RaspIotModule, RaspIotRenderer
+from utils import CommandError, MissingParameter, InvalidParameter
 
 __all__ = [u'Inventory']
 
@@ -78,6 +79,7 @@ class Inventory(RaspIotModule):
             self.modules = modules_json[u'list']
         for module_name in self.modules:
             #append metadata that doesn't exists in modules.json
+            self.modules[module_name][u'name'] = module_name
             self.modules[module_name][u'locked'] = False
             self.modules[module_name][u'installed'] = False
             self.modules[module_name][u'library'] = False
@@ -115,6 +117,7 @@ class Inventory(RaspIotModule):
 
                     #save module entry
                     self.modules[module_name] = {
+                        u'name': module_name,
                         u'description': class_.MODULE_DESCRIPTION,
                         u'version': class_.MODULE_VERSION,
                         u'author': class_.MODULE_AUTHOR,
@@ -239,7 +242,7 @@ class Inventory(RaspIotModule):
             list: list of modules::
                 ['module name':{'module info':'', ...}, ...]
         """
-        return self.modules
+        return copy.deepcopy(self.modules)
 
     def get_modules_names(self):
         """
