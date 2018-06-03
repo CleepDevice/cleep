@@ -240,7 +240,7 @@ class Niccolometronome(RaspIotModule):
     MODULE_PRICE = 0
     MODULE_DEPS = [u'speechrecognition']
     MODULE_DESCRIPTION = u'Niccolo metronome'
-    MODULE_LOCKED = True
+    MODULE_LOCKED = False
     MODULE_TAGS = [u'niccolo', u'metronome']
     MODULE_COUNTRY = None
     MODULE_URLINFO = None
