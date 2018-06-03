@@ -12,16 +12,18 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         self.version = '';
         self.lastUpdate = null;
         self.lastCheck = null;
-        self.automaticUpdate = false;
+        self.raspiotUpdate = false;
+        self.modulesUpdate = false;
+        self.modules = [];
         self.status = 0;
 
         /**
-         * Check for updates
+         * Check for raspiot updates
          */
-        self.checkUpdates = function() {
-            toast.loading('Checking update...');
-            var message = '';
-            updateService.checkUpdates()
+        self.checkRaspiotUpdates = function() {
+            toast.loading('Checking raspiot update...');
+            var message = 'Check update terminated';
+            updateService.checkRaspiotUpdates()
                 .then(function(resp) {
                     if( resp.data===false )
                     {
@@ -36,12 +38,45 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                 })
                 .then(function(resp) {
                     self.status = resp.data.status;
-                    self.lastCheck = resp.data.last_check;
+                    self.lastCheckRaspiot = resp.data.lastcheckraspiot;
                 })
                 .finally(function() {
                     toast.info(message);
                 });
         };
+
+        /**
+         * Check for modules updates
+         */
+        self.checkModulesUpdates = function() {
+            toast.loading('Checking modules updates...');
+            var message = 'Check updates terminated';
+            updateService.checkModulesUpdates()
+                .then(function(resp) {
+                    if( resp.data===false )
+                    {
+                        message = 'No update available';
+                    }
+                    else
+                    {
+                        message = 'Update(s) available';
+                    }
+
+                    return updateService.getStatus(true);
+                })
+                .then(function(resp) {
+                    /update updatable module flag
+                    for( module in resp.data.modules )
+                    {
+                        self.modules[module].updatable = resp.data.modules[module].updatable;
+                    }
+                    self.status = resp.data.status;
+                    self.lastCheckModules = resp.data.lastcheckmodules;
+                })
+                .finally(function() {
+                    toast.info(message);
+                })
+        }
 
         /**
          * Cancel current update
@@ -56,16 +91,16 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         /**
          * Save automatic update
          */
-        self.setAutomaticUpdate = function(automaticUpdate) {
-            updateService.setAutomaticUpdate(automaticUpdate)
+        self.setAutomaticUpdate = function() {
+            updateService.setAutomaticUpdate(self.raspiotUpdate, self.modulesUpdate)
                 .then(function(resp) {
                     if( resp.data===true )
                     {
-                        toast.success('Automatic update saved');
+                        toast.success('New value saved');
                     }
                     else
                     {
-                        toast.error('Unable to save automatic update');
+                        toast.error('Unable to save new value');
                     }
                 });
         };
@@ -81,9 +116,6 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
          * Show update logs
          */
         self.showLogs = function(ev) {
-
-            console.log(self.stdout);
-
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'updateLogsCtl',
@@ -103,15 +135,16 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         {
             updateService.getStatus(true)
                 .then(function(config) {
-                    console.log(config);
                     //save data
-                    self.stdout = config.data.last_stdout;
-                    self.stderr = config.data.last_stderr;
+                    self.stdout = config.data.laststdout;
+                    self.stderr = config.data.laststderr;
                     self.version = config.data.version;
-                    self.lastUpdate = config.data.last_update;
-                    self.lastCheck = config.data.last_check;
-                    self.automaticUpdate = config.data.automatic_update;
+                    self.lastUpdate = config.data.lastupdate;
+                    self.lastCheck = config.data.lastcheck;
+                    self.raspiotUpdate = config.data.raspiotupdate;
+                    self.modulesUpdate = config.data.modulesupdate;
                     self.status = config.data.status;
+                    self.modules = config.data.modules;
                 });
 
 
@@ -123,8 +156,8 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         $rootScope.$on('update.status.update', function(event, uuid, params) {
             console.log(event, uuid, params);
             self.status = params.status;
-            self.downloadPercent = params.download_percent;
-            self.downloadFilesize = params.download_filesize;
+            self.downloadPercent = params.downloadpercent;
+            self.downloadFilesize = params.downloadfilesize;
         });
 
     }];
