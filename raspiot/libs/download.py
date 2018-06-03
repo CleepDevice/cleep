@@ -73,22 +73,22 @@ class Download():
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
                         if self.cleep_filesystem:
-                            self.cleep_filesystem.remove(os.path.join(self.temp_dir, dl))
+                            self.cleep_filesystem.rm(os.path.join(self.temp_dir, dl))
                         else:
                             os.remove(os.path.join(self.temp_dir, dl))
                     except:
-                        pass
+                        self.logger.exception(u'Unable to purge downloaded file:')
 
                 #delete cached files
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
                         if self.cleep_filesystem:
-                            self.cleep_filesystem.remove(os.path.join(self.temp_dir, dl))
+                            self.cleep_filesystem.rm(os.path.join(self.temp_dir, dl))
                         else:
                             os.remove(os.path.join(self.temp_dir, dl))
                     except:
-                        pass
+                        self.logger.exception(u'Unable to cached downloaded file:')
 
     def get_cached_files(self):
         """
