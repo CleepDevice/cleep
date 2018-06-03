@@ -19,6 +19,10 @@ a {
     text-decoration: underline;
 }
 
+md-list div.md-subheader:not(:first-child) {
+    margin-top: 15px;
+}
+
 /* default cursor */
 .default-cursor {
     cursor: default;
