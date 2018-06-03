@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Updatestatusupdate(Event):
+class Systemmoduleinstall(Event):
     """
-    Update.status.update event
+    System.module.install event
     """
 
-    EVENT_NAME = u'update.status.update'
+    EVENT_NAME = u'system.module.install'
     EVENT_SYSTEM = True
 
     def __init__(self, bus, formatters_factory, events_factory):
@@ -33,9 +33,10 @@ class Updatestatusupdate(Event):
             bool: True if params are valid, False otherwise
         """
         keys = [
+            u'module',
             u'status',
-            u'downloadfilesize',
-            u'downloadpercent'
+            u'prescript',
+            u'postscript'
         ]
         return all(key in keys for key in params.keys())
 
