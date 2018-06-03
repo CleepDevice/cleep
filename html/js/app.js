@@ -73,12 +73,12 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                         if( response.data.event.endsWith('reboot') )
                         {
                             self.rebooting = true;
-                            blockUI.start({message:'System is rebooting. It might take some time.'});
+                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.'});
                         }
                         else if( response.data.event.endsWith('restart') )
                         {
                             self.restarting = true;
-                            blockUI.start({message:'System is restarting. Please wait few seconds.'});
+                            blockUI.start({message:'System is restarting...', submessage:'Please wait few seconds.'});
                         }
                         else if( response.data.event.endsWith('halt') )
                         {

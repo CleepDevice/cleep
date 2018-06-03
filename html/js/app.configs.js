@@ -98,7 +98,7 @@ RaspIot.config(['blockUIConfig', function(blockUIConfig) {
     tmpl += '      <md-card-title-media>';
     tmpl += '        <div class="md-media-sm card-media" layout>';
     tmpl += '          <md-icon ng-if="state.icon!==undefined" class="icon-xl" md-svg-icon="{{state.icon}}"></md-icon>';
-    tmpl += '          <md-progress-circular ng-if="state.spinner===undefined || state.spinner===true" md-mode="indeterminate">';
+    tmpl += '          <md-progress-circular ng-if="state.spinner===undefined || state.spinner===true" md-mode="indeterminate" style="margin-top:14px; margin-left:10px;">';
     tmpl += '        </div>';
     tmpl += '      </md-card-title-media>';
     tmpl += '      <md-card-title-text>';
