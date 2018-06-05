@@ -119,6 +119,10 @@ class MessageBus():
         if self.__stopped:
             return None
 
+        #increase default timeout during startup (really useful for raspiot v1)
+        if not self.__app_configured and timeout:
+            timeout *= 3.0
+
         if isinstance(request, MessageRequest):
             #get request as dict
             request_dict = request.to_dict(not self.__app_configured)
