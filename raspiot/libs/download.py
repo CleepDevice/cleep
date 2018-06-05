@@ -3,6 +3,7 @@
 
 import logging
 import urllib3
+urllib3.disable_warnings()
 import uuid
 import time
 import os
