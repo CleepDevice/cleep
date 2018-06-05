@@ -7,6 +7,7 @@ import importlib
 import inspect
 import copy
 from raspiot import RaspIotModule, RaspIotRenderer
+from .libs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
 
 __all__ = [u'Inventory']
@@ -18,8 +19,6 @@ class Inventory(RaspIotModule):
      - loaded modules and their commands
      - existing renderers (sms, email, sound...)
     """ 
-
-    MODULES_JSON = u'/etc/raspiot/modules.json'
 
     def __init__(self, bootstrap, debug_enabled, installed_modules):
         """
@@ -69,13 +68,15 @@ class Inventory(RaspIotModule):
         Load all available modules and their devices
         """
         #list all available modules (list should be downloaded from internet) and fill default metadata
-        if not os.path.exists(self.MODULES_JSON):
-            #no modules loaded, fallback to empty list that will be filled only with local modules list
-            self.logger.warning(u'No module loaded from Raspiot website')
+        modules_json = ModulesJson(self.cleep_filesystem)
+        if not modules_json.exists():
+            #modules.json doesn't exists, fallback to empty one
+            self.logger.warning(u'No modules.json loaded from Raspiot website')
             self.modules = {}
         else:
-            modules_json = self.cleep_filesystem.read_json(self.MODULES_JSON)
-            self.modules = modules_json[u'list']
+            modules_json_content = modules_json.get_json()
+            self.modules = modules_json_content[u'list']
+
         for module_name in self.modules:
             #append metadata that doesn't exists in modules.json
             self.modules[module_name][u'name'] = module_name

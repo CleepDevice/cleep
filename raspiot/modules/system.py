@@ -21,11 +21,11 @@ from raspiot.libs.fstab import Fstab
 from raspiot.libs.hostname import Hostname
 from raspiot.libs.raspiotconf import RaspiotConf
 from raspiot.libs.install import Install
+from raspiot.libs.modulesjson import ModulesJson
 
 
 __all__ = [u'System']
 
-MODULES_JSON = u'/etc/raspiot/modules.json'
 
 class System(RaspIotModule):
     """
@@ -96,6 +96,7 @@ class System(RaspIotModule):
         self.__need_restart = False
         self.__need_reboot = False
         self.hostname = Hostname(self.cleep_filesystem)
+        self.modules_json = ModulesJson(self.cleep_filesystem)
 
         #events
         self.systemTimeNow = self._get_event(u'system.time.now')
@@ -582,13 +583,10 @@ class System(RaspIotModule):
         Return:
             dict: module infos
         """
-        self.logger.debug('Load modules.json file from "%s"' % MODULES_JSON)
-        modules_json = self.cleep_filesystem.read_json(MODULES_JSON)
+        #get modules.json content
+        modules_json = self.modules_json.get_json()
 
-        if u'list' not in modules_json:
-            self.logger.fatal(u'Invalid modules.json file')
-            raise Exception('Invalid modules.json')
-
+        #check module presence in modules.json file
         if module not in modules_json[u'list']:
             self.logger.error(u'Module "%s" not found in modules list' % module)
             raise CommandError(u'Module "%s" not found in modules list' % module)

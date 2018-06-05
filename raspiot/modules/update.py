@@ -6,13 +6,13 @@ import logging
 import time
 import json
 from raspiot.raspiot import RaspIotModule
-from raspiot.modules.system import MODULES_JSON
 from raspiot.libs.download import Download
 from raspiot.libs.install import Install
 from raspiot.libs.github import Github
 from raspiot import __version__ as VERSION
 from raspiot.libs.task import BackgroundTask
 from raspiot.utils import CommandError, InvalidParameter
+from raspiot.libs.modulesjson import ModulesJson
 
 __all__ = [u'Update']
 
@@ -85,6 +85,7 @@ class Update(RaspIotModule):
         self.__update_task = None
         self.__modules = {}
         self.__updating_modules = []
+        self.modules_json = ModulesJson(self.cleep_filesystem)
 
         #events
         self.updateStatusUpdate = self._get_event(u'update.status.update')
@@ -98,14 +99,9 @@ class Update(RaspIotModule):
         self.__reset_update(self.STATUS_IDLE)
 
         #download modules.json file if not exists
-        if not os.path.exists(MODULES_JSON):
-            try:
-                self.logger.info(u'Download latest modules.json file from raspiot repository')
-                modules_json = self.__download_latest_modules_json()
-                if modules_json:
-                    self.cleep_filesystem.write_json(MODULES_JSON, modules_json)
-            except:
-                self.logger.exception(u'File modules.json download failed:')
+        if not self.modules_json.exists():
+            self.logger.info(u'Download latest modules.json file from raspiot repository')
+            self.modules_json.update()
 
         #start update task
         self.__update_task = BackgroundTask(self.__update_raspiot, self.logger, pause=10.0)
@@ -363,18 +359,6 @@ class Update(RaspIotModule):
             #prevent from infinite update attempts
             self.__reset_update(self.STATUS_ERROR)
 
-    def __download_latest_modules_json(self):
-        """
-        Download latest version of modules.json file and copy it to expected place
-
-        Return:
-            string: content of modules.json as string or None if error occured
-        """
-        download = Download(self.cleep_filesystem)
-        raw = download.download_file(self.RASPIOT_MODULES_JSON)
-        
-        return raw
-
     def __is_new_module_version_available(self, module, old_version, new_version):
         """
         Compare specified version and return True if new version is greater than old one
@@ -448,9 +432,9 @@ class Update(RaspIotModule):
         #get modules list from inventory
         modules = self.__get_modules()
 
-        #download latest modules.json file
-        raw = self.__download_latest_modules_json()
-        remote_modules_json = json.loads(raw)
+        #update latest modules.json file
+        self.modules_json.update()
+        remote_modules_json = self.modules_json.get_json()
 
         #check downloaded file validity
         if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
@@ -460,9 +444,9 @@ class Update(RaspIotModule):
 
         #load local modules.json file
         local_modules_json = None
-        if os.path.exists(MODULES_JSON):
+        if self.modules_json.exists():
             #local file exists, load its content
-            local_modules_json = self.cleep_filesystem.read_json(MODULES_JSON)
+            local_modules_json = self.modules_json.get_json()
 
         #check if new modules.json file version available
         if local_modules_json is None or remote_modules_json[u'update']>local_modules_json[u'update']:
