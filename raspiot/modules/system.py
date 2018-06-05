@@ -608,7 +608,7 @@ class System(RaspIotModule):
         self.logger.debug(u'Module install callback status: %s' % status)
         
         #send process status to ui
-        self.systemModuleInstall.send(params=status, to=u'rpc')
+        self.systemModuleInstall.send(params=status)
 
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
@@ -617,12 +617,17 @@ class System(RaspIotModule):
             raspiot = RaspiotConf(self.cleep_filesystem)
             return raspiot.install_module(status[u'module'])
 
-    def install_module(self, module):
+    def install_module(self, module, update_process=False):
         """
         Install specified module
 
+        Note:
+            Parameter update_process allows to distiguish between install from scratch from module update and
+            to react differently in ui
+
         Params:
             module (string): module name to install
+            update_process (bool): set it to True if install triggered during module update (default False)
 
         Returns:
             bool: True if module installed
@@ -636,7 +641,7 @@ class System(RaspIotModule):
 
         #launch installation (non blocking)
         install = Install(self.cleep_filesystem, self.__module_install_callback)
-        install.install_module(module, infos)
+        install.install_module(module, infos, update_process)
 
         return True
 
@@ -650,7 +655,7 @@ class System(RaspIotModule):
         self.logger.debug(u'Module uninstall callback status: %s' % status)
         
         #send process status to ui
-        self.systemModuleUninstall.send(params=status, to=u'rpc')
+        self.systemModuleUninstall.send(params=status)
 
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
@@ -659,12 +664,17 @@ class System(RaspIotModule):
             raspiot = RaspiotConf(self.cleep_filesystem)
             return raspiot.uninstall_module(status[u'module'])
 
-    def uninstall_module(self, module):
+    def uninstall_module(self, module, update_process=False):
         """
         Uninstall specified module
 
+        Note:
+            Parameter update_process allows to distiguish between install from scratch from module update and
+            to react differently in ui
+
         Params:
             module (string): module name to install
+            update_process (bool): set it to True if install triggered during module update (default False)
 
         Returns:
             bool: True if module uninstalled
@@ -675,7 +685,7 @@ class System(RaspIotModule):
 
         #launch uninstallation
         uninstall = Install(self.cleep_filesystem, self.__module_uninstall_callback)
-        uninstall.uninstall_module(module)
+        uninstall.uninstall_module(module, update_process)
 
         return True
 

@@ -32,12 +32,13 @@ class UninstallModule(threading.Thread):
     STATUS_ERROR_REMOVE = 5
     STATUS_ERROR_POSTUNINST = 6
 
-    def __init__(self, module, callback, cleep_filesystem):
+    def __init__(self, module, update_process, callback, cleep_filesystem):
         """
         Constructor
 
         Args:
             module (string): module name to install
+            update_process (bool): True if module uninstall occured during update process
             callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
         """
@@ -50,6 +51,7 @@ class UninstallModule(threading.Thread):
 
         #members
         self.status = self.STATUS_IDLE
+        self.update_process = update_process
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
         self.module = module
@@ -71,13 +73,15 @@ class UninstallModule(threading.Thread):
                     module (string): module name
                     prescript (dict): preuninst status (returncode, stdout, stderr)
                     postscript (dict): postuninst status (returncode, stdout, stderr)
+                    updateprocess (bool): uninstall triggered by module update
                 }
         """
         return {
             u'module': self.module,
             u'status': self.status,
             u'prescript': self.__pre_script_status,
-            u'postscript': self.__post_script_status
+            u'postscript': self.__post_script_status,
+            u'updateprocess': self.update_process
         }
 
     def __script_callback(self, stdout, stderr):
@@ -174,7 +178,7 @@ class UninstallModule(threading.Thread):
             except Exception as e:
                 self.logger.exception(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_PREUNINST
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #send status
             if self.callback:
@@ -188,7 +192,13 @@ class UninstallModule(threading.Thread):
                 lines = install_log.readlines()
                 self.cleep_filesystem.close(install_log)
                 for line in lines:
-                    if not self.cleep_filesystem.rm(line.strip()):
+                    line = line.strip()
+                    if len(line)==0:
+                        #empty line, drop it
+                        continue
+
+                    #try to delete file
+                    if not self.cleep_filesystem.rm(line):
                         self.logger.warning(u'File "%s" was not removed during "%s" module uninstallation' % (line, self.module))
 
                 #remove install log file
@@ -197,7 +207,7 @@ class UninstallModule(threading.Thread):
             except:
                 self.logger.exception(u'Exception occured during "%s" files module uninstallation' % self.module)
                 self.status = self.STATUS_ERROR_REMOVE
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #send status
             if self.callback:
@@ -214,7 +224,7 @@ class UninstallModule(threading.Thread):
             except Exception as e:
                 self.logger.exception(u'Exception occured during postuninst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_POSTUNINST
-                raise Exception()
+                raise Exception(u'Forced exception')
 
         except:
             #local exception raised, invalid state :S
@@ -230,11 +240,11 @@ class UninstallModule(threading.Thread):
                 if postuninst_sh:
                     self.cleep_filesystem.rm(postuninst_sh)
             except:
-                self.logger.exception(u'Exception during install cleaning:')
+                self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
 
             if error:
                 #error occured
-                self.logger.debug('Error occured during "%s" module uninstallation')
+                self.logger.debug('Error occured during "%s" module uninstallation' % self.module)
                 if self.status==self.STATUS_UNINSTALLING:
                     self.status = self.STATUS_ERROR_INTERNAL
             else:
@@ -267,13 +277,14 @@ class InstallModule(threading.Thread):
     STATUS_ERROR_COPY = 8
     STATUS_ERROR_POSTINST = 9
 
-    def __init__(self, module, module_infos, callback, cleep_filesystem):
+    def __init__(self, module, module_infos, update_process, callback, cleep_filesystem):
         """
         Constructor
 
         Args:
             module (string): module name to install
             module_infos (dict): all module infos from modules.json file
+            update_process (bool): True if module uninstall occured during update process
             callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
         """
@@ -286,6 +297,7 @@ class InstallModule(threading.Thread):
 
         #members
         self.callback = callback
+        self.update_process = update_process
         self.status = self.STATUS_IDLE
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
@@ -319,13 +331,15 @@ class InstallModule(threading.Thread):
                     status (int): see STATUS_XXX for available codes
                     prescript (dict): preinst status (returncode, stdout, stderr)
                     postscript (dict): postinst status (returncode, stdout, stderr)
+                    updateprocess (bool): install triggered by module update
                 }
         """
         return {
             u'module': self.module,
             u'status': self.status,
             u'prescript': self.__pre_script_status,
-            u'postscript': self.__post_script_status
+            u'postscript': self.__post_script_status,
+            u'updateprocess': self.update_process
         }
 
     def __script_callback(self, stdout, stderr):
@@ -429,11 +443,11 @@ class InstallModule(threading.Thread):
             except:
                 self.logger.exception(u'Exception occured during install log init "%s":' % path)
                 self.status = self.STATUS_ERROR_INTERNAL
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #canceled ?
             if not self.running:
-                raise Exception()
+                raise Exception(u'Canceled exception')
 
             #send status
             if self.callback:
@@ -457,16 +471,16 @@ class InstallModule(threading.Thread):
     
                     self.logger.error(error)
                     self.status = self.STATUS_ERROR_DOWNLOAD
-                    raise Exception()
+                    raise Exception(u'Forced exception')
 
             except:
                 self.logger.exception(u'Exception occured during module "%s" package download "%s"' % (self.module, self.module_infos[u'download']))
                 self.status = self.STATUS_ERROR_DOWNLOAD
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #canceled ?
             if not self.running:
-                raise Exception()
+                raise Exception(u'Canceled exception')
 
             #send status
             if self.callback:
@@ -483,11 +497,11 @@ class InstallModule(threading.Thread):
             except:
                 self.logger.exception(u'Error decompressing module "%s" package "%s" in "%s":' % (self.module, archive_path, extract_path))
                 self.status = self.STATUS_ERROR_EXTRACT
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #canceled ?
             if not self.running:
-                raise Exception()
+                raise Exception(u'Canceled exception')
 
             #send status
             if self.callback:
@@ -514,11 +528,11 @@ class InstallModule(threading.Thread):
             except Exception as e:
                 self.logger.exception(u'Exception occured during preinst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_PREINST
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #canceled ?
             if not self.running:
-                raise Exception()
+                raise Exception(u'Canceled exception')
 
             #send status
             if self.callback:
@@ -539,18 +553,18 @@ class InstallModule(threading.Thread):
 
                 #canceled ?
                 if not self.running:
-                    raise Exception()
+                    raise Exception(u'Canceled exception')
     
                 #process them according to their directory
                 for f in archive_files:
-                    if f.startswith(u'back/'):
+                    if f.startswith(BACKEND_DIR):
                         #copy python files
                         src_path = os.path.join(extract_path, f)
-                        dst_path = os.path.join(self.raspiot_path, f).replace(u'back/', u'')
+                        dst_path = os.path.join(self.raspiot_path, f).replace(BACKEND_DIR, u'')
                         self.logger.debug('src=%s dst=%s' % (src_path, dst_path))
                         self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                         if not self.cleep_filesystem.copy(src_path, dst_path):
-                            raise Exception()
+                            raise Exception(u'Forced exception')
 
                         #keep track of copied file for uninstall
                         install_log.write(u'%s\n' % dst_path)
@@ -563,7 +577,7 @@ class InstallModule(threading.Thread):
                         self.logger.debug('src=%s dst=%s' % (src_path, dst_path))
                         self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                         if not self.cleep_filesystem.copy(src_path, dst_path):
-                            raise Exception()
+                            raise Exception(u'Forced exception')
 
                         #keep track of copied file for uninstall
                         install_log.write(u'%s\n' % dst_path)
@@ -575,13 +589,13 @@ class InstallModule(threading.Thread):
                 
                     #canceled ?
                     if not self.running:
-                        raise Exception(u'canceled')
+                        raise Exception(u'Canceled exception')
 
             except Exception as e:
-                if e.message!=u'canceled':
+                if e.message!=u'Canceled exception':
                     self.logger.exception(u'Exception occured during module "%s" files copy:' % self.module)
                     self.status = self.STATUS_ERROR_COPY
-                raise Exception()
+                raise Exception(u'Forced exception')
 
             #send status
             if self.callback:
@@ -597,11 +611,11 @@ class InstallModule(threading.Thread):
             except:
                 self.logger.exception(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_POSTINST
-                raise Exception()
+                raise Exception(u'Forced exception')
                     
             #canceled ?
             if not self.running:
-                raise Exception(u'canceled')
+                raise Exception(u'Canceled exception')
 
         except:
             #local exception raised, revert installation
@@ -617,7 +631,7 @@ class InstallModule(threading.Thread):
                 if archive_path:
                     self.cleep_filesystem.rm(archive_path)
             except:
-                self.logger.exception(u'Exception during install cleaning:')
+                self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
 
             if self.running==False:
                 #installation canceled
@@ -625,7 +639,7 @@ class InstallModule(threading.Thread):
 
             elif error:
                 #error occured, revert installation
-                self.logger.debug('Error occured during install, revert installed files')
+                self.logger.debug('Error occured during "%s" install, revert installed files' % self.module)
                 if self.status==self.STATUS_INSTALLING:
                     self.status = self.STATUS_ERROR_INTERNAL
                 
@@ -715,9 +729,9 @@ class Install():
                 }
         """
         return {
-            'status': self.status,
-            'stdout': self.stdout,
-            'stderr': self.stderr
+            u'status': self.status,
+            u'stdout': self.stdout,
+            u'stderr': self.stderr
         }
 
     def __reset_status(self, status):
@@ -735,7 +749,7 @@ class Install():
         """
         End of process callback
         """
-        self.logger.debug('End of command')
+        self.logger.debug(u'End of command')
 
         #update status if necessary
         if self.status!=self.STATUS_ERROR and self.status!=self.STATUS_CANCELED:
@@ -768,7 +782,7 @@ class Install():
 
         #refresh packages
         command = u'/usr/bin/aptitude update'
-        self.logger.debug('Command: %s' % command)
+        self.logger.debug(u'Command: %s' % command)
         self.__console = EndlessConsole(command, self.__callback_quiet, self.__callback_end)
         self.__console.start()
 
@@ -825,7 +839,7 @@ class Install():
 
         #install deb
         command = u'/usr/bin/aptitude install -y "%s"' % package_name
-        self.logger.debug('Command: %s' % command)
+        self.logger.debug(u'Command: %s' % command)
         self.__running = True
         self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
         self.__console.start()
@@ -864,11 +878,11 @@ class Install():
         self.cleep_filesystem.enable_write()
 
         #install deb
-        action = 'remove'
+        action = u'remove'
         if purge:
-            action = 'purge'
+            action = u'purge'
         command = u'/usr/bin/aptitude %s -y "%s"' % (action, package_name)
-        self.logger.debug('Command: %s' % command)
+        self.logger.debug(u'Command: %s' % command)
         self.__running = True
         self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
         self.__console.start()
@@ -925,7 +939,7 @@ class Install():
 
         #install deb (and dependencies)
         command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s" && /usr/bin/apt-get install -f && /usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb, deb)
-        self.logger.debug('Command: %s' % command)
+        self.logger.debug(u'Command: %s' % command)
         self.__running = True
         self.__console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
         self.__console.start()
@@ -978,11 +992,11 @@ class Install():
 
         #check params
         if archive is None or len(archive.strip())==0:
-            raise Exception('Parameter "archive" is missing')
+            raise Exception(u'Parameter "archive" is missing')
         if install_path is None or len(install_path.strip())==0:
-            raise Exception('Parameter "install_path" is missing')
+            raise Exception(u'Parameter "install_path" is missing')
         if not os.path.exists(archive):
-            raise Exception('Archive does not exist')
+            raise Exception(u'Archive does not exist')
 
         #create output dir if it isn't exist
         if not os.path.exists(install_path):
@@ -994,23 +1008,23 @@ class Install():
         #get archive decompressor according to archive extension
         command = None
         dummy, ext = os.path.splitext(archive)
-        if ext=='.gz':
+        if ext==u'.gz':
             _, ext = os.path.splitext(dummy)
-            if ext=='.tar':
-                command = '/bin/tar xzvf "%s" -C "%s"' % (archive, install_path)
+            if ext==u'.tar':
+                command = u'/bin/tar xzvf "%s" -C "%s"' % (archive, install_path)
 
-        elif ext=='.zip':
-            command = '/usr/bin/unzip "%s" -d "%s"' % (archive, install_path)
+        elif ext==u'.zip':
+            command = u'/usr/bin/unzip "%s" -d "%s"' % (archive, install_path)
 
         #execute command
         if command is None:
-            raise Exception('File format not supported. Only zip and tar.gz supported.')
+            raise Exception(u'File format not supported. Only zip and tar.gz supported.')
         else:
             #enable write
             self.cleep_filesystem.enable_write()
 
             #execute command
-            self.logger.debug('Command: %s' % command)
+            self.logger.debug(u'Command: %s' % command)
             self.__running = True
             self.__console = EndlessConsole(command, self.__callback_archive, self.__callback_end)
             self.__console.start()
@@ -1040,6 +1054,7 @@ class Install():
                     status (int): module process status
                     prescript (dict): {stderr, stdout, returncode}
                     postscript (dict): {stderr, stdout, returncode}
+                    updateprocess (bool): uninstall triggered by module update
                 }
         """
         #save status
@@ -1064,17 +1079,19 @@ class Install():
         #send status
         if self.status_callback:
             current_status = self.get_status()
-            #inject module name :S
+            #inject module name and updateprocess
             current_status[u'module'] = status[u'module']
+            current_status[u'updateprocess'] = status[u'updateprocess']
             self.status_callback(current_status)
 
-    def install_module(self, module, module_infos):
+    def install_module(self, module, module_infos, update_process):
         """
         Install specified module
 
         Params:
             module (string): module name to install
             modules_infos (dict): module infos reported in modules.json
+            update_process (bool): True if module uninstall occured during update process
 
         Returns:
             bool: True if module installed
@@ -1086,7 +1103,7 @@ class Install():
             raise MissingParameter(u'Parameter "module_infos" is missing')
 
         #launch installation
-        install = InstallModule(module, module_infos, self.__callback_install_module, self.cleep_filesystem)
+        install = InstallModule(module, module_infos, update_process, self.__callback_install_module, self.cleep_filesystem)
         install.start()
 
         #blocking mode
@@ -1119,6 +1136,7 @@ class Install():
                     status (int): module process status
                     prescript (dict): {stderr, stdout, returncode}
                     postscript (dict): {stderr, stdout, returncode}
+                    updateprocess (bool): uninstall triggered by module update
                 }
         """
         #save status
@@ -1141,16 +1159,18 @@ class Install():
         #send status
         if self.status_callback:
             current_status = self.get_status()
-            #inject module name :S
+            #inject module name and updateprocess status
             current_status[u'module'] = status[u'module']
+            current_status[u'updateprocess'] = status[u'updateprocess']
             self.status_callback(current_status)
 
-    def uninstall_module(self, module):
+    def uninstall_module(self, module, update_process):
         """
         Uninstall specified module
 
         Params:
             module (string): module name to install
+            update_process (bool): True if module uninstall occured during update process
 
         Returns:
             bool: True if module uninstalled
@@ -1160,7 +1180,7 @@ class Install():
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = UninstallModule(module, self.__callback_uninstall_module, self.cleep_filesystem)
+        uninstall = UninstallModule(module, update_process, self.__callback_uninstall_module, self.cleep_filesystem)
         uninstall.start()
 
         #blocking mode
