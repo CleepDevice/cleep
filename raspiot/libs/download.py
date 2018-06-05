@@ -390,7 +390,7 @@ class Download():
             checksum_provided = check_md5
             self.logger.debug('MD5 for %s: %s' % (self.download, checksum_computed))
         if checksum_provided is not None:
-            if checksum_computed==checksum_provided:
+            if checksum_computed.lower()==checksum_provided.lower():
                 self.logger.debug('Checksum is valid')
             else:
                 self.logger.error('Checksum from downloaded file is invalid (computed=%s provided=%s)' % (checksum_computed, checksum_provided))
