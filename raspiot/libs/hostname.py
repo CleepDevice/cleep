@@ -40,9 +40,9 @@ class Hostname(Config):
         self.hostname = hostname
 
         try:
-            fd = self.fs.open(self.conf, u'w')
+            fd = self.cleep_filesystem.open(self.conf, u'w')
             fd.write(u'%s' % self.hostname)
-            self.fs.close(fd)
+            self.cleep_filesystem.close(fd)
         except:
             return False
 
@@ -56,9 +56,9 @@ class Hostname(Config):
             string: raspi hostname
         """
         if self.hostname is None:
-            fd = self.fs.open(self.CONF, u'r')
+            fd = self.cleep_filesystem.open(self.CONF, u'r')
             content = fd.readlines()
-            self.fs.close(fd)
+            self.cleep_filesystem.close(fd)
 
             if len(content)>0:
                 self.hostname = content[0].strip()

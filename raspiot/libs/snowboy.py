@@ -47,7 +47,7 @@ class Snowboy():
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
-        self.fs = cleep_filesystem
+        self.cleep_filesystem = cleep_filesystem
         self.token = token
 
     def set_api_token(self, token):
@@ -115,9 +115,9 @@ class Snowboy():
             if resp.status_code!=201:
                 self.logger.debug('Train response %s: %s' % (resp.status_code, resp.content))
             if resp.ok:
-                fd = self.fs.open(voice_model_path, u'wb')
+                fd = self.cleep_filesystem.open(voice_model_path, u'wb')
                 fd.write(resp.content)
-                self.fs.close(fd)
+                self.cleep_filesystem.close(fd)
                 self.logger.info('Personal voice model wrote to %s' % voice_model_path)
 
                 return voice_model_path
