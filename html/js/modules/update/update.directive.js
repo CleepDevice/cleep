@@ -23,7 +23,7 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
          */
         self.checkRaspiotUpdates = function() {
             toast.loading('Checking raspiot update...');
-            var message = 'Check update terminated';
+            var message = null;
             updateService.checkRaspiotUpdates()
                 .then(function(resp) {
                     if( resp.data===false )
@@ -43,7 +43,10 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                     self.lastCheckModules = resp.data.lastcheckmodules;
                 })
                 .finally(function() {
-                    toast.info(message);
+                    if( message )
+                    {
+                        toast.info(message);
+                    }
                 });
         };
 
@@ -52,7 +55,7 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
          */
         self.checkModulesUpdates = function() {
             toast.loading('Checking modules updates...');
-            var message = 'Check updates terminated';
+            var message = null;
             updateService.checkModulesUpdates()
                 .then(function(resp) {
                     if( resp.data===false )
@@ -77,7 +80,10 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                     self.lastCheckModules = resp.data.lastcheckmodules;
                 })
                 .finally(function() {
-                    toast.info(message);
+                    if( message )
+                    {
+                        toast.info(message);
+                    }
                 })
         }
 
