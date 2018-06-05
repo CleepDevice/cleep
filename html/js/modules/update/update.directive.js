@@ -11,7 +11,8 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
         self.stdout = '';
         self.version = '';
         self.lastUpdate = null;
-        self.lastCheck = null;
+        self.lastCheckRaspiot = null;
+        self.lastCheckModules = null;
         self.raspiotUpdate = false;
         self.modulesUpdate = false;
         self.modules = [];
@@ -39,6 +40,7 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                 .then(function(resp) {
                     self.status = resp.data.status;
                     self.lastCheckRaspiot = resp.data.lastcheckraspiot;
+                    self.lastCheckModules = resp.data.lastcheckmodules;
                 })
                 .finally(function() {
                     toast.info(message);
@@ -65,12 +67,13 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                     return updateService.getStatus(true);
                 })
                 .then(function(resp) {
-                    /update updatable module flag
+                    //update updatable module flag
                     for( module in resp.data.modules )
                     {
                         self.modules[module].updatable = resp.data.modules[module].updatable;
                     }
                     self.status = resp.data.status;
+                    self.lastCheckRaspiot = resp.data.lastcheckraspiot;
                     self.lastCheckModules = resp.data.lastcheckmodules;
                 })
                 .finally(function() {
@@ -101,6 +104,20 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                     else
                     {
                         toast.error('Unable to save new value');
+                    }
+                });
+        };
+
+        /**
+         * Update module
+         */
+        self.updateModule = function(module) {
+            updateService.updateModule(module)
+                .then(function(resp) {
+                    if( resp && resp.data==true )
+                    {
+                        self.modules[module].updating = true;
+                        toast.success('Module update started');
                     }
                 });
         };
@@ -140,7 +157,8 @@ var updateConfigDirective = function(toast, updateService, raspiotService, $mdDi
                     self.stderr = config.data.laststderr;
                     self.version = config.data.version;
                     self.lastUpdate = config.data.lastupdate;
-                    self.lastCheck = config.data.lastcheck;
+                    self.lastCheckRaspiot = config.data.lastcheckraspiot;
+                    self.lastCheckModules = config.data.lastcheckmodules;
                     self.raspiotUpdate = config.data.raspiotupdate;
                     self.modulesUpdate = config.data.modulesupdate;
                     self.status = config.data.status;

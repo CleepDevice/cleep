@@ -113,7 +113,14 @@ var installDirective = function($q, raspiotService, toast) {
          * Handle module install event
          */
         $rootScope.$on('system.module.install', function(event, uuid, params) {
+            //drop useless status
             if( !params.status )
+            {
+                return;
+            }
+
+            //drop module install triggered by module update
+            if( params.updateprocess===true )
             {
                 return;
             }
@@ -143,6 +150,12 @@ var installDirective = function($q, raspiotService, toast) {
          */
         $rootScope.$on('system.module.uninstall', function(event, uuid, params) {
             if( !params.status )
+            {
+                return;
+            }
+
+            //drop module uninstall triggered by module update
+            if( params.updateprocess===true )
             {
                 return;
             }

@@ -59,8 +59,9 @@
         </md-list-item>
         <md-list-item ng-repeat="module in updateCtl.modules">
             <md-icon md-svg-icon="chevron-right"></md-icon>
-            <p>Module {{module.name}} (v{{module.version}} installed)</p>
-            <md-button class="md-secondary" ng-if="module.updatable" ng-click="updateCtl.updateModule(module.name)">Install update</md-button>
+            <p ng-if="!module.updatable">Module {{module.name}} (v{{module.version}} installed)</p>
+            <p ng-if="module.updatable">Module {{module.name}} (v{{module.version}} installed, v{{module.updatable}} available)</p>
+            <md-button class="md-secondary" ng-if="module.updatable" ng-click="updateCtl.updateModule(module.name)" ng-disabled="module.updating">Install update</md-button>
         </md-list-item>
 
     </md-list>

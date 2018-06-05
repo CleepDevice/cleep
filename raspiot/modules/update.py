@@ -13,7 +13,6 @@ from raspiot.libs.github import Github
 from raspiot import __version__ as VERSION
 from raspiot.libs.task import BackgroundTask
 from raspiot.utils import CommandError, InvalidParameter
-from raspiot.libs.install import UninstallModule
 
 __all__ = [u'Update']
 
@@ -141,8 +140,10 @@ class Update(RaspIotModule):
                 if self.__modules[module][u'locked'] or not self.__modules[module][u'installed']:
                     modules_to_delete.append(module)
                 
-                #append updatable flag
-                self.__modules[module][u'updatable'] = False
+                #append updatable/updating flags
+                #TODO check version with modules.json => need to create lib to handle modules.json first
+                self.__modules[module][u'updatable'] = None
+                self.__modules[module][u'updating'] = module in self.__updating_modules
 
             #remove system modules
             for module in modules_to_delete:
@@ -478,8 +479,8 @@ class Update(RaspIotModule):
                 new_version = local_modules_json[u'list'][module][u'version']
                 if self.__is_new_module_version_available(module, current_version, new_version):
                     #new version available for current module
-                    self.logger.info('New version available for module "%s" (%s->%s)' % (module, old_version, new_version))
-                    modules[module][u'updatable'] = True
+                    self.logger.info('New version available for module "%s" (%s->%s)' % (module, current_version, new_version))
+                    modules[module][u'updatable'] = new_version
                     update_available = True
 
                 else:
@@ -505,7 +506,7 @@ class Update(RaspIotModule):
 
         #launch module uninstall first
         #ui should handle rpc events to follow uninstallation progress
-        resp = self.send_command(u'uninstall_module', u'system', {u'module': module})
+        resp = self.send_command(u'uninstall_module', u'system', {u'module': module, u'update_process': True})
         self.logger.debug(u'Module "%s" uninstall response: %s' % (module, resp))
         if resp[u'error']:
             raise Exception(resp[u'message'])
@@ -572,6 +573,7 @@ class Update(RaspIotModule):
         """
         Event received
         """
+        #handle time event to trigger updates check
         if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
             #check updates at noon
 
@@ -584,17 +586,35 @@ class Update(RaspIotModule):
             if config[u'modulesupdate']:
                 self.check_modules_updates()
 
+        #handle module uninstall event during update
         elif event[u'event']==u'system.module.uninstall' and event[u'params'][u'module'] in self.__updating_modules:
-            self.logger.debug(u'Updating module %s detected' % event[u'params'][u'module'])
+            self.logger.debug(u'Module "%s" update detected (uninstall part)' % event[u'params'][u'module'])
             #check module uninstall status
-            if event[u'params'][u'status']==UninstallModule.STATUS_UNINSTALLED:
+            if event[u'params'][u'status']==Install.STATUS_DONE:
                 #module uninstalled, continue installing it
-                resp = send_command(u'install_module', u'system', {u'module': event[u'params'][u'module']})
-                self.logger.debug(u'Uninstallation of module "%s" terminated, module new version install launched: %s' % (event[u'params'][u'module'], resp))
+                resp = self.send_command(u'install_module', u'system', {u'module': event[u'params'][u'module'], u'update_process': True})
+                self.logger.info(u'Module "%s" update: uninstallation terminated, installing new version' % (event[u'params'][u'module']))
 
-            elif event[u'params'][u'status']>UninstallModule.STATUS_UNINSTALLED:
+            elif event[u'params'][u'status'] in (Install.STATUS_ERROR, Install.STATUS_CANCELED):
                 #error occured during module uninstall, remove it from updating list
-                self.logger.debug(u'Error occured during module "%s" uninstallation. Remove it from updating list' % event[u'params'][u'module'])
+                self.logger.error(u'Module "%s" update: error occured during uninstall.' % event[u'params'][u'module'])
+                self.__updating_modules.remove(event[u'params'][u'module'])
+
+            else:
+                self.logger.debug('Module "%s" uninstall not terminated (status=%s)' % (event[u'params'][u'module'], event[u'params'][u'status']))
+
+        #handle module install event during update
+        elif event[u'event']==u'system.module.install' and event[u'params'][u'module'] in self.__updating_modules:
+            self.logger.debug(u'Module "%s" update detected (install part)' % event[u'params'][u'module'])
+            #check module install status
+            if event[u'params'][u'status']==Install.STATUS_DONE:
+                #module installed, end of update, remove it from updating list
+                self.logger.info(u'Module "%s" update: update terminated successfully' % (event[u'params'][u'module']))
+                self.__updating_modules.remove(event[u'params'][u'module'])
+
+            elif event[u'params'][u'status'] in (Install.STATUS_ERROR, Install.STATUS_CANCELED):
+                #error occured during module install, remove it from updating list
+                self.logger.error(u'Module "%s" update: error occured during installation.' % event[u'params'][u'module'])
                 self.__updating_modules.remove(event[u'params'][u'module'])
 
             else:
