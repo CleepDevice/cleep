@@ -33,7 +33,7 @@ class Config():
             comment_tag (string): comment tag
             backup (bool): auto backup original file (default True)
         """
-        self.fs = cleep_filesystem
+        self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         path = os.path.expanduser(path)
@@ -58,14 +58,14 @@ class Config():
         Backup original file if necessary
         """
         if not os.path.exists(self.backup_path) and os.path.exists(self.path):
-            self.fs.copy(self.path, self.backup_path)
+            self.cleep_filesystem.copy(self.path, self.backup_path)
 
     def restore_backup(self):
         """
         Overwrite original config file by backup one
         """
         if os.path.exists(self.backup_path):
-            self.fs.copy(self.backup_path, self.path)
+            self.cleep_filesystem.copy(self.backup_path, self.path)
             return True
 
         return False
@@ -92,7 +92,7 @@ class Config():
         if not os.path.exists(self.path):
             raise Exception(u'%s file does not exist' % self.path)
 
-        self.__fd = self.fs.open(self.path, mode, encoding)
+        self.__fd = self.cleep_filesystem.open(self.path, mode, encoding)
 
         return self.__fd
 
@@ -101,7 +101,7 @@ class Config():
         Close file descriptor is still opened
         """
         if self.__fd:
-            self.fs.close(self.__fd)
+            self.cleep_filesystem.close(self.__fd)
             self.__fd = None
 
     def _write(self, content):
