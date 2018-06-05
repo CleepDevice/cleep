@@ -103,7 +103,7 @@ RaspIot.config(['blockUIConfig', function(blockUIConfig) {
     tmpl += '      </md-card-title-media>';
     tmpl += '      <md-card-title-text>';
     tmpl += '        <span class="md-headline">{{state.message}}</span>';
-    tmpl += '        <span ng-if="state.submessage!==undefined" class="md-subhead">{{state.submessage}}</span>';
+    tmpl += '        <span ng-if="state.submessage" class="md-subhead">{{state.submessage}}</span>';
     tmpl += '      </md-card-title-text>';
     tmpl += '    </md-card-title>';
     tmpl += '  </md-card>';
