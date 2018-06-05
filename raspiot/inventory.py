@@ -63,7 +63,6 @@ class Inventory(RaspIotModule):
         Configure module
         """
         self.__load_modules()
-        #self.__load_formatters()
 
     def __load_modules(self):
         """
@@ -85,6 +84,20 @@ class Inventory(RaspIotModule):
             self.modules[module_name][u'library'] = False
             self.modules[module_name][u'local'] = False
 
+        def fix_country(country):
+            if not country:
+                return u''
+            else:
+                return country.lower()
+
+        def fix_urls(site_url, bugs_url, info_url, help_url):
+            return {
+                u'site': site_url,
+                u'bugs': bugs_url,
+                u'info': info_url,
+                u'help': help_url
+            }
+
         #append local modules (that doesn't exists on internet modules list)
         path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
@@ -93,27 +106,13 @@ class Inventory(RaspIotModule):
             fpath = os.path.join(path, f)
             (module_name, ext) = os.path.splitext(f)
             if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
-                #valid file
                 if module_name not in self.modules:
+                    #local module not published yet
                     self.logger.debug(u'Add modules found locally only')
-                    #it is a local module
+                
+                    #load module to get metadata
                     module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
                     class_ = getattr(module_, module_name.capitalize())
-
-                    #fix module country
-                    country = class_.MODULE_COUNTRY
-                    if not country:
-                        country = u''
-                    else:
-                        country = country.lower()
-
-                    #build urls
-                    urls = {
-                        u'site': getattr(class_, u'MODULE_URLSITE', None),
-                        u'bugs': getattr(class_, u'MODULE_URLBUGS', None),
-                        u'info': getattr(class_, u'MODULE_URLINFO', None),
-                        u'help': getattr(class_, u'MODULE_URLHELP', None)
-                    }
 
                     #save module entry
                     self.modules[module_name] = {
@@ -123,12 +122,26 @@ class Inventory(RaspIotModule):
                         u'author': class_.MODULE_AUTHOR,
                         u'locked': class_.MODULE_LOCKED,
                         u'tags': class_.MODULE_TAGS,
-                        u'country': country,
-                        u'urls': urls, 
+                        u'country': fix_country(getattr(class_, u'MODULE_COUNTRY', None)),
+                        u'urls': fix_urls(getattr(class_, u'MODULE_URLSITE', None), getattr(class_, u'MODULE_URLBUGS', None), getattr(class_, u'MODULE_URLINFO', None), getattr(class_, u'MODULE_URLHELP', None)), 
                         u'installed': False,
                         u'library': False,
                         u'local': True
                     }
+
+                else:
+                    #published and installed module
+                    #overwrite metadata loaded from modules.json by real ones from installed module list
+                    key = 'mod.%s' % module_name
+                    if key in self.installed_modules:
+                        self.modules[module_name][u'description'] = self.installed_modules[key].MODULE_DESCRIPTION
+                        self.modules[module_name][u'version'] = self.installed_modules[key].MODULE_VERSION
+                        self.modules[module_name][u'author'] = self.installed_modules[key].MODULE_AUTHOR
+                        self.modules[module_name][u'tags'] = self.installed_modules[key].MODULE_TAGS
+                        self.modules[module_name][u'country'] = fix_country(self.installed_modules[key].MODULE_COUNTRY)
+                        self.modules[module_name][u'urls'] = fix_urls(self.installed_modules[key].MODULE_URLSITE, self.installed_modules[key].MODULE_URLBUGS, self.installed_modules[key].MODULE_URLINFO, self.installed_modules[key].MODULE_URLHELP)
+                    else:
+                        self.logger.warning(u'Module "%s" not found in installed modules' % module_name)
 
         #update metadata of installed modules
         self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())
