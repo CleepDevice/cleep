@@ -32,7 +32,7 @@ class ReadWrite():
         Args:
             partition (string): partition to work on
         """
-        partition_mod = partition.replace('/', '\/')
+        partition_mod = partition.replace(u'/', u'\/')
         res = self.console.command(u'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod)
 
         #check errors
@@ -43,9 +43,9 @@ class ReadWrite():
 
         #parse result
         line = res[u'stdout'][0].strip()
-        if line=='rw':
+        if line==u'rw':
             self.status[parition] = self.STATUS_WRITE
-        elif line=='ro':
+        elif line==u'ro':
             self.status[partition] = self.STATUS_READ
         else:
             self.logger.error(u'Unable to get parition "%s" status: %s' % (partition, res[u'stdout']))
@@ -58,7 +58,7 @@ class ReadWrite():
         Return:
             bool: True if it's cleep iso
         """
-        if os.path.exists('/tmp/raspiot'):
+        if os.path.exists(u'/tmp/raspiot'):
             return True
 
         return False
@@ -97,7 +97,7 @@ class ReadWrite():
 
         #check errors
         if res[u'error'] or res[u'killed']:
-            self.logger.error('Error when turning on writing mode: %s' % res)
+            self.logger.error(u'Error when turning on writing mode: %s' % res)
             
         #refresh status
         self.__refresh(partition)
@@ -122,7 +122,7 @@ class ReadWrite():
 
         #check errors
         if res[u'error'] or res[u'killed']:
-            self.logger.error('Error when turning on writing mode: %s' % res)
+            self.logger.error(u'Error when turning on writing mode: %s' % res)
             
         #refresh status
         self.__refresh(partition)
