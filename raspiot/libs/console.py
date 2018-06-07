@@ -44,6 +44,7 @@ class EndlessConsole(Thread):
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.running = True
+        self.killed = False
         self.__start_time = 0
         self.__stdout_queue = Queue()
         self.__stderr_queue = Queue()
@@ -81,6 +82,7 @@ class EndlessConsole(Thread):
         Stop command line execution (kill it)
         """
         self.running = False
+        self.killed = True
 
     def kill(self):
         """
@@ -150,7 +152,7 @@ class EndlessConsole(Thread):
 
         #stop callback
         if self.callback_end:
-            self.callback_end(return_code, not self.running)
+            self.callback_end(return_code, self.killed)
 
 
 class Console():
