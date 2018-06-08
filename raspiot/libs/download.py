@@ -39,7 +39,7 @@ class Download():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #members
         self.cleep_filesystem = cleep_filesystem
