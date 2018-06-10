@@ -196,13 +196,17 @@ class InstallRaspiot(threading.Thread):
             try:
                 checksum_content = download.download_file(self.url_checksum)
                 self.logger.debug('Checksum file content: %s' % checksum_content)
+                if checksum_content is None:
+                    #failed to download checksum file
+                    raise Exception(u'')
                 checksum, _ = checksum_content.split()
                 self.logger.debug(u'Raspiot archive checksum: %s' % checksum)
 
-            except:
-                self.logger.exception(u'Exception occured during checksum file download "%s":' % self.url_checksum)
+            except Exception as e:
+                if len(e.message)>0:
+                    self.logger.exception(u'Exception occured during checksum file download "%s":' % self.url_checksum)
                 self.status = self.STATUS_ERROR_DOWNLOAD_CHECKSUM
-                raise Exception(u'Force exception')
+                raise Exception(u'Forced exception')
 
             #canceled ?
             if not self.running:
@@ -226,7 +230,7 @@ class InstallRaspiot(threading.Thread):
                         self.error = u'Error during "%s" download: invalid checksum' % self.url_raspiot
                     else:
                         self.error = u'Error during "%s" download: unknown error' % self.url_raspiot
-                    self.logger.error(error)
+                    self.logger.error(self.error)
 
                     raise Exception(u'')
 
@@ -275,7 +279,7 @@ class InstallRaspiot(threading.Thread):
                         #script failed
                         raise Exception(u'')
 
-            except:
+            except Exception as e:
                 if len(e.message)>0:
                     self.logger.exception(u'Exception occured during preinst.sh script execution:')
                 self.status = self.STATUS_ERROR_PREINST
