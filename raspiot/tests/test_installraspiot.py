@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(filename)s:%(line
 class InstallRaspiotTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_raspiot = 'https://github.com/tangb/raspiot/raw/master/tests/%s.zip'
-        self.url_checksum = 'https://github.com/tangb/raspiot/raw/master/tests/%s.sha256'
+        self.url_raspiot = 'https://github.com/tangb/raspiot/raw/master/tests/installraspiot/%s.zip'
+        self.url_checksum = 'https://github.com/tangb/raspiot/raw/master/tests/installraspiot/%s.sha256'
         self.fs = CleepFilesystem()
         self.fs.DEBOUNCE_DURATION = 0.0
 
