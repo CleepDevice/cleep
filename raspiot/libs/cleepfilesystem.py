@@ -341,6 +341,18 @@ class CleepFilesystem():
 
         return copied
 
+    def remove(self, path):
+        """
+        Remove file (alias of rm function)
+
+        Args:
+            path (string): path
+        
+        Return:
+            bool: True if operation succeed
+        """
+        return self.rm(path)
+
     def rm(self, path):
         """
         Remove file
