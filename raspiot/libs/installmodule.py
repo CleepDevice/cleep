@@ -720,3 +720,132 @@ class InstallModule(threading.Thread):
         self.logger.info(u'Module "%s" installation terminated (success: %s)' % (self.module, not error))
 
 
+
+
+
+class UpdateModule(threading.Thread):
+    """
+    """
+    STATUS_IDLE = 0
+    STATUS_UPDATING = 1
+    STATUS_UPDATED = 2
+    STATUS_ERROR = 3
+
+    def __init__(self, module, module_infos, callback, cleep_filesystem):
+        """
+        Constructor
+
+        Args:
+            module (string): module name to install
+            update_process (bool): True if module uninstall occured during update process
+            callback (function): status callback
+            cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
+        """
+        threading.Thread.__init__(self)
+        threading.Thread.daemon = True
+
+        #logger   
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
+
+        #members
+        self.module = module
+        self.module_infos = module_infos
+        self.callback = callback
+        self.cleep_filesystem = cleep_filesystem
+        self.status = self.STATUS_IDLE
+        self.__is_uninstalling = True
+        self.__uninstall_status = {
+            u'status': InstallModule.STATUS_IDLE,
+            u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
+            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None}
+        }
+        self.__install_status = {
+            u'status': UninstallModule.STATUS_IDLE,
+            u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
+            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None}
+        }
+
+    def get_status(self):
+        """
+        Return update status
+        """
+        return {
+            u'status': self.status,
+            u'uninstall': self.__uninstall_status,
+            u'install': self.__install_status
+        }
+
+    def __callback(self, status):
+        """
+        Install/Uninstall callback
+
+        Args:
+            status (dict): status returned by install/uninstall
+        """
+        if self.__is_uninstalling:
+            #callback from uninstall process
+            self.__uninstall_status[u'status'] = status[u'status']
+            self.__uninstall_status[u'prescript'] = status[u'prescript']
+            self.__uninstall_status[u'postscript'] = status[u'postscript']
+
+        else:
+            #callback from install process
+            self.__install_status[u'status'] = status[u'status']
+            self.__install_status[u'prescript'] = status[u'prescript']
+            self.__install_status[u'postscript'] = status[u'postscript']
+
+    def start(self):
+        """
+        Process module update
+        """
+        #init
+        self.logger.debug(u'Start module "%s" update' % self.module)
+        error_uninstall = False
+        error_install = False
+        self.status = self.STATUS_UPDATING
+
+        #run uninstall
+        uninstall = UninstallModule(self.module, True, self.__callback, self.cleep_filesystem)
+        uninstall.start()
+        time.sleep(0.5)
+        while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:
+            time.sleep(0.5)
+        if uninstall.get_status()[u'status']!=uninstall.STATUS_UNINSTALLED:
+            #module can have error during uninstall but all process is still done
+            self.logger.warning(u'Error during module "%s" update: uninstall encountered errors but continue anyway the new version installation' % self.module)
+            error_uninstall = True
+
+        #callback
+        if self.callback:
+            self.callback(self.get_status())
+        
+        #run new package install
+        self.__is_uninstalling = False
+        install = InstallModule(self.module, self.module_infos, True, self.__callback, self.cleep_filesystem)
+        install.start()
+        time.sleep(0.5)
+        while install.get_status()[u'status']==install.STATUS_INSTALLING:
+            time.sleep(0.5)
+
+        #check install status
+        if install.get_status()[u'status']!=install.STATUS_INSTALLED:
+            self.status = self.STATUS_ERROR
+            error_install = True
+            self.logger.error(u'Error during module "%s" update: install encountered errors' % self.module)
+
+        else:
+            #module updated
+            self.status = self.STATUS_UPDATED
+
+        #callback
+        if self.callback:
+            self.callback(self.get_status())
+
+        if error_install:
+            self.logger.info(u'Module "%s" update terminated (success: False)' % self.module)
+        elif error_uninstall:
+            self.logger.info(u'Module "%s" update terminated (success: True with error during uninstall)' % self.module)
+        else:
+            self.logger.info(u'Module "%s" update terminated (success: True)' % self.module)
+
