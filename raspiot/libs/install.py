@@ -283,7 +283,7 @@ class Install():
         Cannot be canceled once launched
 
         Return:
-            bool: True if install succeed
+            bool: True if install succeed or None if non blocking
         """
         if self.status==self.STATUS_PROCESSING:
             raise Exception(u'Installer is already processing')
@@ -296,6 +296,7 @@ class Install():
 
         #install deb (and its dependencies)
         installer = InstallDeb(self.__callback_deb, self.cleep_filesystem, blocking=False)
+        installer.install(deb)
 
         #blocking mode
         if self.blocking:
