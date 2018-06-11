@@ -146,7 +146,10 @@ class UninstallModule(threading.Thread):
         Return
         """
         #init
-        self.logger.debug(u'Executing %s script' % path)
+        os.chmod(path, stat.S_IEXEC)
+
+        #exec
+        self.logger.debug(u'Executing "%s" script' % path)
         console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
         out = False
 
@@ -186,12 +189,14 @@ class UninstallModule(threading.Thread):
             #pre uninstallation script
             try:
                 self.__pre_script_execution = True
-                preuninst_sh = os.path.join(os.path.join(PATH_INSTALL, u'%s_preuninst.sh' % self.module))
+                preuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'preuninst.sh'))
                 if os.path.exists(preuninst_sh):
                     self.__script_running = True
                     if not self.__execute_script(preuninst_sh):
                         #script failed
                         raise Exception(u'')
+                else:
+                    self.logger.debug(u'No preuninst script found at "%s"' % preuninst_sh)
 
             except Exception as e:
                 if len(e.message)>0:
@@ -205,8 +210,11 @@ class UninstallModule(threading.Thread):
 
             #remove all installed files
             try:
-                module_log = os.path.join(PATH_INSTALL, u'%s.log' % self.module)
+                module_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
                 self.logger.debug(u'Open install log file "%s"' % module_log)
+                if not os.path.exists(module_log):
+                    self.logger.error(u'Unable to remove module "%s" files because "%s" file doesn\'t exist' % (self.module, module_log))
+                    raise Exception(u'')
                 install_log = self.cleep_filesystem.open(module_log, u'r')
                 lines = install_log.readlines()
                 self.cleep_filesystem.close(install_log)
@@ -220,11 +228,12 @@ class UninstallModule(threading.Thread):
                     if not self.cleep_filesystem.rm(line):
                         self.logger.warning(u'File "%s" was not removed during "%s" module uninstallation' % (line, self.module))
 
-                #remove install log file
+                #remove install log file and supposed frontend directory
                 self.cleep_filesystem.rm(module_log)
 
-            except:
-                self.logger.exception(u'Exception occured during "%s" files module uninstallation' % self.module)
+            except Exception as e:
+                if len(e.message)>0:
+                    self.logger.exception(u'Exception occured during "%s" files module uninstallation' % self.module)
                 error_during_remove = True
                 #do not stop uninstall process
 
@@ -235,17 +244,19 @@ class UninstallModule(threading.Thread):
             #post uninstallation script
             try:
                 self.__pre_script_execution = False
-                postuninst_sh = os.path.join(os.path.join(PATH_INSTALL, u'%s_postuninst.sh' % self.module))
+                postuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'postuninst.sh'))
                 if os.path.exists(postuninst_sh):
                     self.__script_running = True
                     if not self.__execute_script(postuninst_sh):
                         #script failed
                         raise Exception(u'')
+                else:
+                    self.logger.debug(u'No postuninst script found at "%s"' % postuninst_sh)
 
             except Exception as e:
                 if len(e.message)>0:
                     self.logger.exception(u'Exception occured during postuninst.sh script execution of module "%s"' % self.module)
-                error_during_remove = True
+                error_during_postscript = True
                 #do not stop uninstall process
 
         except:
@@ -255,25 +266,29 @@ class UninstallModule(threading.Thread):
         finally:
             #clean stuff
             try:
-                if module_log:
-                    self.cleep_filesystem.rm(module_log)
-                if preuninst_sh:
-                    self.cleep_filesystem.rm(preuninst_sh)
-                if postuninst_sh:
-                    self.cleep_filesystem.rm(postuninst_sh)
+                path = os.path.join(PATH_INSTALL, self.module)
+                if os.path.exists(path):
+                    self.cleep_filesystem.rmdir(path)
+                path = os.path.join(PATH_FRONTEND, 'js/modules/%s' % self.module)
+                if os.path.exists(path):
+                    self.cleep_filesystem.rmdir(path)
             except:
                 self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
 
+            self.logger.debug('error=%s error_during_prescript=%s error_during_postscript=%s error_during_remove=%s' % (error, error_during_prescript, error_during_postscript, error_during_remove))
             if error:
                 #error occured
                 self.logger.debug(u'Error occured during "%s" module uninstallation' % self.module)
                 self.status = self.STATUS_ERROR_INTERNAL
             elif error_during_prescript:
+                error = True
                 self.status = self.STATUS_UNINSTALLED_ERROR_PREUNINST
-            elif error_during_postscript:
-                self.status = self.STATUS_UNINSTALLED_ERROR_POSTUNINST
             elif error_during_remove:
+                error = True
                 self.status = self.STATUS_UNINSTALLED_ERROR_REMOVE
+            elif error_during_postscript:
+                error = True
+                self.status = self.STATUS_UNINSTALLED_ERROR_POSTUNINST
             else:
                 #install terminated successfully
                 self.status = self.STATUS_UNINSTALLED
@@ -464,9 +479,10 @@ class InstallModule(threading.Thread):
 
         try:
             #open file for writing installed files
-            install_log = os.path.join(PATH_INSTALL, u'%s.log' % self.module)
+            install_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
             self.logger.debug(u'Create install log file "%s"' % install_log)
             try:
+                self.cleep_filesystem.mkdirs(os.path.join(PATH_INSTALL, self.module))
                 install_log_fd = self.cleep_filesystem.open(install_log, u'w')
                 install_log_fd.flush()
             except:
@@ -540,13 +556,17 @@ class InstallModule(threading.Thread):
 
             #copy uninstall scripts to install path
             src_path = os.path.join(extract_path, u'preuninst.sh')
-            dst_path = os.path.join(PATH_INSTALL, u'%s_preuninst.sh' % self.module)
+            dst_path = os.path.join(PATH_INSTALL, self.module, u'preuninst.sh')
             if os.path.exists(src_path):
                 self.cleep_filesystem.copy(src_path, dst_path)
+            else:
+                self.logger.debug(u'Script preuninst.sh not found in archive')
             src_path = os.path.join(extract_path, u'postuninst.sh')
-            dst_path = os.path.join(PATH_INSTALL, u'%s_postuninst.sh' % self.module)
+            dst_path = os.path.join(PATH_INSTALL, self.module, u'postuninst.sh')
             if os.path.exists(src_path):
                 self.cleep_filesystem.copy(src_path, dst_path)
+            else:
+                self.logger.debug(u'Script postuninst.sh not found in archive')
 
             #pre installation script
             try:
@@ -556,6 +576,8 @@ class InstallModule(threading.Thread):
                     self.__script_running = True
                     if not self.__execute_script(path):
                         raise Exception(u'')
+                else:
+                    self.logger.debug('No preinst script found at "%s"' % path)
 
             except Exception as e:
                 if len(e.message)>0:
@@ -638,6 +660,9 @@ class InstallModule(threading.Thread):
                     self.__script_running = True
                     if not self.__execute_script(path):
                         raise Exception(u'')
+                else:
+                    self.logger.debug('No postinst script found at "%s"' % path)
+
             except Exception as e:
                 if len(e.message)>0:
                     self.logger.exception(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
@@ -679,7 +704,8 @@ class InstallModule(threading.Thread):
                         lines = fd.readlines()
                         for line in lines:
                             self.cleep_filesystem.rm(line.strip())
-                        self.cleep_filesystem.remove(install_log)
+                        self.cleep_filesystem.rmdir(os.path.dirname(install_log))
+
                     except:
                         self.logger.exception(u'Unable to revert "%s" module installation:' % self.module)
 
