@@ -402,7 +402,7 @@ class CleepFilesystem():
         #remove dir
         try:
             if os.path.exists(path):
-                shutil.rmtree(path)
+                shutil.rmtree(path, ignore_errors=True)
                 removed = True
         except:
             self.logger.exception(u'Exception removing directory "%s"' % path)
@@ -446,6 +446,18 @@ class CleepFilesystem():
             self.__disable_write()
 
         return created
+
+    def mkdirs(self, path):
+        """
+        Create directories tree
+
+        Args:
+            path (string): path
+
+        Return:
+            bool: True if operation succeed
+        """
+        return self.mkdir(path, True)
 
 
 
