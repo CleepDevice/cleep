@@ -769,11 +769,21 @@ class UpdateModule(threading.Thread):
     def get_status(self):
         """
         Return update status
+
+        Return:
+            dict: current status
+                {
+                    status (int): see STATUS_XXX
+                    uninstall (dict): dict as returned by uninstall module status
+                    install (dict): dict as returned by uninstall module status
+                    module (string): module name
+                }
         """
         return {
             u'status': self.status,
             u'uninstall': self.__uninstall_status,
-            u'install': self.__install_status
+            u'install': self.__install_status,
+            u'module': self.module
         }
 
     def __callback(self, status):
