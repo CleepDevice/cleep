@@ -16,7 +16,7 @@ from raspiot.raspiot import RaspIotModule
 from raspiot.libs.task import Task
 from raspiot.libs.console import Console
 from raspiot.utils import CommandError, MissingParameter, InvalidParameter
-from raspiot.libs.install import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
+from raspiot.libs.installmodule import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
 
 __all__ = ['Developer']
 

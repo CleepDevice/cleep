@@ -2,7 +2,7 @@
  * System config directive
  * Handle system configuration
  */
-var systemConfigDirective = function($filter, $timeout, $q, toast, systemService, raspiotService, confirm) {
+var systemConfigDirective = function($filter, $timeout, $q, toast, systemService, raspiotService, confirm, $mdDialog) {
 
     var systemController = ['$scope', function($scope)
     {
@@ -28,6 +28,17 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.debugs = {};
         self.renderings = [];
         self.eventsNotRendered = [];
+        self.raspiotUpdateEnabled = false;
+        self.modulesUpdateEnabled = false;
+        self.raspiotUpdateAvailable = false;
+        self.modulesUpdateAvailable = false;
+        self.lastRaspiotInstallStdout = '';
+        self.lastRaspiotInstallStderr = '';
+        self.lastRaspiotUpdate = null;
+        self.lastCheckRaspiot = null;
+        self.lastCheckModules = null;
+        self.raspiotInstallStatus = 0;
+        self.version = '';
 
         /*************
          * General tab
@@ -65,9 +76,130 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                 });
         };
 
+        /************
+         * Update tab
+         ************/
+
+        /**
+         * Set automatic update
+         */
+        self.setAutomaticUpdate = function(row)
+        {
+            //toggle value if row clicked
+            if( row==='raspiot' )
+            {
+                self.raspiotUpdateEnabled = !self.raspiotUpdateEnabled;
+            }
+            else if( row==='modules' )
+            {
+                self.modulesUpdateEnabled = !self.modulesUpdateEnabled;
+            }
+
+            //perform update
+            systemService.setAutomaticUpdate(self.raspiotUpdateEnabled, self.modulesUpdateEnabled)
+                .then(function(resp) {
+                    if( resp.data===true )
+                    {
+                        toast.success('New value saved');
+                    }
+                    else
+                    {
+                        toast.error('Unable to save new value');
+                    }
+                });
+        };
+
+        /**
+         * Check for raspiot updates
+         */
+        self.checkRaspiotUpdates = function() {
+            toast.loading('Checking raspiot update...');
+            var message = null;
+            systemService.checkRaspiotUpdates()
+                .then(function(resp) {
+                    if( resp.data.updateavailable===false )
+                    {
+                        message = 'No update available';
+                    }
+                    else
+                    {
+                        message = 'Update available';
+                    }
+
+                    //refresh system module config
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function(config) {
+                    //set config
+                    self.setConfig(config);
+                })
+                .finally(function() {
+                    if( message )
+                    {
+                        toast.info(message);
+                    }
+                });
+        };
+
+        /**
+         * Check for modules updates
+         */
+        self.checkModulesUpdates = function() {
+            toast.loading('Checking modules updates...');
+            var message = null;
+            systemService.checkModulesUpdates()
+                .then(function(resp) {
+                    if( resp.data.updateavailable===false )
+                    {
+                        message = 'No update available';
+                    }
+                    else
+                    {
+                        message = 'Update(s) available. Please check installed modules list in settings';
+                    }
+
+                    //refresh system module config
+                    return raspiotService.reloadModuleConfig('system');
+                })
+                .then(function(config) {
+                    //set config
+                    self.setConfig(config);
+                })
+                .finally(function() {
+                    if( message )
+                    {
+                        toast.info(message);
+                    }
+                })
+        };
+
+        /**
+         * Close logs dialog
+         */
+        self.closeDialog = function() {
+            $mdDialog.hide();
+        };
+
+        /**
+         * Show update logs
+         */
+        self.showLogs = function(ev) {
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'updateLogsCtl',
+                templateUrl: 'logs.directive.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                fullscreen: true
+            })
+            .then(function() {}, function() {});
+        };
+
         /**************
          * Advanced tab
          **************/
+
         /**
          * Save monitoring
          */
@@ -134,6 +266,9 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          * Renderings
          ************/
 
+        /**
+         * Update renderings
+         */
         self.updateRendering = function(rendering, fromCheckbox) {
             if( !fromCheckbox )
             {
@@ -187,7 +322,6 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         {
             systemService.setModuleDebug(module, self.debugs[module].debug);
         };
-
 
 
         /**
@@ -246,6 +380,32 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         };
 
         /**
+         * Set module config
+         */
+        self.setConfig = function(config)
+        {
+            console.log(config);
+            //save data
+            self.city = config.city.city;
+            self.country = config.city.country;
+            self.sunset = $filter('hrTime')(config.sun.sunset);
+            self.sunrise = $filter('hrTime')(config.sun.sunrise);
+            self.monitoring = config.monitoring;
+            self.hostname = config.hostname;
+            self.eventsNotRendered = config.eventsnotrendered;
+            self.raspiotUpdateEnabled = config.raspiotupdateenabled;
+            self.modulesUpdateEnabled = config.modulesupdateenabled;
+            self.raspiotUpdateAvailable = config.raspiotupdateavailable;
+            self.modulesUpdateAvailable = config.modulesupdateavailable;
+            self.lastCheckRaspiot = config.lastcheckraspiot;
+            self.lastCheckModules = config.lastcheckmodules;
+            self.lastRaspiotInstallStdout = config.lastraspiotinstallstdout;
+            self.lastRaspiotInstallStderr = config.lastraspiotinstallstderr;
+            self.lastRaspiotUpdate = config.lastraspiotupdate;
+            self.version = config.version;
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
@@ -254,22 +414,14 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             $q.all([raspiotService.getEvents(), raspiotService.getRenderers()])
                 .then(function(resps) {
                     self._initRenderings(resps[0], resps[1]);
-                }, 
-                function(error) {
-                });
 
-            //get system config
-            raspiotService.getModuleConfig('system')
+                    //get system config
+                    return raspiotService.getModuleConfig('system');
+                })
                 .then(function(config) {
-                    //save data
-                    self.city = config.city.city;
-                    self.country = config.city.country;
-                    self.sunset = $filter('hrTime')(config.sun.sunset);
-                    self.sunrise = $filter('hrTime')(config.sun.sunrise);
-                    self.monitoring = config.monitoring;
-                    self.hostname = config.hostname;
-                    self.eventsNotRendered = config.eventsnotrendered;
-
+                    //set module config
+                    self.setConfig(config);
+                    
                     //request for modules debug status
                     return raspiotService.getModulesDebug();
                 })
@@ -295,5 +447,5 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', '$q', 'toastService', 'systemService', 'raspiotService', 'confirmService', systemConfigDirective]);
+RaspIot.directive('systemConfigDirective', ['$filter', '$timeout', '$q', 'toastService', 'systemService', 'raspiotService', 'confirmService', '$mdDialog', systemConfigDirective]);
 

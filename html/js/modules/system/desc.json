@@ -9,6 +9,6 @@
     },
     "config": {
         "js": ["system.directive.js"],
-        "html": ["system.directive.html"]
+        "html": ["system.directive.html", "logs.directive.html"]
     }
 }

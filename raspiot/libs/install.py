@@ -12,6 +12,8 @@ from raspiot.libs.console import EndlessConsole
 from raspiot.raspiot import RaspIotModule
 from raspiot.libs.download import Download
 from raspiot.libs.raspiotconf import RaspiotConf
+from raspiot.libs.installmodule import InstallModule, UninstallModule, UpdateModule
+from raspiot.libs.installdeb import InstallDeb
 
 __all__ = ['Install']
 
@@ -437,14 +439,13 @@ class Install():
             current_status[u'updateprocess'] = status[u'updateprocess']
             self.status_callback(current_status)
 
-    def install_module(self, module, module_infos, update_process):
+    def install_module(self, module, module_infos):
         """
         Install specified module
 
         Params:
             module (string): module name to install
             modules_infos (dict): module infos reported in modules.json
-            update_process (bool): True if module uninstall occured during update process
 
         Returns:
             bool: True if module installed or None if non blocking
@@ -459,10 +460,9 @@ class Install():
         self.__can_cancel = False
 
         #launch installation
-        install = InstallModule(module, module_infos, update_process, self.__callback_install_module, self.cleep_filesystem)
+        install = InstallModule(module, module_infos, False, self.__callback_install_module, self.cleep_filesystem)
         install.start()
 
-        #TODO this code should be handled in caller
         #blocking mode
         if self.blocking:
             #wait for end of installation
@@ -471,10 +471,7 @@ class Install():
 
             #check install status
             if install.get_status()==install.STATUS_INSTALLED:
-                #update raspiot.conf
-                raspiot = RaspiotConf(self.cleep_filesystem)
-                return raspiot.install_module(module)
-
+                return True
             return False
 
         else:
@@ -520,13 +517,12 @@ class Install():
             current_status[u'updateprocess'] = status[u'updateprocess']
             self.status_callback(current_status)
 
-    def uninstall_module(self, module, update_process):
+    def uninstall_module(self, module):
         """
         Uninstall specified module
 
         Params:
             module (string): module name to install
-            update_process (bool): True if module uninstall occured during update process
 
         Returns:
             bool: True if module uninstalled or None if non blocking
@@ -536,10 +532,9 @@ class Install():
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = UninstallModule(module, update_process, self.__callback_uninstall_module, self.cleep_filesystem)
+        uninstall = UninstallModule(module, False, self.__callback_uninstall_module, self.cleep_filesystem)
         uninstall.start()
 
-        #TODO this code should be handled in caller
         #blocking mode
         if self.blocking:
             #wait for end of installation
@@ -548,10 +543,7 @@ class Install():
 
             #check uinstall status
             if uninstall.get_status()==uninstall.STATUS_UNINSTALLED:
-                #update raspiot.conf
-                raspiot = RaspiotConf(self.cleep_filesystem)
-                return raspiot.uninstall_module(module)
-
+                return True
             return False
 
         else:
@@ -617,7 +609,6 @@ class Install():
         update = UpdateModule(module, module_infos, self.__callback_update_module, self.cleep_filesystem)
         update.start()
 
-        #TODO this code should be handled in caller
         #blocking mode
         if self.blocking:
             #wait for end of update
@@ -625,15 +616,8 @@ class Install():
                 time.sleep(0.25)
 
             #check update status
-            raspiot = RaspiotConf(self.cleep_filesystem)
             if update.get_status()==update.STATUS_UPDATED:
-                #update raspiot.conf
-                return raspiot.install_module(module)
-
-            else:
-                #update failed, remove module from list of installed modules
-                return raspiot.uninstall_module(module)
-
+                return True
             return False
 
         else:

@@ -140,43 +140,13 @@ var installDirective = function($q, raspiotService, toast) {
                     .then(function() {
                         //set module pending status
                         self.updateModulePendingStatus(params.module);
+
+                        //info message
                         toast.success('Module ' + params.module + ' installation will be finalized after next restart.');
                     });
             }
         });
 
-        /**
-         * Handle module uninstall event
-         */
-        $rootScope.$on('system.module.uninstall', function(event, uuid, params) {
-            if( !params.status )
-            {
-                return;
-            }
-
-            //drop module uninstall triggered by module update
-            if( params.updateprocess===true )
-            {
-                return;
-            }
-                
-            if( params.status==2 )
-            {
-                toast.error('Error during module ' + params.module + ' uninstallation');
-            }
-            else if( params.status==4 )
-            {
-                toast.error('Module ' + params.module + ' uninstallation canceled');
-            }
-            else if( params.status==3 )
-            {
-                //reload system config to activate restart flag (see main controller)
-                raspiotService.reloadModuleConfig('system')
-                    .then(function() {
-                        toast.success('Module ' + params.module + ' is uninstalled. Please restart raspiot' );
-                    });
-            }
-        });
     }];
 
     var installLink = function(scope, element, attrs, controller) {

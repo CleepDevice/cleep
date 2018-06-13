@@ -22,6 +22,9 @@ from raspiot.libs.hostname import Hostname
 from raspiot.libs.raspiotconf import RaspiotConf
 from raspiot.libs.install import Install
 from raspiot.libs.modulesjson import ModulesJson
+import raspiot.libs.converters as Converters
+from raspiot.libs.github import Github
+from raspiot import __version__ as VERSION
 
 
 __all__ = [u'System']
@@ -58,7 +61,17 @@ class System(RaspIotModule):
         u'ssl': False,
         u'auth': False,
         u'rpc_port': 80,
-        u'eventsnotrendered': []
+        u'eventsnotrendered': [],
+        u'lastupdate': None,
+        u'lastcheckraspiot': None,
+        u'lastcheckmodules': None,
+        u'lastraspiotinstallstdout': u'',
+        u'lastraspiotinstallstderr': u'',
+        u'raspiotupdateenabled': True,
+        u'modulesupdateenabled': True,
+        u'lastraspiotupdate': None,
+        u'raspiotupdateavailable': False,
+        u'modulesupdateavailable': False
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -68,6 +81,9 @@ class System(RaspIotModule):
     THRESHOLD_MEMORY = 80.0
     THRESHOLD_DISK_SYSTEM = 80.0
     THRESHOLD_DISK_EXTERNAL = 90.0
+
+    RASPIOT_GITHUB_OWNER = u'tangb'
+    RASPIOT_GITHUB_REPO = u'raspiot'
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -97,6 +113,12 @@ class System(RaspIotModule):
         self.__need_reboot = False
         self.hostname = Hostname(self.cleep_filesystem)
         self.modules_json = ModulesJson(self.cleep_filesystem)
+        self.__updating_modules = []
+        self.__modules = {}
+        self.__raspiot_update = {
+            u'asset': None,
+            u'checksum': None
+        }
 
         #events
         self.systemTimeNow = self._get_event(u'system.time.now')
@@ -112,6 +134,7 @@ class System(RaspIotModule):
         self.alertEmailSend = self._get_event(u'alert.email.send')
         self.systemModuleInstall = self._get_event(u'system.module.install')
         self.systemModuleUninstall = self._get_event(u'system.module.uninstall')
+        self.systemModuleUpdate = self._get_event(u'system.module.update')
 
     def _configure(self):
         """
@@ -170,6 +193,11 @@ class System(RaspIotModule):
 
         #launch monitoring thread
         self.__start_monitoring_threads()
+
+        #download modules.json file if not exists
+        if not self.modules_json.exists():
+            self.logger.info(u'Download latest modules.json file from raspiot repository')
+            self.modules_json.update()
 
     def _stop(self):
         """
@@ -370,6 +398,16 @@ class System(RaspIotModule):
         config[u'needreboot'] = self.__need_reboot
         config[u'hostname'] = self.get_hostname()
         config[u'eventsnotrendered'] = self.get_events_not_rendered()
+        config[u'lastcheckraspiot'] = self._config[u'lastcheckraspiot']
+        config[u'lastcheckmodules'] = self._config[u'lastcheckmodules']
+        config[u'raspiotupdateenabled'] = self._config[u'raspiotupdateenabled']
+        config[u'modulesupdateenabled'] = self._config[u'modulesupdateenabled']
+        config[u'lastraspiotinstallstdout'] = self._config[u'lastraspiotinstallstdout']
+        config[u'lastraspiotinstallstderr'] = self._config[u'lastraspiotinstallstderr']
+        config[u'lastraspiotupdate'] = self._config[u'lastraspiotupdate']
+        config[u'raspiotupdateavailable'] = self._config[u'raspiotupdateavailable']
+        config[u'modulesupdateavailable'] = self._config[u'modulesupdateavailable']
+        config[u'version'] = VERSION
 
         return config
 
@@ -402,6 +440,7 @@ class System(RaspIotModule):
         Args:
             event (MessageRequest): event data
         """
+        #handle restart event
         if event[u'event'].endswith('system.needrestart'):
             #a module requests a raspiot restart
             if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
@@ -411,6 +450,7 @@ class System(RaspIotModule):
                 #manual restart
                 self.__need_restart = True
 
+        #handle reboot event
         elif event[u'event'].endswith('system.needreboot'):
             #a module requests a reboot
             if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
@@ -419,6 +459,19 @@ class System(RaspIotModule):
             else:
                 #manual reboot
                 self.__need_reboot = True
+
+        #handle time event to trigger updates check
+        if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
+            #check updates at noon
+
+            #raspiot updates
+            config = self._get_config()
+            if config[u'raspiotupdateenabled']:
+                self.check_raspiot_updates()
+
+            #modules updates
+            if config[u'modulesupdateenabled']:
+                self.check_modules_updates()
 
     def get_time(self):
         """
@@ -608,24 +661,28 @@ class System(RaspIotModule):
         #send process status to ui
         self.systemModuleInstall.send(params=status)
 
+        #save last stdout/stderr from install
+        if status[u'status'] in (Install.STATUS_DONE, Install.STATUS_ERROR):
+            config = self._get_config()
+            config[u'lastraspiotinstallstdout'] = status[u'stdout']
+            config[u'lastraspiotinstallstderr'] = status[u'stderr']
+            self._save_config(config)
+
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
+            #need to restart
             self.__need_restart = True
+
             #update raspiot.conf
             raspiot = RaspiotConf(self.cleep_filesystem)
             return raspiot.install_module(status[u'module'])
 
-    def install_module(self, module, update_process=False):
+    def install_module(self, module):
         """
         Install specified module
 
-        Note:
-            Parameter update_process allows to distiguish between install from scratch from module update and
-            to react differently in ui
-
         Params:
             module (string): module name to install
-            update_process (bool): set it to True if install triggered during module update (default False)
 
         Returns:
             bool: True if module installed
@@ -639,7 +696,7 @@ class System(RaspIotModule):
 
         #launch installation (non blocking)
         install = Install(self.cleep_filesystem, self.__module_install_callback)
-        install.install_module(module, infos, update_process)
+        install.install_module(module, infos)
 
         return True
 
@@ -658,21 +715,17 @@ class System(RaspIotModule):
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
             self.__need_restart = True
+
             #update raspiot.conf
             raspiot = RaspiotConf(self.cleep_filesystem)
             return raspiot.uninstall_module(status[u'module'])
 
-    def uninstall_module(self, module, update_process=False):
+    def uninstall_module(self, module):
         """
         Uninstall specified module
 
-        Note:
-            Parameter update_process allows to distiguish between install from scratch from module update and
-            to react differently in ui
-
         Params:
             module (string): module name to install
-            update_process (bool): set it to True if install triggered during module update (default False)
 
         Returns:
             bool: True if module uninstalled
@@ -682,10 +735,249 @@ class System(RaspIotModule):
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = Install(self.cleep_filesystem, self.__module_uninstall_callback)
-        uninstall.uninstall_module(module, update_process)
+        install = Install(self.cleep_filesystem, self.__module_uninstall_callback)
+        install.uninstall_module(module)
 
         return True
+
+    def __module_update_callback(self, status):
+        """
+        Module update callback
+
+        Args:
+            status (dict): process status {stdout (list), stderr (list), status (int), module (string)}
+        """
+        self.logger.debug(u'Module update callback status: %s' % status)
+        
+        #send process status to ui
+        self.systemModuleUpdate.send(params=status)
+
+        #handle end of process to trigger restart
+        if status[u'status']==Install.STATUS_DONE:
+            self.__need_restart = True
+
+            #update raspiot.conf
+            raspiot = RaspiotConf(self.cleep_filesystem)
+            return raspiot.uninstall_module(status[u'module'])
+
+    def update_module(self, module):
+        """
+        Update specified module
+
+        Params:
+            module (string): module name to install
+
+        Returns:
+            bool: True if module uninstalled
+        """
+        #check params
+        if module is None or len(module)==0:
+            raise MissingParameter(u'Parameter "module" is missing')
+
+        #launch uninstallation
+        install = Install(self.cleep_filesystem, self.__module_update_callback)
+        install.update_module(module)
+
+        return True
+
+    def set_automatic_update(self, raspiot_update_enabled, modules_update_enabled):
+        """
+        Set automatic update values
+
+        Args:
+            raspiot_update_enabled (bool): enable raspiot automatic update
+            modules_update_enabled (bool): enable modules automatic update
+        """
+        if not isinstance(raspiot_update_enabled, bool):
+            raise InvalidParameter('Parameter "raspiot_update_enabled" is invalid')
+        if not isinstance(modules_update_enabled, bool):
+            raise InvalidParameter('Parameter "modules_update_enabled" is invalid')
+
+        config = self._get_config()
+        config[u'raspiotupdateenabled'] = raspiot_update_enabled
+        config[u'modulesupdateenabled'] = modules_update_enabled
+
+        if self._save_config(config):
+            return True
+
+        return False
+
+    def __get_modules(self):
+        """
+        Get modules from inventory if necessary
+
+        Return:
+            dict: modules dict as returned by inventory
+        """
+        if len(self.__modules)==0:
+            #retrieve modules from inventory
+            resp = self.send_command(u'get_modules', u'inventory')
+            if not resp or resp[u'error']:
+                raise CommandError(u'Unable to get modules list from inventory')
+            self.__modules = resp[u'data']
+
+            #iterate over modules
+            modules_to_delete = []
+            for module in self.__modules:
+                #locked module needs to be removed from list (system module updated by raspiot)
+                #like not installed modules
+                if self.__modules[module][u'locked'] or not self.__modules[module][u'installed']:
+                    modules_to_delete.append(module)
+                
+                #append updatable/updating flags
+                #TODO check version with modules.json => need to create lib to handle modules.json first
+                self.__modules[module][u'updatable'] = None
+                self.__modules[module][u'updating'] = module in self.__updating_modules
+
+            #remove system modules
+            for module in modules_to_delete:
+                self.__modules.pop(module)
+            #self.logger.debug(u'Modules list: %s' % self.__modules)
+
+        return self.__modules
+
+    def check_modules_updates(self):
+        """
+        Check for modules updates.
+
+        Return:
+            dict: last update infos::
+                {
+                    updateavailable (bool): True if update available
+                    lastcheckraspiot (int): last raspiot update check timestamp
+                    lastcheckmodules (int): last modules update check timestamp
+                }
+        """
+        #get modules list from inventory
+        modules = self.__get_modules()
+
+        #update latest modules.json file
+        self.modules_json.update()
+        remote_modules_json = self.modules_json.get_json()
+
+        #check downloaded file validity
+        if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
+            #invalid modules.json
+            self.logger.error(u'Invalid modules.json file downloaded, unable to update modules')
+            raise CommandError(u'Invalid modules.json file downloaded, unable to update modules')
+
+        #load local modules.json file
+        local_modules_json = None
+        if self.modules_json.exists():
+            #local file exists, load its content
+            local_modules_json = self.modules_json.get_json()
+
+        #check if new modules.json file version available
+        if local_modules_json is None or remote_modules_json[u'update']>local_modules_json[u'update']:
+            #file isn't existing yet or updated, overwrite local one
+            self.logger.debug(u'Save new modules.json file: %s' % remote_modules_json)
+            self.cleep_filesystem.write_json(MODULES_JSON, remote_modules_json)
+            local_modules_json = remote_modules_json
+
+        #check for modules updates available
+        update_available = False
+        for module in modules:
+            current_version = modules[module][u'version']
+            if module in local_modules_json[u'list']:
+                new_version = local_modules_json[u'list'][module][u'version']
+                if Converters.compare_versions(current_version, new_version):
+                    #new version available for current module
+                    self.logger.info('New version available for module "%s" (%s->%s)' % (module, current_version, new_version))
+                    modules[module][u'updatable'] = True
+                    update_available = True
+
+                else:
+                    self.logger.debug('No new version available for module "%s" (%s->%s)' % (module, current_version, new_version))
+
+        #update config
+        self._config[u'modulesupdateavailable'] = update_available
+        self._config[u'lastcheckmodules'] = int(time.time())
+        self._save_config(self._config)
+
+        return {
+            u'updateavailable': update_available,
+            u'lastcheckraspiot': self._config[u'lastcheckraspiot'],
+            u'lastcheckmodules': self._config[u'lastcheckmodules'],
+        }
+
+    def check_raspiot_updates(self):
+        """
+        Check for available raspiot updates
+
+        Return:
+            dict: last update infos::
+                {
+                    updateavailable (bool): True if update available
+                    lastcheckraspiot (int): last raspiot update check timestamp
+                    lastcheckmodules (int): last modules update check timestamp
+                }
+        """
+        update_available = False
+        try:
+            github = Github()
+            releases = github.get_releases(self.RASPIOT_GITHUB_OWNER, self.RASPIOT_GITHUB_REPO)
+            if len(releases)==1:
+                #get latest version available
+                version = github.get_release_version(releases[0])
+                if version!=VERSION:
+                    #new version available, trigger update
+                    assets = github.get_release_assets_infos(releases[0])
+
+                    #search for deb file
+                    for asset in assets:
+                        if asset[u'name'].find(u'.deb')!=-1:
+                            self.logger.info(u'Found deb asset: %s' % asset)
+                            self.__raspiot_update[u'asset'] = asset
+                            break
+
+                    #search for checksum file
+                    if self.__raspiot_update[u'asset'] is not None:
+                        deb_name = os.path.splitext(self.__raspiot_update[u'asset'][u'name'])[0]
+                        checksum_name = u'%s.%s' % (deb_name, u'sha256')
+                        self.logger.debug(u'Checksum filename to search: %s' % checksum_name)
+                        for asset in assets:
+                            if asset[u'name']==checksum_name:
+                                self.logger.info(u'Found checksum asset: %s' % asset)
+                                self.__raspiot_update[u'checksum'] = asset
+                                break
+
+                    if self.__raspiot_update[u'asset'] and self.__raspiot_update[u'checksum']:
+                        self.logger.debug(u'Update and checksum found, can trigger update')
+                        update_available = True
+
+            else:
+                #no release found
+                self.logger.warning(u'No release found during check')
+
+        except:
+            self.logger.exception(u'Error occured during updates checking:')
+            raise Exception(u'Error occured during raspiot update check')
+
+        #update config
+        self._config[u'raspiotupdateavailable'] = update_available
+        self._config[u'lastcheckraspiot'] = int(time.time())
+        self._save_config(self._config)
+
+        return {
+            u'updateavailable': update_available,
+            u'lastcheckraspiot': self._config[u'lastcheckraspiot'],
+            u'lastcheckmodules': self._config[u'lastcheckmodules'],
+        }
+
+    def __update_raspiot_callback(self, status):
+        """
+        Raspiot update callback
+
+        Args:
+            status (dict): update status
+        """
+        #TODO
+
+    def update_raspiot(self):
+        """
+        Update raspiot
+        """
+        #TODO
 
     def get_memory_usage(self):
         """
@@ -704,12 +996,12 @@ class System(RaspIotModule):
         raspiot = self.__process.memory_info()[0]
         return {
             u'total': system.total,
-            #u'total_hr': self.__hr_bytes(system.total),
+            #u'total_hr': Converters.hr_bytes(system.total),
             u'available': system.available,
-            u'available_hr': self.__hr_bytes(system.available),
+            u'available_hr': Converters.hr_bytes(system.available),
             #u'used_percent': system.percent,
             u'raspiot': raspiot,
-            #u'raspiot_hr': self.__hr_bytes(raspiot),
+            #u'raspiot_hr': Converters.hr_bytes(raspiot),
             #u'others': system.total - system.available - raspiot
         }
 
@@ -745,7 +1037,7 @@ class System(RaspIotModule):
         uptime = int(time.time() - psutil.boot_time())
         return {
             u'uptime': uptime,
-            u'uptime_hr': self.__hr_uptime(uptime)
+            u'uptime_hr': Converters.hr_uptime(uptime)
         }
 
     def __is_interface_wired(self, interface):
@@ -870,52 +1162,6 @@ class System(RaspIotModule):
 
                 elif disk[u'mountpoint'] not in (u'/', u'/boot') and disk[u'percent']>=self.THRESHOLD_DISK_EXTERNAL:
                     self.systemAlertDisk.send(params={u'percent':disk[u'percent'], u'threshold':self.THRESHOLD_DIST_EXTERNAL, u'mountpoint':disk[u'mountpoint']})
-
-    def __hr_bytes(self, n):
-        """
-        Human readable bytes value
-
-        Note:
-            http://code.activestate.com/recipes/578019
-
-        Params: 
-            n (int): bytes
-
-        Returns:
-            string: human readable bytes value
-        """
-        symbols = (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y')
-        prefix = {}
-
-        for i, s in enumerate(symbols):
-            prefix[s] = 1 << (i + 1) * 10
-
-        for s in reversed(symbols):
-            if n >= prefix[s]:
-                value = float(n) / prefix[s]
-                return u'%.1f%s' % (value, s)
-
-        return u'%sB' % n
-
-    def __hr_uptime(self, uptime):
-        """
-        Human readable uptime (in days/hours/minutes/seconds)
-
-        Note:
-            http://unix.stackexchange.com/a/27014
-
-        Params:
-            uptime (int): uptime value
-
-        Returns:
-            string: human readable string
-        """
-        #get values
-        days = uptime / 60 / 60 / 24
-        hours = uptime / 60 / 60 % 24
-        minutes = uptime / 60 % 60
-
-        return u'%dd %dh %dm' % (days, hours, minutes)
 
     def get_filesystem_infos(self):
         """

@@ -57,4 +57,83 @@ def file_to_base64(path):
     with io.open(path, u'rb') as file_to_convert:
         return base64.b64encode(file_to_convert.read())
 
+def hr_uptime(uptime):
+    """  
+    Human readable uptime (in days/hours/minutes/seconds)
+
+    Note:
+        http://unix.stackexchange.com/a/27014
+
+    Params:
+        uptime (int): uptime value
+
+    Returns:
+        string: human readable string
+    """
+    #get values
+    days = uptime / 60 / 60 / 24 
+    hours = uptime / 60 / 60 % 24 
+    minutes = uptime / 60 % 60 
+
+    return u'%dd %dh %dm' % (days, hours, minutes)
+
+def hr_bytes(n):
+    """  
+    Human readable bytes value
+
+    Note:
+        http://code.activestate.com/recipes/578019
+
+    Args:
+        n (int): bytes
+
+    Returns:
+        string: human readable bytes value
+    """
+    symbols = (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y')
+    prefix = {} 
+
+    for i, s in enumerate(symbols):
+        prefix[s] = 1 << (i + 1) * 10 
+
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            value = float(n) / prefix[s]
+            return u'%.1f%s' % (value, s)
+
+    return u'%sB' % n
+
+def compare_versions(old_version, new_version):
+    """ 
+    Compare specified version and return True if new version is greater than old one
+
+    Args:
+        old_version (string): old version
+        new_version (string): new version
+
+    Return:
+        bool: True if new version available
+    """
+    #check versions
+    try:
+        old_vers = tuple(map(int, (old_version.split(u'.'))))
+        if len(old_vers)!=3:
+            raise Exception('Invalid version format for "%s"' % old_version)
+    except:
+        self.logger.exception(u'Invalid version format, only 3 digits format allowed:')
+        return False
+    try:
+        new_vers = tuple(map(int, (new_version.split(u'.'))))
+        if len(new_vers)!=3:
+            raise Exception('Invalid version format for "%s"' % new_version)
+    except:
+        self.logger.exception(u'Invalid version format, only 3 digits format allowed:')
+        return False
+
+    #compare version
+    if old_vers<new_vers:
+        return True
+
+    return False
+
 

@@ -80,6 +80,11 @@ md-toast.info .md-toast-content {
 /* widget */
 .widget-bg-color {
     background-color: #EEEEEE;
+    min-width: initial;
+}
+
+.widget-bg-color md-card-actions button {
+    min-width: initial;
 }
 
 /* icon */

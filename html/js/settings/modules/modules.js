@@ -33,15 +33,25 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
                     return raspiotService.uninstallModule(module);
-                })
-                .then(function(resp) {
+                });
+                /*.then(function(resp) {
                     //reload system config to activate restart flag (see main controller)
                     return raspiotService.reloadModuleConfig('system');
-                })  
+                })
                 .then(function(config) {
                     self.updateModulePendingStatus(module);
                     toast.success('Module ' + module + ' will be uninstalled after next restart.' );
-                }); 
+                });*/
+        };
+
+        /**
+         * Update module
+         */
+        self.update = function(module)
+        {
+            raspiotService.updateModule(module)
+                .then(function(resp) {
+                });
         };
 
         /** 
@@ -107,6 +117,44 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                 self.init();
             }
         );
+
+        /** 
+         * Handle module uninstall event
+         */
+        $rootScope.$on('system.module.uninstall', function(event, uuid, params) {
+            console.log('system.module.uninstall', uuid, params);
+            if( !params.status )
+            {
+                return;
+            }
+
+            //drop uninstall event triggered during module update
+            if( params.updateprocess===true )
+            {
+                return;
+            }
+                
+            if( params.status==2 )
+            {
+                toast.error('Error during module ' + params.module + ' uninstallation');
+            }
+            else if( params.status==4 )
+            {
+                toast.error('Module ' + params.module + ' uninstallation canceled');
+            }
+            else if( params.status==3 )
+            {
+                //reload system config to activate restart flag (see main controller)
+                raspiotService.reloadModuleConfig('system')
+                    .then(function() {
+                        //force pending status of uninstalled module. This avoid reloading complete config
+                        self.updateModulePendingStatus(params.module);
+
+                        //info message
+                        toast.success('Module ' + params.module + ' is uninstalled. Please restart raspiot' );
+                    });
+            }
+        });
     }];
 
     var modulesLink = function(scope, element, attrs, controller) {

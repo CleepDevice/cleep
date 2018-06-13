@@ -304,6 +304,9 @@ def get_modules():
     config = conf.as_dict()
     for module in modules:
         modules[module][u'pending'] = False
+        if modules[module][u'locked']:
+            #system module, drop it
+            continue
         if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
             #install pending
             modules[module][u'pending'] = True

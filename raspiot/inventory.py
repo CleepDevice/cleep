@@ -9,6 +9,7 @@ import copy
 from raspiot import RaspIotModule, RaspIotRenderer
 from .libs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
+import libs.converters as Tools
 
 __all__ = [u'Inventory']
 
@@ -77,13 +78,15 @@ class Inventory(RaspIotModule):
             modules_json_content = modules_json.get_json()
             self.modules = modules_json_content[u'list']
 
+        #append metadata that doesn't exists in modules.json
         for module_name in self.modules:
-            #append metadata that doesn't exists in modules.json
             self.modules[module_name][u'name'] = module_name
             self.modules[module_name][u'locked'] = False
             self.modules[module_name][u'installed'] = False
             self.modules[module_name][u'library'] = False
             self.modules[module_name][u'local'] = False
+            self.modules[module_name][u'pending'] = False
+            self.modules[module_name][u'updatable'] = ''
 
         def fix_country(country):
             if not country:
@@ -127,7 +130,9 @@ class Inventory(RaspIotModule):
                         u'urls': fix_urls(getattr(class_, u'MODULE_URLSITE', None), getattr(class_, u'MODULE_URLBUGS', None), getattr(class_, u'MODULE_URLINFO', None), getattr(class_, u'MODULE_URLHELP', None)), 
                         u'installed': False,
                         u'library': False,
-                        u'local': True
+                        u'local': True,
+                        u'pending': False,
+                        u'updatable': ''
                     }
 
                 else:
@@ -136,6 +141,8 @@ class Inventory(RaspIotModule):
                     key = 'mod.%s' % module_name
                     if key in self.installed_modules:
                         self.modules[module_name][u'description'] = self.installed_modules[key].MODULE_DESCRIPTION
+                        if Tools.compare_versions(self.installed_modules[key].MODULE_VERSION, self.modules[module_name][u'version']):
+                            self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
                         self.modules[module_name][u'version'] = self.installed_modules[key].MODULE_VERSION
                         self.modules[module_name][u'author'] = self.installed_modules[key].MODULE_AUTHOR
                         self.modules[module_name][u'tags'] = self.installed_modules[key].MODULE_TAGS

@@ -100,6 +100,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Update module
+     */
+    self.updateModule = function(module) {
+        return rpcService.sendCommand('update_module', 'system', {'module':module}, 300);
+    };
+
+    /**
      * Download logs
      */
     self.downloadLogs = function() {
@@ -136,6 +143,27 @@ var systemService = function($rootScope, rpcService, raspiotService) {
                 //overwrite system event_not_rendered config value
                 raspiotService.modules.system.config.eventsnotrendered = resp.data;
             });
+    };
+
+    /**
+     * Check for raspiot updates
+     */
+    self.checkRaspiotUpdates = function() {
+        return rpcService.sendCommand('check_raspiot_updates', 'system');
+    };
+
+    /**
+     * Check for modules updates
+     */
+    self.checkModulesUpdates = function() {
+        return rpcService.sendCommand('check_modules_updates', 'system');
+    };
+
+    /**
+     * Set automatic update
+     */
+    self.setAutomaticUpdate = function(raspiotUpdateEnabled, modulesUpdateEnabled) {
+        return rpcService.sendCommand('set_automatic_update', 'system', {'raspiot_update_enabled':raspiotUpdateEnabled, 'modules_update_enabled':modulesUpdateEnabled});
     };
 
     /**

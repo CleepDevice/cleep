@@ -127,10 +127,16 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
     self.__loadModule = function(module)
     {
         //init
-        var url = self.modulesPath + '/' + module + '/desc.json';
+        var url = self.modulesPath + module + '/desc.json';
         var desc = null;
         var d = $q.defer();
         var files = null;
+
+        //do not load data of modules with pending status
+        if( self.modules[module].pending )
+        {
+            return;
+        }
 
         //load desc.json file from module folder
         $http.get(url)
