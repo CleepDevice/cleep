@@ -756,9 +756,9 @@ class System(RaspIotModule):
         if status[u'status']==Install.STATUS_DONE:
             self.__need_restart = True
 
-            #update raspiot.conf
+            #update raspiot.conf adding module to updated ones
             raspiot = RaspiotConf(self.cleep_filesystem)
-            return raspiot.uninstall_module(status[u'module'])
+            return raspiot.update_module(status[u'module'])
 
     def update_module(self, module):
         """
@@ -774,9 +774,12 @@ class System(RaspIotModule):
         if module is None or len(module)==0:
             raise MissingParameter(u'Parameter "module" is missing')
 
+        #get module infos
+        infos = self.__get_module_infos(module)
+
         #launch uninstallation
         install = Install(self.cleep_filesystem, self.__module_update_callback)
-        install.update_module(module)
+        install.update_module(module, infos)
 
         return True
 

@@ -65,7 +65,7 @@ class Event():
             return self.bus.push(request, None)
 
         else:
-            raise Exception(u'Invalid event parameters specified: %s' % (params.keys()))
+            raise Exception(u'Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params.keys()))
 
     def render(self, types, params=None):
         """

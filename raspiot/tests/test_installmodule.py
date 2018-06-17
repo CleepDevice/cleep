@@ -12,7 +12,6 @@ import shutil
 logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(filename)s:%(lineno)d %(levelname)s : %(message)s')
 #logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(filename)s:%(lineno)d %(levelname)s : %(message)s')
 
-@unittest.skip('')
 class InstallModuleTests(unittest.TestCase):
 
     def setUp(self):
@@ -58,7 +57,6 @@ class InstallModuleTests(unittest.TestCase):
     def callback(self, status):
         pass
 
-    #@unittest.skip('')
     def test_install_ok(self):
         #install
         name = 'raspiot_test_1.0.0.ok'
@@ -82,7 +80,6 @@ class InstallModuleTests(unittest.TestCase):
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-    #@unittest.skip('')
     def test_install_ok_without_script(self):
         #install
         name = 'raspiot_test_1.0.0.noscript-ok'
@@ -106,7 +103,6 @@ class InstallModuleTests(unittest.TestCase):
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-    #@unittest.skip('')
     def test_install_ko_checksum(self):
         #install
         name = 'raspiot_test_1.0.0.ok'
@@ -131,7 +127,6 @@ class InstallModuleTests(unittest.TestCase):
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-    #@unittest.skip('')
     def test_install_ko_preinst(self):
         #install
         name = 'raspiot_test_1.0.0.preinst-ko'
@@ -156,7 +151,6 @@ class InstallModuleTests(unittest.TestCase):
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-    #@unittest.skip('')
     def test_install_ko_postinst(self):
         #install
         name = 'raspiot_test_1.0.0.postinst-ko'
@@ -182,7 +176,6 @@ class InstallModuleTests(unittest.TestCase):
         time.sleep(1.0)
 
 
-@unittest.skip('')
 class UninstallModuleTests(unittest.TestCase):
 
     def setUp(self):
@@ -229,7 +222,6 @@ class UninstallModuleTests(unittest.TestCase):
     def callback(self, status):
         pass
 
-    #@unittest.skip('')
     def test_uninstall_ok(self):
         #install
         name = 'raspiot_test_1.0.0.ok'
@@ -267,7 +259,6 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
         self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
 
-    #@unittest.skip('')
     def test_uninstall_without_script_ok(self):
         #install
         name = 'raspiot_test_1.0.0.noscript-ok'
@@ -303,7 +294,6 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
         self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
 
-    #@unittest.skip('')
     def test_uninstall_ko_preuninst(self):
         #install
         name = 'raspiot_test_1.0.0.preuninst-ko'
@@ -339,7 +329,6 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
         self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
 
-    #@unittest.skip('')
     def test_uninstall_ko_postuninst(self):
         #install
         name = 'raspiot_test_1.0.0.postuninst-ko'
@@ -375,7 +364,6 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
         self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
 
-    #@unittest.skip('')
     def test_uninstall_ko_remove(self):
         #install
         name = 'raspiot_test_1.0.0.postuninst-ko'

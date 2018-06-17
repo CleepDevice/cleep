@@ -32,16 +32,9 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         {
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
+                    self.updateModuleProcessingStatus(module, true);
                     return raspiotService.uninstallModule(module);
                 });
-                /*.then(function(resp) {
-                    //reload system config to activate restart flag (see main controller)
-                    return raspiotService.reloadModuleConfig('system');
-                })
-                .then(function(config) {
-                    self.updateModulePendingStatus(module);
-                    toast.success('Module ' + module + ' will be uninstalled after next restart.' );
-                });*/
         };
 
         /**
@@ -49,15 +42,14 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.update = function(module)
         {
-            raspiotService.updateModule(module)
-                .then(function(resp) {
-                });
+            self.updateModuleProcessingStatus(module, true);
+            raspiotService.updateModule(module);
         };
 
         /** 
          * Update pending module status after install
          * Everything will be reloaded automatically after page reloading
-         * @param module: module name
+         * @param module (string): module name
          */
         self.updateModulePendingStatus = function(module)
         {   
@@ -75,6 +67,26 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         };
 
         /**
+         * Module is processing (uninstall, update)
+         * @param module (string): module name
+         * @param processing (bool): processing value
+         */
+        self.updateModuleProcessingStatus = function(module, processing)
+        {
+            //update pending status in local modules
+            for( var i=0; i<self.modules.length; i++ )
+            {   
+                if( self.modules[i].name===module )
+                {   
+                    self.modules[i].processing = processing;
+                }
+            }
+
+            //update pending status in raspiotService
+            raspiotService.modules[module].processing = processing;
+        };
+
+        /**
          * Init controller
          */
         self.init = function()
@@ -88,6 +100,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                 {
                     //add module name as 'name' property
                     raspiotService.modules[module].name = module;
+
                     //push module to internal array
                     modules.push(raspiotService.modules[module]);
                 }
@@ -122,24 +135,19 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          * Handle module uninstall event
          */
         $rootScope.$on('system.module.uninstall', function(event, uuid, params) {
-            console.log('system.module.uninstall', uuid, params);
             if( !params.status )
             {
                 return;
             }
 
-            //drop uninstall event triggered during module update
-            if( params.updateprocess===true )
-            {
-                return;
-            }
-                
             if( params.status==2 )
             {
+                self.updateModuleProcessingStatus(params.module, false);
                 toast.error('Error during module ' + params.module + ' uninstallation');
             }
             else if( params.status==4 )
             {
+                self.updateModuleProcessingStatus(params.module, false);
                 toast.error('Module ' + params.module + ' uninstallation canceled');
             }
             else if( params.status==3 )
@@ -148,6 +156,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                 raspiotService.reloadModuleConfig('system')
                     .then(function() {
                         //force pending status of uninstalled module. This avoid reloading complete config
+                        self.updateModuleProcessingStatus(params.module, false);
                         self.updateModulePendingStatus(params.module);
 
                         //info message
@@ -155,6 +164,41 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                     });
             }
         });
+
+        /**
+         * Handle module update event
+         */
+        $rootScope.$on('system.module.update', function(event, uuid, params) {
+            if( !params.status )
+            {
+                return;
+            }
+
+            if( params.status==2 )
+            {
+                self.updateModuleProcessingStatus(params.module, false);
+                toast.error('Error during module ' + params.module + ' update');
+            }
+            else if( params.status==4 )
+            {
+                self.updateModuleProcessingStatus(params.module, false);
+                toast.error('Module ' + params.module + ' update canceled');
+            }
+            else if( params.status==3 )
+            {
+                //reload system config to activate restart flag (see main controller)
+                raspiotService.reloadModuleConfig('system')
+                    .then(function() {
+                        //force pending status of updated module. This avoid reloading complete config
+                        self.updateModuleProcessingStatus(params.module, false);
+                        self.updateModulePendingStatus(params.module);
+
+                        //info message
+                        toast.success('Module ' + params.module + ' is updated. Please restart raspiot' );
+                    });
+            }
+        });
+
     }];
 
     var modulesLink = function(scope, element, attrs, controller) {

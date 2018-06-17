@@ -4,6 +4,7 @@
 import logging
 import os
 import json
+import time
 from raspiot.libs.download import Download
 
 class ModulesJson():
@@ -84,8 +85,15 @@ class ModulesJson():
             fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(raw)
             self.cleep_filesystem.close(fd)
+        
+            #make sure file is written
+            time.sleep(0.5)
 
             return True
+
+        else:
+            #no update from remote modules.json file
+            self.logger.info(u'No difference between local and remote modules.json. File not updated.')
 
         #no new content
         return False

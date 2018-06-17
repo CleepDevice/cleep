@@ -38,23 +38,25 @@
                         </div>
                     </md-card-title-media>
                 </md-card-title>
+                <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
+                    <md-progress-linear ng-if="module.processing" md-mode="indeterminate"></md-progress-linear>
+                </md-card-content>
                 <md-card-actions layout="row" layout-align="end center">
                     <md-button ng-if="module.urls.info" ng-href="{{module.urls.info}}" target="_blank">
                         <md-icon md-svg-icon="help-circle"></md-icon>
                         <span>Infos</span>
                     </md-button>
-                    <md-button ng-if="module.hasConfig" ng-href="{{'#!module/'+module.name}}" class="md-accent">
+                    <md-button ng-if="module.hasConfig" ng-disabled="module.pending" ng-href="{{'#!module/'+module.name}}" class="md-accent">
                         <md-icon md-svg-icon="settings"></md-icon>
                         <span>Configure</span>
                     </md-button>
-                    <md-button ng-disabled="module.pending" ng-if="module.updatable.length>0" ng-click="modulesCtl.update(module.name)" class="">
+                    <md-button ng-disabled="module.pending" ng-if="module.updatable.length>0" ng-click="modulesCtl.update(module.name)" class="md-accent">
                         <md-icon md-svg-icon="update"></md-icon>
-                        <span>Update</span>
+                        <span ng-if="!module.pending">Update</span>
+                        <span ng-if="module.pending">Please restart</span>
                     </md-button>
                     <md-button ng-disabled="module.pending" ng-if="!module.locked" ng-click="modulesCtl.uninstall(module.name)" class="">
                         <md-icon md-svg-icon="delete"></md-icon>
-                        <span ng-if="!module.pending && module.updatable.length===0">Uninstall</span>
-                        <span ng-if="module.pending && module.updatable.length===0">Please restart</span>
                     </md-button>
                 </md-card-actions>
             </md-card>

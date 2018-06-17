@@ -546,7 +546,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 
     /**
      * Reboot system
-     * Duplicated function from system service to avoid adhesion of system service from angular app
+     * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.reboot = function() {
         return rpcService.sendCommand('reboot_system', 'system');
@@ -554,7 +554,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 
     /**
      * Halt system
-     * Duplicated function from system service to avoid adhesion of system service from angular app
+     * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.halt = function() {
         return rpcService.sendCommand('halt_system', 'system');
@@ -562,7 +562,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 
     /**
      * Restart raspiot
-     * Duplicated function from system service to avoid adhesion of system service from angular app
+     * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.restart = function() {
         return rpcService.sendCommand('restart', 'system');
@@ -570,7 +570,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 
     /**
      * Install module
-     * Duplicated function from system service to avoid adhesion of system service from angular app
+     * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.installModule = function(module) {
         return rpcService.sendCommand('install_module', 'system', {'module':module}, 300);
@@ -578,10 +578,18 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 
     /**
      * Uninstall module
-     * Duplicated function from system service to avoid adhesion of system service from angular app
+     * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.uninstallModule = function(module) {
         return rpcService.sendCommand('uninstall_module', 'system', {'module':module}, 300);
+    };
+
+    /**
+     * Update module
+     * This function calls system module function to avoid adhesion of system service from angular app
+     */
+    self.updateModule = function(module) {
+        return rpcService.sendCommand('update_module', 'system', {'module':module}, 300);
     };
 
 };

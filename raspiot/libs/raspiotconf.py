@@ -18,7 +18,8 @@ class RaspiotConf():
 
     DEFAULT_CONFIG = {
         u'general': {
-            u'modules': []
+            u'modules': [],
+            u'updated': []
         },
         u'rpc': {
             u'rpc_host': u'0.0.0.0',
@@ -204,6 +205,43 @@ class RaspiotConf():
         self.__close(True)
 
         return True
+
+    def update_module(self, module):
+        """
+        Add module name in updated config list item
+
+        Args:
+            module (string): module name to set as updated
+
+        Returns:
+            bool: True if operation succeed
+        """
+        conf = self.__open()
+
+        #check if module installed
+        modules = ast.literal_eval(conf.get(u'general', u'modules'))
+        if module not in modules:
+            return False
+
+        #update module
+        updated = ast.literal_eval(conf.get(u'general', u'updated'))
+        updated.append(module)
+        conf.set(u'general', u'updated', unicode(updated))
+        self.__close(True)
+
+        return True
+
+    def clear_updated_modules(self):
+        """
+        Erase updated module list from config
+        """
+        conf = self.__open()
+
+        #clear list content
+        updated = ast.literal_eval(conf.get(u'general', u'updated'))
+        updated[:] = []
+        conf.set(u'general', u'updated', unicode(updated))
+        self.__close(True)
 
     def is_module_installed(self, module):
         """

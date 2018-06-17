@@ -114,7 +114,12 @@ def configure(boostrap):
     """
     global cleep_filesystem
 
+    #set cleep filesystem
     cleep_filesystem = boostrap[u'cleep_filesystem']
+
+    #clear updated modules list
+    conf = RaspiotConf(cleep_filesystem)
+    conf.clear_updated_modules()
 
 def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """
@@ -299,19 +304,26 @@ def get_modules():
         else:
             modules[module][u'events'] = []
 
-    #inject module pending status (installed but not loaded yet or uninstalled but still loaded => need restart)
+    #update module pending status
     conf = RaspiotConf(cleep_filesystem)
     config = conf.as_dict()
     for module in modules:
         modules[module][u'pending'] = False
+
         if modules[module][u'locked']:
             #system module, drop it
             continue
+
         if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
             #install pending
             modules[module][u'pending'] = True
+        
         if module not in config[u'general'][u'modules'] and modules[module][u'installed']:
             #uninstall pending
+            modules[module][u'pending'] = True
+
+        if module in config[u'general'][u'updated'] and modules[module][u'installed']:
+            #module updated, need to restart raspiot
             modules[module][u'pending'] = True
 
     return modules

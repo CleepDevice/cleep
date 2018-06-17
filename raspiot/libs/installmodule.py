@@ -795,27 +795,33 @@ class UpdateModule(threading.Thread):
         """
         if self.__is_uninstalling:
             #callback from uninstall process
+            self.logger.debug('Update callback from uninstall: %s' % status)
             self.__uninstall_status[u'status'] = status[u'status']
             self.__uninstall_status[u'prescript'] = status[u'prescript']
             self.__uninstall_status[u'postscript'] = status[u'postscript']
 
         else:
             #callback from install process
+            self.logger.debug('Update callback from install: %s' % status)
             self.__install_status[u'status'] = status[u'status']
             self.__install_status[u'prescript'] = status[u'prescript']
             self.__install_status[u'postscript'] = status[u'postscript']
+
+        if self.callback:
+            self.callback(self.get_status())
 
     def start(self):
         """
         Process module update
         """
         #init
-        self.logger.debug(u'Start module "%s" update' % self.module)
+        self.logger.info(u'Start module "%s" update' % self.module)
         error_uninstall = False
         error_install = False
         self.status = self.STATUS_UPDATING
 
         #run uninstall
+        self.__is_uninstalling = True
         uninstall = UninstallModule(self.module, True, self.__callback, self.cleep_filesystem)
         uninstall.start()
         time.sleep(0.5)
