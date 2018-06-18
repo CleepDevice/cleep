@@ -149,7 +149,7 @@ class Inventory(RaspIotModule):
                         self.modules[module_name][u'country'] = fix_country(self.installed_modules[key].MODULE_COUNTRY)
                         self.modules[module_name][u'urls'] = fix_urls(self.installed_modules[key].MODULE_URLSITE, self.installed_modules[key].MODULE_URLBUGS, self.installed_modules[key].MODULE_URLINFO, self.installed_modules[key].MODULE_URLHELP)
                     else:
-                        self.logger.warning(u'Module "%s" not found in installed modules' % module_name)
+                        self.logger.debug(u'Module "%s" not found in installed modules' % module_name)
 
         #update metadata of installed modules
         self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())

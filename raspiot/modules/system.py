@@ -95,8 +95,6 @@ class System(RaspIotModule):
         """
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
-        self.logger.setLevel(logging.DEBUG)
-
         #members
         self.events_factory = bootstrap[u'events_factory']
         self.time_task = None

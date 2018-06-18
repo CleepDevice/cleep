@@ -118,11 +118,13 @@ if __name__ == u'__main__':
     try:
         #handle command line parameters
         join_events = []
-        debug_enabled = False
+        trace_enabled = False
+        debug_modules = []
+        debug_system = False
         log_level = logging.INFO
         log_stdout = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, u'hsd', [u'help', u'stdout', u'debug'])
+        opts, args = getopt.getopt(argv, u'hsd:Dt', [u'help', u'stdout', u'debug=', u'debugsystem', u'trace'])
         for opt, arg in opts:
             if opt in (u'-h', u'--help'):
                 usage()
@@ -130,7 +132,11 @@ if __name__ == u'__main__':
             elif opt in (u'-s', u'--stdout'):
                 log_stdout = True
             elif opt in (u'-d', u'--debug'):
-                debug_enabled = True
+                debug_modules = arg.split(u',')
+            elif opt in (u'-D', u'--debugsystem'):
+                debug_system = True
+            elif opt in (u'-t', u'--trace'):
+                trace_enabled = True
                 log_level = logging.DEBUG
         
         #configure main logger
@@ -150,28 +156,36 @@ if __name__ == u'__main__':
         config = load_config(cleep_filesystem)
 
         #set debug level after config reading
-        if config[u'debug'][u'debug_enabled']:
-            debug_enabled = True
-        if debug_enabled:
+        if config[u'debug'][u'trace_enabled']:
+            trace_enabled = True
+        if config[u'debug'][u'debug_system']:
+            debug_system = True
+        if config[u'debug'][u'debug_modules'] and isinstance(config[u'debug'][u'debug_modules'], list):
+            debug_modules = list(set(config[u'debug'][u'debug_modules'])|set(debug_modules))
+        if debug_system:
+            #enable debug on raspiot bin if debug system is enabled
             logger.setLevel(logging.DEBUG)
 
         #get webserver app (used to store application objects)
         debug = False
-        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'rpcserver')==1:
+        if trace_enabled or debug_modules.count(u'rpc')==1:
             debug = True
         app = rpcserver.get_app(debug)
 
         #create message bus
         logger.debug(u'Initializing message bus')
         debug = False
-        if debug_enabled and config[u'debug'][u'debug_modules'].count(u'bus')==1:
+        if trace_enabled or debug_modules.count(u'bus')==1:
             debug = True
         bus = bus.MessageBus(debug)
         app.config[u'sys.bus'] = bus
 
         #create bootstrap objects
-        events_factory = EventsFactory(debug_enabled)
-        formatters_factory = FormattersFactory(debug_enabled)
+        debug = False
+        if trace_enabled or debug_system:
+            debug = True
+        events_factory = EventsFactory(debug)
+        formatters_factory = FormattersFactory(debug)
 
         #build bootstrap objects collection
         bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem)
@@ -186,7 +200,7 @@ if __name__ == u'__main__':
         for module_name in mandatory_modules.keys():
             logger.debug(u'Initializing %s module' % module_name)
             debug = False
-            if debug_enabled and config[u'debug'][u'debug_modules'].count(module_name)==1:
+            if trace_enabled or debug_modules.count(module_name)==1:
                 debug = True
             join_events.append(bootstrap[u'join_event'])
             instance_ = mandatory_modules[module_name](bootstrap, debug)
@@ -228,8 +242,8 @@ if __name__ == u'__main__':
                         logger.debug(u'     - starting dependency...')
                         logger.debug(u'===============BEGIN %s===============', dep)
                         debug = False
-                        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(dep)==1):
-                            logger.debug(u'Debug enabled for this module')
+                        if trace_enabled or debug_modules.count(dep)==1:
+                            logger.debug(u'Debug enabled for dependency %s' % dep)
                             debug = True
                         join_events.append(bootstrap[u'join_event'])
                         app.config[u'lib.%s' % dep] = dep_class_(bootstrap, debug)
@@ -241,8 +255,8 @@ if __name__ == u'__main__':
             logger.debug(u'   - starting module...')
             logger.debug(u'---------------BEGIN %s---------------', module_name)
             debug = False
-            if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(module_name)==1):
-                logger.debug(u'Debug enabled for this module')
+            if trace_enabled or debug_modules.count(module_name)==1:
+                logger.debug(u'Debug enabled for module %s' % module_name)
                 debug = True
             join_events.append(bootstrap[u'join_event'])
             app.config[u'mod.%s' % module_name] = class_(bootstrap, debug)
@@ -259,7 +273,7 @@ if __name__ == u'__main__':
         #create inventory at end because it needs to know installed modules
         logger.debug(u'Initializing inventory')
         debug = False
-        if debug_enabled and (len(config[u'debug'][u'debug_modules'])==0 or config[u'debug'][u'debug_modules'].count(u'inventory')==1):
+        if trace_enabled or debug_modules.count(u'inventory')==1:
             debug = True
         join_events.append(bootstrap[u'join_event'])
         inv = inventory.Inventory(bootstrap, debug, app.config)

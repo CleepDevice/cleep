@@ -72,7 +72,6 @@ html/ = /opt/raspiot/html/$_$"""
         """
         #init
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
-        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.__developer_uuid = None

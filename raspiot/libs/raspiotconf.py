@@ -28,7 +28,8 @@ class RaspiotConf():
             u'rpc_key': u''
         },
         u'debug': {
-            u'debug_enabled': False,
+            u'trace_enabled': False,
+            u'debug_system': False,
             u'debug_modules': []
         }
     }
