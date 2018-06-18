@@ -181,7 +181,8 @@ if __name__ == u'__main__':
         formatters_factory.configure(bootstrap)
         rpcserver.configure(bootstrap)
 
-        #create system module by default (needed to handle raspberry config)
+        #create mandatory modules
+        modules_loaded_as_library = {}
         for module_name in mandatory_modules.keys():
             logger.debug(u'Initializing %s module' % module_name)
             debug = False
@@ -190,22 +191,22 @@ if __name__ == u'__main__':
             join_events.append(bootstrap[u'join_event'])
             instance_ = mandatory_modules[module_name](bootstrap, debug)
             app.config[u'mod.%s' % module_name] = instance_
+            modules_loaded_as_library[module_name] = False
             instance_.start()
 
         #load user modules
         logger.debug(u'Loading user modules:')
-        loaded_modules = {}
         for module_name in config[u'general'][u'modules']:
             logger.debug(u' - %s:' % (module_name));
 
             #check if not already loaded
-            if module_name in loaded_modules.keys():
+            if module_name in modules_loaded_as_library:
                 #update module name if necessary
-                if loaded_modules[module_name]:
-                    #module already loaded as library, set loaded as module
+                if modules_loaded_as_library[module_name] is True:
+                    #module already loaded as library, set it as module not library
                     logger.debug(u'   - Module already loaded as library. Set it as module')
                     app.config[u'mod.%s' % module_name] = app.config.pop(u'lib.%s' % module_name)
-                    loaded_modules[module_name] = False
+                    modules_loaded_as_library[module_name] = False
                 else:
                     logger.debug(u'   - Module already loaded')
                 continue
@@ -219,7 +220,7 @@ if __name__ == u'__main__':
             logger.debug(u'   - loading module dependencies:')
             if class_.MODULE_DEPS:
                 for dep in class_.MODULE_DEPS:
-                    if dep not in loaded_modules.keys():
+                    if dep not in modules_loaded_as_library:
                         logger.debug(u'     - loading dependency "%s"' % dep)
                         dep_ = importlib.import_module(u'raspiot.modules.%s' % dep)
                         dep_class_ = getattr(dep_, dep.capitalize())
@@ -234,7 +235,7 @@ if __name__ == u'__main__':
                         app.config[u'lib.%s' % dep] = dep_class_(bootstrap, debug)
                         app.config[u'lib.%s' % dep].start()
                         logger.debug(u'===============END %s===============', dep)
-                        loaded_modules[dep] = True
+                        modules_loaded_as_library[dep] = True
                     
             #and run instance
             logger.debug(u'   - starting module...')
@@ -247,7 +248,7 @@ if __name__ == u'__main__':
             app.config[u'mod.%s' % module_name] = class_(bootstrap, debug)
             app.config[u'mod.%s' % module_name].start()
             logger.debug(u'---------------END %s---------------', module_name)
-            loaded_modules[module_name] = False
+            modules_loaded_as_library[module_name] = False
 
         #wait for all modules completely loaded
         logger.debug('Waiting for end of module loading...')
