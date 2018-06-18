@@ -1,14 +1,13 @@
-<div layout="row" layout-wrap layout-padding>
+<div layout="row" layout-wrap layout-padding ng-cloak>
 
+    <!-- widgets -->
     <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
-        <div ng-if="device.type=='gpio'" widget-gpio-directive device="device"></div>
-        <div ng-if="device.type=='clock'" widget-clock-directive device="device"></div>
-        <div ng-if="device.type==='motion'" widget-motion-directive device="device"></div>
-        <div ng-if="device.type==='shutter'" widget-shutter-directive device="device"></div>
-        <div ng-if="device.type==='temperature'" widget-temperature-directive device="device"></div>
-        <div ng-if="device.type==='monitor'" widget-monitor-directive device="device"></div>
-        <div ng-if="device.type==='openweathermap'" widget-openweathermap-directive device="device"></div>
-        <div ng-if="device.type==='developer'" widget-developer-directive device="device"></div>
+        <dashboardwidget type="{{device.type}}" device="device"></dashboardwidget>
+    </div>
+
+    <!-- no widget -->
+    <div ng-if="!dashboardCtl.loading && dashboardCtl.devices.length===0">
+        <span>You have no dashboard widget, <a href="#!/install">install modules</a> to add some.</span>
     </div>
 
 </div>
