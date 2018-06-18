@@ -2,12 +2,13 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm) {
+var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm, $mdDialog) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
         self.modules = [];
         self.search = '';
+        self.moduleToUpdate = null;
 
         /**
          * Clear search input
@@ -131,6 +132,53 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             }
         );
 
+        /**
+         * Close update dialog
+         */
+        self.closeDialog = function() {
+            $mdDialog.hide();
+        };
+
+        /**
+         * Show update dialog
+         */
+        self.showUpdateDialog = function(module, ev) {
+            console.log(arguments);
+
+            //gather module to update infos
+            self.moduleToUpdate = null;
+            for( var i=0; i<self.modules.length; i++ )
+            {   
+                if( self.modules[i].name===module )
+                {   
+                    self.moduleToUpdate = {
+                        name: module,
+                        oldVersion: self.modules[i].version,
+                        newVersion: self.modules[i].updatable,
+                        changelog: self.modules[i].changelog || ''
+                    };
+                    break;
+                }
+            }
+
+            if( self.moduleToUpdate===null )
+            {
+                toast.error('Unable to find infos of module to update');
+                return;
+            }
+
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'updateCtl',
+                templateUrl: 'js/settings/modules/update.directive.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                fullscreen: true
+            })
+            .then(function() {}, function() {});
+        };
+
         /** 
          * Handle module uninstall event
          */
@@ -215,5 +263,5 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', modulesDirective]);
+RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', '$mdDialog', modulesDirective]);
 

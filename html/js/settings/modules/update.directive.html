@@ -1,0 +1,45 @@
+<md-dialog aria-label="Last update logs" flex="75">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Module update</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="updateCtl.closeDialog()" aria-label="Close dialog">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+
+                <!-- version -->
+                <span>Update module "{{updateCtl.moduleToUpdate.name}}" from {{updateCtl.moduleToUpdate.oldVersion}} to {{updateCtl.moduleToUpdate.newVersion}}.</span>
+                <br/><br/>
+
+                <!-- changelog -->
+                <span class="md-subhead">Changelog:</span>
+                <div ng-if="updateCtl.moduleToUpdate.changelog.length>0">
+                    <code ng-bind-html="updateCtl.moduleToUpdate.changelog"></code>
+                </div>
+                <div ng-if="updateCtl.moduleToUpdate.changelog.length===0">
+                    <code>No changelog provided</code>
+                </div>
+
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions>
+            <md-button ng-click="updateCtl.closeDialog()">
+                <md-icon md-svg-icon="close"></md-icon>
+                Cancel
+            </md-button>
+            <md-button ng-click="updateCtl.update(updateCtl.moduleToUpdate.name)" class="md-accent">
+                <md-icon md-svg-icon="update"></md-icon>
+                Update
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>
+

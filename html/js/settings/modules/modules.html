@@ -50,7 +50,7 @@
                         <md-icon md-svg-icon="settings"></md-icon>
                         <span>Configure</span>
                     </md-button>
-                    <md-button ng-disabled="module.pending" ng-if="module.updatable.length>0" ng-click="modulesCtl.update(module.name)" class="md-accent">
+                    <md-button ng-disabled="module.pending" ng-if="module.updatable.length>0" ng-click="modulesCtl.showUpdateDialog(module.name)" class="md-accent">
                         <md-icon md-svg-icon="update"></md-icon>
                         <span ng-if="!module.pending">Update</span>
                         <span ng-if="module.pending">Please restart</span>
