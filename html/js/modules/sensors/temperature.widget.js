@@ -2,7 +2,7 @@
  * Temperature widget directive
  * Display temperature dashboard widget
  */
-var widgetTemperatureDirective = function(raspiotService) {
+var widgetTemperatureDirective = function(raspiotService, sensorsService) {
 
     var widgetTemperatureController = ['$scope', function($scope) {
         var self = this;
@@ -29,5 +29,5 @@ var widgetTemperatureDirective = function(raspiotService) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetTemperatureDirective', ['raspiotService', widgetTemperatureDirective]);
+RaspIot.directive('widgetTemperatureDirective', ['raspiotService', 'sensorsService', widgetTemperatureDirective]);
 

@@ -2,7 +2,7 @@
  * Motion widget directive
  * Display motion dashboard widget
  */
-var widgetMotionDirective = function(raspiotService) {
+var widgetMotionDirective = function(raspiotService, sensorsService) {
 
     var widgetMotionController = ['$scope', function($scope) {
         var self = this;
@@ -33,5 +33,5 @@ var widgetMotionDirective = function(raspiotService) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetMotionDirective', ['raspiotService', widgetMotionDirective]);
+RaspIot.directive('widgetMotionDirective', ['raspiotService', 'sensorsService', widgetMotionDirective]);
 
