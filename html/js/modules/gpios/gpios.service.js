@@ -6,16 +6,6 @@ var gpiosService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'Gpios',
-            name: 'gpiosConfigDirective'
-        };
-    };
-
-    /**
      * Init module devices
      */
     self.initDevices = function(devices)

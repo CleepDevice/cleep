@@ -384,7 +384,6 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          */
         self.setConfig = function(config)
         {
-            console.log(config);
             //save data
             self.city = config.city.city;
             self.country = config.city.country;

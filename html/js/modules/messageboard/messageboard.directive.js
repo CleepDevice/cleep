@@ -77,7 +77,6 @@ var messageboardDirective = function($rootScope, raspiotService, toast, messageb
                     return raspiotService.reloadModuleConfig('messageboard');
                 })
                 .then(function(config) {
-                    console.log(config);
                     self.messages = config.messages;
                     toast.success('Message added');
                 });

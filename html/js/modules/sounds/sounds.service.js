@@ -5,16 +5,6 @@
 var soundsService = function($q, $rootScope, rpcService) {
     var self = this;
     
-    /** 
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'Sounds',
-            name: 'soundsConfigDirective'
-        };  
-    }; 
-
     /**
      * Get sounds
      */

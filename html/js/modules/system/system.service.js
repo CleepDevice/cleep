@@ -6,16 +6,6 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'System',
-            name: 'systemConfigDirective'
-        };  
-    }; 
-
-    /**
      * Change city
      */
     self.setCity = function(city, country) {

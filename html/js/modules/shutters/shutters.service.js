@@ -4,16 +4,6 @@
  */
 var shuttersService = function($rootScope, rpcService, raspiotService) {
     var self = this;
-    
-    /** 
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'Shutters',
-            name: 'shuttersConfigDirective'
-        };  
-    }; 
 
     /**
      * Return raspi gpios (according to board version)

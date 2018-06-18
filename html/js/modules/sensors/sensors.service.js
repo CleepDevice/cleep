@@ -5,21 +5,10 @@
 var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
     var self = this;
     
-    /** 
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'Sensors',
-            name: 'sensorsConfigDirective'
-        };  
-    }; 
-
     /**
      * Init module devices
      */
-    self.initDevices = function(devices)
-    {   
+    self.initDevices = function(devices) {   
         for( var uuid in devices )
         {   
             if( devices[uuid].type==='motion' )
@@ -125,11 +114,10 @@ var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
      * Catch motion off event
      */
     $rootScope.$on('sensors.motion.off', function(event, uuid, params) {
-
         for( var i=0; i<raspiotService.devices.length; i++ )
         {   
             if( raspiotService.devices[i].uuid===uuid )
-            {   
+            {
                 raspiotService.devices[i].lastupdate = params.lastupdate;
                 raspiotService.devices[i].on = false;
                 raspiotService.devices[i].__widget.mdcolors = '{background:"default-primary-300"}';
@@ -142,7 +130,6 @@ var sensorsService = function($q, $rootScope, rpcService, raspiotService) {
      * Catch temperature events
      */
     $rootScope.$on('sensors.temperature.update', function(event, uuid, params) {
-
         for( var i=0; i<raspiotService.devices.length; i++ )
         {   
             if( raspiotService.devices[i].uuid===uuid )

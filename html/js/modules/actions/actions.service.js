@@ -6,16 +6,6 @@ var actionsService = function($q, $rootScope, rpcService) {
     var self = this;
     
     /**
-     * Return directive infos
-     */
-    self.getDirectiveInfos = function() {
-        return {
-            label: 'Actions',
-            name: 'actionsConfigDirective'
-        };
-    };
-
-    /**
      * Delete script
      */
     self.deleteScript = function(script) {
