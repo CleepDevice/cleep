@@ -463,15 +463,16 @@ class System(RaspIotModule):
         #handle time event to trigger updates check
         if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
             #check updates at noon
+            self.check_raspiot_updates()
+            self.check_modules_updates()
 
-            #raspiot updates
+            #and perform updates if allowed
+            #TODO
             config = self._get_config()
             if config[u'raspiotupdateenabled']:
-                self.check_raspiot_updates()
-
-            #modules updates
+                pass
             if config[u'modulesupdateenabled']:
-                self.check_modules_updates()
+                pass
 
     def get_time(self):
         """

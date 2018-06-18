@@ -33,7 +33,7 @@ class Developer(RaspIotModule):
     MODULE_VERSION = u'1.0.0'
     MODULE_PRICE = 0
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Help you to develop on Raspiot framework.'
+    MODULE_DESCRIPTION = u'Helps you to develop on Raspiot framework.'
     MODULE_LOCKED = False
     MODULE_TAGS = [u'developer', u'python', u'raspiot']
     MODULE_COUNTRY = None
@@ -356,15 +356,17 @@ html/ = /opt/raspiot/html/$_$"""
                         })
 
         return {
+            u'data': {
+                u'files': files,
+                u'errors': errors,
+                u'warnings': warnings
+            },
             u'metadata': metadata,
-            u'files': files,
-            u'errors': errors,
-            u'warnings': warnings
         }
 
     def __fill_js_file_types(self, files, desc_json):
         """
-        Fill file types as good as possible
+        Fill file types as well as possible
         """
         #use desc.json content if possible
         if desc_json:
@@ -447,6 +449,53 @@ html/ = /opt/raspiot/html/$_$"""
 
         return files
 
+    def __check_mdimgsrc_directive(self, js_files):
+        """
+        Check if developer uses md-img-src directive to display its images
+
+        Args:
+            js_files (dict): dict of js files
+          
+        Returns:
+            list: list of warnings
+        """
+        #init
+        images = []
+        htmls = []
+        cacheds = []
+        warnings = []
+
+        #get images
+        for js_file in js_files:
+            ext = js_files[js_file][u'ext'].lower()
+            if ext in (u'jpg', u'jpeg', u'png', u'gif'):
+                images.append(js_files[js_file])
+            if ext in (u'html'):
+                htmls.append(js_files[js_file])
+
+        #no image, no need to go further
+        if len(images)==0:
+            return warnings
+
+        #cache html files content
+        for html in htmls:
+            fd = self.cleep_filesystem.open(html[u'fullpath'], u'r')
+            cacheds.append(u'\n'.join(fd.readlines()))
+            self.cleep_filesystem.close(fd)
+
+        #check directive usage for found images
+        for image in images:
+            pattern = r"mod-img-src\s*=\s*[\"']\s*%s\s*[\"']" % image[u'filename']
+            found = False
+            for cached in cacheds:
+                matches = re.finditer(pattern, cached, re.MULTILINE)
+                if len(list(matches))>0:
+                    found = True
+            if not found:
+                warnings.append(u'Image "%s" may not be displayed properly because mod-img-src directive wasn\'t used' % image[u'filename'])
+
+        return warnings
+
     def __analyze_module_js(self, module):
         """
        Analyze module js part
@@ -455,7 +504,7 @@ html/ = /opt/raspiot/html/$_$"""
             module (string): module name
 
         Return:
-            dict: js data
+            tuple (dict, string): js data adn changelog
         """
         errors = []
         warnings = []
@@ -505,6 +554,11 @@ html/ = /opt/raspiot/html/$_$"""
 
         #fill file types if possible
         all_files = self.__fill_js_file_types(all_files, desc_json)
+        
+        #fill changelog
+        changelog = u''
+        if desc_json and u'changelog' in desc_json:
+            changelog = desc_json[u'changelog']
 
         #set icon
         icon = u'bookmark'
@@ -512,14 +566,17 @@ html/ = /opt/raspiot/html/$_$"""
             icon = desc_json[u'icon']
 
         #check usage of mod-img-src directive in front source code
-        #TODO
+        warnings = self.__check_mdimgsrc_directive(all_files)
 
         return {
+            u'data': {
+                u'files': all_files.values(),
+                u'filetypes': file_types,
+                u'errors': errors,
+                u'warnings': warnings
+            },
             u'icon': icon,
-            u'files': all_files.values(),
-            u'filetypes': file_types,
-            u'errors': errors,
-            u'warnings': warnings
+            u'changelog': changelog
         }
 
     def analyze_module(self, module):
@@ -528,9 +585,6 @@ html/ = /opt/raspiot/html/$_$"""
 
         Args:
             module (string): module name
-            author (string): author name
-            icon (string): icon string (from MDI)
-            price (float): module price (0.0 for fere module)
 
         Return:
             dict: archive infos::
@@ -547,10 +601,10 @@ html/ = /opt/raspiot/html/$_$"""
             raise InvalidParameter(u'Module "%s" does not exist' % module)
 
         #analyze python part
-        module_python = self.__analyze_module_python(module)
+        analyze_python = self.__analyze_module_python(module)
 
         #analyze front part
-        module_js = self.__analyze_module_js(module)
+        analyze_js = self.__analyze_module_js(module)
 
         #check scripts existence
         script_preinst = os.path.join(self.PACKAGE_SCRIPTS, module, u'preinst.sh')
@@ -559,14 +613,17 @@ html/ = /opt/raspiot/html/$_$"""
         script_postuninst = os.path.join(self.PACKAGE_SCRIPTS, module, u'postuninst.sh')
 
         return {
-            u'python': module_python,
-            u'js': module_js,
+            u'python': analyze_python[u'data'],
+            u'js': analyze_js[u'data'],
             u'scripts': {
                 u'preinst': os.path.exists(script_preinst),
                 u'postinst': os.path.exists(script_postinst),
                 u'preuninst': os.path.exists(script_preuninst),
                 u'posuntinst': os.path.exists(script_postuninst)
-            }
+            },
+            u'changelog': analyze_js[u'changelog'],
+            u'icon': analyze_js[u'icon'],
+            u'metadata': analyze_python[u'metadata']
         }
 
     def generate_desc_json(self, js_files, icon):
@@ -645,14 +702,15 @@ html/ = /opt/raspiot/html/$_$"""
         self.__module_version = None
 
         #build desc.json
-        if not self.generate_desc_json(data[u'js'][u'files'], data[u'js'][u'icon']):
+        if not self.generate_desc_json(data[u'js'][u'files'], data[u'icon']):
             raise CommandError(u'Unable to generate desc.json file. Please check logs and sent data')
 
         #build module description file (module.json)
         fd = NamedTemporaryFile(delete=False)
         module_json = fd.name
-        metadata = copy.deepcopy(data[u'python'][u'metadata'])
-        metadata[u'icon'] = data[u'js'][u'icon']
+        metadata = copy.deepcopy(data[u'metadata'])
+        metadata[u'icon'] = data[u'icon']
+        metadata[u'changelog'] = data[u'changelog']
         fd.write(json.dumps(metadata))
         fd.close()
 
@@ -664,7 +722,7 @@ html/ = /opt/raspiot/html/$_$"""
         #add js files
         for f in data[u'js'][u'files']:
             if f[u'type']!=self.FRONT_FILE_TYPE_DROP:
-                archive.write(f[u'fullpath'], os.path.join(FRONTEND_DIR, u'js', u'modules', f['path']))
+                archive.write(f[u'fullpath'], os.path.join(FRONTEND_DIR, u'js', u'modules', module, f['path']))
         #add python files
         for f in data[u'python'][u'files'][u'libs']:
             if f[u'selected']:
@@ -695,7 +753,7 @@ html/ = /opt/raspiot/html/$_$"""
         #save now related package infos to make sure everything is completed successfully
         self.__module_archive = module_archive
         self.__module_name = module
-        self.__module_version = data[u'python'][u'metadata'][u'version']
+        self.__module_version = data[u'metadata'][u'version']
 
         return True
 

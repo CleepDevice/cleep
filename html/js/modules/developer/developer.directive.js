@@ -11,16 +11,30 @@ var developerConfigDirective = function($rootScope, toast, raspiotService, devel
         self.data = null;
         self.selectedNav = 'buildmodule';
         self.loading = false;
+        self.analyzeError = null;
 
         /**
          * Init controller
          */
         self.init = function(modules)
         {
-            //keep only modules names
+            //keep only not system modules names
             var temp = [];
             for( var module in modules )
             {
+                if( modules[module].locked )
+                {
+                    //system module, drop it
+                    continue;
+                }
+
+                if( module=='developer' )
+                {
+                    //drop developer module
+                    continue;
+                }
+
+                //append module name
                 temp.push(module);
             }
             self.modules = temp.sort();
@@ -34,6 +48,7 @@ var developerConfigDirective = function($rootScope, toast, raspiotService, devel
             //reset members
             self.data = null;
             self.loading = true;
+            self.analyzeError = null;
 
             //check params
             if( !self.selectedModule )
@@ -52,6 +67,8 @@ var developerConfigDirective = function($rootScope, toast, raspiotService, devel
             
                     //select first nav tab
                     self.selectedNav = 'buildmodule';
+                }, function(err) {
+                    self.analyzeError = err;
                 })
                 .finally(function() {
                     self.loading = false;
@@ -64,9 +81,11 @@ var developerConfigDirective = function($rootScope, toast, raspiotService, devel
         self.generateDescJson = function()
         {
             if( !self.data )
+            {
                 return;
+            }
 
-            developerService.generateDescJson(self.data.js.files, self.data.js.icon)
+            developerService.generateDescJson(self.data.js.files, self.data.icon)
                 .then(function(resp) {
                     if( resp.data )
                         toast.success('Desc.json file generated in module directory');
