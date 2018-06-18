@@ -4,7 +4,7 @@
  *  - installed modules: module and module helpers (reload config, get config...)
  *  - devices: all devices and devices helpers (reload devices)
  */
-var raspiotService = function($rootScope, $q, toast, rpcService, objectsService, $http, $ocLazyLoad, $templateCache) {
+var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
     var self = this;
     self.__deferred_modules = $q.defer();
     self.__deferred_events = $q.defer();
@@ -374,20 +374,10 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
                 devices[module][uuid].__service = module;
             }
 
-            //request module service to update specifically its device
-            if( objectsService.services[module] && typeof(objectsService.services[module].initDevices)!=='undefined' )
-            {
-                moduleDevices = objectsService.services[module].initDevices(devices[module]);
-            }
-            else
-            {
-                moduleDevices = devices[module];
-            }
-
             //store device
-            for( uuid in moduleDevices )
+            for( uuid in devices[module] )
             {
-                newDevices.push(moduleDevices[uuid]);
+                newDevices.push(devices[module][uuid]);
             }
         }
 
@@ -595,5 +585,5 @@ var raspiotService = function($rootScope, $q, toast, rpcService, objectsService,
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('raspiotService', ['$rootScope', '$q', 'toastService', 'rpcService', 'objectsService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
+RaspIot.service('raspiotService', ['$rootScope', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
 
