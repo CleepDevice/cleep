@@ -226,7 +226,7 @@ class Openweathermap(RaspIotModule):
                 #try with ssl context
                 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
                 req = urllib2.urlopen(u'%s?%s' % (self.OWM_WEATHER_URL, params), context=context)
-            finally:
+            except:
                 #fallback with no ssl context to be compatible with old python version (2.7.3)
                 req = urllib2.urlopen(u'%s?%s' % (self.OWM_WEATHER_URL, params))
             res = req.read()
@@ -306,7 +306,7 @@ class Openweathermap(RaspIotModule):
                 #try with ssl context
                 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
                 req = urllib2.urlopen(u'%s?%s' % (self.OWM_WEATHER_URL, params), context=context)
-            finally:
+            except:
                 #fallback with no ssl context to be compatible with old python version (2.7.3)
                 req = urllib2.urlopen(u'%s?%s' % (self.OWM_WEATHER_URL, params))
             res = req.read()
