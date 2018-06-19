@@ -1,0 +1,13 @@
+astral  python-astral
+gtts    python-gtts
+pyre_gevent python-pyre-gevent
+iso3166 python-iso3166
+netifaces   python-netifaces
+pyremotedev python-pyremotedev
+uptime  python-uptime
+psutil  python-psutil
+simplejson  python-simplejson
+spidev  python-spidev
+scipy   python-scipy
+pygame  python-pygame
+rpi.gpio    python-rpi.gpio
