@@ -8,7 +8,8 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
         var self = this;
         self.device = $scope.device;
         self.hasDatabase = raspiotService.hasModule('database');
-        self.networks = {};
+        //self.networks = {};
+        self.tabIndex = 'hardware';
         self.monitorCpu = null;
         self.monitorMemory = null;
         self.monitorDiskSystem = null;
@@ -119,19 +120,19 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
         self.loadDialogData = function()
         {
             self.__getFilesystemInfos();
-            self.__getNetworkInfos();
+            //self.__getNetworkInfos();
         };
 
         /**
          * Load network infos to fill network part
          */
-        self.__getNetworkInfos = function()
+        /*self.__getNetworkInfos = function()
         {
             systemService.getNetworkInfos()
                 .then(function(resp) {
                     self.networks = resp.data;
                 });
-        };
+        };*/
 
         /**
          * Load filesystem infos to fill donut graph
@@ -196,6 +197,7 @@ var widgetMonitorDirective = function(raspiotService, $mdDialog, systemService, 
          */
         self.showDialog = function()
         {
+            self.graphCpuDeferred = $q.defer();
             self.graphDiskSystemDeferred = $q.defer();
             self.graphDiskExt1Deferred = $q.defer();
             self.graphDiskExt2Deferred = $q.defer();

@@ -13,36 +13,37 @@
         </md-toolbar>
 
         <md-dialog-content>
-            <md-content layout-padding>
-                <md-list>
-                    <md-subheader class="md-no-sticky">Hardware infos</md-subheader>
-                    <md-list-item>
-                        <graph device="monitorCtl.monitorCpu" options="monitorCtl.graphCpuOptions" flex="50"></graph>
-                        <graph device="monitorCtl.monitorMemory" options="monitorCtl.graphMemoryOptions" flex="50"></graph>
-                    </md-list-item>
-                    <md-divider></md-divider>
-                    <md-subheader class="md-no-sticky">Filesystem infos</md-subheader>
-                    <md-list-item>
-                        <graph device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskSystemOptions" flex="33"></graph>
-                        <graph ng-show="monitorCtl.graphDistExt1Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt1Options" flex="33"></graph>
-                        <graph ng-show="monitorCtl.graphDistExt2Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt2Options" flex="33"></graph>
-                    </md-list-item>
-                    <md-divider></md-divider>
-                    <md-subheader class="md-no-sticky">Network infos</md-subheader>
-                    <md-list-item ng-repeat="(interface,infos) in monitorCtl.networks">
-                        <md-icon ng-if="!infos.wired" md-svg-icon="wifi">
-                            <md-tooltip md-direction="right">Wireless interface</md-tooltip>
-                        </md-icon>
-                        <md-icon ng-if="infos.wired" md-svg-icon="ethernet">
-                            <md-tooltip md-direction="right">Wired interface</md-tooltip>
-                        </md-icon>
-                        <p layout="row">
-                            <span class="md-title" flex="33">{{infos.interface}}</span>
-                            <span flex="33">{{infos.ip}}</span>
-                            <span flex="33">{{infos.mac}}</span>
-                        </p>
-                    </md-list-item>
-                </md-list>
+            <md-content>
+
+                <!-- navigation -->
+                <md-nav-bar md-selected-nav-item="monitorCtl.tabIndex" nav-bar-aria-label="Monitoring tabs">
+                    <md-nav-item md-nav-click="goto('hardware')" name="hardware">Hardware</md-nav-item>
+                    <md-nav-item md-nav-click="goto('media')" name="media">Media</md-nav-item>
+                </md-nav-bar>
+
+                <!-- hardware tab -->
+                <div layout="column" layout-padding ng-if="monitorCtl.tabIndex=='hardware'">
+                    <md-list>
+                        <md-list-item>
+                            <graph device="monitorCtl.monitorCpu" options="monitorCtl.graphCpuOptions" flex="100"></graph>
+                        </md-list-item>
+                        <md-list-item>
+                            <graph device="monitorCtl.monitorMemory" options="monitorCtl.graphMemoryOptions" flex="100"></graph>
+                        </md-list-item>
+                    </md-list>
+                </div>
+
+                <!-- media tab -->
+                <div layout="column" layout-padding ng-if="monitorCtl.tabIndex=='media'">
+                    <md-list>
+                        <md-list-item>
+                            <graph device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskSystemOptions" flex="33"></graph>
+                            <graph ng-show="monitorCtl.graphDistExt1Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt1Options" flex="33"></graph>
+                            <graph ng-show="monitorCtl.graphDistExt2Show" device="monitorCtl.monitorDiskSystem" options="monitorCtl.graphDiskExt2Options" flex="33"></graph>
+                        </md-list-item>
+                    </md-list>
+                </div>
+
             </md-content>
         </md-dialog-content>
 
