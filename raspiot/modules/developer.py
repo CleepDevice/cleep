@@ -13,10 +13,10 @@ from tempfile import NamedTemporaryFile
 from modulefinder import ModuleFinder
 from threading import Thread
 from raspiot.raspiot import RaspIotModule
-from raspiot.libs.task import Task
-from raspiot.libs.console import Console
+from raspiot.libs.internals.task import Task
+from raspiot.libs.internals.console import Console
 from raspiot.utils import CommandError, MissingParameter, InvalidParameter
-from raspiot.libs.installmodule import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
+from raspiot.libs.internals.installmodule import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
 
 __all__ = ['Developer']
 

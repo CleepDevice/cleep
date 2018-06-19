@@ -5,8 +5,8 @@ import os
 import logging
 from raspiot.raspiot import RaspIotRenderer
 import time
-from raspiot.libs.task import BackgroundTask
-from raspiot.libs.ht1632c import HT1632C
+from raspiot.libs.internals.task import BackgroundTask
+from raspiot.libs.drivers.ht1632c import HT1632C
 from raspiot.utils import InvalidParameter, MissingParameter
 from raspiot.profiles import DisplayLimitedTimeMessageProfile, DisplayAddOrReplaceMessageProfile
 import uuid

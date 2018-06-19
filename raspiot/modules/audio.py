@@ -5,8 +5,8 @@ import time
 import logging
 import os
 from raspiot.raspiot import RaspIotResource
-from raspiot.libs.alsa import Alsa
-from raspiot.libs.asoundrc import Asoundrc
+from raspiot.libs.commands.alsa import Alsa
+from raspiot.libs.configs.asoundrc import Asoundrc
 
 __all__ = ['Audio']
 

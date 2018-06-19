@@ -31,7 +31,7 @@ import bottle
 from bottle import auth_basic
 from passlib.hash import sha256_crypt
 import functools
-from .libs.raspiotconf import RaspiotConf
+from .libs.configs.raspiotconf import RaspiotConf
 
 __all__ = [u'app']
 

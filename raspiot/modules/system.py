@@ -8,7 +8,7 @@ from raspiot.raspiot import RaspIotModule
 import raspiot
 from datetime import datetime
 import time
-from raspiot.libs.task import Task
+from raspiot.libs.internals.task import Task
 from astral import Astral, GoogleGeocoder, AstralError
 import psutil
 import time
@@ -16,14 +16,14 @@ import io
 import uuid
 import socket
 import iso3166
-from raspiot.libs.console import Console, EndlessConsole
-from raspiot.libs.fstab import Fstab
-from raspiot.libs.hostname import Hostname
-from raspiot.libs.raspiotconf import RaspiotConf
-from raspiot.libs.install import Install
-from raspiot.libs.modulesjson import ModulesJson
-import raspiot.libs.converters as Converters
-from raspiot.libs.github import Github
+from raspiot.libs.internals.console import Console, EndlessConsole
+from raspiot.libs.configs.fstab import Fstab
+from raspiot.libs.configs.hostname import Hostname
+from raspiot.libs.configs.raspiotconf import RaspiotConf
+from raspiot.libs.internals.install import Install
+from raspiot.libs.configs.modulesjson import ModulesJson
+import raspiot.libs.internals.tools as Tools
+from raspiot.libs.internals.github import Github
 from raspiot import __version__ as VERSION
 
 
@@ -882,7 +882,7 @@ class System(RaspIotModule):
             current_version = modules[module][u'version']
             if module in local_modules_json[u'list']:
                 new_version = local_modules_json[u'list'][module][u'version']
-                if Converters.compare_versions(current_version, new_version):
+                if Tools.compare_versions(current_version, new_version):
                     #new version available for current module
                     self.logger.info('New version available for module "%s" (%s->%s)' % (module, current_version, new_version))
                     modules[module][u'updatable'] = True
@@ -998,12 +998,12 @@ class System(RaspIotModule):
         raspiot = self.__process.memory_info()[0]
         return {
             u'total': system.total,
-            #u'total_hr': Converters.hr_bytes(system.total),
+            #u'total_hr': Tools.hr_bytes(system.total),
             u'available': system.available,
-            u'available_hr': Converters.hr_bytes(system.available),
+            u'available_hr': Tools.hr_bytes(system.available),
             #u'used_percent': system.percent,
             u'raspiot': raspiot,
-            #u'raspiot_hr': Converters.hr_bytes(raspiot),
+            #u'raspiot_hr': Tools.hr_bytes(raspiot),
             #u'others': system.total - system.available - raspiot
         }
 
@@ -1039,7 +1039,7 @@ class System(RaspIotModule):
         uptime = int(time.time() - psutil.boot_time())
         return {
             u'uptime': uptime,
-            u'uptime_hr': Converters.hr_uptime(uptime)
+            u'uptime_hr': Tools.hr_uptime(uptime)
         }
 
     def __is_interface_wired(self, interface):

@@ -5,9 +5,9 @@ import os
 import logging
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
 from raspiot.raspiot import RaspIotModule
-from raspiot.libs.task import Task
-from raspiot.libs.configtxt import ConfigTxt
-from raspiot.libs.etcmodules import EtcModules
+from raspiot.libs.internals.task import Task
+from raspiot.libs.configs.configtxt import ConfigTxt
+from raspiot.libs.configs.etcmodules import EtcModules
 import time
 import glob
 

@@ -11,7 +11,7 @@ import pyglet
 import uuid
 from fuzzywuzzy import fuzz
 from threading import Thread
-from raspiot.libs.sox import Sox
+from raspiot.libs.commands.sox import Sox
 from raspiot.raspiot import RaspIotModule
 from raspiot.utils import InvalidParameter, MissingParameter
 

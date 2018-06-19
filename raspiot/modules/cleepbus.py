@@ -4,8 +4,8 @@
 import os
 import logging
 from raspiot.raspiot import RaspIotModule
-from raspiot.libs.externalbus import PyreBus
-from raspiot.libs.hostname import Hostname
+from raspiot.libs.internals.externalbus import PyreBus
+from raspiot.libs.configs.hostname import Hostname
 from raspiot import __version__ as VERSION
 import raspiot
 import json

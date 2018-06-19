@@ -8,7 +8,7 @@ from raspiot.raspiot import RaspIotModule
 from threading import Thread, Lock
 from collections import deque
 import time
-from raspiot.libs.task import Task
+from raspiot.libs.internals.task import Task
 import shutil
 import re
 import traceback

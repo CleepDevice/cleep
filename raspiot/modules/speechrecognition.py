@@ -10,10 +10,10 @@ import audioop
 import uuid
 from threading import Thread, Lock, Timer
 from raspiot.raspiot import RaspIotResource
-from raspiot.libs.sox import Sox
-from raspiot.libs.console import Console
-from raspiot.libs.snowboy import Snowboy
-from raspiot.libs.snowboylib import snowboydetect, snowboydecoder
+from raspiot.libs.commands.sox import Sox
+from raspiot.libs.internals.console import Console
+from raspiot.libs.externals.snowboy import Snowboy
+from raspiot.libs.externals.snowboylib import snowboydetect, snowboydecoder
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
 import speech_recognition as speechrecognition
 

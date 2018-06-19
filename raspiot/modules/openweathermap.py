@@ -3,7 +3,7 @@
     
 import logging
 from raspiot.utils import CommandError, MissingParameter
-from raspiot.libs.task import Task
+from raspiot.libs.internals.task import Task
 from raspiot.raspiot import RaspIotModule
 import urllib
 import urllib2

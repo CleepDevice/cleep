@@ -4,18 +4,18 @@
 import logging
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError, CommandInfo
 from raspiot.raspiot import RaspIotModule
-from raspiot.libs.wpasupplicantconf import WpaSupplicantConf
-from raspiot.libs.dhcpcdconf import DhcpcdConf
-from raspiot.libs.etcnetworkinterfaces import EtcNetworkInterfaces
-from raspiot.libs.console import AdvancedConsole, Console
-from raspiot.libs.ifconfig import Ifconfig
-from raspiot.libs.iw import Iw
-from raspiot.libs.iwlist import Iwlist
-from raspiot.libs.iwconfig import Iwconfig
-from raspiot.libs.ifupdown import Ifupdown
-from raspiot.libs.wpacli import Wpacli
-from raspiot.libs.cleepwificonf import CleepWifiConf
-from raspiot.libs.task import Task
+from raspiot.libs.configs.wpasupplicantconf import WpaSupplicantConf
+from raspiot.libs.configs.dhcpcdconf import DhcpcdConf
+from raspiot.libs.configs.etcnetworkinterfaces import EtcNetworkInterfaces
+from raspiot.libs.internals.console import AdvancedConsole, Console
+from raspiot.libs.commands.ifconfig import Ifconfig
+from raspiot.libs.commands.iw import Iw
+from raspiot.libs.commands.iwlist import Iwlist
+from raspiot.libs.commands.iwconfig import Iwconfig
+from raspiot.libs.commands.ifupdown import Ifupdown
+from raspiot.libs.commands.wpacli import Wpacli
+from raspiot.libs.configs.cleepwificonf import CleepWifiConf
+from raspiot.libs.internals.task import Task
 import re
 import time
 import os

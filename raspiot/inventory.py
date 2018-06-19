@@ -7,9 +7,9 @@ import importlib
 import inspect
 import copy
 from raspiot import RaspIotModule, RaspIotRenderer
-from .libs.modulesjson import ModulesJson
+from .libs.configs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
-import libs.converters as Tools
+import libs.internals.tools as Tools
 
 __all__ = [u'Inventory']
 

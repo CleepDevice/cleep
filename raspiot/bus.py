@@ -10,7 +10,7 @@ import math
 import inspect
 from collections import deque
 from threading import Event
-from .libs.task import Task
+from .libs.internals.task import Task
 from Queue import Queue
 from utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
 
