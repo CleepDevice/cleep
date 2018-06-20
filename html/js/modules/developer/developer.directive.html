@@ -235,17 +235,20 @@
     <!-- backend files -->
     <div ng-show="devCtl.selectedNav==='backendfiles'" ng-if="devCtl.data">
         <md-list>
+            <!-- module -->
             <md-subheader class="md-no-sticky">Main module file</md-subheader>
             <md-list-item>
                 <md-icon md-svg-icon="language-python"></md-icon>
                 <p>{{devCtl.data.python.files.module.path}}</p>
             </md-list-item>
+            <!-- libraries -->
             <md-subheader class="md-no-sticky">Select your libraries only</md-subheader>
             <md-list-item ng-repeat="lib in devCtl.data.python.files.libs">
                 <md-icon md-svg-icon="library-plus"></md-icon>
                 <p>{{lib.path}}</p>
-                <md-checkbox class="md-secondary" ng-model="lib.selected">
-                    <md-tooltip>Include this library?</md-tooltip>
+                <md-checkbox class="md-secondary" ng-model="lib.selected" ng-disabled="lib.systemlib">
+                    <md-tooltip ng-if="!lib.systemlib">Include this library?</md-tooltip>
+                    <md-tooltip ng-if="lib.systemlib">It's a system library</md-tooltip>
                 </md-checkbox>
             </md-list-item>
             <md-list-item ng-if="devCtl.data.python.files.libs.length===0">

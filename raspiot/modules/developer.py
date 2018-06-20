@@ -17,6 +17,11 @@ from raspiot.libs.internals.task import Task
 from raspiot.libs.internals.console import Console
 from raspiot.utils import CommandError, MissingParameter, InvalidParameter
 from raspiot.libs.internals.installmodule import FRONTEND_DIR, BACKEND_DIR, PATH_FRONTEND
+from raspiot.libs.internals import __all__ as internals_libs
+from raspiot.libs.externals import __all__ as externals_libs
+from raspiot.libs.drivers import __all__ as drivers_libs
+from raspiot.libs.configs import __all__ as configs_libs
+from raspiot.libs.commands import __all__ as commands_libs
 
 __all__ = ['Developer']
 
@@ -202,6 +207,30 @@ html/ = /opt/raspiot/html/$_$"""
                     self.pyremotedevStoppedEvent.send(to=u'rpc', device_id=self.__developer_uuid)
                 self.pyremotedev_is_running = False
 
+    def __is_system_lib(self, path):
+        """
+        Check if specified lib is a system one (provided by raspiot)
+
+        Args:
+            path (string): lib path
+
+        Returns:
+            bool: True if lib is system lib, False otherwise
+        """
+        filename = os.path.basename(path)
+        if filename in internals_libs:
+            return True
+        elif filename in externals_libs:
+            return True
+        elif filename in drivers_libs:
+            return True
+        elif filename in commands_libs:
+            return True
+        elif filename in configs_libs:
+            return True
+
+        return False
+
     def __analyze_module_python(self, module):
         """
         Analyze package python part
@@ -216,6 +245,10 @@ html/ = /opt/raspiot/html/$_$"""
                     files (list): list of python files (libs, module...)
                 }
         """
+        #init
+        errors = []
+        warnings = []
+
         #get module instance
         try:
             module_ = importlib.import_module(u'raspiot.modules.%s' % module)
@@ -225,8 +258,6 @@ html/ = /opt/raspiot/html/$_$"""
             raise InvalidParameter(u'Unable to load module "%s". Please check your code' % module)
 
         #check module metadata
-        errors = []
-        warnings = []
         #MODULE_DESCRIPTION
         if not hasattr(class_, u'MODULE_DESCRIPTION'):
             errors.append(u'Mandatory field MODULE_DESCRIPTION is missing')
@@ -320,12 +351,11 @@ html/ = /opt/raspiot/html/$_$"""
         }
         self.logger.debug('Module "%s" metadata: %s' % (module, metadata))
 
-        #build list of files (based on module dependencies)
+        #build main module file infos
         files = {
             u'module': None,
             u'libs': []
         }
-        finder = ModuleFinder()
         module_pyc = inspect.getfile(module_)
         module_py = module_pyc.replace(u'.pyc', u'.py')
         files['module'] = {
@@ -333,26 +363,30 @@ html/ = /opt/raspiot/html/$_$"""
             u'path': module_py.replace(os.path.join(self.raspiot_path, u'modules'), u'')[1:],
             u'filename': os.path.basename(module_py)
         }
-        self.logger.debug('Module file: %s' % module_py)
+        self.logger.debug('Module file infos: %s' % module_py)
+
+        #build module dependencies infos
+        finder = ModuleFinder()
         try:
             finder.run_script(module_py)
+            for name, _ in finder.modules.iteritems():
+                #self.logger.debug('lib name: %s' % name)
+                if name.startswith(u'raspiot.'):
+                    if name.find(u'.libs.')>0:
+                        #add lib
+                        lib = '%s.py' % os.path.join(self.raspiot_path, os.path.sep.join(name.split(u'.')[1:]))
+                        if not os.path.exists(lib):
+                            self.logger.debug('Lib %s not found' % lib)
+                        else:
+                            files[u'libs'].append({
+                                u'fullpath': lib,
+                                u'path': lib.replace(self.raspiot_path, u'')[1:],
+                                u'filename': os.path.basename(lib),
+                                u'selected': True,
+                                u'systemlib': self.__is_system_lib(lib)
+                            })
         except:
             self.logger.exception('Exception occured during module dependencies finder:')
-        for name, _ in finder.modules.iteritems():
-            #self.logger.debug('lib name: %s' % name)
-            if name.startswith(u'raspiot.'):
-                if name.find(u'.libs.')>0:
-                    #add lib
-                    lib = '%s.py' % os.path.join(self.raspiot_path, os.path.sep.join(name.split(u'.')[1:]))
-                    if not os.path.exists(lib):
-                        self.logger.debug('Lib %s not found' % lib)
-                    else:
-                        files[u'libs'].append({
-                            u'fullpath': lib,
-                            u'path': lib.replace(self.raspiot_path, u'')[1:],
-                            u'filename': os.path.basename(lib),
-                            u'selected': True
-                        })
 
         return {
             u'data': {
