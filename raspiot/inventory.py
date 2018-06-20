@@ -115,8 +115,14 @@ class Inventory(RaspIotModule):
                     self.logger.debug(u'Add modules found locally only')
                 
                     #load module to get metadata
-                    module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
-                    class_ = getattr(module_, module_name.capitalize())
+                    try:
+                        module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
+                        class_ = getattr(module_, module_name.capitalize())
+    
+                    except:
+                        #error occured during local module loading. Log error and continue
+                        self.logger.exception(u'Error during local module "%s" loading:' % module_name)
+                        continue
 
                     #save module entry
                     self.modules[module_name] = {
