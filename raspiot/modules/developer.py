@@ -22,6 +22,7 @@ from raspiot.libs.externals import __all__ as externals_libs
 from raspiot.libs.drivers import __all__ as drivers_libs
 from raspiot.libs.configs import __all__ as configs_libs
 from raspiot.libs.commands import __all__ as commands_libs
+import raspiot.libs.internals.tools as Tools
 
 __all__ = ['Developer']
 
@@ -207,30 +208,6 @@ html/ = /opt/raspiot/html/$_$"""
                     self.pyremotedevStoppedEvent.send(to=u'rpc', device_id=self.__developer_uuid)
                 self.pyremotedev_is_running = False
 
-    def __is_system_lib(self, path):
-        """
-        Check if specified lib is a system one (provided by raspiot)
-
-        Args:
-            path (string): lib path
-
-        Returns:
-            bool: True if lib is system lib, False otherwise
-        """
-        filename = os.path.basename(path)
-        if filename in internals_libs:
-            return True
-        elif filename in externals_libs:
-            return True
-        elif filename in drivers_libs:
-            return True
-        elif filename in commands_libs:
-            return True
-        elif filename in configs_libs:
-            return True
-
-        return False
-
     def __analyze_module_python(self, module):
         """
         Analyze package python part
@@ -383,7 +360,7 @@ html/ = /opt/raspiot/html/$_$"""
                                 u'path': lib.replace(self.raspiot_path, u'')[1:],
                                 u'filename': os.path.basename(lib),
                                 u'selected': True,
-                                u'systemlib': self.__is_system_lib(lib)
+                                u'systemlib': Tools.is_system_lib(lib)
                             })
         except:
             self.logger.exception('Exception occured during module dependencies finder:')

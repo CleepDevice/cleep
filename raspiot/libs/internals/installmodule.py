@@ -16,7 +16,7 @@ import stat
 from raspiot.libs.internals.console import EndlessConsole
 from raspiot.raspiot import RaspIotModule
 from raspiot.libs.internals.download import Download
-
+import raspiot.libs.internals.tools as Tools
 
 PATH_FRONTEND = u'/opt/raspiot/html'
 PATH_INSTALL = u'/etc/raspiot/install/'
@@ -56,6 +56,7 @@ class UninstallModule(threading.Thread):
 
         #members
         self.status = self.STATUS_IDLE
+        self.error_message = None
         self.update_process = update_process
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
@@ -75,6 +76,7 @@ class UninstallModule(threading.Thread):
             dict: uninstall status::
                 {
                     status (int): see STATUS_XXX for available codes
+                    errormessage (string): error message. Can be null
                     module (string): module name
                     prescript (dict): preuninst status (returncode, stdout, stderr)
                     postscript (dict): postuninst status (returncode, stdout, stderr)
@@ -84,6 +86,7 @@ class UninstallModule(threading.Thread):
         return {
             u'module': self.module,
             u'status': self.status,
+            u'errormessage': self.error_message,
             u'prescript': self.__pre_script_status,
             u'postscript': self.__post_script_status,
             u'updateprocess': self.update_process
@@ -194,15 +197,16 @@ class UninstallModule(threading.Thread):
                     self.__script_running = True
                     if not self.__execute_script(preuninst_sh):
                         #script failed
-                        raise Exception(u'')
+                        raise Exception(u'Forced exception')
                 else:
                     self.logger.debug(u'No preuninst script found at "%s"' % preuninst_sh)
 
             except Exception as e:
-                if len(e.message)>0:
+                if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
+                    self.error_message = e.message
                 error_during_prescript = True
-                #do not stop uninstall process.
+                #do not stop uninstall process, it's not blocking
 
             #send status
             if self.callback:
@@ -214,7 +218,7 @@ class UninstallModule(threading.Thread):
                 self.logger.debug(u'Open install log file "%s"' % module_log)
                 if not os.path.exists(module_log):
                     self.logger.error(u'Unable to remove module "%s" files because "%s" file doesn\'t exist' % (self.module, module_log))
-                    raise Exception(u'')
+                    raise Exception(u'Unable to uninstall module properly because uninstall file doesn\'t exist (%s)' % module_log)
                 install_log = self.cleep_filesystem.open(module_log, u'r')
                 lines = install_log.readlines()
                 self.cleep_filesystem.close(install_log)
@@ -224,18 +228,22 @@ class UninstallModule(threading.Thread):
                         #empty line, drop it
                         continue
 
+                    #check if we try to remove system library file (should not happen but we are never too careful)
+                    if Tools.is_system_lib(line):
+                        #it's a system library, log warning and continue
+                        self.logger.warning(u'Trying to remove system library "%s" during module "%s" uninstallation. Drop deletion.' % (line, self.module))
+                        continue
+
                     #try to delete file
                     if not self.cleep_filesystem.rm(line):
                         self.logger.warning(u'File "%s" was not removed during "%s" module uninstallation' % (line, self.module))
 
-                #remove install log file and supposed frontend directory
-                self.cleep_filesystem.rm(module_log)
-
             except Exception as e:
-                if len(e.message)>0:
+                if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during "%s" files module uninstallation' % self.module)
+                    self.error_message = e.message
                 error_during_remove = True
-                #do not stop uninstall process
+                #do not stop uninstall process, some files could be still exist after uninstall
 
             #send status
             if self.callback:
@@ -249,13 +257,14 @@ class UninstallModule(threading.Thread):
                     self.__script_running = True
                     if not self.__execute_script(postuninst_sh):
                         #script failed
-                        raise Exception(u'')
+                        raise Exception(u'Forced exception')
                 else:
                     self.logger.debug(u'No postuninst script found at "%s"' % postuninst_sh)
 
             except Exception as e:
-                if len(e.message)>0:
+                if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during postuninst.sh script execution of module "%s"' % self.module)
+                    self.error_message = e.message
                 error_during_postscript = True
                 #do not stop uninstall process
 
@@ -272,6 +281,8 @@ class UninstallModule(threading.Thread):
                 path = os.path.join(PATH_FRONTEND, 'js/modules/%s' % self.module)
                 if os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
+                if os.path.exists(module_log):
+                    self.cleep_filesystem.rm(module_log)
             except:
                 self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
 
@@ -341,6 +352,7 @@ class InstallModule(threading.Thread):
         self.callback = callback
         self.update_process = update_process
         self.status = self.STATUS_IDLE
+        self.error_message = None
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
         self.module = module
@@ -371,6 +383,7 @@ class InstallModule(threading.Thread):
                 {
                     module (string): module name
                     status (int): see STATUS_XXX for available codes
+                    errormessage (string): error message (can be null)
                     prescript (dict): preinst status (returncode, stdout, stderr)
                     postscript (dict): postinst status (returncode, stdout, stderr)
                     updateprocess (bool): install triggered by module update
@@ -379,6 +392,7 @@ class InstallModule(threading.Thread):
         return {
             u'module': self.module,
             u'status': self.status,
+            u'errormessage': self.error_message,
             u'prescript': self.__pre_script_status,
             u'postscript': self.__post_script_status,
             u'updateprocess': self.update_process
@@ -575,13 +589,14 @@ class InstallModule(threading.Thread):
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):
-                        raise Exception(u'')
+                        raise Exception(u'Forced exception')
                 else:
                     self.logger.debug('No preinst script found at "%s"' % path)
 
             except Exception as e:
-                if len(e.message)>0:
+                if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during preinst.sh script execution of module "%s"' % self.module)
+                    self.error_message = e.message
                 self.status = self.STATUS_ERROR_PREINST
                 raise Exception(u'Forced exception')
 
@@ -613,6 +628,17 @@ class InstallModule(threading.Thread):
                         src_path = os.path.join(extract_path, f)
                         dst_path = os.path.join(self.raspiot_path, f).replace(BACKEND_DIR, u'')
                         self.logger.debug(u'src=%s dst=%s' % (src_path, dst_path))
+
+                        #check file overwritings
+                        if os.path.exists(dst_path):
+                            if Tools.is_system_lib(dst_path):
+                                #system lib, just drop file install with warning
+                                self.logger.warning(u'File "%s" is a system lib and shouldn\'t be exists in module "%s" package. File is dropped.' % (dst_path, self.module))
+                                continue
+                            else:
+                                #it's a third part file, can't overwrite existing one, trigger exception
+                                raise Exception(u'Unable to install module, it conflicts with existing installed module (library overwritten)')
+
                         self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                         if not self.cleep_filesystem.copy(src_path, dst_path):
                             raise Exception(u'Forced exception')
@@ -643,9 +669,10 @@ class InstallModule(threading.Thread):
                         raise Exception(u'Canceled exception')
 
             except Exception as e:
-                if e.message!=u'Canceled exception':
+                if e.message!=u'Canceled exception' and e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during module "%s" files copy:' % self.module)
                     self.status = self.STATUS_ERROR_COPY
+                    self.error_message = e.message
                 raise Exception(u'Forced exception')
 
             #send status
@@ -659,20 +686,18 @@ class InstallModule(threading.Thread):
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):
-                        raise Exception(u'')
+                        raise Exception(u'Forced exception')
                 else:
                     self.logger.debug('No postinst script found at "%s"' % path)
 
             except Exception as e:
-                if len(e.message)>0:
+                if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
+                    self.error_message = e.message
                 self.status = self.STATUS_ERROR_POSTINST
                 raise Exception(u'Forced exception')
                     
         except Exception as e:
-            #local exception raised, revert installation
-            #if self.logger.getEffectiveLevel()==logging.DEBUG:
-            #    self.logger.exception(e)
             error = True
 
         finally:
