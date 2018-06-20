@@ -53,21 +53,18 @@ case $1 in
     ;;
     
   start)
-    echo "Starting raspiot..."
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl start raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot start;
     else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
     ;;
 
   stop)
-    echo "Stopping raspiot..."
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl stop raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot stop;
     else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
     ;;
 
   restart)
-    echo "Restarting raspiot..."
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl restart raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot restart;
     else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
