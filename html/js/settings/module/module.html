@@ -1,16 +1,21 @@
 <div layout="column" id="moduleContainer">
 
     <!-- toolbar -->
-    <md-toolbar class="md-hue-1">
-        <div class="md-toolbar-tools">
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div>
             <md-button href="#!modules" class="md-raised" aria-label="Go back">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to modules list</md-tooltip>
                 Back
             </md-button>
-            <div style="width:15px;"></div>
-            <h2 flex md-truncate>{{moduleCtl.module | firstUpper}} configuration</h2>
         </div>
-    </md-toolbar>
+        <div class="toolbar-spacer"></div>
+        <div>
+            <h1 class="md-title">{{moduleCtl.module | firstUpper}} configuration</h1>
+        </div>
+    </div>
+
+    <!-- module content will be appended here -->
 
 </div>
+

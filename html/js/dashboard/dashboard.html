@@ -1,8 +1,19 @@
-<div layout="row" layout-wrap layout-padding ng-cloak>
+<div layout="column" ng-cloak>
+
+    <!-- toolbar -->
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div class="toolbar-spacer"></div>
+        <div layout="row" layout-align="left center">
+            <md-icon md-svg-icon="view-dashboard"></md-icon>
+            <h1 style="padding-left:5px;" class="md-title">Dashboard</h1>
+        </div>
+    </div>
 
     <!-- widgets -->
-    <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
-        <dashboardwidget type="{{device.type}}" device="device"></dashboardwidget>
+    <div layout="row" layout-wrap layout-padding>
+        <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
+            <dashboardwidget type="{{device.type}}" device="device"></dashboardwidget>
+        </div>
     </div>
 
     <!-- no widget -->

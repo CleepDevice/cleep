@@ -1,17 +1,20 @@
 <md-content layout="column">
 
     <!-- toolbar -->
-    <md-toolbar class="md-hue-1 fix-search-toolbar-scrollbar">
-        <div class="md-toolbar-tools">
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div>
             <md-button href="#!modules" class="md-raised" aria-label="Go back">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to installed modules</md-tooltip>
                 Back
             </md-button>
-            <div style="width:15px;"></div>
-            <h2 flex md-truncate>
-                Installable modules
-            </h2>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div>
+            <h1 class="md-title">Modules market</h1>
+        </div>
+        <div flex></div>
+        <div layout="row" layout-align="end center">
             <md-input-container class="md-icon-float md-block no-error-spacer">
                 <md-icon md-svg-icon="magnify"></md-icon>
                 <input ng-model="installCtl.search" type="text" aria-label="Search">
@@ -22,7 +25,7 @@
                 </md-button>
             </div>
         </div>
-    </md-toolbar>
+    </div>
 
     <!-- modules list -->
     <div layout="row" layout-wrap>

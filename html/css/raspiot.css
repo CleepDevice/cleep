@@ -286,9 +286,14 @@ md-toast.info .md-toast-content {
     height: 500px !important;
 }
 
-/********* fix search input in toolbar: when no results, scrollbar appears *********/
-.fix-search-toolbar-scrollbar {
-    height: 68px !important;
+/********* toolbar **********/
+.toolbar-content {
+    height: 64px;
+    overflow-y: hidden;
+}
+
+.toolbar-spacer {
+    width: 15px;
 }
 
 /********* modules card **********/
