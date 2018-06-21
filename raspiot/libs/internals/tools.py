@@ -5,6 +5,7 @@ import binascii
 from passlib.utils import pbkdf2
 import base64
 import io
+import os
 
 from raspiot.libs.internals import __all__ as internals_libs
 from raspiot.libs.externals import __all__ as externals_libs
