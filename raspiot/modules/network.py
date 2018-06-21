@@ -224,7 +224,7 @@ class Network(RaspIotModule):
             #get configuration
             configured_interfaces = self.etcnetworkinterfaces.get_configurations()
             current_status = self.ifconfig.get_configurations()
-            self.logger.error(u'configured_interfaces: %s' % configured_interfaces)
+            self.logger.debug(u'configured_interfaces: %s' % configured_interfaces)
             self.logger.debug(u'current_status: %s' % current_status)
 
             #remove lo interface from configured interfaces list
