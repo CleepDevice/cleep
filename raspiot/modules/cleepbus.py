@@ -22,7 +22,7 @@ class Cleepbus(RaspIotModule):
     MODULE_VERSION = u'1.0.0'
     MODULE_PRICE = 0
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Enable communications between all your Cleep devices through your home network'
+    MODULE_DESCRIPTION = u'Enables communications between all your Cleep devices through your home network'
     MODULE_LOCKED = True
     MODULE_TAGS = [u'bus', u'communication']
     MODULE_COUNTRY = None
