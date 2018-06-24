@@ -251,7 +251,7 @@ var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyL
         var promises = [];
         for( module in self.modules )
         {
-            if( self.modules[module].local )
+            if( self.modules[module].installed && !self.modules[module].library )
             {
                 promises.push(self.__loadModule(module));
             }

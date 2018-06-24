@@ -6,9 +6,11 @@ import logging
 import importlib
 import inspect
 import copy
+from threading import Event
 from raspiot import RaspIotModule, RaspIotRenderer
 from .libs.configs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
+from .libs.configs.raspiotconf import RaspiotConf
 import libs.internals.tools as Tools
 
 __all__ = [u'Inventory']
@@ -21,7 +23,8 @@ class Inventory(RaspIotModule):
      - existing renderers (sms, email, sound...)
     """ 
 
-    def __init__(self, bootstrap, debug_enabled, installed_modules):
+    #def __init__(self, bootstrap, debug_enabled, installed_modules, config, debug_config):
+    def __init__(self, bootstrap, debug_enabled, config, debug_config):
         """
         Constructor
 
@@ -34,6 +37,19 @@ class Inventory(RaspIotModule):
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
+        self.config = config
+        self.debug_config = debug_config
+        self.__modules_loaded_as_dependency = {}
+        self.bootstrap = bootstrap
+        self.__join_events = []
+        self.modules_new = {}
+        self.mandatory_modules = [
+            u'system',
+            u'audio',
+            u'network',
+            u'cleepbus'
+        ]
+        self.__modules_instances = {}
         #factories
         self.events_factory = bootstrap[u'events_factory']
         self.formatters_factory = bootstrap[u'formatters_factory']
@@ -42,32 +58,209 @@ class Inventory(RaspIotModule):
         #list of modules: dict(<module name>:dict(<module config>), ...)
         self.modules = {}
         #list of installed modules names with reference to real name
-        self.installed_modules_names = {}
+        #self.installed_modules_names = {}
         #direct access to installed modules
-        self.installed_modules = installed_modules
+        #self.installed_modules = installed_modules
         #list of libraries
         self.libraries = []
 
         #fill installed and library modules list
-        for module in installed_modules:
-            if module.startswith(u'mod.'):
-                _module = module.replace(u'mod.', '')
-                self.installed_modules_names[_module] = module
-            elif module.startswith(u'lib.'):
-                _module = module.replace(u'lib.', '')
-                self.installed_modules_names[_module] = module
-                self.libraries.append(_module)
+        #for module in installed_modules:
+        #    if module.startswith(u'mod.'):
+        #        _module = module.replace(u'mod.', '')
+        #        self.installed_modules_names[_module] = module
+        #    elif module.startswith(u'lib.'):
+        #        _module = module.replace(u'lib.', '')
+        #        self.installed_modules_names[_module] = module
+        #        self.libraries.append(_module)
 
     def _configure(self):
         """
         Configure module
         """
-        self.__load_modules()
+        #self.__load_modules()
+        self.load_modules_new()
 
+    def __get_bootstrap(self):
+        """
+        Get bootstrap object to pass to module to load
+        """
+        return {
+            u'events_factory': self.bootstrap[u'events_factory'],
+            u'formatters_factory': self.bootstrap[u'formatters_factory'],
+            u'message_bus': self.bootstrap[u'message_bus'],
+            u'join_event': Event(),
+            u'cleep_filesystem': self.bootstrap[u'cleep_filesystem']
+        }
+
+    def __fix_country(self, country):
+        if not country:
+            return u''
+        else:
+            return country.lower()
+
+    def __fix_urls(self, site_url, bugs_url, info_url, help_url):
+        return {
+            u'site': site_url,
+            u'bugs': bugs_url,
+            u'info': info_url,
+            u'help': help_url
+        }
+
+    def __load_module(self, module_name, local_modules, is_dependency=False):
+        """
+        Load specified module
+
+        Args:
+            module_name (string): module name
+            local_modules (list): list of locally installed modules
+            is_dependency (bool): True if module to load is a dependency
+        """
+        if is_dependency:
+            self.logger.debug(u'Loading dependency "%s"' % module_name)
+        else:
+            self.logger.debug(u'Loading module "%s"' % module_name)
+
+        #import module file and get module class
+        module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
+        module_class_ = getattr(module_, module_name.capitalize())
+                    
+        #enable or not debug
+        debug = False
+        if self.debug_config[u'trace_enabled'] or self.debug_config[u'debug_modules'].count(module_name)==1:
+            self.logger.debug(u'Debug enabled for module "%s"' % module_name)
+            debug = True
+
+        #instanciate module class
+        self.logger.debug(u'Starting module "%s"' % module_name)
+
+        #load module dependencies
+        if module_class_.MODULE_DEPS:
+            for dependency in module_class_.MODULE_DEPS:
+                if dependency not in self.__modules_loaded_as_dependency:
+                    #load dependency
+                    self.__load_module(dependency, local_modules, True)
+
+                    #flag module is loaded as dependency and not module
+                    self.__modules_loaded_as_dependency[dependency] = True
+            
+                else:
+                    #module is already loaded, nothing else to do
+                    pass
+
+        #instanciate and start module
+        bootstrap = self.__get_bootstrap()
+        self.__modules_instances[module_name] = module_class_(bootstrap, debug)
+        self.__modules_instances[module_name].start()
+
+        #append join event after module starts to make sure it can unlock it
+        self.__join_events.append(bootstrap[u'join_event'])
+
+        #fix some metadata
+        fixed_urls = self.__fix_urls(
+            getattr(module_class_, u'MODULE_URLSITE', None),
+            getattr(module_class_, u'MODULE_URLBUGS', None),
+            getattr(module_class_, u'MODULE_URLINFO', None),
+            getattr(module_class_, u'MODULE_URLHELP', None)
+        )
+        fixed_country = self.__fix_country(getattr(module_class_, u'MODULE_COUNTRY', None))
+
+        #update metadata with local values
+        self.modules_new[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
+        self.modules_new[module_name][u'author'] = module_class_.MODULE_AUTHOR
+        self.modules_new[module_name][u'locked'] = module_class_.MODULE_LOCKED
+        self.modules_new[module_name][u'tags'] = module_class_.MODULE_TAGS
+        self.modules_new[module_name][u'country'] = fixed_country
+        self.modules_new[module_name][u'urls'] = fixed_urls
+        self.modules_new[module_name][u'installed'] = True
+
+        #handle properly version and updatable flag
+        if Tools.compare_versions(module_class_.MODULE_VERSION, self.modules_new[module_name][u'version']):
+            self.modules_new[module_name][u'updatable'] = self.modules_new[module_name][u'version']
+        self.modules_new[module_name][u'version'] = module_class_.MODULE_VERSION
+
+        #flag module is loaded as module and not dependency
+        self.__modules_loaded_as_dependency[module_name] = False
+
+    def load_modules_new(self):
+        """
+        Load all modules
+        """
+        #init
+        local_modules = []
+
+        #get list of all available modules (from remote list)
+        modules_json = ModulesJson(self.cleep_filesystem)
+        if not modules_json.exists():
+            #modules.json doesn't exists, fallback to empty one
+            self.logger.warning(u'No modules.json loaded from Raspiot website')
+            self.modules_new = {}
+        else:
+            modules_json_content = modules_json.get_json()
+            self.modules_new = modules_json_content[u'list']
+
+        #append manually installed modules (surely module in development)
+        path = os.path.join(os.path.dirname(__file__), u'modules')
+        if not os.path.exists(path):
+            raise CommandError(u'Invalid modules path')
+        for f in os.listdir(path):
+            fpath = os.path.join(path, f)
+            (module_name, ext) = os.path.splitext(f)
+            if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
+                if module_name not in self.modules_new:
+                    self.logger.debug(u'Found module "%s" installed manually' % module_name)
+                    local_modules.append(module_name)
+                    self.modules_new[module_name] = {}
+
+        #add default metadata
+        for module_name in self.modules_new:
+            self.modules_new[module_name][u'name'] = module_name
+            self.modules_new[module_name][u'installed'] = False
+            self.modules_new[module_name][u'library'] = False
+            self.modules_new[module_name][u'local'] = module_name in local_modules
+            self.modules_new[module_name][u'pending'] = False
+            self.modules_new[module_name][u'updatable'] = u''
+
+        #load mandatory modules
+        for module_name in self.mandatory_modules:
+            try:
+                self.__load_module(module_name, local_modules)
+            except:
+                #failed to load mandatory module
+                self.logger.fatal(u'Unable to load main module "%s". System will be instable' % module_name)
+                self.logger.exception(u'Module "%s" exception:' % module_name)
+
+        #load installed modules
+        for module_name in self.config:
+            try:
+                self.__load_module(module_name, local_modules)
+            except:
+                #failed to load module
+                self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
+
+        #fix final library status
+        for module_name in self.modules_new:
+            if module_name in self.__modules_loaded_as_dependency:
+                self.modules_new[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
+
+        self.logger.info("******************************************************")
+        self.logger.info(self.config)
+        self.logger.info("******************************************************")
+        self.logger.info(self.modules_new)
+        self.logger.info("******************************************************")
+
+
+        #wait for all modules completely loaded
+        self.logger.debug('Waiting for end of modules loading...')
+        for join_event in self.__join_events:
+            join_event.wait()
+        self.logger.debug('All modules are loaded')
+
+    """
     def __load_modules(self):
-        """
+        
         Load all available modules and their devices
-        """
+        
         #list all available modules (list should be downloaded from internet) and fill default metadata
         modules_json = ModulesJson(self.cleep_filesystem)
         if not modules_json.exists():
@@ -112,7 +305,7 @@ class Inventory(RaspIotModule):
             if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
                 if module_name not in self.modules:
                     #local module not published yet
-                    self.logger.debug(u'Add modules found locally only')
+                    self.logger.debug(u'Add module "%s" found locally only' % module_name)
                 
                     #load module to get metadata
                     try:
@@ -197,6 +390,7 @@ class Inventory(RaspIotModule):
 
         #self.logger.debug(u'DEVICES=%s' % self.devices)
         #self.logger.debug(u'MODULES=%s' % self.modules)
+    """
 
     def get_device_module(self, uuid):
         """
@@ -261,16 +455,77 @@ class Inventory(RaspIotModule):
 
         return devices
 
+    def get_devices(self):
+        """
+        Return list of modules devices
+        """
+        #init
+        devices = {}
+
+        #inject dynamic data
+        for module_name in self.__modules_instances:
+            try:
+                module_devices = self.__modules_instances[module_name].get_module_devices()
+                devices[module_name] = module_devices
+            
+            except:
+                self.logger.exception(u'Unable to get devices of module "%s"' % module_name)
+
+        return devices
+
     def get_modules(self):
         """
         Returns list of modules
         
         Returns:
             list: list of modules::
-                ['module name':{'module info':'', ...}, ...]
+                {
+                    module name: {
+                        name: '',
+                        version: '',
+                        ...
+                    },
+                    ...
+                }
         """
-        return copy.deepcopy(self.modules)
+        #init
+        modules = copy.deepcopy(self.modules_new)
+        events = self.events_factory.get_modules_events()
+        conf = RaspiotConf(self.cleep_filesystem)
+        raspiot_config = conf.as_dict()
+        
+        #inject dynamic data
+        for module_name in modules:
+            try:
+                #current module config
+                if module_name in self.__modules_instances:
+                    modules[module_name][u'config'] = self.__modules_instances[module_name].get_module_config()
+            
+                #module events
+                if module_name in events:
+                    modules[module_name][u'events'] = events[module_name]
 
+                #pending status
+                modules[module_name][u'pending'] = False
+                if module_name in self.mandatory_modules:
+                    #mandatory modules
+                    modules[module_name][u'pending'] = False
+                elif module_name in raspiot_config[u'general'][u'modules'] and not modules[module_name][u'installed']:
+                    #install pending
+                    modules[module_name][u'pending'] = True
+                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed']:
+                    #uninstall pending
+                    modules[module_name][u'pending'] = True
+                elif module_name in raspiot_config[u'general'][u'updated'] and modules[module_name][u'installed']:
+                    #module updated, need to restart raspiot
+                    modules[module_name][u'pending'] = True
+
+            except:
+                self.logger.exception(u'Unable to get config of module "%s"' % module_name)
+                continue
+
+        return modules
+            
     def get_modules_names(self):
         """
         Returns list of modules names

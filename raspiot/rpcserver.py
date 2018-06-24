@@ -53,6 +53,8 @@ logger = None
 app = bottle.app()
 server = None
 cleep_filesystem = None
+inventory = None
+bus = None
 
 def bottle_logger(func):
     """
@@ -85,41 +87,54 @@ def load_auth():
     except:
         logger.exception(u'Unable to load auth file. Auth disabled:')
 
-def get_app(debug_enabled):
-    """
-    Return web server
 
-    Return:
-        object: bottle instance
-    """
-    global logger, app
+#def get_app(debug_enabled):
+#    """
+#    Return web server
+#
+#    Return:
+#        object: bottle instance
+#    """
+#    global logger, app
+#
+#    #logging (in raspiot.conf file, module name is 'rpcserver')
+#    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+#    logger = logging.getLogger(u'RpcServer')
+#    if debug_enabled:
+#        logger.setLevel(logging.DEBUG)
+#
+#    #load auth
+#    load_auth()
+#
+#    return app
 
-    #logging (in raspiot.conf file, module name is 'rpcserver')
-    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
-    logger = logging.getLogger(u'RpcServer')
-    if debug_enabled:
-        logger.setLevel(logging.DEBUG)
-
-    #load auth
-    load_auth()
-
-    return app
-
-def configure(boostrap):
+def configure(bootstrap, inventory_, debug_enabled):
     """
     Configure rpcserver
 
     Args:
         boostrap (dict): bootstrap objects
     """
-    global cleep_filesystem
+    global cleep_filesystem, inventory, bus, logger
 
-    #set cleep filesystem
-    cleep_filesystem = boostrap[u'cleep_filesystem']
+    #configure logger
+    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+    logger = logging.getLogger(u'RpcServer')
+    if debug_enabled:
+        logger.setLevel(logging.DEBUG)
 
+    #set members
+    cleep_filesystem = bootstrap[u'cleep_filesystem']
+    bus = bootstrap[u'message_bus']
+    inventory = inventory_
+
+    #load auth
+    load_auth()
+
+    #DONE moved to raspiot bin
     #clear updated modules list
-    conf = RaspiotConf(cleep_filesystem)
-    conf.clear_updated_modules()
+    #conf = RaspiotConf(cleep_filesystem)
+    #conf.clear_updated_modules()
 
 def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """
@@ -235,7 +250,7 @@ def send_command(command, to, params, timeout=None):
         MessageResonse: command response (None if broadcasted message)
     """
     #get bus
-    bus = app.config[u'sys.bus']
+    #bus = app.config[u'sys.bus']
 
     #prepare and send command
     request = MessageRequest()
@@ -256,7 +271,8 @@ def get_events():
     Return:
         list: list of used events
     """
-    return app.config[u'sys.inventory'].get_used_events()
+    #return app.config[u'sys.inventory'].get_used_events()
+    return inventory.get_used_events()
 
 def get_renderers():
     """
@@ -278,7 +294,8 @@ def get_renderers():
                 ...
             }
     """
-    return app.config[u'sys.inventory'].get_renderers()
+    #return app.config[u'sys.inventory'].get_renderers()
+    return inventory.get_renderers()
 
 def get_modules():
     """
@@ -287,10 +304,14 @@ def get_modules():
     Return:
         dict: map of modules with their configuration, devices, commands...
     """
-    logger.debug(u'Request inventory for available modules')
-    modules = app.config[u'sys.inventory'].get_modules()
-    events = app.config[u'sys.inventory'].get_modules_events()
+
+    #logger.debug(u'Request inventory for available modules')
+    #modules = app.config[u'sys.inventory'].get_modules()
+    #events = app.config[u'sys.inventory'].get_modules_events()
+
+    return inventory.get_modules()
     
+    """
     #inject extra of installed modules (config, events)
     for module in modules:
         if modules[module][u'installed']:
@@ -327,6 +348,7 @@ def get_modules():
             modules[module][u'pending'] = True
 
     return modules
+    """
 
 def get_devices():
     """
@@ -337,6 +359,7 @@ def get_devices():
     """
     #request each loaded module for its devices
     devices = {}
+    """
     for module in app.config:
         if module.startswith(u'mod.'):
             _module = module.replace(u'mod.', '')
@@ -355,6 +378,8 @@ def get_devices():
                 logger.exception('Fatal exception:')
 
     return devices
+    """
+    return inventory.get_devices()
 
 @app.route(u'/upload', method=u'POST')
 @authenticate()
@@ -651,9 +676,12 @@ def registerpoll():
     """
     #subscribe to bus
     poll_key = unicode(uuid.uuid4())
-    if app.config.has_key(u'sys.bus'):
+    #if app.config.has_key(u'sys.bus'):
+    #    logger.debug(u'subscribe %s' % poll_key)
+    #    app.config[u'sys.bus'].add_subscription(u'rpc-%s' % poll_key)
+    if bus:
         logger.debug(u'subscribe %s' % poll_key)
-        app.config[u'sys.bus'].add_subscription(u'rpc-%s' % poll_key)
+        bus.add_subscription(u'rpc-%s' % poll_key)
 
     #return response
     bottle.response.content_type = u'application/json'
@@ -681,7 +709,7 @@ def poll():
         bottle.response.content_type = u'application/json'
 
         #get message bus
-        bus = app.config[u'sys.bus']
+        #bus = app.config[u'sys.bus']
 
         #init message
         message = {u'error':True, u'data':None, u'message':''}

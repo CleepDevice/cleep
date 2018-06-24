@@ -74,6 +74,9 @@ def load_config(cleep_filesystem):
     config = conf.as_dict()
     logger.info(u'config: %s' % config)
 
+    #clear updated modules list
+    conf.clear_updated_modules()
+
     return config
 
 def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem):
@@ -167,10 +170,10 @@ if __name__ == u'__main__':
             logger.setLevel(logging.DEBUG)
 
         #get webserver app (used to store application objects)
-        debug = False
-        if trace_enabled or debug_modules.count(u'rpc')==1:
-            debug = True
-        app = rpcserver.get_app(debug)
+        #debug = False
+        #if trace_enabled or debug_modules.count(u'rpc')==1:
+        #    debug = True
+        #app = rpcserver.get_app(debug)
 
         #create message bus
         logger.debug(u'Initializing message bus')
@@ -178,9 +181,9 @@ if __name__ == u'__main__':
         if trace_enabled or debug_modules.count(u'bus')==1:
             debug = True
         bus = bus.MessageBus(debug)
-        app.config[u'sys.bus'] = bus
+        #app.config[u'sys.bus'] = bus
 
-        #create bootstrap objects
+        #create factories
         debug = False
         if trace_enabled or debug_system:
             debug = True
@@ -193,9 +196,9 @@ if __name__ == u'__main__':
         #configure factories and rpcserver
         events_factory.configure(bootstrap)
         formatters_factory.configure(bootstrap)
-        rpcserver.configure(bootstrap)
 
         #create mandatory modules
+        """
         modules_loaded_as_library = {}
         for module_name in mandatory_modules.keys():
             logger.debug(u'Initializing %s module' % module_name)
@@ -276,13 +279,28 @@ if __name__ == u'__main__':
         if trace_enabled or debug_modules.count(u'inventory')==1:
             debug = True
         join_events.append(bootstrap[u'join_event'])
-        inv = inventory.Inventory(bootstrap, debug, app.config)
+        inv = inventory.Inventory(bootstrap, debug, app.config, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
         app.config[u'sys.inventory'] = inv
         inv.start()
+        """
+        logger.debug(u'Initializing inventory')
+        debug = False
+        if trace_enabled or debug_modules.count(u'inventory')==1:
+            debug = True
+        #inv = inventory.Inventory(bootstrap, debug, app.config, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
+        inventory = inventory.Inventory(bootstrap, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
+        logger.info(u'Waiting for end of installed modules loading...')
+        #inventory.load_modules_new()
+        inventory.start()
+        logger.info(u'Inventory is ready (all modules are loaded)')
 
         #unlock bus and launch webserver (blocking)
         logger.info(u'Raspiot running...')
         bus.app_configured()
+        debug = False
+        if trace_enabled or debug_modules.count(u'rpc')==1:
+            debug = True
+        rpcserver.configure(bootstrap, inventory, debug)
         rpcserver.start(config[u'rpc'][u'rpc_host'], config[u'rpc'][u'rpc_port'], config[u'rpc'][u'rpc_key'], config[u'rpc'][u'rpc_cert'])
 
     except getopt.GetoptError:
@@ -294,7 +312,9 @@ if __name__ == u'__main__':
 
     #clean all stuff
     if logger:
-        logger.debug(u'Stopping user modules:')
+        logger.debug(u'Stopping modules:')
+    #TODO stop all modules using inventory
+    """
     if app:
         for module in app.config:
             if module[:3] in [u'mod']:
@@ -311,6 +331,7 @@ if __name__ == u'__main__':
                 if logger:
                     logger.debug(u' - %s' % module)
                 app.config[module].stop()
+    """
     
     if logger:
         logger.info(u'Raspiot stopped')
