@@ -49,7 +49,7 @@ class Audio(RaspIotResource):
         RaspIotResource.__init__(self, self.RESOURCES, bootstrap, debug_enabled)
 
         #members
-        self.alsa = Alsa()
+        self.alsa = Alsa(self.cleep_filesystem)
         self.asoundrc = Asoundrc(self.cleep_filesystem)
 
     def get_module_config(self):

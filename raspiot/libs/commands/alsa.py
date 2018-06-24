@@ -69,16 +69,19 @@ class Alsa(AdvancedConsole):
 
     SIMPLE_MIXER_CONTROL = u'Simple mixer control'
 
-    def __init__(self):
+    def __init__(self, cleep_filesystem):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
         AdvancedConsole.__init__(self)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
-        self.asoundrc = Asoundrc()
+        self.asoundrc = Asoundrc(cleep_filesystem)
 
     def __command(self, command):
         """
