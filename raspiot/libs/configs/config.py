@@ -89,7 +89,7 @@ class Config():
         Raises:
             Exception if file doesn't exist
         """
-        if not os.path.exists(self.path):
+        if not os.path.exists(self.path) and mode==self.MODE_READ:
             raise Exception(u'%s file does not exist' % self.path)
 
         self.__fd = self.cleep_filesystem.open(self.path, mode, encoding)

@@ -87,27 +87,6 @@ def load_auth():
     except:
         logger.exception(u'Unable to load auth file. Auth disabled:')
 
-
-#def get_app(debug_enabled):
-#    """
-#    Return web server
-#
-#    Return:
-#        object: bottle instance
-#    """
-#    global logger, app
-#
-#    #logging (in raspiot.conf file, module name is 'rpcserver')
-#    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
-#    logger = logging.getLogger(u'RpcServer')
-#    if debug_enabled:
-#        logger.setLevel(logging.DEBUG)
-#
-#    #load auth
-#    load_auth()
-#
-#    return app
-
 def configure(bootstrap, inventory_, debug_enabled):
     """
     Configure rpcserver
@@ -130,11 +109,6 @@ def configure(bootstrap, inventory_, debug_enabled):
 
     #load auth
     load_auth()
-
-    #DONE moved to raspiot bin
-    #clear updated modules list
-    #conf = RaspiotConf(cleep_filesystem)
-    #conf.clear_updated_modules()
 
 def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """
@@ -249,9 +223,6 @@ def send_command(command, to, params, timeout=None):
     Return:
         MessageResonse: command response (None if broadcasted message)
     """
-    #get bus
-    #bus = app.config[u'sys.bus']
-
     #prepare and send command
     request = MessageRequest()
     request.command = command
@@ -271,7 +242,6 @@ def get_events():
     Return:
         list: list of used events
     """
-    #return app.config[u'sys.inventory'].get_used_events()
     return inventory.get_used_events()
 
 def get_renderers():
@@ -294,7 +264,6 @@ def get_renderers():
                 ...
             }
     """
-    #return app.config[u'sys.inventory'].get_renderers()
     return inventory.get_renderers()
 
 def get_modules():
@@ -304,51 +273,7 @@ def get_modules():
     Return:
         dict: map of modules with their configuration, devices, commands...
     """
-
-    #logger.debug(u'Request inventory for available modules')
-    #modules = app.config[u'sys.inventory'].get_modules()
-    #events = app.config[u'sys.inventory'].get_modules_events()
-
     return inventory.get_modules()
-    
-    """
-    #inject extra of installed modules (config, events)
-    for module in modules:
-        if modules[module][u'installed']:
-            modules[module][u'config'] = app.config[u'mod.%s' % module].get_module_config()
-        elif modules[module][u'library']:
-            modules[module][u'config'] = app.config[u'lib.%s' % module].get_module_config()
-        else:
-            modules[module][u'config'] = {}
-        if module in events:
-            modules[module][u'events'] = events[module]
-        else:
-            modules[module][u'events'] = []
-
-    #update module pending status
-    conf = RaspiotConf(cleep_filesystem)
-    config = conf.as_dict()
-    for module in modules:
-        modules[module][u'pending'] = False
-
-        if modules[module][u'locked']:
-            #system module, drop it
-            continue
-
-        if module in config[u'general'][u'modules'] and not modules[module][u'installed']:
-            #install pending
-            modules[module][u'pending'] = True
-        
-        if module not in config[u'general'][u'modules'] and modules[module][u'installed']:
-            #uninstall pending
-            modules[module][u'pending'] = True
-
-        if module in config[u'general'][u'updated'] and modules[module][u'installed']:
-            #module updated, need to restart raspiot
-            modules[module][u'pending'] = True
-
-    return modules
-    """
 
 def get_devices():
     """
@@ -356,28 +281,6 @@ def get_devices():
 
     Return:
         dict: all devices by module
-    """
-    #request each loaded module for its devices
-    devices = {}
-    """
-    for module in app.config:
-        if module.startswith(u'mod.'):
-            _module = module.replace(u'mod.', '')
-            logger.debug(u'Request "%s" config' % _module)
-            try:
-                response = send_command(u'get_module_devices', _module, {})
-                if not response[u'error']:
-                    devices[_module] = response[u'data']
-                else:
-                    devices[_module] = None
-
-            except NoResponse as e:
-                logger.exception('Unexpected exception occured:')
-
-            except:
-                logger.exception('Fatal exception:')
-
-    return devices
     """
     return inventory.get_devices()
 
@@ -676,9 +579,6 @@ def registerpoll():
     """
     #subscribe to bus
     poll_key = unicode(uuid.uuid4())
-    #if app.config.has_key(u'sys.bus'):
-    #    logger.debug(u'subscribe %s' % poll_key)
-    #    app.config[u'sys.bus'].add_subscription(u'rpc-%s' % poll_key)
     if bus:
         logger.debug(u'subscribe %s' % poll_key)
         bus.add_subscription(u'rpc-%s' % poll_key)
@@ -707,9 +607,6 @@ def poll():
         params = bottle.request.json
         #response content type.
         bottle.response.content_type = u'application/json'
-
-        #get message bus
-        #bus = app.config[u'sys.bus']
 
         #init message
         message = {u'error':True, u'data':None, u'message':''}

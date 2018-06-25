@@ -23,56 +23,40 @@ class Inventory(RaspIotModule):
      - existing renderers (sms, email, sound...)
     """ 
 
-    #def __init__(self, bootstrap, debug_enabled, installed_modules, config, debug_config):
-    def __init__(self, bootstrap, debug_enabled, config, debug_config):
+    def __init__(self, bootstrap, debug_enabled, configured_modules, debug_config):
         """
         Constructor
 
         Args:
             bootstrap (dict): bootstrap objects
-            debug_enabled (bool): debug status
-            installed_modules (list): available modules (list from config)
+            debug_enabled (bool): debug inventory or not
+            configured_modules (dict): list of configured modules to start
+            debug_config (dict): debug computed from config and command line
         """
         #init
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
-        self.config = config
+        self.configured_modules = configured_modules
         self.debug_config = debug_config
-        self.__modules_loaded_as_dependency = {}
         self.bootstrap = bootstrap
+        self.events_factory = bootstrap[u'events_factory']
+        self.formatters_factory = bootstrap[u'formatters_factory']
+        #dict to store event to synchronize module startups
         self.__join_events = []
-        self.modules_new = {}
+        #used to store modules status (library or not) during modules loading
+        self.__modules_loaded_as_dependency = {}
+        #list of modules: dict(<module name>:dict(<module config>), ...)
+        self.modules = {}
+        #list of mandatory modules that must be loaded at startup
         self.mandatory_modules = [
             u'system',
             u'audio',
             u'network',
             u'cleepbus'
         ]
+        #direct access to modules instances
         self.__modules_instances = {}
-        #factories
-        self.events_factory = bootstrap[u'events_factory']
-        self.formatters_factory = bootstrap[u'formatters_factory']
-        #list devices: uuid => module name
-        self.devices = {}
-        #list of modules: dict(<module name>:dict(<module config>), ...)
-        self.modules = {}
-        #list of installed modules names with reference to real name
-        #self.installed_modules_names = {}
-        #direct access to installed modules
-        #self.installed_modules = installed_modules
-        #list of libraries
-        self.libraries = []
-
-        #fill installed and library modules list
-        #for module in installed_modules:
-        #    if module.startswith(u'mod.'):
-        #        _module = module.replace(u'mod.', '')
-        #        self.installed_modules_names[_module] = module
-        #    elif module.startswith(u'lib.'):
-        #        _module = module.replace(u'lib.', '')
-        #        self.installed_modules_names[_module] = module
-        #        self.libraries.append(_module)
 
     def _configure(self):
         """
@@ -166,18 +150,18 @@ class Inventory(RaspIotModule):
         fixed_country = self.__fix_country(getattr(module_class_, u'MODULE_COUNTRY', None))
 
         #update metadata with local values
-        self.modules_new[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
-        self.modules_new[module_name][u'author'] = module_class_.MODULE_AUTHOR
-        self.modules_new[module_name][u'locked'] = module_class_.MODULE_LOCKED
-        self.modules_new[module_name][u'tags'] = module_class_.MODULE_TAGS
-        self.modules_new[module_name][u'country'] = fixed_country
-        self.modules_new[module_name][u'urls'] = fixed_urls
-        self.modules_new[module_name][u'installed'] = True
+        self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
+        self.modules[module_name][u'author'] = module_class_.MODULE_AUTHOR
+        self.modules[module_name][u'locked'] = module_class_.MODULE_LOCKED
+        self.modules[module_name][u'tags'] = module_class_.MODULE_TAGS
+        self.modules[module_name][u'country'] = fixed_country
+        self.modules[module_name][u'urls'] = fixed_urls
+        self.modules[module_name][u'installed'] = True
 
         #handle properly version and updatable flag
-        if Tools.compare_versions(module_class_.MODULE_VERSION, self.modules_new[module_name][u'version']):
-            self.modules_new[module_name][u'updatable'] = self.modules_new[module_name][u'version']
-        self.modules_new[module_name][u'version'] = module_class_.MODULE_VERSION
+        if Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
+            self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
+        self.modules[module_name][u'version'] = module_class_.MODULE_VERSION
 
         #flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
@@ -194,10 +178,10 @@ class Inventory(RaspIotModule):
         if not modules_json.exists():
             #modules.json doesn't exists, fallback to empty one
             self.logger.warning(u'No modules.json loaded from Raspiot website')
-            self.modules_new = {}
+            self.modules = {}
         else:
             modules_json_content = modules_json.get_json()
-            self.modules_new = modules_json_content[u'list']
+            self.modules = modules_json_content[u'list']
 
         #append manually installed modules (surely module in development)
         path = os.path.join(os.path.dirname(__file__), u'modules')
@@ -207,19 +191,19 @@ class Inventory(RaspIotModule):
             fpath = os.path.join(path, f)
             (module_name, ext) = os.path.splitext(f)
             if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
-                if module_name not in self.modules_new:
+                if module_name not in self.modules:
                     self.logger.debug(u'Found module "%s" installed manually' % module_name)
                     local_modules.append(module_name)
-                    self.modules_new[module_name] = {}
+                    self.modules[module_name] = {}
 
         #add default metadata
-        for module_name in self.modules_new:
-            self.modules_new[module_name][u'name'] = module_name
-            self.modules_new[module_name][u'installed'] = False
-            self.modules_new[module_name][u'library'] = False
-            self.modules_new[module_name][u'local'] = module_name in local_modules
-            self.modules_new[module_name][u'pending'] = False
-            self.modules_new[module_name][u'updatable'] = u''
+        for module_name in self.modules:
+            self.modules[module_name][u'name'] = module_name
+            self.modules[module_name][u'installed'] = False
+            self.modules[module_name][u'library'] = False
+            self.modules[module_name][u'local'] = module_name in local_modules
+            self.modules[module_name][u'pending'] = False
+            self.modules[module_name][u'updatable'] = u''
 
         #load mandatory modules
         for module_name in self.mandatory_modules:
@@ -231,7 +215,7 @@ class Inventory(RaspIotModule):
                 self.logger.exception(u'Module "%s" exception:' % module_name)
 
         #load installed modules
-        for module_name in self.config:
+        for module_name in self.configured_modules:
             try:
                 self.__load_module(module_name, local_modules)
 
@@ -245,9 +229,9 @@ class Inventory(RaspIotModule):
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
 
         #fix final library status
-        for module_name in self.modules_new:
+        for module_name in self.modules:
             if module_name in self.__modules_loaded_as_dependency:
-                self.modules_new[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
+                self.modules[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
 
         #wait for all modules are completely loaded
         self.logger.debug('Waiting for end of modules loading...')
@@ -266,142 +250,6 @@ class Inventory(RaspIotModule):
         #clear collection
         self.__modules_instances.clear()
 
-    """
-    def __load_modules(self):
-        
-        Load all available modules and their devices
-        
-        #list all available modules (list should be downloaded from internet) and fill default metadata
-        modules_json = ModulesJson(self.cleep_filesystem)
-        if not modules_json.exists():
-            #modules.json doesn't exists, fallback to empty one
-            self.logger.warning(u'No modules.json loaded from Raspiot website')
-            self.modules = {}
-        else:
-            modules_json_content = modules_json.get_json()
-            self.modules = modules_json_content[u'list']
-
-        #append metadata that doesn't exists in modules.json
-        for module_name in self.modules:
-            self.modules[module_name][u'name'] = module_name
-            self.modules[module_name][u'locked'] = False
-            self.modules[module_name][u'installed'] = False
-            self.modules[module_name][u'library'] = False
-            self.modules[module_name][u'local'] = False
-            self.modules[module_name][u'pending'] = False
-            self.modules[module_name][u'updatable'] = ''
-
-        def fix_country(country):
-            if not country:
-                return u''
-            else:
-                return country.lower()
-
-        def fix_urls(site_url, bugs_url, info_url, help_url):
-            return {
-                u'site': site_url,
-                u'bugs': bugs_url,
-                u'info': info_url,
-                u'help': help_url
-            }
-
-        #append local modules (that doesn't exists on internet modules list)
-        path = os.path.join(os.path.dirname(__file__), u'modules')
-        if not os.path.exists(path):
-            raise CommandError(u'Invalid modules path')
-        for f in os.listdir(path):
-            fpath = os.path.join(path, f)
-            (module_name, ext) = os.path.splitext(f)
-            if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
-                if module_name not in self.modules:
-                    #local module not published yet
-                    self.logger.debug(u'Add module "%s" found locally only' % module_name)
-                
-                    #load module to get metadata
-                    try:
-                        module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
-                        class_ = getattr(module_, module_name.capitalize())
-    
-                    except:
-                        #error occured during local module loading. Log error and continue
-                        self.logger.exception(u'Error during local module "%s" loading:' % module_name)
-                        continue
-
-                    #save module entry
-                    self.modules[module_name] = {
-                        u'name': module_name,
-                        u'description': class_.MODULE_DESCRIPTION,
-                        u'version': class_.MODULE_VERSION,
-                        u'author': class_.MODULE_AUTHOR,
-                        u'locked': class_.MODULE_LOCKED,
-                        u'tags': class_.MODULE_TAGS,
-                        u'country': fix_country(getattr(class_, u'MODULE_COUNTRY', None)),
-                        u'urls': fix_urls(getattr(class_, u'MODULE_URLSITE', None), getattr(class_, u'MODULE_URLBUGS', None), getattr(class_, u'MODULE_URLINFO', None), getattr(class_, u'MODULE_URLHELP', None)), 
-                        u'installed': False,
-                        u'library': False,
-                        u'local': True,
-                        u'pending': False,
-                        u'updatable': ''
-                    }
-
-                else:
-                    #published and installed module
-                    #overwrite metadata loaded from modules.json by real ones from installed module list
-                    key = 'mod.%s' % module_name
-                    if key in self.installed_modules:
-                        self.modules[module_name][u'description'] = self.installed_modules[key].MODULE_DESCRIPTION
-                        if Tools.compare_versions(self.installed_modules[key].MODULE_VERSION, self.modules[module_name][u'version']):
-                            self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
-                        self.modules[module_name][u'version'] = self.installed_modules[key].MODULE_VERSION
-                        self.modules[module_name][u'author'] = self.installed_modules[key].MODULE_AUTHOR
-                        self.modules[module_name][u'tags'] = self.installed_modules[key].MODULE_TAGS
-                        self.modules[module_name][u'country'] = fix_country(self.installed_modules[key].MODULE_COUNTRY)
-                        self.modules[module_name][u'urls'] = fix_urls(self.installed_modules[key].MODULE_URLSITE, self.installed_modules[key].MODULE_URLBUGS, self.installed_modules[key].MODULE_URLINFO, self.installed_modules[key].MODULE_URLHELP)
-                    else:
-                        self.logger.debug(u'Module "%s" not found in installed modules' % module_name)
-
-        #update metadata of installed modules
-        self.logger.info(u'Installed modules: %s' % self.installed_modules_names.keys())
-        for module in self.installed_modules_names.keys():
-            #update local flag
-            self.modules[module][u'local'] = True
-
-            #update installed/library flag
-            if module not in self.libraries:
-                self.modules[module][u'installed'] = True
-            else:
-                self.modules[module][u'library'] = True
-
-            #fill installed modules commands
-            try:
-                self.modules[module][u'command'] = self.installed_modules[self.installed_modules_names[module]].get_module_commands()
-            except:
-                self.logger.exception('Unable to get commands of module "%s":' % module)
-
-            #fill installed modules devices
-            try:
-                devices = self.installed_modules[self.installed_modules_names[module]].get_module_devices()
-                for uuid in devices:
-                    #save new device entry (module name and device name)
-                    self.devices[uuid] = {
-                        u'module': module,
-                        u'name': devices[uuid][u'name']
-                    }
-            except:
-                self.logger.exception('Unable to get devices of module "%s"' % module)
-
-            #fill renderers
-            if issubclass(self.installed_modules[self.installed_modules_names[module]].__class__, RaspIotRenderer):
-                try:
-                    renderers = self.installed_modules[self.installed_modules_names[module]].get_module_renderers()
-                    self.formatters_factory.register_renderer(module, renderers[u'type'], renderers[u'profiles'])
-                except:
-                    self.logger.exception('Unable to get renderers of module "%s"' % module)
-
-        #self.logger.debug(u'DEVICES=%s' % self.devices)
-        #self.logger.debug(u'MODULES=%s' % self.modules)
-    """
-
     def get_device_module(self, uuid):
         """
         Return module that owns specified device
@@ -412,27 +260,10 @@ class Inventory(RaspIotModule):
         Returns:
             string: module name or None if device was not found
         """
-        if self.devices.has_key(uuid):
-            return self.devices[uuid]
-
-        return None
-
-    def get_device_infos(self, uuid):
-        """
-        Return device infos (module name and device name) according to specified uuid
-
-        Args:
-            uuid (string): device identifier
-        
-        Returns:
-            dict: device infos or None if device not found
-                {
-                    'name': '',
-                    'module': ''
-                }
-        """
-        if self.devices.has_key(uuid):
-            return self.devices[uuid]
+        devices = self.get_devices()
+        for module_name in devices:
+            if uuid in devices[module_name]:
+                return module_name
 
         return None
 
@@ -455,24 +286,34 @@ class Inventory(RaspIotModule):
             raise CommandError(u'Module %s doesn\'t exist' % module)
 
         #search module devices
-        devices = []
-        for uuid in self.devices:
-            if self.devices[uuid][u'module']==module:
-                devices.append({
-                    u'uuid': uuid,
-                    u'name': self.devices[uuid][u'name']
-                })
+        devices = self.get_devices()
+        for module_name in devices:
+            if module_name==module:
+                return devices[module_name]
 
-        return devices
+        return []
 
     def get_devices(self):
         """
         Return list of modules devices
+
+        Returns:
+            dict: dictionnary of devices by module::
+                {
+                    module1: 
+                        device uuid: {
+                            device properties,
+                            ...
+                        },
+                        ...
+                    },
+                    module2: ...
+                }
         """
         #init
         devices = {}
 
-        #inject dynamic data
+        #get all devices
         for module_name in self.__modules_instances:
             try:
                 module_devices = self.__modules_instances[module_name].get_module_devices()
@@ -499,7 +340,7 @@ class Inventory(RaspIotModule):
                 }
         """
         #init
-        modules = copy.deepcopy(self.modules_new)
+        modules = copy.deepcopy(self.modules)
         events = self.events_factory.get_modules_events()
         conf = RaspiotConf(self.cleep_filesystem)
         raspiot_config = conf.as_dict()
@@ -547,8 +388,8 @@ class Inventory(RaspIotModule):
             list: list of commands or None if module not found::
                 ['command1', 'command2', ...]
         """
-        if self.modules.has_key(module):
-            return self.modules[module]
+        if module in self.__modules_instances:
+            return self.__modules_instances[module].get_module_commands()
 
         return None
 
@@ -562,7 +403,7 @@ class Inventory(RaspIotModule):
         Returns:
             bool: True if module loaded, False otherwise
         """
-        return self.modules.has_key(module)
+        return module in self.__modules_instances
 
     def get_modules_debug(self):
         """
@@ -576,22 +417,22 @@ class Inventory(RaspIotModule):
                 }
         """
         debugs = {}
-        for module in self.modules_new.keys():
+        for module in self.modules:
             #installed module ?
-            if not self.modules_new[module][u'installed']:
+            if not self.modules[module][u'installed']:
                 continue
 
             #get debug status
             try:
-                resp = self.send_command(u'is_debug_enabled', module)
-                if resp[u'error']:
-                    self.logger.error(u'Unable to get debug status of module %s: %s' % (module, resp[u'message']))
-                    debugs[module] = {u'debug': False}
-                else:
-                    debugs[module] = {u'debug': resp[u'data']}
+                debugs[module] = {
+                    u'debug': self.__modules_instances[module].is_debug_enabled()
+                }
+
             except:
                 self.logger.exception('Unable to get module %s debug status:' % module)
-                debugs[module] = {u'debug': False}
+                debugs[module] = {
+                    u'debug': False
+                }
     
         return debugs
 
