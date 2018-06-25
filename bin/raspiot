@@ -169,19 +169,12 @@ if __name__ == u'__main__':
             #enable debug on raspiot bin if debug system is enabled
             logger.setLevel(logging.DEBUG)
 
-        #get webserver app (used to store application objects)
-        #debug = False
-        #if trace_enabled or debug_modules.count(u'rpc')==1:
-        #    debug = True
-        #app = rpcserver.get_app(debug)
-
         #create message bus
         logger.debug(u'Initializing message bus')
         debug = False
         if trace_enabled or debug_modules.count(u'bus')==1:
             debug = True
         bus = bus.MessageBus(debug)
-        #app.config[u'sys.bus'] = bus
 
         #create factories
         debug = False
@@ -197,100 +190,12 @@ if __name__ == u'__main__':
         events_factory.configure(bootstrap)
         formatters_factory.configure(bootstrap)
 
-        #create mandatory modules
-        """
-        modules_loaded_as_library = {}
-        for module_name in mandatory_modules.keys():
-            logger.debug(u'Initializing %s module' % module_name)
-            debug = False
-            if trace_enabled or debug_modules.count(module_name)==1:
-                debug = True
-            join_events.append(bootstrap[u'join_event'])
-            instance_ = mandatory_modules[module_name](bootstrap, debug)
-            app.config[u'mod.%s' % module_name] = instance_
-            modules_loaded_as_library[module_name] = False
-            instance_.start()
-
-        #load user modules
-        logger.debug(u'Loading user modules:')
-        for module_name in config[u'general'][u'modules']:
-            logger.debug(u' - %s:' % (module_name));
-
-            #check if not already loaded
-            if module_name in modules_loaded_as_library:
-                #update module name if necessary
-                if modules_loaded_as_library[module_name] is True:
-                    #module already loaded as library, set it as module not library
-                    logger.debug(u'   - Module already loaded as library. Set it as module')
-                    app.config[u'mod.%s' % module_name] = app.config.pop(u'lib.%s' % module_name)
-                    modules_loaded_as_library[module_name] = False
-                else:
-                    logger.debug(u'   - Module already loaded')
-                continue
-
-            #get module class
-            logger.debug(u'   - loading module...')
-            module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
-            class_ = getattr(module_, module_name.capitalize())
-
-            #load dependencies
-            logger.debug(u'   - loading module dependencies:')
-            if class_.MODULE_DEPS:
-                for dep in class_.MODULE_DEPS:
-                    if dep not in modules_loaded_as_library:
-                        logger.debug(u'     - loading dependency "%s"' % dep)
-                        dep_ = importlib.import_module(u'raspiot.modules.%s' % dep)
-                        dep_class_ = getattr(dep_, dep.capitalize())
-                    
-                        logger.debug(u'     - starting dependency...')
-                        logger.debug(u'===============BEGIN %s===============', dep)
-                        debug = False
-                        if trace_enabled or debug_modules.count(dep)==1:
-                            logger.debug(u'Debug enabled for dependency %s' % dep)
-                            debug = True
-                        join_events.append(bootstrap[u'join_event'])
-                        app.config[u'lib.%s' % dep] = dep_class_(bootstrap, debug)
-                        app.config[u'lib.%s' % dep].start()
-                        logger.debug(u'===============END %s===============', dep)
-                        modules_loaded_as_library[dep] = True
-                    
-            #and run instance
-            logger.debug(u'   - starting module...')
-            logger.debug(u'---------------BEGIN %s---------------', module_name)
-            debug = False
-            if trace_enabled or debug_modules.count(module_name)==1:
-                logger.debug(u'Debug enabled for module %s' % module_name)
-                debug = True
-            join_events.append(bootstrap[u'join_event'])
-            app.config[u'mod.%s' % module_name] = class_(bootstrap, debug)
-            app.config[u'mod.%s' % module_name].start()
-            logger.debug(u'---------------END %s---------------', module_name)
-            modules_loaded_as_library[module_name] = False
-
-        #wait for all modules completely loaded
-        logger.debug('Waiting for end of module loading...')
-        for join_event in join_events:
-            join_event.wait()
-        logger.debug('All modules are loaded')
-
-        #create inventory at end because it needs to know installed modules
+        #create inventory
         logger.debug(u'Initializing inventory')
         debug = False
         if trace_enabled or debug_modules.count(u'inventory')==1:
             debug = True
-        join_events.append(bootstrap[u'join_event'])
-        inv = inventory.Inventory(bootstrap, debug, app.config, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
-        app.config[u'sys.inventory'] = inv
-        inv.start()
-        """
-        logger.debug(u'Initializing inventory')
-        debug = False
-        if trace_enabled or debug_modules.count(u'inventory')==1:
-            debug = True
-        #inv = inventory.Inventory(bootstrap, debug, app.config, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
         inventory = inventory.Inventory(bootstrap, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
-        logger.info(u'Waiting for end of installed modules loading...')
-        #inventory.load_modules_new()
         inventory.start()
         logger.info(u'Inventory is ready (all modules are loaded)')
 
@@ -312,26 +217,8 @@ if __name__ == u'__main__':
 
     #clean all stuff
     if logger:
-        logger.debug(u'Stopping modules:')
-    #TODO stop all modules using inventory
-    """
-    if app:
-        for module in app.config:
-            if module[:3] in [u'mod']:
-                if logger:
-                    logger.debug(u' - %s' % module)
-                app.config[module].stop()
-        for module in app.config:
-            if module[:3] in [u'lib']:
-                if logger:
-                    logger.debug(u' - %s' % module)
-                app.config[module].stop()
-        for module in app.config:
-            if module[:3] in [u'sys']:
-                if logger:
-                    logger.debug(u' - %s' % module)
-                app.config[module].stop()
-    """
+        logger.debug(u'Stopping modules')
+    inventory.unload_modules()
     
     if logger:
         logger.info(u'Raspiot stopped')

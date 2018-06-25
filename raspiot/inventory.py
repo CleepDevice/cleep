@@ -234,6 +234,12 @@ class Inventory(RaspIotModule):
         for module_name in self.config:
             try:
                 self.__load_module(module_name, local_modules)
+
+                #fill renderers
+                if issubclass(self.__modules_instances[module_name].__class__, RaspIotRenderer):
+                    renderers = self.__modules_instances[module_name].get_module_renderers()
+                    self.formatters_factory.register_renderer(module_name, renderers[u'type'], renderers[u'profiles'])
+
             except:
                 #failed to load module
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
@@ -243,18 +249,22 @@ class Inventory(RaspIotModule):
             if module_name in self.__modules_loaded_as_dependency:
                 self.modules_new[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
 
-        self.logger.info("******************************************************")
-        self.logger.info(self.config)
-        self.logger.info("******************************************************")
-        self.logger.info(self.modules_new)
-        self.logger.info("******************************************************")
-
-
-        #wait for all modules completely loaded
+        #wait for all modules are completely loaded
         self.logger.debug('Waiting for end of modules loading...')
         for join_event in self.__join_events:
             join_event.wait()
         self.logger.debug('All modules are loaded')
+
+    def unload_modules(self):
+        """
+        Unload all modules stopping them
+        """
+        #stpo all running modules
+        for module_name in self.__modules_instances:
+            self.__modules_instances[module_name].stop()
+
+        #clear collection
+        self.__modules_instances.clear()
 
     """
     def __load_modules(self):
@@ -494,7 +504,7 @@ class Inventory(RaspIotModule):
         conf = RaspiotConf(self.cleep_filesystem)
         raspiot_config = conf.as_dict()
         
-        #inject dynamic data
+        #inject volatile infos
         for module_name in modules:
             try:
                 #current module config
@@ -526,16 +536,6 @@ class Inventory(RaspIotModule):
 
         return modules
             
-    def get_modules_names(self):
-        """
-        Returns list of modules names
-
-        Returns:
-            list: list of module names
-                ['name1', 'name2', ...]
-        """
-        return self.modules.keys()
-
     def get_module_commands(self, module):
         """
         Returns list of module commands
@@ -576,7 +576,11 @@ class Inventory(RaspIotModule):
                 }
         """
         debugs = {}
-        for module in self.installed_modules_names.keys():
+        for module in self.modules_new.keys():
+            #installed module ?
+            if not self.modules_new[module][u'installed']:
+                continue
+
             #get debug status
             try:
                 resp = self.send_command(u'is_debug_enabled', module)
