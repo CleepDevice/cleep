@@ -225,6 +225,11 @@ class Alsa(AdvancedConsole):
         #TODO handle cache
         config = self.asoundrc.get_raw_configuration()
         self.logger.debug('Asoundrc config: %s' % config)
+
+        #check config content
+        if len(config)==0:
+            #no config, stop here
+            return {}
         
         #we only need pcm data (not ctl)
         if self.asoundrc.PCM_SECTION not in config.keys():
@@ -277,6 +282,11 @@ class Alsa(AdvancedConsole):
         Return:
             int: volume value or None if error occured
         """
+        #check parameters
+        if len(profile)==0:
+            #invalid profile specified, can't perform action
+            return 0
+
         #get control
         control = profile[get_key]
 

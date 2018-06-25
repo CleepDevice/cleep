@@ -55,6 +55,14 @@ class Audio(RaspIotResource):
     def get_module_config(self):
         """
         Return module configuration
+
+        Returns:
+            dict: audio config::
+                {
+                    config (dict): config from asoundrc file
+                    volumes (dict): volumes values (playback and capture)
+                    devices (dict): audio devices installed on device (playback and capture)
+                }
         """
         #get all stuff
         current_config = self.asoundrc.get_configuration()
@@ -69,7 +77,7 @@ class Audio(RaspIotResource):
                 if playback_devices[name][u'cardid']==current_config[u'cardid']:
                     card_name = name
                     break
-        current_config[u'cardname'] = card_name
+            current_config[u'cardname'] = card_name
 
         return {
             u'config': current_config,

@@ -69,7 +69,7 @@ ctl.!default {
         self.logger.debug('results: %s' % results)
 
         #first parse to identify sections and their content
-	entries = {}
+        entries = {}
         default_card_id = None
         pcm_default_found = False
         pattern = r'(type\s+(.*)\s*)|(card\s+(\d))|(device\s+(\d))'

@@ -148,6 +148,11 @@ class Config():
                     ...
                 ]
         """
+        #check file existence
+        if not self.exists():
+            self.logger.info(u'No file found (%s). Return empty result' % self.path)
+            return []
+
         results = []
         fd = self._open()
         content = fd.read()
@@ -183,8 +188,13 @@ class Config():
                 ]
         """
         results = []
-        matches = re.finditer(pattern, content, options)
 
+        #check file existence
+        if not self.exists():
+            self.logger.info(u'No file found (%s). Return empty result' % self.path)
+            return []
+
+        matches = re.finditer(pattern, content, options)
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
@@ -209,6 +219,9 @@ class Config():
             return False
         if not comment.startswith(self.comment_tag):
             #line already uncommented
+            return False
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
             return False
 
         #read file content
@@ -248,6 +261,9 @@ class Config():
         if comment.startswith(self.comment_tag):
             #line already commented
             return False
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
 
         #read file content
         fd = self._open()
@@ -283,6 +299,9 @@ class Config():
         #check params
         if not isinstance(content, unicode):
             raise Exception('Content parameter must be unicode')
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
 
         fd = self._open()
         lines = fd.read()
@@ -312,6 +331,9 @@ class Config():
         #check params
         if not isinstance(removes, list):
             raise Exception('Removes parameter must be list of string')
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
 
         fd = self._open()
         lines = fd.readlines()
@@ -349,6 +371,10 @@ class Config():
         Return:
             int: number of lines removed
         """
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
+
         #read content
         fd = self._open()
         lines = fd.readlines()
@@ -393,6 +419,10 @@ class Config():
         Returns:
             int: number of lines deleted (blank and commented lines not counted)
         """
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return 0
+
         #read content
         fd = self._open()
         lines = fd.readlines()
@@ -450,6 +480,9 @@ class Config():
         #check params
         if not isinstance(lines, list):
             raise Exception('Lines parameter must be list of string')
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
 
         #read content
         fd = self._open()
@@ -478,6 +511,9 @@ class Config():
         #check params
         if not isinstance(content, unicode):
             raise Exception('Lines parameter must be list of string')
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return False
 
         #read content
         fd = self._open()
@@ -497,6 +533,10 @@ class Config():
         Returns:
             list: list of lines
         """
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return []
+
         #read content
         fd = self._open()
         lines = fd.readlines()
@@ -509,6 +549,10 @@ class Config():
         Dump file content to stdout
         For debug and test purpose only
         """
+        if not self.exists():
+            self.logger.info(u'No file found (%s)' % self.path)
+            return 
+
         #read content
         fd = self._open()
         lines = fd.readlines()
