@@ -146,6 +146,10 @@
                 <p>Disable <b>{{rendering.event}}</b> handled by <b>{{rendering.renderer}}</b> module</p>
                 <md-checkbox class="md-secondary" ng-model="rendering.disabled" ng-click="systemCtl.updateRendering(rendering,true)" aria-label="Rendering"></md-checkbox>
             </md-list-item>
+            <md-list-item ng-if="systemCtl.renderings.length===0">
+                <md-icon md-svg-icon="chevron-double-right"></md-icon>
+                <p>No renderer found</p>
+            </md-list-item>
 
         </md-list>
     </div>

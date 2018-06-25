@@ -97,11 +97,8 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             for( var module in raspiotService.modules )
             {
                 //keep only installed modules
-                if( raspiotService.modules[module].installed )
+                if( raspiotService.modules[module].installed && !raspiotService.modules[module].library )
                 {
-                    //add module name as 'name' property
-                    raspiotService.modules[module].name = module;
-
                     //push module to internal array
                     modules.push(raspiotService.modules[module]);
                 }
