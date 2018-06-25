@@ -9,7 +9,8 @@ from logging.config import dictConfig
 from raspiot.raspiot import RaspIot
 from raspiot.eventsFactory import EventsFactory
 from raspiot.formattersFactory import FormattersFactory
-from raspiot import rpcserver, bus, inventory
+from raspiot import rpcserver, bus
+from raspiot import inventory as raspiot_inventory
 from raspiot.modules import system, cleepbus, network
 from raspiot.libs.configs.raspiotconf import RaspiotConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
@@ -112,12 +113,8 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
 
 if __name__ == u'__main__':
     logger = None
-    app = None
-    mandatory_modules = {
-        u'system': system.System,
-        u'cleepbus': cleepbus.Cleepbus,
-        u'network': network.Network
-    }
+    inventory = None
+
     try:
         #handle command line parameters
         join_events = []
@@ -195,7 +192,7 @@ if __name__ == u'__main__':
         debug = False
         if trace_enabled or debug_modules.count(u'inventory')==1:
             debug = True
-        inventory = inventory.Inventory(bootstrap, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
+        inventory = raspiot_inventory.Inventory(bootstrap, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
         inventory.start()
         logger.info(u'Inventory is ready (all modules are loaded)')
 
@@ -218,7 +215,8 @@ if __name__ == u'__main__':
     #clean all stuff
     if logger:
         logger.debug(u'Stopping modules')
-    inventory.unload_modules()
+    if inventory:
+        inventory.unload_modules()
     
     if logger:
         logger.info(u'Raspiot stopped')
