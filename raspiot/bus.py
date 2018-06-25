@@ -616,7 +616,7 @@ class BusClient(threading.Thread):
         try:
             self._configure()
         except:
-            self.logger.exception('Exception during module configuration:')
+            self.logger.exception('Exception during module "%s" configuration:' % self.__module)
         finally:
             self.join_event.set()
 
