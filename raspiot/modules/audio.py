@@ -134,14 +134,14 @@ class Audio(RaspIotResource):
         Play test sound to make sure audio card is correctly configured
         """
         #get playback resource
-        self.acquire_resource(u'playback')
+        self.acquire_resource(u'audio.playback')
 
         #play audio
         if not self.alsa.play_sound(self.TEST_SOUND):
             raise CommandError(u'Unable to play test sound: internal error.')
 
         #release resource
-        self.release_resource(u'playback')
+        self.release_resource(u'audio.playback')
 
     def test_recording(self):
         """

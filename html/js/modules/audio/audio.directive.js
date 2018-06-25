@@ -89,6 +89,12 @@ var audioConfigDirective = function(toast, audioService, raspiotService) {
             self.volumePlayback = config.volumes.playback;
             self.volumeCapture = config.volumes.capture;
 
+            if( !self.config )
+            {
+                //no config, nothing else to do
+                return;
+            }
+
             //search for current device in playback devices list
             for( var i=0; i<self.playbackDevices.length; i++ )
             {
