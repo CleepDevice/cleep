@@ -59,7 +59,7 @@ class Cleepbus(RaspIotModule):
         """
         #set device uuid if not setted yet
         config = self._get_config()
-        self.logger.debug('=====>Config: %s' % config)
+        self.logger.debug('Config: %s' % config)
         if config[u'uuid'] is None:
             self.logger.debug('Set device uuid')
             self.uuid = str(uuid.uuid4())
