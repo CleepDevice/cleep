@@ -14,6 +14,9 @@ class Iwlist(AdvancedConsole):
 
     CACHE_DURATION = 2.0
 
+    FREQ_2_4GHZ = u'2.4GHz'
+    FREQ_5GHZ = u'5GHz'
+
     def __init__(self):
         """
         Constructor
@@ -38,11 +41,12 @@ class Iwlist(AdvancedConsole):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug('Don\'t refresh')
+            self.logger.debug(u'Don\'t refresh')
             return
 
         self.__last_scanned_interface = interface
-        results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm', timeout=15.0)
+        results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm|Frequency:(\d+\.\d+) GHz', timeout=15.0)
+        #self.logger.debug(u'Results: %s' % results)
 
         #handle invalid interface for wifi scanning
         if len(results)==0 and self.get_last_return_code()!=0:
@@ -54,9 +58,14 @@ class Iwlist(AdvancedConsole):
         entries = {}
         for group, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = filter(lambda v: v is not None, groups)
 
             if group.startswith(u'Cell'):
+                if current_entry is not None and len(current_entry[u'network'])>0:
+                    #save previous entry
+                    entries[u'%s_%s' % (current_entry[u'network'], current_entry[u'frequency'])] = current_entry
+
+                #create new empty entry
                 current_entry = {
                     u'interface': interface,
                     u'network': None,
@@ -64,17 +73,27 @@ class Iwlist(AdvancedConsole):
                     u'signallevel': 0,
                     u'wpa2': False,
                     u'wpa': False,
-                    u'encryption_key': None
+                    u'encryption_key': None,
+                    u'frequency': None
                 }
             elif group.startswith(u'ESSID'):
                 current_entry[u'network'] = groups[0]
-                entries[groups[0]] = current_entry
+
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2')>=0:
                 current_entry[u'wpa2'] = True
+
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa')>=0:
                 current_entry[u'wpa'] = True
+
             elif group.startswith(u'Encryption key') and current_entry is not None:
                 current_entry[u'encryption_key'] = groups[0]
+
+            elif group.startswith(u'Frequency'):
+                if groups[0].startswith(u'2.'):
+                    current_entry[u'frequency'] = self.FREQ_2_4GHZ
+                elif groups[0].startswith(u'5.'):
+                    current_entry[u'frequency'] = self.FREQ_5GHZ
+
             elif group.startswith(u'Signal level') and current_entry is not None:
                 if groups[0].isdigit():
                     try:
