@@ -101,6 +101,7 @@ class Network(RaspIotModule):
             self.refresh_wifi_networks()
         except:
             self.logger.exception(u'Exception occured when refreshing wifi networks:')
+            self.crash_report.report_exception()
 
         #handle startup config if cleep wifi conf exists
         if self.cleepwifi.exists():
@@ -568,6 +569,7 @@ class Network(RaspIotModule):
         if not self.wpasupplicant.write_fake_wpasupplicant(test_wpasupplicant, network, encryption, password, hidden):
             self.logger.error(u'Unable to generate fake wpasupplicant file for testing (%s)' % test_wpasupplicant)
             raise Exception(u'Unable to connect to network: internal error')
+            self.crash_report.report_exception()
 
         c = Console()
         error = None

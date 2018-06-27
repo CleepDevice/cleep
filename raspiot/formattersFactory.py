@@ -22,7 +22,6 @@ class FormattersFactory():
         Constructor
 
         Args:
-            events_factory (EventsFactory): events factory instance
             debug_enabled (bool): debug flag
         """
         #members
@@ -33,6 +32,7 @@ class FormattersFactory():
         self.renderers = {}
         self.renderer_profiles = {}
         self.formatters = {}
+        self.crash_report = None
 
     def configure(self, bootstrap):
         """
@@ -41,7 +41,13 @@ class FormattersFactory():
         Args:
             bootstrap (dict): bootstrap objects
         """
+        #set members
         self.events_factory = bootstrap[u'events_factory']
+
+        #configure crash report
+        self.crash_report = bootstrap[u'crash_report']
+
+        #load formatters
         self.__load_formatters()
 
     def __load_formatters(self):

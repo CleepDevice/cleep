@@ -34,6 +34,7 @@ class EventsFactory():
         self.bus = None
         self.formatters_factory = None
         self.events_not_rendered = []
+        self.crash_report = None
 
     def configure(self, bootstrap):
         """
@@ -42,8 +43,14 @@ class EventsFactory():
         Args:
             bootstrap (dict): bootstrap objects
         """
+        #set members
         self.bus = bootstrap[u'message_bus']
         self.formatters_factory = bootstrap[u'formatters_factory']
+
+        #configure crash report
+        self.crash_report = bootstrap[u'crash_report']
+
+        #load events
         self.__load_events()
 
     def __load_events(self):
@@ -53,6 +60,7 @@ class EventsFactory():
         path = os.path.join(os.path.dirname(__file__), u'events')
         if not os.path.exists(path):
             raise Exception(u'Invalid events path')
+            self.crash_report.report_exception()
 
         for f in os.listdir(path):
             fpath = os.path.join(path, f)

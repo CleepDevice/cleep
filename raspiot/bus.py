@@ -29,13 +29,21 @@ class MessageBus():
     A message without recipient is broadcasted to all subscribers. No response is awaited.
     Only broadcasted messages can be sent before all clients have subscribed (during init phase)
     """
-    def __init__(self, debug_enabled):
+    def __init__(self, crash_report, debug_enabled):
+        """
+        Constructor
+
+        Args:
+            crash_report (CrashReport): CrashReport instance
+            debug_enabled (bool): True if debug is enabled on bus
+        """
         #init
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.crash_report = crash_report
         self.__stopped = False
         #module message queues
         self.__queues = {}
@@ -269,7 +277,9 @@ class MessageBus():
 
                 except:
                     self.logger.exception(u'MessageBus: error when pulling message:')
+                    self.crash_report.report_exception()
                     raise BusError(u'Error when pulling message')
+
             else:
                 #timeout specified, try to read each 0.1 seconds a message until specified timeout
                 loop = math.floor(timeout / 0.10)
@@ -287,6 +297,7 @@ class MessageBus():
                     except:
                         #unhandled error
                         self.logger.exception(u'MessageBus: error when pulling message:')
+                        self.crash_report.report_exception()
                         raise BusError(u'Error when pulling message')
 
                     finally:
@@ -470,7 +481,7 @@ class BusClient(threading.Thread):
 
             #drop message send to the same module
             if request.to is not None and request.to==self.__module:
-                raise Exception(u'Unable to send message to same class')
+                raise Exception(u'Unable to send message to itself')
 
             #push message
             if request.is_broadcast() or timeout is None or timeout==0.0:
@@ -555,6 +566,7 @@ class BusClient(threading.Thread):
                     if ok:
                         try:
                             resp.data = module_function(**args)
+
                         except Exception as e:
                             self.logger.exception(u'Exception during send_command in the same module:')
                             resp.error = True
@@ -617,6 +629,7 @@ class BusClient(threading.Thread):
             self._configure()
         except:
             self.logger.exception('Exception during module "%s" configuration:' % self.__module)
+            self.crash_report.report_exception()
         finally:
             self.join_event.set()
 
@@ -629,6 +642,7 @@ class BusClient(threading.Thread):
                     self._custom_process()
                 except Exception as e:
                     self.logger.error('Critical error occured in custom_process: %s' % str(e))
+                    self.crash_report.report_exception()
 
                 #self.logger.debug('BusClient: pull message')
                 msg = {}
@@ -671,13 +685,16 @@ class BusClient(threading.Thread):
                                         #execute command
                                         try:
                                             resp.data = command(**args)
+
                                         except CommandError as e:
                                             self.logger.error(u'Command error: %s' % unicode(e))
                                             resp.error = True
                                             resp.message = unicode(e)
+
                                         except CommandInfo as e:
                                             #informative message
                                             resp.message = unicode(e)
+
                                         except Exception as e:
                                             #command failed
                                             self.logger.exception(u'bus.run exception')
@@ -736,6 +753,7 @@ class BusClient(threading.Thread):
             except:
                 #error occured
                 self.logger.exception(u'BusClient: fatal exception')
+                self.crash_report.report_exception()
                 self.stop()
 
             #self.logger.debug('----> sleep')

@@ -47,8 +47,7 @@ class Cleepbus(RaspIotModule):
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
-        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, self.__decode_bus_headers, debug_enabled, None)
-        #self.external_bus = None
+        self.external_bus = PyreBus(self.__on_message_received, self.__on_peer_connected, self.__on_peer_disconnected, self.__decode_bus_headers, debug_enabled, self.crash_report)
         self.devices = {}
         self.hostname = Hostname(self.cleep_filesystem)
         self.uuid = None

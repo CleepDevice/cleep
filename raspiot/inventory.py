@@ -74,7 +74,8 @@ class Inventory(RaspIotModule):
             u'formatters_factory': self.bootstrap[u'formatters_factory'],
             u'message_bus': self.bootstrap[u'message_bus'],
             u'join_event': Event(),
-            u'cleep_filesystem': self.bootstrap[u'cleep_filesystem']
+            u'cleep_filesystem': self.bootstrap[u'cleep_filesystem'],
+            u'crash_report': self.bootstrap[u'crash_report']
         }
 
     def __fix_country(self, country):
@@ -213,6 +214,7 @@ class Inventory(RaspIotModule):
                 #failed to load mandatory module
                 self.logger.fatal(u'Unable to load main module "%s". System will be instable' % module_name)
                 self.logger.exception(u'Module "%s" exception:' % module_name)
+                self.crash_report.report_exception()
 
         #load installed modules
         for module_name in self.configured_modules:
@@ -373,7 +375,6 @@ class Inventory(RaspIotModule):
 
             except:
                 self.logger.exception(u'Unable to get config of module "%s"' % module_name)
-                continue
 
         return modules
             

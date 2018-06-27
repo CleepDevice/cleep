@@ -554,7 +554,7 @@ class System(RaspIotModule):
         if city is None or len(city)==0:
             raise MissingParameter(u'City parameter is missing')
 
-        #search city and find if result found (try 3 times beacause geocoder returns exception sometimes :S)
+        #search city and find if result found (try 3 times because geocoder returns exception sometimes :S)
         for i in range(3):
             try:
                 #get location infos
@@ -583,6 +583,7 @@ class System(RaspIotModule):
 
             except Exception as e:
                 #unexpected exception
+                self.crash_report.report_exception()
                 raise e
 
         #if we reach this part of code, it means process was unable to find suitable city
@@ -953,6 +954,7 @@ class System(RaspIotModule):
 
         except:
             self.logger.exception(u'Error occured during updates checking:')
+            self.crash_report.report_exception()
             raise Exception(u'Error occured during raspiot update check')
 
         #update config
@@ -1248,15 +1250,20 @@ class System(RaspIotModule):
             u'uuid': self.__monitor_cpu_uuid,
             u'timestamp_until': int(time.time()) - 604800
         }
+
         try:
             self.send_command(u'purge_data', u'database', params, 10.0)
+
         except InvalidModule:
             #database module not loaded, drop
             pass
+
         except NoResponse:
             self.logger.warning(u'Unable to purge CPU usage from database')
+
         except:
             self.logger.exception(u'Unable to purge CPU usage from database:')
+            self.crash_report.report_exception()
 
     def __purge_memory_data(self):
         """
@@ -1266,15 +1273,20 @@ class System(RaspIotModule):
             u'uuid': self.__monitor_memory_uuid,
             u'timestamp_until': int(time.time()) - 2592000
         }
+
         try:
             self.send_command(u'purge_data', u'database', params, 10.0)
+
         except InvalidModule:
             #database module not loaded, drop
             pass
+
         except NoResponse:
             self.logger.warning(u'Unable to purge memory usage from database')
+
         except:
             self.logger.exception(u'Unable to purge memory usage from database:')
+            self.crash_report.report_exception()
 
     def download_logs(self):
         """

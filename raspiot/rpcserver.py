@@ -55,6 +55,7 @@ server = None
 cleep_filesystem = None
 inventory = None
 bus = None
+crash_report = None
 
 def bottle_logger(func):
     """
@@ -86,6 +87,7 @@ def load_auth():
         logger.debug(u'Auth enabled: %s' % auth_enabled)
     except:
         logger.exception(u'Unable to load auth file. Auth disabled:')
+        crash_report.report_exception()
 
 def configure(bootstrap, inventory_, debug_enabled):
     """
@@ -94,7 +96,7 @@ def configure(bootstrap, inventory_, debug_enabled):
     Args:
         boostrap (dict): bootstrap objects
     """
-    global cleep_filesystem, inventory, bus, logger
+    global cleep_filesystem, inventory, bus, logger, crash_report
 
     #configure logger
     logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
@@ -106,6 +108,9 @@ def configure(bootstrap, inventory_, debug_enabled):
     cleep_filesystem = bootstrap[u'cleep_filesystem']
     bus = bootstrap[u'message_bus']
     inventory = inventory_
+
+    #configure crash report
+    crash_report = bootstrap[u'crash_report']
 
     #load auth
     load_auth()
@@ -152,6 +157,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
 
     except:
         logger.exception(u'Fatal error starting rpcserver:')
+        crash_report.report_exception()
         if not server.closed:
             server.close()
 
@@ -648,6 +654,7 @@ def poll():
 
             except:
                 logger.exception(u'poll exception')
+                crash_report.report_exception()
                 message[u'message'] = u'Internal error'
                 time.sleep(5.0)
 

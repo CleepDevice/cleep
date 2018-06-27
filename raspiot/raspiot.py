@@ -46,6 +46,7 @@ class RaspIot(BusClient):
         #members
         self.events_factory = bootstrap[u'events_factory']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
+        self.crash_report = bootstrap[u'crash_report']
 
         #load and check configuration
         self.__configLock = Lock()
@@ -101,25 +102,27 @@ class RaspIot(BusClient):
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.logger.debug(u'Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
-                #TODO f = self.cleep_filesystem.open(path, u'r')
-                f = open(path, u'r')
+                f = self.cleep_filesystem.open(path, u'r')
+                #f = open(path, u'r')
                 raw = f.read()
-                #self.cleep_filesystem.close(f)
-                f.close()
+                self.cleep_filesystem.close(f)
+                #f.close()
             else:
                 #no conf file yet. Create default one
-                #f = self.cleep_filesystem.open(path, u'w')
-                f = open(path, u'w')
+                f = self.cleep_filesystem.open(path, u'w')
+                #f = open(path, u'w')
                 default = {}
                 raw = json.dumps(default)
                 f.write(raw)
-                #self.cleep_filesystem.close(f)
-                f.close()
+                self.cleep_filesystem.close(f)
+                #f.close()
                 time.sleep(.25) #make sure file is written
             self._config = json.loads(raw)
             out = self._config
         except:
             self.logger.exception(u'Unable to load config file %s:' % path)
+
+        #release lock
         self.__configLock.release()
 
         return out
@@ -145,14 +148,17 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         try:
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
-            #f = self.cleep_filesystem.open(path, u'w')
-            f = open(path, u'w')
+            f = self.cleep_filesystem.open(path, u'w')
+            #f = open(path, u'w')
             f.write(json.dumps(config))
-            #self.cleep_filesystem.close(f)
-            f.close()
+            self.cleep_filesystem.close(f)
+            #f.close()
             force_reload = True
+
         except:
             self.logger.exception(u'Unable to write config file %s:' % path)
+
+        #release lock
         self.__configLock.release()
 
         if force_reload:
@@ -347,6 +353,7 @@ class RaspIot(BusClient):
 
         except:
             self.logger.exception(u'Unable to know if module is loaded or not:')
+            self.crash_report.report_exception()
             return False
 
     def _event_received(self, event):
