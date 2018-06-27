@@ -16,6 +16,8 @@ import io
 import uuid
 import socket
 import iso3166
+from zipfile import ZipFile, ZIP_DEFLATED
+from tempfile import NamedTemporaryFile
 from raspiot.libs.internals.console import Console, EndlessConsole
 from raspiot.libs.configs.fstab import Fstab
 from raspiot.libs.configs.hostname import Hostname
@@ -1300,7 +1302,23 @@ class System(RaspIotModule):
         """
         if os.path.exists(self.LOG_FILE):
             #log file exists
-            return self.LOG_FILE
+
+            #zip it
+            fd = NamedTemporaryFile(delete=False)
+            log_filename = fd.name
+            self.logger.debug(u'Zipped log filename: %s' % log_filename)
+            archive = ZipFile(fd, u'w', ZIP_DEFLATED)
+            archive.write(self.LOG_FILE, u'raspiot.log')
+            archive.close()
+
+            now = datetime.now()
+            filename = u'raspiot_%d%02d%02d_%02d%02d%02d.zip' % (now.year, now.month, now.day, now.hour, now.minute, now.second)
+
+            return {
+                u'filepath': log_filename,
+                u'filename': filename
+            }
+
         else:
             #file doesn't exist, raise exception
             raise Exception(u'Logs file doesn\'t exist')
