@@ -97,7 +97,10 @@ class Network(RaspIotModule):
         Module start
         """
         #refresh list of wifi networks
-        self.refresh_wifi_networks()
+        try:
+            self.refresh_wifi_networks()
+        except:
+            self.logger.exception(u'Exception occured when refreshing wifi networks:')
 
         #handle startup config if cleep wifi conf exists
         if self.cleepwifi.exists():

@@ -198,6 +198,7 @@ class Cleepbus(RaspIotModule):
             #start external bus
             self.__start_external_bus()
             return
+
         elif event[u'event']==u'system.network.down' and self.external_bus.is_running():
             #stop external bus
             self.__stop_external_bus()
@@ -207,6 +208,7 @@ class Cleepbus(RaspIotModule):
         if (u'startup' in event.keys() and not event[u'startup']) and not event[u'event'].startswith(u'system.') and not event[u'event'].startswith(u'gpios.'):
             #broadcast local event to external bus
             self.external_bus.broadcast_event(event[u'event'], event[u'params'], event[u'device_id'])
+
         else:
             #drop current event
             self.logger.debug(u'Received event %s dropped' % event[u'event'])
