@@ -423,10 +423,9 @@ class Openweathermap(RaspIotModule):
             raise CommandError(u'Unable to test')
 
         #save config
-        config = self._get_config()
-        config[u'apikey'] = apikey
-
-        return self._save_config(config)
+        return self._update_config({
+            u'apikey': apikey
+        })
 
     def get_weather(self):
         """

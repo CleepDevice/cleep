@@ -57,16 +57,11 @@ class Cleepbus(RaspIotModule):
         Configure module
         """
         #set device uuid if not setted yet
-        config = self._get_config()
-        self.logger.debug('Config: %s' % config)
-        if config[u'uuid'] is None:
+        self.uuid = self._get_config_field(u'uuid')
+        if self.uuid is None:
             self.logger.debug('Set device uuid')
             self.uuid = str(uuid.uuid4())
-            config[u'uuid'] = self.uuid
-            self._save_config(config)
-
-        else:
-            self.uuid = config[u'uuid']
+            self._set_config_field(u'uuid', self.uuid)
 
     def get_bus_headers(self):
         """

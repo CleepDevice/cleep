@@ -250,7 +250,7 @@ class Sounds(RaspIotRenderer):
         """
         return {
             u'langs': Sounds.TTS_LANGS,
-            u'lang': self._config[u'lang']
+            u'lang': self._get_config_field(u'lang')
         }
 
     def set_lang(self, lang):
@@ -267,9 +267,7 @@ class Sounds(RaspIotRenderer):
             raise InvalidParameter(u'Specified lang "%s" is invalid' % lang)
 
         #save lang
-        config = self._get_config()
-        config[u'lang'] = lang
-        self._save_config(config)
+        return self._set_config_field(u'lang', lang)
 
     def get_volume(self):
         """
@@ -584,5 +582,5 @@ class Sounds(RaspIotRenderer):
         Args:
             profile (any supported profile): profile to speech
         """
-        self.speak_text(profile.text, self._config[u'lang'])
+        self.speak_text(profile.text, self._get_config_field(u'lang'))
 

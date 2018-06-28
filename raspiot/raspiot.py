@@ -50,9 +50,9 @@ class RaspIot(BusClient):
 
         #load and check configuration
         self.__configLock = Lock()
-        self._config = self._load_config()
+        self.__config = self.__load_config()
         if getattr(self, u'DEFAULT_CONFIG', None) is not None:
-            self._check_config(self.DEFAULT_CONFIG)
+            self.__check_config(self.DEFAULT_CONFIG)
 
     def __del__(self):
         """
@@ -84,7 +84,7 @@ class RaspIot(BusClient):
 
         return True
 
-    def _load_config(self):
+    def __load_config(self):
         """
         Load config file.
 
@@ -102,58 +102,48 @@ class RaspIot(BusClient):
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.logger.debug(u'Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
-                f = self.cleep_filesystem.open(path, u'r')
-                #f = open(path, u'r')
-                raw = f.read()
-                self.cleep_filesystem.close(f)
-                #f.close()
+                out = self.cleep_filesystem.read_json(path)
+                if out is None:
+                    #should not happen but handle it
+                    out = {}
             else:
                 #no conf file yet. Create default one
-                f = self.cleep_filesystem.open(path, u'w')
-                #f = open(path, u'w')
-                default = {}
-                raw = json.dumps(default)
-                f.write(raw)
-                self.cleep_filesystem.close(f)
-                #f.close()
-                time.sleep(.25) #make sure file is written
-            self._config = json.loads(raw)
-            out = self._config
+                out = {}
+                self.cleep_filesystem.write_json(path, out)
+                time.sleep(0.25)
+                
         except:
             self.logger.exception(u'Unable to load config file %s:' % path)
-
-        #release lock
         self.__configLock.release()
 
         return out
  
-    def _save_config(self, config):
+    def __save_config(self, config):
         """
         Save config file.
 
         Args:
-            config (dict): config to save.
-        
+            config (dict): config to save
+
         Returns:
-            dict: configuration file content or None if error occured.
+            bool: False if error occured, True otherwise
         """
-        out = None
+        out = False
         force_reload = False
 
         #check if module have config file
         if not self.__has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
-            return None
+            return False
 
+        #get lock
         self.__configLock.acquire(True)
+
         try:
             path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
-            f = self.cleep_filesystem.open(path, u'w')
-            #f = open(path, u'w')
-            f.write(json.dumps(config))
-            self.cleep_filesystem.close(f)
-            #f.close()
-            force_reload = True
+            self.cleep_filesystem.write_json(path, config)
+            self.__config = config
+            out = True
 
         except:
             self.logger.exception(u'Unable to write config file %s:' % path)
@@ -161,18 +151,47 @@ class RaspIot(BusClient):
         #release lock
         self.__configLock.release()
 
-        if force_reload:
-            #reload config
-            out = self._load_config()
-
         return out
 
-    def _reload_config(self):
+    def _update_config(self, config):
         """
-        Reload configuration.
-        Just an alias to _load_config without config content.
+        Secured config update: update specified fields, do not completely overwrite content
+
+        Args:
+            config (dict): new config to update
+
+        Returns:
+            bool: False if update failed, True otherwise
+
+        Raises:
+            InvalidParameter if input params are invalid
         """
-        self._load_config()
+        #check params
+        if not isinstance(config, dict):
+            raise InvalidParameter(u'Parameter config must be a dict')
+
+        #get lock
+        self.__configLock.acquire(True)
+
+        #keep copy of old config
+        old_config = copy.deepcopy(self.__config)
+
+        #update config
+        self.__config.update(config)
+
+        #release lock
+        self.__configLock.release()
+
+        #save new config
+        if not self.__save_config(self.__config):
+            #revert changes
+            self.__configLock.acquire(True)
+            self.__config = old_config
+            self.__configLock.release()
+            
+            return False
+
+        return True
 
     def _get_config(self):
         """
@@ -186,13 +205,67 @@ class RaspIot(BusClient):
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return {}
 
+        #get lock
         self.__configLock.acquire(True)
-        copy_ = copy.deepcopy(self._config)
+
+        #make deep copy of structure
+        copy_ = copy.deepcopy(self.__config)
+
+        #release lock
         self.__configLock.release()
 
         return copy_
 
-    def _check_config(self, keys):
+    def _get_config_field(self, field):
+        """
+        Return specified config field value
+
+        Args:
+            field (string): field name
+
+        Returns:
+            any: returns field value
+
+        Raises:
+            Exception if field is unknown
+        """
+        try:
+            return copy.deepcopy(self.__config[field])
+
+        except KeyError:
+            raise Exception(u'Unknown config field "%s"' % field)
+
+    def _has_config_field(self, field):
+        """
+        Check if config has specified field
+
+        Args:
+            field (string): field to check
+
+        Returns:
+            bool: True if field exists
+        """
+        return field in self.__config
+
+    def _set_config_field(self, field, value):
+        """
+        Convenience function to update config field value
+        Contrarly to _update_config function, _set_config_field check parameter existance in config
+
+        Args:
+            field (string): field name
+            value (any): field value to set
+
+        Returns:
+            bool: result of _update_config function
+        """
+        #check params
+        if field not in self.__config:
+            raise InvalidParameter(u'Parameter "%s" doesn\'t exist in config' % field)
+
+        return self._update_config({field: value})
+
+    def __check_config(self, keys):
         """
         Check config files looking for specified keys.
         If key not found, key is added with specified default value.
@@ -207,13 +280,14 @@ class RaspIot(BusClient):
         config = self._get_config()
         fixed = False
         for key in keys:
-            if not config.has_key(key):
+            if key not in config:
                 #fix missing key
+                self.logger.debug('Add missing key "%s" in config file' % key)
                 config[key] = keys[key]
                 fixed = True
         if fixed:
             self.logger.debug(u'Config file fixed')
-            self._save_config(config)
+            self.__save_config(config)
 
     def _get_unique_id(self):
         """
@@ -283,8 +357,8 @@ class RaspIot(BusClient):
         Returns:
             dict: all devices registered in 'devices' config section.
         """
-        if self._config is not None and self._config.has_key(u'devices'):
-            return self._config[u'devices']
+        if self.__config is not None and self.__config.has_key(u'devices'):
+            return self.__config[u'devices']
         else:
             return {}
 
@@ -403,22 +477,21 @@ class RaspIotModule(RaspIot):
         Returns:
             dict: device data if process was successful, None otherwise.
         """
-        config = self._get_config()
-
         #prepare config file
-        if not config.has_key(u'devices'):
-            config[u'devices'] = {}
+        devices = {}
+        if self._has_config_field(u'devices'):
+            devices = self._get_config_field(u'devices')
 
         #prepare data
         uuid = self._get_unique_id()
         data['uuid'] = uuid
-        if not data.has_key(u'name'):
-            data[u'name'] = u''
-        config[u'devices'][uuid] = data
-        self.logger.debug(u'config=%s' % config)
+        if u'name' not in data:
+            data[u'name'] = u'No name'
+        devices[uuid] = data
+        self.logger.debug(u'devices: %s' % devices)
 
         #save data
-        if self._save_config(config) is None:
+        if not self._update_config({u'devices': devices}):
             #error occured
             return None
 
@@ -434,25 +507,20 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if device was deleted, False otherwise.
         """
-        config = self._get_config()
-
         #check values
-        if not config.has_key(u'devices'):
+        if not self._has_config_field(u'devices'):
             self.logger.error(u'"devices" config file entry doesn\'t exist')
             raise Exception(u'"devices" config file entry doesn\'t exist')
-        if not config[u'devices'].has_key(uuid):
+        devices = self._get_config_field(u'devices')
+        if uuid not in devices:
             self.logger.error(u'Trying to delete unknown device')
             return False
 
         #delete device entry
-        del config[u'devices'][uuid]
+        del devices[uuid]
 
         #save config
-        if self._save_config(config) is None:
-            #error occured
-            return False
-
-        return True
+        return self._set_config_field(u'devices', devices)
 
     def _update_device(self, uuid, data):
         """
@@ -465,13 +533,12 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if device updated, False otherwise.
         """
-        config = self._get_config()
-
         #check values
-        if not config.has_key(u'devices'):
+        if not self._has_config_field(u'devices'):
             self.logger.error(u'"devices" config file entry doesn\'t exist')
             raise Exception(u'"devices" config file entry doesn\'t exist')
-        if not config[u'devices'].has_key(uuid):
+        devices = self._get_config_field(u'devices')
+        if uuid not in devices:
             self.logger.error(u'Trying to update unknown device')
 
         #check uuid key existence
@@ -479,14 +546,10 @@ class RaspIotModule(RaspIot):
             data[u'uuid'] = uuid
 
         #update data
-        config[u'devices'][uuid] = data
+        devices[uuid] = data
 
         #save data
-        if self._save_config(config) is None:
-            #error occured
-            return False
-
-        return True
+        return self._set_config_field(u'devices', devices)
 
     def _search_device(self, key, value):
         """
@@ -500,21 +563,20 @@ class RaspIotModule(RaspIot):
         Returns
             dict: the device data if key-value found, or None otherwise.
         """
-        config = self._get_config()
-
         #check values
-        if not config.has_key(u'devices'):
+        if not self._has_config_field(u'devices'):
             self.logger.warning(u'"devices" config file entry doesn\'t exist')
             return None
-        if len(config[u'devices'])==0:
+        devices = self._get_config_field(u'devices')
+        if len(devices)==0:
             #no device in dict, return no match
             return None
 
         #search
-        for uuid in config[u'devices']:
-            if config[u'devices'][uuid].has_key(key) and config[u'devices'][uuid][key]==value:
+        for uuid in devices:
+            if key in devices[uuid] and devices[uuid][key]==value:
                 #device found
-                return config[u'devices'][uuid]
+                return devices[uuid]
 
         return None
 
@@ -528,15 +590,14 @@ class RaspIotModule(RaspIot):
         Returns:
             dict: None if device not found, device data otherwise.
         """
-        config = self._get_config()
-
         #check values
-        if not config.has_key(u'devices'):
+        if not self._has_config_field(u'devices'):
             self.logger.error(u'"devices" config file entry doesn\'t exist')
             return None
 
-        if config[u'devices'].has_key(uuid):
-            return config[u'devices'][uuid]
+        devices = self._get_config_field(u'devices')
+        if uuid in devices:
+            return devices[uuid]
 
         return None
 
@@ -556,8 +617,8 @@ class RaspIotModule(RaspIot):
         Returns:
             int: number of saved devices.
         """
-        if self._config.has_key(u'devices'):
-            return len(self._config[u'devices'])
+        if self._has_config_field(u'devices'):
+            return len(self._get_config_field(u'devices'))
         else:
             return 0
 

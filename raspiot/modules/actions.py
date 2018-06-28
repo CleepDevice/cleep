@@ -386,23 +386,23 @@ class Actions(RaspIotModule):
         self.__load_scripts_lock.acquire()
 
         #remove stopped threads (script was removed?)
+        scripts = self._get_config_field(u'scripts')
         for script in self.__scripts.keys():
             #check file existance
             if not os.path.exists(os.path.join(Actions.SCRIPTS_PATH, script)):
                 #file doesn't exist from filesystem, clear config entry
                 self.logger.info(u'Delete infos from removed script "%s"' % script)
 
-                if self.__scripts.has_key(script):
+                if script in self.__scripts:
                     #stop running thread if necessary
                     if self.__scripts[script].is_alive():
                         self.__scripts[script].stop()
 
                     #clear config entry
                     del self.__scripts[script]
-                    config = self._get_config()
-                    if config[u'scripts'].has_key(script):
-                        del config[u'scripts'][script]
-                        self._save_config(config)
+                    if script in scripts:
+                        del scripts[script]
+                        self._set_config_field(u'scripts', scripts)
                     
         #launch thread for new script
         for root, dirs, scripts in os.walk(Actions.SCRIPTS_PATH):
@@ -413,18 +413,18 @@ class Actions(RaspIotModule):
                     self.logger.debug(u'Drop bad extension file "%s"' % script)
                     continue
 
+                scripts = self._get_config_field(u'scripts')
                 if not self.__scripts.has_key(script):
                     self.logger.info(u'Discover new script "%s"' % script)
                     #get disable status
                     disabled = False
-                    if self._config[u'scripts'].has_key(script):
-                        disabled = self._config[u'scripts'][script][u'disabled']
+                    if script in scripts:
+                        disabled = scripts[script][u'disabled']
                     else:
-                        config = self._get_config()
-                        config[u'scripts'][script] = {
+                        scripts[script] = {
                             u'disabled': disabled
                         }
-                        self._save_config(config)
+                        self._set_config_field(u'scripts', scripts)
 
                     #start new thread
                     self.__scripts[script] = Script(os.path.join(root, script), self.push, disabled)
@@ -474,7 +474,7 @@ class Actions(RaspIotModule):
             InvalidParameter: if script not found
             CommandError: if error occured processing script
         """
-        self.logger.debug(u'Config: %s' % self._config)
+        self.logger.debug(u'Config: %s' % self._get_config())
         if not self.__scripts.has_key(script):
             raise InvalidParameter(u'Unknown script "%s"' % script)
         path = os.path.join(Actions.SCRIPTS_PATH, script)
@@ -588,9 +588,9 @@ class Actions(RaspIotModule):
             raise InvalidParameter(u'Script not found')
 
         #enable/disable script
-        config = self._get_config()
-        config[u'scripts'][script][u'disabled'] = disabled
-        self._save_config(config)
+        scripts = self._get_config_field(u'scripts')
+        scripts[script][u'disabled'] = disabled
+        self._set_config_field(u'scripts', scripts)
         self.__scripts[script].set_disabled(disabled)
 
     def delete_script(self, script):
@@ -715,11 +715,11 @@ class Actions(RaspIotModule):
         time.sleep(0.5)
 
         #rename script in config
-        config = self._get_config()
-        old = config[u'scripts'][old_script]
-        config[u'scripts'][new_script] = old
-        del config[u'scripts'][old_script]
-        self._save_config(config)
+        scripts = self._get_config_field(u'scripts')
+        old = scripts[old_script]
+        scripts[new_script] = old
+        del scripts[old_script]
+        self._set_config_field(u'scripts', scripts)
 
         #reload scripts
         self.__load_scripts()

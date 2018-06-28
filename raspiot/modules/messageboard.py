@@ -113,7 +113,7 @@ class Messageboard(RaspIotRenderer):
         panels = 4
         self.board = HT1632C(pin_a0, pin_a1, pin_a2, pin_e3, panels)
         self.__set_board_units()
-        self.board.set_scroll_speed(self.SPEEDS[self._config[u'speed']])
+        self.board.set_scroll_speed(self.SPEEDS[self._get_config_field(u'speed')])
         self.__display_task = None
 
         #events
@@ -124,7 +124,7 @@ class Messageboard(RaspIotRenderer):
         Configure module
         """
         #load messages
-        for msg in self._config[u'messages']:
+        for msg in self._get_config_field(u'messages'):
             message = Message()
             message.from_dict(msg)
             self.messages.append(message)
@@ -138,7 +138,7 @@ class Messageboard(RaspIotRenderer):
             })
 
         #init display task
-        self.__display_task = BackgroundTask(self.__display_message, self.logger, float(self._config[u'duration']))
+        self.__display_task = BackgroundTask(self.__display_message, self.logger, float(self._get_config_field(u'duration')))
         self.__display_task.start()
 
         #display ip at startup during 1 minute
@@ -178,10 +178,11 @@ class Messageboard(RaspIotRenderer):
                     self.logger.debug(u'Remove obsolete message %s' % unicode(msg))
                     #remove obsolete message from config
                     config = self._get_config()
-                    for msg_conf in config[u'messages']:
+                    messages = self._get_config_field(u'messages')
+                    for msg_conf in messages:
                         if msg_conf[u'uuid']==msg.uuid:
-                            config[u'messages'].remove(msg_conf)
-                            self._save_config(config)
+                            messages.remove(msg_conf)
+                            self._set_config_field(u'messages', messages)
                             break
 
                     #remove message internaly
@@ -232,13 +233,15 @@ class Messageboard(RaspIotRenderer):
                     status (dict): current message data
                 }
         """
-        config = {}
-        config[u'messages'] = self.get_messages()
-        config[u'duration'] = self._config[u'duration']
-        config[u'speed'] = self._config[u'speed']
-        config[u'status'] = self.get_current_message()
+        config = self._get_config()
 
-        return config;
+        out = {}
+        out[u'messages'] = self.get_messages()
+        out[u'duration'] = config[u'duration']
+        out[u'speed'] = config[u'speed']
+        out[u'status'] = self.get_current_message()
+
+        return out;
 
     def get_module_devices(self):
         """
@@ -293,9 +296,9 @@ class Messageboard(RaspIotRenderer):
         self.logger.debug(u'Add new message: %s' % unicode(msg))
 
         #save it to config
-        config = self._get_config()
-        config[u'messages'].append(msg.to_dict())
-        self._save_config(config)
+        messages = self._get_config_field(u'messages')
+        messages.append(msg.to_dict())
+        self._set_config_field(u'messages', messages)
 
         #save it to internaly
         self.messages.append(msg)
@@ -313,15 +316,16 @@ class Messageboard(RaspIotRenderer):
             bool: True if message deleted
         """
         deleted = False
+
         #delete message from config
-        config = self._get_config()
-        for msg in config[u'messages']:
+        messages = self._get_config_field(u'messages')
+        for msg in messages:
             if msg[u'uuid']==uuid:
-                config[u'messages'].remove(msg)
+                messages.remove(msg)
                 deleted = True
                 break
         if deleted:
-            self._save_config(config)
+            self._set_config_field(u'messages', messages)
 
         #and delete it internaly
         for msg in self.messages[:]:
@@ -348,21 +352,22 @@ class Messageboard(RaspIotRenderer):
         self.logger.debug(u'Replacing message uuid "%s" with message "%s"' % (uuid, message))
         #replace message in config
         replaced = False
-        config = self._get_config()
+        messages = self._get_config_field(u'messages')
         start = int(time.time())
         end = start + 604800 #1 week
-        for msg in config[u'messages']:
+        for msg in messages:
             if msg[u'uuid']==uuid:
                 #message found, replace infos by new ones
                 msg[u'message'] = message
                 msg[u'start'] = start
                 msg[u'end'] = end
                 replaced = True
+                break
 
         if replaced:
             #message found and replaced
             self.logger.debug(u'Message replaced')
-            self._save_config(config)
+            self._set_config_field(u'messages', messages)
 
             #replace message internaly
             for msg in self.messages:
@@ -383,9 +388,9 @@ class Messageboard(RaspIotRenderer):
             msg.uuid = uuid
 
             #save it to config
-            config = self._get_config()
-            config[u'messages'].append(msg.to_dict())
-            self._save_config(config)
+            messages = self._get_config_field(u'messages')
+            messages.append(msg.to_dict())
+            self._set_config_field(u'messages', messages)
 
             #save it to internaly
             self.messages.append(msg)
@@ -402,6 +407,7 @@ class Messageboard(RaspIotRenderer):
         msgs = []
         for msg in self.messages:
             msgs.append(msg.to_dict())
+
         return msgs
 
     def get_current_message(self):
@@ -490,10 +496,10 @@ class Messageboard(RaspIotRenderer):
             raise InvalidParameter(u'Speed value is not valid')
 
         #save config
-        config = self._get_config()
-        config[u'duration'] = float(duration)
-        config[u'speed'] = speed
-        self._save_config(config)
+        self._update_config({
+            u'duration': float(duration),
+            u'speed': speed
+        })
 
         #update board configuration
         self.board.set_scroll_speed(self.SPEEDS[speed])

@@ -132,11 +132,10 @@ class Pushover(RaspIotRenderer):
             raise CommandError(unicode(e))
 
         #save config
-        config = self._get_config()
-        config[u'userkey'] = userkey
-        config[u'apikey'] = apikey
-
-        return self._save_config(config)
+        return self._update_config({
+            u'userkey': userkey,
+            u'apikey': apikey
+        })
 
     def test(self, userkey=None, apikey=None):
         """

@@ -329,7 +329,7 @@ class Respeaker2mic(RaspIotRenderer):
         Configure module
         """
         #configure button
-        if self._config[u'button_gpio_uuid'] is None:
+        if self._get_config_field(u'button_gpio_uuid') is None:
             self.__configure_button()
 
         #play blink green at startup
@@ -360,9 +360,7 @@ class Respeaker2mic(RaspIotRenderer):
         resp_gpio = resp_gpio[u'data'] 
 
         #save device uuid in config
-        config = self._get_config()
-        config[u'button_gpio_uuid'] = resp_gpio[u'uuid']
-        if not self._save_config(config):
+        if not self._set_config_field(u'button_gpio_uuid', resp_gpio[u'uuid']):
             self.logger.error(u'Unable to save config')
             return False
 
@@ -375,7 +373,7 @@ class Respeaker2mic(RaspIotRenderer):
         return {
             u'driverprocessing': self.__driver_task is not None,
             u'driverinstalled': self.is_installed(),
-            u'ledsprofiles': self._config[u'leds_profiles']
+            u'ledsprofiles': self._get_config_field(u'leds_profiles')
         }
 
     def is_installed(self):
@@ -596,13 +594,13 @@ class Respeaker2mic(RaspIotRenderer):
             raise InvalidParameter(u'You must add at least one action in leds profile')
 
         #check name
-        for profile in self._config[u'leds_profiles']:
+        leds_profiles = self._get_config_field(u'leds_profiles')
+        for profile in leds_profiles:
             if profile[u'name']==name:
                 raise InvalidParameter(u'Profile with same name already exists')
 
         #append new profile
-        config = self._get_config()
-        config[u'leds_profiles'].append({
+        leds_profiles.append({
             u'name': name,
             u'repeat': repeat,
             u'uuid': str(uuid.uuid4()),
@@ -611,7 +609,7 @@ class Respeaker2mic(RaspIotRenderer):
         })
 
         #save config
-        if not self._save_config(config):
+        if not self._set_config_field(u'leds_profiles', leds_profiles):
             raise CommandError(u'Unable to save leds profile')
 
         return True
@@ -633,12 +631,12 @@ class Respeaker2mic(RaspIotRenderer):
 
         #get profile
         found = False
-        config = self._get_config()
-        for profile in config[u'leds_profiles']:
+        leds_profiles = self._get_config_field(u'leds_profiles')
+        for profile in leds_profiles:
             if profile[u'uuid']==profile_uuid:
                 #profile found, remove it
                 found = True
-                config[u'leds_profiles'].remove(profile)
+                leds_profiles.remove(profile)
                 break
 
         #check found
@@ -647,7 +645,7 @@ class Respeaker2mic(RaspIotRenderer):
             raise CommandError(u'Unable to remove profile')
 
         #save config
-        if not self._save_config(config):
+        if not self._set_config_field(u'leds_profiles', leds_profiles):
             raise CommandError(u'Unable to save config')
 
         return True
@@ -673,7 +671,7 @@ class Respeaker2mic(RaspIotRenderer):
 
         #get profile
         selected_profile = None
-        for profile in self._config[u'leds_profiles']:
+        for profile in self._get_config_field(u'leds_profiles'):
             if profile[u'uuid']==profile_uuid:
                 #profile found, stop statement
                 selected_profile = profile
@@ -706,7 +704,7 @@ class Respeaker2mic(RaspIotRenderer):
 
         #get profile
         selected_profile = None
-        for profile in self._config[u'leds_profiles']:
+        for profile in self._get_config_field(u'leds_profiles'):
             if profile[u'uuid']==profile_uuid:
                 #profile found, stop statement
                 selected_profile = profile

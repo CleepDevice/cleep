@@ -289,9 +289,12 @@ class Niccolometronome(RaspIotModule):
         """
         Return module configuration
         """
+        #get config
+        self._get_config()
+
         return {
-            u'bpm': self._config[u'bpm'],
-            u'phrases': self._config[u'phrases'],
+            u'bpm': config[u'bpm'],
+            u'phrases': config[u'phrases'],
             u'metronomerunning': not self.__metronome_task is None
         }
 
@@ -299,8 +302,9 @@ class Niccolometronome(RaspIotModule):
         """
         Load phrases internally (from config)
         """
+        phrases = self._get_config_field(u'phrases')
         self.__phrases = {}
-        for phrase in self._config[u'phrases']:
+        for phrase in phrases:
             if phrase[u'command']==self.COMMAND_START_METRONOME:
                 self.logger.debug(u'"%s" phrase triggers __start_metronome_task' % phrase[u'phrase'])
                 self.__phrases[phrase[u'phrase']] = lambda: self.__start_metronome_task()
@@ -331,7 +335,7 @@ class Niccolometronome(RaspIotModule):
         if self.__metronome_task is None:
             self.logger.debug(u'Start metronome')
             self.logger.debug(u'Start Niccolo metronome')
-            self.__metronome_task = MetronomeTask(self.logger, u'/opt/raspiot/sounds/metronome1.wav', self._config[u'bpm'])
+            self.__metronome_task = MetronomeTask(self.logger, u'/opt/raspiot/sounds/metronome1.wav', self._get_config_field(u'bpm'))
             self.__metronome_task.start()
 
             return True
@@ -360,18 +364,12 @@ class Niccolometronome(RaspIotModule):
             #no exception here to not raise exception when user increase or decrease bpm using voice
             self.logger.debug(u'New %d BPM value is invalid: must be 40..220 ' % bpm)
 
-        #save bpm to config
-        config = self._get_config()
-        config[u'bpm'] = bpm
-
         #update metronome task bpm
         if self.__metronome_task:
             self.__metronome_task.set_bpm(bpm)
  
-        if self._save_config(config):
-            return True
-
-        return False
+        #save bpm to config
+        return self._set_config_field(u'bpm', bpm)
 
     def __increase_bpm(self, bpm):
         """
@@ -381,7 +379,7 @@ class Niccolometronome(RaspIotModule):
             bpm (int): bpm to use to increase current one
         """
         self.logger.debug(u'Increase BPM of %d' % bpm)
-        self.__set_bpm(self._config[u'bpm'] + bpm)
+        self.__set_bpm(self._get_config_field(u'bpm') + bpm)
 
     def __decrease_bpm(self, bpm):
         """
@@ -391,7 +389,7 @@ class Niccolometronome(RaspIotModule):
             bpm (int): bpm to use to increase current one
         """
         self.logger.debug(u'Decrease BPM of %d' % bpm)
-        self.__set_bpm(self._config[u'bpm'] - bpm)
+        self.__set_bpm(self._get_config_field(u'bpm') - bpm)
 
     def add_phrase(self, phrase, command, bpm):
         """
@@ -415,16 +413,18 @@ class Niccolometronome(RaspIotModule):
         #    raise InvalidParameter(u'Parameter bpm must negative')
 
         #save phrase
-        config = self._get_config()
-        config[u'phrases'].append({
+        phrases = self._get_config_field(u'phrases')
+        phrases.append({
             u'id': str(uuid.uuid4()),
             u'phrase': phrase,
             u'command': command,
             u'bpm': bpm
         })
         
-        if self._save_config(config):
+        if self._set_config_field(u'phrases', phrases):
             self.__load_phrases()
+        else:
+            raise CommandError(u'Error when adding phrase')
 
     def remove_phrase(self, id):
         """
@@ -438,11 +438,11 @@ class Niccolometronome(RaspIotModule):
             raise MissingParameter(u'Parameter id is missing')
 
         #search for phrase and delete it
-        config = self._get_config()
-        config[u'phrases'] = filter(lambda x: x[u'id']!=id, config[u'phrases'])
+        phrases = self._get_config_field(u'phrases')
+        phrases = filter(lambda x: x[u'id']!=id, phrases)
 
         #save config
-        if self._save_config(config):
+        if self._set_config_field(u'phrases', phrases):
             self.__load_phrases()
 
     def start_metronome(self):

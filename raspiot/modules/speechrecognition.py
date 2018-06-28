@@ -538,6 +538,7 @@ class Speechrecognition(RaspIotResource):
         """
         #build provider list (with apikey)
         providers = []
+        config = self._get_config()
         for provider in self.PROVIDERS:
             #deep copy entry
             entry = {
@@ -548,19 +549,19 @@ class Speechrecognition(RaspIotResource):
             }
 
             #fill apikey if configured
-            if str(provider[u'id']) in self._config[u'providerapikeys'].keys():
-                entry[u'apikey'] = self._config[u'providerapikeys'][str(provider[u'id'])]
+            if str(provider[u'id']) in config[u'providerapikeys'].keys():
+                entry[u'apikey'] = config[u'providerapikeys'][str(provider[u'id'])]
 
             #save entry
             providers.append(entry)
 
         return {
-            u'providerid': self._config[u'providerid'],
+            u'providerid': config[u'providerid'],
             u'providers': providers,
-            u'hotwordtoken': self._config[u'hotwordtoken'],
+            u'hotwordtoken': config[u'hotwordtoken'],
             u'hotwordrecordings': self.__get_hotword_recording_status(),
-            u'hotwordmodel': self._config[u'hotwordmodel'] is not None,
-            u'serviceenabled': self._config[u'serviceenabled'],
+            u'hotwordmodel': config[u'hotwordmodel'] is not None,
+            u'serviceenabled': config[u'serviceenabled'],
             u'servicerunning': self.__speech_recognition_task is not None,
             u'testing': self.__speech_recognition_task is not None and self.__speech_recognition_task.is_test_enabled(),
             u'hotwordtraining': self.__training_task is not None
@@ -576,26 +577,29 @@ class Speechrecognition(RaspIotResource):
         Return:
             bool: True if speech recognition started
         """
+        #get config
+        config = self._get_config()
+
         #check params
-        if not self._config[u'serviceenabled'] and not test:
+        if not config[u'serviceenabled'] and not test:
             self.logger.debug(u'Unable to start speech recognition: service is disabled')
             return False
         if self.__speech_recognition_task is not None:
             self.logger.debug(u'Unable to start speech recognition: process is already running')
             return False
-        if self._config[u'hotwordmodel'] is None or not os.path.exists(self._config[u'hotwordmodel']):
+        if config[u'hotwordmodel'] is None or not os.path.exists(config[u'hotwordmodel']):
             self.logger.debug(u'Unable to start speech recognition: invalid voice model')
             return False
-        if self._config[u'providerid'] is None:
+        if config[u'providerid'] is None:
             self.logger.debug(u'Unable to start speech recognition: STT provider is not configured')
             return False
 
         #start speech recognition
         #TODO handle audio gain and sensitivity
-        provider_token = self._config[u'providerapikeys'][str(self._config[u'providerid'])]
+        provider_token = config[u'providerapikeys'][str(config[u'providerid'])]
         self.logger.debug(u'provider_token=%s' % provider_token)
-        self.logger.debug(u'apikeys:%s providerid:%s' % (self._config[u'providerapikeys'], self._config[u'providerid']))
-        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, self._config[u'hotwordmodel'], self.events, provider_token)
+        self.logger.debug(u'apikeys:%s providerid:%s' % (config[u'providerapikeys'], config[u'providerid']))
+        self.__speech_recognition_task = SpeechRecognitionProcess(self.logger, config[u'hotwordmodel'], self.events, provider_token)
         if test:
             #enable test mode
             self.__speech_recognition_task.enable_test(self.hotwordDetectedEvent)
@@ -688,9 +692,13 @@ class Speechrecognition(RaspIotResource):
         config = self._get_config()
         #need to convert provider id to string because json does not support int as map/dict key
         provider_id_str = str(provider_id)
-        config[u'providerid'] = provider_id_str
-        config[u'providerapikeys'][provider_id_str] = apikey
-        if not self._save_config(config):
+        providersapikeys = self._get_config_field(u'providerapikeys')
+        providersapikeys[provider_id_str] = apikey
+        config = {
+            u'providerid': provider_id_str,
+            u'providerapikeys': providersapikeys
+        }
+        if not self._update_config(config):
             return False
 
         #restart speech recognition task
@@ -713,9 +721,7 @@ class Speechrecognition(RaspIotResource):
             raise CommandError(u'This action is disabled during voice model building')
 
         #save token
-        config = self._get_config()
-        config[u'hotwordtoken'] = token
-        if not self._save_config(config):
+        if not self._set_config_field(u'hotwordtoken', token):
             return False
 
         return True
@@ -729,8 +735,11 @@ class Speechrecognition(RaspIotResource):
             self.logger.debug(u'Try to launch voice model training while one is already running')
             raise CommandError(u'This action is disabled during voice model building')
 
+        #get config
+        config = self._get_config()
+
         #launch model training
-        self.__training_task = BuildPersonalVoiceModelTask(self._config[u'hotwordtoken'], self._config[u'hotwordfiles'], self.__end_of_training, self.logger)
+        self.__training_task = BuildPersonalVoiceModelTask(config[u'hotwordtoken'], config[u'hotwordfiles'], self.__end_of_training, self.logger)
         self.__training_task.start()
 
     def __end_of_training(self, error, voice_model_path):
@@ -752,25 +761,29 @@ class Speechrecognition(RaspIotResource):
             
         #finalize training
         try:
-            #get config
-            config = self._get_config()
+            #get hotwords config
+            hotwords_files = self._get_config_field(u'hotwordsfiles')
 
             #move files
             model = os.path.join(self.VOICE_MODEL_PATH, 'voice_model.pmdl')
             os.rename(voice_model_path, model)
             record1 = os.path.join(self.VOICE_MODEL_PATH, 'record1.wav')
-            os.rename(config[u'hotwordfiles'][0], record1)
+            os.rename(hotwords_files[0], record1)
             record2 = os.path.join(self.VOICE_MODEL_PATH, 'record2.wav')
-            os.rename(config[u'hotwordfiles'][1], record2)
+            os.rename(hotwords_files[1], record2)
             record3 = os.path.join(self.VOICE_MODEL_PATH, 'record3.wav')
-            os.rename(config[u'hotwordfiles'][2], record3)
+            os.rename(hotwords_files[2], record3)
 
             #update config
-            config[u'hotwordfiles'][0] = record1
-            config[u'hotwordfiles'][1] = record2
-            config[u'hotwordfiles'][2] = record3
-            config[u'hotwordmodel'] = model
-            self._save_config(config)
+            hotwords_files[0] = record1
+            hotwords_files[1] = record2
+            hotwords_files[2] = record3
+            config = {
+                u'hotwordsfiles': hotwords_files,
+                u'hotwordmodel': model
+            }
+            if not self._update_config(config):
+                raise Exception(u'Unable to update config')
 
             #send event to ui model is generated
             self.training_ok_event.send(to=u'rpc')
@@ -779,7 +792,7 @@ class Speechrecognition(RaspIotResource):
             self.logger.exception('Exception during model training:')
 
             #send error event to ui
-            self.training_ko_event.send(to=u'rpc', params={u'error': u'unable to move files'})
+            self.training_ko_event.send(to=u'rpc', params={u'error': u'Error occured during model training'})
             return
 
     def record_hotword(self):
@@ -809,15 +822,15 @@ class Speechrecognition(RaspIotResource):
         #save recording
         record1, record2, record3 = self.__get_hotword_recording_status()
         train = False
-        config = self._get_config()
+        hotwords_files = self._get_config_field(u'hotwordsfiles')
         if not record1:
-            config[u'hotwordfiles'][0] = record
+            hotword_files[0] = record
         elif not record2:
-            config[u'hotwordfiles'][1] = record
+            hotword_files[1] = record
         elif not record3:
-            config[u'hotwordfiles'][2] = record
+            hotword_files[2] = record
             train = True
-        self._save_config(config)
+        self._set_config_field(u'hotwordsfiles', hotwords_files)
 
         #train if all recordings are ready
         if train:
@@ -864,6 +877,10 @@ class Speechrecognition(RaspIotResource):
                 os.remove(config[u'hotwordmodel'])
                 config[u'hotwordmodel'] = None
 
+            #update config
+            if not self._update_config(config):
+                raise Exception(u'Unable to update config')
+
         except:
             self.logger.exception(u'Error occured during hotword resetting:')
             raise CommandError(u'Internal error during reset')
@@ -901,9 +918,7 @@ class Speechrecognition(RaspIotResource):
         Enable service
         """
         #update configuration
-        config = self._get_config()
-        config[u'serviceenabled'] = True
-        if not self._save_config(config):
+        if not self._set_config_field(u'serviceenabled', True):
             return False
 
         #start speech recognition
@@ -916,9 +931,7 @@ class Speechrecognition(RaspIotResource):
         Disable service
         """
         #update configuration
-        config = self._get_config()
-        config[u'serviceenabled'] = False
-        if not self._save_config(config):
+        if not self._set_config_field(u'serviceenabled', False):
             return False
 
         #start speech recognition

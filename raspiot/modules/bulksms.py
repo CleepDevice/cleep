@@ -113,13 +113,12 @@ class Bulksms(RaspIotRenderer):
         #try to get credits
         credits = self.get_credits(username, password)
 
-        config = self._get_config()
-        config[u'username'] = username
-        config[u'password'] = password
-        config[u'phone_numbers'] = phone_numbers
-        config[u'credits'] = credits
-
-        return self._save_config(config)
+        return self._update_config({
+            u'username': username,
+            u'password': password,
+            u'phone_numbers': phone_numbers,
+            u'credits': credits
+        })
 
     def get_credits(self, username=None, password=None):
         """

@@ -214,16 +214,15 @@ class Smtp(RaspIotRenderer):
             raise CommandError(unicode(e))
 
         #save config
-        config = self._get_config()
-        config[u'smtp_server'] = smtp_server
-        config[u'smtp_port'] = smtp_port
-        config[u'smtp_login'] = smtp_login
-        config[u'smtp_password'] = smtp_password
-        config[u'smtp_tls'] = smtp_tls
-        config[u'smtp_ssl'] = smtp_ssl
-        config[u'email_sender'] = email_sender
-
-        return self._save_config(config)
+        return self._update_config({
+            u'smtp_server': smtp_server,
+            u'smtp_port': smtp_port,
+            u'smtp_login': smtp_login,
+            u'smtp_password': smtp_password,
+            u'smtp_tls': smtp_tls,
+            u'smtp_ssl': smtp_ssl,
+            u'email_sender': email_sender
+        })
 
     def test(self, recipient, smtp_server=None, smtp_port=None, smtp_login=None, smtp_password=None, smtp_tls=None, smtp_ssl=None, email_sender=None):
         """

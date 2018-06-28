@@ -79,11 +79,10 @@ class Freemobilesms(RaspIotRenderer):
             raise CommandError(u'Unable to send test')
 
         #save config
-        config = self._get_config()
-        config[u'userid'] = userid
-        config[u'apikey'] = apikey
-
-        return self._save_config(config)
+        return self._update_config({
+            u'userid': userid,
+            u'apikey': apikey
+        })
 
     def test(self, userid=None, apikey=None):
         """
