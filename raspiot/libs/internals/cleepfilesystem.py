@@ -52,6 +52,7 @@ class CleepFilesystem():
         for line in lines:
             if line.find(u',ro')>=0 or line.find(u'ro,')>=0:
                 #read only configured
+                self.logger.info(u'Running RaspIot on configured read-only filesystem')
                 return True
 
         return False
@@ -160,17 +161,20 @@ class CleepFilesystem():
 
     def enable_write(self):
         """
-        Enable write
+        Enable write as long as you disable it
         This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
-        Please make sure to call disable_write after you finished your process
+        Please make sure to call disable_write after you finished your process!
         """
+        self.logger.warning(u'Filesystem readonly protection is disabled completely by application!')
         self.__enable_write()
 
     def disable_write(self):
         """
         Disable write
-        Use this function only if you used enable_write function before!
+        This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
+        Use this function only if you called enable_write function before!
         """
+        self.logger.info(u'Filesystem readonly protection is enabled again')
         self.__disable_write()
 
     def open(self, path, mode, encoding=u'utf-8'):

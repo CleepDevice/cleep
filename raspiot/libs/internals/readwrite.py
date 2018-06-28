@@ -23,7 +23,7 @@ class ReadWrite():
         self.console = Console()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
-        self.status = []
+        self.status = {}
 
     def __refresh(self, partition):
         """
@@ -33,7 +33,9 @@ class ReadWrite():
             partition (string): partition to work on
         """
         partition_mod = partition.replace(u'/', u'\/')
-        res = self.console.command(u'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod)
+        command = r'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod
+        res = self.console.command(command)
+        #self.logger.debug('Command "%s" result: %s' % (command, res))
 
         #check errors
         if res[u'error'] or res[u'killed']:
@@ -44,18 +46,20 @@ class ReadWrite():
         #parse result
         line = res[u'stdout'][0].strip()
         if line==u'rw':
-            self.status[parition] = self.STATUS_WRITE
+            self.status[partition] = self.STATUS_WRITE
+            self.logger.debug(u'Partition "%s" is in WRITE mode' % partition)
         elif line==u'ro':
             self.status[partition] = self.STATUS_READ
+            self.logger.debug(u'Partition "%s" is in READ mode' % partition)
         else:
-            self.logger.error(u'Unable to get parition "%s" status: %s' % (partition, res[u'stdout']))
+            self.logger.error(u'Unable to get partition "%s" status: %s' % (partition, res[u'stdout']))
             raise Exception(u'Unable to get partition "%s" status' % partition)
 
     def __is_cleep_iso(self):
         """
         Detect if raspiot is running on cleep iso
 
-        Return:
+        Returns:
             bool: True if it's cleep iso
         """
         if os.path.exists(u'/tmp/raspiot'):
@@ -67,7 +71,7 @@ class ReadWrite():
         """
         Return current filesystem status
 
-        Return:
+        Returns:
             dict: partition status (please check STATUS_UNKNOWN that appears when problem occurs)::
                 {
                     boot (int): STATUS_READ|STATUS_WRITE
@@ -86,14 +90,14 @@ class ReadWrite():
         Args:
             partition (string): partition to work on
 
-        Return:
+        Returns:
             bool: True if write enabled, False otherwise
         """
         if not self.__is_cleep_iso():
             return False
 
         #execute command
-        res = self.console(u'mount -o remount,rw %s' % partition)
+        res = self.console.command(u'/bin/mount -o remount,rw %s' % partition, timeout=10.0)
 
         #check errors
         if res[u'error'] or res[u'killed']:
@@ -111,18 +115,18 @@ class ReadWrite():
         Args:
             partition (string): partition to work on
 
-        Return:
+        Returns:
             bool: True if read enabled, False otherwise
         """
         if not self.__is_cleep_iso():
             return False
 
         #execute command
-        res = self.console(u'mount -o remount,ro %s' % partition)
+        res = self.console.command(u'/bin/mount -o remount,ro %s' % partition, timeout=10.0)
 
         #check errors
         if res[u'error'] or res[u'killed']:
-            self.logger.error(u'Error when turning on writing mode: %s' % res)
+            self.logger.error(u'Error when turning off writing mode: %s' % res)
             
         #refresh status
         self.__refresh(partition)
@@ -133,7 +137,7 @@ class ReadWrite():
         """
         Enable filesystem writings on boot partition
 
-        Return:
+        Returns:
             bool: True if write enabled, False otherwise
         """
         return self.__enable_write(self.PARTITION_BOOT)
@@ -142,7 +146,7 @@ class ReadWrite():
         """
         Disable filesystem writings on boot partition
 
-        Return:
+        Returns:
             bool: True if write disabled, False otherwise
         """
         return self.__disable_write(self.PARTITION_BOOT)
@@ -151,7 +155,7 @@ class ReadWrite():
         """
         Enable filesystem writings on root partition
 
-        Return:
+        Returns:
             bool: True if write enabled, False otherwise
         """
         return self.__enable_write(self.PARTITION_ROOT)
@@ -160,7 +164,7 @@ class ReadWrite():
         """
         Disable filesystem writings on root partition
 
-        Return:
+        Returns:
             bool: True if write disabled, False otherwise
         """
         return self.__disable_write(self.PARTITION_ROOT)

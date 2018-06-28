@@ -165,12 +165,13 @@ if __name__ == u'__main__':
         #handle command line parameters
         join_events = []
         trace_enabled = False
+        readonly_enabled = True
         debug_modules = []
         debug_system = False
         log_level = logging.INFO
         log_stdout = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, u'hsd:Dt', [u'help', u'stdout', u'debug=', u'debugsystem', u'trace'])
+        opts, args = getopt.getopt(argv, u'hsd:DtN', [u'help', u'stdout', u'debug=', u'debugsystem', u'trace', u'noro'])
         for opt, arg in opts:
             if opt in (u'-h', u'--help'):
                 usage()
@@ -184,6 +185,8 @@ if __name__ == u'__main__':
             elif opt in (u'-t', u'--trace'):
                 trace_enabled = True
                 log_level = logging.DEBUG
+            elif opt in (u'-N', u'--noro'):
+                readonly_enabled = False
         
         #configure main logger
         if not log_stdout:
@@ -197,6 +200,9 @@ if __name__ == u'__main__':
 
         #create cleep filesystem singleton (will be saved in bootstrap context)
         cleep_filesystem = CleepFilesystem()
+        if not readonly_enabled:
+            logger.info(u'Readonly feature disabled')
+            cleep_filesystem.enable_write()
 
         #load and check config file
         config = load_config(cleep_filesystem)
@@ -212,7 +218,7 @@ if __name__ == u'__main__':
             #enable debug on raspiot bin if debug system is enabled
             logger.setLevel(logging.DEBUG)
 
-        #create crash report
+        #create crash report singleton (will be part of bootstrap objects)
         crash_report = load_crash_report(trace_enabled or debug_system)
         if log_stdout:
             #disable crash report if stdout enabled
@@ -220,14 +226,14 @@ if __name__ == u'__main__':
         if not crash_report.enabled:
             logger.info(u'Crash report disabled')
 
-        #create message bus
+        #create message bus (will be part of bootstrap objects)
         logger.debug(u'Initializing message bus')
         debug = False
         if trace_enabled or debug_modules.count(u'bus')==1:
             debug = True
         bus = bus.MessageBus(crash_report, debug)
 
-        #create factories
+        #create factories (will be part of bootstrap objects)
         debug = False
         if trace_enabled or debug_system:
             debug = True
