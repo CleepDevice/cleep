@@ -290,6 +290,10 @@ class Alsa(AdvancedConsole):
         #get control
         control = profile[get_key]
 
+        #if no control, nothing else to do
+        if control is None:
+            return None
+
         #execute command
         if volume is None:
             results = self.__amixer_command(u'/usr/bin/amixer get "%s"' % control)
@@ -297,7 +301,7 @@ class Alsa(AdvancedConsole):
             results = self.__amixer_command(u'/usr/bin/amixer set "%s" %s%%' % (control, volume))
         self.logger.debug(results)
         if len(results)==0 or control not in results.keys():
-            self.logger.error(u'Unable to get volume: no control found in results: %s' % results)
+            self.logger.warning(u'Unable to get volume: no control "%s" found in results, maybe device does not support it' % control)
             return None
 
         #parse result to get volume value

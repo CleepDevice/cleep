@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.configs.config import Config
+from raspiot.utils import CommandError
 import logging
 import re
 
@@ -157,7 +158,7 @@ ctl.!default {
             u'device_id': device_id
         }
         self.logger.debug('content=%s' % content)
-        return self._write(content)
 
-
+        if not self._write(content):
+            raise CommandError(u'Unable to set default audio device')
 
