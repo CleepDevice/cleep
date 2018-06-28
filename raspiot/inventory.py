@@ -62,8 +62,7 @@ class Inventory(RaspIotModule):
         """
         Configure module
         """
-        #self.__load_modules()
-        self.load_modules_new()
+        self.load_modules()
 
     def __get_bootstrap(self):
         """
@@ -152,9 +151,9 @@ class Inventory(RaspIotModule):
 
         #update metadata with local values
         self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
-        self.modules[module_name][u'author'] = module_class_.MODULE_AUTHOR
-        self.modules[module_name][u'locked'] = module_class_.MODULE_LOCKED
-        self.modules[module_name][u'tags'] = module_class_.MODULE_TAGS
+        self.modules[module_name][u'author'] = getattr(module_class_, u'MODULE_AUTHOR', u'')
+        self.modules[module_name][u'locked'] = getattr(module_class_, u'MODULE_LOCKED', False)
+        self.modules[module_name][u'tags'] = getattr(module_class_, u'MODULE_TAGS', [])
         self.modules[module_name][u'country'] = fixed_country
         self.modules[module_name][u'urls'] = fixed_urls
         self.modules[module_name][u'installed'] = True
@@ -167,7 +166,7 @@ class Inventory(RaspIotModule):
         #flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
-    def load_modules_new(self):
+    def load_modules(self):
         """
         Load all modules
         """
@@ -205,6 +204,7 @@ class Inventory(RaspIotModule):
             self.modules[module_name][u'local'] = module_name in local_modules
             self.modules[module_name][u'pending'] = False
             self.modules[module_name][u'updatable'] = u''
+            self.modules[module_name][u'locked'] = False
 
         #load mandatory modules
         for module_name in self.mandatory_modules:
