@@ -72,14 +72,14 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                     self.reloadConfig = false;
                     self.loadConfig(false)
                         .then(function() {
-                            //unblock ui
-                            blockUI.stop();
-
                             //toast message
                             if( message && message.length>0 )
                             {
                                 toast.success(message);
                             }
+
+                            //unblock ui
+                            blockUI.stop();
                     });
                 }
 
