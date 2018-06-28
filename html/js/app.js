@@ -18,6 +18,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
     self.rebooting = false;
     self.restarting = false;
     self.notConnected = false;
+    self.reloadConfig = false;
     self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
@@ -29,11 +30,19 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
     {
          rpcService.poll()
             .then(function(response) {
+                message = '';
+
                 if( self.rebooting || self.restarting )
                 {
-                    //keep flag values for toast
-                    rebooting = self.rebooting;
-                    restarting = self.restarting;
+                    //toast message
+                    if( self.rebooting )
+                    {
+                        message = 'Device has rebooted';
+                    }
+                    else if( self.restarting )
+                    {
+                        message = 'Application has restarted';
+                    }
                     
                     //system has started
                     self.rebooting = false;
@@ -42,27 +51,36 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                     self.needReboot = false;
 
                     //reload application config
-                    self.loadConfig(false)
-                        .then(function() {
-                            //unblock ui
-                            blockUI.stop();
-
-                            //toast message
-                            if( rebooting )
-                            {
-                                toast.success('System has rebooted.');
-                            }
-                            else if( restarting )
-                            {
-                                toast.success('System has restarted.');
-                            }
-                    });
+                    self.reloadConfig = true;
                 }
                 else if( self.notConnected )
                 {
                     //unblock ui
                     blockUI.stop();
                     self.notConnected = false;
+
+                    //toast message
+                    message = 'Connection with device restored';
+
+                    //reload application config
+                    self.reloadConfig = true;
+                }
+
+                //reload application config after restart/reboot/connection loss
+                if( self.reloadConfig )
+                {
+                    self.reloadConfig = false;
+                    self.loadConfig(false)
+                        .then(function() {
+                            //unblock ui
+                            blockUI.stop();
+
+                            //toast message
+                            if( message && message.length>0 )
+                            {
+                                toast.success(message);
+                            }
+                    });
                 }
 
                 if( response && response.data && !response.error )
