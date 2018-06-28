@@ -121,7 +121,6 @@ class Config():
 
         except:
             self.logger.exception('Failed to write config file:')
-
             return False
 
     def exists(self):

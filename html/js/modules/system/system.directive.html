@@ -200,25 +200,41 @@
     <div layout="row" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
         
         <div layout="column" layout-padding flex="75" layout-sm="column" flex-sm="100">
-            <div layout="row">
-                <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()">
-                    <md-icon md-svg-icon="refresh"></md-icon>
-                    Refresh logs
-                </md-button>
-                <span flex></span>
-                <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()">
-                    <md-icon md-svg-icon="download"></md-icon>
-                    Download logs
-                </md-button>
-            </div>
-            <div>
+            <md-content>
+                <md-toolbar class="md-hue-3">
+                    <div class="md-toolbar-tools">
+                        <h2 flex md-truncate>Log viewer</h2>
+                        <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()" aria-label="Refresh logs">
+                            <md-icon md-svg-icon="refresh"></md-icon>
+                            Refresh logs
+                        </md-button>
+                        <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()" aria-label="Download logs">
+                            <md-icon md-svg-icon="download"></md-icon>
+                            Download logs
+                        </md-button>
+                    </div>
+                </md-toolbar>
                 <div ui-codemirror ui-codemirror-opts="systemCtl.codemirrorOptions" ng-model="systemCtl.logs" class="codemirror-code"></div>
-            </div>
+            </md-content>
         </div>
 
         <div layout="column" layout-padding flex="25">
             <div class="md-title">
+                Crash report
+            </div>
+            <div>
+                If you enable crash report, it will help us to improve application reliability.
+            </div>
+            <div>
+                <md-checkbox ng-model="systemCtl.crashReport" aria-label="Crash report" ng-change="systemCtl.crashReportChanged()">
+                    Enable crash report
+                </md-checkbox>
+            </div>
+            <div class="md-title" style="padding-top:15px;">
                 Modules to debug
+            </div>
+            <div>
+                Check modules you want to debug.
             </div>
             <div>
                 <div ng-repeat="(module, debug) in systemCtl.debugs">

@@ -39,6 +39,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.lastCheckModules = null;
         self.raspiotInstallStatus = 0;
         self.version = '';
+        self.crashReport = false;
 
         /*************
          * General tab
@@ -323,6 +324,23 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             systemService.setModuleDebug(module, self.debugs[module].debug);
         };
 
+        /**
+         * Crash report changed
+         */
+        self.crashReportChanged = function()
+        {
+            systemService.setCrashReport(self.crashReport)
+                .then(function(resp) {
+                    if( self.crashReport )
+                    {
+                        toast.success('Crash report enabled');
+                    }
+                    else
+                    {
+                        toast.success('Crash report disabled');
+                    }
+                });
+        };
 
         /**
          * Is event not rendered ?
@@ -402,6 +420,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             self.lastRaspiotInstallStderr = config.lastraspiotinstallstderr;
             self.lastRaspiotUpdate = config.lastraspiotupdate;
             self.version = config.version;
+            self.crashReport = config.crashreport;
         };
 
         /**

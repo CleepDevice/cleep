@@ -62,7 +62,7 @@ class System(RaspIotModule):
         u'device_uuid': str(uuid.uuid4()),
         u'ssl': False,
         u'auth': False,
-        u'rpc_port': 80,
+        u'rpcport': 80,
         u'eventsnotrendered': [],
         u'lastupdate': None,
         u'lastcheckraspiot': None,
@@ -73,7 +73,8 @@ class System(RaspIotModule):
         u'modulesupdateenabled': True,
         u'lastraspiotupdate': None,
         u'raspiotupdateavailable': False,
-        u'modulesupdateavailable': False
+        u'modulesupdateavailable': False,
+        u'crashreport': True
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -140,7 +141,10 @@ class System(RaspIotModule):
         """
         Configure module
         """
-        #sunset and sunrise times are volatile and computed automacically at each time event
+        #configure crash report
+        self.__configure_crash_report(self._get_config_field(u'crashreport'))
+
+        #sunset and sunrise times are volatile and computed automatically at each time event
 
         #launch time task
         self.time_task = Task(60.0, self.__time_task, self.logger)
@@ -151,7 +155,7 @@ class System(RaspIotModule):
         self.__process.cpu_percent()
 
         #add clock device if not already added
-        if self._get_device_count()==0:
+        if self._get_device_count()!=4:
             self.logger.debug(u'Add default devices')
             #add fake clock device
             clock = {
@@ -210,6 +214,22 @@ class System(RaspIotModule):
         #stop monitoring task
         self.__stop_monitoring_threads()
 
+    def __configure_crash_report(self, enable):
+        """
+        Configure crash report
+
+        Args:
+            enable (bool): True to enable crash report
+        """
+        #configure crash report
+        if enable:
+            self.crash_report.enable()
+        else:
+            self.crash_report.disable()
+
+        if not self.crash_report.is_enabled():
+            self.logger.info(u'Crash report is disabled')
+
     def __get_location_infos(self, city, country):
         """
         Get location infos
@@ -260,15 +280,16 @@ class System(RaspIotModule):
         Return:
             bool: True if data updated, False otherwise
         """
-        self.logger.debug('Update sun times')
         #reset sunset and sunrise
         self.sunset = None
         self.sunrise = None
 
         #update sun times if possible
-        if self._config.has_key(u'city') and self._config[u'city'] and self._config.has_key(u'country'):
+        config = self._get_config()
+        if u'city' in config and config[u'city'] and u'country' in config:
+            self.logger.debug('Update sun times')
             try:
-                location = self.__get_location_infos(self._config[u'city'], self._config[u'country'])
+                location = self.__get_location_infos(config[u'city'], config[u'country'])
                 self.sunset = location.sunset()
                 self.sunrise = location.sunrise()
                 self.logger.debug('Found sunset=%s sunrise=%s' % (self.sunset, self.sunrise))
@@ -389,27 +410,30 @@ class System(RaspIotModule):
         Returns:
             dict: configuration
         """
-        config = {}
-        config[u'sun'] = self.get_sun()
-        config[u'city'] = self.get_city()
-        config[u'monitoring'] = self.get_monitoring()
-        config[u'uptime'] = self.get_uptime()
-        config[u'needrestart'] = self.__need_restart
-        config[u'needreboot'] = self.__need_reboot
-        config[u'hostname'] = self.get_hostname()
-        config[u'eventsnotrendered'] = self.get_events_not_rendered()
-        config[u'lastcheckraspiot'] = self._config[u'lastcheckraspiot']
-        config[u'lastcheckmodules'] = self._config[u'lastcheckmodules']
-        config[u'raspiotupdateenabled'] = self._config[u'raspiotupdateenabled']
-        config[u'modulesupdateenabled'] = self._config[u'modulesupdateenabled']
-        config[u'lastraspiotinstallstdout'] = self._config[u'lastraspiotinstallstdout']
-        config[u'lastraspiotinstallstderr'] = self._config[u'lastraspiotinstallstderr']
-        config[u'lastraspiotupdate'] = self._config[u'lastraspiotupdate']
-        config[u'raspiotupdateavailable'] = self._config[u'raspiotupdateavailable']
-        config[u'modulesupdateavailable'] = self._config[u'modulesupdateavailable']
-        config[u'version'] = VERSION
+        config = self._get_config()
 
-        return config
+        out = {}
+        out[u'sun'] = self.get_sun()
+        out[u'city'] = self.get_city()
+        out[u'monitoring'] = self.get_monitoring()
+        out[u'uptime'] = self.get_uptime()
+        out[u'needrestart'] = self.__need_restart
+        out[u'needreboot'] = self.__need_reboot
+        out[u'hostname'] = self.get_hostname()
+        out[u'eventsnotrendered'] = self.get_events_not_rendered()
+        out[u'lastcheckraspiot'] = config[u'lastcheckraspiot']
+        out[u'lastcheckmodules'] = config[u'lastcheckmodules']
+        out[u'raspiotupdateenabled'] = config[u'raspiotupdateenabled']
+        out[u'modulesupdateenabled'] = config[u'modulesupdateenabled']
+        out[u'lastraspiotinstallstdout'] = config[u'lastraspiotinstallstdout']
+        out[u'lastraspiotinstallstderr'] = config[u'lastraspiotinstallstderr']
+        out[u'lastraspiotupdate'] = config[u'lastraspiotupdate']
+        out[u'raspiotupdateavailable'] = config[u'raspiotupdateavailable']
+        out[u'modulesupdateavailable'] = config[u'modulesupdateavailable']
+        out[u'crashreport'] = config[u'crashreport']
+        out[u'version'] = VERSION
+
+        return out
 
     def get_module_devices(self):
         """
@@ -424,6 +448,7 @@ class System(RaspIotModule):
             if devices[uuid][u'type']==u'clock':
                 data = self.get_time()
                 devices[uuid].update(data)
+
             elif devices[uuid][u'type']==u'monitor':
                 data = {}
                 data[u'uptime'] = self.get_uptime()
@@ -512,9 +537,7 @@ class System(RaspIotModule):
         if monitoring is None:
             raise MissingParameter(u'Monitoring parameter missing')
 
-        config = self._get_config()
-        config[u'monitoring'] = monitoring
-        if self._save_config(config) is None:
+        if not self._set_config_field(u'monitoring', monitoring):
             raise CommandError(u'Unable to save configuration')
 
     def get_monitoring(self):
@@ -524,7 +547,7 @@ class System(RaspIotModule):
         Returns:
             dict: monitoring configuration
         """
-        return self._config[u'monitoring']
+        return self._get_config_field(u'monitoring')
 
     def get_city(self):
         """
@@ -533,10 +556,12 @@ class System(RaspIotModule):
         Returns:
             dict: city and country infos
         """
+        config = self._get_config()
+
         return {
-            u'city': self._config[u'city'],
-            u'country': self._config[u'country'],
-            u'alpha2': self._config[u'alpha2']
+            u'city': config[u'city'],
+            u'country': config[u'country'],
+            u'alpha2': config[u'alpha2']
         }
 
     def set_city(self, city, country):
@@ -566,11 +591,12 @@ class System(RaspIotModule):
                 self.logger.debug(u'alpha2: %s' % alpha2)
 
                 #save city and country
-                config = self._get_config()
-                config[u'city'] = location.name
-                config[u'country'] = location.region
-                config[u'alpha2'] = alpha2
-                if self._save_config(config) is None:
+                config = {
+                    u'city': location.name,
+                    u'country': location.region,
+                    u'alpha2': alpha2
+                }
+                if not self._update_config(config):
                     raise CommandError(u'Unable to save configuration')
 
                 #update sun times
@@ -665,10 +691,10 @@ class System(RaspIotModule):
 
         #save last stdout/stderr from install
         if status[u'status'] in (Install.STATUS_DONE, Install.STATUS_ERROR):
-            config = self._get_config()
-            config[u'lastraspiotinstallstdout'] = status[u'stdout']
-            config[u'lastraspiotinstallstderr'] = status[u'stderr']
-            self._save_config(config)
+            self._update_config({
+                u'lastraspiotinstallstdout': status[u'stdout'],
+                u'lastraspiotinstallstderr': status[u'stderr']
+            })
 
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
@@ -798,14 +824,10 @@ class System(RaspIotModule):
         if not isinstance(modules_update_enabled, bool):
             raise InvalidParameter('Parameter "modules_update_enabled" is invalid')
 
-        config = self._get_config()
-        config[u'raspiotupdateenabled'] = raspiot_update_enabled
-        config[u'modulesupdateenabled'] = modules_update_enabled
-
-        if self._save_config(config):
-            return True
-
-        return False
+        return self._update_config({
+            u'raspiotupdateenabled': raspiot_update_enabled,
+            u'modulesupdateenabled': modules_update_enabled
+        })
 
     def __get_modules(self):
         """
@@ -895,14 +917,15 @@ class System(RaspIotModule):
                     self.logger.debug('No new version available for module "%s" (%s->%s)' % (module, current_version, new_version))
 
         #update config
-        self._config[u'modulesupdateavailable'] = update_available
-        self._config[u'lastcheckmodules'] = int(time.time())
-        self._save_config(self._config)
+        config = {
+            u'modulesupdateavailable': update_available,
+            u'lastcheckmodules': int(time.time())
+        }
+        self._update_config(config)
 
         return {
             u'updateavailable': update_available,
-            u'lastcheckraspiot': self._config[u'lastcheckraspiot'],
-            u'lastcheckmodules': self._config[u'lastcheckmodules'],
+            u'lastcheckmodules': config[u'lastcheckmodules'],
         }
 
     def check_raspiot_updates(self):
@@ -960,14 +983,15 @@ class System(RaspIotModule):
             raise Exception(u'Error occured during raspiot update check')
 
         #update config
-        self._config[u'raspiotupdateavailable'] = update_available
-        self._config[u'lastcheckraspiot'] = int(time.time())
-        self._save_config(self._config)
+        config = {
+            u'raspiotupdateavailable': update_available,
+            u'lastcheckraspiot': int(time.time())
+        }
+        self._update_config(config)
 
         return {
             u'updateavailable': update_available,
-            u'lastcheckraspiot': self._config[u'lastcheckraspiot'],
-            u'lastcheckmodules': self._config[u'lastcheckmodules'],
+            u'lastcheckraspiot': config[u'lastcheckraspiot']
         }
 
     def __update_raspiot_callback(self, status):
@@ -1412,15 +1436,15 @@ class System(RaspIotModule):
         if not isinstance(disabled, bool):
             raise InvalidParameter(u'Disabled parameter is invalid, must be bool')
 
-        config = self._get_config()
+        events_not_rendered = self._get_config_field(u'eventsnotrendered')
         key = '%s__%s' % (renderer, event)
-        if key in config[u'eventsnotrendered'] and not disabled:
+        if key in events_not_rendered and not disabled:
             #enable renderer event
-            config[u'eventsnotrendered'].remove(key)
+            events_not_rendered.remove(key)
         else:
             #disable renderer event
-            config[u'eventsnotrendered'].append(key)
-        if self._save_config(config) is None:
+            events_not_rendered.append(key)
+        if not self._set_config_field(u'eventsnotrendered', events_not_rendered):
             raise CommandError(u'Unable to save configuration')
 
         #configure events factory with new events to not render
@@ -1454,4 +1478,30 @@ class System(RaspIotModule):
             })
 
         return events_not_rendered
+
+    def set_crash_report(self, enable):
+        """
+        Enable or disable crash report
+
+        Args:
+            enable (bool): True to enable crash report
+
+        Returns:
+            bool: True if crash report status updated
+
+        Raises:
+            CommandError if error occured
+        """
+        if enable is None:
+            raise MissingParameter(u'Parameter "enable" is missing')
+
+        #save config
+        if not self._set_config_field(u'crashreport', enable):
+            raise CommandError(u'Unable to save crash report value')
+            
+        #configure crash report
+        self.__configure_crash_report(enable)
+
+        return True
+
 

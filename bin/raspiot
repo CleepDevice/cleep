@@ -223,7 +223,7 @@ if __name__ == u'__main__':
         if log_stdout:
             #disable crash report if stdout enabled
             crash_report.disable()
-        if not crash_report.enabled:
+        if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
 
         #create message bus (will be part of bootstrap objects)

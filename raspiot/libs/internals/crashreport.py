@@ -37,7 +37,7 @@ class CrashReport():
         #create and configure raven client
         self.client = Client(
             dsn='https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385',
-            ignore_exceptions=[u'KeyboardInterrupt'],
+            ignore_exceptions=[u'KeyboardInterrupt', u'zmq.error.ZMQError'],
             tags=self.extra
         )
         self.report_exception = self.__unbinded_report_exception
@@ -55,7 +55,7 @@ class CrashReport():
         """
         self.client.captureException(args=args, kwargs=kwargs, extra=self.extra)
 
-    def enabled(self):
+    def is_enabled(self):
         """
         Return True if crash report enabled
 

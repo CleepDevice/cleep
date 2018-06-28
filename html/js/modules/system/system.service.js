@@ -157,6 +157,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Enable/disable crash report
+     */
+    self.setCrashReport = function(enable) {
+        return rpcService.sendCommand('set_crash_report', 'system', {'enable':enable});
+    };
+
+    /**
      * Catch system time event
      */
     $rootScope.$on('system.time.now', function(event, uuid, params) {
