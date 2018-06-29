@@ -43,7 +43,7 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         {
             if( block )
             {
-                self.networkBlockui.start({message:'Loading...'});
+                self.networkBlockui.start({message:'Updating wireless networks list...'});
             }
             else
             {
@@ -218,7 +218,6 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         {
             //lock ui
             self.networkLoading(true);
-            toast.loading('Updating network informations...');
 
             networkService.refreshWifiNetworks()
                 .then(function(config) {
@@ -227,7 +226,6 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
                 })
                 .finally(function() {
                     self.networkLoading(false);
-                    toast.hide();
                 });
         };
 
