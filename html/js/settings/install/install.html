@@ -29,7 +29,7 @@
 
     <!-- modules list -->
     <div layout="row" layout-wrap>
-        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex-xs="100">
+        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
                     <md-card-title-text>
