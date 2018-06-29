@@ -46,7 +46,8 @@ class CleepFilesystem():
         Return:
             bool: True if RO configured on OS
         """
-        fd = io.open(u'/etc/fstab', u'r', encoding=u'utf-8')
+        encoding = locale.getpreferredencoding()
+        fd = io.open(u'/etc/fstab', u'r', encoding=encoding)
         lines = fd.readlines()
         fd.close()
         for line in lines:
@@ -177,14 +178,14 @@ class CleepFilesystem():
         self.logger.info(u'Filesystem readonly protection is enabled again')
         self.__disable_write()
 
-    def open(self, path, mode, encoding=u'utf-8'):
+    def open(self, path, mode, encoding=None):
         """
         Open file
 
         Args:
             path (string): file path
             mode (string): mode as builtin open() function
-            encoding (string): file encoding (default utf8)
+            encoding (string): file encoding (default is system one)
 
         Return:
             descriptor: file descriptor
@@ -194,6 +195,10 @@ class CleepFilesystem():
         self.logger.debug(u'Open %s read_mode=%s ro=%s' % (path, read_mode, self.is_readonly))
         if self.is_readonly and not read_mode and not self.__is_on_tmp(path):
             self.__enable_write()
+
+        #use system encoding if not specified
+        if not encoding:
+            encoding = locale.getpreferredencoding()
 
         #check binary mode
         if mode.find(u'b')==-1:
@@ -219,19 +224,23 @@ class CleepFilesystem():
         if self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name):
             self.__disable_write()
 
-    def read_json(self, path, encoding=u'utf-8'):
+    def read_json(self, path, encoding=None):
         """
         Read file content as json
 
         Args:
             path (string): file path
-            encoding (string): file encoding (default utf8)
+            encoding (string): file encoding (default is system one)
 
         Return:
             dict: json content as dict
         """
         fp = None
         lines = None
+
+        #encoding
+        if not encoding:
+            encoding = locale.getpreferredencoding()
 
         try:
             fp = self.open(path, u'r', encoding)
@@ -247,20 +256,24 @@ class CleepFilesystem():
 
         return lines
 
-    def write_json(self, path, data, encoding=u'utf-8'):
+    def write_json(self, path, data, encoding=None):
         """
         Write file as json format
 
         Args:
             path (string): file path
             data (any): data to write as json
-            encoding (string): file encoding (default utf8)
+            encoding (string): file encoding (default is system one)
 
         Return:
             bool: True if operation succeed
         """
         fp = None
         res = False
+
+        #encoding
+        if not encoding:
+            encoding = locale.getpreferredencoding()
 
         try:
             fp = self.open(path, u'w', encoding)
