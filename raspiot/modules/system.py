@@ -64,17 +64,20 @@ class System(RaspIotModule):
         u'auth': False,
         u'rpcport': 80,
         u'eventsnotrendered': [],
-        u'lastupdate': None,
+        u'crashreport': True,
+
         u'lastcheckraspiot': None,
         u'lastcheckmodules': None,
-        u'lastraspiotinstallstdout': u'',
-        u'lastraspiotinstallstderr': u'',
         u'raspiotupdateenabled': True,
         u'modulesupdateenabled': True,
-        u'lastraspiotupdate': None,
         u'raspiotupdateavailable': False,
         u'modulesupdateavailable': False,
-        u'crashreport': True
+        u'lastraspiotupdate': {
+            u'status': None,
+            u'stdout': [],
+            u'stderr': []
+        },
+        u'lastmodulesinstalls' : {}
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -117,7 +120,7 @@ class System(RaspIotModule):
         self.__updating_modules = []
         self.__modules = {}
         self.__raspiot_update = {
-            u'asset': None,
+            u'package': None,
             u'checksum': None
         }
 
@@ -420,18 +423,18 @@ class System(RaspIotModule):
         out[u'needrestart'] = self.__need_restart
         out[u'needreboot'] = self.__need_reboot
         out[u'hostname'] = self.get_hostname()
+        out[u'crashreport'] = config[u'crashreport']
+        out[u'version'] = VERSION
         out[u'eventsnotrendered'] = self.get_events_not_rendered()
+
         out[u'lastcheckraspiot'] = config[u'lastcheckraspiot']
         out[u'lastcheckmodules'] = config[u'lastcheckmodules']
         out[u'raspiotupdateenabled'] = config[u'raspiotupdateenabled']
         out[u'modulesupdateenabled'] = config[u'modulesupdateenabled']
-        out[u'lastraspiotinstallstdout'] = config[u'lastraspiotinstallstdout']
-        out[u'lastraspiotinstallstderr'] = config[u'lastraspiotinstallstderr']
-        out[u'lastraspiotupdate'] = config[u'lastraspiotupdate']
         out[u'raspiotupdateavailable'] = config[u'raspiotupdateavailable']
         out[u'modulesupdateavailable'] = config[u'modulesupdateavailable']
-        out[u'crashreport'] = config[u'crashreport']
-        out[u'version'] = VERSION
+        out[u'lastraspiotupdate'] = config[u'lastraspiotupdate']
+        out[u'lastmodulesinstalls'] = config[u'lastmodulesinstalls']
 
         return out
 
@@ -495,7 +498,7 @@ class System(RaspIotModule):
             #TODO
             config = self._get_config()
             if config[u'raspiotupdateenabled']:
-                pass
+                self.update_raspiot()
             if config[u'modulesupdateenabled']:
                 pass
 
@@ -691,10 +694,13 @@ class System(RaspIotModule):
 
         #save last stdout/stderr from install
         if status[u'status'] in (Install.STATUS_DONE, Install.STATUS_ERROR):
-            self._update_config({
-                u'lastraspiotinstallstdout': status[u'stdout'],
-                u'lastraspiotinstallstderr': status[u'stderr']
-            })
+            lastmodulesinstalls = self._get_config_field(u'lastmodulesinstalls')
+            lastmodulesinstalls[status[u'module']] = {
+                u'status': status[u'status'],
+                u'stdout': status[u'stdout'],
+                u'stderr': status[u'stderr']
+            }
+            self._set_config_field(u'lastmodulesinstalls', lastmodulesinstalls)
 
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
@@ -780,6 +786,16 @@ class System(RaspIotModule):
         #send process status to ui
         self.systemModuleUpdate.send(params=status)
 
+        #save last stdout/stderr from install
+        if status[u'status'] in (Install.STATUS_DONE, Install.STATUS_ERROR):
+            lastmodulesinstalls = self._get_config_field(u'lastmodulesinstalls')
+            lastmodulesinstalls[status[u'module']] = {
+                u'status': status[u'status'],
+                u'stdout': status[u'stdout'],
+                u'stderr': status[u'stderr']
+            }
+            self._set_config_field(u'lastmodulesinstalls', lastmodulesinstalls)
+
         #handle end of process to trigger restart
         if status[u'status']==Install.STATUS_DONE:
             self.__need_restart = True
@@ -805,7 +821,7 @@ class System(RaspIotModule):
         #get module infos
         infos = self.__get_module_infos(module)
 
-        #launch uninstallation
+        #launch module update
         install = Install(self.cleep_filesystem, self.__module_update_callback)
         install.update_module(module, infos)
 
@@ -852,7 +868,6 @@ class System(RaspIotModule):
                     modules_to_delete.append(module)
                 
                 #append updatable/updating flags
-                #TODO check version with modules.json => need to create lib to handle modules.json first
                 self.__modules[module][u'updatable'] = None
                 self.__modules[module][u'updating'] = module in self.__updating_modules
 
@@ -940,10 +955,14 @@ class System(RaspIotModule):
                     lastcheckmodules (int): last modules update check timestamp
                 }
         """
+        #init
         update_available = False
+        self.__raspiot_update[u'package'] = None
+        self.__raspiot_update[u'checksum'] = None
+
         try:
             github = Github()
-            releases = github.get_releases(self.RASPIOT_GITHUB_OWNER, self.RASPIOT_GITHUB_REPO)
+            releases = github.get_releases(self.RASPIOT_GITHUB_OWNER, self.RASPIOT_GITHUB_REPO, only_latest=True)
             if len(releases)==1:
                 #get latest version available
                 version = github.get_release_version(releases[0])
@@ -953,15 +972,15 @@ class System(RaspIotModule):
 
                     #search for deb file
                     for asset in assets:
-                        if asset[u'name'].find(u'.deb')!=-1:
-                            self.logger.info(u'Found deb asset: %s' % asset)
-                            self.__raspiot_update[u'asset'] = asset
+                        if asset[u'name'].startswith(u'raspiot_') and asset[u'name'].endswith('.zip'):
+                            self.logger.info(u'Found raspiot package asset: %s' % asset)
+                            self.__raspiot_update[u'package'] = asset
                             break
 
                     #search for checksum file
-                    if self.__raspiot_update[u'asset'] is not None:
-                        deb_name = os.path.splitext(self.__raspiot_update[u'asset'][u'name'])[0]
-                        checksum_name = u'%s.%s' % (deb_name, u'sha256')
+                    if self.__raspiot_update[u'package'] is not None:
+                        package_name = os.path.splitext(self.__raspiot_update[u'package'][u'name'])[0]
+                        checksum_name = u'%s.%s' % (package_name, u'sha256')
                         self.logger.debug(u'Checksum filename to search: %s' % checksum_name)
                         for asset in assets:
                             if asset[u'name']==checksum_name:
@@ -969,8 +988,9 @@ class System(RaspIotModule):
                                 self.__raspiot_update[u'checksum'] = asset
                                 break
 
-                    if self.__raspiot_update[u'asset'] and self.__raspiot_update[u'checksum']:
+                    if self.__raspiot_update[u'package'] and self.__raspiot_update[u'checksum']:
                         self.logger.debug(u'Update and checksum found, can trigger update')
+                        self.logger.debug(u'raspiot_update: %s' % self.__raspiot_update)
                         update_available = True
 
             else:
@@ -1001,13 +1021,66 @@ class System(RaspIotModule):
         Args:
             status (dict): update status
         """
-        #TODO
+        self.logger.debug(u'Raspiot update callback status: %s' % status)
+
+        #send process status to ui
+        self.systemRaspiotUpdate.send(params=status)
+
+        #save last status when update terminated (successfully or not)
+        if status[u'status']>=InstallRaspiot.STATUS_UPDATED:
+            stdout = []
+            stderr = []
+
+            #prescript
+            if status[u'prescript'][u'returncode']:
+                stdout += [u'Pre-script stdout:'] + status[u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'prescript'][u'returncode']]
+                stderr += [u'Pre-script stderr'] + status[u'prescript'][u'stderr']
+            else:
+                stdout += [u'No pre-script']
+
+            #deb
+            if status[u'package'][u'returncode']:
+                stdout += [u'Package stdout:'] + status[u'package'][u'stdout'] + [u'Package return code: %s' % status[u'package'][u'returncode']]
+                stderr += [u'Package stderr'] + status[u'package'][u'stderr']
+            else:
+                stdout += [u'No package']
+
+            #postscript
+            if status[u'postscript'][u'returncode']:
+                stdout += [u'Post-script stdout:'] + status[u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'postcript'][u'returncode']]
+                stderr += [u'Post-script stderr'] + status[u'postscript'][u'stderr']
+            else:
+                stdout += [u'No post-script']
+
+            #save update status
+            self._set_config_field(u'lastraspiotupdate', {
+                u'status': status[u'status'],
+                u'stdout': stdout,
+                u'stderr': stderr
+            })
+    
+        #handle end of successful process to trigger restart
+        if status[u'status']==InstallRaspiot.STATUS_UPDATED:
+            #need to reboot
+            self.__need_reboot = True
 
     def update_raspiot(self):
         """
         Update raspiot
         """
-        #TODO
+        #check params
+        if not self.__raspiot_update[u'package'] or not self.__raspiot_update[u'checksum']:
+            raise CommandError(u'No raspiot update available')
+
+        #launch install
+        package_url = self.__raspiot_update[u'package'][u'url']
+        checksum_url = self.__raspiot_update[u'checksum'][u'url']
+        self.logger.debug('Update raspiot, package url: %s' % package_url)
+        self.logger.debug('Update raspiot, checksum url: %s' % checksum_url)
+        update = InstallRaspiot(package_url, checksum_url, self.__update_raspiot_callback, self.cleep_filesystem)
+        update.start()
+
+        return True
 
     def get_memory_usage(self):
         """
