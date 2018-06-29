@@ -75,14 +75,14 @@ class Github():
 
         return out
 
-    def get_releases(self, owner, repository, all_releases=False):
+    def get_releases(self, owner, repository, only_latest=False):
         """
         Get releases of specify project repository
 
         Args:
             owner (string): name of owner
             repository (string): name of repository
-            all (bool): return all releases instead of latest one
+            only_latest (bool): if True returns only latest release
 
         Return:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
@@ -96,7 +96,7 @@ class Github():
                 data = json.loads(resp.data.decode('utf-8'))
                 self.logger.debug('Data: %s' % data)
 
-                if all_releases:
+                if not only_latest:
                     #return all releases
                     return data
 
