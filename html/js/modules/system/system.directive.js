@@ -224,6 +224,36 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         };
 
         /**
+         * Save crash report
+         */
+        self.updateCrashReport = function(fromCheckbox) {
+            if( !fromCheckbox )
+            {
+                //row clicked, we need to update flag
+                self.crashReport = !self.crashReport;
+            }
+
+            //delay update to make sure model value is updated
+            $timeout(function() {
+                systemService.setCrashReport(self.crashReport)
+                    .then(function(resp) {
+                        return raspiotService.reloadModuleConfig('system');
+                    })
+                    .then(function(resp) {
+                        if( self.crashReport )
+                        {
+                            toast.success('Crash report enabled');
+                        }
+                        else
+                        {
+                            toast.success('Crash report disabled');
+                        }
+                    });
+            }, 250);
+        };
+
+
+        /**
          * Reboot system
          */
         self.reboot = function() {
@@ -322,24 +352,6 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.debugChanged = function(module)
         {
             systemService.setModuleDebug(module, self.debugs[module].debug);
-        };
-
-        /**
-         * Crash report changed
-         */
-        self.crashReportChanged = function()
-        {
-            systemService.setCrashReport(self.crashReport)
-                .then(function(resp) {
-                    if( self.crashReport )
-                    {
-                        toast.success('Crash report enabled');
-                    }
-                    else
-                    {
-                        toast.success('Crash report disabled');
-                    }
-                });
         };
 
         /**

@@ -189,8 +189,16 @@
             <md-subheader class="md-no-sticky">Monitoring</md-subheader>
             <md-list-item ng-click="systemCtl.updateMonitoring(false)">
                 <md-icon md-svg-icon="chevron-double-right"></md-icon>
-                <p>Enable monitoring allows you to follow cpu and memory consumption of device.</p>
+                <p>Enable monitoring allows you to follow cpu and memory consumption of device</p>
                 <md-checkbox class="md-secondary" ng-model="systemCtl.monitoring" ng-click="systemCtl.updateMonitoring(true)" aria-label="Monitoring option"></md-checkbox>
+            </md-list-item>
+
+            <!-- crash report -->
+            <md-subheader class="md-no-sticky">Crash report</md-subheader>
+            <md-list-item ng-click="systemCtl.updateCrashReport(false)">
+                <md-icon md-svg-icon="chevron-double-right"></md-icon>
+                <p>If you enable crash report, it will help us to improve application reliability</p>
+                <md-checkbox class="md-secondary" ng-model="systemCtl.crashReport" aria-label="Crash report" ng-click="systemCtl.updateCrashReport(true)"></md-checkbox>
             </md-list-item>
 
         </md-list>
@@ -205,11 +213,11 @@
                     <div class="md-toolbar-tools">
                         <h2 flex md-truncate>Log viewer</h2>
                         <md-button class="md-primary md-raised" ng-click="systemCtl.getLogs()" aria-label="Refresh logs">
-                            <md-icon md-svg-icon="refresh"></md-icon>
+                            <md-icon style="color:white;" md-svg-icon="refresh"></md-icon>
                             Refresh logs
                         </md-button>
                         <md-button class="md-primary md-raised" ng-click="systemCtl.downloadLogs()" aria-label="Download logs">
-                            <md-icon md-svg-icon="download"></md-icon>
+                            <md-icon style="color:white;" md-svg-icon="download"></md-icon>
                             Download logs
                         </md-button>
                     </div>
@@ -220,17 +228,6 @@
 
         <div layout="column" layout-padding flex="25">
             <div class="md-title">
-                Crash report
-            </div>
-            <div>
-                If you enable crash report, it will help us to improve application reliability.
-            </div>
-            <div>
-                <md-checkbox ng-model="systemCtl.crashReport" aria-label="Crash report" ng-change="systemCtl.crashReportChanged()">
-                    Enable crash report
-                </md-checkbox>
-            </div>
-            <div class="md-title" style="padding-top:15px;">
                 Modules to debug
             </div>
             <div>
