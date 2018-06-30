@@ -39,9 +39,12 @@ class WpaSupplicantConf(Config):
             filepath = self.CONF
         Config.__init__(self, cleep_filesystem, filepath, None, backup)
 
-        #members
+        #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
+
+        #members
+        self.cleep_filesystem = cleep_filesystem
         self.groups = {}
 
     def encrypt_password(self, network, password):
@@ -470,7 +473,7 @@ class WpaSupplicantConf(Config):
         self.logger.debug('Written fake wpa_supplicant.conf file to %s' % path)
 
         #create new wpasupplicant instance
-        instance = WpaSupplicantConf(path, backup=False)
+        instance = WpaSupplicantConf(self.cleep_filesystem, path, backup=False)
 
         #add new network
         if not instance.add_network(network, encryption, password, hidden):

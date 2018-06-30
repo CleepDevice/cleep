@@ -575,7 +575,7 @@ class Network(RaspIotModule):
         error = None
         try:
 
-            #kill wpa_supplicant and wpa_cli processes
+            #kill wpa_supplicant and wpacli processes
             res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_.*%s"' % interface)
             self.logger.debug(u'pkill output: %s' % res)
     
@@ -588,7 +588,7 @@ class Network(RaspIotModule):
             #if res[u'error'] or res[u'killed']:
             #    raise Exception(u'Unable to connect to network: is network in range?')
 
-            #wpa_supplicant command can only be killed by CTRL-C because it uses wpa_cli
+            #wpa_supplicant command can only be killed by CTRL-C because it uses wpacli
             #so we need to kill it explicitely
             res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_supplicant.*%s"' % interface)
             self.logger.debug(u'pkill output: %s' % res)
@@ -654,7 +654,7 @@ class Network(RaspIotModule):
             self.logger.debug(u'pkill output: %s' % res)
 
             #reconfigure interface (stop-start-reconfigure)
-            self.reconfigure_interface(interface)
+            self.wpacli.reconfigure_interface(interface)
 
         if error:
             raise CommandError(error)
