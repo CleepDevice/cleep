@@ -6,6 +6,7 @@ from raspiot.events.event import Event
 class Systemsystemrestart(Event):
     """
     System.system.restart event
+    This event is sent just before restart command is launched. It allows modules to perform something before.
     """
 
     EVENT_NAME = u'system.system.restart'

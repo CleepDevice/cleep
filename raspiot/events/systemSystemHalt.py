@@ -6,6 +6,7 @@ from raspiot.events.event import Event
 class Systemsystemhalt(Event):
     """
     System.system.halt event
+    This event is sent just before halt command is launched. It allows modules to perform something before.
     """
 
     EVENT_NAME = u'system.system.halt'
