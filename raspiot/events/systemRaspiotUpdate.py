@@ -3,12 +3,12 @@
 
 from raspiot.events.event import Event
 
-class Systemmoduleupdate(Event):
+class Systemraspiotupdate(Event):
     """
-    System.module.update event
+    System.raspiot.update event
     """
 
-    EVENT_NAME = u'system.module.update'
+    EVENT_NAME = u'system.raspiot.update'
     EVENT_SYSTEM = True
 
     def __init__(self, bus, formatters_factory, events_factory):
@@ -33,7 +33,6 @@ class Systemmoduleupdate(Event):
             bool: True if params are valid, False otherwise
         """
         keys = [
-            u'module',
             u'status',
             u'stdout',
             u'stderr'

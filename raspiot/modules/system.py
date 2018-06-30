@@ -139,6 +139,7 @@ class System(RaspIotModule):
         self.systemModuleInstall = self._get_event(u'system.module.install')
         self.systemModuleUninstall = self._get_event(u'system.module.uninstall')
         self.systemModuleUpdate = self._get_event(u'system.module.update')
+        self.systemRaspiotUpdate = self._get_event(u'system.raspiot.update')
 
     def _configure(self):
         """
