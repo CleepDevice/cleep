@@ -79,9 +79,13 @@ class Config():
 
         return os.path.join(base_path, '%s.backup%s' % (filename, ext))
 
-    def _open(self, mode=u'r', encoding=u'utf-8'):
+    def _open(self, mode=u'r', encoding=None):
         """
         Open config file
+
+        Args:
+            mode (string): opening file mode (see MODE_XXX)
+            encoding (string): encoding to use to open file (default is system one)
 
         Returns:
             file: file descriptor as returned by open() function
