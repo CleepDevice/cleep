@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.libs.wpacli import Wpacli
+from raspiot.libs.commands.wpacli import Wpacli
 import unittest
 import logging
 
@@ -25,7 +25,8 @@ class WpacliTests(unittest.TestCase):
         self.assertTrue('status' in networks[network_name].keys())
 
     def test_scan_networks(self):
-        networks = self.w.scan_networks()
+        networks = self.w.scan_networks(interface='wlan0')
+        logging.debug(networks)
         self.assertNotEqual(0, len(networks))
         interface = networks.keys()[0]
         network_name = networks[interface].keys()[0]
@@ -34,3 +35,7 @@ class WpacliTests(unittest.TestCase):
         self.assertTrue('encryption' in networks[interface][network_name].keys())
         self.assertTrue('signallevel' in networks[interface][network_name].keys())
 
+    def test_status(self):
+        status = self.w.get_status(u'wlan0')
+        self.assertNotEqual(status, self.w.STATE_UNKNOWN)
+        

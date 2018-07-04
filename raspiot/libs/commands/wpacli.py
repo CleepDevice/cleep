@@ -20,6 +20,20 @@ class Wpacli(AdvancedConsole):
     STATUS_DISABLED = 0
     STATUS_ENABLED = 1
 
+    #states from https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc
+    STATE_STATE_DISCONNECTED = u'DISCONNECTED'
+    STATE_INTERFACE_DISABLED = u'INTERFACE_DISABLED'
+    STATE_INACTIVE = u'INACTIVE'
+    STATE_SCANNING = u'SCANNING'
+    STATE_AUTHENTICATING = u'AUTHENTICATING'
+    STATE_ASSOCIATING = u'ASSOCIATING'
+    STATE_ASSOCIATED = u'ASSOCIATED'
+    STATE_4WAY_HANDSHAKE = u'4WAY_HANDSHAKE'
+    STATE_GROUP_HANDSHAKE = u'GROUP_HANDSHAKE'
+    STATE_COMPLETED = u'COMPLETED'
+    STATE_UNKNOWN = u'UNKNOWN'
+    STATES = [STATE_STATE_DISCONNECTED, STATE_INTERFACE_DISABLED, STATE_INACTIVE, STATE_SCANNING, STATE_AUTHENTICATING, STATE_ASSOCIATING, STATE_ASSOCIATED, STATE_4WAY_HANDSHAKE, STATE_GROUP_HANDSHAKE, STATE_COMPLETED]
+
     def __init__(self):
         """
         Constructor
@@ -108,12 +122,12 @@ class Wpacli(AdvancedConsole):
         self.__update_configured_networks = False
         return entries
 
-    def scan_networks(self, interface=None, duration=3.0):
+    def scan_networks(self, interface, duration=3.0):
         """
         Scan networks
 
         Args:
-            interface (string): interface to scan. If None scan all interfaces
+            interface (string): interface to scan
             duration (float): time to wait before retrieving scan results (default 3 seconds)
 
         Result:
@@ -131,9 +145,12 @@ class Wpacli(AdvancedConsole):
         time.sleep(duration)
 
         #parse results
-        results = self.find(u'%s scan_results' % (self.wpacli), r'^(Selected interface) \'(.*?)\'|(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s+(\d+)\s+(.*?)\s+(\[.*\])\s+(.*)$')
+        if interface:
+            results = self.find(u'%s -i %s scan_results' % (self.wpacli, interface), r'^(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s+(\d+)\s+(.*?)\s+(\[.*\])\s+(.*)$')
+        else:
+            results = self.find(u'%s scan_results' % (self.wpacli), r'^(Selected interface) \'(.*?)\'|(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s+(\d+)\s+(.*?)\s+(\[.*\])\s+(.*)$')
         entries = {}
-        current_interface = None
+        current_interface = interface
         for group, groups in results:
             #filter None values
             groups = filter(None, groups)
@@ -394,4 +411,24 @@ class Wpacli(AdvancedConsole):
             time.sleep(pause)
         
         return True
+
+    def get_status(self, interface):
+        """
+        Return interface status
+
+        Args:
+            interface (string): interface to get status
+
+        Returns:
+            dict:
+        """
+        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'wpa_state=(.*)')
+        entries = {}
+        for group, groups in results:
+            #filter None values
+            groups = filter(None, groups)
+            if groups[0] in self.STATES:
+                return groups[0]
+            else:
+                return self.STATE_UNKNOWN
 
