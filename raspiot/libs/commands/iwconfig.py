@@ -37,7 +37,8 @@ class Iwconfig(AdvancedConsole):
             self.logger.debug('Don\'t refresh')
             return
 
-        results = self.find(u'%s 2>&1' % self._command, r'^\s*(.*?)\s+(:?(?:(unassociated))(.*)|(?:.*ESSID:)(.*)|(no wireless extensions)).*$', timeout=5.0)
+        pattern = r'^(?:(\w+)\s+(?:IEEE 802\.11)\s+(?:ESSID:(?:(off/any)|\"(\w+)\"))).*|(?:(\w+)\s+(no wireless extensions).*)|(?:(\w+)\s+(unassociated).*)$'
+        results = self.find(u'%s 2>&1' % self._command, pattern, timeout=5.0)
         self.logger.debug(results)
 
         current_entry = None
@@ -45,10 +46,11 @@ class Iwconfig(AdvancedConsole):
         for group, groups in results:
             #filter None values
             groups = filter(None, groups)
+            self.logger.debug(groups)
 
             #get useful values
             interface = groups[0]
-            value = groups[2]
+            value = groups[1]
             self.logger.debug('interface=%s value=%s' % (interface, value))
 
             #drop lo interface
@@ -64,7 +66,7 @@ class Iwconfig(AdvancedConsole):
                 network = None
             else:
                 wifi_interface = True
-                network = value.replace('"', '').replace('\'', '').strip()
+                network = value
 
             entries[interface] = {
                 u'network': network
@@ -72,6 +74,7 @@ class Iwconfig(AdvancedConsole):
 
         #save data
         self.interfaces = entries
+        self.logger.debug('interfaces: %s' % entries)
 
         #update timestamp
         self.timestamp = time.time()
