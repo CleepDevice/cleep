@@ -2,12 +2,17 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from raspiot.libs.internals.console import AdvancedConsole, Console
+try:
+    from raspiot.libs.internals.console import AdvancedConsole, Console
+except:
+    from console import AdvancedConsole, Console
 import time
+import os
 
 class Iw(AdvancedConsole):
     """
-    Command /sbin/iw helper
+    Command /sbin/iw helper.
+    Return wireless network interface infos.
     """
 
     CACHE_DURATION = 5.0
@@ -21,26 +26,18 @@ class Iw(AdvancedConsole):
         #members
         self._command = u'/sbin/iw dev'
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
-        self.connections = {}
+        #self.logger.setLevel(logging.DEBUG)
+        self.adapters = {}
         self.timestamp = None
 
-    def installed(self):
+    def is_installed(self):
         """
         Return True if iw command is installed
 
         Return:
             bool: True is installed
         """
-        res = self.command(u'/usr/bin/whereis iw')
-        if res[u'error'] or res[u'killed']:
-            self.logging.error('Error during command execution: %s' % res)
-
-        stdout = ''.join(res[u'stdout'])
-        if stdout.count(u'iw')==1:
-            return False
-
-        return True
+        return os.path.exists(u'/sbin/iw')
 
     def __refresh(self):
         """
@@ -53,14 +50,14 @@ class Iw(AdvancedConsole):
 
         results = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')
         if len(results)==0:
-            self.connections = {}
+            self.adapters = {}
             return
     
         entries = {}
         current_entry = None
         for group, groups in results:
             #filter non values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
         
             if group.startswith(u'ssid') and current_entry is not None:
                 current_entry[u'network'] = groups[0]
@@ -74,20 +71,26 @@ class Iw(AdvancedConsole):
             elif group.startswith(u'ssid') and current_entry is not None:
                 current_entry[u'network'] = groups[0]
 
-        #save connections
-        self.connections = entries
+        #save adapters
+        self.adapters = entries
 
         #update timestamp
         self.timestamp = time.time()
 
-    def get_connections(self):
+    def get_adapters(self):
         """
-        Return all connections
+        Return all adapters with associated interface
 
         Return:
-            dict: list of connections
+            dict: list of adapters and connected network
+                {
+                    adapter: {
+                        interface (string): associated interface name
+                        network (string): connected network
+                    }
         """
         self.__refresh()
 
-        return self.connections
+        return self.adapters
+
 
