@@ -7,6 +7,7 @@ import re
 import io
 import shutil
 import logging
+import time
 
 class Config():
     """
@@ -29,22 +30,21 @@ class Config():
 
         Args:
             cleep_filesystem: CleepFilesystem instance
-            path (string): configuration file path
+            path (string): configuration file path. If None specified, CONF member will be used instead
             comment_tag (string): comment tag
-            backup (bool): auto backup original file (default True)
+            backup (bool): auto backup original file (default True). Enabled only if path is not None
         """
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
-        path = os.path.expanduser(path)
-        path = os.path.realpath(path)
         self.path = path
-        self.backup_path = self.__get_backup_path(path)
+        self.backup_path = None
         self.comment_tag = comment_tag
         self.__fd = None
 
         #backup original file
-        if backup:
+        if path is not None and backup:
+            self.backup_path = self.__get_backup_path(path)
             self.__make_backup()
 
     def __del__(self):
@@ -53,25 +53,51 @@ class Config():
         """
         self._close()
 
+    def __get_path(self):
+        """
+        Return current cleaned conf file path
+
+        Returns:
+            string: cleaned path
+        """
+        if self.path:
+            #use constructor specified path value
+            return self.path
+
+        #use CONF member
+        path = getattr(self, u'CONF', u'')
+        path = os.path.expanduser(path)
+        path = os.path.realpath(path)
+
+        return path
+
     def __make_backup(self):
         """
         Backup original file if necessary
         """
-        if not os.path.exists(self.backup_path) and os.path.exists(self.path):
-            self.cleep_filesystem.copy(self.path, self.backup_path)
+        if not os.path.exists(self.backup_path) and os.path.exists(self.__get_path()):
+            self.cleep_filesystem.copy(self.__get_path(), self.backup_path)
 
     def restore_backup(self):
         """
         Overwrite original config file by backup one
         """
+        if not self.backup_path:
+            self.logger.info(u'Backup disabled when path is not specified in class init')
+            return False
+
         if os.path.exists(self.backup_path):
-            self.cleep_filesystem.copy(self.backup_path, self.path)
+            self.cleep_filesystem.copy(self.backup_path, self.__get_path())
             return True
 
         return False
 
     def __get_backup_path(self, path):
         """
+        Return backup path
+
+        Args:
+            path (string): path of path to backup
         """
         base_path = os.path.dirname(path)
         base, ext = os.path.splitext(path)
@@ -93,10 +119,10 @@ class Config():
         Raises:
             Exception if file doesn't exist
         """
-        if not os.path.exists(self.path) and mode==self.MODE_READ:
-            raise Exception(u'%s file does not exist' % self.path)
+        if not os.path.exists(self.__get_path()) and mode==self.MODE_READ:
+            raise Exception(u'%s file does not exist' % self.__get_path())
 
-        self.__fd = self.cleep_filesystem.open(self.path, mode, encoding)
+        self.__fd = self.cleep_filesystem.open(self.__get_path(), mode, encoding)
 
         return self.__fd
 
@@ -120,6 +146,7 @@ class Config():
             fd = self._open(self.MODE_WRITE)
             fd.write(content.rstrip())
             self._close()
+            time.sleep(0.25)
 
             return True
 
@@ -134,7 +161,7 @@ class Config():
         Returns:
             bool: True if config file exists
         """
-        return os.path.exists(self.path)
+        return os.path.exists(self.__get_path())
 
     def find(self, pattern, options=re.UNICODE | re.MULTILINE):
         """
@@ -153,7 +180,7 @@ class Config():
         """
         #check file existence
         if not self.exists():
-            self.logger.info(u'No file found (%s). Return empty result' % self.path)
+            self.logger.info(u'No file found (%s). Return empty result' % self.__get_path())
             return []
 
         results = []
@@ -194,7 +221,7 @@ class Config():
 
         #check file existence
         if not self.exists():
-            self.logger.info(u'No file found (%s). Return empty result' % self.path)
+            self.logger.info(u'No file found (%s). Return empty result' % self.__get_path())
             return []
 
         matches = re.finditer(pattern, content, options)
@@ -224,7 +251,7 @@ class Config():
             #line already uncommented
             return False
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         #read file content
@@ -265,7 +292,7 @@ class Config():
             #line already commented
             return False
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         #read file content
@@ -303,7 +330,7 @@ class Config():
         if not isinstance(content, unicode):
             raise Exception('Content parameter must be unicode')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         fd = self._open()
@@ -335,7 +362,7 @@ class Config():
         if not isinstance(removes, list):
             raise Exception('Removes parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         fd = self._open()
@@ -375,7 +402,7 @@ class Config():
             int: number of lines removed
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -423,7 +450,7 @@ class Config():
             int: number of lines deleted (blank and commented lines not counted)
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return 0
 
         #read content
@@ -484,7 +511,7 @@ class Config():
         if not isinstance(lines, list):
             raise Exception('Lines parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -515,7 +542,7 @@ class Config():
         if not isinstance(content, unicode):
             raise Exception('Lines parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -537,7 +564,7 @@ class Config():
             list: list of lines
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return []
 
         #read content
@@ -553,7 +580,7 @@ class Config():
         For debug and test purpose only
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.path)
+            self.logger.info(u'No file found (%s)' % self.__get_path())
             return 
 
         #read content
