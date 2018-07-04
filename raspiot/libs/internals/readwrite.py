@@ -22,7 +22,7 @@ class ReadWrite():
         """
         self.console = Console()
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         self.status = {}
 
     def __refresh(self, partition):
