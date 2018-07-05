@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import io
+import time
 
 class WpaSupplicantConf(Config):
     """
@@ -130,6 +131,7 @@ class WpaSupplicantConf(Config):
             try:
                 fpath = os.path.join(self.WPASUPPLICANT_DIR, f)
                 (conf, ext) = os.path.splitext(f)
+                self.logger.debug(' --> %s' % conf)
                 if os.path.isfile(fpath) and conf==u'wpa_supplicant':
                     #default config file
                     configs[u'default'] = fpath
@@ -308,6 +310,23 @@ class WpaSupplicantConf(Config):
             self.CONF = configurations[u'default']
             return self.remove(self.__groups[u'default'][configuration[u'network']])
 
+    def __check_wpa_supplicant_conf_existence(self, interface):
+        """
+        Check if wpa_supplicant conf file exists for specified interface.
+        If not exists, create default one
+
+        Args:
+            interface (string): interface name
+        """
+        if not interface:
+            return
+
+        path = os.path.join(self.WPASUPPLICANT_DIR, 'wpa_supplicant-%s.conf' % interface)
+        if not os.path.exists(path):
+            self.logger.debug(u'Create default wpa_supplicant conf file for interface "%s" (%s)' % (interface, path))
+            self.cleep_filesystem.copy(self.DEFAULT_CONF, path)
+            time.sleep(0.25)
+
     def __add_network(self, config, interface=None):
         """
         Add new entry based on configuration
@@ -323,16 +342,32 @@ class WpaSupplicantConf(Config):
             u'\nnetwork={\n',
             u'\tssid="%s"\n' % config[u'network']
         ]
-        if config[u'encryption']!=self.ENCRYPTION_TYPE_UNSECURED:
+
+        #encryption
+        if config[u'encryption'] in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
+            #WPA/WPA2 security
+            content.append(u'\tkey_mgmt=WPA-PSK\n')
             content.append(u'\tpsk=%s\n' % config[u'psk'])
+        elif config[u'encryption']==self.ENCRYPTION_TYPE_WEP:
+            #WEP security
+            content.append(u'\tkey_mgmt=NONE\n')
+            content.append(u'\twep_key0=%s\n' % 'TODO')
+            content.append(u'\twep_tx_keyidx=0\n')
+        else:
+            #unsecured network
+            content.append(u'\tkey_mgmt=NONE\n')
+
+        #hidden network
         if config[u'hidden']:
             content.append(u'\tscan_ssid=1\n')
+
+        #disabled network
         if config[u'disabled']:
             content.append(u'\tdisabled=1\n')
+
         content.append(u'}\n')
 
         self.logger.debug('Config to append %s' % content)
-
         return self.add_lines(content)
 
     def add_network(self, network, encryption, password, hidden=False, interface=None):
@@ -363,6 +398,9 @@ class WpaSupplicantConf(Config):
         #check if network doesn't already exist
         if self.get_configuration(network, interface) is not None:
             raise InvalidParameter(u'Network "%s" is already configured' % network)
+
+        #make sure config file exists for interface
+        self.__check_wpa_supplicant_conf_existence(interface)
     
         #header
         output = [
@@ -421,7 +459,6 @@ class WpaSupplicantConf(Config):
 
         #first of all get network configuration
         config = self.get_configuration(network, interface)
-        self.logger.debug(config)
         if config is None:
             return False
 
