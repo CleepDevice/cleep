@@ -180,7 +180,7 @@ class Config():
         """
         #check file existence
         if not self.exists():
-            self.logger.info(u'No file found (%s). Return empty result' % self.__get_path())
+            self.logger.debug(u'No file found (%s). Return empty result' % self.__get_path())
             return []
 
         results = []
@@ -221,7 +221,7 @@ class Config():
 
         #check file existence
         if not self.exists():
-            self.logger.info(u'No file found (%s). Return empty result' % self.__get_path())
+            self.logger.debug(u'No file found (%s). Return empty result' % self.__get_path())
             return []
 
         matches = re.finditer(pattern, content, options)
@@ -251,7 +251,7 @@ class Config():
             #line already uncommented
             return False
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         #read file content
@@ -292,7 +292,7 @@ class Config():
             #line already commented
             return False
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         #read file content
@@ -330,7 +330,7 @@ class Config():
         if not isinstance(content, unicode):
             raise Exception('Content parameter must be unicode')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         fd = self._open()
@@ -362,7 +362,7 @@ class Config():
         if not isinstance(removes, list):
             raise Exception('Removes parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         fd = self._open()
@@ -402,7 +402,7 @@ class Config():
             int: number of lines removed
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -450,7 +450,7 @@ class Config():
             int: number of lines deleted (blank and commented lines not counted)
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return 0
 
         #read content
@@ -511,7 +511,7 @@ class Config():
         if not isinstance(lines, list):
             raise Exception('Lines parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -542,7 +542,7 @@ class Config():
         if not isinstance(content, unicode):
             raise Exception('Lines parameter must be list of string')
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
 
         #read content
@@ -564,7 +564,7 @@ class Config():
             list: list of lines
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return []
 
         #read content
@@ -580,7 +580,7 @@ class Config():
         For debug and test purpose only
         """
         if not self.exists():
-            self.logger.info(u'No file found (%s)' % self.__get_path())
+            self.logger.debug(u'No file found (%s)' % self.__get_path())
             return 
 
         #read content
