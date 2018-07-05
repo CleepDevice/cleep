@@ -318,7 +318,8 @@ class WpaSupplicantConf(Config):
         Args:
             interface (string): interface name
         """
-        if not interface:
+        if not interface or interface==u'default':
+            #invalid interface specified, no config file to create
             return
 
         path = os.path.join(self.WPASUPPLICANT_DIR, 'wpa_supplicant-%s.conf' % interface)
