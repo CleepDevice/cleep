@@ -56,7 +56,7 @@ class Iwlist(AdvancedConsole):
 
         current_entry = None
         entries = {}
-        frequencies = {}
+        #frequencies = {}
         frequency = None
         for group, groups in results:
             #filter None values
@@ -76,48 +76,43 @@ class Iwlist(AdvancedConsole):
                 }
 
             elif group.startswith(u'ESSID'):
-                current_entry[u'network'] = groups[0]
-
-                #do not save network with same name (surely other frequency)
+                #network
                 if len(groups[0])>0 and groups[0] not in entries:
+                    #new network detected, store item in final entries list
+                    current_entry[u'network'] = groups[0]
+                    if frequency is not None:
+                        current_entry[u'frequencies'].append(frequency)
                     entries[groups[0]] = current_entry
+
                 elif len(groups[0])>0 and frequency is not None:
-                    #but save its frequency
+                    #append frequency on existing entry
                     if frequency not in entries[groups[0]][u'frequencies']:
                         entries[groups[0]][u'frequencies'].append(frequency)
-                    frequency = None
+
+                #reset frequency
+                frequency = None
 
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2')>=0:
+                #wpa2
                 current_entry[u'wpa2'] = True
 
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa')>=0:
+                #wpa
                 current_entry[u'wpa'] = True
 
             elif group.startswith(u'Encryption key') and current_entry is not None:
+                #encryption key (wep or unsecured)
                 current_entry[u'encryption_key'] = groups[0]
 
             elif group.startswith(u'Frequency'):
+                #frequency
                 if groups[0].startswith(u'2.'):
                     frequency = self.FREQ_2_4GHZ
                 elif groups[0].startswith(u'5.'):
                     frequency = self.FREQ_5GHZ
 
-                if current_entry[u'network'] is not None:
-                    #network name found, we can save it directly in current entry
-                    if frequency not in current_entry[u'frequencies']:
-                        current_entry[u'frequencies'].append(frequency)
-                    frequency = None
-
-                #self.logger.debug('-->freq: %s' % frequency)
-                #if frequency:
-                #    self.logger.debug(u'--> %s in %s' % (current_entry[u'network'], frequencies.keys()))
-                #    if current_entry[u'network'] in frequencies:
-                #        self.logger.debug('-->append')
-                #        frequencies[current_entry[u'network']].append(frequency)
-                #    else:
-                #        self.logger.debug('-->add')
-
             elif group.startswith(u'Signal level') and current_entry is not None:
+                #signal level
                 if groups[0].isdigit():
                     try:
                         current_entry[u'signallevel'] = float(groups[0])
@@ -130,12 +125,6 @@ class Iwlist(AdvancedConsole):
                         current_entry[u'signallevel'] = 0
                 else:
                     current_entry[u'signallevel'] = groups[0]
-
-        #save frequencies
-        self.logger.debug('--> frequencies: %s' % frequencies)
-        for network in frequencies:
-            if network in entries:
-                entries[network][u'frequencies'] = frequencies[network]
 
         #log entries
         self.logger.debug('entries: %s' % entries)

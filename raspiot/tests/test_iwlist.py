@@ -33,4 +33,5 @@ class IwlistTests(unittest.TestCase):
             self.assertTrue(isinstance(net['signallevel'], int))
             self.assertTrue(net['encryption'] in (WpaSupplicantConf.ENCRYPTION_TYPE_WPA, WpaSupplicantConf.ENCRYPTION_TYPE_WPA2, WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED, WpaSupplicantConf.ENCRYPTION_TYPE_WEP, WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN))
             self.assertTrue(all(x in (self.i.FREQ_2_4GHZ, self.i.FREQ_5GHZ) for x in net['frequencies']))
+            self.assertGreaterEqual(len(net['frequencies']), 1)
 
