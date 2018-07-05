@@ -21,7 +21,7 @@ class Wpacli(AdvancedConsole):
     STATUS_ENABLED = 1
 
     #states from https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc
-    STATE_STATE_DISCONNECTED = u'DISCONNECTED'
+    STATE_DISCONNECTED = u'DISCONNECTED'
     STATE_INTERFACE_DISABLED = u'INTERFACE_DISABLED'
     STATE_INACTIVE = u'INACTIVE'
     STATE_SCANNING = u'SCANNING'
@@ -32,7 +32,7 @@ class Wpacli(AdvancedConsole):
     STATE_GROUP_HANDSHAKE = u'GROUP_HANDSHAKE'
     STATE_COMPLETED = u'COMPLETED'
     STATE_UNKNOWN = u'UNKNOWN'
-    STATES = [STATE_STATE_DISCONNECTED, STATE_INTERFACE_DISABLED, STATE_INACTIVE, STATE_SCANNING, STATE_AUTHENTICATING, STATE_ASSOCIATING, STATE_ASSOCIATED, STATE_4WAY_HANDSHAKE, STATE_GROUP_HANDSHAKE, STATE_COMPLETED]
+    STATES = [STATE_DISCONNECTED, STATE_INTERFACE_DISABLED, STATE_INACTIVE, STATE_SCANNING, STATE_AUTHENTICATING, STATE_ASSOCIATING, STATE_ASSOCIATED, STATE_4WAY_HANDSHAKE, STATE_GROUP_HANDSHAKE, STATE_COMPLETED]
 
     def __init__(self):
         """
@@ -420,15 +420,21 @@ class Wpacli(AdvancedConsole):
             interface (string): interface to get status
 
         Returns:
-            dict:
+            tuple (string, string): network and state info
         """
-        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'wpa_state=(.*)')
-        entries = {}
+        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'^(ssid)=(.*)|(wpa_state)=(.*)$')
+        network = None
+        state = self.STATE_UNKNOWN
         for group, groups in results:
             #filter None values
             groups = filter(None, groups)
-            if groups[0] in self.STATES:
-                return groups[0]
-            else:
-                return self.STATE_UNKNOWN
 
+            if groups[0].startswith(u'ssid'):
+                #network
+                network = groups[1]
+            elif groups[0].startswith(u'wpa_state'):
+                #state
+                if groups[1] in self.STATES:
+                    state = groups[1]
+
+        return (network, state)
