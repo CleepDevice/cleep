@@ -142,7 +142,7 @@ class EtcModules(Config):
         Returns:
             bool: True if embedded sound module is enabled
         """
-        return self.__is_module_enabled(self.MODULE_BCM2835)
+        return self.__is_module_enabled(self.MODULE_SOUND_BCM2835)
 
     def enable_embedded_sound(self):
         """
@@ -152,7 +152,7 @@ class EtcModules(Config):
         Returns:
             bool: True if embedded sound module has been enabled
         """
-        return self.__enable_module(self.MODULE_BCM2835)
+        return self.__enable_module(self.MODULE_SOUND_BCM2835)
 
     def disable_embedded_sound(self):
         """
@@ -162,7 +162,7 @@ class EtcModules(Config):
         Returns:
             bool: True if embedded sound module has been disabled
         """
-        return self.__disable_module(self.MODULE_BCM2835)
+        return self.__disable_module(self.MODULE_SOUND_BCM2835)
 
     def enable_module(self, module_name):
         """
@@ -175,6 +175,8 @@ class EtcModules(Config):
         Returns:
             bool: True if module is enabled
         """
+        if module_name is None or len(module_name)==0:
+            raise MissingParameter('Parameter "module_name" is missing')
         return self.__enable_module(module_name)
 
     def disable_module(self, module_name):
@@ -188,6 +190,9 @@ class EtcModules(Config):
         Returns:
             bool: True if module is disabled
         """
+        if module_name is None or len(module_name)==0:
+            raise MissingParameter('Parameter "module_name" is missing')
+
         return self.__disable_module(module_name)
 
     def is_module_enabled(self, module_name):
@@ -201,5 +206,8 @@ class EtcModules(Config):
         Returns:
             bool: True if module is loaded
         """
+        if module_name is None or len(module_name)==0:
+            raise MissingParameter('Parameter "module_name" is missing')
+
         return self.__is_module_enabled(module_name)
 
