@@ -57,6 +57,11 @@ class Network(RaspIotModule):
     MODULE_URLINFO = None
     MODULE_URLBUGS = None
 
+    STATUS_WIFI_DISCONNECTED = 0
+    STATUS_WIFI_CONNECTING = 1
+    STATUS_WIFI_CONNECTED = 2
+    STATUS_WIFI_INVALID_PASSWORD = 3
+
     def __init__(self, bus, debug_enabled):
         """
         Constructor
@@ -84,6 +89,8 @@ class Network(RaspIotModule):
         self.wifi_networks = {}
         self.wifi_network_names = []
         self.wifi_interfaces = {}
+        self.wifi_adapters = {}
+        self.wifi_status = {}
         self.last_wifi_networks_scan = 0
         self.__network_watchdog_task = None
         self.__network_is_down = True
@@ -91,6 +98,7 @@ class Network(RaspIotModule):
         #events
         self.network_up_event = self._get_event(u'system.network.up')
         self.network_down_event = self._get_event(u'system.network.down')
+        self.network_wifi_status = self._get_event(u'system.wifi.status')
 
     def _configure(self):
         """
@@ -122,7 +130,7 @@ class Network(RaspIotModule):
                 #add config if not already exists
                 if interface_found:
                     #TODO handle hidden network
-                    if not self.wpasupplicant.add_network(cleep_conf[u'network'], cleep_conf[u'encryption'], cleep_conf[u'password'], False):
+                    if not self.wpasupplicant.add_network(cleep_conf[u'network'], cleep_conf[u'encryption'], cleep_conf[u'password'], False, interface=interface_found):
                         self.logger.error(u'Unable to use config from %s' % self.CLEEP_WIFI_CONF)
                     else:
                         self.reconfigure_interface(interface_found)
@@ -134,7 +142,7 @@ class Network(RaspIotModule):
                 self.cleepwifi.delete(self.cleep_filesystem)
 
         #launch network watchdog
-        self.__network_watchdog_task = Task(5.0, self.__check_network_connection, self.logger)
+        self.__network_watchdog_task = Task(1.0, self.__check_network_connection, self.logger)
         self.__network_watchdog_task.start()
 
     def _stop(self):
@@ -151,9 +159,10 @@ class Network(RaspIotModule):
         Returns:
             dict: module configuration::
                 {
-                    status (dict): current network status by interface (ip, gateway, ...)
-                    configurations (dict): interfaces configurations
-                    wifinetworks (dict): list of wifi networks by interfaces
+                    lastwifiscan (int): timestamp of last wifi scan
+                    networks (list): list of networks (wireless and wired)
+                    wifiinterfaces (list): list of wifi interfaces
+                    wifistatus (dict): dict of wifi status
                 }
         """
         output = {}
@@ -203,6 +212,9 @@ class Network(RaspIotModule):
                     #wifi interface
                     configured_interfaces[interface][u'wifi'] = True
 
+                    #refresh wifi status (will be sent at end of this function)
+                    self.__check_wifi_interface(interface)
+
                     if self.wifi_interfaces[interface][u'network'] is not None:
                         #interface is connected
                         configured_interfaces[interface][u'wifi_network'] = self.wifi_interfaces[interface][u'network']
@@ -214,11 +226,12 @@ class Network(RaspIotModule):
                     configured_interfaces[interface][u'wifi'] = False
                     configured_interfaces[interface][u'wifi_network'] = None
 
-                #add connection status
-                if interface in current_status.keys():
-                    configured_interfaces[interface][u'connected'] = True
-                else:
-                    configured_interfaces[interface][u'connected'] = False
+                #add connection status (use wifistatus data)
+                #if interface in current_status.keys():
+                #    configured_interfaces[interface][u'connected'] = True
+                #else:
+                #    configured_interfaces[interface][u'connected'] = False
+                configured_interfaces[interface][u'connected'] = None
 
             self.logger.debug('Configured_interfaces: %s' % configured_interfaces)
 
@@ -251,11 +264,12 @@ class Network(RaspIotModule):
                     configured_interfaces[interface][u'wifi'] = False
                     configured_interfaces[interface][u'wifi_network'] = None
 
-                #add connection status
-                if interface in current_status.keys():
-                    configured_interfaces[interface][u'connected'] = True
-                else:
-                    configured_interfaces[interface][u'connected'] = False
+                #add connection status (use wifistatus data)
+                #if interface in current_status.keys():
+                #    configured_interfaces[interface][u'connected'] = True
+                #else:
+                #    configured_interfaces[interface][u'connected'] = False
+                configured_interfaces[interface][u'connected'] = None
 
         #prepare networks list
         networks = []
@@ -282,6 +296,7 @@ class Network(RaspIotModule):
 
         #add all wifi networks on range
         for interface in self.wifi_networks:
+            self.logger.debug(u'self.wifi_networks[%s]: %s' % (interface, self.wifi_networks[interface]))
             for network_name in self.wifi_networks[interface]:
                 #get interface configuration
                 #interface_config = None
@@ -290,9 +305,8 @@ class Network(RaspIotModule):
 
                 #get wifi config
                 wifi_config = None
-                if interface in self.wifi_networks.keys():
-                    if network_name in self.wifi_networks[interface].keys():
-                        wifi_config = self.wifi_networks[interface][network_name]
+                if network_name in self.wifi_networks[interface].keys():
+                    wifi_config = self.wifi_networks[interface][network_name]
                 
                 #get interface status
                 network_status = None
@@ -300,16 +314,17 @@ class Network(RaspIotModule):
                     network_status = current_status[interface]
 
                 #get wifi connection
-                connected = False
-                if interface in self.wifi_interfaces.keys() and network_name==self.wifi_interfaces[interface][u'network']:
-                    connected = True
+                #connected = False
+                #if interface in self.wifi_interfaces.keys() and network_name==self.wifi_interfaces[interface][u'network']:
+                #    connected = True
 
                 #save entry
                 networks.append({
                     u'network': network_name,
                     u'interface': interface,
                     u'wifi': True,
-                    u'connected': connected,
+                    #u'connected': connected,
+                    u'connected': None,
                     u'config': wifi_config,
                     u'status': network_status
                 })
@@ -318,6 +333,7 @@ class Network(RaspIotModule):
         output[u'networks'] = networks
         output[u'wifiinterfaces'] = self.wifi_interfaces.keys()
         output[u'lastwifiscan'] = self.last_wifi_networks_scan
+        output[u'wifistatus'] = self.wifi_status
 
         return output
 
@@ -325,9 +341,10 @@ class Network(RaspIotModule):
         """
         Check network connection
         Send event when network is up and when it is down
+        Monitor wifi network status (disconnected/connected/invalid password)
         """
+        #network connection status
         connected = False
-
         interfaces = netifaces.interfaces()
         for interface in interfaces:
             #drop local interface
@@ -338,13 +355,17 @@ class Network(RaspIotModule):
             if netifaces.AF_INET in addresses and len(addresses[netifaces.AF_INET])==1 and addresses[netifaces.AF_INET][0]['addr'].strip():
                 connected = True
                 break
-    
         if connected and self.__network_is_down:
             self.__network_is_down = False
             self.network_up_event.send()
         elif not connected and not self.__network_is_down:
             self.__network_is_down = True
             self.network_down_event.send()
+
+        #wifi status
+        wifi_interfaces = self.iwconfig.get_interfaces()
+        for interface in wifi_interfaces:
+            self.__check_wifi_interface(interface)
             
     #----------
     #WIRED AREA
@@ -454,6 +475,50 @@ class Network(RaspIotModule):
     #WIRELESS AREA
     #-------------
 
+    def __check_wifi_interface(self, interface):
+        """
+        Check wifi status for specified interface (used in watchdog)
+
+        Args:
+            interface (string): interface name
+        """
+        #get current status
+        network, status, ip_address = self.wpacli.get_status(interface)
+        #self.logger.debug('Wifi interface status: network:%s status:%s ip_address:%s' % (network, status, ip_address))
+
+        #convert to network status
+        if status==self.wpacli.STATE_COMPLETED:
+            wifi_status = self.STATUS_WIFI_CONNECTED
+        elif status in (self.wpacli.STATE_4WAY_HANDSHAKE, self.wpacli.STATE_GROUP_HANDSHAKE):
+            wifi_status = self.STATUS_WIFI_INVALID_PASSWORD
+        elif status in (self.wpacli.STATE_SCANNING, self.wpacli.STATE_AUTHENTICATING, self.wpacli.STATE_ASSOCIATING, self.wpacli.STATE_ASSOCIATED):
+            wifi_status = self.STATUS_WIFI_CONNECTING
+        else:
+            wifi_status = self.STATUS_WIFI_DISCONNECTED
+
+        #update wifi_status and send event if necessary
+        if interface in self.wifi_status:
+            if self.wifi_status[interface][u'status']==self.STATUS_WIFI_INVALID_PASSWORD and status!=self.wpacli.STATE_COMPLETED:
+                #drop status update of interface that have already been detected with invalid password
+                return
+            
+            if wifi_status!=self.wifi_status[interface][u'status']:
+                #send event for current status
+                self.network_wifi_status.send(params={u'interface':interface, u'network':network, u'status':wifi_status, u'ipaddress':ip_address})
+
+                #save new status
+                self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
+                self.wifi_status[interface][u'network'] = network
+                self.wifi_status[interface][u'status'] = wifi_status
+        else:
+            #no previous status, store it
+            self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
+            self.wifi_status[interface] = {
+                u'network': network,
+                u'status': wifi_status,
+                u'ipaddress': ip_address
+            }
+
     def __scan_wifi_networks(self, interface):
         """
         Scan wifi networks and store them in class member wifi_networks
@@ -487,7 +552,12 @@ class Network(RaspIotModule):
 
         #get wireless configuration
         wifi_config = self.wpasupplicant.get_configurations()
-        self.logger.debug('Wifi config: %s' % wifi_config)
+        if interface in wifi_config:
+            wifi_config = wifi_config[interface]
+        else:
+            #no config found for interface
+            wifi_config = {}
+        self.logger.debug('Wifi config for interface "%s": %s' % (interface, wifi_config))
 
         #get networks
         networks = self.iwlist.get_networks(interface)
@@ -532,12 +602,16 @@ class Network(RaspIotModule):
         self.wifi_networks = {}
         self.wifi_network_names = []
 
+        #get wifi adapters
+        self.wifi_adapters = self.iw.get_adapters()
+        self.logger.debug('Wifi adapters: %s' % self.wifi_adapters)
+
         #get wifi interfaces and connected network
         self.wifi_interfaces = self.iwconfig.get_interfaces()
 
         #scan networks for each interfaces
         for interface in self.wifi_interfaces.keys():
-            #scan interface
+            #scan interface (update wifi_networks member)
             networks = self.__scan_wifi_networks(interface)
 
             #save network names
@@ -550,116 +624,12 @@ class Network(RaspIotModule):
 
         return self.wifi_networks
 
-    def test_wifi_network(self, interface, network, password=None, encryption=None, hidden=False):
-        """ 
-        Try to connect to specified wifi network. Save anything and revert back to original state after test.
-
-        Args:
-            interface (string) interface name
-            network (string): network name
-            password (string): password
-            encryption (wpa|wpa2|wep|unsecured): network encryption
-            hidden (bool) hidden network
-
-        Raises:
-            CommandError
+    def __monitor_wifi_interface(self, interface):
         """
-        #create test wpa_supplicant.conf file
-        test_wpasupplicant = u'/tmp/test_wpa_%s.conf' % unicode(uuid.uuid4())
-        if not self.wpasupplicant.write_fake_wpasupplicant(test_wpasupplicant, network, encryption, password, hidden):
-            self.logger.error(u'Unable to generate fake wpasupplicant file for testing (%s)' % test_wpasupplicant)
-            raise Exception(u'Unable to connect to network: internal error')
-            self.crash_report.report_exception()
-
-        c = Console()
-        error = None
-        try:
-
-            #kill wpa_supplicant and wpacli processes
-            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_.*%s"' % interface)
-            self.logger.debug(u'pkill output: %s' % res)
-    
-            #try to connect
-            log_file = u'/tmp/wpa_%s.log' % unicode(uuid.uuid4())
-            error_file = u'/tmp/error_%s.log' % unicode(uuid.uuid4())
-            self.logger.debug('FILES = %s %s' % (log_file, error_file))
-            res = c.command(u'/sbin/wpa_supplicant -i %s -c %s -t -f %s 2> %s' % (interface, test_wpasupplicant, log_file, error_file), 10.0)
-            #self.logger.debug('wpa_supplicant output: %s' % res)
-            #if res[u'error'] or res[u'killed']:
-            #    raise Exception(u'Unable to connect to network: is network in range?')
-
-            #wpa_supplicant command can only be killed by CTRL-C because it uses wpacli
-            #so we need to kill it explicitely
-            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_supplicant.*%s"' % interface)
-            self.logger.debug(u'pkill output: %s' % res)
-
-            #parse result
-            with open(log_file) as f:
-                lines = f.readlines()
-            with open(error_file) as f:
-                lines += f.readlines()
-            self.logger.debug('lines: %s' % u''.join(lines))
-            groups = re.findall(r'(CTRL-EVENT-SSID-TEMP-DISABLED).*reason=(.*?)\s|(CTRL-EVENT-CONNECTED)|(CTRL-EVENT-DISCONNECTED)|(pre-shared key may be incorrect)', '\n'.join(lines))
-            connection_failed = False
-            connection_succeed = False
-            invalid_password = False
-            for group in groups:
-                group = filter(None, group)
-                self.logger.debug('group: %s' % group)
-                if group[0] is not None and len(group[0])>0:
-                    if group[0]==u'CTRL-EVENT-SSID-TEMP-DISABLED' and group[1]==u'WRONG_KEY':
-                        #true invalid password detected, stop statement
-                        self.logger.debug(u'Test network: invalid password')
-                        invalid_password = True
-                        connection_failed = True
-                        break
-
-                    elif group[0]==u'CTRL-EVENT-CONNECTED':
-                        #connection successful detected, stop statement
-                        self.logger.debug(u'Connection to network succeed')
-                        connection_failed = False
-                        connection_succeed = True
-                        break
-
-                    elif group[0]==u'CTRL-EVENT-DISCONNECTED':
-                        #connection failure for unknow reason, continue parsing to get reason
-                        connection_failed = True
-
-                    elif group[0]==u'pre-shared key may be incorrect':
-                        #maybe invalid password specified
-                        invalid_password = True
-
-            #check result
-            if connection_failed and invalid_password:
-                raise Exception(u'Unable to connect: invalid password specified')
-            elif hidden:
-                raise Exception('Unable to connect: invalid infos specified for hidden network')
-            elif connection_failed or not connection_succeed:
-                raise Exception(u'Unable to connect: problem with wifi')
-
-        except Exception as e:
-            error = unicode(e)
-
-        finally:
-            #remove temp files
-            try:
-                os.remove(test_wpasupplicant)
-                os.remove(log_file)
-                os.remove(error_file)
-            except:
-                pass
-
-            #kill all wpa_ instances
-            res = c.command(u'/usr/bin/pkill -9 -f "/sbin/wpa_.*%s"' % interface)
-            self.logger.debug(u'pkill output: %s' % res)
-
-            #reconfigure interface (stop-start-reconfigure)
-            self.wpacli.reconfigure_interface(interface)
-
-        if error:
-            raise CommandError(error)
-
-        return True
+        Function implemented to be used in task. It is used to monitor wifi interface to 
+        detect status changes (invalid password, connection, disconnection) and return
+        the status to ui only
+        """
 
     def save_wifi_network(self, interface, network, encryption, password=None, hidden=False):
         """
@@ -684,12 +654,8 @@ class Network(RaspIotModule):
         if encryption is None or len(encryption)==0:
             raise MissingParameter(u'Parameter interface is missing')
 
-        #encrypt password
-        if encryption in (WpaSupplicantConf.ENCRYPTION_TYPE_WPA, WpaSupplicantConf.ENCRYPTION_TYPE_WPA2):
-            password = self.wpasupplicant.encrypt_password(network, password)
-
         #save config in wpa_supplicant.conf file
-        if not self.wpasupplicant.add_network(network, encryption, password, hidden):
+        if not self.wpasupplicant.add_network(network, encryption, password, hidden, interface=interface):
             raise CommandError('Unable to save configuration')
 
         #reconfigure interface
@@ -705,7 +671,7 @@ class Network(RaspIotModule):
         Return:
             bool: True if network deleted
         """
-        if not self.wpasupplicant.delete_network(network):
+        if not self.wpasupplicant.delete_network(network, interface=interface):
             raise CommandError(u'Unable to delete network')
 
         #reconfigure interface
@@ -726,7 +692,7 @@ class Network(RaspIotModule):
         Raises:
             CommandError
         """
-        if not self.wpasupplicant.update_network_password(network, password):
+        if not self.wpasupplicant.update_network_password(network, password, interface=interface):
             raise CommandError(u'Unable to update password')
 
         #reconfigure interface
@@ -746,7 +712,7 @@ class Network(RaspIotModule):
         Raises:
             CommandError
         """
-        if not self.wpasupplicant.enable_network(network):
+        if not self.wpasupplicant.enable_network(network, interface=interface):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface
@@ -766,7 +732,7 @@ class Network(RaspIotModule):
         Raises:
             CommandError
         """
-        if not self.wpasupplicant.disable_network(network):
+        if not self.wpasupplicant.disable_network(network, interface=interface):
             raise CommandError(u'Unable to enable network')
 
         #reconfigure interface

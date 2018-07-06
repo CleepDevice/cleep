@@ -62,6 +62,7 @@ var networkService = function($q, $rootScope, rpcService, raspiotService) {
     self.reconfigureWiredNetwork = function(interface) {
         return rpcService.sendCommand('reconfigure_wired_interface', 'network', {'interface':interface}, 30)
             .then(function(resp) {
+                //reload module config
                 return raspiotService.reloadModuleConfig('network');
             })
             .then(function(config) {

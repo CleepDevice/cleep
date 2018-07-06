@@ -6,24 +6,25 @@
  *  - scan wifi networks
  *  - configure connection to wifi networks
  */
-var networkDirective = function(raspiotService, networkService, toast, confirm, $mdDialog, blockUI) {
+var networkDirective = function($rootScope, raspiotService, networkService, toast, confirm, $mdDialog, blockUI) {
 
     var networkController = ['$scope', function($scope) {
         var self = this;
         self.networkBlockui = null;
+        self.lastWifiScan = 0;
         self.networks = [];
         self.wifiInterfaces = [];
+        self.wifiStatus = {};
         self.newConfig = null;
         self.selectedNetwork = null;
         self.wifiPassword = null;
-        self.testing = false;
-        self.lastWifiScan = 0;
         self.encryptions = [
             {label:'No security', value:'unsecured'},
             {label:'WEP', value:'wep'},
             {label:'WPA', value:'wpa'},
             {label:'WPA2', value:'wpa2'}
-        ]
+        ];
+        self.loading = false;
 
         /**
          * Update config
@@ -34,6 +35,7 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
             self.networks = config.networks;
             self.wifiInterfaces = config.wifiinterfaces;
             self.lastWifiScan = config.lastwifiscan;
+            self.wifiStatus = config.wifistatus;
         };
 
         /**
@@ -43,29 +45,13 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         {
             if( block )
             {
-                self.networkBlockui.start({message:'Updating wireless networks list...'});
+                //self.networkBlockui.start({message:'Updating wireless networks list...'});
+                self.loading = true;
             }
             else
             {
-                self.networkBlockui.stop();
-            }
-        };
-
-        /**
-         * Testing network: open loading toast and set testing flag
-         */
-        self.testingNetwork = function(testing)
-        {
-            if( testing )
-            {
-                self.testing = true;
-                toast.loading('Testing network connection, please wait...');
-            }
-            else
-            {
-                self.testing = false;
-                //DO NOT HIDE, TEST RESULT SHOULD USE TOAST AND HIDE LOADING MESSAGE
-                //toast.hide(); 
+                //self.networkBlockui.stop();
+                self.loading = false;
             }
         };
 
@@ -84,12 +70,6 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
          */
         self.cancelDialog = function()
         {
-            if( self.testing )
-            {
-                //test in progress, cancel action
-                return;
-            }
-
             self.resetDialogVariables()
             $mdDialog.cancel();
         };
@@ -99,12 +79,6 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
          * Note: don't forget to reset variables !
          */
         self.validDialog = function() {
-            if( self.testing )
-            {
-                //test in progress, cancel action
-                return;
-            }
-
             $mdDialog.hide();
         };
 
@@ -116,6 +90,7 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         self.showConfig = function(item, type)
         {
             self.selectedNetwork = item;
+            console.log(self.selectedNetwork);
 
             $mdDialog.show({
                 controller: function() { return self; },
@@ -125,7 +100,11 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
                 clickOutsideToClose: true,
                 fullscreen: true
             });
+        };
 
+        self.showWiredConfig = function(network)
+        {
+            //self.__showConfig(network, '
         };
 
         /**
@@ -436,46 +415,6 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
         };
 
         /**
-         * Test wifi connection
-         */
-        self.testWifiNetwork = function()
-        {
-            //testing flag
-            self.testingNetwork(true);
-            
-            //perform action
-            networkService.testWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
-                .then(function() {
-                    //user message
-                    toast.success('Test successful. You can connect safely now');
-                 })
-                .finally(function() {
-                    //unlock ui
-                    self.testingNetwork(false);
-                });
-        };
-
-        /**
-         * Test hidden wifi connection
-         */
-        self.testHiddenWifiNetwork = function()
-        {
-            //testing flag
-            self.testingNetwork(true);
-            
-            //perform action
-            networkService.testWifiNetwork(self.newNetwork.interface, self.newNetwork.network, self.newNetwork.password, self.newNetwork.encryption, self.newNetwork.hidden)
-                .then(function() {
-                    //user message
-                    toast.success('Test successful. You can connect safely now');
-                 })
-                .finally(function() {
-                    //unlock ui
-                    self.testingNetwork(false);
-                });
-        };
-
-        /**
          * Fill newNetwork member with default values
          */
         self.__fillNewNetwork = function()
@@ -498,38 +437,37 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
             self.__fillNewNetwork();
 
             //open dialog
-                $mdDialog.show({
-                    controller: function() { return self; },
-                    controllerAs: 'dialogCtl',
-                    templateUrl: 'js/tools/network/addHiddenWifiDialog.html',
-                    parent: angular.element(document.body),
-                    clickOutsideToClose: false,
-                    escapeToClose: false,
-                    fullscreen: true
-                })
-                    .then(function() {
-                        //lock ui
-                        self.networkLoading(true);
-                        toast.loading('Saving hidden network...');
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'dialogCtl',
+                templateUrl: 'js/tools/network/addHiddenWifiDialog.html',
+                parent: angular.element(document.body),
+                clickOutsideToClose: false,
+                escapeToClose: false,
+                fullscreen: true
+            })
+            .then(function() {
+                //lock ui
+                self.networkLoading(true);
+                toast.loading('Saving hidden network...');
 
-                        //perform action
-                        networkService.saveWifiNetwork(self.newNetwork.interface, self.newNetwork.network, self.newNetwork.password, self.newNetwork.encryption, self.newNetwork.hidden)
-                            .then(function(config) {
-                                //update config
-                                self.__updateConfig(config);
+                //perform action
+                networkService.saveWifiNetwork(self.newNetwork.interface, self.newNetwork.network, self.newNetwork.password, self.newNetwork.encryption, self.newNetwork.hidden)
+                    .then(function(config) {
+                        //update config
+                        self.__updateConfig(config);
 
-                                //user message
-                                toast.success('Hidden wifi network configuration saved. Device should be able to connect to this network');
-                            })
-                            .finally(function() {
-                                //unlock ui
-                                self.networkLoading(false);
-                            });
+                        //user message
+                        toast.success('Hidden wifi network configuration saved. Device should be able to connect to this network');
                     })
                     .finally(function() {
-                        self.resetDialogVariables();
+                        //unlock ui
+                        self.networkLoading(false);
                     });
-
+                })
+                .finally(function() {
+                    self.resetDialogVariables();
+                });
         };
 
         /**
@@ -551,6 +489,30 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
                 });
         };
 
+        /**
+         * Handle wifi events
+         */
+        $rootScope.$on('system.wifi.status', function(event, uuid, params) {
+            console.log('wifi.status', params);
+
+            for( var i=0; i<self.networks.length; i++ )
+            {
+                if( self.wifiStatus[params.interface]===undefined )
+                {
+                    self.wifiStatus[params.interface] = {
+                        network: params.network,
+                        status: 0,
+                        ipaddress: null
+                    };
+                }
+                self.wifiStatus[params.interface].network = params.network;
+                self.wifiStatus[params.interface].status = params.status;
+                self.wifiStatus[params.interface].ipaddress = params.ipaddress;
+            }
+
+            console.log(self.wifiStatus);
+        });
+
     }];
 
     var networkLink = function(scope, element, attrs, controller) {
@@ -569,5 +531,5 @@ var networkDirective = function(raspiotService, networkService, toast, confirm, 
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('networkDirective', ['raspiotService', 'networkService', 'toastService', 'confirmService', '$mdDialog', 'blockUI', networkDirective]);
+RaspIot.directive('networkDirective', ['$rootScope', 'raspiotService', 'networkService', 'toastService', 'confirmService', '$mdDialog', 'blockUI', networkDirective]);
 
