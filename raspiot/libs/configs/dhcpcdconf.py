@@ -57,7 +57,7 @@ class DhcpcdConf(Config):
             string: netmask (ie 255.255.255.0)
         """
         mask = ''
-        if not isinstance(cidr, int) or cidr<0 or cidr>32: 
+        if not isinstance(cidr, int) or cidr<0 or cidr>32: # pragma: no cover
             return None
     
         for t in range(4):
@@ -91,8 +91,9 @@ class DhcpcdConf(Config):
         """
         Return network interfaces
 
-        Return:
+        Returns:
             dict: interface configurations::
+
                 {
                     interface (string): {
                         group (string): regexp group
@@ -105,6 +106,7 @@ class DhcpcdConf(Config):
                     },
                     ...
                 }
+
         """
         entries = {}
         results = self.find(r'^(?:interface\s(.*?))$|^(?:static (.*?)=(.*?))$|^(?:fallback\s(\w+_\w+))$|^(?:profile\s(\w+_\w+))$', re.UNICODE | re.MULTILINE)
@@ -128,7 +130,7 @@ class DhcpcdConf(Config):
                     try:
                         netmask = self.__cidr_to_netmask(int(splits[1]))
                         current_entry[u'netmask'] = netmask
-                    except:
+                    except: # pragma: no cover
                         current_entry[u'netmask'] = '255.255.255.0'
                 if group.startswith(u'static routers'):
                     #format: X.X.X.X
@@ -165,7 +167,7 @@ class DhcpcdConf(Config):
                     entry[u'netmask'] = profile[u'netmask']
                     entry[u'dns_address'] = profile[u'dns_address']
                     to_del.append(entry[u'fallback'])
-                else:
+                else: # pragma: no cover
                     #invalid file, specified profile does not exist
                     pass
 
@@ -191,7 +193,7 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interface is missing')
+            raise MissingParameter(u'Parameter "interface" is missing')
 
         interfaces = self.get_configurations()
         if interfaces.has_key(interface):
@@ -218,13 +220,13 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interfaceis missing')
+            raise MissingParameter(u'Parameter "interface" is missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter(u'Parameter ip_address is missing')
+            raise MissingParameter(u'Parameter "ip_address" is missing')
         if gateway is None or len(gateway)==0:
-            raise MissingParameter(u'Parameter gateway is missing')
+            raise MissingParameter(u'Parameter "gatewa"y is missing')
         if netmask is None or len(netmask)==0:
-            raise MissingParameter(u'Parameter netmask is missing')
+            raise MissingParameter(u'Parameter "netmask" is missing')
 
         #check if interface is not already configured
         if self.get_configuration(interface) is not None:
@@ -251,7 +253,7 @@ class DhcpcdConf(Config):
         Delete new static interface
 
         Args:
-            interface (string): interface name
+            interface (dict): interface data as returned by get_interface
     
         Returns:
             bool: True if interface is deleted, False otherwise
@@ -259,17 +261,9 @@ class DhcpcdConf(Config):
         Raises:
             MissingParameter
         """
-        #check params
-        if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interface is missing')
-
-        #check if interface is configured
-        if self.get_configuration(interface) is None:
-            return False
-
         #delete interface configuration lines
-        count = self.remove_after(r'^\s*interface\s*%s\s*$' % interface, r'^\s*static.*$', 4)
-        if count!=4:
+        count = self.remove_after(r'^\s*interface\s*%s\s*$' % interface[u'interface'], r'^\s*static.*$', 4)
+        if count!=4: # pragma: no cover
             return False
 
         return True
@@ -293,20 +287,20 @@ class DhcpcdConf(Config):
         """
         #check params
         if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interface is missing')
+            raise MissingParameter(u'Parameter "interface" is missing')
         if ip_address is None or len(ip_address)==0:
-            raise MissingParameter(u'Parameter ip_address is missing')
-        if netmask is None or len(netmask)==0:
-            raise MissingParameter(u'Parameter netmask is missing')
+            raise MissingParameter(u'Parameter "ip_address" is missing')
         if gateway is None or len(gateway)==0:
-            raise MissingParameter(u'Parameter gateway is missing')
+            raise MissingParameter(u'Parameter "gateway" is missing')
+        if netmask is None or len(netmask)==0:
+            raise MissingParameter(u'Parameter "netmask" is missing')
 
         #check if interface is not already configured
         if self.get_configuration(interface) is not None:
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #fix dns
-        if dns_address is None:
+        if dns_address is None or len(dns_address)==0:
             dns_address = gateway
 
         #prepare configuration content
@@ -325,7 +319,7 @@ class DhcpcdConf(Config):
         Delete fallback configuration for specified interface
 
         Args:
-            interface (string): interface name
+            interface (dict): interface data as returned by get_configuration
 
         Returns:
             bool: True if interface is deleted, False otherwise
@@ -333,49 +327,40 @@ class DhcpcdConf(Config):
         Raises:
             MissingParameter
         """
-        #check params
-        if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interface is missing')
-
-        #check if interface is configured
-        interface_ = self.get_configuration(interface)
-        if interface_ is None:
-            return False
-
         #delete interface data and find profile name
-        count = self.remove_after(r'^\s*interface\s*%s\s*$' % interface, r'^\s*fallback\s*(.*?)\s*$', 2)
-        if count!=2:
+        count = self.remove_after(r'^\s*interface\s*%s\s*$' % interface[u'interface'], r'^\s*fallback\s*(.*?)\s*$', 2)
+        if count!=2: # pragma: no cover
             return False
 
         #delete profile data
-        if interface_[u'fallback'] is not None:
-            count = self.remove_after(r'^\s*profile\s*%s\s*$' % interface_[u'fallback'], r'^\s*static.*$', 6)
-            if count!=4:
+        if interface[u'fallback'] is not None:
+            count = self.remove_after(r'^\s*profile\s*%s\s*$' % interface[u'fallback'], r'^\s*static.*$', 6)
+            if count!=4: # pragma: no cover
                 return False
 
         return True
 
-    def delete_interface(self, interface):
+    def delete_interface(self, interface_name):
         """
         Delete specified interface
 
         Args:
-            interface (string): interface name
+            interface_name (string): interface name
 
         Returns:
             bool: True if interface deleted, False otherwise
         """
         #check params
-        if interface is None or len(interface)==0:
-            raise MissingParameter(u'Parameter interface is missing')
+        if interface_name is None or len(interface_name)==0:
+            raise MissingParameter(u'Parameter "interface_name" is missing')
 
         #get interface
-        interface_ = self.get_configuration(interface)
-        if interface_ is None:
+        interface = self.get_configuration(interface_name)
+        if interface is None:
             #interface not found
             return False
 
-        if interface_[u'fallback'] is not None:
+        if interface[u'fallback'] is not None:
             return self.__delete_fallback_interface(interface)
         else:
             return self.__delete_static_interface(interface)
