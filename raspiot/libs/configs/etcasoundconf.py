@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.configs.config import Config
+from raspiot.utils import InvalidParameter
 import logging
 import re
 import time
+import os
 
 class EtcAsoundConf(Config):
     """
@@ -46,7 +48,6 @@ ctl.!default {
         #self.logger.setLevel(logging.DEBUG)
         self.__cache = None
         self.__last_update = None
-        self.timestamp = None
 
     def get_raw_configuration(self):
         """
@@ -56,8 +57,11 @@ ctl.!default {
             dict: file content as dict::
 
                 {
-                    section: {
-                        field...
+                    section name (string): {
+                        card (int): card id (optional)
+                        device (int): device id (optional)
+                        other field (string): field value (string),
+                        ...
                     }
                 }
 
@@ -76,7 +80,7 @@ ctl.!default {
         for match, groups in results:
             #filter None values
             groups = filter(None, groups)
-            if len(groups)==0:
+            if len(groups)==0: # pragma: no cover
                 continue
             self.logger.trace('groups=%s' % (groups,))
 
@@ -94,7 +98,7 @@ ctl.!default {
                     self.logger.trace('subgroups=%s' % (sub_groups,))
 
                     if len(sub_groups)==2:
-                        entries[current_section][sub_groups[0]] = sub_groups[1]
+                        entries[current_section][sub_groups[0]] = int(sub_groups[1]) if sub_groups[1].isdigit() else sub_groups[1]
 
         #cache
         self.__cache = entries
@@ -132,51 +136,66 @@ ctl.!default {
 
         Args:
             card_id (int): card identifier
-            device_id (int): device identifier
+            device_id (int): device identifier (default value 0, set negative value to not store device)
 
         Returns:
             bool: True if section added or already exists in file
         """
+        if card_id is None or not isinstance(card_id, int):
+            raise InvalidParameter('Parameter "card_id" must be specified and integer')
+        if not isinstance(device_id, int):
+            raise InvalidParameter('Parameter "device_id" must be an integer')
+
         if self.PCM_SECTION in self.get_raw_configuration():
             self.logger.debug(u'PCM section already exists in file. Nothing updated.')
             return True
 
-        CONF = [
+        lines = [
             u'pcm.!default {',
             u'    type hw',
-            u'    card %(card_id)s',
-            u'}'
+            u'    card %s' % card_id
         ]
-        lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
+        if device_id>=0:
+            lines.append(u'    device %s' % device_id)
+        lines.append(u'}')
+        self.__last_update = 0
         return self.add_lines(lines)
 
-    def add_default_ctl_section(self, card_id, device_id=0):
+    def add_default_ctl_section(self, card_id, device_id=-1):
         """
         Add default CTL section if not exists
 
         Args:
             card_id (int): card identifier
-            device_id (int): device identifier
+            device_id (int): device identifier (default -1 means device field not written)
 
         Returns:
             bool: True if section added or already exists in file
         """
+        if card_id is None or not isinstance(card_id, int):
+            raise InvalidParameter('Parameter "card_id" must be specified and integer')
+        if not isinstance(device_id, int):
+            raise InvalidParameter('Parameter "device_id" must be an integer')
+
         if self.CTL_SECTION in self.get_raw_configuration():
             self.logger.debug(u'CTL section already exists in file. Nothing updated.')
             return True
 
-        CONF = [
+        lines = [
             u'ctl.!default {',
             u'    type hw',
-            u'    card %(card_id)s',
-            u'}'
+            u'    card %s' % card_id,
         ]
-        lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
+        if device_id>=0:
+            lines.append(u'    device %s' % device_id)
+        lines.append(u'}')
+        self.__last_update = 0
+        self.logger.trace('Add lines %s' % lines)
         return self.add_lines(lines)
 
     def save_default_file(self, card_id, device_id=0):
         """
-        Save default asound.conf file overwritting existing one.
+        Save default asound.conf file overwriting existing one.
 
         Args:
             card_id (int): card identifier as returned by alsa
@@ -185,6 +204,11 @@ ctl.!default {
         Returns:
             bool: True if config saved successfully
         """
+        if card_id is None or not isinstance(card_id, int):
+            raise InvalidParameter('Parameter "card_id" must be specified and integer')
+        if not isinstance(device_id, int):
+            raise InvalidParameter('Parameter "device_id" must be an integer')
+
         #generate and write new content
         content = self.DEFAULT_CONF % {
             u'card_id': card_id,
@@ -192,18 +216,23 @@ ctl.!default {
         }
         self.logger.trace('content=%s' % content)
 
-        if not self._write(content):
-            return False
-
-        return True
+        return self._write(content)
 
     def delete(self):
         """
         Delete /etc/asound.conf and /var/lib/alsa/asound.state files to let system using its prefered device
-        """
-        conf = self.cleep_filesystem.rm(self.CONF)
-        state = self.cleep_filesystem.rm(self.ASOUND_STATE)
 
-        return conf and state
+        Returns:
+            bool: True if files deleted or if files weren't existing
+        """
+        conf_deleted = True
+        if os.path.exists(self.CONF):
+            conf_deleted = self.cleep_filesystem.rm(self.CONF)
+
+        state_deleted = True
+        if os.path.exists(self.ASOUND_STATE):
+            state_deleted = self.cleep_filesystem.rm(self.ASOUND_STATE)
+
+        return conf_deleted and state_deleted
 
 
