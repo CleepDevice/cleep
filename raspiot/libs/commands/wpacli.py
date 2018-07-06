@@ -422,8 +422,9 @@ class Wpacli(AdvancedConsole):
         Returns:
             tuple (string, string): network and state info
         """
-        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'^(ssid)=(.*)|(wpa_state)=(.*)$')
+        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'^(ssid)=(.*)|(wpa_state)=(.*)|(ip_address)=(.*)$')
         network = None
+        ip_address = None
         state = self.STATE_UNKNOWN
         for group, groups in results:
             #filter None values
@@ -432,9 +433,14 @@ class Wpacli(AdvancedConsole):
             if groups[0].startswith(u'ssid'):
                 #network
                 network = groups[1]
+            elif groups[0].startswith(u'ip_address'):
+                #ip
+                ip_address = groups[1]
             elif groups[0].startswith(u'wpa_state'):
                 #state
                 if groups[1] in self.STATES:
                     state = groups[1]
 
-        return (network, state)
+        return (network, state, ip_address)
+
+
