@@ -40,10 +40,11 @@ class Hostname(Config):
         self.hostname = hostname
 
         try:
-            fd = self.cleep_filesystem.open(self.conf, u'w')
+            fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(u'%s' % self.hostname)
             self.cleep_filesystem.close(fd)
         except:
+            self.logger.exception(u'Unable to write hostname file:')
             return False
 
         return True
