@@ -744,7 +744,7 @@ class BusClient(threading.Thread):
                                 self._event_received(msg[u'message'])
                             except:
                                 #do not crash module
-                                self.logger.exception(u'Exception in event_received:')
+                                self.logger.exception(u'Exception in event_received handled by "%s" module:' % self.__class__.__name__)
 
                 else:
                     #received message is badly formatted
