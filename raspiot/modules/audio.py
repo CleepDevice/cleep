@@ -32,9 +32,13 @@ class Audio(RaspIotResource):
 
     TEST_SOUND = u'/opt/raspiot/sounds/connected.wav'
 
+    DEFAULT_DEVICE = {
+        u'card': 0,
+        u'device': 0
+    }
     RESOURCES = {
-        u'audio.capture': 15.0,
-        u'audio.playback': 10.0
+        u'audio.capture': 50.0,
+        u'audio.playback': 75.0
     }
 
     def __init__(self, bootstrap, debug_enabled):
@@ -52,6 +56,14 @@ class Audio(RaspIotResource):
         self.alsa = Alsa(self.cleep_filesystem)
         self.asoundrc = Asoundrc(self.cleep_filesystem)
 
+    def _configure(self):
+        """
+        Module configuration
+        """
+        if not self.asoundrc.exists():
+            self.logger.debug(u'Create default audio configuration file')
+            self.asoundrc.set_default_device(self.DEFAULT_DEVICE[u'card'], self.DEFAULT_DEVICE[u'device'])
+
     def get_module_config(self):
         """
         Return module configuration
@@ -66,6 +78,7 @@ class Audio(RaspIotResource):
         """
         #get all stuff
         current_config = self.asoundrc.get_configuration()
+        self.logger.debug('current_config=%s' % current_config)
         playback_devices = self.alsa.get_playback_devices()
         capture_devices = self.alsa.get_capture_devices()
         volumes = self.alsa.get_volumes()
