@@ -2,8 +2,8 @@
     "icon": "heart-pulse",
     "system": {
         "widgets": {
-            "js": ["clock.widget.js", "monitor.widget.js"],
-            "html": ["clock.widget.html", "monitor.widget.html", "monitorDialog.widget.html"]
+            "js": ["monitor.widget.js"],
+            "html": ["monitor.widget.html", "monitorDialog.widget.html"]
         },
         "services": ["system.service.js"]
     },

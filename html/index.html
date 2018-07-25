@@ -19,49 +19,48 @@
 
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100">
+        <div ng-controller="mainController as mainCtl" layout="column">
 
-    <div ng-controller="mainController as mainCtl" layout="column">
+            <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div class="toolbar-spacer"></div>
+                <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
+                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
+                </div>
+                <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
+                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <h1 style="padding-left:5px;" class="md-title">{{mainCtl.hostname}}</h1>
+                </div>
+                <div flex></div>
+                <div layout="row" layout-align="end center">
+                    <md-button ng-if="mainCtl.needRestart && !mainCtl.needReboot" class="md-raised md-accent" aria-label="Restart" ng-click="mainCtl.restart()">
+                        <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
+                        Restart to apply changes
+                    </md-button>
+                    <md-button ng-if="mainCtl.needReboot" class="md-raised md-accent" aria-label="Reboot" ng-click="mainCtl.reboot()">
+                        <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
+                        Reboot to load changes
+                    </md-button>
+                    <md-button href="#!dashboard" class="md-raised" aria-label="Dashboard">
+                        <md-icon md-svg-icon="view-dashboard"></md-icon>
+                        <span>Dashboard</span>
+                    </md-button>
+                    <md-button href="#!modules" class="md-raised" aria-label="Settings">
+                        <md-icon md-svg-icon="settings"></md-icon>
+                        <span>Settings</span>
+                    </md-button>
+                </div>
+                <div class="toolbar-spacer"></div>
+            </div>
+            <div loading-bar-directive></div>
 
-        <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
-            <div class="toolbar-spacer"></div>
-            <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
-                <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
-                <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
-            </div>
-            <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
-                <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
-                <h1 style="padding-left:5px;" class="md-title">{{mainCtl.hostname}}</h1>
-            </div>
-            <div flex></div>
-            <div layout="row" layout-align="end center">
-                <md-button ng-if="mainCtl.needRestart && !mainCtl.needReboot" class="md-raised md-accent" aria-label="Restart" ng-click="mainCtl.restart()">
-                    <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
-                    Restart to apply changes
-                </md-button>
-                <md-button ng-if="mainCtl.needReboot" class="md-raised md-accent" aria-label="Reboot" ng-click="mainCtl.reboot()">
-                    <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
-                    Reboot to load changes
-                </md-button>
-                <md-button href="#!dashboard" class="md-raised" aria-label="Dashboard">
-                    <md-icon md-svg-icon="view-dashboard"></md-icon>
-                    <span>Dashboard</span>
-                </md-button>
-                <md-button href="#!modules" class="md-raised" aria-label="Settings">
-                    <md-icon md-svg-icon="settings"></md-icon>
-                    <span>Settings</span>
-                </md-button>
-            </div>
-            <div class="toolbar-spacer"></div>
+            <!-- page content -->
+            <div ng-view></div>
+
+            <!-- action button -->
+            <div fab-button></div>
+
         </div>
-        <div loading-bar-directive></div>
-
-        <!-- page content -->
-        <div ng-view></div>
-
-        <!-- action button -->
-        <div fab-button></div>
-
-    </div>
 
     </md-content>
 

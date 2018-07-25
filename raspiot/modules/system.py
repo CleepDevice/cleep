@@ -5,22 +5,18 @@ import os
 import logging
 from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError, NoCityFound
 from raspiot.raspiot import RaspIotModule
+from raspiot.libs.internals.task import Task
 import raspiot
 from datetime import datetime
 import time
-from raspiot.libs.internals.task import Task
-from astral import Astral, GoogleGeocoder, AstralError
 import psutil
 import time
-import io
 import uuid
 import socket
-import iso3166
 from zipfile import ZipFile, ZIP_DEFLATED
 from tempfile import NamedTemporaryFile
 from raspiot.libs.internals.console import Console, EndlessConsole
 from raspiot.libs.configs.fstab import Fstab
-from raspiot.libs.configs.hostname import Hostname
 from raspiot.libs.configs.raspiotconf import RaspiotConf
 from raspiot.libs.internals.install import Install
 from raspiot.libs.configs.modulesjson import ModulesJson
@@ -42,7 +38,7 @@ class System(RaspIotModule):
     MODULE_DEPS = []
     MODULE_DESCRIPTION = u'Helps controlling and monitoring the device'
     MODULE_LOCKED = True
-    MODULE_TAGS = [u'system', u'troubleshoot', u'locale', u'hostname']
+    MODULE_TAGS = [u'troubleshoot', u'locale', u'events', u'monitoring', u'update', u'log']
     MODULE_COUNTRY = u''
     MODULE_URLINFO = None
     MODULE_URLHELP = None
@@ -103,10 +99,6 @@ class System(RaspIotModule):
 
         #members
         self.events_factory = bootstrap[u'events_factory']
-        self.time_task = None
-        self.sunset = None
-        self.sunrise = None
-        self.__clock_uuid = None
         self.__monitor_cpu_uuid = None
         self.__monitor_memory_uuid = None
         self.__monitoring_cpu_task = None
@@ -115,7 +107,6 @@ class System(RaspIotModule):
         self.__process = None
         self.__need_restart = False
         self.__need_reboot = False
-        self.hostname = Hostname(self.cleep_filesystem)
         self.modules_json = ModulesJson(self.cleep_filesystem)
         self.__updating_modules = []
         self.__modules = {}
@@ -125,9 +116,6 @@ class System(RaspIotModule):
         }
 
         #events
-        self.systemTimeNow = self._get_event(u'system.time.now')
-        self.systemTimeSunrise = self._get_event(u'system.time.sunrise')
-        self.systemTimeSunset = self._get_event(u'system.time.sunset')
         self.systemSystemHalt = self._get_event(u'system.system.halt')
         self.systemSystemReboot = self._get_event(u'system.system.reboot')
         self.systemSystemRestart = self._get_event(u'system.system.restart')
@@ -148,25 +136,13 @@ class System(RaspIotModule):
         #configure crash report
         self.__configure_crash_report(self._get_config_field(u'crashreport'))
 
-        #sunset and sunrise times are volatile and computed automatically at each time event
-
-        #launch time task
-        self.time_task = Task(60.0, self.__time_task, self.logger)
-        self.time_task.start()
-
         #init first cpu percent for current process
         self.__process = psutil.Process(os.getpid())
         self.__process.cpu_percent()
 
-        #add clock device if not already added
-        if self._get_device_count()!=4:
+        #add devices if they are not already added
+        if self._get_device_count()!=3:
             self.logger.debug(u'Add default devices')
-            #add fake clock device
-            clock = {
-                u'type': u'clock',
-                u'name': u'Clock'
-            }
-            self._add_device(clock)
 
             #add fake monitor device (used to have a device on dashboard)
             monitor = {
@@ -192,9 +168,7 @@ class System(RaspIotModule):
         #store device uuids for events
         devices = self.get_module_devices()
         for uuid in devices:
-            if devices[uuid][u'type']==u'clock':
-                self.__clock_uuid = uuid
-            elif devices[uuid][u'type']==u'monitorcpu':
+            if devices[uuid][u'type']==u'monitorcpu':
                 self.__monitor_cpu_uuid = uuid
             elif devices[uuid][u'type']==u'monitormemory':
                 self.__monitor_memory_uuid = uuid
@@ -211,10 +185,6 @@ class System(RaspIotModule):
         """
         Stop module
         """
-        #stop time task
-        if self.time_task:
-            self.time_task.stop()
-
         #stop monitoring task
         self.__stop_monitoring_threads()
 
@@ -234,179 +204,6 @@ class System(RaspIotModule):
         if not self.crash_report.is_enabled():
             self.logger.info(u'Crash report is disabled')
 
-    def __get_location_infos(self, city, country):
-        """
-        Get location infos
-
-        Params:
-            city (string): city name
-            country (string): city country
-
-        Returns:
-            astral.Location: astral location (from geocoder function) (location.name=city, location.region=country)
-
-        Exceptions:
-            Exception: if error occured, new exception is raise in generic one with appropriate message
-        """
-        try:
-            a = Astral(GoogleGeocoder)
-
-            #search location info
-            pattern = city
-            if country and len(country)>0:
-                pattern = u'%s,%s' % (city, country)
-            return a.geocoder[pattern]
-
-        except AstralError as e:
-            self.logger.debug('Exception during Astral request: %s' % str(e))
-            if e.message and e.message.find(u'Unable to locate')>=0:
-                raise NoCityFound()
-            else:
-                raise Exception(e.message)
-
-    def __get_country_alpha2(self, country):
-        """
-        Return alpha2 country code useful for flag
-
-        Args:
-            country (string): country
-        """
-        if country.upper() in iso3166.countries_by_name.keys():
-            c = iso3166.countries_by_name[country.upper()]
-            return c.alpha2.lower()
-
-        return None
-
-    def __update_sun_times(self):
-        """
-        Update sun times
-
-        Return:
-            bool: True if data updated, False otherwise
-        """
-        #reset sunset and sunrise
-        self.sunset = None
-        self.sunrise = None
-
-        #update sun times if possible
-        config = self._get_config()
-        if u'city' in config and config[u'city'] and u'country' in config:
-            self.logger.debug('Update sun times')
-            try:
-                location = self.__get_location_infos(config[u'city'], config[u'country'])
-                self.sunset = location.sunset()
-                self.sunrise = location.sunrise()
-                self.logger.debug('Found sunset=%s sunrise=%s' % (self.sunset, self.sunrise))
-
-            except Exception as e:
-                self.logger.warning('Unable to refresh suntimes (%s)' % str(e))
-                return False
-
-        return True
-
-    def __save_sun_times(self, location):
-        """
-        Save sun times
-    
-        Args:
-            location (astral.Location): data from astral/geocoder request
-        """
-        if isinstance(location, astral.Location):
-            self.sunset = location.sun()[u'sunset']
-            self.sunrise = location.sun()[u'sunrise']
-
-    def __format_time(self, now=None):
-        """
-        Return current time object
-
-        Returns:
-            dict: time data
-        """
-        #current time
-        if not now:
-            now = int(time.time())
-        dt = datetime.fromtimestamp(now)
-        weekday = dt.weekday()
-        if weekday==0:
-            weekday_literal = u'monday'
-        elif weekday==1:
-            weekday_literal = u'tuesday'
-        elif weekday==2:
-            weekday_literal = u'wednesday'
-        elif weekday==3:
-            weekday_literal = u'thursday'
-        elif weekday==4:
-            weekday_literal = u'friday'
-        elif weekday==5:
-            weekday_literal = u'saturday'
-        elif weekday==6:
-            weekday_literal = u'sunday'
-
-        #sunset and sunrise
-        sunset = None
-        if self.sunset:
-            sunset = time.mktime(self.sunset.timetuple())
-        sunrise = None
-        if self.sunrise:
-            sunrise = time.mktime(self.sunrise.timetuple())
-
-        return {
-            u'time': now,
-            u'year': dt.year,
-            u'month': dt.month,
-            u'day': dt.day,
-            u'hour': dt.hour,
-            u'minute': dt.minute,
-            u'weekday': weekday,
-            u'weekday_literal': weekday_literal,
-            u'sunset': sunset,
-            u'sunrise': sunrise
-        }
-
-    def __time_task(self):
-        """
-        Time task: send time event every minutes. It also accomplishes somes other tasks like:
-         - sunset/sunrise computations every day at midnight
-         - send sunset/sunrise events
-         - system monitoring data purge
-        """
-        now = int(time.time())
-        now_formatted = self.__format_time()
-
-        #send now event
-        self.systemTimeNow.send(params=now_formatted, device_id=self.__clock_uuid)
-        self.systemTimeNow.render([u'sound', u'display'], params=now_formatted)
-
-        #update sun times
-        refresh_sun_times = False
-        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0:
-            #daily sun times refresh
-            refresh_sun_times = True
-        elif self.sunset is None or self.sunrise is None:
-            #handle last update failure
-            refresh_sun_times = True
-        if refresh_sun_times:
-            self.__update_sun_times()
-
-        #send sunset event
-        if self.sunset:
-            if self.sunset.hour==now_formatted[u'hour'] and self.sunset.minute==now_formatted[u'minute']:
-                #sunset time
-                self.systemTimeSunset.send(device_id=self.__clock_uuid)
-                self.systemTimeSunset.render([u'display', u'sound'], params=self.__clock_uuid)
-
-        #send sunrise event
-        if self.sunrise:
-            if self.sunrise.hour==now_formatted[u'hour'] and self.sunrise.minute==now_formatted[u'minute']:
-                #sunrise time
-                self.systemTimeSunrise.send(device_id=self.__clock_uuid)
-                self.systemTimeSunrise.render([u'display', u'sound'], self.__clock_uuid)
-
-        #daily data cleanup
-        if now_formatted[u'hour']==0 and now_formatted[u'minute']==0 and self.is_module_loaded(u'database'):
-            self.__purge_cpu_data()
-            self.__purge_memory_data()
-
     def get_module_config(self):
         """
         Return full module configuration
@@ -417,13 +214,10 @@ class System(RaspIotModule):
         config = self._get_config()
 
         out = {}
-        out[u'sun'] = self.get_sun()
-        out[u'city'] = self.get_city()
         out[u'monitoring'] = self.get_monitoring()
         out[u'uptime'] = self.get_uptime()
         out[u'needrestart'] = self.__need_restart
         out[u'needreboot'] = self.__need_reboot
-        out[u'hostname'] = self.get_hostname()
         out[u'crashreport'] = config[u'crashreport']
         out[u'version'] = VERSION
         out[u'eventsnotrendered'] = self.get_events_not_rendered()
@@ -441,7 +235,7 @@ class System(RaspIotModule):
 
     def get_module_devices(self):
         """
-        Return clock and system as system devices
+        Return system devices
 
         Returns:
             dict: devices
@@ -449,11 +243,7 @@ class System(RaspIotModule):
         devices = super(System, self).get_module_devices()
         
         for uuid in devices:
-            if devices[uuid][u'type']==u'clock':
-                data = self.get_time()
-                devices[uuid].update(data)
-
-            elif devices[uuid][u'type']==u'monitor':
+            if devices[uuid][u'type']==u'monitor':
                 data = {}
                 data[u'uptime'] = self.get_uptime()
                 data[u'cpu'] = self.get_cpu_usage()
@@ -503,34 +293,6 @@ class System(RaspIotModule):
             if config[u'modulesupdateenabled']:
                 pass
 
-    def get_time(self):
-        """
-        Return current time
-
-        Returns:
-            dict: time data
-        """
-        return self.__format_time()
-
-    def get_sun(self):
-        """
-        Return sunset and sunrise timestamps
-
-        Returns:
-            dict: sunset and sunrise timestamps
-        """
-        sunset = None
-        if self.sunset:
-            sunset = int(time.mktime(self.sunset.timetuple()))
-        sunrise = None
-        if self.sunrise:
-            sunrise = int(time.mktime(self.sunrise.timetuple()))
-
-        return {
-            u'sunset': sunset,
-            u'sunrise': sunrise
-        }
-
     def set_monitoring(self, monitoring):
         """
         Set monitoring flag
@@ -552,75 +314,6 @@ class System(RaspIotModule):
             dict: monitoring configuration
         """
         return self._get_config_field(u'monitoring')
-
-    def get_city(self):
-        """
-        Return configured city
-
-        Returns:
-            dict: city and country infos
-        """
-        config = self._get_config()
-
-        return {
-            u'city': config[u'city'],
-            u'country': config[u'country'],
-            u'alpha2': config[u'alpha2']
-        }
-
-    def set_city(self, city, country):
-        """
-        Set city name
-
-        Params:
-            city (string): closest city name
-            country (string): country name (optionnal)
-        
-        Returns:
-            bool: True if city configured
-
-        Raises:
-            CommandError
-        """
-        if city is None or len(city)==0:
-            raise MissingParameter(u'City parameter is missing')
-
-        #search city and find if result found (try 3 times because geocoder returns exception sometimes :S)
-        for i in range(3):
-            try:
-                #get location infos
-                location = self.__get_location_infos(city, country)
-                alpha2 = self.__get_country_alpha2(country)
-                self.logger.debug(u'location: %s' % location)
-                self.logger.debug(u'alpha2: %s' % alpha2)
-
-                #save city and country
-                config = {
-                    u'city': location.name,
-                    u'country': location.region,
-                    u'alpha2': alpha2
-                }
-                if not self._update_config(config):
-                    raise CommandError(u'Unable to save configuration')
-
-                #update sun times
-                self.__update_sun_times()
-
-                #process terminated, quit now
-                return True
-
-            except NoCityFound:
-                #no city found, it happens sometimes with geocoder ?!? so give it a new try
-                pass
-
-            except Exception as e:
-                #unexpected exception
-                self.crash_report.report_exception()
-                raise e
-
-        #if we reach this part of code, it means process was unable to find suitable city
-        #so raise an exception
-        raise Exception(u'Unable to find city. Please specify a more important city.')
 
     def reboot_system(self):
         """
@@ -967,6 +660,7 @@ class System(RaspIotModule):
             if len(releases)==1:
                 #get latest version available
                 version = github.get_release_version(releases[0])
+                self.logger.debug('Compare version: (online)%s!=(installed)%s' % (version, VERSION))
                 if version!=VERSION:
                     #new version available, trigger update
                     assets = github.get_release_assets_infos(releases[0])
@@ -974,7 +668,7 @@ class System(RaspIotModule):
                     #search for deb file
                     for asset in assets:
                         if asset[u'name'].startswith(u'raspiot_') and asset[u'name'].endswith('.zip'):
-                            self.logger.info(u'Found raspiot package asset: %s' % asset)
+                            self.logger.debug(u'Found raspiot package asset: %s' % asset)
                             self.__raspiot_update[u'package'] = asset
                             break
 
@@ -985,7 +679,7 @@ class System(RaspIotModule):
                         self.logger.debug(u'Checksum filename to search: %s' % checksum_name)
                         for asset in assets:
                             if asset[u'name']==checksum_name:
-                                self.logger.info(u'Found checksum asset: %s' % asset)
+                                self.logger.debug(u'Found checksum asset: %s' % asset)
                                 self.__raspiot_update[u'checksum'] = asset
                                 break
 
@@ -1143,66 +837,6 @@ class System(RaspIotModule):
             u'uptime': uptime,
             u'uptime_hr': Tools.hr_uptime(uptime)
         }
-
-    def __is_interface_wired(self, interface):
-        """
-        Return True if interface is wireless
-
-        Params:
-            interface (string): interface name
-        """
-        console = Console()
-        res = console.command(u'/sbin/iwconfig %s 2>&1' % interface)
-        if res['error'] or res[u'killed'] or len(res[u'stdout'])==0:
-            return False
-
-        if res[u'stdout'][0].lower().find(u'no wireless')==-1:
-            return False
-
-        return True
-
-    def get_network_infos(self):
-        """
-        Return network infos
-
-        Returns:
-            dict: network infos::
-                {
-                    '<interface>': {
-                        'interface':<interface name (string)>,
-                        'ip': <ip address (string)>,
-                        'mac': <interface mac address (string)>,
-                        'wired': <interface type ('wired', 'wifi')> 
-                    },
-                    ...
-                }
-        """
-        nets = psutil.net_if_addrs()
-        infos = {}
-
-        for interface in nets:
-            #drop local interface
-            if interface==u'lo':
-                continue
-
-            #read infos
-            ip = None
-            mac = None
-            for snic in nets[interface]:
-                if snic.family==2:
-                    ip = snic.address
-                elif snic.family==17:
-                    mac = snic.address
-
-            #save infos
-            infos[interface] = {
-                u'ip': ip,
-                u'mac': mac,
-                u'interface': interface,
-                u'wired': self.__is_interface_wired(interface)
-            }
-
-        return infos
 
     def __start_monitoring_threads(self):
         """
@@ -1427,9 +1061,7 @@ class System(RaspIotModule):
         """
         lines = []
         if os.path.exists(self.LOG_FILE):
-            fd = io.open(self.LOG_FILE, u'r', encoding=u'utf-8')
-            lines = fd.read()
-            fd.close()
+            lines = self.cleep_filesystem.read_data(self.LOG_FILE)
 
         return lines
 
@@ -1461,27 +1093,6 @@ class System(RaspIotModule):
         elif resp[u'error']:
             self.logger.error(u'Unable to set debug on module %s: %s' % (module, resp[u'message']))
             raise CommandError(u'Update debug failed')
-
-    def set_hostname(self, hostname):
-        """
-        Set raspi hostname
-
-        Args:
-            hostname (string): hostname
-
-        Return:
-            bool: True if hostname saved successfully, False otherwise
-        """
-        self.hostname.set_hostname(hostname)
-
-    def get_hostname(self):
-        """
-        Return raspi hostname
-
-        Returns:
-            string: raspi hostname
-        """
-        return self.hostname.get_hostname()
 
     def __update_events_not_rendered_in_factory(self):
         """
@@ -1577,5 +1188,4 @@ class System(RaspIotModule):
         self.__configure_crash_report(enable)
 
         return True
-
 

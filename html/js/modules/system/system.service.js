@@ -6,34 +6,6 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     var self = this;
     
     /**
-     * Change city
-     */
-    self.setCity = function(city, country) {
-        return rpcService.sendCommand('set_city', 'system', {'city':city, 'country':country}, 20);
-    };
-
-    /**
-     * Get city
-     */
-    self.getCity = function() {
-        return rpcService.sendCommand('get_city', 'system');
-    };
-
-    /**
-     * Get sunset/sunrise
-     */
-    self.getSun = function() {
-        return rpcService.sendCommand('get_sun', 'system');
-    };
-
-    /**
-     * Get current time
-     */
-    self.getTime = function() {
-        return rpcService.sendCommand('get_time', 'system');
-    };
-
-    /**
      * Get filesystem infos
      */
     self.getFilesystemInfos = function() {
@@ -162,22 +134,6 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     self.setCrashReport = function(enable) {
         return rpcService.sendCommand('set_crash_report', 'system', {'enable':enable});
     };
-
-    /**
-     * Catch system time event
-     */
-    $rootScope.$on('system.time.now', function(event, uuid, params) {
-        for( var i=0; i<raspiotService.devices.length; i++ )
-        {
-            if( raspiotService.devices[i].uuid==uuid )
-            {
-                raspiotService.devices[i].time = params.time;
-                raspiotService.devices[i].sunset = params.sunset;
-                raspiotService.devices[i].sunrise = params.sunrise;
-                break;
-            }
-        }
-    });
 
     /**
      * Catch cpu monitoring event

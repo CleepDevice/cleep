@@ -7,14 +7,9 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
     var systemController = ['$scope', function($scope)
     {
         var self = this;
-        self.tabIndex = 'general';
-        self.sunset = null;
-        self.sunrise = null;
-        self.city = null;
-        self.country = '';
+        self.tabIndex = 'update';
         self.monitoring = false;
         self.logs = '';
-        self.hostname = '';
         self.codemirrorInstance = null;
         self.codemirrorOptions = {
             lineNumbers: true,
@@ -40,42 +35,6 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.raspiotInstallStatus = 0;
         self.version = '';
         self.crashReport = false;
-
-        /*************
-         * General tab
-         *************/
-
-        /**
-         * Set city
-         */
-        self.setCity = function() {
-            toast.loading('Updating city...');
-            systemService.setCity(self.city, self.country)
-                .then(function(resp) {
-                    return raspiotService.reloadModuleConfig('system');
-                })
-                .then(function(config) {
-                    toast.success('City updated');
-                    self.city = config.city.city;
-                    self.country = config.city.country;
-                    self.sunset = $filter('hrTime')(config.sun.sunset);
-                    self.sunrise = $filter('hrTime')(config.sun.sunrise);
-                });
-        };
-
-        /**
-         * Set hostname
-         */
-        self.setHostname = function()
-        {
-            systemService.setHostname(self.hostname)
-                .then(function(resp) {
-                    return raspiotService.reloadModuleConfig('system');
-                })
-                .then(function() {
-                    toast.success('Device name saved');
-                });
-        };
 
         /************
          * Update tab
@@ -118,6 +77,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             var message = null;
             systemService.checkRaspiotUpdates()
                 .then(function(resp) {
+                     
                     if( resp.data.updateavailable===false )
                     {
                         message = 'No update available';
@@ -415,12 +375,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.setConfig = function(config)
         {
             //save data
-            self.city = config.city.city;
-            self.country = config.city.country;
-            self.sunset = $filter('hrTime')(config.sun.sunset);
-            self.sunrise = $filter('hrTime')(config.sun.sunrise);
             self.monitoring = config.monitoring;
-            self.hostname = config.hostname;
             self.eventsNotRendered = config.eventsnotrendered;
             self.raspiotUpdateEnabled = config.raspiotupdateenabled;
             self.modulesUpdateEnabled = config.modulesupdateenabled;
