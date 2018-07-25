@@ -162,3 +162,5 @@ ctl.!default {
         if not self._write(content):
             raise CommandError(u'Unable to set default audio device')
 
+        return True
+

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.libs.asoundrc import Asoundrc
+from raspiot.libs.configs.asoundrc import Asoundrc
+from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 import unittest
 import logging
 import os
@@ -11,6 +12,8 @@ logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(name)s %(levelnam
 class AsoundrcTests(unittest.TestCase):
 
     def setUp(self):
+        self.fs = CleepFilesystem()
+        self.fs.enable_write()
         self.a = Asoundrc
         #fake asoundrc file
         self.fake = '/tmp/fake_asoundrc'
@@ -28,7 +31,7 @@ class AsoundrcTests(unittest.TestCase):
         }""")
         fd.close()
         self.a.CONF = self.fake
-        self.a = self.a()
+        self.a = self.a(self.fs)
 
     def tearDown(self):
         if os.path.exists(self.fake):
@@ -36,44 +39,29 @@ class AsoundrcTests(unittest.TestCase):
 
     def test_get_configuration(self):
         config = self.a.get_configuration()
-        #print(config)
+        logging.debug('config=%s' % config)
 
-        self.assertNotEqual(0, len(config.keys()))
+        self.assertNotEqual(None, config)
 
-        self.assertTrue('pcm.!default' in config.keys())
-        self.assertTrue('type' in config['pcm.!default'].keys())
-        self.assertTrue('cardid' in config['pcm.!default'].keys())
-        #self.assertTrue('cardname' in config['pcm.!default'].keys())
-        self.assertTrue('deviceid' in config['pcm.!default'].keys())
-        self.assertNotEqual(None, config['pcm.!default']['type'])
-        self.assertNotEqual(None, config['pcm.!default']['cardid'])
-        #self.assertNotEqual(None, config['pcm.!default']['cardname'])
-        self.assertNotEqual(None, config['pcm.!default']['deviceid'])
+        self.assertTrue('section' in config.keys())
+        self.assertTrue('type' in config.keys())
+        self.assertTrue('cardid' in config.keys())
+        self.assertTrue('deviceid' in config.keys())
+        self.assertEqual(config['section'], 'pcm.!default')
+        self.assertNotEqual(None, config['cardid'])
+        self.assertNotEqual(None, config['deviceid'])
 
-        self.assertTrue('ctl.!default' in config.keys())
-        self.assertTrue('type' in config['ctl.!default'].keys())
-        self.assertTrue('cardid' in config['ctl.!default'].keys())
-        #self.assertTrue('cardname' in config['ctl.!default'].keys())
-        self.assertTrue('deviceid' in config['ctl.!default'].keys())
-        self.assertNotEqual(None, config['ctl.!default']['type'])
-        self.assertNotEqual(None, config['ctl.!default']['cardid'])
-        #self.assertNotEqual(None, config['ctl.!default']['cardname'])
-        self.assertEqual(None, config['ctl.!default']['deviceid'])
-
-    def test_set_default_card(self):
-        self.assertTrue(self.a.set_default_card(card_id=0, device_id=1)) #set HDMI
+    def test_set_default_device(self):
+        self.assertTrue(self.a.set_default_device(card_id=0, device_id=1)) #set HDMI
         config = self.a.get_configuration()
-        #print(config)
+        logging.debug('config=%s' % config)
 
-        self.assertTrue('pcm.!default' in config.keys())
-        self.assertEqual(0, config['pcm.!default']['cardid'])
-        self.assertEqual(1, config['pcm.!default']['deviceid'])
+        self.assertTrue('section' in config.keys())
+        self.assertTrue('type' in config.keys())
+        self.assertTrue('cardid' in config.keys())
+        self.assertTrue('deviceid' in config.keys())
+        self.assertEqual(config['section'], 'pcm.!default')
+        self.assertEqual(0, config['cardid'])
+        self.assertEqual(1, config['deviceid'])
 
-        self.assertTrue('ctl.!default' in config.keys())
-        self.assertEqual(0, config['ctl.!default']['cardid'])
-        self.assertEqual(None, config['ctl.!default']['deviceid'])
-
-    #def test_set_default_card_with_invalid_infos(self):
-    #    self.assertFalse(self.a.set_default_card(card_id=5, device_id=0))
-    #    self.assertFalse(self.a.set_default_card(card_id=0, device_id=15))
 
