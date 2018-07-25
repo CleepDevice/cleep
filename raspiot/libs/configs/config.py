@@ -496,6 +496,54 @@ class Config():
                 return 0
 
         return count
+
+    def replace_line(self, pattern, replace):
+        """
+        Replace line identified by pattern by replace string
+
+        Args:
+            pattern (string): pattern used to detect line
+            replace (string): string to replace
+
+        Returns:
+            bool: True if line found and replaced
+        """
+        #check params
+        if pattern is None:
+            raise Exception(u'Parameter "pattern" must be specified')
+        if replace is None:
+            raise Exception(u'Parameter "replace" must be specified')
+        if not isinstance(replace, str) and not isinstance(replace, unicode):
+            raise Exception(u'Parameter "replace" must be a string or unicode (%s)' % type(replace))
+
+        #add new line if necessary
+        if replace[len(replace)-1]!='\n':
+            replace += u'\n'
+
+        #read content
+        fd = self._open()
+        lines = fd.readlines()
+        self._close()
+        
+        #search line
+        prog = re.compile(pattern)
+        new_content = []
+        found = False
+        for line in lines:
+            if re.match(prog, line) is not None:
+                #line found, append new one
+                new_content.append(replace)
+                found = True
+            else:
+                #append line
+                new_content.append(line)
+
+        #write config file
+        if found:
+            return self._write(u''.join(new_content))
+        
+        #not found
+        return False
         
     def add_lines(self, lines):
         """
