@@ -140,8 +140,6 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          * Show update dialog
          */
         self.showUpdateDialog = function(module, ev) {
-            console.log(arguments);
-
             //gather module to update infos
             self.moduleToUpdate = null;
             for( var i=0; i<self.modules.length; i++ )
