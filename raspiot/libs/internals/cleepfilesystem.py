@@ -225,16 +225,51 @@ class CleepFilesystem():
         if self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name):
             self.__disable_write()
 
-    def read_json(self, path, encoding=None):
+    def write_data(self, path, data, encoding=None):
         """
-        Read file content as json
+        Write data on specified path
+
+        Args:
+            path (string): file path
+            data (any): data to write
+            encoding (string): file encoding (default is system one)
+
+        Return:
+            bool: True if operation succeed
+        """
+        fp = None
+        res = False
+
+        #encoding
+        if not encoding:
+            encoding = locale.getpreferredencoding()
+
+        try:
+            fp = self.open(path, u'w', encoding)
+            fp.write(data)
+            res = True
+
+        except:
+            self.logger.error('===> %s' % data)
+            self.logger.exception(u'Unable to write content to file "%s"' % path)
+            res = False
+
+        finally:
+            if fp:
+                self.close(fp)
+
+        return res
+
+    def read_data(self, path, encoding=None):
+        """
+        Read file content
 
         Args:
             path (string): file path
             encoding (string): file encoding (default is system one)
 
         Return:
-            dict: json content as dict
+            list: file lines
         """
         fp = None
         lines = None
@@ -246,14 +281,33 @@ class CleepFilesystem():
         try:
             fp = self.open(path, u'r', encoding)
             lines = fp.readlines()
-            lines = json.loads(u'\n'.join(lines), encoding)
 
         except:
-            self.logger.exception(u'Unable to get json content of "%s":' % path)
+            self.logger.exception(u'Unable to get content of file "%s":' % path)
 
         finally:
             if fp:
                 self.close(fp)
+
+        return lines
+
+    def read_json(self, path, encoding=None):
+        """
+        Read file content as json
+
+        Args:
+            path (string): file path
+            encoding (string): file encoding (default is system one)
+
+        Return:
+            dict: json content as dict
+        """
+        lines = self.read_data(path, encoding)
+        try:
+            lines = json.loads(u'\n'.join(lines), encoding)
+        except:
+            self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))
+            lines = ''
 
         return lines
 
@@ -269,28 +323,10 @@ class CleepFilesystem():
         Return:
             bool: True if operation succeed
         """
-        fp = None
-        res = False
+        #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
+        json_data = unicode(json.dumps(data, ensure_ascii=False))
 
-        #encoding
-        if not encoding:
-            encoding = locale.getpreferredencoding()
-
-        try:
-            fp = self.open(path, u'w', encoding)
-            #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
-            fp.write(unicode(json.dumps(data, ensure_ascii=False)))
-            res = True
-
-        except:
-            self.logger.exception(u'Unable to write json content to "%s"' % path)
-            res = False
-
-        finally:
-            if fp:
-                self.close(fp)
-
-        return res
+        return self.write_data(path, json_data, encoding)
 
     def rename(self, src, dst):
         """
