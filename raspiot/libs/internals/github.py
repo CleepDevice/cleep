@@ -5,6 +5,7 @@ import logging
 import time
 import urllib3
 import json
+import re
 
 class Github():
     """
@@ -25,6 +26,7 @@ class Github():
         #members
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
+        self.version_pattern = r'\d+\.\d+\.\d+'
 
     def get_release_version(self, release):
         """
@@ -40,7 +42,11 @@ class Github():
             raise Exception('Invalid release format. Dict type awaited')
 
         if u'tag_name' in release.keys():
+            version = re.search(self.version_pattern, release[u'tag_name'])
+            if version:
+                return version.group()
             return release[u'tag_name']
+
         else:
             raise Exception('Specified release has no version field')
 
