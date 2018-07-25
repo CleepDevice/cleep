@@ -8,7 +8,7 @@ CUR_DIR=`pwd`
 #dch -i
 
 #build raspiot application
-cd /root/raspiot
+cd ../
 debuild -us -uc 
 debuild clean
 rm -rf raspiot.egg-info
