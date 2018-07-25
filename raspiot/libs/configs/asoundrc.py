@@ -39,7 +39,7 @@ ctl.!default {
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        Config.__init__(self, cleep_filesystem, self.CONF, u'', False)
+        Config.__init__(self, cleep_filesystem, None, u'', False)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)

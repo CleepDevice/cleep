@@ -61,7 +61,8 @@ class Config():
             string: cleaned path
         """
         if self.path:
-            #use constructor specified path value
+            #use path value specified in constructor
+            self.logger.debug(u'Use path value specified in constructor (%s)' % self.path)
             return self.path
 
         #use CONF member
