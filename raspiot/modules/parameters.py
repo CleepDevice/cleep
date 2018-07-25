@@ -34,8 +34,8 @@ class Parameters(RaspIotModule):
     MODULE_VERSION = u'1.0.0'
     MODULE_PRICE = 0
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = u'Configure your device'
-    MODULE_LOCKED = False
+    MODULE_DESCRIPTION = u'Configure generic parameters of your device'
+    MODULE_LOCKED = True
     MODULE_TAGS = [u'configuration', u'date', u'time', u'locale', u'lang']
     MODULE_COUNTRY = None
     MODULE_URLINFO = None

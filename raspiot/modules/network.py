@@ -47,7 +47,7 @@ class Network(RaspIotModule):
     MODULE_VERSION = u'1.0.0'
     MODULE_PRICE = 0
     MODULE_DEPS = []
-    MODULE_DESCRIPTION = 'Network configuration helper'
+    MODULE_DESCRIPTION = u'Configure how your device connect to your network'
     MODULE_LOCKED = True
     MODULE_URL = None
     MODULE_TAGS = ['wireless', 'wifi', 'ethernet']
