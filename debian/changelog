@@ -18,6 +18,8 @@ raspiot (0.0.11) UNRELEASED; urgency=low
   improve command line options (debug, disable readonly...)
   * Improve loader on UI
 
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Fri, 08 Dec 2017 23:00:00 +0000
+
 raspiot (0.0.10) UNRELEASED; urgency=low
 
   * Improve renderers: add way to configure handled events
