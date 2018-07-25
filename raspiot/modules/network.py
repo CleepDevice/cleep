@@ -313,6 +313,18 @@ class Network(RaspIotModule):
 
         return output
 
+    def event_received(self, event):
+        """
+        Event received on bus
+
+        Args:
+            event (dist): event data
+        """
+        if event[u'event']==u'system.country.update':
+            #update wpa_supplicant country code
+            self.logger.debug(u'Received country update event: %s' % event)
+            self.wpasupplicant.set_country(event[u'params'][u'country'])
+
     def __check_network_connection(self):
         """
         Check network connection

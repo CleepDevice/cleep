@@ -94,6 +94,7 @@ class Parameters(RaspIotModule):
         self.systemTimeSunrise = self._get_event(u'system.time.sunrise')
         self.systemTimeSunset = self._get_event(u'system.time.sunset')
         self.systemHostnameUpdate = self._get_event(u'system.hostname.update')
+        self.systemCountryUpdate = self._get_event(u'system.country.update')
 
     def _configure(self):
         """
@@ -376,6 +377,9 @@ class Parameters(RaspIotModule):
 
                 #save new country
                 self._set_config_field(u'country', country)
+
+                #send event
+                self.systemCountryUpdate.send(params=country);
 
             except:
                 self.logger.exception(u'Unable to find country for position %s:' % position)

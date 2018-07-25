@@ -13,6 +13,7 @@ import time
 class WpaSupplicantConf(Config):
     """
     Helper class to update and read /etc/wpa_supplicant/wpa_supplicant.conf file
+    This class is not thread safe due to self.CONF that can modified on the fly
 
     Infos:
         https://w1.fi/cgit/hostap/plain/wpa_supplicant/wpa_supplicant.conf
@@ -28,6 +29,8 @@ class WpaSupplicantConf(Config):
     ENCRYPTION_TYPE_UNSECURED = u'unsecured'
     ENCRYPTION_TYPE_UNKNOWN = u'unknown'
     ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
+
+    COUNTRIES_ISO3166 = u'/usr/share/zoneinfo/iso3166.tab'
 
     def __init__(self, cleep_filesystem, backup=True):
         """
@@ -47,6 +50,56 @@ class WpaSupplicantConf(Config):
         #members
         self.cleep_filesystem = cleep_filesystem
         self.__groups = {}
+        self.__country_codes = None
+
+    def __load_country_codes(self):
+        """
+        Load country codes
+        """
+        if os.path.exists(self.COUNTRIES_ISO3166):
+            lines = self.cleep_filesystem.read_data(self.COUNTRIES_ISO3166)
+            self.__country_codes = {}
+            for line in lines:
+                if line.startswith(u'#'):
+                    continue
+                (code, country) = line.split(None, 1)
+                self.__country_codes[country.strip().lower()] = code
+
+        else:
+            #no iso3166 file, set to empty dict
+            self.__country_codes = {}
+
+        self.logger.debug(u'Found country codes: %s' % self.__country_codes)
+
+    def set_country(self, country):
+        """
+        Configure country in wpa_supplicant conf file
+
+        Args:
+            country (string): country to use
+        """
+        #load country codes
+        if self.__country_codes is None:
+            self.__load_country_codes()
+
+        #get country code
+        country_lower = country.lower()
+        if country_lower not in self.__country_codes:
+            self.logger.debug(u'Country "%s" not found in country codes' % country_lower)
+            return None
+        country_code = self.__country_codes[country_lower]
+        self.logger.debug(u'Found country code "%s" for country "%s"' % (country_code, country))
+
+        #update wpa_supplicant files
+        config_files = self.__get_configuration_files()
+        old_conf = self.CONF
+        for interface in config_files:
+            self.CONF = config_files[interface]
+            if not self.replace_line(u'^\s*country\s*=.*$', 'country=%s' % country_code):
+                self.logger.warning(u'It seems there is no country information in "%s"' % self.CONF)
+
+        #restore old conf file
+        self.CONF = old_conf
 
     def encrypt_password(self, network, password):
         """
@@ -131,7 +184,6 @@ class WpaSupplicantConf(Config):
             try:
                 fpath = os.path.join(self.WPASUPPLICANT_DIR, f)
                 (conf, ext) = os.path.splitext(f)
-                self.logger.debug(' --> %s' % conf)
                 if os.path.isfile(fpath) and conf==u'wpa_supplicant':
                     #default config file
                     configs[u'default'] = fpath
@@ -222,7 +274,7 @@ class WpaSupplicantConf(Config):
 
     def get_configurations(self):
         """
-        Get configuration for specified configuration file
+        Get all configuration files
 
         Returns:
             dict: dict of configurations per interface. If no config for interface, interface is named "default"
