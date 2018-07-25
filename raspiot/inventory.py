@@ -53,7 +53,8 @@ class Inventory(RaspIotModule):
             u'system',
             u'audio',
             u'network',
-            u'cleepbus'
+            u'cleepbus',
+            u'parameters'
         ]
         #direct access to modules instances
         self.__modules_instances = {}
@@ -159,7 +160,7 @@ class Inventory(RaspIotModule):
         self.modules[module_name][u'installed'] = True
 
         #handle properly version and updatable flag
-        if Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
+        if u'version' in self.modules[module_name] and Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
             self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
         self.modules[module_name][u'version'] = module_class_.MODULE_VERSION
 
