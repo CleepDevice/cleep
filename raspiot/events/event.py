@@ -59,6 +59,7 @@ class Event():
             request.to = to
             request.from_ = module
             request.event = self.EVENT_NAME
+            request.eventsystem = self.EVENT_SYSTEM
             request.device_id = device_id
             request.params = params
 

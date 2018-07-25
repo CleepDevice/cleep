@@ -106,6 +106,7 @@ class MessageRequest():
      - in case of an event:
        - an event name
        - event parameters
+       - eventsystem flag to say if event is a system one (and may not be pushed away from device)
        - a device id
        - a startup flag that indicates this event was sent during raspiot startup
        - peer infos if message comes from external device
@@ -116,6 +117,7 @@ class MessageRequest():
         """
         self.command = None
         self.event = None
+        self.eventsystem = False
         self.params = {}
         self.to = None
         self.from_ = None
@@ -129,7 +131,7 @@ class MessageRequest():
         if self.command:
             return u'{command:%s, params:%s, to:%s}' % (self.command, unicode(self.params), self.to)
         elif self.event:
-            return u'{event:%s, params:%s, to:%s, peer_infos:%s}' % (self.event, unicode(self.params), self.to, self.peer_infos)
+            return u'{event:%s, eventsystem:%s, params:%s, to:%s, peer_infos:%s}' % (self.event, self.eventsystem, unicode(self.params), self.to, self.peer_infos)
         else:
             return u'Invalid message'
 
