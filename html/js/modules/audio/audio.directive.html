@@ -6,7 +6,7 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div>
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <span style="padding-left: 28px;">Audio device</span>
         </div>
         <div layout="row">
@@ -28,14 +28,14 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div flex="30">
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <span style="padding-left: 28px;">Playback volume</span>
         </div>
         <md-slider flex="40" md-discrete ng-model="audioCtl.volumePlayback" step="5" min="0" max="100" aria-label="Playback volume" ng-model-options="{debounce: 1000}" ng-change="audioCtl.setVolumes()" ng-disabled="!audioCtl.currentDevice || audioCtl.volumePlayback===null"></md-slider>
     </div>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div flex="30">
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <span style="padding-left: 28px;">Capture volume</span>
         </div>
         <md-slider flex="40" md-discrete ng-model="audioCtl.volumeCapture" step="5" min="0" max="100" aria-label="Capture volume" ng-model-options="{debounce: 1000}" ng-change="audioCtl.setVolumes()" ng-disabled="!audioCtl.currentDevice || audioCtl.volumeCapture===null"></md-slider>
@@ -47,7 +47,7 @@
     </md-list-item>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div>
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <span style="padding-left: 28px;">Play sound on configured sound device to check configuration and volume</span>
         </div>
         <div layout="row">
@@ -59,7 +59,7 @@
     </div>
     <div layout="row" layout-align="space-between center" style="padding: 0 16px;">
 	    <div>
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <span style="padding-left: 28px;">Record sound during 5 seconds and play it to check recording configuration</span>
         </div>
         <div layout="row">

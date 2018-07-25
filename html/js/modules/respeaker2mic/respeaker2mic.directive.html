@@ -4,7 +4,7 @@
     <md-list ng-cloak>
         <md-subheader class="md-no-sticky">Respeaker2mic driver</md-subheader>
 		<md-list-item>
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <p class="custom-list-item-label" ng-if="respeaker2micCtl.driverStatus==='installed'">Driver is installed</p>
             <p class="custom-list-item-label" ng-if="respeaker2micCtl.driverStatus==='notinstalled'">Driver is not installed</p>
             <p class="custom-list-item-label" ng-if="respeaker2micCtl.driverStatus==='installing'">Driver is installing...</p>
@@ -27,7 +27,7 @@
     <md-list ng-cloak>
         <md-subheader class="md-no-sticky">LEDs profiles</md-subheader>
         <md-list-item ng-repeat="profile in respeaker2micCtl.ledsProfiles">
-            <md-icon md-svg-icon="chevron-double-right"></md-icon>
+            <md-icon md-svg-icon="chevron-right"></md-icon>
             <p>{{profile.name}}: {{profile.actions.length}} actions</p>
             <md-button class="md-secondary md-primary" ng-click="respeaker2micCtl.testLedsProfile(profile)">
                 <md-icon md-svg-icon="play"></md-icon>
