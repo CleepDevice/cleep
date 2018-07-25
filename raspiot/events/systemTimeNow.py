@@ -33,7 +33,8 @@ class Systemtimenow(Event):
             bool: True if params are valid, False otherwise
         """
         keys = [
-            u'time',
+            u'timestamp',
+            u'iso',
             u'year',
             u'month',
             u'day',
