@@ -16,6 +16,7 @@ from timezonefinder import TimezoneFinder
 from pytz import timezone
 from tzlocal import get_localzone
 from datetime import datetime
+import re
 
 __all__ = [u'Parameters']
 
@@ -86,11 +87,13 @@ class Parameters(RaspIotModule):
         self.timezone = None
         self.time_task = None
         self.__clock_uuid = None
+        self.__hostname_pattern = r'^[a-zA-Z][0-9a-zA-Z\-]{3,}[^-]$'
 
         #events
         self.systemTimeNow = self._get_event(u'system.time.now')
         self.systemTimeSunrise = self._get_event(u'system.time.sunrise')
         self.systemTimeSunset = self._get_event(u'system.time.sunset')
+        self.systemHostnameUpdate = self._get_event(u'system.hostname.update')
 
     def _configure(self):
         """
@@ -255,7 +258,18 @@ class Parameters(RaspIotModule):
         Return:
             bool: True if hostname saved successfully, False otherwise
         """
-        self.hostname.set_hostname(hostname)
+        #check hostname
+        if re.match(self.__hostname_pattern, hostname) is None:
+            raise CommandError(u'Hostname is not valid')
+
+        #update hostname
+        res = self.hostname.set_hostname(hostname)
+
+        #send event to update hostname on all devices
+        if res:
+            self.systemHostnameUpdate.send(params={u'hostname': hostname})
+
+        return res
 
     def get_hostname(self):
         """
