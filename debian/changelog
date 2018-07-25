@@ -1,3 +1,23 @@
+raspiot (0.0.11) UNRELEASED; urgency=low
+
+  * Add parameters module to handle generic device configuration (timezone,
+  hostname)
+  * Remove implemented stuff in parameters module from system module
+  * Implement system event flag to filter system event easily
+  * Fix issues in cleep filesystem
+  * Implement updates in system module for raspiot and modules
+  * Externalize properly modules to make them installable and updatable (in
+  python and angular). Load dynamically angular modules.
+  * Implement Sentry to report crash
+  * Improve network module: recognize multiple wifi interfaces, fix bugs,
+  rewrite some code
+  * Inventory module is now the only way to load modules (and all related
+  stuff)
+  * Fix bug in audio module
+  * Major improvements on core: protect from crash (prepare for developers),
+  improve command line options (debug, disable readonly...)
+  * Improve loader on UI
+
 raspiot (0.0.10) UNRELEASED; urgency=low
 
   * Improve renderers: add way to configure handled events
