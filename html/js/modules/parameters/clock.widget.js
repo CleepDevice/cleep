@@ -2,7 +2,7 @@
  * Clock widget directive
  * Display clock dashboard widget
  */
-var widgetClockDirective = function() {
+var widgetClockDirective = function(parametersService) {
 
     var widgetClockController = ['$scope', function($scope) {
         var self = this;
@@ -22,5 +22,5 @@ var widgetClockDirective = function() {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('widgetClockDirective', [widgetClockDirective]);
+RaspIot.directive('widgetClockDirective', ['parametersService', widgetClockDirective]);
 
