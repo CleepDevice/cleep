@@ -96,8 +96,8 @@ class Network(RaspIotModule):
         self.__network_is_down = True
 
         #events
-        self.network_up_event = self._get_event(u'network.network.up')
-        self.network_down_event = self._get_event(u'network.network.down')
+        self.network_up_event = self._get_event(u'system.network.up')
+        self.network_down_event = self._get_event(u'system.network.down')
         self.network_status_update = self._get_event(u'network.status.update')
 
     def _configure(self):
