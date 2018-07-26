@@ -3,7 +3,7 @@
     
 import os
 import logging
-from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError, NoCityFound
+from raspiot.utils import InvalidParameter, MissingParameter, NoResponse, InvalidModule, CommandError
 from raspiot.raspiot import RaspIotModule
 from raspiot.libs.internals.task import Task
 import raspiot
@@ -19,6 +19,7 @@ from raspiot.libs.internals.console import Console, EndlessConsole
 from raspiot.libs.configs.fstab import Fstab
 from raspiot.libs.configs.raspiotconf import RaspiotConf
 from raspiot.libs.internals.install import Install
+from raspiot.libs.internals.installraspiot import InstallRaspiot
 from raspiot.libs.configs.modulesjson import ModulesJson
 import raspiot.libs.internals.tools as Tools
 from raspiot.libs.internals.github import Github
@@ -51,9 +52,6 @@ class System(RaspIotModule):
     LOG_FILE = u'/var/log/raspiot.log'
 
     DEFAULT_CONFIG = {
-        u'city': None,
-        u'country': u'',
-        u'alpha2': u'',
         u'monitoring': False,
         u'device_uuid': str(uuid.uuid4()),
         u'ssl': False,
@@ -286,11 +284,11 @@ class System(RaspIotModule):
             self.check_modules_updates()
 
             #and perform updates if allowed
-            #TODO
             config = self._get_config()
             if config[u'raspiotupdateenabled']:
                 self.update_raspiot()
             if config[u'modulesupdateenabled']:
+                #TODO update modules that need to be updated
                 pass
 
     def set_monitoring(self, monitoring):
