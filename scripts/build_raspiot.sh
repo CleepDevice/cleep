@@ -39,10 +39,14 @@ then
 fi
 
 #build zip archive
-zip $ARCHIVE $DEB $PREINST $POSTINST
-printf "@ $DEB\n@=raspiot.deb\n" | zipnote -w $ARCHIVE
-printf "@ $PREINST\n@=preinst.sh\n" | zipnote -w $ARCHIVE
-printf "@ $POSTINST\n@=postinst.sh\n" | zipnote -w $ARCHIVE
+rm -f *.zip
+rm -f *.sha256
+cp -a $DEB raspiot.deb
+cp -a $PREINST .
+cp -a $POSTINST .
+zip $ARCHIVE raspiot.deb `basename $PREINST` `basename $POSTINST`
+rm -f `basename $PREINST`
+rm -f `basename $POSTINST`
 sha256sum $ARCHIVE > $SHA256
 
 echo "Files \"$ARCHIVE\" and \"$SHA256\" are ready to be uploaded in https://github.com/tangb/raspiot/releases with following informations:"
