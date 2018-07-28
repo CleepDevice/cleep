@@ -46,8 +46,8 @@ class Parameters(RaspIotModule):
     MODULE_CONFIG_FILE = u'parameters.conf'
     DEFAULT_CONFIG = {
         u'position': {
-            u'latitude': 0,
-            u'longitude': 0
+            u'latitude': 52.2023,
+            u'longitude': 0.1201
         },
         u'country': {
             u'country': None,
