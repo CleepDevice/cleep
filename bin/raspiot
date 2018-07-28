@@ -25,8 +25,6 @@ from gevent import __version__ as gevent_version
 from urllib3 import __version__ as urllib3_version
 from psutil import __version__ as psutil_version
 from passlib import __version__ as passlib_version
-from RPi.GPIO import VERSION as gpio_version
-from pyremotedev import __version__ as pyremotedev_version
 from pyre_gevent import __version__ as pyregevent_version
 
 LOG_FILE = u'/var/log/raspiot.log'
@@ -111,8 +109,6 @@ def load_crash_report(debug_enabled):
         u'urllib3': urllib3_version,
         u'psutil': psutil_version,
         u'passlib': passlib_version,
-        u'gpio': gpio_version,
-        u'pyremotedev': pyremotedev_version,
         u'pyregevent': pyregevent_version
     }
     crash_report = CrashReport(u'CleepDevice', VERSION, libs_version, debug_enabled)
