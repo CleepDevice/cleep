@@ -177,12 +177,12 @@ class Inventory(RaspIotModule):
         #get list of all available modules (from remote list)
         modules_json = ModulesJson(self.cleep_filesystem)
         if not modules_json.exists():
-            #modules.json doesn't exists, fallback to empty one
-            self.logger.warning(u'No modules.json loaded from Raspiot website')
-            self.modules = {}
-        else:
-            modules_json_content = modules_json.get_json()
-            self.modules = modules_json_content[u'list']
+            #modules.json doesn't exists, download it
+            self.logger.info(u'No modules.json still loaded from Raspiot website. Download it now')
+            if modules_json.update():
+                self.logger.info(u'File modules.json downloaded successfully')
+        modules_json_content = modules_json.get_json()
+        self.modules = modules_json_content[u'list']
 
         #append manually installed modules (surely module in development)
         path = os.path.join(os.path.dirname(__file__), u'modules')

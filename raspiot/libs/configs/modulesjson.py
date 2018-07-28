@@ -25,7 +25,7 @@ class ModulesJson():
         #members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
     def exists(self):
         """
@@ -47,6 +47,10 @@ class ModulesJson():
                     list (dict): dict of available modules
                 }
         """
+        #check
+        if not os.path.exists(self.CONF):
+            raise Exception(u'File modules.json doesn\'t exist. Please update it first.')
+            
         #read content
         modules_json = self.cleep_filesystem.read_json(self.CONF)
 
@@ -66,6 +70,7 @@ class ModulesJson():
         Return:
             bool: True if remove modules.json is different from local one
         """
+        self.logger.debug('Updating modules.json file...')
         #download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
         raw = download.download_file(self.REMOTE_CONF)
@@ -73,21 +78,24 @@ class ModulesJson():
 
         #check remote content
         if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
-            self.logger.warning(u'Remote modules.json file has unknown format')
+            self.logger.warning(u'Remote modules.json file has invalid format')
             return False
         
         #get local
-        local_modules_json = self.get_json()
+        local_modules_json = None
+        if os.path.exists(self.CONF):
+            local_modules_json = self.get_json()
 
         #compare update field
         if local_modules_json is None or remote_modules_json[u'update']>local_modules_json['update']:
             #modules.json updated, save new file
+            self.logger.debug(u'Write modules.json to "%s"' % self.CONF)
             fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(raw)
             self.cleep_filesystem.close(fd)
         
             #make sure file is written
-            time.sleep(0.5)
+            time.sleep(0.25)
 
             return True
 
