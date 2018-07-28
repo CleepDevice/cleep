@@ -293,7 +293,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.getLogs = function() {
             systemService.getLogs()
                 .then(function(resp) {
-                    self.logs = resp.data;
+                    self.logs = resp.data.join();
                     self.refreshEditor();
                 });
         };
