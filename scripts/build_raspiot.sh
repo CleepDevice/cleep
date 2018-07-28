@@ -47,6 +47,7 @@ cp -a $POSTINST .
 zip $ARCHIVE raspiot.deb `basename $PREINST` `basename $POSTINST`
 rm -f `basename $PREINST`
 rm -f `basename $POSTINST`
+rm -f raspiot.deb
 sha256sum $ARCHIVE > $SHA256
 
 echo "Files \"$ARCHIVE\" and \"$SHA256\" are ready to be uploaded in https://github.com/tangb/raspiot/releases with following informations:"
