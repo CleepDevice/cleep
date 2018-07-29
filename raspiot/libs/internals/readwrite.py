@@ -113,6 +113,14 @@ class ReadWrite():
         #check errors
         if res[u'error'] or res[u'killed']:
             self.logger.error(u'Error when turning on writing mode: %s' % res)
+
+            #dump current stack trace to log
+            lines = traceback.format_list(traceback.extract_stack())
+            self.logger.error(u'%s' % ''.join(lines))
+
+            #and send crash report
+            if self.crash_report:
+                self.crash_report.manual_report(u'Error when turning on writing mode', res)
             
         #refresh status
         self.__refresh(partition)
