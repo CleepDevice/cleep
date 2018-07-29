@@ -68,6 +68,7 @@ class System(RaspIotModule):
         u'modulesupdateavailable': False,
         u'lastraspiotupdate': {
             u'status': None,
+            u'time': 0,
             u'stdout': [],
             u'stderr': []
         },
@@ -389,6 +390,7 @@ class System(RaspIotModule):
             lastmodulesinstalls = self._get_config_field(u'lastmodulesinstalls')
             lastmodulesinstalls[status[u'module']] = {
                 u'status': status[u'status'],
+                u'time': int(time.time()),
                 u'stdout': status[u'stdout'],
                 u'stderr': status[u'stderr']
             }
@@ -483,6 +485,7 @@ class System(RaspIotModule):
             lastmodulesinstalls = self._get_config_field(u'lastmodulesinstalls')
             lastmodulesinstalls[status[u'module']] = {
                 u'status': status[u'status'],
+                u'time': int(time.time()),
                 u'stdout': status[u'stdout'],
                 u'stderr': status[u'stderr']
             }
@@ -748,6 +751,7 @@ class System(RaspIotModule):
             #save update status
             self._set_config_field(u'lastraspiotupdate', {
                 u'status': status[u'status'],
+                u'time': int(time.time()),
                 u'stdout': stdout,
                 u'stderr': stderr
             })
