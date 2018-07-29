@@ -57,13 +57,16 @@
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>
-                            Country: {{parametersCtl.country.country}} ({{parametersCtl.country.alpha2}})
+                            <span>Country:</span> 
+                            <span ng-bind="parametersCtl.country.country || '-'"></span> 
+                            <span ng-if="parametersCtl.country.alpha2">({{parametersCtl.country.alpha2}})</span>
                         </p>
                     </md-list-item>
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>
-                            Timezone: {{parametersCtl.timezone}}
+                            <span>Timezone:</span> 
+                            <span ng-bind="parametersCtl.timezone || '-'"></span>
                         </p>
                     </md-list-item>
                 </md-list>

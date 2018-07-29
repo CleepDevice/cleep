@@ -44,16 +44,17 @@ class Parameters(RaspIotModule):
     MODULE_URLSITE = None
 
     MODULE_CONFIG_FILE = u'parameters.conf'
+    #default position to raspberry pi foundation
     DEFAULT_CONFIG = {
         u'position': {
-            u'latitude': 52.2023,
-            u'longitude': 0.1201
+            u'latitude': 52.2040,
+            u'longitude': 0.1208
         },
         u'country': {
-            u'country': None,
-            u'alpha2': None
+            u'country': u'United Kingdom',
+            u'alpha2': u'GB'
         },
-        u'timezone': None
+        u'timezone': u'Europe/London'
     }
 
     SYSTEM_ZONEINFO_DIR = u'/usr/share/zoneinfo/'
@@ -109,21 +110,29 @@ class Parameters(RaspIotModule):
             }
             self._add_device(clock)
 
-        #instanciate timezone object
+
+        #prepare country
+        country = self._get_config_field(u'country')
+        if not country:
+            self.set_country()
+
+        #prepare timezone
         timezone_name = self._get_config_field(u'timezone')
         if timezone_name:
             self.timezone = timezone(timezone_name)
         else:
+            self.logger.info(u'No timezone defined, use default one. It will be updated when user set its position.')
             self.timezone = get_localzone()
 
+        #compute sun times
+        self.set_sun()
+
         #store device uuids for events
+        #get_module_devices need to have timezone configured !
         devices = self.get_module_devices()
         for uuid in devices:
             if devices[uuid][u'type']==u'clock':
                 self.__clock_uuid = uuid
-
-        #compute sun times
-        self.set_sun()
 
         #launch time task
         self.time_task = Task(60.0, self.__time_task, self.logger)
@@ -415,6 +424,7 @@ class Parameters(RaspIotModule):
                 self.logger.exception(u'Coordinates out of bounds')
 
         #save timezone value
+        self.logger.debug('Save new timezone: %s' % timezone)
         if not self._set_config_field(u'timezone', timezone):
             raise CommandError(u'Unable to save timezone')
 
@@ -433,11 +443,11 @@ class Parameters(RaspIotModule):
                 command = Console()
                 res = command.command(u'/usr/sbin/dpkg-reconfigure -f noninteractive tzdata', timeout=15.0)
                 self.logger.debug('Timezone update command result: %s' % res)
-                if res[u'error']:
-                    return False
+                # /!\ can't check command res because command output is printed on stderr :(
                 
             else:
                 self.logger.warning(u'Unable to set device timezone on non existing zoneinfo file: %s' % zoneinfo)
+                return False
 
         return True
 
