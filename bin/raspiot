@@ -253,7 +253,7 @@ if __name__ == u'__main__':
             debug = True
         inventory = raspiot_inventory.Inventory(bootstrap, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
         inventory.start()
-        logger.info(u'Inventory is ready (all modules are loaded)')
+        logger.info(u'Inventory is ready and all modules are loaded')
 
         #unlock bus and launch webserver (blocking)
         logger.info(u'Raspiot running...')
