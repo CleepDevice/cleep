@@ -38,7 +38,7 @@ class CleepFilesystem():
         #check if os is in readonly mode
         self.is_readonly = self.__is_readonly_filesystem()
         if self.is_readonly:
-            self.logger.info(u'Raspiot is running on readonly configured filesystem')
+            self.logger.info(u'Raspiot is running on read-only filesystem')
 
     def __is_readonly_filesystem(self):
         """
@@ -54,7 +54,6 @@ class CleepFilesystem():
         for line in lines:
             if line.find(u',ro')>=0 or line.find(u'ro,')>=0:
                 #read only configured
-                self.logger.info(u'Running RaspIot on configured read-only filesystem')
                 return True
 
         return False

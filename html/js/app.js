@@ -91,16 +91,16 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                         if( response.data.event.endsWith('reboot') )
                         {
                             self.rebooting = true;
-                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.'});
+                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.', spinner:true});
                         }
                         else if( response.data.event.endsWith('restart') )
                         {
                             self.restarting = true;
-                            blockUI.start({message:'System is restarting...', submessage:'Please wait few seconds.'});
+                            blockUI.start({message:'Application is restarting...', submessage:'Please wait few seconds.', spinner:true});
                         }
                         else if( response.data.event.endsWith('halt') )
                         {
-                            blockUI.start({message:'System is halted.', spinner:false});
+                            blockUI.start({message:'System is halting.', submessage:'Your device will disconnect in few seconds.', spinner:true});
                         }
                     }
                     else
@@ -233,6 +233,20 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
             {
                 self.needRestart = newValue.config.needrestart;
                 self.needReboot = newValue.config.needreboot;
+            }
+        }
+    );
+
+    /**
+     * Watch for parameters config changes
+     */
+    $scope.$watchCollection(
+        function() {
+            return raspiotService.modules['parameters'];
+        },
+        function(newValue) {
+            if( !angular.isUndefined(newValue) )
+            {
                 self.hostname = newValue.config.hostname;
             }
         }

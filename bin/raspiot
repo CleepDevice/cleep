@@ -81,11 +81,11 @@ def load_config(cleep_filesystem):
     @raise ConfigException when error occured
     """
     #load config
-    logger.info(u'Loading configuration raspiot.conf file')
     conf = RaspiotConf(cleep_filesystem)
+    logger.info(u'Loading application configuration file "%s"' % conf.CONF)
     conf.check()
     config = conf.as_dict()
-    logger.info(u'config: %s' % config)
+    logger.debug(u'Application config: %s' % config)
 
     #clear updated modules list
     conf.clear_updated_modules()
