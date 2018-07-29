@@ -224,6 +224,7 @@ if __name__ == u'__main__':
             crash_report.disable()
         if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
+        cleep_filesystem.set_crash_report(crash_report)
 
         #create message bus (will be part of bootstrap objects)
         logger.debug(u'Initializing message bus')

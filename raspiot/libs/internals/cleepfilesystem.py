@@ -30,6 +30,7 @@ class CleepFilesystem():
         #self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.crash_report = None
         self.rw = ReadWrite()
         self.__counter = 0;
         self.__rw_lock = Lock()
@@ -39,6 +40,16 @@ class CleepFilesystem():
         self.is_readonly = self.__is_readonly_filesystem()
         if self.is_readonly:
             self.logger.info(u'Raspiot is running on read-only filesystem')
+
+    def set_crash_report(self, crash_report):
+        """
+        Set crash report
+
+        Args:
+            crash_report (CrashReport): CrashReport instance
+        """
+        self.crash_report = crash_report
+        self.rw.set_crash_report(crash_report)
 
     def __is_readonly_filesystem(self):
         """

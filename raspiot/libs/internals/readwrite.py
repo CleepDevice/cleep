@@ -4,6 +4,7 @@
 from raspiot.libs.internals.console import Console
 import logging
 import os
+import traceback
 
 class ReadWrite():
     """
@@ -24,6 +25,16 @@ class ReadWrite():
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.status = {}
+        self.crash_report = None
+
+    def set_crash_report(self, crash_report):
+        """
+        Set crash report
+
+        Args:
+            crash_report (CrashReport): CrashReport instance
+        """
+        self.crash_report = crash_report
 
     def __refresh(self, partition):
         """
@@ -127,6 +138,14 @@ class ReadWrite():
         #check errors
         if res[u'error'] or res[u'killed']:
             self.logger.error(u'Error when turning off writing mode: %s' % res)
+
+            #dump current stack trace to log
+            lines = traceback.format_list(traceback.extract_stack())
+            self.logger.error(u'%s' % ''.join(lines))
+
+            #and send crash report
+            if self.crash_report:
+                self.crash_report.manual_report(u'Error when turning off writing mode', res)
             
         #refresh status
         self.__refresh(partition)

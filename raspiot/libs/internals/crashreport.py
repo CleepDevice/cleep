@@ -8,6 +8,7 @@ from raven.handlers.logging import SentryHandler
 import platform
 import traceback
 
+
 class CrashReport():
     """
     Crash report class
@@ -94,6 +95,16 @@ class CrashReport():
         #self.logger.fatal(message)
         if self.enabled:
             self.client.captureException((type, value, tb), extra=self.extra)
+
+    def manual_report(self, message, extra=None):
+        """
+        Report manually a crash report dumping current stack trace to report thx to raven
+
+        Args:
+            message (string): message to attach to crash report
+        """
+        if self.enabled:
+            self.client.capture(u'raven.events.Message', message=message, stack=True, extra=extra)
 
     def get_logging_handler(self, level=logging.ERROR):
         """
