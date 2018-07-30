@@ -333,7 +333,6 @@ class Actions(RaspIotModule):
     MODULE_CONFIG_FILE = u'actions.conf'
 
     SCRIPTS_PATH = u'/var/opt/raspiot/scripts'
-    DATA_FILE = u'raspiot.data.conf'
     DEFAULT_CONFIG = {
         u'scripts': {}
     }
