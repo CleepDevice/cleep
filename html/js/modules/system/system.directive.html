@@ -39,7 +39,7 @@
                 <p>New raspiot version available</p>
                 <md-button class="md-secondary" ng-click="systemCtl.updateRaspiot()">Update raspiot</md-button>
             </md-list-item>
-            <md-list-item ng-if="systemCtl.lastRaspiotUpdate.time">
+            <md-list-item ng-if="systemCtl.lastRaspiotUpdate.time!==0">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Last update installed at {{systemCtl.lastRaspiotUpdate.time | hrDatetime}}</p>
                 <md-button class="md-secondary" ng-click="systemCtl.showLogs()">Show logs</md-button>
