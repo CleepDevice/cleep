@@ -88,19 +88,19 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                     if( response.data.event.startsWith('system.system.') )
                     {
                         //handle system events
-                        if( response.data.event.endsWith('reboot') )
+                        if( response.data.event=='system.system.reboot' )
                         {
                             self.rebooting = true;
-                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.', spinner:true});
+                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.', spinner:true, icon:null});
                         }
-                        else if( response.data.event.endsWith('restart') )
+                        else if( response.data.event=='system.system.restart' )
                         {
                             self.restarting = true;
-                            blockUI.start({message:'Application is restarting...', submessage:'Please wait few seconds.', spinner:true});
+                            blockUI.start({message:'Application is restarting...', submessage:'Please wait few seconds.', spinner:true, icon:null});
                         }
-                        else if( response.data.event.endsWith('halt') )
+                        else if( response.data.event=='system.system.halt' )
                         {
-                            blockUI.start({message:'System is halting.', submessage:'Your device will disconnect in few seconds.', spinner:true});
+                            blockUI.start({message:'System is halting.', submessage:'Your device will disconnect in few seconds.', spinner:true, icon:null});
                         }
                     }
                     else
