@@ -376,7 +376,7 @@ class System(RaspIotModule):
         """
         self.logger.debug(u'Module install callback status: %s' % status)
         
-        #send process status to ui
+        #send process status
         self.systemModuleInstall.send(params=status)
 
         #save last stdout/stderr from install

@@ -11,6 +11,7 @@ from raspiot import RaspIotModule, RaspIotRenderer
 from .libs.configs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
+from .libs.internals.install import Install
 import libs.internals.tools as Tools
 
 __all__ = [u'Inventory']
@@ -66,6 +67,23 @@ class Inventory(RaspIotModule):
         Configure module
         """
         self.load_modules()
+
+    def event_received(self, event):
+        """
+        Handle event
+
+        Args:
+            event (MessageRequest): event data
+        """
+        #handle module installation
+        if event[u'event']=='system.module.install':
+            if event[u'params'][u'module'] in self.modules:
+                if event[u'params'][u'status']==Install.STATUS_PROCESSING:
+                    self.logger.debug(u'Set module "%s" installing flag to True' % event[u'params'][u'module'])
+                    self.modules[event[u'params'][u'module']][u'installing'] = True
+                else:
+                    self.logger.debug(u'Set module "%s" installing flag to False' % event[u'params'][u'module'])
+                    self.modules[event[u'params'][u'module']][u'installing'] = False
 
     def __get_bootstrap(self):
         """
@@ -206,6 +224,7 @@ class Inventory(RaspIotModule):
             self.modules[module_name][u'library'] = False
             self.modules[module_name][u'local'] = module_name in local_modules
             self.modules[module_name][u'pending'] = False
+            self.modules[module_name][u'installing'] = False
             self.modules[module_name][u'updatable'] = u''
             self.modules[module_name][u'locked'] = False
 

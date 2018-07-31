@@ -8,7 +8,7 @@ import io
 import os
 
 from raspiot.libs.internals import __all__ as internals_libs
-from raspiot.libs.externals import __all__ as externals_libs
+#from raspiot.libs.externals import __all__ as externals_libs
 from raspiot.libs.drivers import __all__ as drivers_libs
 from raspiot.libs.configs import __all__ as configs_libs
 from raspiot.libs.commands import __all__ as commands_libs
@@ -189,16 +189,21 @@ def is_system_lib(path):
     filename_wo_ext = os.path.splitext(parts[len(parts)-1])[0]
     libs_part = parts[len(parts)-3]
     sublibs_part = parts[len(parts)-2]
+    print('==> internals_libs: %s' % internals_libs)
+    print('==> drivers_libs: %s' % drivers_libs)
+    print('==> commands_libs: %s' % commands_libs)
+    print('==> configs_libs: %s' % configs_libs)
+    print('==> %s %s %s' % (filename_wo_ext, libs_part, sublibs_part))
 
     #check
     if libs_part!=u'libs':
         return False
-    if sublibs_part not in (u'internals', u'externals', u'drivers', u'commands', u'configs'):
+    if sublibs_part not in (u'internals', u'drivers', u'commands', u'configs'):
         return False
     if sublibs_part==u'internals' and filename not in internals_libs:
         return False
-    elif sublibs_part==u'externals' and filename not in externals_libs:
-        return False
+    #elif sublibs_part==u'externals' and filename not in externals_libs:
+    #    return False
     elif sublibs_part==u'drivers' and filename not in drivers_libs:
         return False
     elif sublibs_part==u'commands' and filename not in commands_libs:

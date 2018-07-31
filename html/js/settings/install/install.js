@@ -25,6 +25,10 @@ var installDirective = function($q, raspiotService, toast) {
          */
         self.install = function(module)
         {
+            //lock button
+            self.updateModuleInstallingStatus(module, true);
+
+            //trigger install
             raspiotService.installModule(module);
         };
 
@@ -60,6 +64,26 @@ var installDirective = function($q, raspiotService, toast) {
             
             //update pending status in raspiotService
             raspiotService.modules[module].pending = true;
+        };
+
+        /**
+         * Update installing module status
+         * @param module (string): module name
+         * @param installing (bool): installing value
+         */
+        self.updateModuleInstallingStatus = function(module, installing)
+        {
+            //update pending status in local modules
+            for( var i=0; i<self.modules.length; i++ )
+            {
+                if( self.modules[i].name===module )
+                {
+                    self.modules[i].installing = installing;
+                }
+            }
+            
+            //update pending status in raspiotService
+            raspiotService.modules[module].installing = installing;
         };
 
         /**
@@ -124,21 +148,28 @@ var installDirective = function($q, raspiotService, toast) {
             {
                 return;
             }
-                
-            if( params.status==2 )
+            
+            if( params.status===1 )
             {
-                toast.error('Error during module ' + params.module + ' installation');
+                //installing status
             }
-            else if( params.status==4 )
+            if( params.status===2 )
+            { 
+                toast.error('Error during module ' + params.module + ' installation');
+                self.updateModuleInstallingStatus(params.module, false);
+            }
+            else if( params.status===4 )
             {
                 toast.error('Module ' + params.module + ' installation canceled');
+                self.updateModuleInstallingStatus(params.module, false);
             }
-            else if( params.status==3 )
+            else if( params.status===3 )
             {
                 //reload system config to activate restart flag (see main controller)
                 raspiotService.reloadModuleConfig('system')
                     .then(function() {
                         //set module pending status
+                        self.updateModuleInstallingStatus(params.module, false);
                         self.updateModulePendingStatus(params.module);
 
                         //info message
