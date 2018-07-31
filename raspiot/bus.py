@@ -644,16 +644,13 @@ class BusClient(threading.Thread):
                     self.logger.error('Critical error occured in custom_process: %s' % str(e))
                     self.crash_report.report_exception()
 
-                #self.logger.debug('BusClient: pull message')
                 msg = {}
                 try:
                     #get message
                     msg = self.bus.pull(self.__module)
-                    #self.logger.debug('BusClient: %s received %s' % (self.__module, msg))
 
                 except NoMessageAvailable:
                     #no message available
-                    #self.logger.debug('BusClient no msg avail')
                     #release CPU
                     time.sleep(.25)
                     continue
@@ -666,7 +663,6 @@ class BusClient(threading.Thread):
                 resp = MessageResponse()
        
                 #process message
-                #self.logger.debug('BusClient: %s process message' % (self.__module))
                 if msg.has_key(u'message'):
                     if msg[u'message'].has_key(u'command'):
                         #command received, process it
@@ -674,13 +670,13 @@ class BusClient(threading.Thread):
                             try:
                                 #get command reference
                                 command = getattr(self, msg[u'message'][u'command'])
-                                self.logger.debug(u'BusClient: %s received command %s' % (self.__module, msg[u'message'][u'command']))
+                                self.logger.debug(u'%s received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'from'], msg[u'message'][u'params']))
 
                                 #check if command was found
                                 if command is not None:
                                     #check if message contains all command parameters
                                     (ok, args) = self.__check_params(command, msg[u'message'][u'params'], msg[u'message'][u'from'])
-                                    self.logger.debug(u'BusClient: command ok=%s args=%s' % (ok, args))
+                                    #self.logger.debug(u'Command ok=%s args=%s' % (ok, args))
                                     if ok:
                                         #execute command
                                         try:
@@ -721,7 +717,7 @@ class BusClient(threading.Thread):
 
                         else:
                             #no command specified
-                            self.logger.error(u'BusClient: No command specified in message %s' % msg[u'message'])
+                            self.logger.error(u'No command specified in message %s' % msg[u'message'])
                             resp.error = True
                             resp.message = u'No command specified in message'
                                 
@@ -731,7 +727,6 @@ class BusClient(threading.Thread):
                         #unlock event if necessary
                         if msg[u'event']:
                             #event available, client is waiting for response, unblock it
-                            self.logger.debug(u'BusClient: unlock event')
                             msg[u'event'].set()
                     
                     elif msg[u'message'].has_key(u'event'):
@@ -752,7 +747,7 @@ class BusClient(threading.Thread):
 
             except:
                 #error occured
-                self.logger.exception(u'BusClient: fatal exception')
+                self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module)
                 self.crash_report.report_exception()
                 self.stop()
 
