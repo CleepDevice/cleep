@@ -493,20 +493,13 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
          */
         $rootScope.$on('network.status.update', function(event, uuid, params)
         {
-            for( var i=0; i<self.networks.length; i++ )
+            if( self.networkStatus[params.interface]===undefined )
             {
-                if( self.networkStatus[params.interface]===undefined )
-                {
-                    self.networkStatus[params.interface] = {
-                        network: params.network,
-                        status: 0,
-                        ipaddress: null
-                    };
-                }
-                self.networkStatus[params.interface].network = params.network;
-                self.networkStatus[params.interface].status = params.status;
-                self.networkStatus[params.interface].ipaddress = params.ipaddress;
+                self.networkStatus[params.interface] = {};
             }
+            self.networkStatus[params.interface].network = params.network;
+            self.networkStatus[params.interface].status = params.status;
+            self.networkStatus[params.interface].ipaddress = params.ipaddress;
         });
 
     }];

@@ -25,7 +25,6 @@ import netifaces
 __all__ = ['Network']
 
 
-
 class Network(RaspIotModule):
     """
     Network module allows user to configure wired and wifi connection
@@ -527,7 +526,8 @@ class Network(RaspIotModule):
         #self.logger.debug('Wifi interface status: network:%s status:%s ip_address:%s' % (network, status, ip_address))
 
         #convert to network status
-        if status==self.wpacli.STATE_COMPLETED:
+        if status==self.wpacli.STATE_COMPLETED and ip_address is not None:
+            #wait before setting connected status while ip is not attributed (can take sometime to get ip)
             wifi_status = self.STATUS_CONNECTED
         elif status in (self.wpacli.STATE_4WAY_HANDSHAKE, self.wpacli.STATE_GROUP_HANDSHAKE):
             wifi_status = self.STATUS_WIFI_INVALID_PASSWORD
@@ -559,6 +559,7 @@ class Network(RaspIotModule):
             self.logger.debug('Wifi interface "%s" status %s on network "%s"' % (interface, wifi_status, network))
             self.network_status[interface][u'network'] = network
             self.network_status[interface][u'status'] = wifi_status
+            self.network_status[interface][u'ipaddress'] = ip_address
 
     def __scan_wifi_networks(self, interface):
         """
