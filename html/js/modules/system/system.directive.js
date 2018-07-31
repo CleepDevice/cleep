@@ -21,6 +21,8 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             }
         };
         self.debugs = {};
+        self.debugSystem = false;
+        self.debugTrace = false;
         self.renderings = [];
         self.eventsNotRendered = [];
         self.raspiotUpdateEnabled = false;
@@ -276,44 +278,6 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             }, 250);
         };
 
-        /******************
-         * Troubleshoot tab
-         ******************/
-
-        /**
-         * Download logs
-         */
-        self.downloadLogs = function() {
-            systemService.downloadLogs();
-        };
-
-        /**
-         * Get logs
-         */
-        self.getLogs = function() {
-            systemService.getLogs()
-                .then(function(resp) {
-                    self.logs = resp.data.join('');
-                    self.refreshEditor();
-                });
-        };
-
-        /**
-         * Refresh editor
-         */
-        self.refreshEditor = function()
-        {
-            self.codemirrorInstance.refresh();
-        };
-
-        /**
-         * Debug changed
-         */
-        self.debugChanged = function(module)
-        {
-            systemService.setModuleDebug(module, self.debugs[module].debug);
-        };
-
         /**
          * Is event not rendered ?
          * @param renderer: renderer name
@@ -369,6 +333,67 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             }
         };
 
+        /******************
+         * Troubleshoot tab
+         ******************/
+
+        /**
+         * Download logs
+         */
+        self.downloadLogs = function() {
+            systemService.downloadLogs();
+        };
+
+        /**
+         * Get logs
+         */
+        self.getLogs = function() {
+            systemService.getLogs()
+                .then(function(resp) {
+                    self.logs = resp.data.join('');
+                    self.refreshEditor();
+                });
+        };
+
+        /**
+         * Refresh editor
+         */
+        self.refreshEditor = function()
+        {
+            self.codemirrorInstance.refresh();
+        };
+
+        /**
+         * Module debug changed
+         */
+        self.moduleDebugChanged = function(module)
+        {
+            systemService.setModuleDebug(module, self.debugs[module].debug);
+        };
+
+        /**
+         * System debug changed
+         */
+        self.systemDebugChanged = function()
+        {
+            systemService.setSystemDebug(self.debugSystem);
+        };
+
+        /**
+         * Trace changed
+         */
+        self.traceChanged = function()
+        {
+            systemService.setTrace(self.debugTrace)
+                .then(function() {
+                    var message = 'Trace enabled';
+                    if( !self.debugTrace )
+                        message = 'Trace disabled';
+                        
+                    toast.success('' + message +'. Please restart application');
+                });
+        };
+
         /**
          * Set module config
          */
@@ -388,6 +413,8 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             self.lastRaspiotUpdate = config.lastraspiotupdate;
             self.version = config.version;
             self.crashReport = config.crashreport;
+            self.debugSystem = config.debug.system;
+            self.debugTrace = config.debug.trace;
         };
 
         /**

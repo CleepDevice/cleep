@@ -32,17 +32,17 @@
             <md-subheader class="md-no-sticky">Raspiot updates</md-subheader>
             <md-list-item>
                 <p>Raspiot version {{systemCtl.version}} is installed (last check {{systemCtl.lastCheckRaspiot | hrDatetime}})</p>
-                <md-button class="md-secondary" ng-click="systemCtl.checkRaspiotUpdates()">Check updates</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.checkRaspiotUpdates()">Check updates</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.raspiotUpdateAvailable && !systemCtl.raspiotUpdateEnabled">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>New raspiot version available</p>
-                <md-button class="md-secondary" ng-click="systemCtl.updateRaspiot()">Update raspiot</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.updateRaspiot()">Update raspiot</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.lastRaspiotUpdate.time!==0">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Last update installed at {{systemCtl.lastRaspiotUpdate.time | hrDatetime}}</p>
-                <md-button class="md-secondary" ng-click="systemCtl.showLogs()">Show logs</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.showLogs()">Show logs</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.raspiotInstallStatus!==0" layout"row">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
@@ -70,12 +70,12 @@
             <md-subheader class="md-no-sticky">Modules update</md-subheader>
             <md-list-item>
                 <p>Check for new modules versions (last check {{systemCtl.lastCheckModules | hrDatetime}})</p>
-                <md-button class="md-secondary" ng-click="systemCtl.checkModulesUpdates()">Check updates</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.checkModulesUpdates()">Check updates</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.modulesUpdateAvailable && !systemCtl.modulesUpdateEnabled">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Some modules updates are available</p>
-                <md-button class="md-secondary" ng-click="systemCtl.updateAllModules()">Update all modules</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.updateAllModules()">Update all modules</md-button>
             </md-list-item>
 
         </md-list>
@@ -113,7 +113,7 @@
             <md-list-item ng-click="systemCtl.restart()">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Restart application</p>
-                <md-button class="md-secondary md-primary" ng-click="systemCtl.restart()">
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.restart()">
                     <md-icon md-svg-icon="restart"></md-icon>
                     Restart
                 </md-button>
@@ -121,7 +121,7 @@
             <md-list-item ng-click="systemCtl.reboot()">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Reboot device</p>
-                <md-button class="md-secondary md-warn" ng-click="systemCtl.reboot()">
+                <md-button class="md-secondary md-raised md-warn" ng-click="systemCtl.reboot()">
                     <md-icon md-svg-icon="restart"></md-icon>
                     Reboot
                 </md-button>
@@ -129,7 +129,7 @@
             <md-list-item ng-click="systemCtl.halt()">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Halt device</p>
-                <md-button class="md-secondary md-warn" ng-click="systemCtl.halt()">
+                <md-button class="md-secondary md-raised md-warn" ng-click="systemCtl.halt()">
                     <md-icon md-svg-icon="stop"></md-icon>
                     Halt
                 </md-button>
@@ -181,12 +181,24 @@
                 Modules to debug
             </div>
             <div>
-                Check modules you want to debug.
+                <div ng-repeat="(module, debug) in systemCtl.debugs">
+                    <md-checkbox ng-model="debug.debug" aria-label="Debug enabled" ng-change="systemCtl.moduleDebugChanged(module)">
+                        {{module}}
+                    </md-checkbox>
+                </div>
+            </div>
+            <div class="md-title">
+                Advanced debug
             </div>
             <div>
-                <div ng-repeat="(module, debug) in systemCtl.debugs">
-                    <md-checkbox ng-model="debug.debug" aria-label="Debug enabled" ng-change="systemCtl.debugChanged(module)">
-                        {{module}}
+                <div>
+                    <md-checkbox ng-model="systemCtl.debugSystem" aria-label="Debug system" ng-change="systemCtl.systemDebugChanged()">
+                        Debug system modules
+                    </md-checkbox>
+                </div>
+                <div>
+                    <md-checkbox ng-model="systemCtl.debugTrace" aria-label="Enable trace" ng-change="systemCtl.traceChanged()">
+                        Enable full log (trace)
                     </md-checkbox>
                 </div>
             </div>

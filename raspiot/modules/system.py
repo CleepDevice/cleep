@@ -118,6 +118,7 @@ class System(RaspIotModule):
         self.systemSystemHalt = self._get_event(u'system.system.halt')
         self.systemSystemReboot = self._get_event(u'system.system.reboot')
         self.systemSystemRestart = self._get_event(u'system.system.restart')
+        self.systemNeedRestart = self._get_event(u'system.system.needrestart')
         self.systemMonitoringCpu = self._get_event(u'system.monitoring.cpu')
         self.systemMonitoringMemory = self._get_event(u'system.monitoring.memory')
         self.systemAlertMemory = self._get_event(u'system.alert.memory')
@@ -211,6 +212,7 @@ class System(RaspIotModule):
             dict: configuration
         """
         config = self._get_config()
+        raspiot = RaspiotConf(self.cleep_filesystem)
 
         out = {}
         out[u'monitoring'] = self.get_monitoring()
@@ -220,6 +222,10 @@ class System(RaspIotModule):
         out[u'crashreport'] = config[u'crashreport']
         out[u'version'] = VERSION
         out[u'eventsnotrendered'] = self.get_events_not_rendered()
+        out[u'debug'] = {
+            u'system': raspiot.is_system_debugged(),
+            u'trace': raspiot.is_trace_enabled()
+        }
 
         out[u'lastcheckraspiot'] = config[u'lastcheckraspiot']
         out[u'lastcheckmodules'] = config[u'lastcheckmodules']
@@ -260,23 +266,11 @@ class System(RaspIotModule):
         """
         #handle restart event
         if event[u'event'].endswith('system.needrestart'):
-            #a module requests a raspiot restart
-            if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
-                #automatic restart requested
-                self.restart()
-            else:
-                #manual restart
-                self.__need_restart = True
+            self.__need_restart = True
 
         #handle reboot event
         elif event[u'event'].endswith('system.needreboot'):
-            #a module requests a reboot
-            if u'force' in event[u'params'].keys() and event[u'params'][u'force']:
-                #automatic reboot requested
-                self.reboot_system()
-            else:
-                #manual reboot
-                self.__need_reboot = True
+            self.__need_reboot = True
 
         #handle time event to trigger updates check
         if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
@@ -1067,18 +1061,61 @@ class System(RaspIotModule):
 
         return lines
 
+    def set_trace(self, trace):
+        """
+        Set trace (full debug)
+
+        Args:
+            trace (bool): enable trace
+        """
+        if trace is None:
+            raise MissingParameter(u'Parameter "trace" is missing')
+
+        #save log level in conf file
+        conf = RaspiotConf(self.cleep_filesystem)
+        if trace:
+            conf.enable_trace()
+        else:
+            conf.disable_trace()
+
+        #send event raspiot needs to be restarted
+        self.__need_restart = True
+        self.systemNeedRestart.send()
+
+    def set_system_debug(self, debug):
+        """
+        Set debug on all system modules
+
+        Args:
+            debug (bool): enable debug
+        """
+        if debug is None:
+            raise MissingParameter(u'Parameter "debug" is missing')
+
+        conf = RaspiotConf(self.cleep_filesystem)
+        if debug:
+            self.events_factory.logger.setLevel(logging.DEBUG)
+            self.cleep_filesystem.logger.setLevel(logging.DEBUG)
+
+            conf.enable_system_debug()
+        else:
+            self.events_factory.logger.setLevel(logging.INFO)
+            self.cleep_filesystem.logger.setLevel(logging.INFO)
+
+            conf.disable_system_debug()
+
     def set_module_debug(self, module, debug):
         """
         Set module debug flag
 
         Args:
             module (string): module name
-            debug (bool): debug flag
+            debug (bool): enable debug
         """
         if module is None or len(module)==0:
-            raise MissingParameter(u'Module parameter is missing')
+            raise MissingParameter(u'Parameter "module" is missing')
         if debug is None:
-            raise MissingParameter(u'Debug parameter is missing')
+            raise MissingParameter(u'Parameter "debug" is missing')
 
         #save log level in conf file
         conf = RaspiotConf(self.cleep_filesystem)
@@ -1088,10 +1125,16 @@ class System(RaspIotModule):
             conf.disable_module_debug(module)
 
         #set debug on module
-        resp = self.send_command(u'set_debug', module, {u'debug':debug})
+        if module==u'rpc':
+            #specific command for rpcserver
+            resp = self.send_command(u'set_rpc_debug', u'inventory', {u'debug':debug})
+        else:
+            resp = self.send_command(u'set_debug', module, {u'debug':debug})
+
+        #process command response
         if not resp:
             self.logger.error(u'No response')
-            raise CommandError(u'No response')
+            raise CommandError(u'No response from "%s" module' % module)
         elif resp[u'error']:
             self.logger.error(u'Unable to set debug on module %s: %s' % (module, resp[u'message']))
             raise CommandError(u'Update debug failed')

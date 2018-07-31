@@ -50,6 +50,7 @@ sessions = {}
 auth_config = {}
 auth_enabled = False
 logger = None
+debug_enabled = False
 app = bottle.app()
 server = None
 cleep_filesystem = None
@@ -89,19 +90,22 @@ def load_auth():
         logger.exception(u'Unable to load auth file. Auth disabled:')
         crash_report.report_exception()
 
-def configure(bootstrap, inventory_, debug_enabled):
+def configure(bootstrap, inventory_, debug_enabled_):
     """
     Configure rpcserver
 
     Args:
         boostrap (dict): bootstrap objects
+        inventory_ (Inventory): Inventory instance
+        debug_enabled_ (bool): debug status
     """
-    global cleep_filesystem, inventory, bus, logger, crash_report
+    global cleep_filesystem, inventory, bus, logger, crash_report, debug_enabled
 
     #configure logger
-    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+    #logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
     logger = logging.getLogger(u'RpcServer')
-    if debug_enabled:
+    debug_enabled = debug_enabled_
+    if debug_enabled_:
         logger.setLevel(logging.DEBUG)
 
     #set members
@@ -114,6 +118,32 @@ def configure(bootstrap, inventory_, debug_enabled):
 
     #load auth
     load_auth()
+
+def set_debug(debug_enabled_):
+    """
+    Change debug level
+
+    Args:
+        debug_enabled_ (bool): True to enable debug
+    """
+    global logger, debug_enabled
+    logger.error('set debug %s' % debug_enabled_)
+
+    debug_enabled = debug_enabled_
+    if debug_enabled:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+def get_debug():
+    """
+    Return debug status
+
+    Returns:
+        bool
+    """
+    global debug_enabled
+    return debug_enabled
 
 def start(host=u'0.0.0.0', port=80, key=None, cert=None):
     """

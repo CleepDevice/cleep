@@ -32,8 +32,5 @@ class Systemsystemneedreboot(Event):
         Return:
             bool: True if params are valid, False otherwise
         """
-        keys = [
-            u'force'
-        ]
-        return all(key in keys for key in params.keys())
+        return True
 

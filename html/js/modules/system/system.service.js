@@ -90,6 +90,23 @@ var systemService = function($rootScope, rpcService, raspiotService) {
     };
 
     /**
+     * Set system debug
+     */
+    self.setSystemDebug = function(debug) {
+        return rpcService.sendCommand('set_system_debug', 'system', {'debug':debug});
+    };
+
+    /**
+     * Set trace
+     */
+    self.setTrace = function(trace) {
+        return rpcService.sendCommand('set_trace', 'system', {'trace':trace})
+            .then(function() {
+                return raspiotService.reloadModuleConfig('system');
+            });
+    };
+
+    /**
      * Set hostname
      */
     self.setHostname = function(hostname) {

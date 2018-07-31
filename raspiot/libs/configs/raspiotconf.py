@@ -131,34 +131,6 @@ class RaspiotConf():
 
         return config
 
-    def get_global_debug(self):
-        """
-        Get global debug status
-
-        Returns:
-            bool: global debug status
-        """
-        conf = self.__open()
-        self.__close()
-        debug = conf.getboolean(u'debug', u'debug_enabled')
-        return debug
-
-    def set_global_debug(self, debug):
-        """
-        Set global debug status
-
-        Args:
-            debug (bool): new debug status
-        """
-        if debug is None:
-            raise MissingParameter(u'Debug parameter is missing')
-        if debug not in (True, False):
-            raise InvalidParameter(u'Debug parameter is invalid')
-
-        conf = self.__open()
-        conf.set(u'debug', u'debug_enabled', unicode(debug))
-        self.__close(True)
-
     def install_module(self, module):
         """
         Add module to list of modules to load at startup
@@ -260,6 +232,59 @@ class RaspiotConf():
 
         return module in modules
 
+    def enable_trace(self):
+        """
+        Enable trace
+        """
+        conf = self.__open()
+        conf.set(u'debug', u'trace_enabled', unicode(True))
+        self.__close(True)
+
+    def disable_trace(self):
+        """
+        Disable trace
+        """
+        conf = self.__open()
+        conf.set(u'debug', u'trace_enabled', unicode(False))
+        self.__close(True)
+
+    def is_trace_enabled(self):
+        """
+        Return trace status
+
+        Returns:
+            bool: True if trace enabled
+        """
+        conf = self.__open()
+        self.__close()
+        return ast.literal_eval(conf.get(u'debug', u'trace_enabled'))
+
+    def enable_system_debug(self):
+        """
+        Enable system debug
+        """
+        conf = self.__open()
+        conf.set(u'debug', u'debug_system', unicode(True))
+        self.__close(True)
+
+    def disable_system_debug(self):
+        """
+        Disable system debug
+        """
+        conf = self.__open()
+        conf.set(u'debug', u'debug_system', unicode(False))
+        self.__close(True)
+
+    def is_system_debugged(self):
+        """
+        Return system debug status
+
+        Returns:
+            bool: True if system debug enabled
+        """
+        conf = self.__open()
+        self.__close()
+        return ast.literal_eval(conf.get(u'debug', u'debug_system'))
 
     def enable_module_debug(self, module):
         """

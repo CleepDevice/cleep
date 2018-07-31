@@ -23,12 +23,13 @@ class Inventory(RaspIotModule):
      - existing renderers (sms, email, sound...)
     """ 
 
-    def __init__(self, bootstrap, debug_enabled, configured_modules, debug_config):
+    def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
         """
         Constructor
 
         Args:
             bootstrap (dict): bootstrap objects
+            rpcserver (Object): rpcserver instance (used to set debug)
             debug_enabled (bool): debug inventory or not
             configured_modules (dict): list of configured modules to start
             debug_config (dict): debug computed from config and command line
@@ -37,6 +38,7 @@ class Inventory(RaspIotModule):
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
+        self.__rpcserver = rpcserver
         self.configured_modules = configured_modules
         self.debug_config = debug_config
         self.bootstrap = bootstrap
@@ -435,8 +437,25 @@ class Inventory(RaspIotModule):
                 debugs[module] = {
                     u'debug': False
                 }
+
+        #append system modules
+        debugs[u'inventory'] = {
+            u'debug': self.is_debug_enabled()
+        }
+        debugs[u'rpc'] = {
+            u'debug': self.__rpcserver.get_debug()
+        }
     
         return debugs
+
+    def set_rpc_debug(self, debug):
+        """
+        Set debug on rpcserver
+
+        Args:
+            debug (bool): debug enabled or not
+        """
+        self.__rpcserver.set_debug(debug)
 
     def get_renderers(self):
         """
