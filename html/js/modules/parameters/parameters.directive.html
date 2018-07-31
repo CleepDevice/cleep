@@ -19,7 +19,7 @@
                     <md-input-container>
                         <input ng-model="parametersCtl.hostname" ng-pattern="parametersCtl.hostnamePattern">
                     </md-input-container>
-                    <md-button ng-click="parametersCtl.setHostname()" ng-disabled="hostnameForm.$invalid">
+                    <md-button ng-click="parametersCtl.setHostname()" class="md-raised md-primary" ng-disabled="hostnameForm.$invalid">
                         <md-icon md-svg-icon="rename-box"></md-icon>
                         Set device name
                     </md-button>
@@ -75,7 +75,7 @@
         </div>
         <div flex="50" layout="column" layout-padding layout-align="start stretch">
             <div layout="column" layout="center stretch">
-                <md-button class="md-raised md-accent" ng-click="parametersCtl.setPosition()">
+                <md-button class="md-raised md-primary" ng-click="parametersCtl.setPosition()">
                     <md-icon md-svg-icon="crosshairs-gps"></md-icon>
                     Set position
                 </md-button>

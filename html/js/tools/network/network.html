@@ -8,7 +8,7 @@
                 <md-icon md-svg-icon="ethernet"></md-icon>
                 <p ng-if="networkCtl.networkStatus[network.interface].status===2">Ethernet: connected with ip address {{networkCtl.networkStatus[network.interface].ipaddress}}</p>
                 <p ng-if="networkCtl.networkStatus[network.interface].status!==2">Ethernet: not connected</p>
-                <md-button class="md-secondary" ng-click="networkCtl.editWiredConfig(network)" ng-disabled="networkCtl.loading">
+                <md-button class="md-secondary md-raised md-primary" ng-click="networkCtl.editWiredConfig(network)" ng-disabled="networkCtl.loading">
                     <md-icon md-svg-icon="pencil"></md-icon>
                     Configure
                 </md-button>
@@ -65,11 +65,11 @@
                     <md-icon ng-if="network.config.signallevel>75" md-svg-icon="wifi-strength-4"></md-icon>
                     <md-tooltip md-direction="left">{{network.config.signallevel}}% signal level</md-tooltip>
                 </md-button>
-                <md-button class="md-secondary" ng-if="!network.config.configured" ng-click="networkCtl.connectWifiNetwork(network)" aria-label="Connect to network" ng-disabled="networkCtl.loading">
+                <md-button class="md-secondary md-raised md-primary" ng-if="!network.config.configured" ng-click="networkCtl.connectWifiNetwork(network)" aria-label="Connect to network" ng-disabled="networkCtl.loading">
                     <md-icon md-svg-icon="lan-connect"></md-icon>
                     <span>Connect</span>
                 </md-button>
-                <md-button class="md-secondary" ng-if="network.config.configured" ng-click="networkCtl.editWifiConfig(network)" aria-label="Configure network" ng-disabled="networkCtl.loading">
+                <md-button class="md-secondary md-raised md-primary" ng-if="network.config.configured" ng-click="networkCtl.editWifiConfig(network)" aria-label="Configure network" ng-disabled="networkCtl.loading">
                     <md-icon md-svg-icon="pencil"></md-icon>
                     <span>Configure</span>
                 </md-button>
