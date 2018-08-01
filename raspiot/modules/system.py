@@ -141,8 +141,8 @@ class System(RaspIotModule):
         self.__process.cpu_percent()
 
         #add devices if they are not already added
-        if self._get_device_count()!=3:
-            self.logger.debug(u'Add default devices')
+        if self._get_device_count()<3:
+            self.logger.debug(u'Add default devices (device count=%d)' % self._get_device_count())
 
             #add fake monitor device (used to have a device on dashboard)
             monitor = {

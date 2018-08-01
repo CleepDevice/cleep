@@ -102,14 +102,13 @@ class Parameters(RaspIotModule):
         Configure module
         """
         #add clock device if not already added
-        if self._get_device_count()!=1:
+        if self._get_device_count()<1:
             self.logger.debug(u'Add default devices')
             clock = {
                 u'type': u'clock',
                 u'name': u'Clock'
             }
             self._add_device(clock)
-
 
         #prepare country
         country = self._get_config_field(u'country')
