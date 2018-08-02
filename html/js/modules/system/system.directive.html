@@ -19,7 +19,7 @@
             </md-list-item>
             <md-list-item ng-click="systemCtl.setAutomaticUpdate('raspiot')">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
-                <p>Enable automatic raspiot updates</p>
+                <p>Enable automatic device application updates</p>
                 <md-checkbox class="md-secondary" ng-model="systemCtl.raspiotUpdateEnabled" ng-change="systemCtl.setAutomaticUpdate()"></md-checkbox>
             </md-list-item>
             <md-list-item ng-click="systemCtl.setAutomaticUpdate('modules')">
@@ -29,39 +29,35 @@
             </md-list-item>
 
             <!-- raspiot -->
-            <md-subheader class="md-no-sticky">Raspiot updates</md-subheader>
+            <md-subheader class="md-no-sticky">Application updates</md-subheader>
             <md-list-item>
-                <p>Raspiot version {{systemCtl.version}} is installed (last check {{systemCtl.lastCheckRaspiot | hrDatetime}})</p>
+                <p>Application version {{systemCtl.version}} is installed (last check {{systemCtl.lastCheckRaspiot | hrDatetime}})</p>
                 <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.checkRaspiotUpdates()">Check updates</md-button>
             </md-list-item>
-            <md-list-item ng-if="systemCtl.raspiotUpdateAvailable && !systemCtl.raspiotUpdateEnabled">
+            <md-list-item ng-if="systemCtl.raspiotUpdateAvailable && systemCtl.systemService.raspiotInstallStatus===0">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
-                <p>New raspiot version available</p>
-                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.updateRaspiot()">Update raspiot</md-button>
+                <p>New application version available</p>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.updateRaspiot()">Update application</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.lastRaspiotUpdate.time!==0">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
                 <p>Last update installed at {{systemCtl.lastRaspiotUpdate.time | hrDatetime}}</p>
                 <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.showLogs()">Show logs</md-button>
             </md-list-item>
-            <md-list-item ng-if="systemCtl.raspiotInstallStatus!==0" layout"row">
+            <md-list-item ng-if="systemCtl.systemService.raspiotInstallStatus!==0">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
-                <div flex="50" style="text-align:left;">
-                    <span ng-if="systemCtl.raspiotInstallStatus===1">Downloading update... ({{systemCtl.downloadPercent}}%)</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===2">Download failed (internal error)</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===3">Download failed (invalid filesize)</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===4">Download failed (file is corrupted)</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===5">Installing update...</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===6">Installation failed (internal error)</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===7">Installation complete</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===8">Update canceled</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===9">Installation completed</span>
-                    <span ng-if="systemCtl.raspiotInstallStatus===10">Installation failed (internal error)</span>
-                </div>
-                <div ng-if="systemCtl.raspiotInstallStatus===1" flex="50">
-                    <md-progress-linear md-mode="determinate" class="md-accent" value="{{systemCtl.downloadPercent}}"></md-progress-linear>
-                </div>
-                <div ng-if="systemCtl.raspiotInstallStatus===5" flex="50">
+                <p>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===1">Installing update...</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===2">Installation completed</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===3">Installation failed (internal error)</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===4">Download failed</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===5">Download failed (file is corrupted)</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===6">Installation failed (decompression error)</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===7">Installation failed (pre-instal script failed)</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===8">Installation failed (package install failed)</span>
+                    <span ng-if="systemCtl.systemService.raspiotInstallStatus===9">Installation failed (post-install failed)</span>
+                </p>
+                <div ng-if="systemCtl.systemService.raspiotInstallStatus===1" class="md-secondary">
                     <md-progress-linear md-mode="indeterminate" class="md-accent"></md-progress-linear>
                 </div>
             </md-list-item>

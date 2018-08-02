@@ -2,8 +2,9 @@
  * System service
  * Handle system module requests
  */
-var systemService = function($rootScope, rpcService, raspiotService) {
+var systemService = function($rootScope, rpcService, raspiotService, toast) {
     var self = this;
+	self.raspiotInstallStatus = 0; //idle
     
     /**
      * Get filesystem infos
@@ -66,6 +67,13 @@ var systemService = function($rootScope, rpcService, raspiotService) {
      */
     self.updateModule = function(module) {
         return rpcService.sendCommand('update_module', 'system', {'module':module}, 300);
+    };
+
+    /**
+     * Update raspiot
+     */
+    self.updateRaspiot = function() {
+        return rpcService.sendCommand('update_raspiot', 'system', {}, 300);
     };
 
     /**
@@ -180,8 +188,32 @@ var systemService = function($rootScope, rpcService, raspiotService) {
         }
     });
 
+    /**
+     * Handle raspiot update event
+     */
+    $rootScope.$on('system.raspiot.update', function(event, uuid, params) {
+        if( params.status===null || params.status===undefined )
+        {
+            return;
+        }
+
+        self.raspiotInstallStatus = params.status;
+        if( params.status==0 || params.status==1 )
+        {
+            //idle status or installing update
+        }
+        else if( params.status==2 )
+        {   
+            toast.success('Application has been installed. Please reboot device.');
+        }   
+        else if( params.status>2 )
+        {   
+            toast.error('Error during application update. See logs for more infos.');
+        }   
+    });
+
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('systemService', ['$rootScope', 'rpcService', 'raspiotService', systemService]);
+RaspIot.service('systemService', ['$rootScope', 'rpcService', 'raspiotService', 'toastService', systemService]);
 

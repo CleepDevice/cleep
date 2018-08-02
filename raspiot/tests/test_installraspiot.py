@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.libs.installraspiot import InstallRaspiot
-from raspiot.libs.cleepfilesystem import CleepFilesystem
+from raspiot.libs.internals.installraspiot import InstallRaspiot
+from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 import unittest
 import logging
 import time

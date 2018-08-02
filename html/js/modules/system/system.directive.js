@@ -7,8 +7,12 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
     var systemController = ['$scope', function($scope)
     {
         var self = this;
+        self.systemService = systemService;
         self.tabIndex = 'update';
         self.monitoring = false;
+        self.uptime = 0;
+        self.needRestart = false;
+        self.needReboot = false;
         self.logs = '';
         self.codemirrorInstance = null;
         self.codemirrorOptions = {
@@ -29,14 +33,12 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.modulesUpdateEnabled = false;
         self.raspiotUpdateAvailable = false;
         self.modulesUpdateAvailable = false;
-        self.lastRaspiotInstallStdout = '';
-        self.lastRaspiotInstallStderr = '';
         self.lastRaspiotUpdate = null;
         self.lastCheckRaspiot = null;
         self.lastCheckModules = null;
-        self.raspiotInstallStatus = 0;
         self.version = '';
         self.crashReport = false;
+        self.lastModulesInstalls = {};
 
         /************
          * Update tab
@@ -158,6 +160,38 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             })
             .then(function() {}, function() {});
         };
+
+        /**
+         * Update raspiot
+         */
+        self.updateRaspiot = function() {
+            toast.loading('Updating device application...');
+            systemService.updateRaspiot();
+        };
+
+        /**
+         * Handle raspiot update event
+         */
+        /*$rootScope.$on('system.raspiot.update', function(event, uuid, params) {
+            if( params.status===null || params.status===undefined )
+            {
+                return;
+            }
+
+            self.raspiotInstallStatus = params.status;
+            if( params.status==0 || params.status==1 )
+            {
+                //idle status or installing update
+            }
+            else if( params.status==2 )
+            {
+                toast.success('Application has been installed. Please reboot device.');
+            }
+            else if( params.status>2 )
+            {
+                toast.error('Error during application update. See logs for more infos.');
+            }
+        });*/
 
         /**************
          * Advanced tab
@@ -401,20 +435,22 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         {
             //save data
             self.monitoring = config.monitoring;
+            self.uptime = config.uptime;
+            self.needRestart = config.needrestart;
+            self.needReboot = config.needreboot;
+            self.crashReport = config.crashreport;
+            self.version = config.version;
             self.eventsNotRendered = config.eventsnotrendered;
+            self.debugSystem = config.debug.system;
+            self.debugTrace = config.debug.trace;
+            self.lastCheckRaspiot = config.lastcheckraspiot;
+            self.lastCheckModules = config.lastcheckmodules;
             self.raspiotUpdateEnabled = config.raspiotupdateenabled;
             self.modulesUpdateEnabled = config.modulesupdateenabled;
             self.raspiotUpdateAvailable = config.raspiotupdateavailable;
             self.modulesUpdateAvailable = config.modulesupdateavailable;
-            self.lastCheckRaspiot = config.lastcheckraspiot;
-            self.lastCheckModules = config.lastcheckmodules;
-            self.lastRaspiotInstallStdout = config.lastraspiotinstallstdout;
-            self.lastRaspiotInstallStderr = config.lastraspiotinstallstderr;
             self.lastRaspiotUpdate = config.lastraspiotupdate;
-            self.version = config.version;
-            self.crashReport = config.crashreport;
-            self.debugSystem = config.debug.system;
-            self.debugTrace = config.debug.trace;
+            self.lastModulesInstalls = config.lastmodulesinstalls;
         };
 
         /**

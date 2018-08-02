@@ -1,8 +1,8 @@
-<md-dialog aria-label="Last update logs" flex="75">
+<md-dialog aria-label="Last update infos" flex="75">
     <form ng-cloak>
         <md-toolbar>
             <div class="md-toolbar-tools">
-                <h2>Last update logs</h2>
+                <h2>Last update infos</h2>
                 <span flex></span>
                 <md-button class="md-icon-button" ng-click="updateLogsCtl.closeDialog()" aria-label="Close dialog">
                     <md-icon md-svg-icon="close"></md-icon>
@@ -12,6 +12,38 @@
 
         <md-dialog-content>
             <div class="md-dialog-content">
+                <!-- infos -->
+                <span class="md-title">Last status</span>
+                <div>
+                    Last update was made {{updateLogsCtl.lastRaspiotUpdate.time | hrDatetime}}.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===2">
+                    Application was updated successfully.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===3">
+                    Application update failed because of an internal error (see logs below).
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===4">
+                    Application update failed because of an error during checksum file download.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===5">
+                    Application update failed because of an error during application package download.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===6">
+                    Application update failed because of application package extraction error.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===7">
+                    Application update failed because of error during pre-installation script execution.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===8">
+                    Application update failed because of error during application package installation.
+                </div>
+                <div ng-if="updateLogsCtl.lastRaspiotUpdate.status===9">
+                    Application update failed because of error during post-installation script execution.
+                </div>
+
+                <br/>
+
                 <!-- stdout -->
                 <span class="md-title">Output</span>
                 <div ng-if="updateLogsCtl.lastRaspiotUpdate.stdout.length>0" ng-repeat="line in updateLogsCtl.lastRaspiotUpdate.stdout track by $index">

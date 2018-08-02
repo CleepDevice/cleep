@@ -53,7 +53,7 @@ class InstallRaspiot(threading.Thread):
 
         #logger   
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.status = self.STATUS_IDLE
@@ -65,7 +65,7 @@ class InstallRaspiot(threading.Thread):
         self.__pre_script_execution = False
         self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
         self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
-        self.__deb_status = {u'status': InstallDeb.STATUS_IDLE, u'stdout': [], u'stderr': []}
+        self.__deb_status = {u'status': InstallDeb.STATUS_IDLE, u'stdout': [], u'stderr': [], u'returncode':None}
         self.callback = callback
 
     def get_status(self):
@@ -83,7 +83,8 @@ class InstallRaspiot(threading.Thread):
         return {
             u'status': self.status,
             u'prescript': self.__pre_script_status,
-            u'postscript': self.__post_script_status
+            u'postscript': self.__post_script_status,
+            u'deb': self.__deb_status
         }
 
     def __download_callback(self, status, filesize, percent):
@@ -152,7 +153,6 @@ class InstallRaspiot(threading.Thread):
         os.chmod(path, stat.S_IEXEC)
 
         #exec
-        self.logger.debug(u'Executing %s script' % path)
         console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
         out = False
 
@@ -160,6 +160,7 @@ class InstallRaspiot(threading.Thread):
         console.start()
 
         #monitor end of script execution
+        self.__script_running = True
         while self.__script_running:
             #pause
             time.sleep(0.25)
@@ -178,7 +179,7 @@ class InstallRaspiot(threading.Thread):
         """
         self.running = False
 
-    def start(self):
+    def run(self):
         """
         Run update
         """
@@ -219,7 +220,9 @@ class InstallRaspiot(threading.Thread):
             #download raspiot archive
             self.logger.debug(u'Download file "%s"' % self.url_raspiot)
             try:
+                #blocking mode
                 archive_path = download.download_file_advanced(self.url_raspiot, check_sha256=checksum)
+                self.logger.debug(u'Download terminated with result: %s' % archive_path)
                 if archive_path is None:
                     download_status = download.get_status()
                     if download_status==download.STATUS_ERROR:
@@ -255,6 +258,7 @@ class InstallRaspiot(threading.Thread):
                 self.logger.debug('Extracting archive to "%s"' % extract_path)
                 zipfile.extractall(extract_path)
                 zipfile.close()
+                self.logger.debug(u'Archive extracted successfully')
 
             except:
                 self.logger.exception(u'Error decompressing raspiot archive "%s" in "%s":' % (archive_path, extract_path))
@@ -271,13 +275,17 @@ class InstallRaspiot(threading.Thread):
 
             #pre update script
             try:
+                self.logger.debug(u'Executing preinst.sh script')
                 self.__pre_script_execution = True
                 path = os.path.join(extract_path, u'preinst.sh')
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):
                         #script failed
+                        self.logger.debug(u'Script preinst.sh execution failed')
                         raise Exception(u'')
+                else:
+                    self.logger.debug(u'No preinst.sh script in archive')
 
             except Exception as e:
                 if len(e.message)>0:
@@ -292,6 +300,7 @@ class InstallRaspiot(threading.Thread):
             #install deb package
             archive_path = None
             try:
+                self.logger.debug(u'Installing deb package')
                 deb_path = os.path.join(extract_path, u'raspiot.deb')
                 self.logger.debug('Installing "%s" package' % deb_path)
                 installer = InstallDeb(None, self.cleep_filesystem, blocking=False)
@@ -299,9 +308,12 @@ class InstallRaspiot(threading.Thread):
                 #time.sleep(1.0)
 
                 #wait until end of script
+                self.logger.debug(u'Deb status=%s' % installer.get_status()[u'status'])
                 while installer.get_status()[u'status']==installer.STATUS_RUNNING:
                     time.sleep(0.25)
+                    self.logger.debug(u'Deb status=%s' % installer.get_status()[u'status'])
                 self.__deb_status = installer.get_status()
+                self.logger.debug(u'Deb package install terminated with status: %s' % self.__deb_status)
 
                 #check deb install result
                 if installer.get_status()[u'status']!=installer.STATUS_DONE:
@@ -320,13 +332,17 @@ class InstallRaspiot(threading.Thread):
 
             #post update script
             try:
+                self.logger.debug(u'Executing postinst.sh script')
                 self.__pre_script_execution = False
                 path = os.path.join(extract_path, u'postinst.sh')
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):
                         #script failed
+                        self.logger.debug(u'Script postinst.sh execution failed')
                         raise Exception(u'')
+                else:
+                    self.logger.debug(u'No postinst.sh script in archive')
 
             except Exception as e:
                 if len(e.message)>0:

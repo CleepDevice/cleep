@@ -31,7 +31,7 @@ class InstallDeb():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.cleep_filesystem = cleep_filesystem
@@ -41,6 +41,13 @@ class InstallDeb():
         self.stderr = []
         self.stdout = []
         self.status = self.STATUS_IDLE
+        self.return_code = None
+
+    def stop(self):
+        """
+        Stop installation
+        """
+        self.running = False
 
     def get_status(self):
         """
@@ -49,8 +56,18 @@ class InstallDeb():
         return {
             u'status': self.status,
             u'stdout': self.stdout,
-            u'stderr': self.stderr
+            u'stderr': self.stderr,
+            u'returncode': self.return_code
         }
+
+    def is_terminated(self):
+        """
+        Return True if installation terminated
+
+        Returns:
+            bool: True if terminated
+        """
+        return not self.running
 
     def __callback_end(self, return_code, killed):
         """
@@ -58,24 +75,26 @@ class InstallDeb():
         """
         self.logger.debug(u'End of command with returncode=%s and killed=%s' % (return_code, killed))
 
-        #update status if necessary
+        #update return code
+        self.return_code = return_code
+
+        #update status
         if killed:
             self.status = self.STATUS_KILLED
         elif return_code!=0:
             self.status = self.STATUS_ERROR
-        elif self.status!=self.STATUS_ERROR:
+        elif len(self.stderr)>0:
+            self.status = self.STATUS_ERROR
+        else:
             self.status = self.STATUS_DONE
-
-        #unblock function call
-        self.running = False
-
-        #disable write at end of command execution
-        self.cleep_filesystem.disable_write()
 
         #send for the last time current status
         if self.status_callback:
             self.logger.debug('Final status: %s' % self.get_status())
             self.status_callback(self.get_status())
+
+        #unblock function call
+        self.running = False
 
     def __callback_deb(self, stdout, stderr):
         """
@@ -93,7 +112,6 @@ class InstallDeb():
                 self.stdout.append(stdout)
 
         if stderr is not None:
-            self.status = self.STATUS_ERROR
             self.stderr.append(stderr)
 
         #send status to caller callback
@@ -121,11 +139,16 @@ class InstallDeb():
         console.start()
 
         #blocking mode
+        self.logger.debug('Blocking mode: %s' % self.blocking)
         if self.blocking:
             #loop
             while self.running:
                 time.sleep(0.25)
             
+            #disable write at end of command execution
+            self.cleep_filesystem.disable_write()
+
+            #handle result
             if self.status==self.STATUS_DONE:
                 return True
             return False

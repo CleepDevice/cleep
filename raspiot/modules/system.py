@@ -280,9 +280,9 @@ class System(RaspIotModule):
 
             #and perform updates if allowed
             config = self._get_config()
-            if config[u'raspiotupdateenabled']:
+            if config[u'raspiotupdateenabled'] is True:
                 self.update_raspiot()
-            if config[u'modulesupdateenabled']:
+            if config[u'modulesupdateenabled'] is True:
                 #TODO update modules that need to be updated
                 pass
 
@@ -713,10 +713,10 @@ class System(RaspIotModule):
         """
         self.logger.debug(u'Raspiot update callback status: %s' % status)
 
-        #send process status to ui
-        self.systemRaspiotUpdate.send(params=status)
+        #send process status (only status)
+        self.systemRaspiotUpdate.send(params={u'status':status[u'status']})
 
-        #save last status when update terminated (successfully or not)
+        #save final status when update terminated (successfully or not)
         if status[u'status']>=InstallRaspiot.STATUS_UPDATED:
             stdout = []
             stderr = []
@@ -729,9 +729,9 @@ class System(RaspIotModule):
                 stdout += [u'No pre-script']
 
             #deb
-            if status[u'package'][u'returncode']:
-                stdout += [u'Package stdout:'] + status[u'package'][u'stdout'] + [u'Package return code: %s' % status[u'package'][u'returncode']]
-                stderr += [u'Package stderr'] + status[u'package'][u'stderr']
+            if status[u'deb'][u'returncode']:
+                stdout += [u'Package stdout:'] + status[u'deb'][u'stdout'] + [u'Package return code: %s' % status[u'deb'][u'returncode']]
+                stderr += [u'Package stderr'] + status[u'deb'][u'stderr']
             else:
                 stdout += [u'No package']
 
@@ -753,6 +753,7 @@ class System(RaspIotModule):
         #handle end of successful process to trigger restart
         if status[u'status']==InstallRaspiot.STATUS_UPDATED:
             #need to reboot
+            #TODO reboot automatically instead ?
             self.__need_reboot = True
 
     def update_raspiot(self):
@@ -761,7 +762,14 @@ class System(RaspIotModule):
         """
         #check params
         if not self.__raspiot_update[u'package'] or not self.__raspiot_update[u'checksum']:
-            raise CommandError(u'No raspiot update available')
+            #user trigger raspiot update and there is no update infos. Check again
+            self.logger.debug('Raspiot update trigger while there is no update infos, check again')
+            res = self.check_raspiot_updates()
+            if not res[u'updateavailable']:
+                #there is really no update available
+                raise CommandError(u'No raspiot update available')
+            else:
+                self.logger.debug('Finally an update is available, process it')
 
         #launch install
         package_url = self.__raspiot_update[u'package'][u'url']
@@ -770,6 +778,7 @@ class System(RaspIotModule):
         self.logger.debug('Update raspiot, checksum url: %s' % checksum_url)
         update = InstallRaspiot(package_url, checksum_url, self.__update_raspiot_callback, self.cleep_filesystem)
         update.start()
+        self.logger.debug('---> update_raspiot command terminated')
 
         return True
 
