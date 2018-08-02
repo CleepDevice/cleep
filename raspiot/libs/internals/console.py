@@ -42,7 +42,7 @@ class EndlessConsole(Thread):
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
         self.running = True
         self.killed = False
         self.__start_time = 0
@@ -51,22 +51,22 @@ class EndlessConsole(Thread):
         self.__stdout_thread = None
         self.__stderr_thread = None
 
+    def __del__(self):
+        """
+        Destructor
+        """
+        self.__stop()
+
     def __enqueue_output(self, output, queue):
         for line in iter(output.readline, b''):
             if not self.running:
                 break
-            queue.put(line.strip())
+            queue.put(line.decode('utf-8').strip())
         try:
             output.close()
         except:
             pass
         self.logger.debug('Enqueued thread stopped')
-
-    def __del__(self):
-        """
-        Destructor
-        """
-        self.stop()
 
     def get_start_time(self):
         """
@@ -77,18 +77,19 @@ class EndlessConsole(Thread):
         """
         return self.__start_time
 
-    def stop(self):
+    def __stop(self):
         """
         Stop command line execution (kill it)
         """
         self.running = False
-        self.killed = True
 
     def kill(self):
         """
         Stop command line execution
         """
-        self.stop()
+        self.logger.debug(u'Process killed manually')
+        self.killed = True
+        self.__stop()
 
     def run(self):
         """
@@ -99,7 +100,7 @@ class EndlessConsole(Thread):
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
-        self.logger.debug('PID=%d' % pid)
+        self.logger.debug(u'PID=%d' % pid)
 
         if self.callback:
             #async stdout reading
@@ -108,7 +109,7 @@ class EndlessConsole(Thread):
             self.__stdout_thread.start()
 
             #async stderr reading
-            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stdout_queue))
+            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue))
             self.__stderr_thread.daemon = True
             self.__stderr_thread.start()
 
@@ -135,7 +136,7 @@ class EndlessConsole(Thread):
             #check end of command
             if p.returncode is not None:
                 return_code = p.returncode
-                self.logger.debug('Process is terminated with return code %s' % p.returncode)
+                self.logger.debug(u'Process is terminated with return code %s' % p.returncode)
                 break
             
             #pause
@@ -145,7 +146,7 @@ class EndlessConsole(Thread):
         try:
             subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
         except Exception as e:
-            self.logger.debug('Kill exception: %s' % str(e))
+            self.logger.debug(u'Kill exception: %s' % str(e))
 
         #process is over
         self.running = False
