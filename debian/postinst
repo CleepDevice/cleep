@@ -20,6 +20,6 @@ echo ""
 echo ""
 
 #restarting raspiot
-/etc/raspiot/raspiot_helper.sh restart
-echo ""
+#/etc/raspiot/raspiot_helper.sh restart
+#echo ""
 
