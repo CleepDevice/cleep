@@ -42,6 +42,9 @@
                         </div>
                     </md-card-title-media>
                 </md-card-title>
+                <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
+                    <md-progress-linear ng-if="module.installing" md-mode="indeterminate"></md-progress-linear>
+                </md-card-content>
                 <md-card-actions layout="row" layout-align="end center">
                     <div ng-if="module.country">
                         <img src="images/flagsBlank.gif" class="flag flag-{{module.country}}"/>

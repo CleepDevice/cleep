@@ -33,20 +33,6 @@ var installDirective = function($q, raspiotService, toast) {
         };
 
         /**
-         * Uninstall module
-         */
-        self.uninstall = function(module)
-        {
-            raspiotService.uninstallModule(module)
-                .then(function(resp) {
-                    //reload system config
-                    return raspiotService.reloadModuleConfig('system');
-                })
-                .then(function(config) {
-                });
-        };
-
-        /**
          * Update pending module status after install
          * Everything will be reloaded automatically after page reloading
          * @param module: module name
