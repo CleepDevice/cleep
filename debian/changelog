@@ -1,6 +1,7 @@
 raspiot (0.0.12) UNRELEASED; urgency=low
 
   * Fix bugs in network, system modules
+  * Fix bugs in raspiot install
   * Improve ui: module installation, buttons style
   * Fix minor bugs
 
