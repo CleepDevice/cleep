@@ -3,10 +3,6 @@
 #@see http://unix.stackexchange.com/a/164092
 #@see http://unix.stackexchange.com/a/106674
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
 function enable_on_sysvinit {
     echo "Enabling raspiot on sysvinit..."
     update-rc.d raspiot defaults
@@ -40,34 +36,34 @@ case $1 in
     echo "Enabling raspiot at startup..."
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl enable raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then update-rc.d raspiot defaults;
-    else echo -e "${RED}Error: unable to find suitable startup system. Raspiot will NOT start automatically${NC}"; exit; fi
-    echo -e "${GREEN}Done${NC}"
+    else echo "Error: unable to find suitable startup system. Raspiot will NOT start automatically"; exit; fi
+    echo "Done"
     ;;
 
   disable)
     echo "Disabling raspiot from startup..."
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl disable raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then update-rc.d raspiot remove;
-    else echo -e "${RED}Error: unable to find suitable startup system. Raspiot CANNOT be disabled${NC}"; exit; fi
-    echo -e "${GREEN}Done${NC}"
+    else echo "Error: unable to find suitable startup system. Raspiot CANNOT be disabled"; exit; fi
+    echo "Done"
     ;;
     
   start)
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl start raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot start;
-    else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
+    else echo "Error: unable to find suitable startup system."; exit; fi
     ;;
 
   stop)
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl stop raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot stop;
-    else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
+    else echo "Error: unable to find suitable startup system."; exit; fi
     ;;
 
   restart)
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl restart raspiot.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then /etc/init.d/raspiot restart;
-    else echo -e "${RED}Error: unable to find suitable startup system.${NC}"; exit; fi
+    else echo "Error: unable to find suitable startup system."; exit; fi
     ;;
 
   *)

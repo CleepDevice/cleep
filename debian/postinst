@@ -1,25 +1,6 @@
 #!/bin/sh
 
-#install pip
-echo "Installing pip..."
-wget --no-check-certificate -P /tmp/ "https://bootstrap.pypa.io/get-pip.py"
-python /tmp/get-pip.py --trusted-host pypi.python.org
-rm -f /tmp/get-pip.py
-echo "Done"
-echo ""
-
-#install python dependencies
-echo "Installing python dependencies..."
-pip install --trusted-host pypi.python.org -r /etc/raspiot/requirements.txt
-rm /etc/raspiot/requirements.txt
-echo "Done"
-echo ""
-
 #enabling raspiot at startup
 /etc/raspiot/raspiot_helper.sh enable
 echo ""
-
-#restarting raspiot
-#/etc/raspiot/raspiot_helper.sh restart
-#echo ""
 

@@ -1,8 +1,9 @@
 raspiot (0.0.12) UNRELEASED; urgency=low
 
   * Fix bugs in network, system modules
-  * Fix bugs in raspiot install
-  * Improve ui: module installation, buttons style
+  * Fix bugs and improve in raspiot install
+  * Fix issue in raspiot config saving after reboot
+  * Improve ui: module installation progress bar, buttons style
   * Fix minor bugs
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Tue, 31 Jul 2018 16:40:00 +0000
