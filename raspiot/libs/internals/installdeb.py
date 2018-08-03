@@ -83,8 +83,6 @@ class InstallDeb():
             self.status = self.STATUS_KILLED
         elif return_code!=0:
             self.status = self.STATUS_ERROR
-        elif len(self.stderr)>0:
-            self.status = self.STATUS_ERROR
         else:
             self.status = self.STATUS_DONE
 
@@ -112,7 +110,8 @@ class InstallDeb():
                 self.stdout.append(stdout)
 
         if stderr is not None:
-            self.stderr.append(stderr)
+            #mix stderr with stdout
+            self.stdout.append(stderr)
 
         #send status to caller callback
         if self.status_callback:
@@ -133,7 +132,8 @@ class InstallDeb():
         self.cleep_filesystem.enable_write()
 
         #install deb (and dependencies)
-        command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s" && /usr/bin/apt-get install -f && /usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb, deb)
+        #command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s" && /usr/bin/apt-get install -f && /usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb, deb)
+        command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb)
         self.logger.debug(u'Command: %s' % command)
         console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
         console.start()

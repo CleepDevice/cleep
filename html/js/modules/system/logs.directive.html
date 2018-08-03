@@ -13,7 +13,9 @@
         <md-dialog-content>
             <div class="md-dialog-content">
                 <!-- infos -->
-                <span class="md-title">Last status</span>
+                <div class="md-title" style="margin-bottom:13px;">
+                    Status
+                </div>
                 <div>
                     Last update was made {{updateLogsCtl.lastRaspiotUpdate.time | hrDatetime}}.
                 </div>
@@ -45,23 +47,21 @@
                 <br/>
 
                 <!-- stdout -->
-                <span class="md-title">Output</span>
-                <div ng-if="updateLogsCtl.lastRaspiotUpdate.stdout.length>0" ng-repeat="line in updateLogsCtl.lastRaspiotUpdate.stdout track by $index">
-                    <code>{{line}}</code>
+                <div class="md-title">
+                    Output
                 </div>
-                <div ng-if="updateLogsCtl.lastRaspiotUpdate.stdout.length===0">
-                    <code>No error</code>
+                <div>
+                    <pre>{{updateLogsCtl.lastRaspiotUpdate.stdout}}</pre>
                 </div>
 
                 <br/>
 
                 <!-- stderr -->
-                <span class="md-title">Errors</span>
-                <div ng-if="updateLogsCtl.lastRaspiotUpdate.stderr.length>0" ng-repeat="line in updateLogsCtl.lastRaspiotUpdate.stderr track by $index">
-                    <code>{{line}}</code>
+                <div class="md-title">
+                    Errors
                 </div>
-                <div ng-if="updateLogsCtl.lastRaspiotUpdate.stderr.length===0">
-                    <code>No error</code>
+                <div>
+                    <pre>{{updateLogsCtl.lastRaspiotUpdate.stderr}}</pre>
                 </div>
             </div>
         </md-dialog-content>

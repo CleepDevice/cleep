@@ -112,7 +112,8 @@ class System(RaspIotModule):
         self.__raspiot_update = {
             u'package': None,
             u'checksum': None
-        }
+        } 
+        self.raspiot_update_pending = False
 
         #events
         self.systemSystemHalt = self._get_event(u'system.system.halt')
@@ -227,6 +228,7 @@ class System(RaspIotModule):
             u'trace': raspiot.is_trace_enabled()
         }
 
+        #update related values
         out[u'lastcheckraspiot'] = config[u'lastcheckraspiot']
         out[u'lastcheckmodules'] = config[u'lastcheckmodules']
         out[u'raspiotupdateenabled'] = config[u'raspiotupdateenabled']
@@ -235,6 +237,7 @@ class System(RaspIotModule):
         out[u'modulesupdateavailable'] = config[u'modulesupdateavailable']
         out[u'lastraspiotupdate'] = config[u'lastraspiotupdate']
         out[u'lastmodulesinstalls'] = config[u'lastmodulesinstalls']
+        out[u'raspiotupdatepending'] = self.raspiot_update_pending
 
         return out
 
@@ -280,7 +283,7 @@ class System(RaspIotModule):
 
             #and perform updates if allowed
             config = self._get_config()
-            if config[u'raspiotupdateenabled'] is True:
+            if config[u'raspiotupdateenabled'] is True and self.raspiot_update_pending is False:
                 self.update_raspiot()
             if config[u'modulesupdateenabled'] is True:
                 #TODO update modules that need to be updated
@@ -718,29 +721,65 @@ class System(RaspIotModule):
 
         #save final status when update terminated (successfully or not)
         if status[u'status']>=InstallRaspiot.STATUS_UPDATED:
+            self.logger.debug(u'Store update result in config file')
             stdout = []
             stderr = []
 
             #prescript
-            if status[u'prescript'][u'returncode']:
-                stdout += [u'Pre-script stdout:'] + status[u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'prescript'][u'returncode']]
-                stderr += [u'Pre-script stderr'] + status[u'prescript'][u'stderr']
-            else:
-                stdout += [u'No pre-script']
+            try:
+                if status[u'prescript'][u'returncode'] is not None:
+                    stdout += [u'Pre-script output:']
+                    if len(status[u'prescript'][u'stdout'])>0:
+                        stdout += [u' '*4 + line for line in status[u'prescript'][u'stdout']]
+                    else:
+                        stdout += [u' '*4 + u'No output']
+                    stdout += [u'', u'Pre-script return code: %s' % status[u'prescript'][u'returncode']]
+                    stderr += [u'Pre-script errors']
+                    if len(status[u'prescript'][u'stderr'])>0:
+                        stderr += [u' '*4 + line for line in status[u'prescript'][u'stderr']]
+                    else:
+                        stderr += [u' '*4 + u'No error']
+                else:
+                    stdout += [u'No pre-script found']
+            except:
+                self.logger.exception(u'Error saving prescript output:')
+                self.crash_report.report_exception()
 
             #deb
-            if status[u'deb'][u'returncode']:
-                stdout += [u'Package stdout:'] + status[u'deb'][u'stdout'] + [u'Package return code: %s' % status[u'deb'][u'returncode']]
-                stderr += [u'Package stderr'] + status[u'deb'][u'stderr']
-            else:
-                stdout += [u'No package']
+            try:
+                if status[u'deb'][u'returncode'] is not None:
+                    stdout += [u'', u'Package output:']
+                    if len(status[u'deb'][u'stdout'])>0:
+                        stdout += [u' '*4 + line for line in status[u'deb'][u'stdout']]
+                    else:
+                        stdout += [u' '*4 + u'No output']
+                    stdout += [u'', u'Package return code: %s' % status[u'deb'][u'returncode']]
+                    #stderr merge to stdout because dpkg and pip put some info on stderr
+                else:
+                    stdout += [u'', u'No package found']
+            except:
+                self.logger.exception(u'Error saving deb output:')
+                self.crash_report.report_exception()
 
             #postscript
-            if status[u'postscript'][u'returncode']:
-                stdout += [u'Post-script stdout:'] + status[u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'postcript'][u'returncode']]
-                stderr += [u'Post-script stderr'] + status[u'postscript'][u'stderr']
-            else:
-                stdout += [u'No post-script']
+            try:
+                if status[u'postscript'][u'returncode'] is not None:
+                    stdout += [u'', u'Post-script output:']
+                    if len(status[u'postscript'][u'stdout'])>0:
+                        stdout += [u' '*4 + line for line in status[u'postscript'][u'stdout']]
+                    else:
+                        stdout += [u' '*4 + u'No output']
+                    stdout += [u'', u'Post-script return code: %s' % status[u'postscript'][u'returncode']]
+                    stderr += [u'', u'Post-script errors:']
+                    if len(status[u'postscript'][u'stderr'])>0:
+                        stderr += [u' '*4 + line for line in status[u'postscript'][u'stderr']]
+                    else:
+                        stderr += [u' '*4 + u'No error']
+                else:
+                    stdout += [u'', u'No post-script found']
+            except:
+                self.logger.exception(u'Error saving postscript output:')
+                self.crash_report.report_exception()
 
             #save update status
             self._set_config_field(u'lastraspiotupdate', {
@@ -754,6 +793,7 @@ class System(RaspIotModule):
         if status[u'status']==InstallRaspiot.STATUS_UPDATED:
             #need to reboot
             #TODO reboot automatically instead ?
+            self.raspiot_update_pending = True
             self.__need_reboot = True
 
     def update_raspiot(self):
@@ -778,7 +818,6 @@ class System(RaspIotModule):
         self.logger.debug('Update raspiot, checksum url: %s' % checksum_url)
         update = InstallRaspiot(package_url, checksum_url, self.__update_raspiot_callback, self.cleep_filesystem)
         update.start()
-        self.logger.debug('---> update_raspiot command terminated')
 
         return True
 
@@ -1242,4 +1281,13 @@ class System(RaspIotModule):
         self.__configure_crash_report(enable)
 
         return True
+
+    def backup_raspiot_config(self):
+        """
+        Backup raspiot configuration files on filesystem
+
+        Returns:
+            bool: True if backup successful
+        """
+        pass
 

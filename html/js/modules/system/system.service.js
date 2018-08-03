@@ -4,7 +4,7 @@
  */
 var systemService = function($rootScope, rpcService, raspiotService, toast) {
     var self = this;
-	self.raspiotInstallStatus = 0; //idle
+	self.raspiotInstallStatus = 0; //idle status
     
     /**
      * Get filesystem infos
@@ -205,10 +205,14 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
         else if( params.status==2 )
         {   
             toast.success('Application has been installed. Please reboot device.');
+            //reset install status to remove item from ui
+            self.raspiotInstallStatus = 0;
         }   
-        else if( params.status>2 )
+        else
         {   
-            toast.error('Error during application update. See logs for more infos.');
+            toast.error('Error during application update. See logs for details.');
+            //reset install status to remove item from ui
+            self.raspiotInstallStatus = 0;
         }   
     });
 

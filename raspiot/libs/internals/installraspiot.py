@@ -67,6 +67,7 @@ class InstallRaspiot(threading.Thread):
         self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
         self.__deb_status = {u'status': InstallDeb.STATUS_IDLE, u'stdout': [], u'stderr': [], u'returncode':None}
         self.callback = callback
+        self.__last_download_percent = None
 
     def get_status(self):
         """
@@ -78,6 +79,7 @@ class InstallRaspiot(threading.Thread):
                     status (int): see STATUS_XXX for available codes
                     prescript (dict): preinst status (returncode, stdout, stderr)
                     postscript (dict): postinst status (returncode, stdout, stderr)
+                    deb (dict): deb status (status, returncode, stdout, stderr)
                 }
         """
         return {
@@ -92,7 +94,9 @@ class InstallRaspiot(threading.Thread):
         Download callback
         """
         #just log download status
-        self.logger.debug('Download callback: %s %s %s' % (status, filesize, percent))
+        if not percent % 10 and percent!=self.__last_download_percent:
+            self.__last_download_percent = percent
+            self.logger.debug('Download callback: %s %s %s' % (status, filesize, percent))
 
     def __script_callback(self, stdout, stderr):
         """
@@ -108,7 +112,7 @@ class InstallRaspiot(threading.Thread):
             if stderr:
                 self.__pre_script_status['stderr'].append(stderr)
 
-        elif self.__post_script_execution:
+        else:
             if stdout:
                 self.__post_script_status[u'stdout'].append(stdout)
             if stderr:
@@ -189,6 +193,10 @@ class InstallRaspiot(threading.Thread):
         error = False
         archive_path = None
         extract_path = None
+
+        #send status asap to update frontend
+        if self.callback:
+            self.callback(self.get_status())
 
         try:
             #download checksum file
@@ -308,10 +316,8 @@ class InstallRaspiot(threading.Thread):
                 #time.sleep(1.0)
 
                 #wait until end of script
-                self.logger.debug(u'Deb status=%s' % installer.get_status()[u'status'])
                 while installer.get_status()[u'status']==installer.STATUS_RUNNING:
                     time.sleep(0.25)
-                    self.logger.debug(u'Deb status=%s' % installer.get_status()[u'status'])
                 self.__deb_status = installer.get_status()
                 self.logger.debug(u'Deb package install terminated with status: %s' % self.__deb_status)
 

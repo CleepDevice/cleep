@@ -39,6 +39,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.version = '';
         self.crashReport = false;
         self.lastModulesInstalls = {};
+        self.raspiotUpdatePending = false;
 
         /************
          * Update tab
@@ -170,28 +171,19 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         };
 
         /**
-         * Handle raspiot update event
+         * Refresh config when raspiot update terminated
          */
-        /*$rootScope.$on('system.raspiot.update', function(event, uuid, params) {
-            if( params.status===null || params.status===undefined )
-            {
-                return;
+        $scope.$watch(function() {
+            return self.systemService.raspiotInstallStatus;
+        }, function(newValue, oldValue) {
+            if( newValue<oldValue ) {
+                //update terminated
+                raspiotService.reloadModuleConfig('system')
+                    .then(function(config) {
+                        self.setConfig(config);
+                    });
             }
-
-            self.raspiotInstallStatus = params.status;
-            if( params.status==0 || params.status==1 )
-            {
-                //idle status or installing update
-            }
-            else if( params.status==2 )
-            {
-                toast.success('Application has been installed. Please reboot device.');
-            }
-            else if( params.status>2 )
-            {
-                toast.error('Error during application update. See logs for more infos.');
-            }
-        });*/
+        });
 
         /**************
          * Advanced tab
@@ -213,7 +205,12 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                     .then(function(resp) {
                         return raspiotService.reloadModuleConfig('system');
                     })
-                    .then(function(resp) {
+                    .then(function(config) {
+                        //set config
+                        self.setConfig(config);
+                    })
+                    .finally(function() {
+                        //user message
                         toast.success('Monitoring updated');
                     });
             }, 250);
@@ -235,7 +232,12 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                     .then(function(resp) {
                         return raspiotService.reloadModuleConfig('system');
                     })
-                    .then(function(resp) {
+                    .then(function(config) {
+                        //set config
+                        self.setConfig(config);
+                    })
+                    .finally(function() {
+                        //user message
                         if( self.crashReport )
                         {
                             toast.success('Crash report enabled');
@@ -308,6 +310,10 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                 systemService.setEventNotRendered(rendering.renderer, rendering.event, rendering.disabled)
                     .then(function(resp) {
                         return raspiotService.reloadModuleConfig('system');
+                    })
+                    .then(function(config) {
+                        //set config
+                        self.setConfig(config);
                     });
             }, 250);
         };
@@ -450,7 +456,10 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             self.raspiotUpdateAvailable = config.raspiotupdateavailable;
             self.modulesUpdateAvailable = config.modulesupdateavailable;
             self.lastRaspiotUpdate = config.lastraspiotupdate;
+            self.lastRaspiotUpdate.stdout = config.lastraspiotupdate.stdout.join('\n');
+            self.lastRaspiotUpdate.stderr = config.lastraspiotupdate.stderr.join('\n');
             self.lastModulesInstalls = config.lastmodulesinstalls;
+            self.raspiotUpdatePending = config.raspiotupdatpending;
         };
 
         /**
