@@ -101,11 +101,6 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
             });
         };
 
-        self.showWiredConfig = function(network)
-        {
-            //self.__showConfig(network, '
-        };
-
         /**
          * Fill new config class member with specified interface configuration
          * @param network: selected network

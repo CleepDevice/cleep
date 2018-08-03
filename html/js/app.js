@@ -160,7 +160,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
         //block ui
         if( withBlockUi )
         {
-            blockUI.start({message:'Loading data...'});
+            blockUI.start({message:'Loading data...', submessage:'Please wait', icon:null, spinner:true});
         }
 
         return rpcService.getConfig()
