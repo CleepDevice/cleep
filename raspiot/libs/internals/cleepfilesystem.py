@@ -11,6 +11,7 @@ import io
 import shutil
 import json
 import locale
+from distutils.dir_util import copy_tree
 
 
 class CleepFilesystem():
@@ -175,7 +176,7 @@ class CleepFilesystem():
         """
         Enable write as long as you disable it
         This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
-        Please make sure to call disable_write after you finished your process!
+        Please make sure to call disable_write after you finished your job!
         """
         self.logger.warning(u'Filesystem readonly protection is disabled completely by application!')
         self.__enable_write()
@@ -260,8 +261,9 @@ class CleepFilesystem():
             res = True
 
         except:
-            self.logger.error('===> %s' % data)
+            self.logger.debug('Data to be written: %s' % data)
             self.logger.exception(u'Unable to write content to file "%s"' % path)
+            self.crash_report.report_exception()
             res = False
 
         finally:
@@ -294,6 +296,7 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Unable to get content of file "%s":' % path)
+            self.crash_report.report_exception()
 
         finally:
             if fp:
@@ -317,6 +320,7 @@ class CleepFilesystem():
             lines = json.loads(u'\n'.join(lines), encoding)
         except:
             self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))
+            self.crash_report.report_exception()
             lines = ''
 
         return lines
@@ -368,6 +372,7 @@ class CleepFilesystem():
             moved = True
         except:
             self.logger.exception(u'Exception moving directory from "%s" to "%s"' % (src, dst))
+            self.crash_report.report_exception()
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
@@ -377,27 +382,57 @@ class CleepFilesystem():
 
     def copy(self, src, dst):
         """
-        Copy file/dir to destination (uses shutil.copy2)
+        Copy file to destination (uses shutil.copy2)
 
         Args:
-            src (string): source path
+            src (string): source file path
             dst (string): destination path
 
         Return:
             bool: True if operation succeed
         """
-        copied = False
-
         #enable writings if necessary
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             self.__enable_write()
 
         #copy
+        copied = False
         try:
             shutil.copy2(src, dst)
             copied = True
         except:
             self.logger.exception(u'Exception copying "%s" to "%s"' % (src, dst))
+            self.crash_report.report_exception()
+
+        #disable writings
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            self.__disable_write()
+
+        return copied
+
+    def copy_dir(self, src, dst):
+        """
+        Copy directory content to destination (uses distutils.dir_util.copy_tree)
+
+        Args:
+            src (string): source dir path
+            dst (string): destination path
+
+        Return:
+            bool: True if operation succeed
+        """
+        #enable writings if necessary
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            self.__enable_write()
+
+        #copy
+        copied = False
+        try:
+            copy_tree(src, dst)
+            copied = True
+        except:
+            self.logger.exception(u'Exception copying dir "%s" to "%s"' % (src, dst))
+            self.crash_report.report_exception()
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
@@ -440,6 +475,7 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing "%s"' % path)
+            self.crash_report.report_exception()
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
@@ -470,6 +506,7 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing directory "%s"' % path)
+            self.crash_report.report_exception()
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
@@ -504,6 +541,7 @@ class CleepFilesystem():
                 created = True
         except:
             self.logger.exception(u'Exception creating "%s"' % path)
+            self.crash_report.report_exception()
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
