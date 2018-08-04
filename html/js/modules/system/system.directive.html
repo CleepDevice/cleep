@@ -3,6 +3,7 @@
     <!-- navigation tabs -->
     <md-nav-bar md-selected-nav-item="systemCtl.tabIndex" nav-bar-aria-label="System tabs">
         <md-nav-item md-nav-click="goto('update')" name="update">Update</md-nav-item>
+        <md-nav-item md-nav-click="goto('backup')" name="backup">Backup</md-nav-item>
         <md-nav-item md-nav-click="goto('renderings')" name="renderings">Renderings</md-nav-item>
         <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         <md-nav-item md-nav-click="goto('troubleshoot')" name="troubleshoot">Troubleshoot</md-nav-item>
@@ -82,6 +83,64 @@
         </md-list>
     </div>
 
+    <!-- backup -->
+    <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='backup'">
+        
+        <md-list ng-cloak>
+
+            <!-- readonly -->
+            <md-subheader class="md-no-sticky">Filesystem protection</md-subheader>
+            <md-list-item>
+                <p>
+                    SD-card is the weakness of Raspberry pi. To palliate this problem this application can run on protected filesystem.
+                    Protected filesystem means the system is on read-only and cannot be corrupted (because it can't be modified).<br/>
+                    However this application, to work correctly and allow system configuration, can toggle this read-only mode to writable one.<br/><br/>
+                    Also application configuration is saved on volatile part of filesystem that is lost after each device reboot.
+                    To keep configuration changes, application makes regular savings on filesystem.<br/><br/>
+                </p>
+            </md-list-item>
+            <!--<md-list-item>
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Protection status</p>
+                <md-checkbox class="md-secondary"></md-checkbox>
+            </md-list-item>-->
+            <!--<md-list-item class="md-2-line">
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <div class="md-list-item-text">
+                    <h3>Disable/enable protection</h3>
+                    <p>Please notice that if disabled your device may not restart after an unexpected shutdown.</p>
+                </div>
+                <md-checkbox class="md-secondary"></md-checkbox>
+            </md-list-item>-->
+
+            <!-- backup -->
+            <md-subheader class="md-no-sticky">Configuration backup</md-subheader>
+            <md-list-item>
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Make configuration backup now</p>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.backupConfiguration()">Backup config</md-button>
+            </md-list-item>
+            <md-list-item>
+                <md-icon md-svg-icon="chevron-right"></md-icon>
+                <p>Configure backup configuration delay</p>
+                <div class="md-secondary">
+                    <md-select ng-model="systemCtl.backupDelay" placeholder="Backup delay" class="md-no-underline">
+                        <md-option value="5">5 minutes</md-option>
+                        <md-option value="10">10 minutes</md-option>
+                        <md-option value="15">15 minutes</md-option>
+                        <md-option value="30">30 minutes</md-option>
+                        <md-option value="60">60 minutes</md-option>
+                    </md-select>
+                </div>
+                <div class="md-secondary">
+                    <md-button class="md-raised md-primary" ng-click="systemCtl.setBackupDelay()">Set delay</md-button>
+                </div>
+            </md-list-item>
+
+        </md-list>
+
+    </div>
+
     <!-- renderings -->
     <div layout="column" layout-padding ng-if="systemCtl.tabIndex=='renderings'">
         <md-list ng-cloak>
@@ -158,6 +217,7 @@
     <!-- troubleshoot -->
     <div layout="row" layout-padding ng-if="systemCtl.tabIndex=='troubleshoot'">
         
+        <!-- viewer -->
         <div layout="column" layout-padding flex="75" layout-sm="column" flex-sm="100">
             <md-content>
                 <md-toolbar class="md-hue-3">
@@ -177,6 +237,7 @@
             </md-content>
         </div>
 
+        <!-- debug config -->
         <div layout="column" layout-padding flex="25">
             <div class="md-title">
                 Modules to debug

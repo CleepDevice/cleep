@@ -161,6 +161,20 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
     };
 
     /**
+     * Set backup update time
+     */
+    self.setRaspiotBackupDelay = function(delay) {
+        return rpcService.sendCommand('set_raspiot_backup_delay', 'system', {'delay': delay});
+    };
+
+    /**
+     * Make backup of raspiot configuration files
+     */
+    self.backupRaspiotConfig = function() {
+        return rpcService.sendCommand('backup_raspiot_config', 'system', {});
+    };
+
+    /**
      * Catch cpu monitoring event
      */
     $rootScope.$on('system.monitoring.cpu', function(event, uuid, params) {

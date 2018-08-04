@@ -24,6 +24,7 @@ from raspiot.libs.configs.modulesjson import ModulesJson
 import raspiot.libs.internals.tools as Tools
 from raspiot.libs.internals.github import Github
 from raspiot import __version__ as VERSION
+from raspiot.libs.internals.raspiotbackup import RaspiotBackup
 
 
 __all__ = [u'System']
@@ -72,7 +73,8 @@ class System(RaspIotModule):
             u'stdout': [],
             u'stderr': []
         },
-        u'lastmodulesinstalls' : {}
+        u'lastmodulesinstalls' : {},
+        u'raspiotbackupdelay': 15
     }
 
     MONITORING_CPU_DELAY = 60.0 #1 minute
@@ -114,6 +116,8 @@ class System(RaspIotModule):
             u'checksum': None
         } 
         self.raspiot_update_pending = False
+        self.raspiot_backup = RaspiotBackup(self.cleep_filesystem, self.crash_report)
+        self.raspiot_backup_delay = None
 
         #events
         self.systemSystemHalt = self._get_event(u'system.system.halt')
@@ -134,6 +138,9 @@ class System(RaspIotModule):
         """
         Configure module
         """
+        #set members
+        self.raspiot_backup_delay = self._get_config_field(u'raspiotbackupdelay')
+
         #configure crash report
         self.__configure_crash_report(self._get_config_field(u'crashreport'))
 
@@ -227,6 +234,7 @@ class System(RaspIotModule):
             u'system': raspiot.is_system_debugged(),
             u'trace': raspiot.is_trace_enabled()
         }
+        out[u'raspiotbackupdelay'] = self.raspiot_backup_delay
 
         #update related values
         out[u'lastcheckraspiot'] = config[u'lastcheckraspiot']
@@ -275,19 +283,24 @@ class System(RaspIotModule):
         elif event[u'event'].endswith('system.needreboot'):
             self.__need_reboot = True
 
-        #handle time event to trigger updates check
-        if event[u'event']==u'system.time.now' and event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
-            #check updates at noon
-            self.check_raspiot_updates()
-            self.check_modules_updates()
+        if event[u'event']==u'system.time.now':
+            #update
+            if event[u'params'][u'hour']==12 and event[u'params'][u'minute']==0:
+                #check updates at noon
+                self.check_raspiot_updates()
+                self.check_modules_updates()
 
-            #and perform updates if allowed
-            config = self._get_config()
-            if config[u'raspiotupdateenabled'] is True and self.raspiot_update_pending is False:
-                self.update_raspiot()
-            if config[u'modulesupdateenabled'] is True:
-                #TODO update modules that need to be updated
-                pass
+                #and perform updates if allowed
+                config = self._get_config()
+                if config[u'raspiotupdateenabled'] is True and self.raspiot_update_pending is False:
+                    self.update_raspiot()
+                if config[u'modulesupdateenabled'] is True:
+                    #TODO update modules that need to be updated
+                    pass
+
+            #backup
+            if not event[u'params'][u'minute'] % self.raspiot_backup_delay:
+                self.backup_raspiot_config()
 
     def set_monitoring(self, monitoring):
         """
@@ -315,36 +328,42 @@ class System(RaspIotModule):
         """
         Reboot system
         """
-        console = Console()
+        #backup configuration
+        self.backup_raspiot_config()
 
         #send event
         self.systemSystemReboot.send()
 
         #and reboot system
+        console = Console()
         console.command_delayed(u'reboot', 5.0)
 
     def halt_system(self):
         """
         Halt system
         """
-        console = Console()
+        #backup configuration
+        self.backup_raspiot_config()
 
         #send event
         self.systemSystemHalt.send()
 
         #and reboot system
+        console = Console()
         console.command_delayed(u'halt', 5.0)
 
     def restart(self):
         """
         Restart raspiot
         """
-        console = Console()
+        #backup configuration
+        self.backup_raspiot_config()
 
         #send event
         self.systemSystemRestart.send()
 
         #and restart raspiot
+        console = Console()
         console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', 3.0)
 
     def __get_module_infos(self, module):
@@ -1289,5 +1308,25 @@ class System(RaspIotModule):
         Returns:
             bool: True if backup successful
         """
-        pass
+        self.logger.debug(u'Backup raspiot configuration')
+        return self.raspiot_backup.backup()
+
+    def set_raspiot_backup_delay(self, delay):
+        """
+        Set raspiot backup delay
+
+        Args:
+            minute (int): delay in minutes (5..60)
+        """
+        #check params
+        if delay is None:
+            raise MissingParameter(u'Parameter "delay" must be specified')
+        if delay<5 or delay>60:
+            raise MissingParameter(u'Parameter "delay" must be 0..60')
+
+        res = self._set_config_field(u'raspiotbackupdelay', delay)
+        if res:
+            self.raspiot_backup_delay = delay
+
+        return res
 

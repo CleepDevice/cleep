@@ -40,6 +40,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
         self.crashReport = false;
         self.lastModulesInstalls = {};
         self.raspiotUpdatePending = false;
+        self.backupDelay = 15;
 
         /************
          * Update tab
@@ -174,7 +175,7 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
          * Refresh config when raspiot update terminated
          */
         $scope.$watch(function() {
-            return self.systemService.raspiotInstallStatus;
+            return systemService.raspiotInstallStatus;
         }, function(newValue, oldValue) {
             if( newValue<oldValue ) {
                 //update terminated
@@ -184,6 +185,37 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
                     });
             }
         });
+
+        /**************
+         * Backup tab
+         **************/
+
+        /**
+         * Trigger configuration backup
+         */
+        self.backupConfiguration = function() {
+            systemService.backupRaspiotConfig()
+                .then(function() {
+                    toast.success('Configuration saved');
+                });
+        };
+
+        /**
+         * Set backup config delay
+         */
+        self.setBackupDelay = function() {
+            systemService.setRaspiotBackupDelay(Number(self.backupDelay))
+                .then(function() {
+                    toast.success('Delay saved');
+                });
+        };
+
+        /**
+         * Set filesystem protection
+         */
+        self.setFilesystemProtection = function() {
+            //TODO
+        };
 
         /**************
          * Advanced tab
@@ -459,7 +491,8 @@ var systemConfigDirective = function($filter, $timeout, $q, toast, systemService
             self.lastRaspiotUpdate.stdout = config.lastraspiotupdate.stdout.join('\n');
             self.lastRaspiotUpdate.stderr = config.lastraspiotupdate.stderr.join('\n');
             self.lastModulesInstalls = config.lastmodulesinstalls;
-            self.raspiotUpdatePending = config.raspiotupdatpending;
+            self.raspiotUpdatePending = config.raspiotupdatepending;
+            self.backupDelay = config.raspiotbackupdelay;
         };
 
         /**
