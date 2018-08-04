@@ -16,6 +16,7 @@ class CrashReport():
 
     Usage:
         To report specific exception, simply use <CrashReport instance>.report_exception() function (without params)
+        To report manually something uses <CrashReport instance>.manual_report() specifiying a message
         Unhandled exceptions are reported automatically (if enabled!)
     """
 
@@ -102,6 +103,7 @@ class CrashReport():
 
         Args:
             message (string): message to attach to crash report
+            extra (dict): extra metadata to post with the report (stack...)
         """
         if self.enabled:
             self.client.capture(u'raven.events.Message', message=message, stack=True, extra=extra)
