@@ -292,7 +292,7 @@ class System(RaspIotModule):
 
                 #and perform updates if allowed
                 config = self._get_config()
-                if config[u'raspiotupdateenabled'] is True and self.raspiot_update_pending is False:
+                if config[u'raspiotupdateenabled'] is True and self.raspiot_update_pending is False and config[u'raspiotupdateavailable'] is True:
                     self.update_raspiot()
                 if config[u'modulesupdateenabled'] is True:
                     #TODO update modules that need to be updated
