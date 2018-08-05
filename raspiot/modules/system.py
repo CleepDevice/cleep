@@ -803,7 +803,7 @@ class System(RaspIotModule):
             #save update status
             self._update_config({
                 u'raspiotupdateavailable': False,
-                u'lastraspiotupdate', {
+                u'lastraspiotupdate': {
                     u'status': status[u'status'],
                     u'time': int(time.time()),
                     u'stdout': stdout,
