@@ -801,11 +801,14 @@ class System(RaspIotModule):
                 self.crash_report.report_exception()
 
             #save update status
-            self._set_config_field(u'lastraspiotupdate', {
-                u'status': status[u'status'],
-                u'time': int(time.time()),
-                u'stdout': stdout,
-                u'stderr': stderr
+            self._update_config({
+                u'raspiotupdateavailable': False,
+                u'lastraspiotupdate', {
+                    u'status': status[u'status'],
+                    u'time': int(time.time()),
+                    u'stdout': stdout,
+                    u'stderr': stderr
+                }
             })
     
         #handle end of successful process to trigger restart

@@ -33,7 +33,7 @@
             <md-subheader class="md-no-sticky">Application updates</md-subheader>
             <md-list-item>
                 <p>Application version {{systemCtl.version}} is installed (last check {{systemCtl.lastCheckRaspiot | hrDatetime}})</p>
-                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.checkRaspiotUpdates()" ng-disabled="systemCtl.raspiotUpdatePending">Check updates</md-button>
+                <md-button class="md-secondary md-raised md-primary" ng-click="systemCtl.checkRaspiotUpdates()" ng-disabled="systemCtl.systemService.raspiotInstallStatus!==0 || systemCtl.raspiotUpdatePending">Check updates</md-button>
             </md-list-item>
             <md-list-item ng-if="systemCtl.raspiotUpdateAvailable && systemCtl.systemService.raspiotInstallStatus===0 && !systemCtl.raspiotUpdatePending">
                 <md-icon md-svg-icon="chevron-right"></md-icon>
