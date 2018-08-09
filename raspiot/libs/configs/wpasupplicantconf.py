@@ -423,7 +423,7 @@ class WpaSupplicantConf(Config):
         self.logger.debug('Config to append %s' % content)
         return self.add_lines(content)
 
-    def add_network(self, network, encryption, password, hidden=False, interface=None):
+    def add_network(self, network, encryption, password, hidden=False, interface=None, encrypt_password=True):
         """
         Add new network in config file
         Password is automatically encrypted using wpa_passphrase
@@ -434,6 +434,7 @@ class WpaSupplicantConf(Config):
             password (string): network password (not encrypted!)
             hidden (bool): hidden network flag
             interface (string|None): if specified try to add network in specific interface wpa_supplicant.conf file
+            encrypt_password (bool): encrypt password if necessary before adding it to config file (default True)
 
         Raises:
             MissingParameter, InvalidParameter
@@ -469,7 +470,10 @@ class WpaSupplicantConf(Config):
         if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
             #WPA/WPA2 security
             output.append(u'\tkey_mgmt=WPA-PSK\n')
-            output.append(u'\tpsk=%s\n' % self.encrypt_password(network, password))
+            if encrypt_password:
+                output.append(u'\tpsk=%s\n' % self.encrypt_password(network, password))
+            else:
+                output.append(u'\tpsk=%s\n' % password)
         elif encryption==self.ENCRYPTION_TYPE_WEP:
             #WEP security
             output.append(u'\tkey_mgmt=NONE\n')
