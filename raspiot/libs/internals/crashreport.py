@@ -38,9 +38,9 @@ class CrashReport():
 
         #create and configure raven client
         self.client = Client(
-            dsn='https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385',
-            ignore_exceptions=[u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError'],
-            tags=self.extra
+            dsn = 'https://8aa3d328a88e44b09af18a02bf412512@sentry.io/1256905',
+            ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError'],
+            tags = self.extra
         )
         self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.__crash_report
