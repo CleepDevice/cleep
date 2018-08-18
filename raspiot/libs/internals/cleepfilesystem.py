@@ -538,7 +538,8 @@ class CleepFilesystem():
                     os.makedirs(path)
                 else:
                     os.mkdir(path)
-                created = True
+            created = True
+
         except:
             self.logger.exception(u'Exception creating "%s"' % path)
             self.crash_report.report_exception()

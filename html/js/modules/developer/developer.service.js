@@ -9,21 +9,21 @@ var developerService = function($q, $rootScope, rpcService, raspiotService) {
      * Restart raspiot
      */
     self.restartRaspiot = function() {
-        return rpcService.sendCommand('restart_raspiot', 'developer');
+        return rpcService.sendCommand('restart_raspiot', 'developer', 10);
     };
 
     /**
      * Start pyremotedev
      */
     self.startPyremotedev = function() {
-        return rpcService.sendCommand('start_pyremotedev', 'developer');
+        return rpcService.sendCommand('start_pyremotedev', 'developer', 15);
     };
 
     /**
      * Stop pyremotedev
      */
     self.stopPyremotedev = function() {
-        return rpcService.sendCommand('stop_pyremotedev', 'developer');
+        return rpcService.sendCommand('stop_pyremotedev', 'developer', 15);
     };
 
     /**

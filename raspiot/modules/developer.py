@@ -51,7 +51,7 @@ class Developer(RaspIotModule):
     MODULE_CONFIG_FILE = u'developer.conf'
 
     PACKAGE_SCRIPTS = u'/opt/raspiot/scripts/'
-    RASPIOT_PROFILE = """[raspiot]
+    RASPIOT_PROFILE = u"""[raspiot]
 raspiot/ = /usr/share/pyshared/raspiot/$_$/usr/lib/python2.7/dist-packages/raspiot/
 bin/ = /usr/bin/$_$
 log_file_path = /var/log/raspiot.log
@@ -116,15 +116,17 @@ html/ = /opt/raspiot/html/$_$"""
 
         #write default pyremotedev profile
         if not os.path.exists(self.RASPIOT_PROFILE_FILE):
-            try:
-                fd = open(self.RASPIOT_PROFILE_FILE, 'w')
-                fd.write(self.RASPIOT_PROFILE)
-                fd.close()
-            except:
-                self.logger.exception(u'Unable to create raspiot profile for pyremotedev:')
+            #create dir tree
+            if not self.cleep_filesystem.mkdirs(os.path.dirname(self.RASPIOT_PROFILE_FILE)):
+                self.logger.error('Unable to create pyremote config dir tree. Unable to run developer module properly.')
+
+            else:
+                #create default profile file
+                if not self.cleep_filesystem.write_data(self.RASPIOT_PROFILE_FILE, self.RASPIOT_PROFILE):
+                    self.logger.error(u'Unable to write pyremotedev config. Unable to run developer module properly.')
 
         #start pyremotedev status task
-        self.status_task = Task(15.0, self.status_pyremotedev, self.logger)
+        self.status_task = Task(10.0, self.status_pyremotedev, self.logger)
         self.status_task.start()
 
     def get_module_devices(self):
@@ -157,8 +159,9 @@ html/ = /opt/raspiot/html/$_$"""
         """
         Start pyremotedev task
         """
-        res = self.console.command(u'/usr/sbin/service pyremotedev start')
-        if not res[u'error'] and not res[u'killed']:
+        res = self.console.command(u'/bin/systemctl start pyremotedev', timeout=15.0)
+        self.logger.debug('Pyremotedev console res: %s' % res)
+        if not res[u'killed']:
             #no problem
             self.pyremotedev_is_running = True
             self.logger.info('Pyremotedev started')
@@ -174,8 +177,9 @@ html/ = /opt/raspiot/html/$_$"""
         """
         Stop pyremotedev process
         """
-        res = self.console.command(u'/usr/sbin/service pyremotedev stop')
-        if not res[u'error'] and not res[u'killed']:
+        res = self.console.command(u'/bin/systemctl stop pyremotedev', timeout=15.0)
+        self.logger.debug('Pyremotedev console res: %s' % res)
+        if not res[u'killed']:
             #no problem
             self.pyremotedev_is_running = False
             self.logger.info('Pyremotedev stopped')
@@ -191,10 +195,10 @@ html/ = /opt/raspiot/html/$_$"""
         """
         Get pyremotedev status
         """
-        res = self.console.command(u'/usr/sbin/service pyremotedev status')
+        res = self.console.command(u'/bin/systemctl status pyremotedev')
         if not res[u'error'] and not res[u'killed']:
             output = u''.join(res[u'stdout'])
-            if output.find(u'pyremotedev is running')>=0:
+            if output.find(u'active (running)')>=0:
                 #pyremotedev is running
                 if not self.pyremotedev_is_running:
                     #send is running event
