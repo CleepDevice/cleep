@@ -127,7 +127,7 @@ class Inventory(RaspIotModule):
             self.logger.debug(u'Loading module "%s"' % module_name)
 
         #import module file and get module class
-        module_ = importlib.import_module(u'raspiot.modules.%s' % module_name)
+        module_ = importlib.import_module(u'raspiot.modules.%s.%s' % (module_name, module_name))
         module_class_ = getattr(module_, module_name.capitalize())
                     
         #enable or not debug
@@ -171,6 +171,8 @@ class Inventory(RaspIotModule):
         fixed_country = self.__fix_country(getattr(module_class_, u'MODULE_COUNTRY', None))
 
         #update metadata with local values
+        if module_name not in self.modules.keys():
+            self.modules[module_name] = {}
         self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
         self.modules[module_name][u'author'] = getattr(module_class_, u'MODULE_AUTHOR', u'')
         self.modules[module_name][u'locked'] = getattr(module_class_, u'MODULE_LOCKED', False)
@@ -210,12 +212,12 @@ class Inventory(RaspIotModule):
             raise CommandError(u'Invalid modules path')
         for f in os.listdir(path):
             fpath = os.path.join(path, f)
-            (module_name, ext) = os.path.splitext(f)
-            if os.path.isfile(fpath) and ext==u'.py' and module_name!=u'__init__':
-                if module_name not in self.modules:
-                    self.logger.debug(u'Found module "%s" installed manually' % module_name)
-                    local_modules.append(module_name)
-                    self.modules[module_name] = {}
+            module_name = os.path.split(fpath)[-1]
+            module_py = os.path.join(fpath, u'%s.py' % module_name)
+            if os.path.isdir(fpath) and os.path.exists(module_py) and module_name not in self.modules:
+                self.logger.debug(u'Found module "%s" installed manually' % module_name)
+                local_modules.append(module_name)
+                self.modules[module_name] = {}
 
         #add default metadata
         for module_name in self.modules:
