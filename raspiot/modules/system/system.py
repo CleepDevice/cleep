@@ -324,7 +324,7 @@ class System(RaspIotModule):
         """
         return self._get_config_field(u'monitoring')
 
-    def reboot_system(self):
+    def reboot_system(self, delay=5.0):
         """
         Reboot system
         """
@@ -336,9 +336,9 @@ class System(RaspIotModule):
 
         #and reboot system
         console = Console()
-        console.command_delayed(u'reboot', 5.0)
+        console.command_delayed(u'reboot', delay)
 
-    def halt_system(self):
+    def halt_system(self, delay=5.0):
         """
         Halt system
         """
@@ -350,9 +350,9 @@ class System(RaspIotModule):
 
         #and reboot system
         console = Console()
-        console.command_delayed(u'halt', 5.0)
+        console.command_delayed(u'halt', delay)
 
-    def restart(self):
+    def restart(self, delay=3.0):
         """
         Restart raspiot
         """
@@ -364,7 +364,7 @@ class System(RaspIotModule):
 
         #and restart raspiot
         console = Console()
-        console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', 3.0)
+        console.command_delayed(u'/etc/raspiot/raspiot_helper.sh restart', delay)
 
     def __get_module_infos(self, module):
         """

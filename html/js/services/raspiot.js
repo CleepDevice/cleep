@@ -554,8 +554,8 @@ var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyL
      * Restart raspiot
      * This function calls system module function to avoid adhesion of system service from angular app
      */
-    self.restart = function() {
-        return rpcService.sendCommand('restart', 'system');
+    self.restart = function(delay) {
+        return rpcService.sendCommand('restart', 'system', {'delay': delay});
     };
 
     /**
