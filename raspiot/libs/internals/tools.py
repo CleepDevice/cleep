@@ -200,15 +200,15 @@ def is_system_lib(path):
         return False
     if sublibs_part not in (u'internals', u'drivers', u'commands', u'configs'):
         return False
-    if sublibs_part==u'internals' and filename not in internals_libs:
+    if sublibs_part==u'internals' and filename_wo_ext not in internals_libs:
         return False
     #elif sublibs_part==u'externals' and filename not in externals_libs:
     #    return False
-    elif sublibs_part==u'drivers' and filename not in drivers_libs:
+    elif sublibs_part==u'drivers' and filename_wo_ext not in drivers_libs:
         return False
-    elif sublibs_part==u'commands' and filename not in commands_libs:
+    elif sublibs_part==u'commands' and filename_wo_ext not in commands_libs:
         return False
-    elif sublibs_part==u'configs' and filename not in configs_libs:
+    elif sublibs_part==u'configs' and filename_wo_ext not in configs_libs:
         return False
 
     return True
