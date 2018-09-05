@@ -2,56 +2,66 @@
  * System service
  * Handle system module requests
  */
-var systemService = function($rootScope, rpcService, raspiotService, toast) {
+var systemService = function($rootScope, $scope, rpcService, raspiotService, toast, appToolbarService)
+{
     var self = this;
-	self.raspiotInstallStatus = 0; //idle status
+    self.raspiotInstallStatus = 0; //idle status
+    self.restartButtonId = null;
+    self.rebootButtonId = null;
     
     /**
      * Get filesystem infos
      */
-    self.getFilesystemInfos = function() {
+    self.getFilesystemInfos = function()
+    {
         return rpcService.sendCommand('get_filesystem_infos', 'system', 30000);
     };
 
     /**
      * Get network infos
      */
-    self.getNetworkInfos = function() {
+    self.getNetworkInfos = function()
+    {
         return rpcService.sendCommand('get_network_infos', 'system', 30000);
     };
 
     /**
      * Set monitoring
      */
-    self.setMonitoring = function(monitoring) {
+    self.setMonitoring = function(monitoring)
+    {
         return rpcService.sendCommand('set_monitoring', 'system', {'monitoring': monitoring});
     };
 
     /**
      * Reboot system
      */
-    self.reboot = function() {
+    self.reboot = function()
+    {
         return rpcService.sendCommand('reboot_system', 'system');
     };
 
     /**
      * Halt system
      */
-    self.halt = function() {
+    self.halt = function()
+    {
         return rpcService.sendCommand('halt_system', 'system');
     };
 
     /**
      * Restart raspiot
      */
-    self.restart = function() {
+    self.restart = function()
+    {
         return rpcService.sendCommand('restart', 'system');
     };
 
     /**
      * Install module
      */
-    self.installModule = function(module) {
+    self.installModule = function(module)
+    {
         return rpcService.sendCommand('install_module', 'system', {'module':module}, 300);
     };
 
@@ -65,49 +75,56 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
     /**
      * Update module
      */
-    self.updateModule = function(module) {
+    self.updateModule = function(module)
+    {
         return rpcService.sendCommand('update_module', 'system', {'module':module}, 300);
     };
 
     /**
      * Update raspiot
      */
-    self.updateRaspiot = function() {
+    self.updateRaspiot = function()
+    {
         return rpcService.sendCommand('update_raspiot', 'system', {}, 300);
     };
 
     /**
      * Download logs
      */
-    self.downloadLogs = function() {
+    self.downloadLogs = function()
+    {
         rpcService.download('download_logs', 'system');
     };
 
     /**
      * Get logs
      */
-    self.getLogs = function() {
+    self.getLogs = function()
+    {
         return rpcService.sendCommand('get_logs', 'system');
     };
 
     /**
      * Set module debug
      */
-    self.setModuleDebug = function(module, debug) {
+    self.setModuleDebug = function(module, debug)
+    {
         return rpcService.sendCommand('set_module_debug', 'system', {'module':module, 'debug':debug});
     };
 
     /**
      * Set system debug
      */
-    self.setSystemDebug = function(debug) {
+    self.setSystemDebug = function(debug)
+    {
         return rpcService.sendCommand('set_system_debug', 'system', {'debug':debug});
     };
 
     /**
      * Set trace
      */
-    self.setTrace = function(trace) {
+    self.setTrace = function(trace)
+    {
         return rpcService.sendCommand('set_trace', 'system', {'trace':trace})
             .then(function() {
                 return raspiotService.reloadModuleConfig('system');
@@ -117,14 +134,16 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
     /**
      * Set hostname
      */
-    self.setHostname = function(hostname) {
+    self.setHostname = function(hostname)
+    {
         return rpcService.sendCommand('set_hostname', 'system', {'hostname':hostname});
     };
 
     /**
      * Set event not rendered
      */
-    self.setEventNotRendered = function(renderer, event, disabled) {
+    self.setEventNotRendered = function(renderer, event, disabled)
+    {
         return rpcService.sendCommand('set_event_not_rendered', 'system', {'renderer':renderer, 'event':event, 'disabled':disabled})
             .then(function(resp) {
                 //overwrite system event_not_rendered config value
@@ -135,44 +154,85 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
     /**
      * Check for raspiot updates
      */
-    self.checkRaspiotUpdates = function() {
+    self.checkRaspiotUpdates = function()
+    {
         return rpcService.sendCommand('check_raspiot_updates', 'system');
     };
 
     /**
      * Check for modules updates
      */
-    self.checkModulesUpdates = function() {
+    self.checkModulesUpdates = function()
+    {
         return rpcService.sendCommand('check_modules_updates', 'system');
     };
 
     /**
      * Set automatic update
      */
-    self.setAutomaticUpdate = function(raspiotUpdateEnabled, modulesUpdateEnabled) {
+    self.setAutomaticUpdate = function(raspiotUpdateEnabled, modulesUpdateEnabled)
+    {
         return rpcService.sendCommand('set_automatic_update', 'system', {'raspiot_update_enabled':raspiotUpdateEnabled, 'modules_update_enabled':modulesUpdateEnabled});
     };
 
     /**
      * Enable/disable crash report
      */
-    self.setCrashReport = function(enable) {
+    self.setCrashReport = function(enable)
+    {
         return rpcService.sendCommand('set_crash_report', 'system', {'enable':enable});
     };
 
     /**
      * Set backup update time
      */
-    self.setRaspiotBackupDelay = function(delay) {
+    self.setRaspiotBackupDelay = function(delay)
+    {
         return rpcService.sendCommand('set_raspiot_backup_delay', 'system', {'delay': delay});
     };
 
     /**
      * Make backup of raspiot configuration files
      */
-    self.backupRaspiotConfig = function() {
+    self.backupRaspiotConfig = function()
+    {
         return rpcService.sendCommand('backup_raspiot_config', 'system', {});
     };
+
+    /**
+     * Watch for system config changes to add restart/reboot buttons if restart/reboot is needed
+     */
+    $scope.$watchCollection(
+        function() {
+            return raspiotService.modules['system'];
+        },
+        function(newValue) {
+            if( !angular.isUndefined(newValue) && newValue.config )
+            {
+                //handle restart button
+                if( !newValue.config.needrestart && self.restartButtonId )
+                {
+                    appToolbarService.addButton(self.restartButtonId);
+                    self.restartButtonId = null;
+                }
+                else if( newValue.config.needrestart && !self.restartButtonId )
+                {
+                    self.restartButtonId = appToolbarService.addButton('Restart to apply changes', 'restart', raspiotService.restart, 'md-accent');
+                }
+
+                //handle reboot button
+                if( !newValue.config.needreboot && self.rebootButtonId )
+                {
+                    appToolbarService.addButton(self.rebootButtonId);
+                    self.rebootButtonId = null;
+                }
+                else if( newValue.config.needreboot && !self.rebootButtonId )
+                {
+                    self.rebootButtonId = appToolbarService.addButton('Reboot to apply changes', 'restart', raspiotService.reboot, 'md-accent');
+                }
+            }
+        }
+    );
 
     /**
      * Catch cpu monitoring event
@@ -233,5 +293,4 @@ var systemService = function($rootScope, rpcService, raspiotService, toast) {
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('systemService', ['$rootScope', 'rpcService', 'raspiotService', 'toastService', systemService]);
-
+RaspIot.service('systemService', ['$rootScope', '$scope', 'rpcService', 'raspiotService', 'toastService', 'appToolbarService', systemService]);

@@ -13,8 +13,6 @@ var RaspIot = angular.module(
 var mainController = function($rootScope, $scope, $injector, rpcService, raspiotService, blockUI, toast) {
 
     var self = this;
-    self.needRestart = false;
-    self.needReboot = false;
     self.rebooting = false;
     self.restarting = false;
     self.notConnected = false;
@@ -47,8 +45,6 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                     //system has started
                     self.rebooting = false;
                     self.restarting = false;
-                    self.needRestart = false;
-                    self.needReboot = false;
 
                     //reload application config
                     self.reloadConfig = true;
@@ -193,22 +189,6 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
     };
 
     /**
-     * Restart raspiot
-     */
-    self.restart = function()
-    {
-        raspiotService.restart();
-    };
-
-    /**
-     * Reboot raspberry
-     */
-    self.reboot = function()
-    {
-        raspiotService.reboot();
-    };
-
-    /**
      * Init main controller
      */
     self.init = function()
@@ -222,23 +202,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
     self.init();
 
     /**
-     * Watch for system config changes to add restart button if restart is needed
-     */
-    $scope.$watchCollection(
-        function() {
-            return raspiotService.modules['system'];
-        },
-        function(newValue) {
-            if( !angular.isUndefined(newValue) )
-            {
-                self.needRestart = newValue.config.needrestart;
-                self.needReboot = newValue.config.needreboot;
-            }
-        }
-    );
-
-    /**
-     * Watch for parameters config changes
+     * Watch for parameters config changes to update device hostname
      */
     $scope.$watchCollection(
         function() {

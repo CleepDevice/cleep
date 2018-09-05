@@ -32,15 +32,8 @@
                     <h1 style="padding-left:5px;" class="md-title">{{mainCtl.hostname}}</h1>
                 </div>
                 <div flex></div>
+                <app-toolbar></app-toolbar>
                 <div layout="row" layout-align="end center">
-                    <md-button ng-if="mainCtl.needRestart && !mainCtl.needReboot" class="md-raised md-accent" aria-label="Restart" ng-click="mainCtl.restart()">
-                        <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
-                        Restart to apply changes
-                    </md-button>
-                    <md-button ng-if="mainCtl.needReboot" class="md-raised md-accent" aria-label="Reboot" ng-click="mainCtl.reboot()">
-                        <md-icon style="color:white;" md-svg-icon="restart"></md-icon>
-                        Reboot to apply changes
-                    </md-button>
                     <md-button href="#!dashboard" class="md-raised" aria-label="Dashboard">
                         <md-icon md-svg-icon="view-dashboard"></md-icon>
                         <span>Dashboard</span>
@@ -97,6 +90,7 @@
     <script src="js/services/confirm.js"></script>
     <script src="js/services/dialog.js"></script>
     <script src="js/services/graph.js"></script>
+    <script src="js/services/appToolbar.js"></script>
     <script src="js/tools/graph/graph.js"></script>
     <script src="js/tools/graphButton/graphButton.js"></script>
     <script src="js/tools/fabButton/fabButton.js"></script>
@@ -107,6 +101,7 @@
     <script src="js/tools/renderersSelector/renderersSelector.js"></script>
     <script src="js/tools/loadingBar/loadingBar.js"></script>
     <script src="js/tools/moduleImage/moduleImage.js"></script>
+    <script src="js/tools/appToolbar/appToolbar.js"></script>
     <script src="js/settings/modules/modules.js"></script>
     <script src="js/settings/module/module.js"></script>
     <script src="js/settings/install/install.js"></script>
