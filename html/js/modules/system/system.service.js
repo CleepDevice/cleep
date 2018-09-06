@@ -2,7 +2,7 @@
  * System service
  * Handle system module requests
  */
-var systemService = function($rootScope, $scope, rpcService, raspiotService, toast, appToolbarService)
+var systemService = function($rootScope, rpcService, raspiotService, toast, appToolbarService)
 {
     var self = this;
     self.raspiotInstallStatus = 0; //idle status
@@ -202,31 +202,31 @@ var systemService = function($rootScope, $scope, rpcService, raspiotService, toa
     /**
      * Watch for system config changes to add restart/reboot buttons if restart/reboot is needed
      */
-    $scope.$watchCollection(
+    $rootScope.$watchCollection(
         function() {
             return raspiotService.modules['system'];
         },
-        function(newValue) {
-            if( !angular.isUndefined(newValue) && newValue.config )
+        function(newConfig) {
+            if( !angular.isUndefined(newConfig) && newConfig.config )
             {
                 //handle restart button
-                if( !newValue.config.needrestart && self.restartButtonId )
+                if( !newConfig.config.needrestart && self.restartButtonId )
                 {
                     appToolbarService.addButton(self.restartButtonId);
                     self.restartButtonId = null;
                 }
-                else if( newValue.config.needrestart && !self.restartButtonId )
+                else if( newConfig.config.needrestart && !self.restartButtonId )
                 {
                     self.restartButtonId = appToolbarService.addButton('Restart to apply changes', 'restart', raspiotService.restart, 'md-accent');
                 }
 
                 //handle reboot button
-                if( !newValue.config.needreboot && self.rebootButtonId )
+                if( !newConfig.config.needreboot && self.rebootButtonId )
                 {
                     appToolbarService.addButton(self.rebootButtonId);
                     self.rebootButtonId = null;
                 }
-                else if( newValue.config.needreboot && !self.rebootButtonId )
+                else if( newConfig.config.needreboot && !self.rebootButtonId )
                 {
                     self.rebootButtonId = appToolbarService.addButton('Reboot to apply changes', 'restart', raspiotService.reboot, 'md-accent');
                 }
@@ -293,4 +293,4 @@ var systemService = function($rootScope, $scope, rpcService, raspiotService, toa
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('systemService', ['$rootScope', '$scope', 'rpcService', 'raspiotService', 'toastService', 'appToolbarService', systemService]);
+RaspIot.service('systemService', ['$rootScope', 'rpcService', 'raspiotService', 'toastService', 'appToolbarService', systemService]);
