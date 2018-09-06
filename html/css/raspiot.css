@@ -296,6 +296,11 @@ md-toast.info .md-toast-content {
     width: 15px;
 }
 
+.toolbar-white-icon {
+    color: white !important;
+    fill: white !important;
+}
+
 /********* modules card **********/
 .module-desc {
     height: 50px;
