@@ -4,7 +4,7 @@
  *  - installed modules: module and module helpers (reload config, get config...)
  *  - devices: all devices and devices helpers (reload devices)
  */
-var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
+var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
     var self = this;
     self.__deferred_modules = $q.defer();
     self.__deferred_events = $q.defer();
@@ -121,6 +121,16 @@ var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyL
     };
 
     /**
+     * Convert to camelcase specified string (with dot)
+     */
+    self.__camelize = function(str)
+    {
+        return str.replace(/^[_.\- ]+/, '')
+                .toLowerCase()
+                .replace(/[_.\- ]+(\w|$)/g, (m, p1) => p1.toUpperCase());
+    };
+
+    /**
      * Load module
      * @return promise
      */
@@ -190,7 +200,26 @@ var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyL
                 }
             })
             .then(function() {
-                //nothing to do
+                //force getting service from injector to make them executed as soon as possible
+                for( var i=0; i<files.js.length; i++ )
+                {
+                    if( files.js[i].indexOf('service')>=0 )
+                    {
+                        //guess service name from filename
+                        serviceName = files.js[i].replace(/^.*[\\\/]/, '');
+                        serviceName = serviceName.replace('.js', '');
+                        serviceName = self.__camelize(serviceName);
+
+                        //make sure
+                        if( $injector.has(serviceName) )
+                        {
+                            $injector.get(serviceName, function(err) {
+                                console.error('Error occured during service loading:', err)
+                            });
+                        }
+                    }
+                }
+
             }, function(err) {
                 console.error('Error loading modules js files:', err);
             })
@@ -585,5 +614,4 @@ var raspiotService = function($rootScope, $q, toast, rpcService, $http, $ocLazyL
 };
     
 var RaspIot = angular.module('RaspIot');
-RaspIot.service('raspiotService', ['$rootScope', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
-
+RaspIot.service('raspiotService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
