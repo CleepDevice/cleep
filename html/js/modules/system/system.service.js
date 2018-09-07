@@ -212,7 +212,7 @@ var systemService = function($rootScope, rpcService, raspiotService, toast, appT
                 //handle restart button
                 if( !newConfig.config.needrestart && self.restartButtonId )
                 {
-                    appToolbarService.addButton(self.restartButtonId);
+                    appToolbarService.removeButton(self.restartButtonId);
                     self.restartButtonId = null;
                 }
                 else if( newConfig.config.needrestart && !self.restartButtonId )
@@ -223,7 +223,7 @@ var systemService = function($rootScope, rpcService, raspiotService, toast, appT
                 //handle reboot button
                 if( !newConfig.config.needreboot && self.rebootButtonId )
                 {
-                    appToolbarService.addButton(self.rebootButtonId);
+                    appToolbarService.removeButton(self.rebootButtonId);
                     self.rebootButtonId = null;
                 }
                 else if( newConfig.config.needreboot && !self.rebootButtonId )
