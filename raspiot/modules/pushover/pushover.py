@@ -16,6 +16,7 @@ __all__ = [u'Pushover']
 class Pushover(RaspIotRenderer):
     """
     Pushover module
+    Used to send push notifications to mobile devices
     """
     MODULE_AUTHOR = u'Cleep'
     MODULE_VERSION = u'1.0.0'
