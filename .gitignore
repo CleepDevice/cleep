@@ -18,3 +18,4 @@ debian/raspiot.prerm.debhelper
 debian/raspiot.substvars
 debian/raspiot/
 modules/
+remote_*.log
