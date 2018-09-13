@@ -53,37 +53,122 @@ class EventsFactory():
         #load events
         self.__load_events()
 
+    def __full_path_split(self, path):
+        """
+        Explode path into dir/dir/.../filename
+
+        Source:
+            https://stackoverflow.com/a/27065945
+
+        Args:
+            path (string): path to split
+
+        Return:
+            list: list of path parts
+        """
+        if path is None:
+            path = u''
+        parts = []
+        (path, tail) = os.path.split(path)
+        while path and tail:
+            parts.append(tail)
+            (path, tail) = os.path.split(path)
+        parts.append(os.path.join(path, tail))
+
+        out = list(map(os.path.normpath, parts))[::-1]
+        if len(out) > 0 and out[0] == u'.':
+            #remove starting .
+            return out[1:]
+
+        return out
+
+    def __get_event_class_name(self, filename, module):
+        """
+        Search for event class name trying to match filename with item in module
+
+        Args:
+            filename (string): filename (without extension)
+            module (module): python module
+        """
+        return next((item for item in dir(module) if item.lower()==filename.lower()), None)
+
     def __load_events(self):
         """
         Load existing events
         """
+        self.__load_events_from_events_dir()
+        self.__load_events_from_modules_dir()
+
+        self.logger.debug('Found %d events: %s' % (len(self.events_by_event), self.events_by_event.keys()))
+
+    def __save_event(self, class_):
+        """
+        Save event entry in internal members
+
+        Args:
+            class_ (class): event class ready to be instanciated
+        """
+        self.events_by_event[class_.EVENT_NAME] = {
+            u'instance': class_,
+            u'used': False,
+            u'modules': [],
+            u'formatters': [],
+            u'profiles': []
+        }
+
+    def __load_events_from_modules_dir(self):
+        """
+        Load existing events from modules directory
+        """
+        path = os.path.join(os.path.dirname(__file__), u'modules')
+        if not os.path.exists(path):
+            self.crash_report.report_exception()
+            raise Exception(u'Invalid modules path')
+
+        try:
+            for root, _, filenames in os.walk(path):
+                for filename in filenames:
+                    fullpath = os.path.join(root, filename)
+                    (event, ext) = os.path.splitext(filename)
+                    parts = self.__full_path_split(fullpath)
+                    if filename.lower().find(u'event')>=0 and ext==u'.py':
+                        mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], event))
+                        event_class_name = self.__get_event_class_name(event, mod_)
+                        if event_class_name:
+                            class_ = getattr(mod_, event.capitalize())
+                            self.__save_event(class_)
+                        else:
+                            self.logger.error(u'Event class must have the same name than filename')
+
+        except AttributeError:
+            self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
+            raise Exception('Invalid event tryed to be loaded')
+
+    def __load_events_from_events_dir(self):
+        """
+        Load existing events from events directory
+        """
         path = os.path.join(os.path.dirname(__file__), u'events')
         if not os.path.exists(path):
-            raise Exception(u'Invalid events path')
             self.crash_report.report_exception()
+            raise Exception(u'Invalid events path')
 
         try:
             for f in os.listdir(path):
                 fpath = os.path.join(path, f)
                 (event, ext) = os.path.splitext(f)
                 if os.path.isfile(fpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
-                    event_ = importlib.import_module(u'raspiot.events.%s' % event)
-                    class_ = getattr(event_, event.capitalize())
-    
-                    #save event
-                    self.events_by_event[class_.EVENT_NAME] = {
-                        u'instance': class_,
-                        u'used': False,
-                        u'modules': [],
-                        u'formatters': [],
-                        u'profiles': []
-                    }
+                    mod_ = importlib.import_module(u'raspiot.events.%s' % event)
+                    event_class_name = self.__get_event_class_name(event, mod_)
+                    if event_class_name:
+                        class_ = getattr(mod_, event.capitalize())
+                        self.__save_event(class_)
+                    else:
+                        self.logger.error(u'Event class must have the same name than filename')
 
         except AttributeError:
             self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
             raise Exception('Invalid event tryed to be loaded')
-
-        self.logger.debug('Found %d events' % len(self.events_by_event))
 
     def get_event_instance(self, event_name):
         """
