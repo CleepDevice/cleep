@@ -1,7 +1,0 @@
-{
-    "icon": "volume-high",
-    "config": {
-        "js": ["sounds.directive.js", "sounds.service.js"],
-        "html": ["sounds.directive.html", "addSound.directive.html", "configSound.directive.html"]
-    }
-}
