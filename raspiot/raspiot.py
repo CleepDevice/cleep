@@ -746,7 +746,7 @@ class RaspIotResource(RaspIotModule):
         Return:
             bool: True if resource really acquired
         """
-        raise NotImplemented(u'Method release_resource must be implemented')
+        raise NotImplementedError(u'Method release_resource must be implemented')
 
     def release_resource(self, resource, extra=None):
         """
@@ -786,7 +786,7 @@ class RaspIotResource(RaspIotModule):
         Return:
             bool: True if resource released
         """
-        raise NotImplemented(u'Method release_resource must be implemented')
+        raise NotImplementedError(u'Method release_resource must be implemented')
 
     def need_resource(self, resource):
         """

@@ -10,6 +10,9 @@ class Event():
     Base event class
     """
 
+    EVENT_NAME = u''
+    EVENT_SYSTEM = False
+
     def __init__(self, bus, formatters_factory, events_factory):
         """
         Construtor

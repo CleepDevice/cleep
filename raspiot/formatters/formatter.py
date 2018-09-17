@@ -34,12 +34,9 @@ class Formatter():
         #get event instance
         self.event = self.events_factory.get_event_instance(self.event_name)
 
-    def format(self, event_values):
+    def format(self):
         """
         Format event
-        
-        Args:
-            event_values (dict): event values
         """
         return self._fill_profile(self.event, self.profile)
     
@@ -51,5 +48,5 @@ class Formatter():
            event_values (dict): event values
            profile (Profile): profile instance
         """
-        raise NotImplemented('_fill_profile method must be implemented')
+        raise NotImplementedError('_fill_profile method must be implemented')
 
