@@ -12,7 +12,6 @@ from raspiot.eventsFactory import EventsFactory
 from raspiot.formattersFactory import FormattersFactory
 from raspiot import rpcserver, bus
 from raspiot import inventory as raspiot_inventory
-from raspiot.modules import system, cleepbus, network
 from raspiot.libs.configs.raspiotconf import RaspiotConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 import importlib

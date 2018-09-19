@@ -6,7 +6,7 @@ import os
 import importlib
 import inspect
 from utils import MissingParameter, InvalidParameter, CommandError
-from formatters.formatter import Formatter
+from events.formatter import Formatter
 
 __all__ = [u'EventsFactory']
 
@@ -96,7 +96,7 @@ class EventsFactory():
         """
         Load existing events
         """
-        self.__load_events_from_events_dir()
+        #self.__load_events_from_events_dir()
         self.__load_events_from_modules_dir()
 
         self.logger.debug('Found %d events: %s' % (len(self.events_by_event), self.events_by_event.keys()))
@@ -132,10 +132,11 @@ class EventsFactory():
                     (event, ext) = os.path.splitext(filename)
                     parts = self.__full_path_split(fullpath)
                     if filename.lower().find(u'event')>=0 and ext==u'.py':
+                        self.logger.debug('Loading "%s"' % u'raspiot.modules.%s.%s' % (parts[-2], event))
                         mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], event))
                         event_class_name = self.__get_event_class_name(event, mod_)
                         if event_class_name:
-                            class_ = getattr(mod_, event.capitalize())
+                            class_ = getattr(mod_, event_class_name)
                             self.__save_event(class_)
                         else:
                             self.logger.error(u'Event class must have the same name than filename')

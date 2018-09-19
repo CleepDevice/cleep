@@ -48,6 +48,35 @@ class FormattersFactory():
         #load formatters
         self.__load_formatters()
 
+    def __full_path_split(self, path):
+        """
+        Explode path into dir/dir/.../filename
+
+        Source:
+            https://stackoverflow.com/a/27065945
+
+        Args:
+            path (string): path to split
+
+        Return:
+            list: list of path parts
+        """
+        if path is None:
+            path = u''
+        parts = []
+        (path, tail) = os.path.split(path)
+        while path and tail:
+            parts.append(tail)
+            (path, tail) = os.path.split(path)
+        parts.append(os.path.join(path, tail))
+
+        out = list(map(os.path.normpath, parts))[::-1]
+        if len(out) > 0 and out[0] == u'.':
+            #remove starting .
+            return out[1:]
+
+        return out
+
     def __get_formatter_class_name(self, filename, module):
         """
         Search for formatter class name trying to match filename with item in module
@@ -77,7 +106,7 @@ class FormattersFactory():
                         mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], formatter))
                         formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
                         if formatter_class_name:
-                            class_ = getattr(mod_, formatter.capitalize())
+                            class_ = getattr(mod_, formatter_class_name)
                             instance_ = class_(self.events_factory)
                             if not self.formatters.has_key(instance_.event_name):
                                 self.formatters[instance_.event_name] = {}
