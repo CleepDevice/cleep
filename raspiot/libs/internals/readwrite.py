@@ -36,6 +36,19 @@ class ReadWrite():
         """
         self.crash_report = crash_report
 
+    def is_path_on_root(self, path):
+        """
+        Return True if specified path is on root partition
+
+        Args:
+            path (string): path (absolute or not)
+
+        Returns:
+            bool: True if path on root partition
+        """
+        path = os.path.abspath(os.path.expanduser(path))
+        return path and path.startswith(self.PARTITION_ROOT)
+
     def __refresh(self, partition):
         """
         Refresh data

@@ -238,7 +238,10 @@ class Inventory(RaspIotModule):
                 #failed to load mandatory module
                 self.logger.fatal(u'Unable to load main module "%s". System will be instable' % module_name)
                 self.logger.exception(u'Module "%s" exception:' % module_name)
-                self.crash_report.report_exception()
+                self.crash_report.report_exception({
+                    u'message': u'Unable to load main module "%s". System will be instable' % module_name,
+                    u'module_name': module_name
+                })
 
         #load installed modules
         for module_name in self.configured_modules:

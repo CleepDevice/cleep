@@ -93,7 +93,10 @@ class FormattersFactory():
         """
         path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': 'Invalid module path',
+                u'path': path
+            })
             raise Exception(u'Invalid modules path')
 
         try:

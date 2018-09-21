@@ -427,7 +427,10 @@ class RaspIot(BusClient):
 
         except:
             self.logger.exception(u'Unable to know if module is loaded or not:')
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Unable to know if module is loaded or not:',
+                u'module': module
+            })
             return False
 
     def _event_received(self, event):

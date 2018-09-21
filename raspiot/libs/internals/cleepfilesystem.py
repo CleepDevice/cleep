@@ -88,15 +88,24 @@ class CleepFilesystem():
         #disable writings
         self.logger.debug('Disable writings')
         self.rw.disable_write_on_root()
+        self.rw.disable_write_on_boot()
 
         #release lock
         self.logger.debug('Release lock in really_disable_write')
         self.__rw_lock.release()
 
-    def __enable_write(self):
+    def __enable_write(self, boot=True, root=False):
         """
         Enable write mode
+
+        Args:
+            root: enable write on root partition (efault true)
+            boot (bool): enable write on boot partition (default false)
         """
+        if not boot and not root:
+            self.logger.warning(u'No partition specified, enable write action ignored.')
+            return
+
         #acquire lock
         self.logger.debug('Acquire lock in enable_write [counter=%s]' % (self.__counter))
         self.__rw_lock.acquire()
@@ -108,9 +117,12 @@ class CleepFilesystem():
 
         if self.__counter==0:
             #first to request writing, enable it
-            self.logger.debug('Enable writings')
-            self.rw.enable_write_on_root()
-            #self.__counter += 1
+            if root:
+                self.logger.debug('Enable writings on root partition')
+                self.rw.enable_write_on_root()
+            if boot:
+                self.logger.debug('Enable writings on boot partition')
+                self.rw.enable_write_on_boot()
 
         else:
             #write mode already enabled
@@ -179,7 +191,7 @@ class CleepFilesystem():
         Please make sure to call disable_write after you finished your job!
         """
         self.logger.warning(u'Filesystem readonly protection is disabled completely by application!')
-        self.__enable_write()
+        self.__enable_write(root=True, boot=True)
 
     def disable_write(self):
         """
@@ -206,7 +218,8 @@ class CleepFilesystem():
         read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
         self.logger.debug(u'Open %s read_mode=%s ro=%s' % (path, read_mode, self.is_readonly))
         if self.is_readonly and not read_mode and not self.__is_on_tmp(path):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(path)
+            self.__enable_write(root=root, boot=not root)
 
         #use system encoding if not specified
         if not encoding:
@@ -263,7 +276,11 @@ class CleepFilesystem():
         except:
             self.logger.debug('Data to be written: %s' % data)
             self.logger.exception(u'Unable to write content to file "%s"' % path)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Unable to write content to file "%s"' % path,
+                u'encoding': encoding,
+                u'path': path
+            })
             res = False
 
         finally:
@@ -296,7 +313,11 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Unable to get content of file "%s":' % path)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Unable to get content of file "%s"' % path,
+                u'encoding': encoding,
+                u'path': path
+            })
 
         finally:
             if fp:
@@ -320,7 +341,11 @@ class CleepFilesystem():
             lines = json.loads(u'\n'.join(lines), encoding)
         except:
             self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Unable to parse file "%s" content as json' % path,
+                u'encoding' : encoding,
+                u'path': path
+            })
             lines = ''
 
         return lines
@@ -364,7 +389,9 @@ class CleepFilesystem():
 
         #enable writings if necessary
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
+            boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
+            self.__enable_write(root=root, boot=root)
 
         #move 
         try:
@@ -372,7 +399,11 @@ class CleepFilesystem():
             moved = True
         except:
             self.logger.exception(u'Exception moving directory from "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception moving directory from "%s" to "%s"' % (src, dst),
+                u'src': src,
+                u'dst': dst
+            })
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
@@ -393,7 +424,9 @@ class CleepFilesystem():
         """
         #enable writings if necessary
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
+            boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
+            self.__enable_write(root=root, boot=root)
 
         #copy
         copied = False
@@ -402,7 +435,11 @@ class CleepFilesystem():
             copied = True
         except:
             self.logger.exception(u'Exception copying "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception copying "%s" to "%s"' % (src, dst),
+                u'src': src,
+                u'dst': dst
+            })
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
@@ -423,7 +460,9 @@ class CleepFilesystem():
         """
         #enable writings if necessary
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
+            boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
+            self.__enable_write(root=root, boot=boot)
 
         #copy
         copied = False
@@ -432,7 +471,11 @@ class CleepFilesystem():
             copied = True
         except:
             self.logger.exception(u'Exception copying dir "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception copying dir "%s" to "%s"' % (src, dst),
+                u'src': src,
+                u'dst': dst
+            })
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
@@ -466,7 +509,8 @@ class CleepFilesystem():
 
         #enable writings if necessary
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(path)
+            self.__enable_write(root=root, boot=not root)
 
         #remove file
         try:
@@ -475,7 +519,10 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing "%s"' % path)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception removing "%s"' % path,
+                u'path': path
+            })
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
@@ -497,7 +544,8 @@ class CleepFilesystem():
 
         #enable writings if necessary
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(path)
+            self.__enable_write(root=root, boot=not root)
 
         #remove dir
         try:
@@ -506,7 +554,10 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing directory "%s"' % path)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception removing directory "%s"' % path,
+                u'path': path
+            })
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
@@ -529,7 +580,8 @@ class CleepFilesystem():
 
         #enable writings if necessary
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__enable_write()
+            root = self.rw.is_path_on_root(path)
+            self.__enable_write(root=root, boot=not root)
 
         #create dir
         try:
@@ -542,7 +594,10 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Exception creating "%s"' % path)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Exception creating "%s"' % path,
+                u'path': path
+            })
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):

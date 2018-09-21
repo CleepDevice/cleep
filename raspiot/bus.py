@@ -277,7 +277,10 @@ class MessageBus():
 
                 except:
                     self.logger.exception(u'MessageBus: error when pulling message:')
-                    self.crash_report.report_exception()
+                    self.crash_report.report_exception({
+                        u'message': u'MessageBus: error when pulling message',
+                        u'module': module
+                    })
                     raise BusError(u'Error when pulling message')
 
             else:
@@ -297,7 +300,10 @@ class MessageBus():
                     except:
                         #unhandled error
                         self.logger.exception(u'MessageBus: error when pulling message:')
-                        self.crash_report.report_exception()
+                        self.crash_report.report_exception({
+                            u'message': u'MessageBus: error when pulling message',
+                            u'module': module
+                        })
                         raise BusError(u'Error when pulling message')
 
                     finally:
@@ -629,7 +635,10 @@ class BusClient(threading.Thread):
             self._configure()
         except:
             self.logger.exception('Exception during module "%s" configuration:' % self.__module)
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': 'Exception during module "%s" configuration' % self.__module,
+                u'module': self.__module
+            })
         finally:
             self.join_event.set()
 
@@ -641,8 +650,11 @@ class BusClient(threading.Thread):
                 try:
                     self._custom_process()
                 except Exception as e:
-                    self.logger.error('Critical error occured in custom_process: %s' % str(e))
-                    self.crash_report.report_exception()
+                    self.logger.error(u'Critical error occured in custom_process: %s' % str(e))
+                    self.crash_report.report_exception({
+                        u'message': u'Critical error occured in custom_process: %s' % str(e),
+                        u'module': self.__module
+                    })
 
                 msg = {}
                 try:
@@ -748,7 +760,10 @@ class BusClient(threading.Thread):
             except:
                 #error occured
                 self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module)
-                self.crash_report.report_exception()
+                self.crash_report.report_exception({
+                    u'message': u'Fatal exception occured running module "%s":' % self.__module,
+                    u'module': self.__module
+                })
                 self.stop()
 
             #self.logger.debug('----> sleep')

@@ -88,7 +88,11 @@ def load_auth():
         logger.debug(u'Auth enabled: %s' % auth_enabled)
     except:
         logger.exception(u'Unable to load auth file. Auth disabled:')
-        crash_report.report_exception()
+        crash_report.report_exception({
+            u'message': u'Unable to load auth file. Auth disabled:',
+            u'auth_enabled': auth_enabled,
+            u'auth_config': auth_config
+        })
 
 def configure(bootstrap, inventory_, debug_enabled_):
     """
@@ -187,7 +191,9 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
 
     except:
         logger.exception(u'Fatal error starting rpcserver:')
-        crash_report.report_exception()
+        crash_report.report_exception({
+            u'message': u'Fatal error starting rpcserver'
+        })
         if not server.closed:
             server.close()
 
@@ -683,8 +689,10 @@ def poll():
                 time.sleep(1.0)
 
             except:
-                logger.exception(u'poll exception')
-                crash_report.report_exception()
+                logger.exception(u'Poll exception')
+                crash_report.report_exception({
+                    u'message': u'Poll exception'
+                })
                 message[u'message'] = u'Internal error'
                 time.sleep(5.0)
 

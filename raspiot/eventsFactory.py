@@ -122,7 +122,10 @@ class EventsFactory():
         """
         path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Invalid modules path',
+                u'path': path
+            })
             raise Exception(u'Invalid modules path')
 
         try:
@@ -151,7 +154,10 @@ class EventsFactory():
         """
         path = os.path.join(os.path.dirname(__file__), u'events')
         if not os.path.exists(path):
-            self.crash_report.report_exception()
+            self.crash_report.report_exception({
+                u'message': u'Invalid events path',
+                u'path': path
+            })
             raise Exception(u'Invalid events path')
 
         try:
