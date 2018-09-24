@@ -189,11 +189,11 @@ def is_system_lib(path):
     filename_wo_ext = os.path.splitext(parts[len(parts)-1])[0]
     libs_part = parts[len(parts)-3]
     sublibs_part = parts[len(parts)-2]
-    print('==> internals_libs: %s' % internals_libs)
-    print('==> drivers_libs: %s' % drivers_libs)
-    print('==> commands_libs: %s' % commands_libs)
-    print('==> configs_libs: %s' % configs_libs)
-    print('==> %s %s %s' % (filename_wo_ext, libs_part, sublibs_part))
+    #print('==> internals_libs: %s' % internals_libs)
+    #print('==> drivers_libs: %s' % drivers_libs)
+    #print('==> commands_libs: %s' % commands_libs)
+    #print('==> configs_libs: %s' % configs_libs)
+    #print('==> %s %s %s' % (filename_wo_ext, libs_part, sublibs_part))
 
     #check
     if libs_part!=u'libs':
