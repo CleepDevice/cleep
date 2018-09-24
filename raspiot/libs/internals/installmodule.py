@@ -19,9 +19,11 @@ from raspiot.libs.internals.download import Download
 import raspiot.libs.internals.tools as Tools
 
 PATH_FRONTEND = u'/opt/raspiot/html'
-PATH_INSTALL = u'/etc/raspiot/install/'
+PATH_SCRIPTS = u'/opt/raspiot/scripts'
+PATH_INSTALL = u'/opt/raspiot/install'
 FRONTEND_DIR = u'frontend/'
 BACKEND_DIR = u'backend/'
+SCRIPTS_DIR = u'scripts/'
 
 
 class UninstallModule(threading.Thread):
@@ -363,7 +365,9 @@ class InstallModule(threading.Thread):
         self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode':None}
         self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode':None}
 
-        #make sure install log path exists
+        #make sure install paths exist
+        if not os.path.exists(PATH_SCRIPTS):
+            self.cleep_filesystem.mkdir(PATH_SCRIPTS, True)
         if not os.path.exists(PATH_INSTALL):
             self.cleep_filesystem.mkdir(PATH_INSTALL, True)
 
@@ -568,14 +572,14 @@ class InstallModule(threading.Thread):
             if self.callback:
                 self.callback(self.get_status())
 
-            #copy uninstall scripts to install path
-            src_path = os.path.join(extract_path, u'preuninst.sh')
+            #copy uninstall scripts to install path (to make them available during uninstallation)
+            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'preuninst.sh')
             dst_path = os.path.join(PATH_INSTALL, self.module, u'preuninst.sh')
             if os.path.exists(src_path):
                 self.cleep_filesystem.copy(src_path, dst_path)
             else:
                 self.logger.debug(u'Script preuninst.sh not found in archive')
-            src_path = os.path.join(extract_path, u'postuninst.sh')
+            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'postuninst.sh')
             dst_path = os.path.join(PATH_INSTALL, self.module, u'postuninst.sh')
             if os.path.exists(src_path):
                 self.cleep_filesystem.copy(src_path, dst_path)
@@ -585,7 +589,7 @@ class InstallModule(threading.Thread):
             #pre installation script
             try:
                 self.__pre_script_execution = True
-                path = os.path.join(extract_path, u'preinst.sh')
+                path = os.path.join(extract_path, SCRIPTS_DIR, u'preinst.sh')
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):
@@ -682,7 +686,7 @@ class InstallModule(threading.Thread):
             #post installation script
             try:
                 self.__pre_script_execution = False
-                path = os.path.join(extract_path, u'postinst.sh')
+                path = os.path.join(extract_path, SCRIPTS_DIR, u'postinst.sh')
                 if os.path.exists(path):
                     self.__script_running = True
                     if not self.__execute_script(path):

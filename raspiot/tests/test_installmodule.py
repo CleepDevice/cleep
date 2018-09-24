@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.libs.installmodule import InstallModule, UninstallModule, PATH_FRONTEND, UpdateModule
-from raspiot.libs.cleepfilesystem import CleepFilesystem
+from raspiot.libs.internals.installmodule import InstallModule, UninstallModule, PATH_FRONTEND, UpdateModule
+from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 import unittest
 import logging
 import time
@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(filename)s:%(line
 class InstallModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/raspiot/raw/master/tests/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",
@@ -35,7 +35,7 @@ class InstallModuleTests(unittest.TestCase):
             "sha256": None
         }
         self.fs = CleepFilesystem()
-        self.fs.DEBOUNCE_DURATION = 0.0
+        self.fs.enable_write()
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -46,22 +46,26 @@ class InstallModuleTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/etc/raspiot/install/test/test.log'):
-            f = open('/etc/raspiot/install/test/test.log', 'r')
+        if os.path.exists('/opt/raspiot/install/test/test.log'):
+            f = open('/opt/raspiot/install/test/test.log', 'r')
             lines = f.readlines()
             f.close()
             for line in lines:
                 os.remove(line.strip())
-            shutil.rmtree('/etc/raspiot/install/test/', ignore_errors=True)
+            shutil.rmtree('/opt/raspiot/install/test/', ignore_errors=True)
+        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test')
+        if os.path.exists('/opt/raspiot/html/js/modules/test'):
+            shutil.rmtree('/opt/raspiot/html/js/modules/test')
 
     def callback(self, status):
         pass
 
     def test_install_ok(self):
         #install
-        name = 'raspiot_test_1.0.0.ok'
+        name = 'cleepmod_test_1.0.0.ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '4a158ba9ebe211790948ca3571628326a2fa8f339c22e6c5d1b4f11c9cb5b679'
+        self.archive_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -73,18 +77,18 @@ class InstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
     def test_install_ok_without_script(self):
         #install
-        name = 'raspiot_test_1.0.0.noscript-ok'
+        name = 'cleepmod_test_1.0.0.noscript-ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '2dd607a7b07d9fc576ea125a7286c5ee14e0a0f3e4847f9c03574fb6b37c0f7c'
+        self.archive_infos['sha256'] = '0b43bcff0e4dc88f4e24261913bd118cb53c9c9a82ab1a61b053477615421da7'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -96,18 +100,19 @@ class InstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
     def test_install_ko_checksum(self):
         #install
-        name = 'raspiot_test_1.0.0.ok'
+        name = 'cleepmod_test_1.0.0.ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '2dd607a7b07d9fc576ea125a7286c5ee14e0a0f3e4847f9c03574fb6b37c0f7c'
+        #enter invalid checkum
+        self.archive_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -119,19 +124,19 @@ class InstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
     def test_install_ko_preinst(self):
         #install
-        name = 'raspiot_test_1.0.0.preinst-ko'
+        name = 'cleepmod_test_1.0.0.preinst-ko'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '61dd6b2c0a3593357cdd803339589c5bb08c5672ca59f0831569cb2e5c7c545c'
+        self.archive_infos['sha256'] = '7c96e007d2ecebcde543c2bbf7f810904976f1dae7a8bfce438807e5b30392a6'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -143,19 +148,19 @@ class InstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
     def test_install_ko_postinst(self):
         #install
-        name = 'raspiot_test_1.0.0.postinst-ko'
+        name = 'cleepmod_test_1.0.0.postinst-ko'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = 'fa5ea42e26bdd6aeb1957d0bc259b9db8cd95df2445554ae7685cbcac940b090'
+        self.archive_infos['sha256'] = '31d04988811c1ab449278bce66d608d1fbbc9324b0d60dd260ce36a326b700b4'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -167,10 +172,10 @@ class InstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test.log'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -179,7 +184,7 @@ class InstallModuleTests(unittest.TestCase):
 class UninstallModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/raspiot/raw/master/tests/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",
@@ -199,7 +204,7 @@ class UninstallModuleTests(unittest.TestCase):
             "sha256": None
         }
         self.fs = CleepFilesystem()
-        self.fs.DEBOUNCE_DURATION = 0.0
+        self.fs.enable_write()
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -210,23 +215,27 @@ class UninstallModuleTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/etc/raspiot/install/test/test.log'):
-            f = open('/etc/raspiot/install/test/test.log', 'r')
+        if os.path.exists('/opt/raspiot/install/test/test.log'):
+            f = open('/opt/raspiot/install/test/test.log', 'r')
             lines = f.readlines()
             f.close()
             for line in lines:
                 os.remove(line.strip())
-            if os.path.exists('/etc/raspiot/install/test/'):
-                shutil.rmtree('/etc/raspiot/install/test/')
+            if os.path.exists('/opt/raspiot/install/test/'):
+                shutil.rmtree('/opt/raspiot/install/test/', ignore_errors=True)
+        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test')
+        if os.path.exists('/opt/raspiot/html/js/modules/test'):
+            shutil.rmtree('/opt/raspiot/html/js/modules/test')
 
     def callback(self, status):
         pass
 
     def test_uninstall_ok(self):
         #install
-        name = 'raspiot_test_1.0.0.ok'
+        name = 'cleepmod_test_1.0.0.ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '4a158ba9ebe211790948ca3571628326a2fa8f339c22e6c5d1b4f11c9cb5b679'
+        self.archive_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -238,9 +247,9 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -257,13 +266,13 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
     def test_uninstall_without_script_ok(self):
         #install
-        name = 'raspiot_test_1.0.0.noscript-ok'
+        name = 'cleepmod_test_1.0.0.noscript-ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '2dd607a7b07d9fc576ea125a7286c5ee14e0a0f3e4847f9c03574fb6b37c0f7c'
+        self.archive_infos['sha256'] = '0b43bcff0e4dc88f4e24261913bd118cb53c9c9a82ab1a61b053477615421da7'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -275,7 +284,7 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -292,13 +301,13 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
 
     def test_uninstall_ko_preuninst(self):
         #install
-        name = 'raspiot_test_1.0.0.preuninst-ko'
+        name = 'cleepmod_test_1.0.0.preuninst-ko'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '628065d3cc0a4ab802986c46ea7a9fc190f8b5d7ffef8674ec152feb5eb116b0'
+        self.archive_infos['sha256'] = '0565957885fb6438bfbeeb44e54f7ec66bb0144d196e9243bfd8e452b3e22853'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -310,7 +319,7 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -327,13 +336,13 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
 
     def test_uninstall_ko_postuninst(self):
         #install
-        name = 'raspiot_test_1.0.0.postuninst-ko'
+        name = 'cleepmod_test_1.0.0.postuninst-ko'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '0886ae4795232f1b04e185cd5e433e49fc9b5e68c28b9d4ade9ae4f7d2e4aac7'
+        self.archive_infos['sha256'] = '0b7a48ca0c39926915a22213fccc871064b5e8e5054e4095d0b9b4c14ce39493'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -345,7 +354,7 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -362,13 +371,13 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
     def test_uninstall_ko_remove(self):
         #install
-        name = 'raspiot_test_1.0.0.postuninst-ko'
+        name = 'cleepmod_test_1.0.0.postuninst-ko'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '0886ae4795232f1b04e185cd5e433e49fc9b5e68c28b9d4ade9ae4f7d2e4aac7'
+        self.archive_infos['sha256'] = '0b7a48ca0c39926915a22213fccc871064b5e8e5054e4095d0b9b4c14ce39493'
         i = InstallModule('test', self.archive_infos, False, self.callback, self.fs)
         i.start()
         time.sleep(0.5)
@@ -380,13 +389,13 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
         #remove installed file to simulate error
-        os.remove('/etc/raspiot/install/test/test.log')
+        os.remove('/opt/raspiot/install/test/test.log')
 
         #uninstall module
         u = UninstallModule('test', False, self.callback, self.fs)
@@ -400,7 +409,7 @@ class UninstallModuleTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertFalse(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
 
 
 
@@ -408,7 +417,7 @@ class UninstallModuleTests(unittest.TestCase):
 class UpdateModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/raspiot/raw/master/tests/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",
@@ -428,7 +437,7 @@ class UpdateModuleTests(unittest.TestCase):
             "sha256": None
         }
         self.fs = CleepFilesystem()
-        self.fs.DEBOUNCE_DURATION = 0.0
+        #self.fs.enable_write()
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -439,23 +448,27 @@ class UpdateModuleTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/etc/raspiot/install/test/test.log'):
-            f = open('/etc/raspiot/install/test/test.log', 'r')
+        if os.path.exists('/opt/raspiot/install/test/test.log'):
+            f = open('/opt/raspiot/install/test/test.log', 'r')
             lines = f.readlines()
             f.close()
             for line in lines:
                 os.remove(line.strip())
-            if os.path.exists('/etc/raspiot/install/test/'):
-                shutil.rmtree('/etc/raspiot/install/test/')
+            if os.path.exists('/opt/raspiot/install/test/'):
+                shutil.rmtree('/opt/raspiot/install/test/')
+        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test')
+        if os.path.exists('/opt/raspiot/html/js/modules/test'):
+            shutil.rmtree('/opt/raspiot/html/js/modules/test')
 
     def callback(self, status):
         pass
 
     def test_update_ok(self):
         #install
-        name = 'raspiot_test_1.0.0.ok'
+        name = 'cleepmod_test_1.0.0.ok'
         self.archive_infos['download'] = self.url_archive % name
-        self.archive_infos['sha256'] = '4a158ba9ebe211790948ca3571628326a2fa8f339c22e6c5d1b4f11c9cb5b679'
+        self.archive_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
         i = InstallModule('test', self.archive_infos, False, None, self.fs)
         i.start()
         time.sleep(0.5)
@@ -467,9 +480,9 @@ class UpdateModuleTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -486,5 +499,5 @@ class UpdateModuleTests(unittest.TestCase):
 
         #check update
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertTrue(os.path.exists('/etc/raspiot/install/test/'))
+        self.assertTrue(os.path.exists('/opt/raspiot/install/test/'))
 
