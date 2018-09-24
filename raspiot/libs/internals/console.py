@@ -42,7 +42,7 @@ class EndlessConsole(Thread):
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         self.running = True
         self.killed = False
         self.__start_time = 0
