@@ -107,8 +107,8 @@ class CleepFilesystem():
             return
 
         #acquire lock
-        self.logger.debug('Acquire lock in enable_write [counter=%s]' % (self.__counter))
         self.__rw_lock.acquire()
+        self.logger.debug('Acquire lock in enable_write [counter=%s]' % (self.__counter))
 
         if self.__debounce_timer is not None:
             #debounce timer running and we need to enable write mode, cancel timer
@@ -140,8 +140,8 @@ class CleepFilesystem():
         Disable write mode
         """
         #acquire lock
-        self.logger.debug('Acquire lock in disable_write [counter=%s]' % self.__counter)
         self.__rw_lock.acquire()
+        self.logger.debug('Acquire lock in disable_write [counter=%s]' % self.__counter)
 
         #cancel action if necessary
         if self.__counter==0:
@@ -184,14 +184,18 @@ class CleepFilesystem():
 
         return u'tmp'==parts[1]
 
-    def enable_write(self):
+    def enable_write(self, root=True, boot=False):
         """
         Enable write as long as you disable it
         This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
         Please make sure to call disable_write after you finished your job!
+
+        Args:
+            root (bool): enable write on root partition
+            boot (bool): enable write on boot partition
         """
         self.logger.warning(u'Filesystem readonly protection is disabled completely by application!')
-        self.__enable_write(root=True, boot=True)
+        self.__enable_write(root=root, boot=boot)
 
     def disable_write(self):
         """
