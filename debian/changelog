@@ -1,3 +1,13 @@
+raspiot (0.0.13) UNRELEASED; urgency=low
+
+  * Remove completely all modules. Now they are external parts even system
+  modules
+  * Remove all formatters and keep only profiles
+  * Fix some bugs and improve cleepos
+  * Modules are only loaded by inventory now
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Tue, 25 Sep 2018 22:30:00 +0000
+
 raspiot (0.0.12) UNRELEASED; urgency=low
 
   * Fix bugs in network, system modules
