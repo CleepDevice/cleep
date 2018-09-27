@@ -31,16 +31,17 @@ if [ ! -d "$BACKEND/$1" ]; then
 fi
 cp -a modules/$1/backend/* $BACKEND/$1/.
 
-if [ ! -d "$FRONTEND/$1" ]; then
-    mkdir -p $FRONTEND/$1
-fi
 if [ -d "modules/$1/frontend/" ]; then
+    if [ ! -d "$FRONTEND/$1" ]; then
+        mkdir -p $FRONTEND/$1
+    fi
     cp -a modules/$1/frontend/* $FRONTEND/$1/.
 fi
 
-if [ ! -d "$SCRIPTS/$1" ]; then
-    mkdir -p $SCRIPTS/$1
-fi
 if [ -d "modules/$1/scripts/" ]; then
+    if [ ! -d "$SCRIPTS/$1" ]; then
+        mkdir -p $SCRIPTS/$1
+    fi
     cp -a modules/$1/scripts/* $SCRIPTS/$1/.
 fi
+
