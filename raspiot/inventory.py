@@ -180,6 +180,7 @@ class Inventory(RaspIotModule):
         self.modules[module_name][u'country'] = fixed_country
         self.modules[module_name][u'urls'] = fixed_urls
         self.modules[module_name][u'installed'] = True
+        self.modules[module_name][u'category'] = getattr(module_class_, u'MODULE_CATEGORY', u'')
 
         #handle properly version and updatable flag
         if u'version' in self.modules[module_name] and Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
