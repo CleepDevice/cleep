@@ -9,11 +9,11 @@ from raspiot.libs.internals.download import Download
 
 class ModulesJson():
     """
-    Helper class to update and read values from /etc/raspiot/raspiot.conf file
+    Helper class to update and read values from /etc/raspiot/modules.json file
     """
 
     CONF = u'/etc/raspiot/modules.json'
-    REMOTE_CONF = u'https://raw.githubusercontent.com/tangb/raspiot/master/modules.json'
+    REMOTE_CONF = u'https://raw.githubusercontent.com/tangb/cleep-os/master/modules.json'
 
     def __init__(self, cleep_filesystem):
         """
@@ -65,7 +65,7 @@ class ModulesJson():
 
     def update(self):
         """
-        Update modules.json file downloading fresh version from raspiot website
+        Update modules.json file downloading fresh version from cleepos website
 
         Return:
             bool: True if remove modules.json is different from local one
