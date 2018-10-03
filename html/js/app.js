@@ -147,7 +147,6 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
      */
     self.loadConfig = function(withBlockUi)
     {
-        var config;
         if( withBlockUi===undefined || withBlockUi===null )
         {
             withBlockUi = true;
@@ -159,21 +158,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
             blockUI.start({message:'Loading data...', submessage:'Please wait', icon:null, spinner:true});
         }
 
-        return rpcService.getConfig()
-            .then(function(resp) {
-                //save response as config to use it in next promise step
-                config = resp;
-
-                //set and load modules
-                return raspiotService._setModules(config.modules);
-
-            })
-            .then(function() {
-                //set other stuff
-                raspiotService._setDevices(config.devices);
-                raspiotService._setRenderers(config.renderers);
-                raspiotService._setEvents(config.events);
-            })
+        return raspiotService.loadConfig()
             .finally(function() {
                 //unblock ui
                 if( withBlockUi )
