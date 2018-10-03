@@ -6,6 +6,28 @@ import logging
 import os
 import traceback
 
+class ReadWriteContext():
+    """ 
+    Object to hold some data about current context
+    """
+    def __init__(self):
+        self.is_readonly = None
+        self.src = None
+        self.dst = None
+	self.action = None
+        self.boot = None
+        self.root = None
+
+    def to_dict(self):
+        return {
+            u'is_readonly': self.is_readonly,
+            u'src': self.src,
+            u'dst': self.dst,
+            u'action': self.action,
+            u'boot': self.boot,
+            u'root': self.root
+        }
+
 class ReadWrite():
     """
     Read/write library allows user to toggle read/write mode on cleep protected iso
@@ -133,19 +155,24 @@ class ReadWrite():
 
             #and send crash report
             if self.crash_report:
-                self.crash_report.manual_report(u'Error when turning on writing mode', res)
+                self.crash_report.manual_report(u'Error when turning on writing mode', {
+                    u'result': res,
+                    u'partition': partition,
+                    u'traceback': lines
+                })
             
         #refresh status
         self.__refresh(partition)
 
         return self.status[partition] is self.STATUS_WRITE
 
-    def __disable_write(self, partition):
+    def __disable_write(self, partition, context):
         """
         Disable filesystem writings
 
         Args:
             partition (string): partition to work on
+            context (ReadWriteContext): write context
 
         Returns:
             bool: True if read enabled, False otherwise
@@ -166,7 +193,12 @@ class ReadWrite():
 
             #and send crash report
             if self.crash_report:
-                self.crash_report.manual_report(u'Error when turning off writing mode', res)
+                self.crash_report.manual_report(u'Error when turning off writing mode', {
+                    u'result': res,
+                    u'partition': partition,
+                    u'traceback': lines,
+                    u'context': context.to_dict()
+                })
             
         #refresh status
         self.__refresh(partition)
@@ -182,14 +214,17 @@ class ReadWrite():
         """
         return self.__enable_write(self.PARTITION_BOOT)
 
-    def disable_write_on_boot(self):
+    def disable_write_on_boot(self, context):
         """
         Disable filesystem writings on boot partition
+
+        Args:
+            context (ReadWriteContext): write context
 
         Returns:
             bool: True if write disabled, False otherwise
         """
-        return self.__disable_write(self.PARTITION_BOOT)
+        return self.__disable_write(self.PARTITION_BOOT, context)
 
     def enable_write_on_root(self):
         """
@@ -200,12 +235,15 @@ class ReadWrite():
         """
         return self.__enable_write(self.PARTITION_ROOT)
 
-    def disable_write_on_root(self):
+    def disable_write_on_root(self, context):
         """
         Disable filesystem writings on root partition
+
+        Args:
+            context (ReadWriteContext): write context
 
         Returns:
             bool: True if write disabled, False otherwise
         """
-        return self.__disable_write(self.PARTITION_ROOT)
+        return self.__disable_write(self.PARTITION_ROOT, context)
 

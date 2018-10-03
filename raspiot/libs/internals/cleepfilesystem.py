@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.internals.console import Console
-from raspiot.libs.internals.readwrite import ReadWrite
+from raspiot.libs.internals.readwrite import ReadWrite, ReadWriteContext
 import logging
 import os
 from threading import Timer, Lock
@@ -36,11 +36,20 @@ class CleepFilesystem():
         self.__counter = 0;
         self.__rw_lock = Lock()
         self.__debounce_timer = None
+        self.__errors_busy = 0
+        self.__errors = 0
 
         #check if os is in readonly mode
         self.is_readonly = self.__is_readonly_filesystem()
         if self.is_readonly:
             self.logger.info(u'Raspiot is running on read-only filesystem')
+
+    def reset_errors(self):
+        """
+        Reset internal errors counters
+        """
+        self.__errors_busy = 0
+        self.__errors = 0
 
     def set_crash_report(self, crash_report):
         """
@@ -70,7 +79,7 @@ class CleepFilesystem():
 
         return False
 
-    def __really_disable_write(self):
+    def __really_disable_write(self, context):
         """
         Function used in debounce timer
         """
@@ -87,8 +96,8 @@ class CleepFilesystem():
 
         #disable writings
         self.logger.debug('Disable writings')
-        self.rw.disable_write_on_root()
-        self.rw.disable_write_on_boot()
+        self.rw.disable_write_on_root(context)
+        self.rw.disable_write_on_boot(context)
 
         #release lock
         self.logger.debug('Release lock in really_disable_write')
@@ -135,7 +144,7 @@ class CleepFilesystem():
         self.logger.debug('Release lock in enable_write [counter=%s]' % self.__counter)
         self.__rw_lock.release()
 
-    def __disable_write(self):
+    def __disable_write(self, context):
         """
         Disable write mode
         """
@@ -157,7 +166,7 @@ class CleepFilesystem():
         if self.__counter==0:
             #disable write after debounce time
             self.logger.debug('Launch debounce timer')
-            self.__debounce_timer = Timer(self.DEBOUNCE_DURATION, self.__really_disable_write)
+            self.__debounce_timer = Timer(self.DEBOUNCE_DURATION, self.__really_disable_write, [context])
             self.__debounce_timer.start()
 
         else:
@@ -204,7 +213,9 @@ class CleepFilesystem():
         Use this function only if you called enable_write function before!
         """
         self.logger.info(u'Filesystem readonly protection is enabled again')
-        self.__disable_write()
+        context = ReadWriteContext()
+        context.action = u'disable_write'
+        self.__disable_write(context)
 
     def open(self, path, mode, encoding=None):
         """
@@ -251,7 +262,11 @@ class CleepFilesystem():
         self.logger.debug(u'if self.is_readonly and not read_mode => %s' % (self.is_readonly and not read_mode))
         self.logger.debug(u'if self.is_readonly and not read_mode and not in self.__is_on_tmp(path) => %s' % (self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name)))
         if self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = fd.name
+            context.action = u'close'
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
     def write_data(self, path, data, encoding=None):
         """
@@ -411,7 +426,14 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = src
+            context.dst = dst
+            context.action = u'move'
+            context.root = root
+            context.boot = boot
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return moved
 
@@ -447,7 +469,14 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = src
+            context.dst = dst
+            context.action = u'copy'
+            context.root = root
+            context.boot = boot
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return copied
 
@@ -483,7 +512,13 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = src
+            context.action = u'copy_dir'
+            context.root = root
+            context.boot = boot
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return copied
 
@@ -530,7 +565,13 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = path
+            context.action = u'rm'
+            context.root = root
+            context.boot = not root
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return removed
 
@@ -565,7 +606,13 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = path
+            context.action = u'rmdir'
+            context.root = root
+            context.boot = not root
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return removed
 
@@ -605,7 +652,13 @@ class CleepFilesystem():
 
         #disable writings
         if self.is_readonly and not self.__is_on_tmp(path):
-            self.__disable_write()
+            context = ReadWriteContext()
+            context.src = path
+            context.action = u'mkdir'
+            context.root = root
+            context.boot = not root
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
 
         return created
 
