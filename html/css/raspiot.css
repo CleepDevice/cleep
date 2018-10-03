@@ -87,6 +87,11 @@ md-toast.info .md-toast-content {
     min-width: initial;
 }
 
+.widget-bg-color md-card-actions {
+    min-height: 36px;
+    max-height: 36px;
+}
+
 /* icon */
 .icon-md {
     font-size: 48px;
