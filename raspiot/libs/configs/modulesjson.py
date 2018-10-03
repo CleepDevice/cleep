@@ -75,6 +75,7 @@ class ModulesJson():
         download = Download(self.cleep_filesystem)
         raw = download.download_file(self.REMOTE_CONF)
         remote_modules_json = json.loads(raw)
+        self.logger.debug(u'Downloaded modules.json=%s' % remote_modules_json)
 
         #check remote content
         if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
@@ -89,10 +90,10 @@ class ModulesJson():
         #compare update field
         if local_modules_json is None or remote_modules_json[u'update']>local_modules_json['update']:
             #modules.json updated, save new file
-            self.logger.debug(u'Write modules.json to "%s"' % self.CONF)
             fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(raw)
             self.cleep_filesystem.close(fd)
+            self.logger.info(u'File modules.json updated successfully')
         
             #make sure file is written
             time.sleep(0.25)
