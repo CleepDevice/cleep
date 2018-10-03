@@ -2,14 +2,17 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var installDirective = function($q, raspiotService, toast) {
+var installDirective = function($q, raspiotService, toast, $mdDialog) {
 
     var installController = ['$rootScope', '$scope','$element', function($rootScope, $scope, $element) {
         var self = this;
-        self.modules = raspiotService.modules;
+        self.raspiotService = raspiotService;
         self.search = '';
         self.country = null;
-        self.country_alpha = null;
+        self.countryAlpha = null;
+        self.moduleToInstall = null;
+        self.moduleLogs = null
+        self.moduleNames = [];
 
         /**
          * Clear search input
@@ -25,51 +28,14 @@ var installDirective = function($q, raspiotService, toast) {
          */
         self.install = function(module)
         {
-            //lock button
-            self.updateModuleInstallingStatus(module, true);
+            //lock button asap
+            raspiotService.modules[module].installing = true;
+
+            //close modal
+            self.closeDialog();
 
             //trigger install
             raspiotService.installModule(module);
-        };
-
-        /**
-         * Update pending module status after install
-         * Everything will be reloaded automatically after page reloading
-         * @param module: module name
-         */
-        self.updateModulePendingStatus = function(module)
-        {
-            //update pending status in local modules
-            for( var i=0; i<self.modules.length; i++ )
-            {
-                if( self.modules[i].name===module )
-                {
-                    self.modules[i].pending = true;
-                }
-            }
-            
-            //update pending status in raspiotService
-            raspiotService.modules[module].pending = true;
-        };
-
-        /**
-         * Update installing module status
-         * @param module (string): module name
-         * @param installing (bool): installing value
-         */
-        self.updateModuleInstallingStatus = function(module, installing)
-        {
-            //update pending status in local modules
-            for( var i=0; i<self.modules.length; i++ )
-            {
-                if( self.modules[i].name===module )
-                {
-                    self.modules[i].installing = installing;
-                }
-            }
-            
-            //update pending status in raspiotService
-            raspiotService.modules[module].installing = installing;
         };
 
         /**
@@ -77,34 +43,79 @@ var installDirective = function($q, raspiotService, toast) {
          */
         self.init = function()
         {
-            //get configured user country
-            if( raspiotService.modules.system && raspiotService.modules.system.config && raspiotService.modules.system.config.city )
+            //update list of module names
+            var moduleNames = [];
+            for( moduleName in raspiotService.modules )
             {
-                self.country = raspiotService.modules.system.config.city.country;
-                self.country_alpha = raspiotService.modules.system.config.city.alpha2;
-            }
-
-            //flatten modules to array to allow sorting with ngrepeat
-            var modules = [];
-            for( var module in raspiotService.modules )
-            {
-                //filter not installed modules and modules for user configured country
-                var country_alpha = raspiotService.modules[module].country;
-                if( country_alpha===null || country_alpha===undefined )
+                //fix module country alpha code
+                var countryAlpha = raspiotService.modules[module].country;
+                if( countryAlpha===null || countryAlpha===undefined )
                 {
-                    country_alpha = "";
+                    countryAlpha = "";
                 }
-                if( !raspiotService.modules[module].installed && (country_alpha.length===0 || country_alpha==self.country_alpha))
+
+                //append module name if necessary
+                if( !raspiotService.modules[moduleName].installed && (countryAlpha.length===0 || countryAlpha==raspiotService.modules.parameters.config.country.alpha2))
                 {
-                    //add module name as 'name' property
-                    raspiotService.modules[module].name = module;
-                    //push module to internal array
-                    modules.push(raspiotService.modules[module]);
+                    moduleNames.push(moduleName);
                 }
             }
+            self.moduleNames = moduleNames;
+        };
 
-            //save modules list
-            self.modules = modules;
+        /** 
+         * Close update dialog
+         */
+        self.closeDialog = function() {
+            $mdDialog.hide();
+        };  
+
+        /** 
+         * Show install dialog
+         */
+        self.showInstallDialog = function(module, ev) {
+            self.moduleToInstall = module;
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'installCtl',
+                templateUrl: 'js/settings/install/install.dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: ev, 
+                clickOutsideToClose: true,
+                fullscreen: true
+            })  
+            .then(function() {}, function() {});
+        };
+
+        /** 
+         * Show logs dialog
+         */
+        self.showLogsDialog = function(moduleName, ev) {
+            //get system config
+            raspiotService.getModuleConfig('system')
+                .then(function(config) {
+                    //prepare dialog object
+                    self.moduleLogs = {
+                        name: moduleName,
+                        status: config.lastmodulesinstalls[moduleName].status,
+                        time: config.lastmodulesinstalls[moduleName].time,
+                        stdout: config.lastmodulesinstalls[moduleName].stdout.join('\n'),
+                        stderr: config.lastmodulesinstalls[moduleName].stderr.join('\n'),
+                        process: config.lastmodulesinstalls[moduleName].process.join('\n'),
+                    };
+
+                    //display dialog
+                    $mdDialog.show({
+                        controller: function() { return self; },
+                        controllerAs: 'installCtl',
+                        templateUrl: 'js/settings/install/logs.dialog.html',
+                        parent: angular.element(document.body),
+                        targetEvent: ev, 
+                        clickOutsideToClose: true,
+                        fullscreen: true
+                    })  
+                    .then(function() {}, function() {});
+                });
         };
 
         /**
@@ -118,51 +129,6 @@ var installDirective = function($q, raspiotService, toast) {
                 self.init();
             }
         );
-
-        /**
-         * Handle module install event
-         */
-        $rootScope.$on('system.module.install', function(event, uuid, params) {
-            //drop useless status
-            if( !params.status )
-            {
-                return;
-            }
-
-            //drop module install triggered by module update
-            if( params.updateprocess===true )
-            {
-                return;
-            }
-            
-            if( params.status===1 )
-            {
-                //installing status
-            }
-            if( params.status===2 )
-            { 
-                toast.error('Error during module ' + params.module + ' installation');
-                self.updateModuleInstallingStatus(params.module, false);
-            }
-            else if( params.status===4 )
-            {
-                toast.error('Module ' + params.module + ' installation canceled');
-                self.updateModuleInstallingStatus(params.module, false);
-            }
-            else if( params.status===3 )
-            {
-                //reload system config to activate restart flag (see main controller)
-                raspiotService.reloadModuleConfig('system')
-                    .then(function() {
-                        //set module pending status
-                        self.updateModuleInstallingStatus(params.module, false);
-                        self.updateModulePendingStatus(params.module);
-
-                        //info message
-                        toast.success('Module ' + params.module + ' installation will be finalized after next restart.');
-                    });
-            }
-        });
 
     }];
 
@@ -180,5 +146,5 @@ var installDirective = function($q, raspiotService, toast) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', installDirective]);
+RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', '$mdDialog', installDirective]);
 

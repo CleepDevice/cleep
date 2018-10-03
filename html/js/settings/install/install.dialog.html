@@ -1,0 +1,67 @@
+<md-dialog aria-label="Install dialog" flex="75">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Module install</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="installCtl.closeDialog()" aria-label="Close dialog">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+
+                <!-- header -->
+                <span class="md-title">You're going to install module "{{installCtl.moduleToInstall.name}}" version {{installCtl.moduleToInstall.version}}.</span>
+                <br/><br/>
+
+                <!-- description -->
+                <p ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.moduleToInstall.longdescription"></p>
+                <p ng-if="installCtl.moduleToInstall.changelog.length===0">No description provided. Please see module links below.</p>
+                <br/>
+
+                <!-- external resources -->
+                <div layout="row" layout-align="space-around center">
+                    <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.site" ng-href="{{installCtl.moduleToInstall.urls.site}}" target="_blank">
+                        <md-icon md-svg-icon="web"></md-icon>
+                        Module website
+                    </md-button>
+                    <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.info" ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">
+                        <md-icon md-svg-icon="information-outline"></md-icon>
+                        Module infos
+                    </md-button>
+                    <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.bugs" ng-href="{{installCtl.moduleToInstall.urls.bugs}}" target="_blank">
+                        <md-icon md-svg-icon="bug"></md-icon>
+                        Module bugs page
+                    </md-button>
+                    <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.help" ng-href="{{installCtl.moduleToInstall.urls.help}}" target="_blank">
+                        <md-icon md-svg-icon="lifebuoy"></md-icon>
+                        Module help page
+                    </md-button>
+                </div>
+                <br/>
+
+                <!-- screenshots -->
+                <div ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
+                    <img ng-src="{{installCtl.moduleToInstall.screenshots[1]}}" style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"/>
+                </div>
+
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions>
+            <md-button ng-click="installCtl.closeDialog()">
+                <md-icon md-svg-icon="close-circle"></md-icon>
+                Cancel
+            </md-button>
+            <md-button ng-click="installCtl.install(installCtl.moduleToInstall.name)" class="md-accent">
+                <md-icon md-svg-icon="plus-circle"></md-icon>
+                Install
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>
+

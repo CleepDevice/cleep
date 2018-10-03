@@ -5,13 +5,13 @@
         <div>
             <md-button href="#!modules" class="md-raised" aria-label="Go back">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
-                <md-tooltip>Back to installed modules</md-tooltip>
+                <md-tooltip>Back to installed apps</md-tooltip>
                 Back
             </md-button>
         </div>
         <div class="toolbar-spacer"></div>
         <div>
-            <h1 class="md-title">Modules market</h1>
+            <h1 class="md-title">Applications market</h1>
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
@@ -27,43 +27,50 @@
         </div>
     </div>
 
-    <!-- modules list -->
+    <!-- applications list -->
     <div layout="row" layout-wrap>
-        <div ng-if="installCtl.modules.length>0" ng-repeat="module in installCtl.modules | orderBy:'name' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+
+        <div ng-if="installCtl.moduleNames.length===0" style="text-align:center; width:100%; padding-top:30px;">
+            <md-icon md-svg-icon="trophy-variant"></md-icon>
+            <span>You are a master, you installed all available applications</span>
+        </div>
+
+        <div ng-if="installCtl.moduleNames.length>0" ng-repeat="moduleName in installCtl.moduleNames | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
                     <md-card-title-text>
-                        <span class="md-headline">{{module.name | firstUpper}}</span>
-                        <span class="md-subhead module-desc">{{module.description}}</span>
+                        <span class="md-headline">{{moduleName | firstUpper}}</span>
+                        <span class="md-subhead module-desc">{{installCtl.raspiotService.modules[moduleName].description}}</span>
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-svg-icon="{{module.icon}}" class="icon-xl" style="padding:4px;"></md-icon>
+                            <md-icon md-svg-icon="{{installCtl.raspiotService.modules[moduleName].icon}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
-                    <md-progress-linear ng-if="module.installing" md-mode="indeterminate"></md-progress-linear>
+                    <md-progress-linear ng-if="installCtl.raspiotService.modules[moduleName].installing" md-mode="indeterminate"></md-progress-linear>
                 </md-card-content>
                 <md-card-actions layout="row" layout-align="end center">
-                    <div ng-if="module.country">
-                        <img src="images/flagsBlank.gif" class="flag flag-{{module.country}}"/>
+                    <div ng-if="installCtl.raspiotService.modules[moduleName].country">
+                        <img src="images/flagsBlank.gif" class="flag flag-{{installCtl.raspiotService.modules[moduleName].country}}"/>
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
                     <span flex></span>
-                    <md-button ng-if="module.urls.info" ng-href="{{module.urls.info}}" target="_blank">
-                        <md-icon md-svg-icon="help-circle"></md-icon>
-                        <span>Infos</span>
+                    <md-button class="md-primary" ng-if="installCtl.raspiotService.modules[moduleName]" ng-click="installCtl.showLogsDialog(moduleName)">
+                        <md-icon md-svg-icon="file-document-box-outline"></md-icon>
+                        <span>Install logs</span>
                     </md-button>
-                    <md-button class="md-accent" ng-disabled="module.pending || module.installing" ng-click="installCtl.install(module.name)">
+                    <md-button class="md-accent" ng-disabled="installCtl.raspiotService.modules[moduleName].pending || installCtl.raspiotService.modules[moduleName].installing" ng-click="installCtl.showInstallDialog(installCtl.raspiotService.modules[moduleName])">
                         <md-icon md-svg-icon="plus-circle"></md-icon>
-                        <span ng-if="!module.pending && !module.installing">Install</span>
-                        <span ng-if="module.installing">Installing...</span>
-                        <span ng-if="module.pending">Please restart</span>
+                        <span ng-if="!installCtl.raspiotService.modules[moduleName].pending && !installCtl.raspiotService.modules[moduleName].installing">Install</span>
+                        <span ng-if="installCtl.raspiotService.modules[moduleName].installing">Installing...</span>
+                        <span ng-if="installCtl.raspiotService.modules[moduleName].pending">Please restart</span>
                     </md-button>
                 </md-card-actions>
             </md-card>
         </div>
+
     </div>
  
 </md-content>
