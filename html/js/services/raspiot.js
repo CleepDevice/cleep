@@ -16,6 +16,29 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     self.modulesPath = 'js/modules/';
 
     /**
+     * Load CleepOS config
+     */
+    self.loadConfig = function()
+    {
+        var config;
+
+        return rpcService.getConfig()
+            .then(function(resp) {
+                //save response as config to use it in next promise step
+                config = resp;
+
+                //set and load modules
+                return self._setModules(config.modules);
+            })  
+            .then(function() {
+                //set other stuff
+                self._setDevices(config.devices);
+                self._setRenderers(config.renderers);
+                self._setEvents(config.events);
+            });
+    };
+
+    /**
      * Build list of system files
      * @param module: module name
      * @param desc: description content file (json)
@@ -280,7 +303,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         var promises = [];
         for( module in self.modules )
         {
-            if( self.modules[module].installed && !self.modules[module].library )
+            if( self.modules[module].installed && self.modules[module].started && !self.modules[module].library )
             {
                 promises.push(self.__loadModule(module));
             }
