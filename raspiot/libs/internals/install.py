@@ -34,12 +34,13 @@ class Install():
     STATUS_DONE = 3
     STATUS_CANCELED = 4
 
-    def __init__(self, cleep_filesystem, status_callback, blocking=False):
+    def __init__(self, cleep_filesystem, crash_report, status_callback, blocking=False):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            crashÃ_report (CrashReport): Crash report instance
             status_callback (function): status callback. Params: status
             blocking (bool): enable or not blocking mode. If blocking mode is enabled, all functions are blocking
         """
@@ -49,6 +50,7 @@ class Install():
 
         #members
         self.cleep_filesystem = cleep_filesystem
+        self.crash_report = crash_report
         self.blocking = blocking
         self.__console = None
         self.__cancel = False
@@ -411,8 +413,10 @@ class Install():
                     prescript (dict): {stderr, stdout, returncode}
                     postscript (dict): {stderr, stdout, returncode}
                     updateprocess (bool): uninstall triggered by module update
+                    process (list): process status
                 }
         """
+        self.logger.debug('Install status: %s' % status)
         #save status
         if status[u'status']==InstallModule.STATUS_IDLE:
             self.status = self.STATUS_IDLE
@@ -426,18 +430,20 @@ class Install():
         #save stdout/stderr at end of process
         if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
             #prescript
-            if status[u'prescript'][u'returncode']:
-                self.stdout += [u'Pre-script stdout:'] + status[u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'prescript'][u'returncode']]
-                self.stderr += [u'Pre-script stderr:'] + status[u'prescript'][u'stderr']
+            if status[u'prescript'][u'returncode'] is not None:
+                self.stdout += [u'Preinstall script stdout:'] + status[u'prescript'][u'stdout'] + [u'Preinstall script return code: %s' % status[u'prescript'][u'returncode']]
+                self.stderr += [u'Preinstall script stderr:'] + status[u'prescript'][u'stderr']
             else:
-                self.stdout += [u'No pre-script']
+                self.stdout += [u'No preinstall script']
+                self.stderr += [u'No preinstall script']
 
             #postscript
-            if status[u'postscript'][u'returncode']:
-                self.stdout += [u'', u'Post-script process:'] + status[u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'postscript'][u'returncode']]
-                self.stderr += [u'', u'Post-script stderr:'] + status[u'postscript'][u'stderr']
+            if status[u'postscript'][u'returncode'] is not None:
+                self.stdout += [u'', u'Postinstall script stdout:'] + status[u'postscript'][u'stdout'] + [u'Postinstall script return code: %s' % status[u'postscript'][u'returncode']]
+                self.stderr += [u'', u'Postinstall script stderr:'] + status[u'postscript'][u'stderr']
             else:
-                self.stdout += [u'No post-script']
+                self.stdout += [u'', u'No postinstall script']
+                self.stderr += [u'', u'No postinstall script']
 
         #send status
         if self.status_callback:
@@ -445,6 +451,7 @@ class Install():
             #inject module name and updateprocess
             current_status[u'module'] = status[u'module']
             current_status[u'updateprocess'] = status[u'updateprocess']
+            current_status[u'process'] = status[u'process']
             self.status_callback(current_status)
 
     def install_module(self, module, module_infos):
@@ -468,7 +475,7 @@ class Install():
         self.__can_cancel = False
 
         #launch installation
-        install = InstallModule(module, module_infos, False, self.__callback_install_module, self.cleep_filesystem)
+        install = InstallModule(module, module_infos, False, self.__callback_install_module, self.cleep_filesystem, self.crash_report)
         install.start()
 
         #blocking mode
@@ -549,7 +556,7 @@ class Install():
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = UninstallModule(module, False, self.__callback_uninstall_module, self.cleep_filesystem)
+        uninstall = UninstallModule(module, False, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
         uninstall.start()
 
         #blocking mode
@@ -650,7 +657,7 @@ class Install():
         self.__can_cancel = False
 
         #launch update
-        update = UpdateModule(module, module_infos, self.__callback_update_module, self.cleep_filesystem)
+        update = UpdateModule(module, module_infos, self.__callback_update_module, self.cleep_filesystem, self.crash_report)
         update.start()
 
         #blocking mode
