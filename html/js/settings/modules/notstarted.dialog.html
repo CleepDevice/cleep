@@ -1,0 +1,38 @@
+<md-dialog aria-label="Module not started" flex="50">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Module not started</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="notstartedCtl.closeDialog()" aria-label="Close dialog">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+
+                <span>It appears installed module "{{notstartedCtl.moduleNotStarted.name}}" was unable to start correctly.</span>
+                <br/><br/>
+                <span>If you enable crash report in system module ("Advanced" tab), the error is already reported.</span>
+                <br/>
+                <span>If the option is disabled, you can post issue on module bug page.</span>
+                <br/><br/>
+                <span>To try to fix this problem check if the module has an available update and update it consequently.</span>
+                <br/>
+                <span>If no update is available uninstall it and try to install it again.</span>
+
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions>
+            <md-button ng-click="notstartedCtl.closeDialog()">
+                <md-icon md-svg-icon="close-circle"></md-icon>
+                Close
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>
+
