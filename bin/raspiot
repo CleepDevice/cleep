@@ -140,6 +140,7 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
                 join_event (Threading.Event): module startup join event
                 cleep_filesystem (CleepFilesystem): filesystem helper (handle readonly filesystem)
                 crash_report (CrashReport): crash report helper
+                log_file (string): log file path
             }
     """
     bootstrap = {
@@ -148,7 +149,8 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         u'message_bus': message_bus,
         u'join_event': Event(),
         u'cleep_filesystem': cleep_filesystem,
-        u'crash_report': crash_report
+        u'crash_report': crash_report,
+        u'log_file': LOG_FILE
     }
 
     return bootstrap
