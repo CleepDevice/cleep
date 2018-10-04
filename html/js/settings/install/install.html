@@ -49,7 +49,7 @@
                     </md-card-title-media>
                 </md-card-title>
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
-                    <md-progress-linear ng-if="installCtl.raspiotService.modules[moduleName].installing" md-mode="indeterminate"></md-progress-linear>
+                    <md-progress-linear ng-if="installCtl.raspiotService.modules[moduleName].processing" md-mode="indeterminate"></md-progress-linear>
                 </md-card-content>
                 <md-card-actions layout="row" layout-align="end center">
                     <div ng-if="installCtl.raspiotService.modules[moduleName].country">
@@ -61,10 +61,10 @@
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Install logs</span>
                     </md-button>
-                    <md-button class="md-accent" ng-disabled="installCtl.raspiotService.modules[moduleName].pending || installCtl.raspiotService.modules[moduleName].installing" ng-click="installCtl.showInstallDialog(installCtl.raspiotService.modules[moduleName])">
+                    <md-button class="md-accent" ng-disabled="installCtl.raspiotService.modules[moduleName].pending || installCtl.raspiotService.modules[moduleName].processing" ng-click="installCtl.showInstallDialog(installCtl.raspiotService.modules[moduleName])">
                         <md-icon md-svg-icon="plus-circle"></md-icon>
-                        <span ng-if="!installCtl.raspiotService.modules[moduleName].pending && !installCtl.raspiotService.modules[moduleName].installing">Install</span>
-                        <span ng-if="installCtl.raspiotService.modules[moduleName].installing">Installing...</span>
+                        <span ng-if="!installCtl.raspiotService.modules[moduleName].pending && !installCtl.raspiotService.modules[moduleName].processing">Install</span>
+                        <span ng-if="installCtl.raspiotService.modules[moduleName].processing">Installing...</span>
                         <span ng-if="installCtl.raspiotService.modules[moduleName].pending">Please restart</span>
                     </md-button>
                 </md-card-actions>

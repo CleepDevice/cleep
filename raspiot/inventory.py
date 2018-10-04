@@ -79,14 +79,14 @@ class Inventory(RaspIotModule):
             event (MessageRequest): event data
         """
         #handle module installation
-        if event[u'event']=='system.module.install':
+        if event[u'event'] in (u'system.module.install', u'system.module.uninstall', u'system.module.update'):
             if event[u'params'][u'module'] in self.modules:
                 if event[u'params'][u'status']==Install.STATUS_PROCESSING:
-                    self.logger.debug(u'Set module "%s" installing flag to True' % event[u'params'][u'module'])
-                    self.modules[event[u'params'][u'module']][u'installing'] = True
+                    self.logger.debug(u'Set module "%s" processing status to True' % event[u'params'][u'module'])
+                    self.modules[event[u'params'][u'module']][u'processing'] = True
                 else:
-                    self.logger.debug(u'Set module "%s" installing flag to False' % event[u'params'][u'module'])
-                    self.modules[event[u'params'][u'module']][u'installing'] = False
+                    self.logger.debug(u'Set module "%s" processing status to False' % event[u'params'][u'module'])
+                    self.modules[event[u'params'][u'module']][u'processing'] = False
 
     def __get_bootstrap(self):
         """
@@ -230,7 +230,7 @@ class Inventory(RaspIotModule):
             self.modules[module_name][u'library'] = False
             self.modules[module_name][u'local'] = module_name in local_modules
             self.modules[module_name][u'pending'] = False
-            self.modules[module_name][u'installing'] = False
+            self.modules[module_name][u'processing'] = False
             self.modules[module_name][u'updatable'] = u''
             self.modules[module_name][u'locked'] = False
             self.modules[module_name][u'screenshots'] = []

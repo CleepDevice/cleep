@@ -29,7 +29,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
         self.install = function(module)
         {
             //lock button asap
-            raspiotService.modules[module].installing = true;
+            raspiotService.modules[module].processing = true;
 
             //close modal
             self.closeDialog();
