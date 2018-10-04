@@ -8,6 +8,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         var self = this;
         self.modulesPath = 'js/modules/';
         self.module = '';
+        self.moduleUrls = {};
 
         /**
          * Get list of config files to lazy load
@@ -144,6 +145,9 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                     var template = '<div ' + module + '-config-directive=""></div>';
                     var directive = $compile(template)($scope);
                     $element.append(directive);
+
+                    //save module urls
+                    self.moduleUrls = raspiotService.modules[module].urls;
 
                 }, function(err) {
                     console.error('Error loading module js/css files:', err);

@@ -13,6 +13,26 @@
         <div>
             <h1 class="md-title">{{moduleCtl.module | firstUpper}} configuration</h1>
         </div>
+        <div flex></div>
+        <div>
+            <md-button ng-if="moduleCtl.moduleUrls.site" ng-href="{{moduleCtl.moduleUrls.site}}" target="_blank">
+                <md-icon md-svg-icon="web"></md-icon>
+                Website
+            </md-button>
+            <md-button ng-if="moduleCtl.moduleUrls.info" ng-href="{{moduleCtl.moduleUrls.info}}" target="_blank">
+                <md-icon md-svg-icon="information-outline"></md-icon>
+                Infos
+            </md-button>
+            <md-button ng-if="moduleCtl.moduleUrls.bugs" ng-href="{{moduleCtl.moduleUrls.bugs}}" target="_blank">
+                <md-icon md-svg-icon="bug"></md-icon>
+                Bugs
+            </md-button>
+            <md-button ng-if="moduleCtl.moduleUrls.help" ng-href="{{moduleCtl.moduleUrls.help}}" target="_blank">
+                <md-icon md-svg-icon="lifebuoy"></md-icon>
+                Help
+            </md-button>
+        </div>
+        <div class="toolbar-spacer"></div>
     </div>
 
     <!-- module content will be appended here -->
