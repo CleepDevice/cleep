@@ -33,7 +33,7 @@ class CrashReport():
         self.extra['platform'] = platform.platform()
         self.extra['product'] = product
         self.extra['product_version'] = product_version
-        self.enabled = False
+        self.__enabled = False
         self.__handler = None
 
         #create and configure raven client
@@ -45,7 +45,7 @@ class CrashReport():
         self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.__crash_report
 
-    def __unbinded_report_exception(self):
+    def __unbinded_report_exception(self, *argv, **kwargs):
         """
         Unbinded report exception when sentry is disabled
         """
@@ -64,17 +64,16 @@ class CrashReport():
         Returns:
             bool: True is enabled
         """
-        return self.enabled
+        return self.__enabled
 
     def enable(self):
         """
         Enable crash report
         """
         self.logger.debug('Crash report is enabled')
-        self.enabled = True
+        self.__enabled = True
 
         #bind report_exception
-        #self.report_exception = self.client.captureException
         self.report_exception = self.__binded_report_exception
 
     def disable(self):
@@ -82,7 +81,7 @@ class CrashReport():
         Disable crash report
         """
         self.logger.debug('Crash report is disabled')
-        self.enabled = False
+        self.__enabled = False
 
         #unbind report exception
         self.report_exception = self.__unbinded_report_exception
@@ -91,10 +90,10 @@ class CrashReport():
         """
         Exception handler that report crashes
         """
-        message = u'\n'.join(traceback.format_tb(tb))
-        message += '\n%s %s' % (str(type), value)
+        #message = u'\n'.join(traceback.format_tb(tb))
+        #message += '\n%s %s' % (str(type), value)
         #self.logger.fatal(message)
-        if self.enabled:
+        if self.__enabled:
             self.client.captureException((type, value, tb), extra=self.extra)
 
     def manual_report(self, message, extra=None):
@@ -105,7 +104,7 @@ class CrashReport():
             message (string): message to attach to crash report
             extra (dict): extra metadata to post with the report (stack...)
         """
-        if self.enabled:
+        if self.__enabled:
             self.client.capture(u'raven.events.Message', message=message, stack=True, extra=extra)
 
     def get_logging_handler(self, level=logging.ERROR):
