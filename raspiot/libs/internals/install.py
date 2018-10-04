@@ -40,7 +40,7 @@ class Install():
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
-            crashÃ_report (CrashReport): Crash report instance
+            crash_report (CrashReport): Crash report instance
             status_callback (function): status callback. Params: status
             blocking (bool): enable or not blocking mode. If blocking mode is enabled, all functions are blocking
         """
