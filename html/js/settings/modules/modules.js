@@ -6,9 +6,12 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
+        self.raspiotService = raspiotService;
         self.modules = [];
         self.search = '';
         self.moduleToUpdate = null;
+        self.moduleToNotStarted = null;
+        self.moduleNames = [];
 
         /**
          * Clear search input
@@ -52,7 +55,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          * Everything will be reloaded automatically after page reloading
          * @param module (string): module name
          */
-        self.updateModulePendingStatus = function(module)
+        /*self.updateModulePendingStatus = function(module)
         {   
             //update pending status in local modules
             for( var i=0; i<self.modules.length; i++ )
@@ -65,14 +68,14 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 
             //update pending status in raspiotService
             raspiotService.modules[module].pending = true;
-        };
+        };*/
 
         /**
          * Module is processing (uninstall, update)
          * @param module (string): module name
          * @param processing (bool): processing value
          */
-        self.updateModuleProcessingStatus = function(module, processing)
+        /*self.updateModuleProcessingStatus = function(module, processing)
         {
             //update pending status in local modules
             for( var i=0; i<self.modules.length; i++ )
@@ -85,7 +88,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 
             //update pending status in raspiotService
             raspiotService.modules[module].processing = processing;
-        };
+        };*/
 
         /**
          * Init controller
@@ -93,7 +96,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.init = function()
         {
             //flatten modules to array to allow sorting with ngrepeat
-            var modules = [];
+            /*var modules = [];
             for( var module in raspiotService.modules )
             {
                 //keep only installed modules
@@ -105,7 +108,18 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             }
 
             //save modules list
-            self.modules = modules;
+            self.modules = modules;*/
+
+            var moduleNames = [];
+            for( var moduleName in raspiotService.modules )
+            {
+                //keep only installed modules
+                if( raspiotService.modules[moduleName].installed && !raspiotService.modules[moduleName].library )
+                {
+                    moduleNames.push(moduleName);
+                }
+            }
+            self.moduleNames = moduleNames;
 
             //add fab action
             action = [{
@@ -140,32 +154,28 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          * Show update dialog
          */
         self.showUpdateDialog = function(module, ev) {
-            //gather module to update infos
-            self.moduleToUpdate = null;
-            for( var i=0; i<self.modules.length; i++ )
-            {   
-                if( self.modules[i].name===module )
-                {   
-                    self.moduleToUpdate = {
-                        name: module,
-                        oldVersion: self.modules[i].version,
-                        newVersion: self.modules[i].updatable,
-                        changelog: self.modules[i].changelog || ''
-                    };
-                    break;
-                }
-            }
-
-            if( self.moduleToUpdate===null )
-            {
-                toast.error('Unable to find infos of module to update');
-                return;
-            }
-
+            self.moduleToUpdate = module;
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'updateCtl',
-                templateUrl: 'js/settings/modules/update.directive.html',
+                templateUrl: 'js/settings/modules/update.dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                fullscreen: true
+            })
+            .then(function() {}, function() {});
+        };
+
+        /**
+         * Show not started dialog
+         */
+        self.showNotStartedDialog = function(module, ev) {
+            self.moduleNotStarted = module;
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'notstartedCtl',
+                templateUrl: 'js/settings/modules/notstarted.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -177,7 +187,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         /** 
          * Handle module uninstall event
          */
-        $rootScope.$on('system.module.uninstall', function(event, uuid, params) {
+        /*$rootScope.$on('system.module.uninstall', function(event, uuid, params) {
             if( !params.status )
             {
                 return;
@@ -206,12 +216,12 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                         toast.success('Module ' + params.module + ' is uninstalled. Please restart raspiot' );
                     });
             }
-        });
+        });*/
 
         /**
          * Handle module update event
          */
-        $rootScope.$on('system.module.update', function(event, uuid, params) {
+        /*$rootScope.$on('system.module.update', function(event, uuid, params) {
             if( !params.status )
             {
                 return;
@@ -240,7 +250,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
                         toast.success('Module ' + params.module + ' is updated. Please restart raspiot' );
                     });
             }
-        });
+        });*/
 
     }];
 

@@ -11,7 +11,7 @@
         </div>
         <div class="toolbar-spacer"></div>
         <div>
-            <h1 class="md-title">Installed modules</h1>
+            <h1 class="md-title">Installed apps</h1>
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
@@ -27,19 +27,19 @@
         </div>
     </div>
 
-    <!-- modules list -->
+    <!-- applications list -->
     <div layout="row" layout-wrap>
-        <div ng-if="modulesCtl.modules.length>0" ng-repeat="module in modulesCtl.modules | orderBy:'name' | filter:modulesCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div ng-if="modulesCtl.moduleNames.length>0" ng-repeat="moduleName in modulesCtl.moduleNames | orderBy:'toString()' | filter:modulesCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
 
             <md-card class="widget-bg-color">
                 <md-card-title>
                     <md-card-title-text>
-                        <span class="md-headline">{{module.name | firstUpper}}</span>
-                        <span class="md-subhead module-desc">{{module.description}}</span>
+                        <span class="md-headline">{{moduleName | firstUpper}}</span>
+                        <span class="md-subhead module-desc">{{modulesCtl.raspiotService.modules[moduleName].description}}</span>
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-svg-icon="{{module.icon}}" class="icon-xl" style="padding:4px;"></md-icon>
+                            <md-icon md-svg-icon="{{modulesCtl.raspiotService.modules[moduleName].icon}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
@@ -47,20 +47,20 @@
                     <md-progress-linear ng-if="module.processing" md-mode="indeterminate"></md-progress-linear>
                 </md-card-content>
                 <md-card-actions layout="row" layout-align="end center">
-                    <md-button ng-if="module.urls.info" ng-href="{{module.urls.info}}" target="_blank">
-                        <md-icon md-svg-icon="help-circle"></md-icon>
-                        <span>Infos</span>
+                    <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].hasConfig" ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-href="{{'#!module/'+moduleName}}" class="md-accent">
+                        <md-icon md-svg-icon="open-in-app"></md-icon>
+                        <span>Open</span>
                     </md-button>
-                    <md-button ng-if="module.hasConfig" ng-disabled="module.pending" ng-href="{{'#!module/'+module.name}}" class="md-accent">
-                        <md-icon md-svg-icon="settings"></md-icon>
-                        <span>Configure</span>
-                    </md-button>
-                    <md-button ng-disabled="module.pending" ng-if="module.updatable.length>0" ng-click="modulesCtl.showUpdateDialog(module.name)" class="md-accent">
+                    <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-if="modulesCtl.raspiotService.modules[moduleName].updatable.length>0" ng-click="modulesCtl.showUpdateDialog(modulesCtl.raspiotService.modules[moduleName])" class="md-accent">
                         <md-icon md-svg-icon="update"></md-icon>
-                        <span ng-if="!module.pending">Update</span>
-                        <span ng-if="module.pending">Please restart</span>
+                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].pending">Update</span>
+                        <span ng-if="modulesCtl.raspiotService.modules[moduleName].pending">Please restart</span>
                     </md-button>
-                    <md-button ng-disabled="module.pending" ng-if="!module.locked" ng-click="modulesCtl.uninstall(module.name)" class="">
+                    <md-button ng-if="!modulesCtl.raspiotService.modules[moduleName].started" ng-click="modulesCtl.showNotStartedDialog(modulesCtl.raspiotService.modules[moduleName])" class="md-accent">
+                        <md-icon md-svg-icon="alert-circle"></md-icon>
+                        <span>Not started</span>
+                    </md-button>
+                    <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-if="!modulesCtl.raspiotService.modules[moduleName].locked" ng-click="modulesCtl.uninstall(moduleName)">
                         <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
                 </md-card-actions>
