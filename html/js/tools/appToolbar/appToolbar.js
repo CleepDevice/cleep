@@ -10,6 +10,13 @@ var appToolbarDirective = function(appToolbarService) {
     var appToolbarController = ['$scope', function($scope) {
         var self = this;
         self.buttons = appToolbarService.buttons;
+
+        /**
+         * Action button click
+         */
+        self.click = function(btn) {
+            btn.click();
+        };
     }];
 
     var appToolbarLink = function(scope, element, attrs, controller) {
