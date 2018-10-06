@@ -30,12 +30,12 @@
     <!-- applications list -->
     <div layout="row" layout-wrap>
 
-        <div ng-if="installCtl.moduleNames.length===0" style="text-align:center; width:100%; padding-top:30px;">
+        <div ng-if="installCtl.modulesName.length===0" style="text-align:center; width:100%; padding-top:30px;">
             <md-icon md-svg-icon="trophy-variant"></md-icon>
             <span>You are a master, you installed all available applications</span>
         </div>
 
-        <div ng-if="installCtl.moduleNames.length>0" ng-repeat="moduleName in installCtl.moduleNames | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div ng-if="installCtl.modulesName.length>0" ng-repeat="moduleName in installCtl.modulesName | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
                     <md-card-title-text>
@@ -57,7 +57,7 @@
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
                     <span flex></span>
-                    <md-button class="md-primary" ng-if="installCtl.raspiotService.modules[moduleName]" ng-click="installCtl.showLogsDialog(moduleName)">
+                    <md-button class="md-primary" ng-if="modulesCtl.raspiotService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="installCtl.showLogsDialog(moduleName)">
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Install logs</span>
                     </md-button>

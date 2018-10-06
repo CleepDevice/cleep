@@ -1,8 +1,8 @@
-<md-dialog aria-label="Module install logs" flex="75">
+<md-dialog aria-label="App install logs" flex="75">
     <form ng-cloak>
         <md-toolbar>
             <div class="md-toolbar-tools">
-                <h2>Module {{installCtl.moduleLogs.name}} install logs</h2>
+                <h2>App {{installCtl.moduleLogs.name}} install logs</h2>
                 <span flex></span>
                 <md-button class="md-icon-button" ng-click="installCtl.closeDialog()" aria-label="Close dialog">
                     <md-icon md-svg-icon="close"></md-icon>
@@ -17,13 +17,13 @@
                     Last install occured {{installCtl.moduleLogs.time | hrDatetime}}.
                 </div>
                 <div ng-if="installCtl.moduleLogs.status===3">
-                    Module was installed successfully.
+                     App was installed successfully.
                 </div>
                 <div ng-if="installCtl.moduleLogs.status===2">
-                    Module install failed because of error (see logs below).
+                    App install failed because of error (see logs below).
                 </div>
                 <div ng-if="installCtl.moduleLogs.status===4">
-                    Module install was canceled.
+                    App install was canceled.
                 </div>
 
                 <br/>

@@ -12,7 +12,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
         self.countryAlpha = null;
         self.moduleToInstall = null;
         self.moduleLogs = null
-        self.moduleNames = [];
+        self.modulesName = [];
 
         /**
          * Clear search input
@@ -43,8 +43,8 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
          */
         self.init = function()
         {
-            //update list of module names
-            var moduleNames = [];
+            //update list of modules name
+            var modulesName = [];
             for( moduleName in raspiotService.modules )
             {
                 //fix module country alpha code
@@ -57,10 +57,10 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
                 //append module name if necessary
                 if( !raspiotService.modules[moduleName].installed && (countryAlpha.length===0 || countryAlpha==raspiotService.modules.parameters.config.country.alpha2))
                 {
-                    moduleNames.push(moduleName);
+                    modulesName.push(moduleName);
                 }
             }
-            self.moduleNames = moduleNames;
+            self.modulesName = modulesName;
         };
 
         /** 
@@ -91,17 +91,17 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
          * Show logs dialog
          */
         self.showLogsDialog = function(moduleName, ev) {
-            //get system config
-            raspiotService.getModuleConfig('system')
-                .then(function(config) {
+            //get last module processing
+            raspiotService.getLastModuleProcessing(moduleName)
+                .then(function(resp) {
                     //prepare dialog object
                     self.moduleLogs = {
                         name: moduleName,
-                        status: config.lastmodulesinstalls[moduleName].status,
-                        time: config.lastmodulesinstalls[moduleName].time,
-                        stdout: config.lastmodulesinstalls[moduleName].stdout.join('\n'),
-                        stderr: config.lastmodulesinstalls[moduleName].stderr.join('\n'),
-                        process: config.lastmodulesinstalls[moduleName].process.join('\n'),
+                        status: resp.data.status,
+                        time: resp.data.time,
+                        stdout: resp.data.stdout.join('\n'),
+                        stderr: resp.data.stderr.join('\n'),
+                        process: resp.data.process.join('\n')
                     };
 
                     //display dialog

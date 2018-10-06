@@ -39,13 +39,14 @@ class UninstallModule(threading.Thread):
     STATUS_UNINSTALLED_ERROR_REMOVE = 5
     STATUS_UNINSTALLED_ERROR_POSTUNINST = 6
 
-    def __init__(self, module, update_process, callback, cleep_filesystem, crash_report):
+    def __init__(self, module, update_process, force, callback, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
             module (string): module name to install
             update_process (bool): True if module uninstall occured during update process
+            force (bool): uninstall module and continue if error occured
             callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
@@ -55,12 +56,13 @@ class UninstallModule(threading.Thread):
 
         #logger   
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.status = self.STATUS_IDLE
         self.crash_report = crash_report
         self.update_process = update_process
+        self.force = force
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
         self.module = module
@@ -70,6 +72,7 @@ class UninstallModule(threading.Thread):
         self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
         self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
         self.callback = callback
+        self.__process_status = []
 
     def get_status(self):
         """
@@ -83,6 +86,7 @@ class UninstallModule(threading.Thread):
                     prescript (dict): preuninst status (returncode, stdout, stderr)
                     postscript (dict): postuninst status (returncode, stdout, stderr)
                     updateprocess (bool): uninstall triggered by module update
+                    process (list): process status
                 }
         """
         return {
@@ -90,7 +94,8 @@ class UninstallModule(threading.Thread):
             u'status': self.status,
             u'prescript': self.__pre_script_status,
             u'postscript': self.__post_script_status,
-            u'updateprocess': self.update_process
+            u'updateprocess': self.update_process,
+            u'process': self.__process_status
         }
 
     def __script_callback(self, stdout, stderr):
@@ -178,7 +183,8 @@ class UninstallModule(threading.Thread):
         Run install
         """
         #init
-        self.logger.info(u'Start module "%s" uninstallation' % self.module)
+        self.logger.info(u'Start app "%s" uninstallation' % self.module)
+        self.__process_status.append(u'Start app "%s" uninstallation' % self.module)
         self.status = self.STATUS_UNINSTALLING
         error = False
         module_log = None
@@ -195,6 +201,7 @@ class UninstallModule(threading.Thread):
             #pre uninstallation script
             try:
                 self.logger.debug(u'Run pre uninstallation script')
+                self.__process_status.append(u'Run pre uninstallation script')
                 self.__pre_script_execution = True
                 preuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'preuninst.sh'))
                 if os.path.exists(preuninst_sh):
@@ -205,10 +212,12 @@ class UninstallModule(threading.Thread):
                         raise Exception(u'Forced exception')
                 else:
                     self.logger.debug(u'No preuninst script found at "%s"' % preuninst_sh)
+                    self.__process_status.append(u'No pre uninstallation script')
 
             except Exception as e:
                 if e.message!=u'Forced exception':
                     self.logger.exception(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
+                    self.__process_status.append(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
                 error_during_prescript = True
                 #do not stop uninstall process, it's not blocking
 
@@ -218,11 +227,11 @@ class UninstallModule(threading.Thread):
 
             #remove all installed files
             try:
+                self.__process_status.append(u'Remove installed files')
                 module_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
                 self.logger.debug(u'Open install log file "%s"' % module_log)
                 if not os.path.exists(module_log):
-                    self.logger.error(u'Unable to remove module "%s" files because "%s" file doesn\'t exist' % (self.module, module_log))
-                    raise Exception(u'Unable to uninstall module properly because uninstall file doesn\'t exist (%s)' % module_log)
+                    self.logger.warning(u'Problem during app "%s" uninstallation because "%s" file doesn\'t exist' % (self.module, module_log))
                 install_log = self.cleep_filesystem.open(module_log, u'r')
                 lines = install_log.readlines()
                 self.cleep_filesystem.close(install_log)
@@ -235,16 +244,17 @@ class UninstallModule(threading.Thread):
                     #check if we try to remove system library file (should not happen but we are never too careful)
                     if Tools.is_system_lib(line):
                         #it's a system library, log warning and continue
-                        self.logger.warning(u'Trying to remove system library "%s" during module "%s" uninstallation. Drop deletion.' % (line, self.module))
+                        self.logger.warning(u'Trying to remove system library "%s" during app "%s" uninstallation. Drop deletion.' % (line, self.module))
                         continue
 
                     #try to delete file
                     if os.path.exists(line) and not self.cleep_filesystem.rm(line):
-                        self.logger.warning(u'File "%s" was not removed during "%s" module uninstallation' % (line, self.module))
+                        self.logger.warning(u'File "%s" was not removed during "%s" app uninstallation' % (line, self.module))
 
             except Exception as e:
                 if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during "%s" files module uninstallation' % self.module)
+                    self.logger.exception(u'Exception occured during "%s" files app uninstallation' % self.module)
+                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation' % self.module)
                 error_during_remove = True
                 #do not stop uninstall process, some files could be still exist after uninstall
 
@@ -255,6 +265,7 @@ class UninstallModule(threading.Thread):
             #post uninstallation script
             try:
                 self.logger.debug(u'Run post uninstallation script')
+                self.__process_status.append(u'Run post uninstallation script')
                 self.__pre_script_execution = False
                 postuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'postuninst.sh'))
                 if os.path.exists(postuninst_sh):
@@ -265,10 +276,12 @@ class UninstallModule(threading.Thread):
                         raise Exception(u'Forced exception')
                 else:
                     self.logger.debug(u'No postuninst script found at "%s"' % postuninst_sh)
+                    self.__process_status.append(u'No post uninstallation script')
 
             except Exception as e:
                 if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during postuninst.sh script execution of module "%s"' % self.module)
+                    self.logger.exception(u'Exception occured during postuninst.sh script execution of app "%s"' % self.module)
+                    self.__process_status.append(u'Exception occured during postuninst.sh script execution of app "%s"' % self.module)
                 error_during_postscript = True
                 #do not stop uninstall process
 
@@ -298,9 +311,12 @@ class UninstallModule(threading.Thread):
                 self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
 
             self.logger.debug('error=%s error_during_prescript=%s error_during_postscript=%s error_during_remove=%s' % (error, error_during_prescript, error_during_postscript, error_during_remove))
-            if error:
+            if self.force:
+                #whatever the result return uninstalled
+                self.status = self.STATUS_UNINSTALLED
+            elif error:
                 #error occured
-                self.logger.debug(u'Error occured during "%s" module uninstallation' % self.module)
+                self.logger.debug(u'Error occured during "%s" app uninstallation' % self.module)
                 self.status = self.STATUS_ERROR_INTERNAL
             elif error_during_prescript:
                 error = True
@@ -322,7 +338,8 @@ class UninstallModule(threading.Thread):
             #disable write mode
             self.cleep_filesystem.disable_write()
 
-        self.logger.info(u'Module "%s" uninstallation terminated (success: %s)' % (self.module, not error))
+        self.__process_status.append(u'App "%s" uninstallation terminated (success:%s, forced:%s)' % (self.module, not error, self.force))
+        self.logger.info(u'App "%s" uninstallation terminated (success: %s)' % (self.module, not error))
 
 
 
@@ -797,13 +814,14 @@ class UpdateModule(threading.Thread):
     STATUS_UPDATED = 2
     STATUS_ERROR = 3
 
-    def __init__(self, module, module_infos, callback, cleep_filesystem, crash_report):
+    def __init__(self, module, module_infos, force_uninstall, callback, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
             module (string): module name to install
             update_process (bool): True if module uninstall occured during update process
+            force_uninstall (bool): force module uninstall even if error occured
             callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
@@ -818,6 +836,7 @@ class UpdateModule(threading.Thread):
         #members
         self.module = module
         self.module_infos = module_infos
+        self.force_uninstall = force_uninstall
         self.callback = callback
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
@@ -890,7 +909,7 @@ class UpdateModule(threading.Thread):
 
         #run uninstall
         self.__is_uninstalling = True
-        uninstall = UninstallModule(self.module, True, self.__callback, self.cleep_filesystem, self.crash_report)
+        uninstall = UninstallModule(self.module, True, self.force_uninstall, self.__callback, self.cleep_filesystem, self.crash_report)
         uninstall.start()
         time.sleep(0.5)
         while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:

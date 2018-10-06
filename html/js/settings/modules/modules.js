@@ -11,7 +11,8 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.search = '';
         self.moduleToUpdate = null;
         self.moduleToNotStarted = null;
-        self.moduleNames = [];
+        self.modulesName = [];
+        self.moduleLogs = null;
 
         /**
          * Clear search input
@@ -36,9 +37,27 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         {
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
-                    self.updateModuleProcessingStatus(module, true);
+                    //lock button asap
+                    raspiotService.modules[module].processing = true;
+
+                    //uninstall module
                     return raspiotService.uninstallModule(module);
-                });
+                }, function() {});
+        };
+
+        /**
+         * Force module uninstall
+         */
+        self.forceUninstall = function(module)
+        {
+            //lock button
+            raspiotService.modules[module].processing = true;
+
+            //close dialog
+            self.closeDialog();
+
+            //uninstall module
+            return raspiotService.forceUninstallModule(module);
         };
 
         /**
@@ -50,76 +69,22 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             raspiotService.updateModule(module);
         };
 
-        /** 
-         * Update pending module status after install
-         * Everything will be reloaded automatically after page reloading
-         * @param module (string): module name
-         */
-        /*self.updateModulePendingStatus = function(module)
-        {   
-            //update pending status in local modules
-            for( var i=0; i<self.modules.length; i++ )
-            {   
-                if( self.modules[i].name===module )
-                {   
-                    self.modules[i].pending = true;
-                }
-            }
-
-            //update pending status in raspiotService
-            raspiotService.modules[module].pending = true;
-        };*/
-
-        /**
-         * Module is processing (uninstall, update)
-         * @param module (string): module name
-         * @param processing (bool): processing value
-         */
-        /*self.updateModuleProcessingStatus = function(module, processing)
-        {
-            //update pending status in local modules
-            for( var i=0; i<self.modules.length; i++ )
-            {   
-                if( self.modules[i].name===module )
-                {   
-                    self.modules[i].processing = processing;
-                }
-            }
-
-            //update pending status in raspiotService
-            raspiotService.modules[module].processing = processing;
-        };*/
-
         /**
          * Init controller
          */
         self.init = function()
         {
-            //flatten modules to array to allow sorting with ngrepeat
-            /*var modules = [];
-            for( var module in raspiotService.modules )
-            {
-                //keep only installed modules
-                if( raspiotService.modules[module].installed && !raspiotService.modules[module].library )
-                {
-                    //push module to internal array
-                    modules.push(raspiotService.modules[module]);
-                }
-            }
-
-            //save modules list
-            self.modules = modules;*/
-
-            var moduleNames = [];
+            //fill modules name
+            var modulesName = [];
             for( var moduleName in raspiotService.modules )
             {
                 //keep only installed modules
                 if( raspiotService.modules[moduleName].installed && !raspiotService.modules[moduleName].library )
                 {
-                    moduleNames.push(moduleName);
+                    modulesName.push(moduleName);
                 }
             }
-            self.moduleNames = moduleNames;
+            self.modulesName = modulesName;
 
             //add fab action
             action = [{
@@ -185,72 +150,35 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         };
 
         /** 
-         * Handle module uninstall event
+         * Show logs dialog
          */
-        /*$rootScope.$on('system.module.uninstall', function(event, uuid, params) {
-            if( !params.status )
-            {
-                return;
-            }
+        self.showLogsDialog = function(moduleName, ev) {
+            //get last module processing
+            raspiotService.getLastModuleProcessing(moduleName)
+                .then(function(resp) {
+                    //prepare dialog object
+                    self.moduleLogs = { 
+                        name: moduleName,
+                        status: resp.data.status,
+                        time: resp.data.time,
+                        stdout: resp.data.stdout.join('\n'),
+                        stderr: resp.data.stderr.join('\n'),
+                        process: resp.data.process.join('\n')
+                    };  
 
-            if( params.status==2 )
-            {
-                self.updateModuleProcessingStatus(params.module, false);
-                toast.error('Error during module ' + params.module + ' uninstallation');
-            }
-            else if( params.status==4 )
-            {
-                self.updateModuleProcessingStatus(params.module, false);
-                toast.error('Module ' + params.module + ' uninstallation canceled');
-            }
-            else if( params.status==3 )
-            {
-                //reload system config to activate restart flag (see main controller)
-                raspiotService.reloadModuleConfig('system')
-                    .then(function() {
-                        //force pending status of uninstalled module. This avoid reloading complete config
-                        self.updateModuleProcessingStatus(params.module, false);
-                        self.updateModulePendingStatus(params.module);
-
-                        //info message
-                        toast.success('Module ' + params.module + ' is uninstalled. Please restart raspiot' );
-                    });
-            }
-        });*/
-
-        /**
-         * Handle module update event
-         */
-        /*$rootScope.$on('system.module.update', function(event, uuid, params) {
-            if( !params.status )
-            {
-                return;
-            }
-
-            if( params.status==2 )
-            {
-                self.updateModuleProcessingStatus(params.module, false);
-                toast.error('Error during module ' + params.module + ' update');
-            }
-            else if( params.status==4 )
-            {
-                self.updateModuleProcessingStatus(params.module, false);
-                toast.error('Module ' + params.module + ' update canceled');
-            }
-            else if( params.status==3 )
-            {
-                //reload system config to activate restart flag (see main controller)
-                raspiotService.reloadModuleConfig('system')
-                    .then(function() {
-                        //force pending status of updated module. This avoid reloading complete config
-                        self.updateModuleProcessingStatus(params.module, false);
-                        self.updateModulePendingStatus(params.module);
-
-                        //info message
-                        toast.success('Module ' + params.module + ' is updated. Please restart raspiot' );
-                    });
-            }
-        });*/
+                    //display dialog
+                    $mdDialog.show({
+                        controller: function() { return self; },
+                        controllerAs: 'modulesCtl',
+                        templateUrl: 'js/settings/modules/logs.dialog.html',
+                        parent: angular.element(document.body),
+                        targetEvent: ev, 
+                        clickOutsideToClose: true,
+                        fullscreen: true
+                    })  
+                    .then(function() {}, function() {});
+                }); 
+        };
 
     }];
 

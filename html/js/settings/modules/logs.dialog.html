@@ -1,0 +1,70 @@
+<md-dialog aria-label="App uninstall logs" flex="75">
+    <form ng-cloak>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>App {{modulesCtl.moduleLogs.name}} uninstallation logs</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="modulesCtl.closeDialog()" aria-label="Close dialog">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content">
+                <!-- infos -->
+                <div>
+                    Last uninstall occured {{modulesCtl.moduleLogs.time | hrDatetime}}.
+                </div>
+                <div ng-if="modulesCtl.moduleLogs.status===3">
+                    App was uninstalled successfully.
+                </div>
+                <div ng-if="modulesCtl.moduleLogs.status===2">
+                    App uninstall failed because of error (see logs below).
+                </div>
+                <div ng-if="modulesCtl.moduleLogs.status===4">
+                    App uninstall was canceled.
+                </div>
+
+                <br/>
+
+                <!-- process -->
+                <div class="md-title">
+                    Uninstallation process
+                </div>
+                <div>
+                    <pre>{{modulesCtl.moduleLogs.process}}</pre>
+                </div>
+
+                <br/>
+
+                <!-- stdout -->
+                <div class="md-title">
+                    Scripts output
+                </div>
+                <div>
+                    <pre>{{modulesCtl.moduleLogs.stdout}}</pre>
+                </div>
+
+                <br/>
+
+                <!-- stderr -->
+                <div class="md-title">
+                    Scripts errors
+                </div>
+                <div>
+                    <pre>{{modulesCtl.moduleLogs.stderr}}</pre>
+                </div>
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions>
+            <md-button ng-click="modulesCtl.forceUninstall(modulesCtl.moduleLogs.name)">
+                <md-icon md-svg-icon="delete"></md-icon>
+                Force uninstall
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>
+

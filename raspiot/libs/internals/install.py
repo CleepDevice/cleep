@@ -521,17 +521,19 @@ class Install():
         if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
             #prescript
             if status[u'prescript'][u'returncode']:
-                self.stdout += [u'Pre-script stdout:'] + status[u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'prescript'][u'returncode']]
-                self.stderr += [u'Pre-script stderr:'] + status[u'prescript'][u'stderr']
+                self.stdout += [u'Preuninstall script stdout:'] + status[u'prescript'][u'stdout'] + [u'Preuninstall script return code: %s' % status[u'prescript'][u'returncode']]
+                self.stderr += [u'Preuninstall script stderr:'] + status[u'prescript'][u'stderr']
             else:
-                self.stdout += [u'No pre-script']
+                self.stdout += [u'No preuninstall script']
+                self.stderr += [u'No preuninstall script']
                 
             #postscript
             if status[u'postscript'][u'returncode']:
-                self.stdout += [u'', u'Post-script process:'] + status[u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'postscript'][u'returncode']]
-                self.stderr += [u'', u'Post-script stderr:'] + status[u'postscript'][u'stderr']
+                self.stdout += [u'', u'Postuninstall script process:'] + status[u'postscript'][u'stdout'] + [u'Postuninstall script return code: %s' % status[u'postscript'][u'returncode']]
+                self.stderr += [u'', u'Postuninstall script stderr:'] + status[u'postscript'][u'stderr']
             else:
-                self.stdout += [u'No post-script']
+                self.stdout += [u'No postuninstall script']
+                self.stderr += [u'No postuninstall script']
 
         #send status
         if self.status_callback:
@@ -539,14 +541,16 @@ class Install():
             #inject module name and updateprocess status
             current_status[u'module'] = status[u'module']
             current_status[u'updateprocess'] = status[u'updateprocess']
+            current_status[u'process'] = status[u'process']
             self.status_callback(current_status)
 
-    def uninstall_module(self, module):
+    def uninstall_module(self, module, force=False):
         """
         Uninstall specified module
 
         Params:
             module (string): module name to install
+            force (bool): uninstall module and continue if error occured
 
         Returns:
             bool: True if module uninstalled or None if non blocking
@@ -556,7 +560,7 @@ class Install():
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = UninstallModule(module, False, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
+        uninstall = UninstallModule(module, False, force, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
         uninstall.start()
 
         #blocking mode
@@ -601,31 +605,31 @@ class Install():
         if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
             #uninstall prescript
             if status[u'uninstall'][u'prescript'][u'returncode']:
-                self.stdout += [u'Uninstall pre-script stdout:'] + status[u'uninstall'][u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'uninstall'][u'prescript'][u'returncode']]
-                self.stderr += [u'Uninstall pre-script stderr:'] + status[u'uninstall'][u'prescript'][u'stderr']
+                self.stdout += [u'Preuninstall script stdout:'] + status[u'uninstall'][u'prescript'][u'stdout'] + [u'Preuninstall script return code: %s' % status[u'uninstall'][u'prescript'][u'returncode']]
+                self.stderr += [u'Preuninstall script stderr:'] + status[u'uninstall'][u'prescript'][u'stderr']
             else:
-                self.stdout += [u'No uninstall pre-script']
+                self.stdout += [u'No preuninstall script']
 
             #uninstall postscript
             if status[u'uninstall'][u'postscript'][u'returncode']:
-                self.stdout += [u'', u'Uninstall post-script stdout:'] + status[u'uninstall'][u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'uninstall'][u'postscript'][u'returncode']]
-                self.stderr += [u'', u'Uninstall post-script stderr:'] + status[u'uninstall'][u'postscript'][u'stderr']
+                self.stdout += [u'', u'Postuninstall script stdout:'] + status[u'uninstall'][u'postscript'][u'stdout'] + [u'Postuninstall script return code: %s' % status[u'uninstall'][u'postscript'][u'returncode']]
+                self.stderr += [u'', u'Postuninstall script stderr:'] + status[u'uninstall'][u'postscript'][u'stderr']
             else:
-                self.stdout = [u'', u'No uninstall post-script']
+                self.stdout = [u'', u'No postuninstall script']
 
             #install prescript
             if status[u'install'][u'prescript'][u'returncode']:
-                self.stdout += [u'', u'Install pre-script stdout:'] + status[u'install'][u'prescript'][u'stdout'] + [u'Pre-script return code: %s' % status[u'install'][u'prescript'][u'returncode']]
-                self.stderr += [u'', u'Install pre-script stderr:'] + status[u'install'][u'prescript'][u'stderr']
+                self.stdout += [u'', u'Preinstall script stdout:'] + status[u'install'][u'prescript'][u'stdout'] + [u'Preinstall script return code: %s' % status[u'install'][u'prescript'][u'returncode']]
+                self.stderr += [u'', u'Preinstall script stderr:'] + status[u'install'][u'prescript'][u'stderr']
             else:
-                self.stdout = [u'', u'No install pre-script']
+                self.stdout = [u'', u'No preinstall script']
 
             #install postscript
             if status[u'install'][u'postscript'][u'returncode']:
-                self.stdout += [u'', u'Install post-script stdout:'] + status[u'install'][u'postscript'][u'stdout'] + [u'Post-script return code: %s' % status[u'install'][u'postscript'][u'returncode']]
-                self.stderr += [u'', u'Install post-script stderr:'] + status[u'install'][u'postscript'][u'stderr']
+                self.stdout += [u'', u'Postinstall script stdout:'] + status[u'install'][u'postscript'][u'stdout'] + [u'Postinstall script return code: %s' % status[u'install'][u'postscript'][u'returncode']]
+                self.stderr += [u'', u'Postinstall script stderr:'] + status[u'install'][u'postscript'][u'stderr']
             else:
-                self.stdout = [u'', u'No install post-script']
+                self.stdout = [u'', u'No postinstall script']
 
         #send status
         if self.status_callback:
@@ -635,7 +639,7 @@ class Install():
             self.logger.debug('current_status=%s' % current_status)
             self.status_callback(current_status)
 
-    def update_module(self, module, module_infos):
+    def update_module(self, module, module_infos, force_uninstall=False):
         """
         Update specified module
         An update executes consecutively uninstall and install action
@@ -643,6 +647,7 @@ class Install():
         Args:
             module (string): module name
             modules_infos (dict): module infos reported in modules.json
+            force_uninstall (bool): force module uninstall even if error occured
 
         Returns:
             bool: True if module updated or None if non blocking
@@ -657,7 +662,7 @@ class Install():
         self.__can_cancel = False
 
         #launch update
-        update = UpdateModule(module, module_infos, self.__callback_update_module, self.cleep_filesystem, self.crash_report)
+        update = UpdateModule(module, module_infos, force_uninstall, self.__callback_update_module, self.cleep_filesystem, self.crash_report)
         update.start()
 
         #blocking mode

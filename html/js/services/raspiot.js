@@ -607,6 +607,11 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.restart = function(delay) {
+        if( delay===null || delay===undefined )
+        {
+            //add default delay of 3 seconds
+            delay = 3;
+        }
         return rpcService.sendCommand('restart', 'system', {'delay': delay});
     };
 
@@ -627,11 +632,27 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     };
 
     /**
+     * Force uninstall module
+     * This function calls system module function to avoid adhesion of system service from angular app
+     */
+    self.forceUninstallModule = function(module) {
+        return rpcService.sendCommand('uninstall_module', 'system', {'module':module, 'force':true}, 300);
+    };
+
+    /**
      * Update module
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.updateModule = function(module) {
         return rpcService.sendCommand('update_module', 'system', {'module':module}, 300);
+    };
+
+    /**
+     * Get last module processing
+     * This function calls system module function to avoid adhesion of system service from angular app
+     */
+    self.getLastModuleProcessing = function(module) {
+        return rpcService.sendCommand('get_last_module_processing', 'system', {'module':module});
     };
 
 };
