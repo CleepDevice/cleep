@@ -1,3 +1,11 @@
+raspiot (0.0.14) UNRELEASED; urgency=low
+
+  * Move specific events and formatters from core sources
+  * Fix some issues during install/uninstall app process
+  * Improve some other features and fix some issues
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Tue, 07 Oct 2018 23:00:00 +0000
+
 raspiot (0.0.13) UNRELEASED; urgency=low
 
   * Remove completely all modules. Now they are external parts even system
