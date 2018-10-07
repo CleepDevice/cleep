@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var installDirective = function($q, raspiotService, toast, $mdDialog) {
+var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
 
     var installController = ['$rootScope', '$scope','$element', function($rootScope, $scope, $element) {
         var self = this;
@@ -75,6 +75,10 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
          */
         self.showInstallDialog = function(module, ev) {
             self.moduleToInstall = module;
+
+            //trust html content
+            self.moduleToInstall.longdescription = $sce.trustAsHtml(self.moduleToInstall.longdescription);
+
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'installCtl',
@@ -146,5 +150,5 @@ var installDirective = function($q, raspiotService, toast, $mdDialog) {
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', '$mdDialog', installDirective]);
+RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', '$mdDialog', '$sce', installDirective]);
 
