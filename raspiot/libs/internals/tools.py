@@ -213,3 +213,33 @@ def is_system_lib(path):
 
     return True
 
+
+def full_path_split(path):
+    """ 
+    Explode path into dir/dir/.../filename
+
+    Source:
+        https://stackoverflow.com/a/27065945
+
+    Args:
+        path (string): path to split
+
+    Return:
+        list: list of path parts
+    """
+    if path is None:
+        path = u'' 
+    parts = []
+    (path, tail) = os.path.split(path)
+    while path and tail:
+        parts.append(tail)
+        (path, tail) = os.path.split(path)
+    parts.append(os.path.join(path, tail))
+
+    out = list(map(os.path.normpath, parts))[::-1]
+    if len(out) > 0 and out[0] == u'.':
+        #remove starting .
+        return out[1:]
+
+    return out 
+

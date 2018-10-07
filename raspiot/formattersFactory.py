@@ -6,6 +6,7 @@ import os
 import importlib
 import inspect
 from utils import MissingParameter, InvalidParameter, CommandError
+from libs.internals.tools import full_path_split
 
 __all__ = [u'FormattersFactory']
 
@@ -48,35 +49,6 @@ class FormattersFactory():
         #load formatters
         self.__load_formatters()
 
-    def __full_path_split(self, path):
-        """
-        Explode path into dir/dir/.../filename
-
-        Source:
-            https://stackoverflow.com/a/27065945
-
-        Args:
-            path (string): path to split
-
-        Return:
-            list: list of path parts
-        """
-        if path is None:
-            path = u''
-        parts = []
-        (path, tail) = os.path.split(path)
-        while path and tail:
-            parts.append(tail)
-            (path, tail) = os.path.split(path)
-        parts.append(os.path.join(path, tail))
-
-        out = list(map(os.path.normpath, parts))[::-1]
-        if len(out) > 0 and out[0] == u'.':
-            #remove starting .
-            return out[1:]
-
-        return out
-
     def __get_formatter_class_name(self, filename, module):
         """
         Search for formatter class name trying to match filename with item in module
@@ -104,7 +76,7 @@ class FormattersFactory():
                 for filename in filenames:
                     fullpath = os.path.join(root, filename)
                     (formatter, ext) = os.path.splitext(filename)
-                    parts = self.__full_path_split(fullpath)
+                    parts = full_path_split(fullpath)
                     if filename.lower().find(u'formatter')>=0 and ext==u'.py':
                         mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], formatter))
                         formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
@@ -121,45 +93,6 @@ class FormattersFactory():
         except AttributeError:
             self.logger.exception(u'Formatter "%s" has surely invalid name, please refer to coding rules:' % formatter)
             raise Exception('Invalid formatter tryed to be loaded')
-
-    # def __load_formatters_old(self):
-    #     """ 
-    #     Load all available formatters
-    #     """
-    #     #list all formatters in formatters folder
-    #     path = os.path.join(os.path.dirname(__file__), self.FORMATTERS_PATH)
-    #     if not os.path.exists(path):
-    #         raise CommandError(u'Invalid formatters path')
-
-    #     #iterates over formatters
-    #     for f in os.listdir(path):
-    #         #build path
-    #         fpath = os.path.join(path, f)
-    #         (formatter, ext) = os.path.splitext(f)
-
-    #         #filter files
-    #         if os.path.isfile(fpath) and ext==u'.py' and formatter not in [u'__init__', u'formatter', u'profiles']:
-
-    #             formatters_ = importlib.import_module(u'raspiot.%s.%s' % (self.FORMATTERS_PATH, formatter))
-    #             for name, class_ in inspect.getmembers(formatters_):
-
-    #                 #filter imports
-    #                 if name is None:
-    #                     continue
-    #                 if not unicode(class_).startswith(u'raspiot.%s.%s.' % (self.FORMATTERS_PATH, formatter)):
-    #                     continue
-
-    #                 #create formatter instance
-    #                 instance_ = class_(self.events_factory)
-
-    #                 #save formatter
-    #                 self.logger.debug(u'Found class %s in %s' % (unicode(class_), formatter) )
-    #                 if not self.formatters.has_key(instance_.event_name):
-    #                     self.formatters[instance_.event_name] = {}
-    #                 self.formatters[instance_.event_name][instance_.profile_name] = instance_
-    #                 self.logger.debug(u'  %s => %s' % (instance_.event_name, instance_.profile_name))
-
-    #     self.logger.debug(u'FORMATTERS: %s' % self.formatters) 
 
     def register_renderer(self, module_name, type, profiles):
         """ 

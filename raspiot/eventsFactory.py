@@ -7,6 +7,7 @@ import importlib
 import inspect
 from utils import MissingParameter, InvalidParameter, CommandError
 from events.formatter import Formatter
+from libs.internals.tools import full_path_split
 
 __all__ = [u'EventsFactory']
 
@@ -52,35 +53,6 @@ class EventsFactory():
 
         #load events
         self.__load_events()
-
-    def __full_path_split(self, path):
-        """
-        Explode path into dir/dir/.../filename
-
-        Source:
-            https://stackoverflow.com/a/27065945
-
-        Args:
-            path (string): path to split
-
-        Return:
-            list: list of path parts
-        """
-        if path is None:
-            path = u''
-        parts = []
-        (path, tail) = os.path.split(path)
-        while path and tail:
-            parts.append(tail)
-            (path, tail) = os.path.split(path)
-        parts.append(os.path.join(path, tail))
-
-        out = list(map(os.path.normpath, parts))[::-1]
-        if len(out) > 0 and out[0] == u'.':
-            #remove starting .
-            return out[1:]
-
-        return out
 
     def __get_event_class_name(self, filename, module):
         """
@@ -133,7 +105,7 @@ class EventsFactory():
                 for filename in filenames:
                     fullpath = os.path.join(root, filename)
                     (event, ext) = os.path.splitext(filename)
-                    parts = self.__full_path_split(fullpath)
+                    parts = full_path_split(fullpath)
                     if filename.lower().find(u'event')>=0 and ext==u'.py':
                         self.logger.debug('Loading "%s"' % u'raspiot.modules.%s.%s' % (parts[-2], event))
                         mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], event))
@@ -162,9 +134,9 @@ class EventsFactory():
 
         try:
             for f in os.listdir(path):
-                fpath = os.path.join(path, f)
+                fullpath = os.path.join(path, f)
                 (event, ext) = os.path.splitext(f)
-                if os.path.isfile(fpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
+                if os.path.isfile(fullpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
                     mod_ = importlib.import_module(u'raspiot.events.%s' % event)
                     event_class_name = self.__get_event_class_name(event, mod_)
                     if event_class_name:
