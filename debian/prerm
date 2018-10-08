@@ -1,8 +1,8 @@
 #!/bin/sh
 
-#disabling raspiot from startup
+#disabling CleepOS from startup
 /etc/raspiot/raspiot_helper.sh disable
 
-#stop raspiot
+#stop CleepOS
 /etc/raspiot/raspiot_helper.sh stop
 

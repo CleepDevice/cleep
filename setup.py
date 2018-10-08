@@ -4,18 +4,23 @@
 from setuptools import setup, find_packages
  
 import raspiot
+
+exclude = [
+    "*tests*",
+    "modules"
+]
  
 setup(
     name = 'pyraspiot',
     version = raspiot.__version__,
-    packages = find_packages(),
+    packages = find_packages(exclude=exclude),
     author = 'Tanguy Bonneau',
     author_email = 'tanguy.bonneau+raspiot@gmail.com',
-    description = 'Make your own IoT device with a raspberry pi',
+    description = 'Build your own IoT device with a raspberry pi',
     long_description = open('README.md').read(),
     install_requires = open('requirements.txt').readlines(),
     include_package_data = True,
-    url = 'http://www.github.com/tangb/raspiot'
+    url = 'http://www.github.com/tangb/cleep-os'
 )
 
 #test_suite = 'nose.collector',
