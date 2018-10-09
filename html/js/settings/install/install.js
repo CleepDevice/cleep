@@ -77,7 +77,8 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
             self.moduleToInstall = module;
 
             //trust html content
-            self.moduleToInstall.longdescription = $sce.trustAsHtml(self.moduleToInstall.longdescription);
+            self.sceLongDescription = $sce.trustAsHtml(self.moduleToInstall.longdescription);
+            self.sceChangelog = $sce.trustAsHtml(self.moduleToInstall.changelog);
 
             $mdDialog.show({
                 controller: function() { return self; },
