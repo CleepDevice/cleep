@@ -514,6 +514,7 @@ class CleepFilesystem():
         if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             context = ReadWriteContext()
             context.src = src
+            context.dst = dst
             context.action = u'copy_dir'
             context.root = root
             context.boot = boot
