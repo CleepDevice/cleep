@@ -57,7 +57,7 @@
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
                     <span flex></span>
-                    <md-button class="md-primary" ng-if="modulesCtl.raspiotService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="installCtl.showLogsDialog(moduleName)">
+                    <md-button class="md-primary" ng-if="installCtl.raspiotService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="installCtl.showLogsDialog(moduleName)">
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Install logs</span>
                     </md-button>
