@@ -12,15 +12,27 @@
 
         <md-dialog-content>
             <div class="md-dialog-content">
+            
+                <md-list>
+                    <!-- header -->
+                    <md-list-item>
+                        <p>You're going to install module "{{installCtl.moduleToInstall.name}}" version {{installCtl.moduleToInstall.version}}.</p>
+                    </md-list-item>
 
-                <!-- header -->
-                <span class="md-title">You're going to install module "{{installCtl.moduleToInstall.name}}" version {{installCtl.moduleToInstall.version}}.</span>
-                <br/><br/>
+                    <!-- description -->
+                    <md-subheader style="background-color:white;" class="md-subheader-inner">Description</md-subheader>
+                    <md-list-item>
+                        <p ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></p>
+                        <p ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</p>
+                    </md-list-item>
 
-                <!-- description -->
-                <p ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.moduleToInstall.longdescription"></p>
-                <p ng-if="installCtl.moduleToInstall.changelog.length===0">No description provided. Please see module links below.</p>
-                <br/>
+                    <!-- changelog -->
+                    <md-subheader style="background-color:white;" class="md-subheader-inner">Changelog</md-subheader>
+                    <md-list-item>
+                        <p ng-if="installCtl.moduleToInstall.changelog.length>0" ng-bind-html="installCtl.sceChangelog"></p>
+                        <p ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</p>
+                    </md-list-item>
+                </md-list>
 
                 <!-- external resources -->
                 <div layout="row" layout-align="space-around center">
