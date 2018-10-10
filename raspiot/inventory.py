@@ -40,6 +40,7 @@ class Inventory(RaspIotModule):
         #self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.__modules_loaded = False
         self.__rpcserver = rpcserver
         self.configured_modules = configured_modules
         self.debug_config = debug_config
@@ -193,21 +194,67 @@ class Inventory(RaspIotModule):
         #flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
-    def load_modules(self):
+    def __get_modules_json(self):
         """
-        Load all modules
+        Get content of modules.json file
+
+        Returns:
+            dict: modules.json content
         """
-        #init
-        local_modules = []
-                
-        #get list of all available modules (from remote list)
         modules_json = ModulesJson(self.cleep_filesystem)
+
         if not modules_json.exists():
             #modules.json doesn't exists, download it
             self.logger.info(u'No modules.json still loaded from CleepOS website. Download it now')
             if modules_json.update():
                 self.logger.info(u'File modules.json downloaded successfully')
-        modules_json_content = modules_json.get_json()
+
+            else:
+                self.logger.error(u'Failed to update modules.json. No module (except installed ones) will be available')
+                return modules_json.get_empty()
+
+        return modules_json.get_json()
+
+    def reload_modules(self):
+        """
+        Reload modules refreshing only not installed modules
+        """
+        self.logger.debug(u'Reloading modules')
+        #get list of all available modules (from remote list)
+        modules_json_content = self.__get_modules_json()
+        modules_json = modules_json_content[u'list']
+
+        #iterates over modules.json
+        for module_name in modules_json:
+            if module_name not in self.modules:
+                #new module, add new entry in existing modules list
+                self.modules[module_name] = {}
+                
+                #add data from modules.json
+                for key in modules_json[module_name]:
+                    self.modules[module_name][key] = copy.deepcopy(modules_json[module_name][key])
+
+                #add internal data
+                self.modules[module_name][u'name'] = module_name
+                self.modules[module_name][u'installed'] = False
+                self.modules[module_name][u'library'] = False
+                self.modules[module_name][u'local'] = False
+                self.modules[module_name][u'pending'] = False
+                self.modules[module_name][u'processing'] = False
+                self.modules[module_name][u'updatable'] = u''
+                self.modules[module_name][u'locked'] = False
+
+    def load_modules(self):
+        """
+        Load all modules
+        """
+        #init
+        if self.__modules_loaded:
+            raise Exception(u'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
+        local_modules = []
+                
+        #get list of all available modules (from remote list)
+        modules_json_content = self.__get_modules_json()
         self.modules = modules_json_content[u'list']
 
         #append manually installed modules (surely module in development)
@@ -277,6 +324,8 @@ class Inventory(RaspIotModule):
         self.logger.debug('Waiting for end of modules loading...')
         for join_event in self.__join_events:
             join_event.wait()
+
+        self.__modules_loaded = True
         self.logger.debug('All modules are loaded')
 
     def unload_modules(self):
