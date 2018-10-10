@@ -35,24 +35,22 @@
                 <!-- links -->
                 <md-subheader style="background-color:white;" class="md-subheader-inner">Links</md-subheader>
                 <md-list-item>
-                    <div layout="row" layout-align="space-around center">
-                        <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.site" ng-href="{{installCtl.moduleToInstall.urls.site}}" target="_blank">
-                            <md-icon md-svg-icon="web"></md-icon>
-                            Module website
-                        </md-button>
-                        <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.info" ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">
-                            <md-icon md-svg-icon="information-outline"></md-icon>
-                            Module infos
-                        </md-button>
-                        <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.bugs" ng-href="{{installCtl.moduleToInstall.urls.bugs}}" target="_blank">
-                            <md-icon md-svg-icon="bug"></md-icon>
-                            Module bugs page
-                        </md-button>
-                        <md-button class="md-primary md-raised" ng-if="installCtl.moduleToInstall.urls.help" ng-href="{{installCtl.moduleToInstall.urls.help}}" target="_blank">
-                            <md-icon md-svg-icon="lifebuoy"></md-icon>
-                            Module help page
-                        </md-button>
-                    </div>
+                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.site" ng-href="{{installCtl.moduleToInstall.urls.site}}" target="_blank">
+                        <md-icon md-svg-icon="web"></md-icon>
+                        Module website
+                    </md-button>
+                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.info" ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">
+                        <md-icon md-svg-icon="information-outline"></md-icon>
+                        Module infos
+                    </md-button>
+                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.bugs" ng-href="{{installCtl.moduleToInstall.urls.bugs}}" target="_blank">
+                        <md-icon md-svg-icon="bug"></md-icon>
+                        Module bugs page
+                    </md-button>
+                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.help" ng-href="{{installCtl.moduleToInstall.urls.help}}" target="_blank">
+                        <md-icon md-svg-icon="lifebuoy"></md-icon>
+                        Module help page
+                    </md-button>
                 </md-list-item>
 
                 <!-- screenshots -->
