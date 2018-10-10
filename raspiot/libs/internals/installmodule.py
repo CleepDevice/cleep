@@ -226,6 +226,7 @@ class UninstallModule(threading.Thread):
                 self.callback(self.get_status())
 
             #remove all installed files
+            paths = []
             try:
                 self.__process_status.append(u'Remove installed files')
                 module_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
@@ -250,6 +251,17 @@ class UninstallModule(threading.Thread):
                     #try to delete file
                     if os.path.exists(line) and not self.cleep_filesystem.rm(line):
                         self.logger.warning(u'File "%s" was not removed during "%s" app uninstallation' % (line, self.module))
+
+                    #keep track of file path
+                    path = os.path.dirname(line)
+                    if path not in paths:
+                        paths.append(path)
+
+                #clear paths
+                for path in paths:
+                    if os.path.exists(path):
+                        if not self.cleep_filesystem.rmdir(path):
+                            self.logger.warning(u'Directory "%s" was not removed during "%s" app uninstallation' % (path, self.module))
 
             except Exception as e:
                 if e.message!=u'Forced exception':
