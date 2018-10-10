@@ -98,7 +98,8 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 fullscreen: true
-            });
+            })
+            .then(function() {}, function() {});
         };
 
         /**
@@ -159,7 +160,7 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
                     .finally(function() {
                         self.resetDialogVariables();
                     });
-            });
+            }, function() {});
         };
 
         /**
@@ -181,7 +182,8 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
                 parent: angular.element(document.body),
                 clickOutsideToClose: true,
                 fullscreen: true
-            });
+            })
+            .then(function() {}, function() {});
         };
 
         /**
@@ -328,28 +330,28 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
                     escapeToClose: false,
                     fullscreen: true
                 })
-                    .then(function() {
-                        //lock ui
-                        self.networkLoading(true);
-                        toast.loading('Connecting to network...');
+                .then(function() {
+                    //lock ui
+                    self.networkLoading(true);
+                    toast.loading('Connecting to network...');
 
-                        //perform action
-                        networkService.saveWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
-                            .then(function(config) {
-                                //update config
-                                self.__updateConfig(config);
+                    //perform action
+                    networkService.saveWifiNetwork(self.selectedNetwork.interface, self.selectedNetwork.network, self.wifiPassword, self.selectedNetwork.config.encryption)
+                        .then(function(config) {
+                            //update config
+                            self.__updateConfig(config);
 
-                                //user message
-                                toast.success('Wifi network configuration saved. Device should be able to connect to this network');
-                            })
-                            .finally(function() {
-                                //unlock ui
-                                self.networkLoading(false);
-                            });
-                    })
-                    .finally(function() {
-                        self.resetDialogVariables();
-                    });
+                            //user message
+                            toast.success('Wifi network configuration saved. Device should be able to connect to this network');
+                        })
+                        .finally(function() {
+                            //unlock ui
+                            self.networkLoading(false);
+                        });
+                }, function() {})
+                .finally(function() {
+                    self.resetDialogVariables();
+                });
             }
             else
             {
@@ -383,29 +385,27 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
 
             //open confirm dialog
             confirm.open('Reconfigure network', 'This action can disconnect the device temporarly. Please wait until it connects again.', 'Reconfigure')
-                .then(function() {
-                    //block ui
-                    self.networkLoading(true);
-                    toast.loading('Reconfiguring network...');
+            .then(function() {
+                //block ui
+                self.networkLoading(true);
+                toast.loading('Reconfiguring network...');
 
-                    //execute action
-                    return networkService.reconfigureWifiNetwork(self.selectedNetwork.interface)
-                        .then(function(config) {
-                            //update config
-                            self.__updateConfig(config);
-
-                            //user message
-                            toast.success('Network has been reconfigured')
-                        })
-                        .finally(function() {
-                            //unblock ui
-                            self.networkLoading(false);
-                        });
-                })
-                .finally(function() {
-                    self.resetDialogVariables();
-                });
-
+                //execute action
+                return networkService.reconfigureWifiNetwork(self.selectedNetwork.interface)
+                    .then(function(config) {
+                        //update config
+                        self.__updateConfig(config);
+                         //user message
+                        toast.success('Network has been reconfigured')
+                    })
+                    .finally(function() {
+                        //unblock ui
+                        self.networkLoading(false);
+                    });
+            }, function() {})
+            .finally(function() {
+                self.resetDialogVariables();
+            });
         };
 
         /**
@@ -458,10 +458,10 @@ var networkDirective = function($rootScope, raspiotService, networkService, toas
                         //unlock ui
                         self.networkLoading(false);
                     });
-                })
-                .finally(function() {
-                    self.resetDialogVariables();
-                });
+            }, function() {})
+            .finally(function() {
+                self.resetDialogVariables();
+            });
         };
 
         /**
