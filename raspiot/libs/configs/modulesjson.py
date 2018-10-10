@@ -27,6 +27,10 @@ class ModulesJson():
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
 
+        #use local REMOTE_CONF if provided
+        #if u'CLEEPOS_REMOTE_CONF' in os.environ:
+        #    REMOTE_CONF = os.environ[u'CLEEPOS_REMOTE_CONF']
+
     def exists(self):
         """
         Return True if modules.json exists locally
@@ -35,6 +39,19 @@ class ModulesJson():
             bool: True if modules.json exists
         """
         return os.path.exists(self.CONF)
+
+    def get_empty(self):
+        """
+        Return empty version of modules.json
+        Used to have something to parse file in case of error
+
+        Returns:
+            dict: default (and empty) modules.json content
+        """
+        return {
+            u'update': int(time.time()),
+            u'list': {}
+        }
 
     def get_json(self):
         """
