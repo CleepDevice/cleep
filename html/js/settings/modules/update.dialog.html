@@ -1,45 +1,43 @@
 <md-dialog aria-label="Update module" flex="75">
-    <form ng-cloak>
-        <md-toolbar>
-            <div class="md-toolbar-tools">
-                <h2>Module update</h2>
-                <span flex></span>
-                <md-button class="md-icon-button" ng-click="updateCtl.closeDialog()" aria-label="Close dialog">
-                    <md-icon md-svg-icon="close"></md-icon>
-                </md-button>
-            </div>
-        </md-toolbar>
-
-        <md-dialog-content>
-            <div class="md-dialog-content">
-
-                <!-- version -->
-                <span>Update module "{{updateCtl.moduleToUpdate.name}}" from {{updateCtl.moduleToUpdate.oldVersion}} to {{updateCtl.moduleToUpdate.newVersion}}.</span>
-                <br/><br/>
-
-                <!-- changelog -->
-                <span class="md-subhead">Changelog:</span>
-                <div ng-if="updateCtl.moduleToUpdate.changelog.length>0">
-                    <p ng-bind-html="updateCtl.moduleToUpdate.changelog"></p>
-                </div>
-                <div ng-if="updateCtl.moduleToUpdate.changelog.length===0">
-                    <p>No changelog provided</p>
-                </div>
-
-            </div>
-        </md-dialog-content>
-
-        <md-dialog-actions>
-            <md-button ng-click="updateCtl.closeDialog()">
-                <md-icon md-svg-icon="close-circle"></md-icon>
-                Cancel
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Module update</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="updateCtl.closeDialog()" aria-label="Close dialog">
+                <md-icon md-svg-icon="close"></md-icon>
             </md-button>
-            <md-button ng-click="updateCtl.update(updateCtl.moduleToUpdate.name)" class="md-accent">
-                <md-icon md-svg-icon="update"></md-icon>
-                Update
-            </md-button>
-        </md-dialog-actions>
+        </div>
+    </md-toolbar>
 
-    </form>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+
+            <!-- version -->
+            <span>Update module "{{updateCtl.moduleToUpdate.name}}" from {{updateCtl.moduleToUpdate.oldVersion}} to {{updateCtl.moduleToUpdate.newVersion}}.</span>
+            <br/><br/>
+
+            <!-- changelog -->
+            <span class="md-subhead">Changelog:</span>
+            <div ng-if="updateCtl.moduleToUpdate.changelog.length>0">
+                <p ng-bind-html="updateCtl.moduleToUpdate.changelog"></p>
+            </div>
+            <div ng-if="updateCtl.moduleToUpdate.changelog.length===0">
+                <p>No changelog provided</p>
+            </div>
+
+        </div>
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="updateCtl.closeDialog()">
+            <md-icon md-svg-icon="close-circle"></md-icon>
+            Cancel
+        </md-button>
+        <md-button ng-click="updateCtl.update(updateCtl.moduleToUpdate.name)" class="md-accent">
+            <md-icon md-svg-icon="update"></md-icon>
+            Update
+        </md-button>
+    </md-dialog-actions>
+
 </md-dialog>
 
