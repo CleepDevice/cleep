@@ -18,7 +18,7 @@ fi
 github_release_data() {
     cat <<EOF
 {
-  "tag_name": "$1",
+  "tag_name": "v$1",
   "target_commitish": "master",
   "name": "$1",
   "body": "`sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\n/g' $2`",
