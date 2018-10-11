@@ -479,6 +479,7 @@ class Install():
         install.start()
 
         #blocking mode
+        self.logger.debug(u'Install module blocking? %s' % self.blocking)
         if self.blocking:
             #wait for end of installation
             while install.get_status()==install.STATUS_INSTALLING:
@@ -549,7 +550,7 @@ class Install():
         Uninstall specified module
 
         Params:
-            module (string): module name to install
+            module (string): module name to uninstall
             force (bool): uninstall module and continue if error occured
 
         Returns:

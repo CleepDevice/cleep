@@ -227,6 +227,7 @@ class Inventory(RaspIotModule):
         #iterates over modules.json
         for module_name in modules_json:
             if module_name not in self.modules:
+                self.logger.debug(u'Append module "%s" to list of modules' % module_name)
                 #new module, add new entry in existing modules list
                 self.modules[module_name] = {}
                 
