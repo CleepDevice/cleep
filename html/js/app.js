@@ -3,7 +3,7 @@
  */
 var RaspIot = angular.module(
     'RaspIot',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror', 'oc.lazyLoad']
+    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror', 'oc.lazyLoad', 'konami']
 );
 
 /**
