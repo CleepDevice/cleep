@@ -51,6 +51,11 @@
                         <md-icon md-svg-icon="open-in-app"></md-icon>
                         <span>Open</span>
                     </md-button>
+                    <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].pending && modulesCtl.raspiotService.modules[moduleName].installed" ng-disabled="true">
+                        <md-icon md-svg-icon="open-in-app"></md-icon>
+                        <span ng-if="modulesCtl.raspiotService.modules[moduleName].processing">Uninstalling</span>
+                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].processing">Please restart</span>
+                    </md-button>
                     <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-if="modulesCtl.raspiotService.modules[moduleName].updatable.length>0" ng-click="modulesCtl.showUpdateDialog(modulesCtl.raspiotService.modules[moduleName])" class="md-accent">
                         <md-icon md-svg-icon="update"></md-icon>
                         <span ng-if="!modulesCtl.raspiotService.modules[moduleName].pending">Update</span>
