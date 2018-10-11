@@ -178,9 +178,9 @@ class UninstallModule(threading.Thread):
 
         return out
 
-    def start(self):
+    def run(self):
         """
-        Run install
+        Run uninstall
         """
         #init
         self.logger.info(u'Start app "%s" uninstallation' % self.module)
@@ -525,7 +525,7 @@ class InstallModule(threading.Thread):
 
         return out
 
-    def start(self):
+    def run(self):
         """
         Run install
         """
@@ -909,9 +909,9 @@ class UpdateModule(threading.Thread):
         if self.callback:
             self.callback(self.get_status())
 
-    def start(self):
+    def run(self):
         """
-        Process module update
+        Run module update
         """
         #init
         self.logger.info(u'Start module "%s" update' % self.module)
