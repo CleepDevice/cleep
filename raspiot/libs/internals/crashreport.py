@@ -20,11 +20,12 @@ class CrashReport():
         Unhandled exceptions are reported automatically (if enabled!)
     """
 
-    def __init__(self, product, product_version, libs_version={}, debug=False, forced=False):
+    def __init__(self, sentry_dsn, product, product_version, libs_version={}, debug=False, forced=False):
         """
         Constructor
 
         Args:
+            sentry_dsn (string): sentry DSN
             product (string): product name
             product_version (string): product version
             libs_version (dict): dict of libraries with their version
@@ -39,23 +40,26 @@ class CrashReport():
             self.logger.setLevel(logging.INFO)
 
         #members
+        self.libs_version = libs_version
         self.extra = libs_version
+        self.product = product
+        self.product_version = product_version
         self.extra['platform'] = platform.platform()
         self.extra['product'] = product
         self.extra['product_version'] = product_version
         self.__forced = forced
         self.__enabled = True
-        if self.__forced:
+        self.report_exception = self.__binded_report_exception
+        if self.__forced or sentry_dsn in (None, u''):
             self.disable()
         self.__handler = None
 
         #create and configure raven client
         self.client = Client(
-            dsn = 'https://8aa3d328a88e44b09af18a02bf412512@sentry.io/1256905',
+            dsn = sentry_dsn,
             ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError'],
             tags = self.extra
         )
-        self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.__crash_report
 
     def __unbinded_report_exception(self, *argv, **kwargs):

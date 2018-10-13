@@ -10,6 +10,7 @@ from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotA
 import time
 import copy
 import uuid
+from libs.internals.crashreport import CrashReport
 
 
 __all__ = [u'RaspIot', u'RaspIotRenderer', u'RaspIotModule']
@@ -22,6 +23,7 @@ class RaspIot(BusClient):
      - configuration helpers
      - message bus access
      - logger with log level configured
+     - custom crash report
     """
     CONFIG_DIR = u'/etc/raspiot/'
     MODULE_DEPS = []
@@ -46,13 +48,33 @@ class RaspIot(BusClient):
         #members
         self.events_factory = bootstrap[u'events_factory']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
-        self.crash_report = bootstrap[u'crash_report']
 
         #load and check configuration
         self.__configLock = Lock()
         self.__config = self.__load_config()
         if getattr(self, u'DEFAULT_CONFIG', None) is not None:
             self.__check_config(self.DEFAULT_CONFIG)
+
+        #crash report
+        if getattr(self, u'MODULE_SENTRY_DSN', None) is not None:
+            #set custom crash report instance
+            self.logger.debug(u'Sentry DSN found in module, create dedicated crash report for this module.')
+            libs_version = bootstrap[u'crash_report'].libs_version
+            libs_version[self.__class__.__name__] = self.MODULE_VERSION
+            product = bootstrap[u'crash_report'].product
+            product_version = bootstrap[u'crash_report'].product_version
+            bootstrap[u'crash_report'].disabled = bootstrap[u'crash_report'].is_enabled()
+            self.crash_report = CrashReport(self.MODULE_SENTRY_DSN, product, product_version, libs_version, False, disabled)
+
+        elif getattr(self, u'MODULE_LOCKED', None) is True:
+            #set default crash report for core module
+            self.logger.debug(u'Crash report set to core one')
+            self.crash_report = bootstrap[u'crash_report']
+
+        else:
+            #no crash report specified, set dummy one (no dsn provided)
+            self.logger.warning(u'No Sentry DSN found, crash report disabled')
+            self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
 
     def __del__(self):
         """

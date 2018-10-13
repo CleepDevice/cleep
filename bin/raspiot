@@ -110,7 +110,17 @@ def load_crash_report(debug, disabled):
         u'passlib': passlib_version,
         u'pyregevent': pyregevent_version
     }
-    return CrashReport(u'CleepDevice', VERSION, libs_version, debug, disabled)
+
+    #get sentry token
+    sentry_dsn = None
+    if u'SENTRY_DSN' in os.environ:
+        sentry_dsn = os.environ[u'SENTRY_DSN']
+        logger.debug(u'Sentry DSN found (%s)' % sentry_dsn)
+    else:
+        logger.error(u'No Sentry DSN found, crash report will be disabled')
+        disabled = True
+
+    return CrashReport(sentry_dsn, u'CleepDevice', VERSION, libs_version, debug, disabled)
 
 def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem, crash_report):
     """
