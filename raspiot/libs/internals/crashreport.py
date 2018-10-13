@@ -16,24 +16,37 @@ class CrashReport():
 
     Usage:
         To report specific exception, simply use <CrashReport instance>.report_exception() function (without params)
-        To report manually something uses <CrashReport instance>.manual_report() specifiying a message
+        To report manually something uses <CrashReport instance>.manual_report() specifiying a message and extra infos
         Unhandled exceptions are reported automatically (if enabled!)
     """
 
-    def __init__(self, product, product_version, libs_version={}, debug=False):
+    def __init__(self, product, product_version, libs_version={}, debug=False, forced=False):
+        """
+        Constructor
+
+        Args:
+            product (string): product name
+            product_version (string): product version
+            libs_version (dict): dict of libraries with their version
+            debug (bool): enable debug on this library (default False)
+            forced (bool): used by system to force crash report deactivation
+        """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.WARN)
+            self.logger.setLevel(logging.INFO)
 
         #members
         self.extra = libs_version
         self.extra['platform'] = platform.platform()
         self.extra['product'] = product
         self.extra['product_version'] = product_version
-        self.__enabled = False
+        self.__forced = forced
+        self.__enabled = True
+        if self.__forced:
+            self.disable()
         self.__handler = None
 
         #create and configure raven client
@@ -70,6 +83,11 @@ class CrashReport():
         """
         Enable crash report
         """
+        #avoid enabling again if forced by system
+        if self.__forced:
+            self.logger.info(u'Unable to enable crash report because system disabled it for current execution')
+            return
+
         self.logger.debug('Crash report is enabled')
         self.__enabled = True
 

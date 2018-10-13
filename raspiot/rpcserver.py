@@ -99,7 +99,7 @@ def configure(bootstrap, inventory_, debug_enabled_):
     Configure rpcserver
 
     Args:
-        boostrap (dict): bootstrap objects
+        bootstrap (dict): bootstrap objects
         inventory_ (Inventory): Inventory instance
         debug_enabled_ (bool): debug status
     """
@@ -161,7 +161,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
         key (string): SSL key file
         cert (string): SSL certificate file
     """
-    global server, app, boostrap
+    global server, app, crash_report
 
     try:
         run_https = False
@@ -171,7 +171,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
                 run_https = True
             else:
                 logger.error('Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.' % (key, cert))
-            
+
         if run_https:
             #start HTTPS server
             logger.debug(u'Starting HTTPS server on %s:%d' % (host, port))

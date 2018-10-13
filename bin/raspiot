@@ -91,12 +91,12 @@ def load_config(cleep_filesystem):
 
     return config
 
-def load_crash_report(debug_enabled):
+def load_crash_report(debug, disabled):
     """
     Load crash report
 
     Args:
-        debug_enabled (bool): enable crash report debug
+        disabled (bool): crash report initialized disabled by system
 
     Returns:
         CrashReport: crash report instance
@@ -110,15 +110,7 @@ def load_crash_report(debug_enabled):
         u'passlib': passlib_version,
         u'pyregevent': pyregevent_version
     }
-    crash_report = CrashReport(u'CleepDevice', VERSION, libs_version, debug_enabled)
-
-    #disable crash report during debug session
-    if debug_enabled:
-        crash_report.disable()
-    else:
-        crash_report.enable()
-
-    return crash_report
+    return CrashReport(u'CleepDevice', VERSION, libs_version, debug, disabled)
 
 def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem, crash_report):
     """
@@ -219,10 +211,14 @@ if __name__ == u'__main__':
             logger.setLevel(logging.DEBUG)
 
         #create crash report singleton (will be part of bootstrap objects)
-        crash_report = load_crash_report(trace_enabled or debug_system)
+        disable_crash_report = False
         if log_stdout:
             #disable crash report if stdout enabled
-            crash_report.disable()
+            disable_crash_report = True
+        elif trace_enabled or debug_system:
+            #disable crash report if full debug enabled
+            disable_crash_report = True
+        crash_report = load_crash_report(trace_enabled or debug_system, disable_crash_report)
         if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
         cleep_filesystem.set_crash_report(crash_report)
