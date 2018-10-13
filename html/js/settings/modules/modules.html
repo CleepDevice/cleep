@@ -69,7 +69,7 @@
                         <md-icon md-svg-icon="alert-circle"></md-icon>
                         <span>Not started</span>
                     </md-button>
-                    <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-if="!modulesCtl.raspiotService.modules[moduleName].locked" ng-click="modulesCtl.uninstall(moduleName)">
+                    <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending" ng-if="!modulesCtl.raspiotService.modules[moduleName].core" ng-click="modulesCtl.uninstall(moduleName)">
                         <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
                 </md-card-actions>

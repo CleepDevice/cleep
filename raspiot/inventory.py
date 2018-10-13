@@ -26,7 +26,7 @@ class Inventory(RaspIot):
 
     MODULE_AUTHOR = u'Cleep'
     MODULE_VERSION = u'0.0.0'
-    MODULE_LOCKED = True
+    MODULE_CORE = True
 
     def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
         """
@@ -183,7 +183,7 @@ class Inventory(RaspIot):
             self.modules[module_name] = {}
         self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
         self.modules[module_name][u'author'] = getattr(module_class_, u'MODULE_AUTHOR', u'')
-        self.modules[module_name][u'locked'] = getattr(module_class_, u'MODULE_LOCKED', False)
+        self.modules[module_name][u'locked'] = getattr(module_class_, u'MODULE_CORE', False)
         self.modules[module_name][u'tags'] = getattr(module_class_, u'MODULE_TAGS', [])
         self.modules[module_name][u'country'] = fixed_country
         self.modules[module_name][u'urls'] = fixed_urls

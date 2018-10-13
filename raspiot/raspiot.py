@@ -66,7 +66,7 @@ class RaspIot(BusClient):
             bootstrap[u'crash_report'].disabled = bootstrap[u'crash_report'].is_enabled()
             self.crash_report = CrashReport(self.MODULE_SENTRY_DSN, product, product_version, libs_version, False, disabled)
 
-        elif getattr(self, u'MODULE_LOCKED', None) is True:
+        elif getattr(self, u'MODULE_CORE', None) is True:
             #set default crash report for core module
             self.logger.debug(u'Crash report set to core one')
             self.crash_report = bootstrap[u'crash_report']
