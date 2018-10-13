@@ -7,7 +7,7 @@ import importlib
 import inspect
 import copy
 from threading import Event
-from raspiot import RaspIotModule, RaspIotRenderer
+from raspiot import RaspIot, RaspIotRenderer
 from .libs.configs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
@@ -16,13 +16,17 @@ import libs.internals.tools as Tools
 
 __all__ = [u'Inventory']
 
-class Inventory(RaspIotModule):
+class Inventory(RaspIot):
     """
     Inventory handles inventory of:
      - existing devices: knows all devices and module that handles it
      - loaded modules and their commands
      - existing renderers (sms, email, sound...)
-    """ 
+    """
+
+    MODULE_AUTHOR = u'Cleep'
+    MODULE_VERSION = u'0.0.0'
+    MODULE_LOCKED = True
 
     def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
         """
@@ -36,7 +40,7 @@ class Inventory(RaspIotModule):
             debug_config (dict): debug computed from config and command line
         """
         #init
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+        RaspIot.__init__(self, bootstrap, debug_enabled)
         #self.logger.setLevel(logging.DEBUG)
 
         #members
