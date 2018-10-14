@@ -40,12 +40,12 @@ LOG_SETTINGS = {
             u'stream': u'ext://sys.stdout',
         },  
         u'file': {
-            u'class': u'logging.handlers.RotatingFileHandler',
+            u'class': u'logging.handlers.TimedRotatingFileHandler',
             u'formatter': u'detailed',
             u'filename': LOG_FILE,
-            u'mode': u'a',
-            u'maxBytes': 10485760,
-            u'backupCount': 5,
+            u'when': u'midnight',
+            u'interval': 1,
+            u'backupCount': 7,
             u'encoding': u'utf-8'
         }   
     },  
