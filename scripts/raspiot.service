@@ -4,6 +4,7 @@ After=network-online.target
 Requires=network-online.target
 
 [Service]
+EnvironmentFile=/etc/default/raspiot.conf
 ExecStart=/usr/bin/raspiot
 WorkingDirectory=/usr/bin
 StandardOutput=syslog

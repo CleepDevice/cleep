@@ -9,6 +9,7 @@
 ### END INIT INFO
 
 . /lib/lsb/init-functions
+[ -f /etc/default/raspiot.conf ] && . /etc/default/raspiot.conf
 
 BIN_PATH=/usr/bin/
 PID_PATH=/var/run/
@@ -18,7 +19,7 @@ APP=raspiot
 DESC=RaspIot
 
 start_module() {
-    start-stop-daemon --start --quiet --background --chuid $DAEMON_USER:$DAEMON_GROUP --pidfile "$3" --make-pidfile --exec "$2" -- "$4"
+    start-stop-daemon --start --quiet --background --chuid $DAEMON_USER:$DAEMON_GROUP --pidfile "$3" --make-pidfile --exec "/usr/bin/env SENTRY_DSN=$SENTRY_DSN $2" -- "$4"
     if [ $? -ne 0 ]; then
         log_failure_msg "Failed"
         exit 1
