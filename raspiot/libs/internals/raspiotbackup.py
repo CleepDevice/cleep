@@ -9,6 +9,8 @@ class RaspiotBackup:
     RaspiotBackup allows you:
      - to backup raspiot configuration files on filesystem (in /etc/raspiot.bak directory)
      - to generate backup archive of configuration files
+
+    It uses rsync to backup files locally
     """
     RASPIOT_PATH = u'/etc/raspiot/'
     BACKUP_PATH = u'/etc/raspiot.bak/'
@@ -30,7 +32,7 @@ class RaspiotBackup:
         Returns:
             bool: True if backup completed sucessfully
         """
-        return self.cleep_filesystem.copy_dir(self.RASPIOT_PATH, self.BACKUP_PATH)
+        return self.cleep_filesystem.rsync(self.RASPIOT_PATH, self.BACKUP_PATH)
 
     def generate_archive(self):
         """

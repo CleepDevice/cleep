@@ -676,4 +676,57 @@ class CleepFilesystem():
         return self.mkdir(path, True)
 
 
+    def rsync(self, src, dst, options=u'-ah --delete'):
+        """
+        Remove directory
+
+        Args:
+            src (string): source
+            dst (string): destination
+            options (string): rsync options
+        
+        Return:
+            bool: True if operation succeed
+        """
+        error = False
+
+        #enable writings if necessary
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
+            boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
+            self.__enable_write(root=root, boot=boot)
+
+        #rsync
+        try:
+            console = Console()
+            cmd = u'/usr/bin/rsync %s %s %s' % (options, src, dst)
+            console.command(cmd)
+            if console.get_last_return_code()!=0:
+                self.logger.error(u'Error occured during rsync command execution "%s" (return code %s)' % (cmd, console.get_last_return_code()))
+                error = True
+
+        except:
+            self.logger.exception(u'Exception executing rsync command "%s"' % cmd)
+            self.crash_report.report_exception({
+                u'message': u'Exception executing rsync command "%s"' % cmd,
+                u'options': options,
+                u'src': src,
+                u'dst': dst
+            })
+            error = True
+
+        #disable writings
+        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            context = ReadWriteContext()
+            context.src = src
+            context.dst = dst
+            context.cmd = cmd
+            context.options = options
+            context.action = u'rsync'
+            context.root = root
+            context.boot = boot
+            context.is_readonly = self.is_readonly
+            self.__disable_write(context)
+
+        return error
 
