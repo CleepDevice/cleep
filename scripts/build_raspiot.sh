@@ -22,8 +22,8 @@ github_release_data() {
   "target_commitish": "master",
   "name": "$1",
   "body": "`sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\n/g' $2`",
-  "draft": true,
-  "prerelease": false
+  "draft": false,
+  "prerelease": true
 }
 EOF
 }
