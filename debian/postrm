@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#https://wiki.debian.org/MaintainerScripts
+
+set -e
+
+case "$1" in
+    remove)
+        ;; 
+
+    purge)
+        ;; 
+
+    upgrade)
+        ;;
+
+    abort-install)
+        ;; 
+
+    abort-upgrade)
+        ;; 
+
+    failed-upgrade)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        ;;
+esac
+
+exit 0
+

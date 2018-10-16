@@ -1,8 +1,28 @@
 #!/bin/sh
 
-#disabling CleepOS from startup
-/etc/raspiot/raspiot_helper.sh disable
+#https://wiki.debian.org/MaintainerScripts
 
-#stop CleepOS
-/etc/raspiot/raspiot_helper.sh stop
+set -e
+
+case "$1" in
+    remove)
+        #disable CleepOS from startup
+        /etc/raspiot/raspiot_helper.sh disable
+        #stop CleepOS
+        /etc/raspiot/raspiot_helper.sh stop
+        ;; 
+
+    upgrade)
+        #after upgrade let cleepos restart by itself
+        ;;
+        
+    failed-upgrade)
+        ;;
+
+    *)
+        echo "prerm called with unknown argument '$1'" >&2
+        ;;
+esac
+
+exit 0
 

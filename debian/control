@@ -8,6 +8,6 @@ Homepage: https://github.com/tangb/cleep-os
 
 Package: raspiot
 Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-dev, libffi-dev, libssl-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-dev, libffi-dev, libssl-dev python-scipy python-numpy
 Description: Build your own IoT device with a raspberry pi
 

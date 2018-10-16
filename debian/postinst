@@ -1,6 +1,25 @@
 #!/bin/sh
 
-#enabling raspiot at startup
-/etc/raspiot/raspiot_helper.sh enable
-echo ""
+#https://wiki.debian.org/MaintainerScripts
+
+set -e
+
+case "$1" in
+    configure)
+        #enable raspiot at startup
+        /etc/raspiot/raspiot_helper.sh enable
+        ;; 
+
+    abort-remove)
+        ;; 
+
+    abort-upgrade)
+        ;; 
+
+    *)
+        echo "postinst called with unknown argument '$1'" >&2
+        ;;
+esac
+
+exit 0
 
