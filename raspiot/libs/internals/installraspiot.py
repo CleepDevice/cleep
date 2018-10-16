@@ -263,7 +263,7 @@ class InstallRaspiot(threading.Thread):
             try:
                 zipfile = ZipFile(archive_path, u'r')
                 extract_path = tempfile.mkdtemp()
-                self.logger.debug('Extracting archive to "%s"' % extract_path)
+                self.logger.debug('Extraction path: "%s"' % extract_path)
                 zipfile.extractall(extract_path)
                 zipfile.close()
                 self.logger.debug(u'Archive extracted successfully')
@@ -308,14 +308,14 @@ class InstallRaspiot(threading.Thread):
             #install deb package
             archive_path = None
             try:
-                self.logger.debug(u'Installing deb package')
                 deb_path = os.path.join(extract_path, u'raspiot.deb')
-                self.logger.debug('Installing "%s" package' % deb_path)
+                self.logger.debug('Installing "%s" debian package' % deb_path)
                 installer = InstallDeb(None, self.cleep_filesystem, blocking=False)
                 installer.install(deb_path)
-                #time.sleep(1.0)
+                time.sleep(1.0)
 
                 #wait until end of script
+                self.logger.debug(u'Waiting for debian package install...')
                 while installer.get_status()[u'status']==installer.STATUS_RUNNING:
                     time.sleep(0.25)
                 self.__deb_status = installer.get_status()

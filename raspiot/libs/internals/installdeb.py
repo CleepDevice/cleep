@@ -102,6 +102,8 @@ class InstallDeb():
             stdout (list): console stdout
             stderr (list): console stderr
         """
+        self.logger.debug(u'Callback command stdout: %s' % stdout)
+        self.logger.debug(u'Callback command stderr: %s' % stderr)
         #append current stdout/stderr
         if stdout is not None:
             #end of command ends with broken pipe on yes execution, this is normal. Drop this unimportant message
@@ -117,6 +119,16 @@ class InstallDeb():
         if self.status_callback:
             self.logger.debug('Process status: %s' % self.get_status())
             self.status_callback(self.get_status())
+
+    def dry_run(self, deb):
+        """
+        Try to install deb archive executing dpkg with --dry-run option
+
+        Args:
+            deb (string): deb package path
+        """
+        #TODO
+        pass
 
     def install(self, deb):
         """
