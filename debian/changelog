@@ -1,3 +1,12 @@
+raspiot (0.0.16) unreleased; urgency=low
+
+  * Wpasupplicant lib: always add country code in wpasupplicant conf files
+  * InstallModule lib: fix module update
+  * CleepFilesystem lib: fix default encoding
+  * Package: fix raspiot installer
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Tue, 16 oct 2018 19:00:00 +0000
+
 raspiot (0.0.15) unreleased; urgency=low
 
   * Fix blocking issue in module install lib
@@ -8,7 +17,7 @@ raspiot (0.0.15) unreleased; urgency=low
   * Rename MODULE_LOCKED to MODULE_CORE
   * Replace rotating log by timed rotating log
 
- -- tanguy bonneau <tanguy.bonneau@gmail.com>  tue, 07 oct 2018 23:00:00 +0000
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 14 oct 2018 23:00:00 +0000
 
 raspiot (0.0.14) unreleased; urgency=low
 
@@ -16,7 +25,7 @@ raspiot (0.0.14) unreleased; urgency=low
   * Fix some issues during install/uninstall app process
   * Improve some other features and fix some issues
 
- -- tanguy bonneau <tanguy.bonneau@gmail.com>  tue, 07 oct 2018 23:00:00 +0000
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 07 oct 2018 23:00:00 +0000
 
 raspiot (0.0.13) UNRELEASED; urgency=low
 
