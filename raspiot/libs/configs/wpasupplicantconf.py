@@ -58,6 +58,11 @@ class WpaSupplicantConf(Config):
         """
         if os.path.exists(self.COUNTRIES_ISO3166):
             lines = self.cleep_filesystem.read_data(self.COUNTRIES_ISO3166)
+
+            if lines is None:
+                self.logger.error(u'Unable to get countries, country code cannot be setted')
+                return
+
             self.__country_codes = {}
             for line in lines:
                 if line.startswith(u'#'):
@@ -95,8 +100,12 @@ class WpaSupplicantConf(Config):
         old_conf = self.CONF
         for interface in config_files:
             self.CONF = config_files[interface]
-            if not self.replace_line(u'^\s*country\s*=.*$', 'country=%s' % country_code):
-                self.logger.warning(u'It seems there is no country information in "%s"' % self.CONF)
+            if self.replace_line(u'^\s*country\s*=.*$', 'country=%s' % country_code):
+                self.logger.info(u'Country code "%s" updated in "%s" file' % (country_code, self.CONF))
+            elif self.add_lines(['country=%s\n' % country_code], end=False):
+                self.logger.info(u'Country code "%s" added in "%s" file' % (country_code, self.CONF))
+            else:
+                self.logger.warning(u'Unable to set country code in wpasupplicant file "%s"' % self.CONF)
 
         #restore old conf file
         self.CONF = old_conf
