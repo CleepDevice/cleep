@@ -12,19 +12,40 @@
     <md-dialog-content>
         <div class="md-dialog-content">
 
-            <!-- version -->
-            <span>Update module "{{updateCtl.moduleToUpdate.name}}" from {{updateCtl.moduleToUpdate.oldVersion}} to {{updateCtl.moduleToUpdate.newVersion}}.</span>
-            <br/><br/>
+            <md-list>
+                <!-- header -->
+                <md-list-item>
+                    <p>You're going to update module "{{updateCtl.moduleToUpdate.name}}" version {{updateCtl.moduleToUpdate.version}} to {{updateCtl.moduleToUpdate.updatable}}.</p>
+                </md-list-item>
 
-            <!-- changelog -->
-            <span class="md-subhead">Changelog:</span>
-            <div ng-if="updateCtl.moduleToUpdate.changelog.length>0">
-                <p ng-bind-html="updateCtl.moduleToUpdate.changelog"></p>
-            </div>
-            <div ng-if="updateCtl.moduleToUpdate.changelog.length===0">
-                <p>No changelog provided</p>
-            </div>
+                <md-subheader style="background-color:white;" class="md-subheader-inner">What's new</md-subheader>
+                <md-list-item>
+                    <span ng-if="updateCtl.moduleToUpdate.changelog.length>0" ng-bind-html="updateCtl.sceChangelog"></span>
+                    <span ng-if="updateCtl.moduleToUpdate.changelog.length===0">Nothing new ? No way ;-)</span>
+                </md-list-item>
 
+                <!-- links -->
+                <md-subheader style="background-color:white;" class="md-subheader-inner">Links</md-subheader>
+                <md-list-item>
+                    <md-button class="md-raised" ng-if="updateCtl.moduleToUpdate.urls.site" ng-href="{{updateCtl.moduleToUpdate.urls.site}}" target="_blank">
+                        <md-icon md-svg-icon="web"></md-icon>
+                        Module website
+                    </md-button>
+                    <md-button class="md-raised" ng-if="updateCtl.moduleToUpdate.urls.info" ng-href="{{updateCtl.moduleToUpdate.urls.info}}" target="_blank">
+                        <md-icon md-svg-icon="information-outline"></md-icon>
+                        Module infos
+                    </md-button>
+                    <md-button class="md-raised" ng-if="updateCtl.moduleToUpdate.urls.bugs" ng-href="{{updateCtl.moduleToUpdate.urls.bugs}}" target="_blank">
+                        <md-icon md-svg-icon="bug"></md-icon>
+                        Module bugs page
+                    </md-button>
+                    <md-button class="md-raised" ng-if="updateCtl.moduleToUpdate.urls.help" ng-href="{{updateCtl.moduleToUpdate.urls.help}}" target="_blank">
+                        <md-icon md-svg-icon="lifebuoy"></md-icon>
+                        Module help page
+                    </md-button>
+                </md-list-item>
+
+            </md-list>
         </div>
     </md-dialog-content>
 

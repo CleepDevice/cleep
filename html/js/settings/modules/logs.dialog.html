@@ -11,49 +11,43 @@
 
     <md-dialog-content>
         <div class="md-dialog-content">
-            <!-- infos -->
-            <div>
-                Last uninstall occured {{modulesCtl.moduleLogs.time | hrDatetime}}.
-            </div>
-            <div ng-if="modulesCtl.moduleLogs.status===3">
-                App was uninstalled successfully.
-            </div>
-            <div ng-if="modulesCtl.moduleLogs.status===2">
-                App uninstall failed because of error (see logs below).
-            </div>
-            <div ng-if="modulesCtl.moduleLogs.status===4">
-                App uninstall was canceled.
-            </div>
 
-            <br/>
+            <md-list>
+                <!-- header -->
+                <md-list-item>
+                    <p>Last uninstall occured {{modulesCtl.moduleLogs.time | hrDatetime}}.</p>
+                </md-list-item>
+                <md-list-item>
+                    <p ng-if="modulesCtl.moduleLogs.status===3">App was uninstalled successfully.</p>
+                    <p ng-if="modulesCtl.moduleLogs.status===2">App uninstall failed because of error (see logs below).</p>
+                    <p ng-if="modulesCtl.moduleLogs.status===4">App uninstall was canceled.</p>
+                </md-list-item>
 
-            <!-- process -->
-            <div class="md-title">
-                Uninstallation process
-            </div>
-            <div>
-                <pre>{{modulesCtl.moduleLogs.process}}</pre>
-            </div>
+                <!-- process -->
+                <md-subheader style="background-color:white;" class="md-subheader-inner">Uninstallation process</md-subheader>
+                <md-list-item>
+                    <p>{{modulesCtl.moduleLogs.process}}</p>
+                </md-list-item>
 
-            <br/>
+                <!-- scripts output -->
+                <md-subheader style="background-color:white;" class="md-subheader-inner">Uninstallation scripts output</md-subheader>
+                <md-list-item>
+                    <p>{{modulesCtl.moduleLogs.stdout}}</p>
+                </md-list-item>
 
-            <!-- stdout -->
-            <div class="md-title">
-                Scripts output
-            </div>
-            <div>
-                <pre>{{modulesCtl.moduleLogs.stdout}}</pre>
-            </div>
+                <!-- scripts error -->
+                <md-subheader style="background-color:white;" class="md-subheader-inner">Uninstallation scripts error</md-subheader>
+                <md-list-item>
+                    <p>{{modulesCtl.moduleLogs.stderr}}</p>
+                </md-list-item>
 
-            <br/>
+                <!-- force -->
+                <md-subheader style="background-color:white;" class="md-subheader-inner">Force uninstallation</md-subheader>
+                <md-list-item>
+                    <p>If uninstallation failed, you can force uninstallation clicking on button below. It just disable the module from loading at startup.</p>
+                </md-list-item>
+            </md-list>
 
-            <!-- stderr -->
-            <div class="md-title">
-                Scripts errors
-            </div>
-            <div>
-                <pre>{{modulesCtl.moduleLogs.stderr}}</pre>
-            </div>
         </div>
     </md-dialog-content>
 

@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm, $mdDialog) {
+var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm, $mdDialog, $sce) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -65,7 +65,13 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.update = function(module)
         {
-            self.updateModuleProcessingStatus(module, true);
+            //lock button asap
+            raspiotService.modules[module].processing = true;
+
+            //close dialog
+            self.closeDialog();
+
+            //update module
             raspiotService.updateModule(module);
         };
 
@@ -120,6 +126,10 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.showUpdateDialog = function(module, ev) {
             self.moduleToUpdate = module;
+
+            //trust html content
+            self.sceChangelog = $sce.trustAsHtml(self.moduleToUpdate.changelog);
+
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'updateCtl',
@@ -196,5 +206,5 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
 };
 
 var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', '$mdDialog', modulesDirective]);
+RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', modulesDirective]);
 
