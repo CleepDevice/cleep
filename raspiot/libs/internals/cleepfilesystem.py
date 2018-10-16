@@ -44,6 +44,12 @@ class CleepFilesystem():
         if self.is_readonly:
             self.logger.info(u'Raspiot is running on read-only filesystem')
 
+    def __get_default_encoding(self):
+        """
+        Return default encoding
+        """
+        return locale.getdefaultlocale()[1]
+
     def reset_errors(self):
         """
         Reset internal errors counters
@@ -61,6 +67,13 @@ class CleepFilesystem():
         self.crash_report = crash_report
         self.rw.set_crash_report(crash_report)
 
+    def __report_exception(self, *args, **kwargs):
+        """
+        Report exception using crash report instance if configured
+        """
+        if self.crash_report:
+            self.crash_report.report_exception(args=args, kwargs=kwargs)
+
     def __is_readonly_filesystem(self):
         """
         Check if readonly is configured in OS
@@ -68,7 +81,7 @@ class CleepFilesystem():
         Return:
             bool: True if RO configured on OS
         """
-        encoding = locale.getpreferredencoding()
+        encoding = self.__get_default_encoding()
         fd = io.open(u'/etc/fstab', u'r', encoding=encoding)
         lines = fd.readlines()
         fd.close()
@@ -238,7 +251,8 @@ class CleepFilesystem():
 
         #use system encoding if not specified
         if not encoding:
-            encoding = locale.getpreferredencoding()
+            encoding = self.__get_default_encoding()
+        self.logger.debug(u'Encoding: %s' % encoding)
 
         #check binary mode
         if mode.find(u'b')==-1:
@@ -283,10 +297,6 @@ class CleepFilesystem():
         fp = None
         res = False
 
-        #encoding
-        if not encoding:
-            encoding = locale.getpreferredencoding()
-
         try:
             fp = self.open(path, u'w', encoding)
             fp.write(data)
@@ -295,9 +305,9 @@ class CleepFilesystem():
         except:
             self.logger.debug('Data to be written: %s' % data)
             self.logger.exception(u'Unable to write content to file "%s"' % path)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Unable to write content to file "%s"' % path,
-                u'encoding': encoding,
+                u'encoding': encoding or self.__get_default_encoding(),
                 u'path': path
             })
             res = False
@@ -317,14 +327,10 @@ class CleepFilesystem():
             encoding (string): file encoding (default is system one)
 
         Return:
-            list: file lines
+            list: file lines or None if errors
         """
         fp = None
         lines = None
-
-        #encoding
-        if not encoding:
-            encoding = locale.getpreferredencoding()
 
         try:
             fp = self.open(path, u'r', encoding)
@@ -332,9 +338,9 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Unable to get content of file "%s":' % path)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Unable to get content of file "%s"' % path,
-                u'encoding': encoding,
+                u'encoding': encoding or self.__get_default_encoding(),
                 u'path': path
             })
 
@@ -360,9 +366,9 @@ class CleepFilesystem():
             lines = json.loads(u'\n'.join(lines), encoding)
         except:
             self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Unable to parse file "%s" content as json' % path,
-                u'encoding' : encoding,
+                u'encoding' : encoding or self.__get_default_encoding(),
                 u'path': path
             })
             lines = ''
@@ -418,7 +424,7 @@ class CleepFilesystem():
             moved = True
         except:
             self.logger.exception(u'Exception moving directory from "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception moving directory from "%s" to "%s"' % (src, dst),
                 u'src': src,
                 u'dst': dst
@@ -461,7 +467,7 @@ class CleepFilesystem():
             copied = True
         except:
             self.logger.exception(u'Exception copying "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception copying "%s" to "%s"' % (src, dst),
                 u'src': src,
                 u'dst': dst
@@ -504,7 +510,7 @@ class CleepFilesystem():
             copied = True
         except:
             self.logger.exception(u'Exception copying dir "%s" to "%s"' % (src, dst))
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception copying dir "%s" to "%s"' % (src, dst),
                 u'src': src,
                 u'dst': dst
@@ -559,7 +565,7 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing "%s"' % path)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception removing "%s"' % path,
                 u'path': path
             })
@@ -600,7 +606,7 @@ class CleepFilesystem():
                 removed = True
         except:
             self.logger.exception(u'Exception removing directory "%s"' % path)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception removing directory "%s"' % path,
                 u'path': path
             })
@@ -646,7 +652,7 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Exception creating "%s"' % path)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception creating "%s"' % path,
                 u'path': path
             })
@@ -678,7 +684,7 @@ class CleepFilesystem():
 
     def rsync(self, src, dst, options=u'-ah --delete'):
         """
-        Remove directory
+        Copy source to destination using rsync
 
         Args:
             src (string): source
@@ -707,7 +713,7 @@ class CleepFilesystem():
 
         except:
             self.logger.exception(u'Exception executing rsync command "%s"' % cmd)
-            self.crash_report.report_exception({
+            self.__report_exception({
                 u'message': u'Exception executing rsync command "%s"' % cmd,
                 u'options': options,
                 u'src': src,
