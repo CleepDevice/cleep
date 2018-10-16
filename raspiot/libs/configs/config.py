@@ -123,6 +123,7 @@ class Config():
         if not os.path.exists(self.__get_path()) and mode==self.MODE_READ:
             raise Exception(u'%s file does not exist' % self.__get_path())
 
+        self.logger.debug(u'Open "%s"' % self.__get_path())
         self.__fd = self.cleep_filesystem.open(self.__get_path(), mode, encoding)
 
         return self.__fd
@@ -546,12 +547,15 @@ class Config():
         #not found
         return False
         
-    def add_lines(self, lines):
+    def add_lines(self, lines, end=True):
         """
-        Add new lines at end of file
+        Add new lines
+        Please note carriage return (\n) is added automatically at end of line if necessary.
+        This is necessary to preserve the line when file is loaded again.
 
         Args:
             lines (list): list of lines to add
+            end (bool): add lines at end of file (default True)
 
         Return:
             bool: True if succeed
@@ -568,21 +572,36 @@ class Config():
         content = fd.readlines()
         self._close()
 
-        #add new line
-        if len(lines[len(lines)-1])!=0:
-            content.append(u'\n')
-        for line in lines:
-            content.append(line)
+        if end:
+            #add lines at end of file
+            if len(lines[len(lines)-1])!=0:
+                content.append(u'\n')
+
+            for line in lines:
+                if line[len(line)-1]!=u'\n':
+                    content.append(line + u'\n')
+                else:
+                    content.append(line)
+
+        else:
+            #add lines at beginning of file
+            for line in lines:
+                if line[len(line)-1]!=u'\n':
+                    content = [line + u'\n'] + content
+                else:
+                    content = [line] + content
 
         #write config file
         return self._write(u''.join(content))
 
-    def add(self, content):
+    def add(self, content, end=True):
         """
         Add specified content at end of file
+        Please note carriage return (\n) is added automatically at end of specified content if necessary
 
         Args:
             content (string): string to append
+            end (bool): add content at end of file (default True)
 
         Returns:
             bool: True if content added
@@ -599,8 +618,15 @@ class Config():
         content_ = fd.read()
         self._close()
 
-        #add new content
-        content_ += content
+        if end:
+            #add new content at end
+            content_ += content
+        else:
+            #add content at beginning
+            if content[len(content)-1]!=u'\n':
+                content_ = content + u'\n' + content_
+            else:
+                content_ = content + content_
 
         #write config file
         return self._write(content_)

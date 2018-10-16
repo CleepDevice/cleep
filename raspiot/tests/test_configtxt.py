@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.libs.configtxt import ConfigTxt
+from raspiot.libs.configs.configtxt import ConfigTxt
+from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 import unittest
 import os
+import logging
+import re
 
+logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class configtxtTests(unittest.TestCase):
     def setUp(self):
+        #cleep fs
+        self.fs = CleepFilesystem()
+        self.fs.enable_write()
+
         #fake config file
         fd = open('config.txt', 'w')
         fd.write("""# For more options and information see 
@@ -71,8 +79,9 @@ dtparam=audio=on
 #dtoverlay=w1-gpio""")
         fd.close()
         
-        self.c = ConfigTxt(backup=False)
-        self.c.CONF = 'config.txt'
+        NewConfigTxt = ConfigTxt
+        NewConfigTxt.CONF = 'config.txt'
+        self.c = NewConfigTxt(self.fs, backup=False)
 
     def tearDown(self):
         os.remove('config.txt')
@@ -84,7 +93,8 @@ dtparam=audio=on
         return False
 
     def test_remove_dtoverlays(self):
-        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY)
+        results = self.c.find(u'(#?)%s=(.*?)(\s|\Z)' % self.c.KEY_DTOVERLAY) #, re.UNICODE | re.MULTILINE | re.DOTALL)
+        logging.debug(results)
         self.assertTrue(self.__find_key(u'#dtoverlay=lirc-rpi', results))
         self.assertTrue(self.__find_key(u'#dtoverlay=w1-gpio', results))
         self.assertTrue(self.c.remove_lines([u'#dtoverlay=w1-gpio']))
@@ -132,4 +142,9 @@ dtparam=audio=on
         self.assertTrue(self.c.is_i2c_enabled())
         self.assertTrue(self.c.disable_i2c())
         self.assertFalse(self.c.is_i2c_enabled())
+
+    def test_add_line_beginning(self):
+        self.assertTrue(self.c.add_lines([u'#test'], False))
+        content = self.c.get_content()
+        self.assertTrue(content[0] == u'#test\n')
 
