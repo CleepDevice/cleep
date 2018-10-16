@@ -5,7 +5,7 @@
 CUR_DIR=`pwd`
 GITHUB_ACCESS_TOKEN=`printenv GITHUB_ACCESS_TOKEN`
 SENTRY_DSN=`printenv SENTRY_DSN`
-NO_PUBLISH=1
+#NO_PUBLISH=1
 
 if [ -z "$GITHUB_ACCESS_TOKEN" ]; then
     echo 
