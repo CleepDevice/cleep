@@ -5,5 +5,6 @@ conf/* etc/raspiot/
 scripts/raspiot.service lib/systemd/system/
 scripts/raspiot etc/init.d/
 scripts/raspiot_helper.sh etc/raspiot/
+tmp/raspiot.conf etc/default/
 medias/sounds/* opt/raspiot/sounds/
 

@@ -4,10 +4,19 @@
 
 CUR_DIR=`pwd`
 GITHUB_ACCESS_TOKEN=`printenv GITHUB_ACCESS_TOKEN`
+SENTRY_DSN=`printenv SENTRY_DSN`
+NO_PUBLISH=1
 
 if [ -z "$GITHUB_ACCESS_TOKEN" ]; then
     echo 
     echo "ERROR: github access token not defined, please set an environment variable called GITHUB_ACCESS_TOKEN with a valid token"
+    echo
+    exit 1
+fi
+
+if [ -z "$SENTRY_DSN" ]; then
+    echo 
+    echo "ERROR: sentry DSN not defined, please set an environment variable called SENTRY_DSN with valid data"
     echo
     exit 1
 fi
@@ -28,6 +37,16 @@ github_release_data() {
 EOF
 }
 
+#clean all files
+clean() {
+    echo `pwd`
+    rm -rf build
+    rm -rf debian/raspiot
+    rm -rf debian/*debhelper*
+    rm -rf ../raspiot_*_armhf.*
+    rm -rf tmp
+}
+
 #add log if --newversion specified in command line
 #dch -i
 
@@ -35,10 +54,7 @@ EOF
 cd ..
 
 #clean previous build
-rm -rf build
-rm -rf debian/raspiot
-rm -rf debian/*debhelper*
-rm -rf ../raspiot_*_armhf.*
+clean
 
 #check python version
 VERSION=`head -n 1 debian/changelog | awk '{ gsub("[\(\)]","",$2); print $2 }'`
@@ -51,6 +67,11 @@ then
     exit 1
 fi
 
+#generate /etc/default/raspiot.conf
+mkdir tmp
+touch tmp/raspiot.conf
+echo "SENTRY_DSN=$SENTRY_DSN" >> tmp/raspiot.conf
+
 #build raspiot application
 debuild -us -uc 
 
@@ -58,8 +79,10 @@ debuild -us -uc
 rm -rf raspiot.egg-info
 rm -rf pyraspiot.egg-info/
 
-#collect variables
+#move to previous directory where archive was generated
 cd ..
+
+#collect variables
 DEB=`ls -A1 raspiot* | grep \.deb`
 CHANGES=`ls -A1 raspiot* | grep \.changes`
 ARCHIVE=raspiot_$VERSION.zip
@@ -89,26 +112,32 @@ echo "  - release title \"$VERSION\""
 echo "  - description:"
 cat sed.out
 
-#prepare new release
-echo
-echo "Uploading release to github..."
-#https://www.barrykooij.com/create-github-releases-via-command-line/
-curl --silent --output curl.out --data "$(github_release_data "$VERSION" "sed.out")" https://api.github.com/repos/tangb/raspiot/releases?access_token=$GITHUB_ACCESS_TOKEN
-ID=`cat curl.out | grep "\"id\":" | head -n 1 | awk '{ gsub(",","",$2); print $2 }'`
-if [ -z "$ID" ]; then
-    echo 
-    echo "ERROR: problem when creating gihub release. Please check curl.out file content."
+#upload to github
+if [ -z "$NO_PUBLISH" ]; then
     echo
-    exit 1
+    echo "Uploading release to github..."
+    #https://www.barrykooij.com/create-github-releases-via-command-line/
+    curl --silent --output curl.out --data "$(github_release_data "$VERSION" "sed.out")" https://api.github.com/repos/tangb/raspiot/releases?access_token=$GITHUB_ACCESS_TOKEN
+    ID=`cat curl.out | grep "\"id\":" | head -n 1 | awk '{ gsub(",","",$2); print $2 }'`
+    if [ -z "$ID" ]; then
+        echo 
+        echo "ERROR: problem when creating gihub release. Please check curl.out file content."
+        echo
+        exit 1
+    fi
+    #https://gist.github.com/stefanbuck/ce788fee19ab6eb0b4447a85fc99f447
+    echo " - Uploading archive"
+    curl --output curl.out --progress-bar --data-binary @"$ARCHIVE" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $ARCHIVE)"
+    echo " - Uploading checksum"
+    curl --output curl.out --progress-bar --data-binary @"$SHA256" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $SHA256)"
+    rm curl.out
+    rm sed.out
+    echo "Done."
 fi
-#https://gist.github.com/stefanbuck/ce788fee19ab6eb0b4447a85fc99f447
-echo " - Uploading archive"
-curl --output curl.out --progress-bar --data-binary @"$ARCHIVE" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $ARCHIVE)"
-echo " - Uploading checksum"
-curl --output curl.out --progress-bar --data-binary @"$SHA256" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $SHA256)"
-rm curl.out
-rm sed.out
-echo "Done."
+
+#clean install
+cd -
+clean
 
 #return back to original directory
 cd $CUR_DIR
