@@ -73,8 +73,10 @@ class BusError(Exception):
         return u'%s' % self.value
 
 class ForcedException(Exception):
+    def __init__(self, code=-1):
+        self.code = code
     def __str__(self):
-        return u'ForcedException'
+        return u'ForcedException(%s)' % self.code
 
 class MessageResponse():
     """ 
