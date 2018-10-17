@@ -20,6 +20,8 @@ class InstallDeb():
     STATUS_ERROR = 3
     STATUS_KILLED = 4
 
+    WATCHDOG_TIMEOUT = 60 #seconds
+
     def __init__(self, status_callback, cleep_filesystem, blocking=True):
         """
         Constructor
@@ -123,28 +125,58 @@ class InstallDeb():
     def dry_run(self, deb):
         """
         Try to install deb archive executing dpkg with --dry-run option
+        This method is blocking even if blocking params is False
+        Process result can be found calling get_status()
 
         Args:
             deb (string): deb package path
+
+        Returns:
+            bool: True if install simulation succeed, False otherwise
         """
-        #TODO
-        pass
+        #try install deb
+        command = u'/usr/bin/yes | /usr/bin/dpkg --dry-run -i "%s"' % (deb)
+        self.logger.debug(u'Command: %s' % command)
+        console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
+        console.start()
+
+        #loop
+        error = False
+        watchdog_end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
+        while self.running:
+            #watchdog
+            if int(time.time())>watchdog_end_time:
+                self.logger.error(u'Timeout (%s seconds) during debian dry-run install' % self.WATCHDOG_TIMEOUT)
+                self.crash_report.manual_report(u'Debian "%s" dry-run install failed because of timeout (%s seconds)' % (deb, self.WATCHDOG_TIMEOUT), self.get_status())
+                error = True
+                continue
+
+            time.sleep(0.25)
+            
+        #handle result
+        if not error and self.status==self.STATUS_DONE:
+            return True
+        return False
 
     def install(self, deb):
         """
         Install specified .deb file
+        Please note in non blocking mode you must allow by yourself filesystem writing
 
         Args:
             deb (string): deb package path
+
+        Returns:
+            bool: True if install succeed, False otherwise. None is returned if blocking mode is disabled
         """
         #update status
         self.status = self.STATUS_RUNNING
 
-        #enable write
-        self.cleep_filesystem.enable_write()
+        if self.blocking:
+            #enable write
+            self.cleep_filesystem.enable_write()
 
-        #install deb (and dependencies)
-        #command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s" && /usr/bin/apt-get install -f && /usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb, deb)
+        #install deb
         command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb)
         self.logger.debug(u'Command: %s' % command)
         console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
@@ -154,14 +186,23 @@ class InstallDeb():
         self.logger.debug('Blocking mode: %s' % self.blocking)
         if self.blocking:
             #loop
+            error = False
+            end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
             while self.running:
+                #watchdog
+                if int(time.time())>watchdog_end_time:
+                    self.logger.error(u'Timeout (%s seconds) during debian dry-run install' % self.WATCHDOG_TIMEOUT)
+                    self.crash_report.manual_report(u'Debian "%s" install failed because of watchdog timeout (%s seconds)' % (deb, self.WATCHDOG_TIMEOUT), self.get_status())
+                    error = True
+                    continue
+
                 time.sleep(0.25)
             
             #disable write at end of command execution
             self.cleep_filesystem.disable_write()
 
             #handle result
-            if self.status==self.STATUS_DONE:
+            if not error and self.status==self.STATUS_DONE:
                 return True
             return False
 
