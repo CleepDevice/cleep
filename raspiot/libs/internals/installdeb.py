@@ -33,7 +33,7 @@ class InstallDeb():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #members
         self.cleep_filesystem = cleep_filesystem
@@ -134,6 +134,9 @@ class InstallDeb():
         Returns:
             bool: True if install simulation succeed, False otherwise
         """
+        #init
+        self.running = True
+
         #try install deb
         command = u'/usr/bin/yes | /usr/bin/dpkg --dry-run -i "%s"' % (deb)
         self.logger.debug(u'Command: %s' % command)
@@ -169,6 +172,9 @@ class InstallDeb():
         Returns:
             bool: True if install succeed, False otherwise. None is returned if blocking mode is disabled
         """
+        #init
+        self.running = True
+
         #update status
         self.status = self.STATUS_RUNNING
 
@@ -187,7 +193,7 @@ class InstallDeb():
         if self.blocking:
             #loop
             error = False
-            end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
+            watchdog_end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
             while self.running:
                 #watchdog
                 if int(time.time())>watchdog_end_time:

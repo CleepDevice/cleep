@@ -39,7 +39,7 @@ class InstallRaspiot(threading.Thread):
     STATUS_ERROR_DEB = 8
     STATUS_ERROR_POSTINST = 9
 
-    def __init__(self, url_archive, url_checksum, callback, cleep_filesystem):
+    def __init__(self, url_archive, url_checksum, callback, cleep_filesystem, crash_report):
         """
         Constructor
 
@@ -47,19 +47,21 @@ class InstallRaspiot(threading.Thread):
             url_archive (string): url of cleepos archive
             url_checksum (string): url of checksum
             callback (function): status callback
-            cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            crash_report (CrashReport): CrashReport instance
         """
         threading.Thread.__init__(self)
         threading.Thread.daemon = True
 
         #logger   
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #members
         self.status = self.STATUS_IDLE
         self.running = True
         self.cleep_filesystem = cleep_filesystem
+        self.crash_report = crash_report
         self.url_archive = url_archive
         self.url_checksum = url_checksum
         self.__script_running = True
@@ -253,7 +255,7 @@ class InstallRaspiot(threading.Thread):
                     error = u'Error during "%s" download: invalid checksum' % self.url_archive
                 else:
                     error = u'Error during "%s" download: unknown error' % self.url_archive
-                self.logger.error(self.error)
+                self.logger.error(error)
                 archive_path = None
 
         except:
@@ -386,7 +388,7 @@ class InstallRaspiot(threading.Thread):
             #install deb
             self.logger.debug(u'Waiting for end of debian package install...')
             installer.install(deb_path)
-            self.logger.debug(u'Deb package install terminated with status: %s' % self.__deb_status)
+            self.logger.debug(u'Deb package install terminated with status: %s' % installer.get_status())
 
             #check deb install result
             if installer.get_status()[u'status']!=installer.STATUS_DONE:
@@ -427,7 +429,7 @@ class InstallRaspiot(threading.Thread):
             checksum = self.__download_checksum(download, self.url_checksum)
             if not checksum:
                 self.status = self.STATUS_ERROR_DOWNLOAD_CHECKSUM
-                raise ForcedException()
+                raise ForcedException(0)
 
             #send status
             if self.callback:
@@ -437,7 +439,7 @@ class InstallRaspiot(threading.Thread):
             archive_path = self.__download_archive(download, self.url_archive, checksum)
             if not archive_path:
                 self.status = self.STATUS_ERROR_DOWNLOAD_ARCHIVE
-                raise ForcedException()
+                raise ForcedException(1)
 
             #send status
             if self.callback:
@@ -447,7 +449,7 @@ class InstallRaspiot(threading.Thread):
             extract_path = self.__extract_archive(archive_path)
             if not extract_path:
                 self.status = self.STATUS_ERROR_EXTRACT
-                raise ForcedException()
+                raise ForcedException(2)
 
             #send status
             if self.callback:
@@ -456,7 +458,7 @@ class InstallRaspiot(threading.Thread):
             #pre update script
             if not self.__execute_preinst_script(extract_path):
                 self.status = self.STATUS_ERROR_PREINST
-                raise ForcedException()
+                raise ForcedException(3)
 
             #send status
             if self.callback:
@@ -465,7 +467,7 @@ class InstallRaspiot(threading.Thread):
             #install deb package
             if not self.__install_deb(extract_path):
                 self.status = self.STATUS_ERROR_DEB
-                raise ForcedException()
+                raise ForcedException(4)
 
             #send status
             if self.callback:
@@ -474,14 +476,15 @@ class InstallRaspiot(threading.Thread):
             #post update script
             if not self.__execute_postinst_script(extract_path):
                 self.status = self.STATUS_ERROR_POSTINST
-                raise ForcedException()
+                raise ForcedException(5)
 
             #send status
             if self.callback:
                 self.callback(self.get_status(96))
 
-        except ForcedException:
+        except ForcedException as e:
             #a step failed, error should already be logged
+            self.logger.debug(u'Error occured during raspiot update [%s]' % e.code)
             error = True
 
         except:

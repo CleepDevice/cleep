@@ -7,6 +7,7 @@ import unittest
 import logging
 import time
 import os
+from dummyCrashReport import DummyCrashReport
 
 logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(filename)s:%(lineno)d %(levelname)s : %(message)s')
 
@@ -15,8 +16,11 @@ class InstallRaspiotTests(unittest.TestCase):
     def setUp(self):
         self.url_raspiot = 'https://github.com/tangb/raspiot/raw/master/tests/installraspiot/%s.zip'
         self.url_checksum = 'https://github.com/tangb/raspiot/raw/master/tests/installraspiot/%s.sha256'
+
         self.fs = CleepFilesystem()
-        self.fs.DEBOUNCE_DURATION = 0.0
+        self.fs.enable_write()
+
+        self.crashreport = DummyCrashReport()
 
     def tearDown(self):
         if os.path.exists('/usr/bin/gpio'):
@@ -34,7 +38,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.ok'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
@@ -56,7 +60,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.post-ko'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
@@ -78,7 +82,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.pre-ko'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
@@ -100,7 +104,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.deb-ko'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
@@ -122,7 +126,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.noscript-ok'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
@@ -144,7 +148,7 @@ class InstallRaspiotTests(unittest.TestCase):
         name = 'installraspiot.badchecksum-ko'
         url_raspiot = self.url_raspiot % name
         url_checksum = self.url_checksum % name
-        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs)
+        i = InstallRaspiot(url_raspiot, url_checksum, self.callback, self.fs, self.crashreport)
         i.start()
         time.sleep(0.5)
 
