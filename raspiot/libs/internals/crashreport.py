@@ -57,7 +57,7 @@ class CrashReport():
         #create and configure raven client
         self.client = Client(
             dsn = sentry_dsn,
-            ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError'],
+            ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException'],
             tags = self.extra
         )
         sys.excepthook = self.__crash_report

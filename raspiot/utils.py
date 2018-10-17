@@ -72,6 +72,10 @@ class BusError(Exception):
     def __str__(self):
         return u'%s' % self.value
 
+class ForcedException(Exception):
+    def __str__(self):
+        return u'ForcedException'
+
 class MessageResponse():
     """ 
     Object that holds message response
