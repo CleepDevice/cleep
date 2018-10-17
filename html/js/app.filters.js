@@ -159,3 +159,26 @@ RaspIot.filter('firstUpper', function($filter) {
     };
 });
 
+/**
+ * order specified object by member key
+ */
+RaspIot.filter('orderObjByKey', function() {
+    return function(items, field, reverse) {
+        var filtered = Object.keys(items).sort().reduce(function(a,v) {a[v] = items[v]; return a;}, {});
+
+        /*angular.forEach(items, function(item) {
+            item[
+            filtered.push(item);
+        });
+
+        filtered.sort(function (a, b) {
+            return (a[field] > b[field] ? 1 : -1);
+        });*/
+
+        if(reverse)
+            filtered.reverse();
+
+        return filtered;
+    };
+});
+
