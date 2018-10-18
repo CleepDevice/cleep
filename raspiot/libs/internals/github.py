@@ -4,6 +4,7 @@
 import logging
 import time
 import urllib3
+urllib3.disable_warnings()
 import json
 import re
 
@@ -14,6 +15,7 @@ class Github():
     """
 
     GITHUB_URL = u'https://api.github.com/repos/%s/%s/releases'
+    GITHUB_RATE = u'https://api.github.com/rate_limit'
 
     def __init__(self):
         """
@@ -27,6 +29,33 @@ class Github():
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
         self.version_pattern = r'\d+\.\d+\.\d+'
+
+    def get_api_rate(self):
+        """
+        Get current api rate
+        Api requests are limited on free usage of github. This method returns current rate
+
+        Returns:
+            dict: general rate values::
+                {
+                    limit (int): limit of requests
+                    remaining (int): number of requests processed
+                    reset (int): timestamp when rate is resetted to limit
+                }
+        """
+        resp = self.http.urlopen('GET', self.GITHUB_RATE, headers=self.http_headers)
+
+        if resp.status==200:
+            #response successful, parse data to get current latest version
+            data = json.loads(resp.data.decode('utf-8'))
+            self.logger.debug('Data: %s' % data)
+
+            if u'rate' in data:
+                return data[u'rate']
+            else:
+                raise Exception(u'Invalid data from github rate_limit request')
+        else:
+            raise Exception(u'Invalid response (status=%d): %s' % (resp.status, resp.data))
 
     def get_release_version(self, release):
         """
@@ -49,6 +78,25 @@ class Github():
 
         else:
             raise Exception('Specified release has no version field')
+
+    def get_release_changelog(self, release):
+        """
+        Return changelog of specified release
+
+        Args:
+            release (dict): release data as returned by get_releases function
+
+        Return:
+            string: changelog of release. Can be empty string if no changelog specified.
+        """
+        if not isinstance(release, dict):
+            raise Exception('Invalid release format. Dict type awaited')
+
+        if u'body' in release.keys():
+            return release[u'body']
+        else:
+            #no body tag found, return empty string
+            return u''
 
     def get_release_assets_infos(self, release):
         """
