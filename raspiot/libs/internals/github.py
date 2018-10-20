@@ -64,7 +64,7 @@ class Github():
         Args:
             release (dict): release data as returned by get_releases function
 
-        Return:
+        Returns:
             string: version of release
         """
         if not isinstance(release, dict):
@@ -86,7 +86,7 @@ class Github():
         Args:
             release (dict): release data as returned by get_releases function
 
-        Return:
+        Returns:
             string: changelog of release. Can be empty string if no changelog specified.
         """
         if not isinstance(release, dict):
@@ -98,6 +98,28 @@ class Github():
             #no body tag found, return empty string
             return u''
 
+    def is_released(self, release):
+        """
+        Return True if release is released (it means not prerelease or draft)
+
+        Args:
+            release (dict): release data as returned by get_releases function
+
+        Returns:
+            bool: True if release is released
+        """
+        if not isinstance(release, dict):
+            raise Exception('Invalid release format. Dict type awaited')
+
+        prerelease = True
+        if u'prerelease' in release.keys():
+            prerelease = release[u'prerelease']
+        draft = True
+        if u'draft' in release.keys():
+            draft = release[u'draft']
+
+        return not prerelease and not draft
+
     def get_release_assets_infos(self, release):
         """
         Return simplified structure of all release assets
@@ -105,7 +127,7 @@ class Github():
         Args:
             release (dict): release data as returned by get_releases function
 
-        Return:
+        Returns:
             list of dict: list of assets infos (name, url, size)::
                 [
                     {name (string), url (string), size (int)},
@@ -129,16 +151,15 @@ class Github():
 
         return out
 
-    def get_releases(self, owner, repository, only_latest=False):
+    def __get_all_releases(self, owner, repository):
         """
         Get releases of specify project repository
 
         Args:
             owner (string): name of owner
             repository (string): name of repository
-            only_latest (bool): if True returns only latest release
 
-        Return:
+        Returns:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
         try:
@@ -150,17 +171,8 @@ class Github():
                 data = json.loads(resp.data.decode('utf-8'))
                 self.logger.debug('Data: %s' % data)
 
-                if not only_latest:
-                    #return all releases
-                    return data
-
-                elif len(data)>0:
-                    #return latest release
-                    return data[0:1]
-
-                else:
-                    #it seems there is no release yet
-                    return []
+                #return all releases
+                return data
 
             else:
                 raise Exception('Invalid response (status=%d): %s' % (resp.status, resp.data))
@@ -168,5 +180,39 @@ class Github():
         except Exception as e:
             self.logger.exception('Unable to get releases:')
             raise Exception('Unable to get releases: %s' % str(e))
-    
+
+    def __get_released_releases(self, owner, repository):
+        """
+        Get released releases
+
+        Args:
+            owner (string): name of owner
+            repository (string): name of repository
+        """
+        return [release for release in self.__get_all_releases(owner, repository) if self.is_released(release)]
+
+    def get_releases(self, owner, repository, only_latest=False, only_released=True):
+        """
+        Get releases of specify project repository
+
+        Args:
+            owner (string): name of owner
+            repository (string): name of repository
+            only_latest (bool): if True returns only latest release
+            only_released (bool): if True returns only released releases
+
+        Returns:
+            list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
+        """
+        #get all releases
+        if only_released:
+            releases = self.__get_released_releases(owner, repository)
+        else:
+            releases = self.__get_all_releases(owner, repository)
+
+        if only_latest:
+            #return only latest release
+            return releases[0:1]
+
+        return releases
 

@@ -11,19 +11,19 @@ class GithubTests(unittest.TestCase):
 
     def setUp(self):
         self.g = Github()
-        self.owner = 'resin-io'
-        self.repo = 'etcher'
+        self.owner = 'tangb'
+        self.repo = 'raspiot'
 
     def tearDown(self):
         pass
 
     def test_get_releases(self):
-        releases = self.g.get_releases(self.owner, self.repo, only_latest=True)
+        releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertTrue(isinstance(releases, list))
         self.assertEqual(1, len(releases))
 
     def test_get_all_releases(self):
-        release = self.g.get_releases(self.owner, self.repo)
+        release = self.g.get_releases(self.owner, self.repo, only_latest=False, only_released=False)
         self.assertTrue(isinstance(release, list))
         self.assertNotEqual(0, len(release))
 
@@ -31,7 +31,7 @@ class GithubTests(unittest.TestCase):
         self.assertRaises(Exception, self.g.get_releases, 'tangb', 'test')
 
     def test_release_version_changelog(self):
-        releases = self.g.get_releases(self.owner, self.repo, only_latest=True)
+        releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         version = self.g.get_release_version(releases[0])
         changelog = self.g.get_release_changelog(releases[0])
@@ -39,10 +39,26 @@ class GithubTests(unittest.TestCase):
         self.assertNotEqual(0, len(changelog.strip()))
 
     def test_release_assets_infos(self):
-        releases = self.g.get_releases(self.owner, self.repo, only_latest=True)
+        releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         infos = self.g.get_release_assets_infos(releases[0])
         logging.debug(infos)
+
+    def test_released_release(self):
+        releases = self.g.get_releases(self.owner, self.repo, only_released=True)
+        for release in releases:
+            self.assertTrue(self.g.is_released(release))
+
+        releases = self.g.get_releases(self.owner, self.repo, only_released=False)
+        released = 0
+        unreleased = 0
+        for release in releases:
+            if self.g.is_released(release):
+                released += 1
+            else:
+                unreleased += 1
+        self.assertNotEqual(0, released)
+        self.assertNotEqual(0, unreleased)
 
     def test_api_rate(self):
         rate = self.g.get_api_rate()
