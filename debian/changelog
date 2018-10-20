@@ -1,3 +1,11 @@
+raspiot (0.0.17) unreleased; urgency=low
+
+  * Update and improve CleepOS update
+  * Move network frontend component to Network module
+  * Improve github lib
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sat, 20 oct 2018 12:00:00 +0000
+
 raspiot (0.0.16) unreleased; urgency=low
 
   * Wpasupplicant lib: always add country code in wpasupplicant conf files
