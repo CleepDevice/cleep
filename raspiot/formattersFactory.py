@@ -71,9 +71,9 @@ class FormattersFactory():
             })
             raise Exception(u'Invalid modules path')
 
-        try:
-            for root, _, filenames in os.walk(path):
-                for filename in filenames:
+        for root, _, filenames in os.walk(path):
+            for filename in filenames:
+                try:
                     fullpath = os.path.join(root, filename)
                     (formatter, ext) = os.path.splitext(filename)
                     parts = full_path_split(fullpath)
@@ -90,9 +90,11 @@ class FormattersFactory():
                         else:
                             self.logger.error(u'Event class must have the same name than filename')
 
-        except AttributeError:
-            self.logger.exception(u'Formatter "%s" has surely invalid name, please refer to coding rules:' % formatter)
-            raise Exception('Invalid formatter tryed to be loaded')
+                except AttributeError:
+                    self.logger.exception(u'Formatter "%s" not loaded: it has surely invalid name, please refer to coding rules:' % formatter)
+
+                except:
+                    self.logger.exception(u'Formatter "%s" not loaded: it has some problem from inside. Please check code.' % formatter)
 
     def register_renderer(self, module_name, type, profiles):
         """ 
