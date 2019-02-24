@@ -49,7 +49,8 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         //init
         var files = {
             'js': [],
-            'html': []
+            'html': [],
+            'css': []
         };
         var entries = ['widgets', 'services'];
 
@@ -71,6 +72,13 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
             for( var i=0; i<desc.system.widgets.html.length; i++ )
             {
                 files.html.push(self.modulesPath + module + '/' + desc.system.widgets.html[i]);
+            }
+        }
+        if( desc.system.widgets && desc.system.widgets.css )
+        {
+            for( var i=0; i<desc.system.widgets.css.length; i++ )
+            {
+                files.css.push(self.modulesPath + module + '/' + desc.system.widgets.css[i]);
             }
         }
 
@@ -103,12 +111,24 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     };
 
     /**
+     * Load css files
+     * Use oclazyloader to inject automatically css
+     * @param cssFiles: list of css files (with full path)
+     * @return promise
+     */
+    self.__loadCssFiles = function(cssFiles)
+    {
+        return $ocLazyLoad.load(cssFiles);
+    };
+
+    /**
      * Load html files
-     * Html are considerated as templates and saved in angular templateCache for easy use
+     * Html are considerated as templates and saved in angular templateCache for easier usage
+     * @param modulePath: module path
      * @param htmlFiles: list of html files (with full path)
      * @return promise
      */
-    self.__loadHtmlFiles = function(htmlFiles)
+    self.__loadHtmlFiles = function(modulePath, htmlFiles)
     {
         //init
         var promises = [];
@@ -130,7 +150,8 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 //cache templates
                 for( var i=0; i<templates.length; i++ )
                 {
-                    var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                    // var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                    var templateName = htmlFiles[i].replace(modulePath, '');
                     $templateCache.put(templateName, templates[i].data);
                 }
             }, function(err) {
@@ -160,7 +181,8 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     self.__loadModule = function(module)
     {
         //init
-        var url = self.modulesPath + module + '/desc.json';
+        var modulePath = self.modulesPath + module + '/';
+        var url = modulePath + 'desc.json';
         var desc = null;
         var d = $q.defer();
         var files = null;
@@ -199,8 +221,13 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                     return $q.reject('no-files');
                 };
 
+                //load css files asynchronously (no further process needed)
+                if( files.css.length>0 ) {
+                    self.__loadCssFiles(files.css);
+                }
+
                 //load html files first
-                return self.__loadHtmlFiles(files.html);
+                return self.__loadHtmlFiles(modulePath, files.html);
 
             }, function(err) {
                 //save empty desc for module
@@ -211,6 +238,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
 
                 //reject final promise
                 d.reject();
+                return;
             })
             .then(function(resp) {
                 //load js files
@@ -245,6 +273,11 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
 
             }, function(err) {
                 console.error('Error loading modules js files:', err);
+
+                //reject final promise
+                d.reject();
+                return;
+
             })
             .finally(function() {
                 //modules are completely loaded
