@@ -9,6 +9,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.modulesPath = 'js/modules/';
         self.module = '';
         self.moduleUrls = {};
+        self.version = '';
 
         /**
          * Get list of config files to lazy load
@@ -148,6 +149,9 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
                     //save module urls
                     self.moduleUrls = raspiotService.modules[module].urls;
+
+                    //save module version
+                    self.version = raspiotService.modules[module].version;
 
                 }, function(err) {
                     console.error('Error loading module js/css files:', err);
