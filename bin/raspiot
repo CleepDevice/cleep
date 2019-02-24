@@ -223,11 +223,11 @@ if __name__ == u'__main__':
         #create crash report singleton (will be part of bootstrap objects)
         disable_crash_report = False
         if log_stdout:
-            #disable crash report if stdout enabled
+            #disable crash report if stdout enabled. It means user is in dev mode
             disable_crash_report = True
-        elif trace_enabled or debug_system:
-            #disable crash report if full debug enabled
-            disable_crash_report = True
+        #elif trace_enabled or debug_system:
+        #    #disable crash report if full debug enabled
+        #    disable_crash_report = True
         crash_report = load_crash_report(trace_enabled or debug_system, disable_crash_report)
         if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
