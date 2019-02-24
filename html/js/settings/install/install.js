@@ -35,7 +35,11 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
             self.closeDialog();
 
             //trigger install
-            raspiotService.installModule(module);
+            raspiotService.installModule(module)
+                .catch(function(error) {
+                    //toast should be already displayed, just cancel install
+                    raspiotService.modules[module].processing = false;
+                });
         };
 
         /**

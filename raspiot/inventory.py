@@ -418,6 +418,24 @@ class Inventory(RaspIot):
 
         return devices
 
+    def get_module(self, module):
+        """
+        Returns infos of specified module
+
+        Returns:
+            list: module infos::
+            {
+                name: str
+                version: str
+                ...
+            }
+        """
+        if module not in self.modules:
+            return None
+
+        else:
+            return copy.deepcopy(self.modules[module])
+
     def get_modules(self):
         """
         Returns list of modules

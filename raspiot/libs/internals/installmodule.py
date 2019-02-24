@@ -26,6 +26,10 @@ BACKEND_DIR = u'backend/'
 SCRIPTS_DIR = u'scripts/'
 
 
+class LocalModuleException(Exception):
+    pass
+
+
 class UninstallModule(threading.Thread):
     """
     Uninstall module in background task
@@ -39,12 +43,13 @@ class UninstallModule(threading.Thread):
     STATUS_UNINSTALLED_ERROR_REMOVE = 5
     STATUS_UNINSTALLED_ERROR_POSTUNINST = 6
 
-    def __init__(self, module, update_process, force, callback, cleep_filesystem, crash_report):
+    def __init__(self, module, module_infos, update_process, force, callback, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
             module (string): module name to install
+            module_infos (dict): all module infos from modules.json file
             update_process (bool): True if module uninstall occured during update process
             force (bool): uninstall module and continue if error occured
             callback (function): status callback
@@ -66,6 +71,7 @@ class UninstallModule(threading.Thread):
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
         self.running = True
         self.module = module
+        self.module_infos = module_infos
         self.cleep_filesystem = cleep_filesystem
         self.__script_running = True
         self.__pre_script_execution = False
@@ -198,6 +204,11 @@ class UninstallModule(threading.Thread):
             #enable write mode
             self.cleep_filesystem.enable_write()
 
+            #uninstall local module
+            if u'local' in self.module_infos and self.module_infos[u'local'] is True:
+                #nothing to process for local modules, quit current process triggering no error
+                raise LocalModuleException()
+
             #pre uninstallation script
             try:
                 self.logger.debug(u'Run pre uninstallation script')
@@ -296,6 +307,10 @@ class UninstallModule(threading.Thread):
                     self.__process_status.append(u'Exception occured during postuninst.sh script execution of app "%s"' % self.module)
                 error_during_postscript = True
                 #do not stop uninstall process
+
+        except LocalModuleException:
+            #local module to uninstall, proper exit
+            pass
 
         except:
             #unexpected exception
@@ -543,6 +558,11 @@ class InstallModule(threading.Thread):
             #enable write mode
             self.cleep_filesystem.enable_write()
 
+            #install local module
+            if u'local' in self.module_infos and self.module_infos[u'local'] is True:
+                #nothing to process for local modules, quit current process triggering no error
+                raise LocalModuleException()
+
             #open file for writing installed files
             install_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
             self.logger.debug(u'Create install log file "%s"' % install_log)
@@ -754,7 +774,11 @@ class InstallModule(threading.Thread):
                     self.__process_status.append(u'Exception occured during postinst.sh script execution of module "%s"' % self.module)
                 self.status = self.STATUS_ERROR_POSTINST
                 raise Exception(u'Forced exception')
-                    
+
+        except LocalModuleException:
+            #local module to install, proper exit
+            pass
+
         except:
             #error occured, invalid state
             error = True

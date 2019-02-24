@@ -545,12 +545,13 @@ class Install():
             current_status[u'process'] = status[u'process']
             self.status_callback(current_status)
 
-    def uninstall_module(self, module, force=False):
+    def uninstall_module(self, module, module_infos, force=False):
         """
         Uninstall specified module
 
         Params:
             module (string): module name to uninstall
+            modules_infos (dict): module infos reported in modules.json
             force (bool): uninstall module and continue if error occured
 
         Returns:
@@ -561,7 +562,7 @@ class Install():
             raise MissingParameter(u'Parameter "module" is missing')
 
         #launch uninstallation
-        uninstall = UninstallModule(module, False, force, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
+        uninstall = UninstallModule(module, module_infos, False, force, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
         uninstall.start()
 
         #blocking mode

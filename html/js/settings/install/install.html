@@ -38,35 +38,53 @@
         <div ng-if="installCtl.modulesName.length>0" ng-repeat="moduleName in installCtl.modulesName | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
+
+                    <!-- module description -->
                     <md-card-title-text>
                         <span class="md-headline">{{moduleName | firstUpper}}</span>
-                        <span class="md-subhead module-desc">{{installCtl.raspiotService.modules[moduleName].description}}</span>
+                        <span class="md-subhead module-desc" ng-if="installCtl.raspiotService.modules[moduleName].description">{{installCtl.raspiotService.modules[moduleName].description}}</span>
+                        <span class="md-subhead module-desc" ng-if="!installCtl.raspiotService.modules[moduleName].description && !installCtl.raspiotService.modules[moduleName].local">No description provided</span>
+                        <span class="md-subhead module-desc" ng-if="!installCtl.raspiotService.modules[moduleName].description && installCtl.raspiotService.modules[moduleName].local">Locally installed module</span>
                     </md-card-title-text>
+
+                    <!-- module icon -->
                     <md-card-title-media>
                         <div class="md-media-sm">
                             <md-icon md-svg-icon="{{installCtl.raspiotService.modules[moduleName].icon}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
+
                 </md-card-title>
+
+                <!-- install progress bar -->
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
                     <md-progress-linear ng-if="installCtl.raspiotService.modules[moduleName].processing" md-mode="indeterminate"></md-progress-linear>
                 </md-card-content>
+
                 <md-card-actions layout="row" layout-align="end center">
+
+                    <!-- country flag -->
                     <div ng-if="installCtl.raspiotService.modules[moduleName].country">
                         <img src="images/flagsBlank.gif" class="flag flag-{{installCtl.raspiotService.modules[moduleName].country}}"/>
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
+
                     <span flex></span>
+
+                    <!-- logs button -->
                     <md-button class="md-primary" ng-if="installCtl.raspiotService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="installCtl.showLogsDialog(moduleName)">
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Install logs</span>
                     </md-button>
+   
+                    <!-- install button -->
                     <md-button class="md-accent" ng-disabled="installCtl.raspiotService.modules[moduleName].pending || installCtl.raspiotService.modules[moduleName].processing" ng-click="installCtl.showInstallDialog(installCtl.raspiotService.modules[moduleName])">
                         <md-icon md-svg-icon="plus-circle"></md-icon>
                         <span ng-if="!installCtl.raspiotService.modules[moduleName].pending && !installCtl.raspiotService.modules[moduleName].processing">Install</span>
                         <span ng-if="installCtl.raspiotService.modules[moduleName].processing">Installing...</span>
                         <span ng-if="installCtl.raspiotService.modules[moduleName].pending">Please restart</span>
                     </md-button>
+
                 </md-card-actions>
             </md-card>
         </div>

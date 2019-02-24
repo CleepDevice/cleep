@@ -12,7 +12,7 @@
     <md-dialog-content>
         <div class="md-dialog-content">
             
-            <md-list>
+            <md-list ng-if="!installCtl.moduleToInstall.local">
                 <!-- header -->
                 <md-list-item>
                     <p>You're going to install module "{{installCtl.moduleToInstall.name}}" version {{installCtl.moduleToInstall.version}}.</p>
@@ -62,6 +62,13 @@
                     <span ng-if="!installCtl.moduleToInstall.screenshots || installCtl.moduleToInstall.screenshots.length===0">No screenshot</span>
                 </md-list-item>
                     
+            </md-list>
+
+            <md-list ng-if="installCtl.moduleToInstall.local">
+                <!-- header -->
+                <md-list-item>
+                    <p>You're going to enable locally installed module "{{installCtl.moduleToInstall.name}}".</p>
+                </md-list-item>
             </md-list>
 
         </div>
