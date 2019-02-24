@@ -38,7 +38,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
                     //lock button asap
-                    raspiotService.modules[module].processing = true;
+                    raspiotService.modules[module].processing = 'uninstall';
 
                     //uninstall module
                     return raspiotService.uninstallModule(module);
@@ -51,7 +51,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.forceUninstall = function(module)
         {
             //lock button
-            raspiotService.modules[module].processing = true;
+            raspiotService.modules[module].processing = 'uninstall';
 
             //close dialog
             self.closeDialog();
@@ -66,7 +66,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.update = function(module)
         {
             //lock button asap
-            raspiotService.modules[module].processing = true;
+            raspiotService.modules[module].processing = 'update';
 
             //close dialog
             self.closeDialog();

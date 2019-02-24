@@ -83,15 +83,20 @@ class Inventory(RaspIot):
         Args:
             event (MessageRequest): event data
         """
-        #handle module installation
+        #handle module installation/uninstallation/update
         if event[u'event'] in (u'system.module.install', u'system.module.uninstall', u'system.module.update'):
             if event[u'params'][u'module'] in self.modules:
                 if event[u'params'][u'status']==Install.STATUS_PROCESSING:
                     self.logger.debug(u'Set module "%s" processing status to True' % event[u'params'][u'module'])
-                    self.modules[event[u'params'][u'module']][u'processing'] = True
+                    if event[u'event']==u'system.module.install':
+                        self.modules[event[u'params'][u'module']][u'processing'] = u'install'
+                    elif event[u'event']==u'system.module.uninstall':
+                        self.modules[event[u'params'][u'module']][u'processing'] = u'uninstall'
+                    elif event[u'event']==u'system.module.update':
+                        self.modules[event[u'params'][u'module']][u'processing'] = u'update'
                 else:
                     self.logger.debug(u'Set module "%s" processing status to False' % event[u'params'][u'module'])
-                    self.modules[event[u'params'][u'module']][u'processing'] = False
+                    self.modules[event[u'params'][u'module']][u'processing'] = None
 
     def __get_bootstrap(self):
         """
@@ -245,7 +250,7 @@ class Inventory(RaspIot):
                 self.modules[module_name][u'library'] = False
                 self.modules[module_name][u'local'] = False
                 self.modules[module_name][u'pending'] = False
-                self.modules[module_name][u'processing'] = False
+                self.modules[module_name][u'processing'] = None
                 self.modules[module_name][u'updatable'] = u''
                 self.modules[module_name][u'core'] = False
 
@@ -282,7 +287,7 @@ class Inventory(RaspIot):
             self.modules[module_name][u'library'] = False
             self.modules[module_name][u'local'] = module_name in local_modules
             self.modules[module_name][u'pending'] = False
-            self.modules[module_name][u'processing'] = False
+            self.modules[module_name][u'processing'] = None
             self.modules[module_name][u'updatable'] = u''
             self.modules[module_name][u'core'] = False
             self.modules[module_name][u'screenshots'] = []

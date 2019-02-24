@@ -274,12 +274,21 @@ class UninstallModule(threading.Thread):
                         if not self.cleep_filesystem.rmdir(path):
                             self.logger.warning(u'Directory "%s" was not removed during "%s" app uninstallation' % (path, self.module))
 
+            except IOError as e:
+                if e.errno==2:
+                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, u'installation file not found'))
+                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, u'installation file not found'))
+                else:
+                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, os.strerror(e.errno)))
+                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, os.strerro(e.errno)))
+                error_during_remove = True
+
             except Exception as e:
                 if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during "%s" files app uninstallation' % self.module)
-                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation' % self.module)
+                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, str(e)))
+                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, str(e)))
                 error_during_remove = True
-                #do not stop uninstall process, some files could be still exist after uninstall
+                #do not stop uninstall process, some files could still remain after uninstall
 
             #send status
             if self.callback:
