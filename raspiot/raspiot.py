@@ -68,7 +68,7 @@ class RaspIot(BusClient):
 
         elif getattr(self, u'MODULE_CORE', None) is True:
             #set default crash report for core module
-            self.logger.debug(u'Crash report set to core one')
+            self.logger.debug(u'Crash report enabled for core')
             self.crash_report = bootstrap[u'crash_report']
 
         else:
