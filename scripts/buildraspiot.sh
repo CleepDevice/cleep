@@ -1,8 +1,10 @@
 #!/bin/bash
 
-#script that build raspiot deb package
+#script that builds raspiot deb package and publish it to github repository
 
 CUR_DIR=`pwd`
+GITHUB_OWNER=tangb
+GITHUB_REPO=cleep-os
 GITHUB_ACCESS_TOKEN=`printenv GITHUB_ACCESS_TOKEN`
 SENTRY_DSN=`printenv SENTRY_DSN`
 #NO_PUBLISH=1
@@ -106,7 +108,7 @@ sha256sum $ARCHIVE > $SHA256
 sed -n "/raspiot ($VERSION)/,/Checksums-Sha1:/{/raspiot ($VERSION)/b;/Checksums-Sha1:/b;p}" $CHANGES | tail -n +2 > sed.out
 
 #display changes
-echo "Files \"$ARCHIVE\" and \"$SHA256\" are ready to be uploaded in https://github.com/tangb/raspiot/releases with following informations:"
+echo "Files \"$ARCHIVE\" and \"$SHA256\" are ready to be uploaded in https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases with following informations:"
 echo "  - tag version \"v$VERSION\""
 echo "  - release title \"$VERSION\""
 echo "  - description:"
@@ -117,7 +119,7 @@ if [ -z "$NO_PUBLISH" ]; then
     echo
     echo "Uploading release to github..."
     #https://www.barrykooij.com/create-github-releases-via-command-line/
-    curl --silent --output curl.out --data "$(github_release_data "$VERSION" "sed.out")" https://api.github.com/repos/tangb/raspiot/releases?access_token=$GITHUB_ACCESS_TOKEN
+    curl --silent --output curl.out --data "$(github_release_data "$VERSION" "sed.out")" https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases?access_token=$GITHUB_ACCESS_TOKEN
     ID=`cat curl.out | grep "\"id\":" | head -n 1 | awk '{ gsub(",","",$2); print $2 }'`
     if [ -z "$ID" ]; then
         echo 
@@ -127,9 +129,9 @@ if [ -z "$NO_PUBLISH" ]; then
     fi
     #https://gist.github.com/stefanbuck/ce788fee19ab6eb0b4447a85fc99f447
     echo " - Uploading archive"
-    curl --output curl.out --progress-bar --data-binary @"$ARCHIVE" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $ARCHIVE)"
+    curl --output curl.out --progress-bar --data-binary @"$ARCHIVE" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/$ID/assets?name=$(basename $ARCHIVE)"
     echo " - Uploading checksum"
-    curl --output curl.out --progress-bar --data-binary @"$SHA256" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/tangb/raspiot/releases/$ID/assets?name=$(basename $SHA256)"
+    curl --output curl.out --progress-bar --data-binary @"$SHA256" -H "Authorization: token $GITHUB_ACCESS_TOKEN" -H "Content-Type: application/octet-stream" "https://uploads.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/$ID/assets?name=$(basename $SHA256)"
     rm curl.out
     rm sed.out
     echo "Done."
