@@ -72,14 +72,6 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
 }]);*/
 
 /**
- * Fix issue with md-datepicker with angular 1.6 and angular-material 1.1.1
- * @see https://github.com/angular/material/issues/10280
- */
-RaspIot.config(['$compileProvider', function($compileProvider) {
-    $compileProvider.preAssignBindingsEnabled(true);
-}]);
-
-/**
  * MDI font configuration
  */
 RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
