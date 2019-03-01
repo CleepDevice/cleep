@@ -44,7 +44,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      * @param desc: description content file (json)
      * @return object { js:[], html:[] }
      */
-    self.__getModuleSystemFiles = function(module, desc)
+    self.__getModuleGlobalFiles = function(module, desc)
     {
         //init
         var files = {
@@ -52,42 +52,32 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
             'html': [],
             'css': []
         };
-        var entries = ['widgets', 'services'];
 
-        if( !desc || !desc.system )
+        if( !desc || !desc.global )
         {
             return files;
         }
 
-        //get widget files
-        if( desc.system.widgets && desc.system.widgets.js )
+        //get global files
+        if( desc.global && desc.global.js )
         {
-            for( var i=0; i<desc.system.widgets.js.length; i++ )
+            for( var i=0; i<desc.global.js.length; i++ )
             {
-                files.js.push(self.modulesPath + module + '/' + desc.system.widgets.js[i]);
+                files.js.push(self.modulesPath + module + '/' + desc.global.js[i]);
             }
         }
-        if( desc.system.widgets && desc.system.widgets.html )
+        if( desc.global && desc.global.html )
         {
-            for( var i=0; i<desc.system.widgets.html.length; i++ )
+            for( var i=0; i<desc.global.html.length; i++ )
             {
-                files.html.push(self.modulesPath + module + '/' + desc.system.widgets.html[i]);
+                files.html.push(self.modulesPath + module + '/' + desc.global.html[i]);
             }
         }
-        if( desc.system.widgets && desc.system.widgets.css )
+        if( desc.global && desc.global.css )
         {
-            for( var i=0; i<desc.system.widgets.css.length; i++ )
+            for( var i=0; i<desc.global.css.length; i++ )
             {
-                files.css.push(self.modulesPath + module + '/' + desc.system.widgets.css[i]);
-            }
-        }
-
-        //get services
-        if( desc.system.services )
-        {
-            for( var i=0; i<desc.system.services.length; i++ )
-            {
-                files.js.push(self.modulesPath + module + '/' + desc.system.services[i]);
+                files.css.push(self.modulesPath + module + '/' + desc.global.css[i]);
             }
         }
 
@@ -213,8 +203,8 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                     self.modules[module].hasConfig = true;
                 }
 
-                //load module system objects (widgets and services)
-                files = self.__getModuleSystemFiles(module, resp.data);
+                //load module global objects (components, widgets and services)
+                files = self.__getModuleGlobalFiles(module, resp.data);
                 if( files.js.length==0 && files.html.length==0 )
                 {
                     //no files to lazyload, stop chain here
