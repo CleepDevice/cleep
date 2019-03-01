@@ -24,7 +24,7 @@ class Event():
         self.formatters_factory = formatters_factory
         self.events_factory = events_factory
         self.logger = logging.getLogger(self.__class__.__name__)
-        if not hasattr(self, u'EVENT_NAME'):
+        if not hasattr(self, u'EVENT_NAME') or len(self.EVENT_NAME)==0:
             raise NotImplementedError(u'EVENT_NAME class member must be declared')
 
     def _check_params(self, params):
