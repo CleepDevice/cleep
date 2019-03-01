@@ -472,6 +472,38 @@ class RaspIot(BusClient):
 
 
 
+class RaspIotRpcWrapper(RaspIot):
+    """
+    Base raspiot class for RPC request wrapping
+    """
+    def __init__(self, bootstrap, debug_enabled):
+        """
+        Constructor
+
+        Args:
+            bootstrap (dict): bootstrap objects.
+            debug_enabled (bool): flag to set debug level to logger.
+        """
+        #init raspiot
+        RaspIot.__init__(self, bootstrap, debug_enabled)
+    
+    def wrap_request(self, route, request):
+        """
+        Function called when web request from / in POST is called
+        By default this access point is not supported by Cleep but it can be wrapped here
+
+        Args:
+            request (bottle.request): web server bottle request content. See doc https://bottlepy.org/docs/dev/tutorial.html#request-data
+
+        Returns:
+            returns any data
+        """
+        raise NotImplementedError('wrap_request function must be implemented')
+
+
+
+
+
 class RaspIotModule(RaspIot):
     """
     Base raspiot class for module
@@ -480,7 +512,7 @@ class RaspIotModule(RaspIot):
     """
     def __init__(self, bootstrap, debug_enabled):
         """
-        Constructor.
+        Constructor
 
         Args:
             bootstrap (dict): bootstrap objects.
@@ -655,7 +687,7 @@ class RaspIotResource(RaspIotModule):
     """
     Base raspiot class for specific resource (for example audio)
     It implements:
-     - resource lock/release
+     - resource acquire/release
      - resource demand request
     """
 

@@ -7,7 +7,7 @@ import importlib
 import inspect
 import copy
 from threading import Event
-from raspiot import RaspIot, RaspIotRenderer
+from raspiot import RaspIot, RaspIotRenderer, RaspIotRpcWrapper
 from .libs.configs.modulesjson import ModulesJson
 from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
@@ -69,6 +69,8 @@ class Inventory(RaspIot):
         self.__modules_instances = {}
         #modules that failed to starts
         self.__modules_in_errors = []
+        #module names that are RaspIotRpcWrapper instances
+        self.__rpc_wrappers = []
 
     def _configure(self):
         """
@@ -325,10 +327,16 @@ class Inventory(RaspIot):
                 #failed to load module
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
 
-        #fix final library status
+        #finalize loading process
         for module_name in self.modules:
+            #fix final library status
             if module_name in self.__modules_loaded_as_dependency:
                 self.modules[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
+
+            #store rpc wrappers
+            if module_name in self.__modules_instances and isinstance(self.__modules_instances[module_name], RaspIotRpcWrapper):
+                self.logger.debug(u'Store RpcWrapper instance "%s"' % module_name)
+                self.__rpc_wrappers.append(module_name)
 
         #wait for all modules are completely loaded
         self.logger.debug('Waiting for end of modules loading...')
@@ -609,4 +617,16 @@ class Inventory(RaspIot):
             list: list of used events
         """
         return self.events_factory.get_used_events()
+
+    def rpc_wrapper(self, route, request):
+        """
+        Rpc wrapper is called by rpc server when default / POST route is called.
+        Inventory get all loaded RaspIotRpcWrapperModule modules and push the bottle request object.
+        See bottle documentation for request object description https://bottlepy.org/docs/dev/tutorial.html#request-data
+        """
+        for module_name in self.__rpc_wrappers:
+            try:
+                self.__modules_instances[module_name].wrap_request(route, request)
+            except:
+                self.logger.exception(u'RpcWrapper wrap_request function failed:')
 

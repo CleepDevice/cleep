@@ -699,7 +699,16 @@ def poll():
     #and return it
     return json.dumps(message)
 
-@app.route(u'/<path:path>')
+@app.route(u'/<route:re:.*>', method=u'POST')
+#@authenticate()
+def rpc_wrapper(route):
+    """
+    Custom rpc route used to implement wrappers (ie REST=>RPC)
+    This route is intended to be used with external services like alexa
+    """
+    return inventory.rpc_wrapper(route, bottle.request)
+
+@app.route(u'/<path:path>', method=u'GET')
 @authenticate()
 def default(path):
     """
@@ -707,23 +716,12 @@ def default(path):
     """
     return bottle.static_file(path, HTML_DIR)
 
-@app.route(u'/')
+@app.route(u'/', method=u'GET')
 @authenticate()
 def index():
     """
     Return a default document if no path was specified.
     """
     return bottle.static_file(u'index.html', HTML_DIR)
-
-@app.route(u'/debug')
-def debug():
-    """
-    This lets us see how many /sub requests are active.
-    """
-    bottle.response.content_type = u'text/plain'
-
-    # Using yield because this makes it easier to add
-    # additional output.
-    yield(u'polling = %d\n' % polling)
 
 
