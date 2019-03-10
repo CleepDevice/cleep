@@ -336,12 +336,12 @@ class UninstallModule(threading.Thread):
             #clean stuff
             try:
                 path = os.path.join(PATH_INSTALL, self.module)
-                if os.path.exists(path):
+                if path and os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
                 path = os.path.join(PATH_FRONTEND, 'js/modules/%s' % self.module)
-                if os.path.exists(path):
+                if path and os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
-                if os.path.exists(module_log):
+                if module_log and os.path.exists(module_log):
                     self.cleep_filesystem.rm(module_log)
             except:
                 self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
