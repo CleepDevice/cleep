@@ -28,7 +28,7 @@ class FormattersFactory():
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.events_factory = None
-        self.renderers = {}
+        self.renderers = []
         self.renderer_profiles = {}
         self.formatters = {}
         self.crash_report = None
@@ -77,7 +77,7 @@ class FormattersFactory():
                     fullpath = os.path.join(root, filename)
                     (formatter, ext) = os.path.splitext(filename)
                     parts = full_path_split(fullpath)
-                    if filename.lower().find(u'formatter')>=0 and ext==u'.py':
+                    if ext==u'.py' and filename.lower().endswith(u'formatter'):
                         mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], formatter))
                         formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
                         if formatter_class_name:
@@ -96,13 +96,12 @@ class FormattersFactory():
                 except:
                     self.logger.exception(u'Formatter "%s" not loaded: it has some problem from inside. Please check code.' % formatter)
 
-    def register_renderer(self, module_name, type, profiles):
+    def register_renderer(self, module_name, profiles):
         """ 
         Register new renderer
 
         Args:
             module_name (string): name of renderer (module name)
-            type (string): renderer type (ie: alert for sms/push/email renderer)
             profiles (list): profiles supported by renderer
 
         Returns:
@@ -111,19 +110,15 @@ class FormattersFactory():
         Raises:
             MissingParameter, InvalidParameter
         """
-        self.logger.debug(u'Register new renderer %s' % (type))
+        self.logger.debug(u'Register new renderer "%s"' % module_name)
         #check values
-        if type is None or len(type)==0:
-            raise MissingParameter(u'Type parameter is missing')
         if profiles is None:
             raise MissingParameter(u'Profiles is missing')
         if len(profiles)==0:
             raise InvalidParameter(u'Profiles must contains at least one profile')
 
         #update renderers list
-        if not self.renderers.has_key(type):
-            self.renderers[type] = []
-        self.renderers[type].append(module_name)
+        self.renderers.append(module_name)
 
         #update renderer profiles list
         for profile in profiles:
@@ -151,35 +146,7 @@ class FormattersFactory():
         Returns list of renderers
         
         Returns:
-            list: list of renderers by type::
-                {
-                    'type1': {
-                        'subtype1':  {
-                            <profile name>: <profile instance>,
-                            ...
-                        }
-                        'subtype2': ...
-                    },
-                    'type2': {
-                        <profile name>: <renderer instance>
-                    },
-                    ...
-                }
+            list: list of renderers
         """
         return self.renderers
-
-    def has_renderer(self, type):
-        """
-        Return True if at least one renderer is registered for specified type
-
-        Args:
-            type (string): renderer type
-        
-        Returns:
-            bool: True if renderer exists or False otherwise
-        """
-        if len(self.renderers)>0 and self.renderers.has_key(type) and len(self.renderers[type])>0:
-            return True
-
-        return False
 

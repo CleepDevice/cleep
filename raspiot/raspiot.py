@@ -935,15 +935,12 @@ class RaspIotRenderer(RaspIotModule):
         """
         if getattr(self, u'RENDERER_PROFILES', None) is None:
             raise Exception(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
-        if getattr(self, u'RENDERER_TYPE', None) is None:
-            raise Exception(u'RENDERER_TYPE is not defined in %s' % self.__class__.__name__)
 
         #cache profile types as string
         for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__name__)
 
         return {
-            u'type': self.RENDERER_TYPE,
             u'profiles': self.RENDERER_PROFILES
         }
 
