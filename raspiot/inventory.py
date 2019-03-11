@@ -492,7 +492,10 @@ class Inventory(RaspIot):
                 elif module_name in raspiot_config[u'general'][u'modules'] and not modules[module_name][u'installed']:
                     #install pending
                     modules[module_name][u'pending'] = True
-                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed']:
+                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed'] and modules[module_name][u'library']:
+                    #module is installed as library
+                    modules[module_name][u'pending'] = False
+                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed'] and not modules[module_name][u'library']:
                     #uninstall pending
                     modules[module_name][u'pending'] = True
                 elif module_name in raspiot_config[u'general'][u'updated'] and modules[module_name][u'installed']:
