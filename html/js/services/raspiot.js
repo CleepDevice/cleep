@@ -92,6 +92,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      */
     self.__loadJsFiles = function(jsFiles)
     {
+        console.log('load js files', jsFiles);
         //load js files using lazy loader
         return $ocLazyLoad.load({
             'reconfig': true,
@@ -326,7 +327,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         var promises = [];
         for( module in self.modules )
         {
-            if( self.modules[module].installed && self.modules[module].started && !self.modules[module].library )
+            if( 
+                (self.modules[module].installed && self.modules[module].started) ||
+                self.modules[module].library
+            )
             {
                 promises.push(self.__loadModule(module));
             }
