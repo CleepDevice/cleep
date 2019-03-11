@@ -59,7 +59,10 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
                 }
 
                 //append module name if necessary
-                if( !raspiotService.modules[moduleName].installed && (countryAlpha.length===0 || countryAlpha==raspiotService.modules.parameters.config.country.alpha2))
+                if(
+                    (!raspiotService.modules[moduleName].installed || (raspiotService.modules[moduleName].installed && raspiotService.modules[moduleName].library)) &&
+                    (countryAlpha.length===0 || countryAlpha==raspiotService.modules.parameters.config.country.alpha2)
+                )
                 {
                     modulesName.push(moduleName);
                 }
