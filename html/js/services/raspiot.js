@@ -92,7 +92,6 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      */
     self.__loadJsFiles = function(jsFiles)
     {
-        console.log('load js files', jsFiles);
         //load js files using lazy loader
         return $ocLazyLoad.load({
             'reconfig': true,
