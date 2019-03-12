@@ -69,7 +69,7 @@ class ReadWrite():
             bool: True if path on root partition
         """
         path = os.path.abspath(os.path.expanduser(path))
-        return path and path.startswith(self.PARTITION_ROOT)
+        return path and path.find(self.PARTITION_BOOT)==-1 and path.startswith(self.PARTITION_ROOT)
 
     def __refresh(self, partition):
         """
