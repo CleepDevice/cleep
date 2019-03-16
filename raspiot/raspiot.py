@@ -928,7 +928,7 @@ class RaspIotRenderer(RaspIotModule):
         #members
         self.profiles_types = []
 
-    def get_module_renderers(self):
+    def get_renderer_config(self):
         """
         Register internally available profiles and return it.
         This method is called by inventory at startup

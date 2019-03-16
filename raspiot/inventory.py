@@ -310,8 +310,8 @@ class Inventory(RaspIot):
 
                 #fill renderers
                 if issubclass(self.__modules_instances[module_name].__class__, RaspIotRenderer):
-                    renderers = self.__modules_instances[module_name].get_module_renderers()
-                    self.formatters_factory.register_renderer(module_name, renderers[u'profiles'])
+                    config = self.__modules_instances[module_name].get_renderer_config()
+                    self.formatters_factory.register_renderer(module_name, config[u'profiles'])
 
             except:
                 #flag modules has in error
