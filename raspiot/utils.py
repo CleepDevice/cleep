@@ -1,9 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter', u'MissingParameter', 
+"""
+This file shares some constants, exceptions and classes
+"""
+
+__all__ = [u'SYSTEM_MODULES', u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter', u'MissingParameter', 
            u'InvalidMessage', u'Unauthorized', u'BusError', u'MessageResponse', u'MessageRequest']
 
+"""        
+CONSTANTS
+"""
+SYSTEM_MODULES = [
+    u'system',
+    u'audio',
+    u'network',
+    u'cleepbus',
+    u'parameters'
+]
+
+
+"""
+Exceptions
+"""
 class CommandError(Exception):
     def __init__(self, value):
         self.value = value
@@ -78,6 +97,10 @@ class ForcedException(Exception):
     def __str__(self):
         return u'ForcedException(%s)' % self.code
 
+
+"""
+Shared classes
+"""
 class MessageResponse():
     """ 
     Object that holds message response

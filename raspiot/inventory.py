@@ -13,6 +13,7 @@ from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
 from .libs.internals.install import Install
 import libs.internals.tools as Tools
+from utils import SYSTEM_MODULES
 
 __all__ = [u'Inventory']
 
@@ -57,14 +58,6 @@ class Inventory(RaspIot):
         self.__modules_loaded_as_dependency = {}
         #list of modules: dict(<module name>:dict(<module config>), ...)
         self.modules = {}
-        #list of mandatory modules that must be loaded at startup
-        self.mandatory_modules = [
-            u'system',
-            u'audio',
-            u'network',
-            u'cleepbus',
-            u'parameters'
-        ]
         #direct access to modules instances
         self.__modules_instances = {}
         #modules that failed to starts
@@ -295,7 +288,7 @@ class Inventory(RaspIot):
             self.modules[module_name][u'screenshots'] = []
 
         #load mandatory modules
-        for module_name in self.mandatory_modules:
+        for module_name in SYSTEM_MODULES:
             try:
                 #load module
                 self.__load_module(module_name, local_modules)
@@ -483,7 +476,7 @@ class Inventory(RaspIot):
 
                 #pending status
                 modules[module_name][u'pending'] = False
-                if module_name in self.mandatory_modules:
+                if module_name in SYSTEM_MODULES:
                     #mandatory modules
                     modules[module_name][u'pending'] = False
                 elif module_name in self.__modules_in_errors:
