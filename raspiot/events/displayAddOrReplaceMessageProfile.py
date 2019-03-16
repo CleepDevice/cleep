@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from raspiot.events.rendererProfile import RendererProfile
+
 class DisplayAddOrReplaceMessageProfile(RendererProfile):
     """
     Display profile.

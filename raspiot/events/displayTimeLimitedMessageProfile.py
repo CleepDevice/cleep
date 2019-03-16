@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class DisplayLimitedTimeMessageProfile(RendererProfile):
+class DisplayTimeLimitedMessageProfile(RendererProfile):
     """
     Display profile.
     Handles single message with start and end range datetime
