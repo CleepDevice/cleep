@@ -25,27 +25,24 @@ class Formatter():
         if not issubclass(profile.__class__, RendererProfile):
             raise InvalidParameter(u'Invalid profile specified. Instance must inherits from RendererProfile.')
 
-        #memebers
+        #members
         self.events_factory = events_factory
         self.event_name = event_name
         self.profile_name = profile.__class__.__name__
         self.profile = profile
 
-        #get event instance
-        self.event = self.events_factory.get_event_instance(self.event_name)
-
-    def format(self):
+    def format(self, event_params):
         """
         Format event
         """
-        return self._fill_profile(self.event, self.profile)
+        return self._fill_profile(event_params, self.profile)
     
-    def _fill_profile(self, event_values, profile):
+    def _fill_profile(self, event_params, profile):
         """
         Fll profile with event data
   
         Args:
-           event_values (dict): event values
+           event_params (dict): event parameters
            profile (Profile): profile instance
         """
         raise NotImplementedError('_fill_profile method must be implemented')

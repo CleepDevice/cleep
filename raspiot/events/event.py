@@ -24,6 +24,7 @@ class Event():
         self.formatters_factory = formatters_factory
         self.events_factory = events_factory
         self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
         if not hasattr(self, u'EVENT_NAME') or len(self.EVENT_NAME)==0:
             raise NotImplementedError(u'EVENT_NAME class member must be declared')
 
@@ -39,7 +40,7 @@ class Event():
         """
         raise NotImplementedError(u'_check_params method must implemented')
 
-    def send(self, params=None, device_id=None, to=None):
+    def send(self, params=None, device_id=None, to=None, render=True):
         """ 
         Push event message on bus.
 
@@ -47,6 +48,7 @@ class Event():
             params (dict): event parameters.
             device_id (string): device id that send event. If not specified event cannot be monitored.
             to (string): event recipient. If not specified, event will be broadcasted. (to send to ui client set 'rpc')
+            render (bool): also propagate event to renderer. False to disable it
 
         Returns:
             None: event always returns None.
@@ -66,6 +68,14 @@ class Event():
             request.device_id = device_id
             request.params = params
 
+            #render event
+            if render:
+                try:
+                    self.render(params)
+                except:
+                    self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
+
+            #pus event to internal bus
             return self.bus.push(request, None)
 
         else:
@@ -79,46 +89,32 @@ class Event():
             params (dict): list of event parameters
         """
         #get formatters
-        self.logger.debug(u'Searching formatters...')
-        formatters = {}
-        for formatter in self.formatters_factory.formatters:
-            if formatter.endswith(self.EVENT_NAME):
-                formatters.update(self.formatters_factory.formatters[formatter])
+        formatters = self.formatters_factory.get_renderers_formatters(self.EVENT_NAME)
+        self.logger.debug('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
 
-        if len(formatters)==0:
-            #no formatter found, exit
-            self.logger.debug(u'No formatter found for event %s' % self.EVENT_NAME)
+        #handle no formatters found
+        if not formatters:
             return False
 
-        #find match with formatters and renderer profiles
-        for renderer in self.formatters_factory.renderers[type]:
-            for profile in self.formatters_factory.renderer_profiles[renderer]:
-                if profile in formatters:
-                    self.logger.debug(u'Found match, post profile to renderer %s' % renderer)
+        #render profiles
+        for profile_name in formatters:
+            for module_name in formatters[profile_name]:
+                #format event params to profile
+                profile = formatters[profile_name][module_name].format(params)
+                if profile is None:
+                    continue
 
-                    #check if event is not configured to not be rendered
-                    if not self.events_factory.can_render_event(self.EVENT_NAME, renderer):
-                        self.logger.debug(u' -> Event %s is configured to not be rendered on renderer %s' % (self.EVENT_NAME, renderer))
-                        continue
+                #and post profile to renderer
+                try:
+                    request = MessageRequest()
+                    request.command = u'render'
+                    request.to = module_name
+                    request.params = {u'profile': profile}
 
-                    #found match, format event to profile
-                    profile = formatters[profile].format(params)
+                    resp = self.bus.push(request)
+                    if resp[u'error']:
+                        self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
 
-                    #handle no profile
-                    if profile is None:
-                        continue
-
-                    #and post profile to renderer
-                    try:
-                        request = MessageRequest()
-                        request.command = u'render'
-                        request.to = renderer
-                        request.params = {u'profile': profile}
-
-                        resp = self.bus.push(request)
-                        if resp[u'error']:
-                            self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
-
-                    except:
-                        self.logger.exception(u'Unable to render event %s:' % self.EVENT_NAME)
+                except:
+                    self.logger.exception(u'Unable to push event "%s" to bus:' % self.EVENT_NAME)
 
