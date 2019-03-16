@@ -207,8 +207,8 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 files = self.__getModuleGlobalFiles(module, resp.data);
                 if( files.js.length==0 && files.html.length==0 )
                 {
-                    //no files to lazyload, stop chain here
-                    return $q.reject('no-files');
+                    //no file to lazyload, stop chain here
+                    return $q.reject('stop-chain');
                 };
 
                 //load css files asynchronously (no further process needed)
@@ -227,17 +227,21 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 console.error('Error occured loading "' + module + '" description file', err);
 
                 //reject final promise
-                d.reject();
-                return;
+                return $q.reject('stop-chain');
             })
             .then(function(resp) {
                 //load js files
                 return self.__loadJsFiles(files.js);
 
             }, function(err) {
-                if( err!='no-files' )
+                if( err!='stop-chain' )
                 {
+                    //error occured during html or css files loading
                     console.error('Error loading modules html files:', err);
+                }
+                else
+                {
+                    return $q.reject('stop-chain');
                 }
             })
             .then(function() {
@@ -262,15 +266,22 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 }
 
             }, function(err) {
-                console.error('Error loading modules js files:', err);
-
-                //reject final promise
-                d.reject();
-                return;
-
+                if( err!='stop-chain' )
+                {
+                    //error occured during js files loading
+                    console.error('Error loading modules js files:', err);
+                }
+                else
+                {
+                    return $q.reject('stop-chain');
+                }
             })
-            .finally(function() {
-                //modules are completely loaded
+            .then(function() {
+                //all chain was good
+                d.resolve();
+            },
+            function(err) {
+                //error occured during chain but resolve chain otherwise devices can be loaded properly
                 d.resolve();
             });
 
