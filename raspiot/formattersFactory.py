@@ -26,8 +26,8 @@ class FormattersFactory():
         """
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
-        #if debug_enabled:
-        self.logger.setLevel(logging.DEBUG)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
         self.events_factory = None
         #list of renderer module names with format:
         #[
