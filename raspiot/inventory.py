@@ -64,6 +64,8 @@ class Inventory(RaspIot):
         self.__modules_in_errors = []
         #module names that are RaspIotRpcWrapper instances
         self.__rpc_wrappers = []
+        #modules dependencies
+        self.__dependencies = {}
 
     def _configure(self):
         """
@@ -150,6 +152,11 @@ class Inventory(RaspIot):
         #load module dependencies
         if module_class_.MODULE_DEPS:
             for dependency in module_class_.MODULE_DEPS:
+                #update dependencies list
+                if dependency not in self.__dependencies:
+                    self.__dependencies[dependency] = []
+                self.__dependencies[dependency].append(module_name)
+                
                 if dependency not in self.__modules_loaded_as_dependency:
                     #load dependency
                     self.__load_module(dependency, local_modules, True)
@@ -189,6 +196,7 @@ class Inventory(RaspIot):
         self.modules[module_name][u'urls'] = fixed_urls
         self.modules[module_name][u'category'] = getattr(module_class_, u'MODULE_CATEGORY', u'')
         self.modules[module_name][u'screenshots'] = getattr(module_class_, u'MODULE_SCREENSHOTS', [])
+        self.modules[module_name][u'deps'] = getattr(module_class_, u'MODULE_DEPS', [])
 
         #handle properly version and updatable flag
         if u'version' in self.modules[module_name] and Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
@@ -286,6 +294,8 @@ class Inventory(RaspIot):
             self.modules[module_name][u'updatable'] = u''
             self.modules[module_name][u'core'] = False
             self.modules[module_name][u'screenshots'] = []
+            self.modules[module_name][u'deps'] = []
+            self.modules[module_name][u'dependsof'] = []
 
         #load mandatory modules
         for module_name in SYSTEM_MODULES:
@@ -424,7 +434,7 @@ class Inventory(RaspIot):
 
         return devices
 
-    def get_module(self, module):
+    def get_module_infos(self, module):
         """
         Returns infos of specified module
 
@@ -436,11 +446,16 @@ class Inventory(RaspIot):
                 ...
             }
         """
-        if module not in self.modules:
-            return None
+        output = None
+        if module in self.modules:
+            output = copy.deepcopy(self.modules[module])
 
-        else:
-            return copy.deepcopy(self.modules[module])
+            #inject module dependencies
+            output[u'dependsof'] = []
+            if module in self.__dependencies:
+                output[u'dependsof'] = self.__dependencies[module]
+
+        return output
 
     def get_modules(self):
         """
