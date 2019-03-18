@@ -94,21 +94,35 @@ md-toast.info .md-toast-content {
 
 /* icon */
 .icon-md {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.icon-lg {
     font-size: 48px;
     width: 48px;
     height: 48px;
+    min-width: 48px;
+    min-height: 48px;
 }
 
 .icon-xl {
     font-size: 72px;
     width: 72px;
     height: 72px;
+    min-width: 72px;
+    min-height: 72px;
 }
 
 .icon-xxl {
     font-size: 96px;
     width: 96px;
     height: 96px;
+    min-width: 96px;
+    min-height: 96px;
 }
 
 /* remove input text error spacer */
@@ -205,7 +219,12 @@ md-toast.info .md-toast-content {
 
 /********* list item **********/
 .md-secondary-rpadding {
-    padding-right: 15px;
+    padding-right: 30px;
+}
+
+.margin-v-5px {
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
 }
 
 /********* no margin *********/
