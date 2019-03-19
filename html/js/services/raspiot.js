@@ -337,10 +337,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         var promises = [];
         for( module in self.modules )
         {
-            if( 
-                (self.modules[module].installed && self.modules[module].started) ||
-                self.modules[module].library
-            )
+            if( (self.modules[module].installed && self.modules[module].started) || self.modules[module].library )
             {
                 promises.push(self.__loadModule(module));
             }
@@ -348,7 +345,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
 
         //resolve deferred once all promises terminated
         //TODO sequentially chain promises https://stackoverflow.com/a/43543665 or https://stackoverflow.com/a/24262233
-        //$q.all execute finally statement as soon as one of promises is rejected
+        //$q.all executes final statement as soon as one of promises is rejected
         return $q.all(promises)
             .then(function(resp) {
             }, function(err) {
@@ -459,8 +456,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                     mdcolors: '{background:"default-primary-300"}'
                 };
 
-                //add service infos
-                devices[module][uuid].__service = module;
+                //add module which handles this device
+                devices[module][uuid].module = module;
+                //add if widget is hidden or not
+                devices[module][uuid].hidden = self.modules[module].library ? true : false;
             }
 
             //store device

@@ -40,11 +40,11 @@ RaspIot.filter('deviceType', function($filter) {
 /**
  * Device service filter
  */
-RaspIot.filter('filterDeviceByService', function($filter) {
-    return function(devices, service) {
-        if( service ) {
+RaspIot.filter('filterDeviceByModule', function($filter) {
+    return function(devices, module) {
+        if( module ) {
             return $filter("filter")(devices, function(device) {
-                return device.__service==service;
+                return device.module==module;
             });
         }
     };
