@@ -596,7 +596,8 @@ class RaspIotModule(RaspIot):
             raise Exception(u'"devices" config file entry doesn\'t exist')
         devices = self._get_config_field(u'devices')
         if uuid not in devices:
-            self.logger.error(u'Trying to update unknown device')
+            self.logger.debug(u'Trying to update unknown device "%s"' % uuid)
+            return False
 
         #check uuid key existence
         if not data.has_key(u'uuid'):
@@ -636,6 +637,36 @@ class RaspIotModule(RaspIot):
                 return devices[uuid]
 
         return None
+
+    def _search_devices(self, key, value):
+        """
+        Helper function to search a device based on the property value.
+        Useful to search a device of course, but can be used to check if a name is not already assigned to a device.
+
+        Args:
+            key (string): device property to search on.
+            value (any): property value.
+
+        Returns
+            dict: the device data if key-value found, or None otherwise.
+        """
+        #check values
+        if not self._has_config_field(u'devices'):
+            self.logger.warning(u'"devices" config file entry doesn\'t exist')
+            return None
+        devices = self._get_config_field(u'devices')
+        if len(devices)==0:
+            #no device in dict, return no match
+            return None
+
+        #search
+        output = []
+        for uuid in devices:
+            if key in devices[uuid] and devices[uuid][key]==value:
+                #device found
+                output.append(devices[uuid])
+
+        return output
 
     def _get_device(self, uuid):
         """
@@ -969,4 +1000,37 @@ class RaspIotRenderer(RaspIotModule):
         Fake render method
         """
         pass
+
+
+
+
+
+class RaspIotDriver(RaspIotModule):
+    """
+    Base raspiot class to create a Cleep driver.
+    It implements:
+    """
+    def __init__(self, bootstrap, debug_enabled):
+        """
+        Constructor.
+
+        Args:
+            bootstrap (dict): bootstrap objects.
+            debug_enabled (bool): flag to set debug level to logger.
+        """
+        #init raspiot
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+
+    def get_driver_config(self):
+        """
+        Register internally available resources and return it
+        This method is called by inventory at startup
+        """
+        if getattr(self, u'DRIVER_RESOURCES', None) is None:
+            raise Exception(u'DRIVER_RESOURCES is not defined in %s' % self.__class__.__name__)
+
+        return {
+            u'resources': self.DRIVER_RESOURCES
+        }
+
 
