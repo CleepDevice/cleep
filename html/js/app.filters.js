@@ -55,7 +55,7 @@ RaspIot.filter('filterDeviceByModule', function($filter) {
  */
 RaspIot.filter('hrDatetime', function($filter) {
     return function(ts, shortYear) {
-        if( angular.isUndefined(ts) || ts===null )
+        if( angular.isUndefined(ts) || !ts )
         {
             return '-';
         }
@@ -78,7 +78,7 @@ RaspIot.filter('hrDatetime', function($filter) {
  */
 RaspIot.filter('hrTime', function($filter) {
     return function(ts, withSeconds) {
-        if( angular.isUndefined(ts) || ts===null )
+        if( angular.isUndefined(ts) || !ts )
         {
             return '-';
         }
@@ -98,7 +98,7 @@ RaspIot.filter('hrTime', function($filter) {
  */
 RaspIot.filter('hrMilliseconds', function($filter) {
     return function(ts) {
-        if( angular.isUndefined(ts) || ts===null )
+        if( angular.isUndefined(ts) || !ts )
         {
             return '-';
         }
