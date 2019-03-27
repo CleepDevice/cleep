@@ -24,16 +24,16 @@ SYSTEM_MODULES = [
 Exceptions
 """
 class CommandError(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class CommandInfo(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class NoResponse(Exception):
     def __init__(self, to, timeout, value):
@@ -58,16 +58,16 @@ class NoCityFound(Exception):
         return u'No city found'
 
 class InvalidParameter(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class MissingParameter(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class InvalidMessage(Exception):
     def __str__(self):
@@ -86,10 +86,10 @@ class Unauthorized(Exception):
         return u'%s' % self.value
 
 class BusError(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class ForcedException(Exception):
     def __init__(self, code=-1):
