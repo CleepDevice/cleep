@@ -143,6 +143,7 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
                 cleep_filesystem (CleepFilesystem): filesystem helper (handle readonly filesystem)
                 crash_report (CrashReport): crash report helper
                 log_file (string): log file path
+                test_mode: test mode flag
             }
     """
     bootstrap = {
@@ -152,13 +153,36 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         u'join_event': Event(),
         u'cleep_filesystem': cleep_filesystem,
         u'crash_report': crash_report,
-        u'log_file': LOG_FILE
+        u'log_file': LOG_FILE,
+        u'test_mode': False
     }
 
     return bootstrap
 
 
+def install_trace_logging_level():
+    """
+    Install custom log level TRACE for library debugging principaly
+    Credits https://gist.github.com/numberoverzero/f803ebf29a0677b6980a5a733a10ca71
+    """
+    level = logging.TRACE = logging.DEBUG - 5
+
+    def log_logger(self, message, *args, **kwargs):
+        if self.isEnabledFor(level):
+            self._log(level, message, args, **kwargs)
+    logging.getLoggerClass().trace = log_logger
+
+    def log_root(msg, *args, **kwargs):
+        logging.log(level, msg, *args, **kwargs)
+    logging.addLevelName(level, "TRACE")
+    logging.trace = log_root
+
+
+
+
+
 if __name__ == u'__main__':
+    install_trace_logging_level()
     logger = None
     inventory = None
     crash_report = None
@@ -170,7 +194,6 @@ if __name__ == u'__main__':
         readonly_enabled = True
         debug_modules = []
         debug_system = False
-        log_level = logging.INFO
         log_stdout = False
         argv = sys.argv[1:]
         opts, args = getopt.getopt(argv, u'hsd:DtN', [u'help', u'stdout', u'debug=', u'debugsystem', u'trace', u'noro'])
@@ -186,7 +209,6 @@ if __name__ == u'__main__':
                 debug_system = True
             elif opt in (u'-t', u'--trace'):
                 trace_enabled = True
-                log_level = logging.DEBUG
             elif opt in (u'-N', u'--noro'):
                 readonly_enabled = False
         
@@ -197,13 +219,17 @@ if __name__ == u'__main__':
         else:
             #log to stdout
             LOG_SETTINGS[u'root'][u'handlers'] = [u'console']
+        if trace_enabled:
+            LOG_SETTINGS[u'root'][u'level'] = logging.TRACE
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger(u'Raspiot')
 
         #create cleep filesystem singleton (will be saved in bootstrap context)
         cleep_filesystem = CleepFilesystem()
+        if cleep_filesystem.is_readonly:
+            logger.info(u'Cleep is running on read-only feature enabled filesystem')
         if not readonly_enabled:
-            logger.info(u'Readonly feature disabled')
+            logger.info(u'Filesystem readonly protection is disabled completely by application!')
             cleep_filesystem.enable_write()
 
         #load and check config file
@@ -262,6 +288,8 @@ if __name__ == u'__main__':
         inventory = raspiot_inventory.Inventory(bootstrap, rpcserver, debug, config[u'general'][u'modules'], {u'trace_enabled': trace_enabled, u'debug_modules':debug_modules})
         inventory.start()
         logger.info(u'Inventory is ready and all modules are loaded')
+
+        logger.trace(u'===============TRACE=================')
 
         #unlock bus and launch webserver (blocking)
         logger.info(u'Raspiot running...')

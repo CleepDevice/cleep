@@ -73,7 +73,8 @@ class RaspIot(BusClient):
 
         else:
             #no crash report specified, set dummy one (no dsn provided)
-            self.logger.warning(u'No Sentry DSN found, crash report disabled')
+            if not bootstrap[u'test_mode']:
+                self.logger.warning(u'No Sentry DSN found, crash report disabled')
             self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
 
     def __del__(self):
@@ -121,7 +122,7 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
         out = None
         try:
-            path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
+            path = os.path.join(self.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.logger.debug(u'Loading conf file %s' % path)
             if os.path.exists(path) and not self.__file_is_empty(path):
                 out = self.cleep_filesystem.read_json(path)
@@ -162,7 +163,7 @@ class RaspIot(BusClient):
         self.__configLock.acquire(True)
 
         try:
-            path = os.path.join(RaspIot.CONFIG_DIR, self.MODULE_CONFIG_FILE)
+            path = os.path.join(self.CONFIG_DIR, self.MODULE_CONFIG_FILE)
             self.cleep_filesystem.write_json(path, config)
             self.__config = config
             out = True
@@ -272,7 +273,7 @@ class RaspIot(BusClient):
     def _set_config_field(self, field, value):
         """
         Convenience function to update config field value
-        Contrarly to _update_config function, _set_config_field check parameter existance in config
+        Unlike _update_config function, _set_config_field check parameter existance in config
 
         Args:
             field (string): field name
@@ -521,6 +522,12 @@ class RaspIotModule(RaspIot):
         #init raspiot
         RaspIot.__init__(self, bootstrap, debug_enabled)
 
+        #add devices section if missing
+        if not self._has_config_field(u'devices'):
+            self._update_config({
+                u'devices': {}
+            })
+
     def _add_device(self, data):
         """
         Helper function to add device in module configuration file.
@@ -623,7 +630,7 @@ class RaspIotModule(RaspIot):
         """
         #check values
         if not self._has_config_field(u'devices'):
-            self.logger.warning(u'"devices" config file entry doesn\'t exist')
+            self.logger.error(u'"devices" config file entry doesn\'t exist')
             return None
         devices = self._get_config_field(u'devices')
         if len(devices)==0:
