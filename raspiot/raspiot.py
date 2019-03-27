@@ -95,7 +95,7 @@ class RaspIot(BusClient):
         """
         return os.path.isfile(path) and not os.path.getsize(path)>0
 
-    def __has_config_file(self):
+    def _has_config_file(self):
         """
         Check if module has configuration file.
 
@@ -115,7 +115,7 @@ class RaspIot(BusClient):
             dict: configuration file content or None if error occured.
         """
         #check if module have config file
-        if not self.__has_config_file():
+        if not self._has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return None
 
@@ -155,7 +155,7 @@ class RaspIot(BusClient):
         force_reload = False
 
         #check if module have config file
-        if not self.__has_config_file():
+        if not self._has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return False
 
@@ -224,7 +224,7 @@ class RaspIot(BusClient):
             dict: config file content (copy).
         """
         #check if module have config file
-        if not self.__has_config_file():
+        if not self._has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return {}
 
@@ -268,7 +268,7 @@ class RaspIot(BusClient):
         Returns:
             bool: True if field exists
         """
-        return field in self.__config
+        return field in self.__config if self.__config is not None else False
 
     def _set_config_field(self, field, value):
         """
@@ -523,7 +523,7 @@ class RaspIotModule(RaspIot):
         RaspIot.__init__(self, bootstrap, debug_enabled)
 
         #add devices section if missing
-        if not self._has_config_field(u'devices'):
+        if self._has_config_file() and not self._has_config_field(u'devices'):
             self._update_config({
                 u'devices': {}
             })
@@ -657,17 +657,18 @@ class RaspIotModule(RaspIot):
         Returns
             dict: the device data if key-value found, or None otherwise.
         """
+        output = []
+
         #check values
         if not self._has_config_field(u'devices'):
             self.logger.warning(u'"devices" config file entry doesn\'t exist')
-            return None
+            return output
         devices = self._get_config_field(u'devices')
         if len(devices)==0:
             #no device in dict, return no match
-            return None
+            return output
 
         #search
-        output = []
         for uuid in devices:
             if key in devices[uuid] and devices[uuid][key]==value:
                 #device found
