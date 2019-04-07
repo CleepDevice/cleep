@@ -32,6 +32,7 @@ from bottle import auth_basic
 from passlib.hash import sha256_crypt
 import functools
 from .libs.configs.raspiotconf import RaspiotConf
+import re
 
 __all__ = [u'app']
 
@@ -505,6 +506,8 @@ def command():
         else:
             #POST request (need json)
             tmp_params = bottle.request.json
+            if tmp_params is None:
+                raise Exception(u'Invalid payload, json required.')
             if tmp_params.has_key(u'to'):
                 to = tmp_params[u'to']
                 del tmp_params[u'to']
@@ -514,8 +517,10 @@ def command():
             if tmp_params.has_key(u'timeout') and tmp_params[u'timeout'] is not None and type(tmp_params[u'timeout']).__name__ in (u'float', u'int'):
                 timeout = float(tmp_params[u'timeout'])
                 del tmp_params[u'timeout']
-            if len(tmp_params)>0:
+            if tmp_params.has_key(u'params'):
                 params = tmp_params[u'params']
+            else:
+                params = None
 
         #execute command
         resp = send_command(command, to, params, timeout)
@@ -724,4 +729,16 @@ def index():
     """
     return bottle.static_file(u'index.html', HTML_DIR)
 
+
+@app.route(u'/log', method=u'GET')
+def log():
+    """
+    Serve log file
+    """
+    logs = ['<table>']
+    with open(u'/var/log/raspiot.log', 'r') as f:
+        for line in f.readlines():
+            groups = re.findall('^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3})\s+(.*?)\s+(\[.*\])\s+(.*?)\s+:\s+(.*)$', line)
+            logs.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % groups[0])
+    return logs + ['</table>']
 
