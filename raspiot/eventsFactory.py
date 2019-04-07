@@ -193,7 +193,7 @@ class EventsFactory():
 
             return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory, self)
 
-        raise Exception(u'Event %s does not exist' % event_name)
+        raise Exception(u'Event "%s" does not exist' % event_name)
 
     def get_used_events(self):
         """
