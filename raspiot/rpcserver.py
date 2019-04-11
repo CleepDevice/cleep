@@ -730,15 +730,23 @@ def index():
     return bottle.static_file(u'index.html', HTML_DIR)
 
 
-@app.route(u'/log', method=u'GET')
-def log():
+@app.route(u'/logs', method=u'GET')
+def logs():
     """
     Serve log file
     """
-    logs = ['<table>']
+    SCRIPT = """<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script type="text/javascript">
+    function scrollBottom() {
+        setTimeout(function(){
+            window.scrollTo(0, document.body.scrollHeight);
+        }, 500);
+    }
+</script>"""
+    CONTENT = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
+
+    page = ['<html>', '<head>', SCRIPT, '</head>', '<body onload="scrollBottom()">']
     with open(u'/var/log/raspiot.log', 'r') as f:
-        for line in f.readlines():
-            groups = re.findall('^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3})\s+(.*?)\s+(\[.*\])\s+(.*?)\s+:\s+(.*)$', line)
-            logs.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % groups[0])
-    return logs + ['</table>']
+        page.append(CONTENT % ''.join(f.readlines()))
+    return page + ['</body>', '</html>']
 
