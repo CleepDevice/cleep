@@ -80,10 +80,10 @@ class InvalidModule(Exception):
         return u'Invalid module %s (not loaded or unknown)' % self.module
 
 class Unauthorized(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, message):
+        self.message = message
     def __str__(self):
-        return u'%s' % self.value
+        return u'%s' % self.message
 
 class BusError(Exception):
     def __init__(self, message):
