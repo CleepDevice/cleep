@@ -412,7 +412,7 @@ class CleepFilesystem():
             bool: True if operation succeed
         """
         #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
-        json_data = unicode(json.dumps(data, ensure_ascii=False))
+        json_data = unicode(json.dumps(data, indent=4, ensure_ascii=False))
 
         return self.write_data(path, json_data, encoding)
 
