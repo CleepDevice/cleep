@@ -232,3 +232,8 @@ md-toast.info .md-toast-content {
     margin: 0px 0px 0px 0px !important;
 }
 
+.no-md-error .md-errors-spacer {
+    min-height: 0px !important;
+    height: 0px !important;
+}
+
