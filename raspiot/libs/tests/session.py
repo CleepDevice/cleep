@@ -5,6 +5,7 @@ from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.utils import NoResponse
 from raspiot import bus
 from raspiot.events import event
+import raspiot.libs.internals.tools as tools
 from threading import Event
 import os
 import logging
@@ -23,30 +24,14 @@ class Session():
         Args:
             debug_enabled (bool): set it to True to enable debug log messages
         """
+        tools.install_trace_logging_level()
         self.bootstrap = self.__build_bootstrap_objects(debug_enabled)
+        self.__setup_executed = False
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
         self.__module_class = None
         self.__module_instance = None
         self.__debug_enabled = False
-        self.__add_trace_level_to_logging()
-
-    def __add_trace_level_to_logging(self):
-        """ 
-        Add trace level to logging system
-        Credits https://gist.github.com/numberoverzero/f803ebf29a0677b6980a5a733a10ca71
-        """
-        level = logging.TRACE = logging.DEBUG - 5 
-
-        def log_logger(self, message, *args, **kwargs):
-            if self.isEnabledFor(level):
-                self._log(level, message, args, **kwargs)
-        logging.getLoggerClass().trace = log_logger
-
-        def log_root(msg, *args, **kwargs):
-            logging.log(level, msg, *args, **kwargs)
-        logging.addLevelName(level, "TRACE")
-        logging.trace = log_root
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -80,7 +65,15 @@ class Session():
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
+
+        Args:
+            module_class (type): module class type
+            debug_enable (bool): enable debug on module
+
+        Returns:
+            Object: returns module_class instance
         """
+        self.__setup_executed = True
         self.__module_class = module_class
         self.__debug_enabled = debug_enabled
 
@@ -99,7 +92,13 @@ class Session():
     def respawn_module(self):
         """
         Respawn module instance (simulate module start)
+
+        Returns:
+            Object: returns module_class instance or None if setup not executed before
         """
+        if not self.__setup_executed:
+            return None
+
         #stop current running module instance
         self.__module_instance.stop()
         self.__module_instance.join()
@@ -112,6 +111,9 @@ class Session():
         Clean all stuff.
         Can be called during test tear down.
         """
+        if not self.__setup_executed:
+            return
+
         #config
         path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
         if os.path.exists(path):
