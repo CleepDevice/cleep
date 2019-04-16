@@ -84,6 +84,12 @@ class EndlessConsole(Thread):
         """
         self.running = False
 
+    def stop(self):
+        """
+        Kill alias
+        """
+        self.kill()
+
     def kill(self):
         """
         Stop command line execution
@@ -110,17 +116,20 @@ class EndlessConsole(Thread):
         except Empty:
             pass
         except:
-            self.logger.exception('Error getting stdout queue')
+            self.logger.exception(u'Error getting stdout queue')
 
         try:
             stderr = self.__stderr_queue.get_nowait()
         except Empty:
             pass
         except:
-            self.logger.exception('Error getting stderr queue')
+            self.logger.exception(u'Error getting stderr queue')
 
         if stdout is not None or stderr is not None:
-            self.callback(stdout, stderr)
+            try:
+                self.callback(stdout, stderr)
+            except:
+                self.logger.exception(u'Exception occured during EndlessCommand callback:')
             return True
 
         return False
@@ -180,7 +189,11 @@ class EndlessConsole(Thread):
         #stop callback
         if self.callback_end:
             self.logger.debug('Call end callback')
-            self.callback_end(return_code, self.killed)
+            try:
+                self.callback_end(return_code, self.killed)
+            except:
+                self.logger.exception(u'Exception occured during EndlessCommand end callback:')
+            return True
 
 
 class Console():
