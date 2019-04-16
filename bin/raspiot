@@ -167,7 +167,7 @@ if __name__ == u'__main__':
     logger = None
     inventory = None
     crash_report = None
-
+    
     try:
         #handle command line parameters
         join_events = []
@@ -204,6 +204,7 @@ if __name__ == u'__main__':
             LOG_SETTINGS[u'root'][u'level'] = logging.TRACE
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger(u'Raspiot')
+        logger.info('========== Cleep started ==========')
 
         #create cleep filesystem singleton (will be saved in bootstrap context)
         cleep_filesystem = CleepFilesystem()
@@ -239,6 +240,7 @@ if __name__ == u'__main__':
         if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
         cleep_filesystem.set_crash_report(crash_report)
+        tools.install_unhandled_exception_handler(crash_report)
 
         #create message bus (will be part of bootstrap objects)
         logger.debug(u'Initializing message bus')

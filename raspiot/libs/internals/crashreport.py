@@ -60,7 +60,7 @@ class CrashReport():
             ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException'],
             tags = self.extra
         )
-        sys.excepthook = self.__crash_report
+        #sys.excepthook = self.__crash_report
 
     def __unbinded_report_exception(self, *argv, **kwargs):
         """
@@ -108,7 +108,7 @@ class CrashReport():
         #unbind report exception
         self.report_exception = self.__unbinded_report_exception
 
-    def __crash_report(self, type, value, tb):
+    def crash_report(self, exc_type, exc_value, exc_traceback):
         """
         Exception handler that report crashes
         """
@@ -116,7 +116,7 @@ class CrashReport():
         #message += '\n%s %s' % (str(type), value)
         #self.logger.fatal(message)
         if self.__enabled:
-            self.client.captureException((type, value, tb), extra=self.extra)
+            self.client.captureException((exc_type, exc_value, exc_traceback), extra=self.extra)
 
     def manual_report(self, message, extra=None):
         """
