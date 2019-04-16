@@ -67,6 +67,6 @@ case $1 in
     ;;
 
   *)
-    echo "Usage: raspiot_helper.sh <enable|disable|start|stop|restart>"
+    echo "Usage: raspiothelper.sh <enable|disable|start|stop|restart>"
 esac
 
