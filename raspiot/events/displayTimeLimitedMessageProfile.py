@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from rendererProfile import RendererProfile
+
 class DisplayTimeLimitedMessageProfile(RendererProfile):
     """
     Display profile.

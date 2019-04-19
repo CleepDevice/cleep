@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from rendererprofile import RendererProfile
+from rendererProfile import RendererProfile
 
 class SpeechRecognitionHotwordProfile(RendererProfile):
     """
