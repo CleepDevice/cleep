@@ -174,8 +174,13 @@ class EndlessConsole(Thread):
             time.sleep(0.25)
 
         #purge queues
-        while self.__send_stds():
-            pass
+        self.logger.debug('Purging outputs...')
+        count = 0
+        while self.__send_stds() or count<=5:
+            self.logger.debug(' purging...')
+            count += 1
+            time.sleep(0.05)
+        self.logger.debug('Purge completed')
 
         #make sure process (and child processes) is really killed
         try:
