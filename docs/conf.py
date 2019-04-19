@@ -44,8 +44,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'RaspIot'
-copyright = u'2017, Tanguy BONNEAU'
+project = u'Cleep'
+copyright = u'2019 Tanguy BONNEAU'
 author = u'Tanguy BONNEAU'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -62,18 +62,18 @@ release = u'0.0.0'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = u'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', './tests']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -84,10 +84,10 @@ todo_include_todos = False
 #html_theme = 'alabaster'
 #html_theme = 'sphinx_rtd_theme'
 import sphinx_rtd_theme
-
 html_theme = "sphinx_rtd_theme"
-
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -98,13 +98,13 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'RaspIotdoc'
+htmlhelp_basename = 'cleepdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -158,4 +158,6 @@ texinfo_documents = [
 ]
 
 
+def setup(app):
+    app.add_stylesheet('theme_overrides.css')
 
