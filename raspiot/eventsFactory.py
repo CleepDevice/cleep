@@ -156,7 +156,7 @@ class EventsFactory():
         Args:
             event_name (string): full event name (xxx.xxx.xxx)
 
-        Return:
+        Returns:
             Event instance
 
         Raise:
@@ -197,10 +197,11 @@ class EventsFactory():
 
     def get_used_events(self):
         """
-        Return list of used events
+        Return dict of used events
 
-        Return:
-            list: list of used events::
+        Returns:
+            dict: dict of used events::
+
                 {
                     event1: {
                         used (bool),
@@ -209,6 +210,7 @@ class EventsFactory():
                     },
                     ...
                 }
+
         """
         used_events = {}
         for ev in self.events_by_event:
@@ -222,15 +224,17 @@ class EventsFactory():
 
     def get_modules_events(self):
         """
-        Return list of modules events
+        Return dict of modules events
 
-        Return:
-            dict: list of events::
+        Returns:
+            dict: dict of events::
+
                 {
                     module1: [event1, event2,...],
                     module2: [event1],
                     ...
                 }
+
         """
         return self.events_by_module
 
@@ -247,7 +251,7 @@ class EventsFactory():
         """
         Return True if event can be rendered on specified renderer
 
-        Return:
+        Returns:
             bool: True if event can be rendered, False otherwise
         """
         for item in self.events_not_rendered:

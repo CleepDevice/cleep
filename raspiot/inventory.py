@@ -385,8 +385,12 @@ class Inventory(RaspIot):
             module (string): module name
         
         Returns:
-            array: list of devices 
-                [{'uuid':'', 'name':''}, ...]
+            list: list of devices::
+
+                [
+                    {'uuid':'', 'name':''},
+                    ...
+                ]
 
         Raises:
             CommandError: if module doesn't exists
@@ -405,10 +409,11 @@ class Inventory(RaspIot):
 
     def get_devices(self):
         """
-        Return list of modules devices
+        Return dict of modules devices
 
         Returns:
-            dict: dictionnary of devices by module::
+            dict: dict of devices by module::
+
                 {
                     module1: 
                         device uuid: {
@@ -419,6 +424,7 @@ class Inventory(RaspIot):
                     },
                     module2: ...
                 }
+
         """
         #init
         devices = {}
@@ -439,12 +445,14 @@ class Inventory(RaspIot):
         Returns infos of specified module
 
         Returns:
-            list: module infos::
-            {
-                name: str
-                version: str
-                ...
-            }
+            dict: module infos::
+                
+                {
+                    name: str
+                    version: str
+                    ...
+                }
+
         """
         output = None
         if module in self.modules:
@@ -459,10 +467,11 @@ class Inventory(RaspIot):
 
     def get_modules(self):
         """
-        Returns list of modules
+        Returns dict of modules
         
         Returns:
-            list: list of modules::
+            dict: dictof modules::
+
                 {
                     module name: {
                         name: '',
@@ -471,6 +480,7 @@ class Inventory(RaspIot):
                     },
                     ...
                 }
+
         """
         #init
         modules = copy.deepcopy(self.modules)
@@ -530,7 +540,9 @@ class Inventory(RaspIot):
 
         Returns:
             list: list of commands or None if module not found::
+
                 ['command1', 'command2', ...]
+
         """
         if module in self.__modules_instances:
             return self.__modules_instances[module].get_module_commands()
@@ -554,11 +566,13 @@ class Inventory(RaspIot):
         Return dict of installed modules or libraries debug flag
 
         Returns:
-            dict: modules/libraries debug flag::
+            dict: dict of modules/libraries debug flag::
+            
                 {
                     modulename (bool): debug flag
                     ...
                 }
+
         """
         debugs = {}
         for module in self.modules:
@@ -610,13 +624,15 @@ class Inventory(RaspIot):
         """
         Return modules events
 
-        Return:
-            dict: list of modules events::
+        Returns:
+            dict: dict of modules events::
+
                 {
                     module1: [event1, event2, ...],
                     module2: [event1],
                     ...
                 }
+
         """
         return self.events_factory.get_modules_events()
 
@@ -624,7 +640,7 @@ class Inventory(RaspIot):
         """
         Return used events
 
-        Return:
+        Returns:
             list: list of used events
         """
         return self.events_factory.get_used_events()
