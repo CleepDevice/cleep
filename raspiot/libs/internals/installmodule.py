@@ -24,6 +24,7 @@ PATH_INSTALL = u'/opt/raspiot/install'
 FRONTEND_DIR = u'frontend/'
 BACKEND_DIR = u'backend/'
 SCRIPTS_DIR = u'scripts/'
+TESTS_DIR = u'tests/'
 
 
 class LocalModuleException(Exception):
