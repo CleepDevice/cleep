@@ -62,7 +62,7 @@ class EndlessConsole(Thread):
             if not self.running:
                 break
             #self.logger.info('line = %s' % line)
-            queue.put(line.decode('utf-8').strip())
+            queue.put(line.decode('utf-8').rstrip())
         try:
             output.close()
         except:
