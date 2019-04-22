@@ -19,7 +19,7 @@ __all__ = [u'MessageBus', u'BusClient']
 class MessageBus():
 
     STARTUP_TIMEOUT = 30.0
-    DEQUE_MAX_LEN = 50
+    DEQUE_MAX_LEN = 100
 
     """
     Message bus
