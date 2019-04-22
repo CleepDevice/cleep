@@ -439,8 +439,11 @@ def download():
             download = True
             if data[u'filename']:
                 download = data[u'filename']
-            logger.debug(u'Download file root=%s filename=%s download=%s' % (root, filename, download))
-            return bottle.static_file(filename=filename, root=root, download=download)
+            logger.info(u'Download file root=%s filename=%s download=%s' % (root, filename, download))
+            bottle.response.set_header(u'Cache-Control', u'max-age=5')
+            http_resp = bottle.static_file(filename=filename, root=root, download=download)
+            return http_resp
+
         else:
             #error during filepath retrieving
             raise Exception(resp[u'message'])
