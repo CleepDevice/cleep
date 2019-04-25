@@ -10,6 +10,8 @@ class DisplayAddOrReplaceMessageProfile(RendererProfile):
     """
     def __init__(self):
         RendererProfile.__init__(self)
+        #message to display
         self.message = None
+        #message unique id to allow message replacement
         self.uuid = None
 
