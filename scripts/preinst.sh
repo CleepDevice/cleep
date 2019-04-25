@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Check command result
 # $1: command result (usually $?)
