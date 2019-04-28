@@ -6,7 +6,6 @@ from raspiot.libs.internals.readwrite import ReadWrite, ReadWriteContext
 import logging
 import os
 from threading import Timer, Lock
-import gevent.lock as glock
 import io
 import shutil
 import json
