@@ -2,6 +2,7 @@ from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.eventsFactory import EventsFactory
 from raspiot.formattersFactory import FormattersFactory
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
+from raspiot.libs.internals.criticalresources import CriticalResources
 from raspiot.utils import NoResponse
 from raspiot import bus
 from raspiot.events import event
@@ -51,6 +52,8 @@ class Session():
         #enable writings during tests
         cleep_filesystem.enable_write(True, True)
 
+        critical_resources = CriticalResources(debug)
+
         return {
             'message_bus': message_bus,
             'events_factory': events_factory,
@@ -58,7 +61,8 @@ class Session():
             'cleep_filesystem': cleep_filesystem,
             'crash_report': crash_report,
             'join_event': Event(),
-            'test_mode': True
+            'test_mode': True,
+            'critical_resources': critical_resources,
         }
 
     def setup(self, module_class, debug_enabled = False):
