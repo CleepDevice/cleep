@@ -262,7 +262,7 @@ if __name__ == u'__main__':
         critical_resources = CriticalResources(debug)
 
         #build bootstrap objects collection
-        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem, crash_report)
+        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources)
 
         #configure factories
         events_factory.configure(bootstrap)
