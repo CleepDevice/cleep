@@ -12,27 +12,31 @@ import os
 import logging
 import types
 
+logging.basicConfig(format=u'%(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s')
 
 class Session():
     """
     Create session to be able to run tests on a Cleep module
     """
 
-    def __init__(self, debug_enabled=False):
+    def __init__(self, log_level):
         """
         Constructor
 
         Args:
             debug_enabled (bool): set it to True to enable debug log messages
         """
+        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger('TestSession')
+        self.logger.setLevel(log_level)
         tools.install_trace_logging_level()
-        self.bootstrap = self.__build_bootstrap_objects(debug_enabled)
+        self.__debug_enabled = True if log_level==logging.DEBUG else False
+        self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.__setup_executed = False
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
         self.__module_class = None
         self.__module_instance = None
-        self.__debug_enabled = False
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -127,7 +131,7 @@ class Session():
         self.__module_instance.stop()
         self.__module_instance.join()
 
-    def add_command_handler(self, command, handler, disabled=False):
+    def add_command_handler(self, command, handler, disabled=False, no_response=False):
         """
         Add command handler
 
@@ -139,7 +143,8 @@ class Session():
         self.__bus_command_handlers[command] = {
             u'handler': handler,
             u'calls': 0,
-            u'disabled': False
+            u'disabled': disabled,
+            u'no_response': no_response
         }
 
     def enable_command_handler(self, command):
@@ -184,16 +189,19 @@ class Session():
         Mocked message bus push method
         """
         if request and request.command in self.__bus_command_handlers:
-            logging.debug('TEST: push command "%s"' % request.command)
+            self.logger.debug('TEST: push command "%s"' % request.command)
             self.__bus_command_handlers[request.command][u'calls'] += 1
 
             if self.__bus_command_handlers[request.command][u'disabled']:
-                logging.debug('TEST: command "%s" disabled for tests')
+                self.logger.debug('TEST: command "%s" disabled for tests' % request.command)
                 return {
                     'error': True,
                     'data': None,
                     'message': 'TEST: command disabled for tests'
                 }
+            elif self.__bus_command_handlers[request.command][u'no_response']:
+                self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
+                return None
 
             res = self.__bus_command_handlers[request.command][u'handler']()
             return res
@@ -217,7 +225,7 @@ class Session():
         event_handler = self.__event_handlers[event_name]
         #monkey patch new event send() method
         def event_send_mock(self, params=None, device_id=None, to=None, render=True):
-            logging.debug('TEST: send event "%s"' % event_name)
+            self.logger.debug('TEST: send event "%s"' % event_name)
             event_handler[u'sends'] += 1
         instance.send = types.MethodType(event_send_mock, instance)
 
