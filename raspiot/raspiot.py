@@ -11,6 +11,7 @@ import time
 import copy
 import uuid
 from libs.internals.crashreport import CrashReport
+import re
 
 
 __all__ = [u'RaspIot', u'RaspIotRenderer', u'RaspIotModule']
@@ -720,227 +721,118 @@ class RaspIotModule(RaspIot):
 
 
 
-
-
-class RaspIotResource(RaspIotModule):
+class RaspIotResources(RaspIotModule):
     """
-    Base raspiot class for specific resource (for example audio)
-    It implements:
-     - resource acquire/release
-     - resource demand request
+    Base raspiot class to handle critical resources such as audio capture and make sure
+    loaded application using the same resource are not using it at the same time.
     """
 
-    RESOURCE_TIMEOUT = 5.0
+    #module resources: list of resource identifer. The identifier can be for example the 
+    #                  audio card name::
+    #
+    #   [
+    #       identifier (string): {
+    #           resource_name (string): resource name
+    #           permanent (bool): acquire permanently the resource
+    #       },
+    #       ...
+    #   ]
+    #
+    MODULE_RESOURCES = []
 
-    def __init__(self, resources, bootstrap, debug_enabled):
+    def __init__(self, bootstrap, debug_enabled):
         """
-        Constructor.
+        Constructor
 
         Args:
-            resources (dict): dict of handled resources {'resource name': <delay to reacquire>, ...}
-            bootstrap (dict): bootstrap objects.
-            debug_enabled (bool): flag to set debug level to logger.
+            bootstrap (dict): bootstrap objects
+            debug_enabled (bool): flag to set debug level to logger
         """
         #init raspiot
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
         #members
-        if not isinstance(resources, dict):
-            raise InvalidParameter('Parameter resources is invalid: must be a list not a %s' % str(type(resources)))
-        self.delays = resources
-        self.resources = {}
-        for resource in resources.keys():
-            self.resources[resource] = {
-                u'in_use': None,
-                u'waiting': False,
-                u'was_in_use': False
-            }
-        self.__module = self.__class__.__name__.lower()
-        self.resource_released_event = self._get_event('system.resource.released')
-        self.resource_acquired_event = self._get_event('system.resource.acquired')
+        self.__critical_resources = bootstrap[u'critical_resources']
 
-    def acquire_resource(self, resource, extra=None):
+        #register resources
+        self.__register_resources()
+
+    def __register_resources(self):
         """
-        Acquire specified resource
+        Register module resources
+        """
+        for identifier in self.MODULE_RESOURCES:
+            self.__critical_resources.register_resource(
+                self.__class__.__name__,
+                self.MODULE_RESOURCES[identifier]['resource_name'],
+                self._resource_acquired,
+                self._resource_needs_to_be_released,
+                self.MODULE_RESOURCES[identifier][u'permanent'],
+                extra={
+                    identifier: identifier,
+                }
+            )
+
+    def _resource_acquired(self, resource_name):
+        """
+        Function called when resource is acquired. Must be implemented!
 
         Args:
-            resource (string): resource name
-            extra (any): extra parameters
+            resource_name (string): acquired resource name
 
-        Return:
-            bool: True if resource acquired
+        Raises:
+            NotImplementedError: if function is not implemented
         """
-        #check resource
-        if resource not in self.resources.keys():
-            #unsupported resource specified
-            raise Exception(u'Specified resource %s is not supported by this module' % resource)
+        raise NotImplementedError(u'Method "_resource_acquired" must be implemented')
 
-        #supported resource, check if request not already running
-        if self.resources[resource][u'waiting']:
-            #acquisition already requested
-            self.logger.debug(u'Module %s is already acquiring resource %s' % (self.__module, resource))
-            return False
-
-        #no acquisition in progress, check if resource already acquired
-        if self.resources[resource][u'in_use'] and self.resources[resource][u'in_use']==self.__module:
-            #resource already acquired by this module, do nothing
-            self.logger.debug(u'Resource %s already acquired by %s, do nothing' % (resource, self.__module))
-            return False
-
-        elif self.resources[resource][u'in_use'] and self.resources[resource][u'in_use']!=self.__module:
-            #resource is in use, request for the need of it
-            self.logger.debug(u'Send command need_resource for resource %s to resource owner %s' % (resource, self.resources[resource][u'in_use']))
-            resp = self.send_command(u'need_resource', self.resources[resource][u'in_use'], {u'resource':resource})
-            #self.logger.debug('need_resource resp: %s' % resp)
-
-            #check resp
-            if resp[u'error'] or not resp[u'data']:
-                self.logger.warning('Unable to claim resource %s to module %s' % (resource, self.resources[resource][u'in_use']))
-                raise ResourceNotAvailable(resource)
-
-            #resource released, acquire it now
-            if self._acquire_resource(resource, extra):
-                #resource acquired, set resource stuff
-                self.logger.debug(u'Resource %s acquired successfully' % resource)
-                self.resources[resource][u'in_use'] = self.__module
-                self.resources[resource][u'waiting'] = False
-
-                #and send event
-                self.resource_acquired_event.send({u'resource': resource, u'module':self.__module})
-
-            else:
-                #resource not acquired
-                self.logger.warning(u'Resource %s not acquired' % resource)
-                return False
-
-        else:
-            #acquire resource
-            self.logger.debug(u'Resource %s is free, acquire it' % resource)
-            if self._acquire_resource(resource, extra):
-                #resource acquired, set resource stuff
-                self.resources[resource][u'in_use'] = self.__module
-                self.resources[resource][u'waiting'] = False
-
-                #and send event
-                self.resource_acquired_event.send({u'resource': resource, u'module':self.__module})
-
-            else:
-                #resource not acquired
-                self.logger.warning(u'Resource %s not acquired' % resource)
-                return False
-
-        return True
-
-    def _acquire_resource(self, resource, extra=None):
+    def _resource_needs_to_be_released(self, resource_name):
         """
-        Acquire resource
+        Function called when resource is acquired by other module and needs to be released.
+        Must be implemented!
 
         Args:
-            resource (string): resource name
-            extra (any): extra parameters
+            resource_name (string): acquired resource name
 
-        Return:
-            bool: True if resource really acquired
+        Raises:
+            NotImplementedError: if function is not implemented
         """
-        raise NotImplementedError(u'Method release_resource must be implemented')
+        raise NotImplementedError(u'Method "_resource_needs_to_be_released" must be implemented')
 
-    def release_resource(self, resource, extra=None):
+    def _need_resource(self, resource_name):
         """
-        Release resource
+        Need to acquire specified resource. The resource is really acquired after _resource_acquired
+        function execution. A delay could occurs if resource is not available at this time.
+        This function call does not guarantee to have resource access if current acquirer still needs
+        to use it.
 
         Args:
-            resource (string): resource name
-            extra (any): extra parameters
-
-        Return:
-            bool: True if resource released
+            resource_name (string): Existing resource name (see resources core directory content)
         """
-        self.logger.debug('release_resource')
-        #release resource in module
-        if not self._release_resource(resource, extra):
-            #unable to release resource
-            self.logger.Debug(u'Unable to release resource %s' % resource)
-            return False
+        self.__critical_resources.acquire_resource(self.__class__.__name__, resource_name)
 
-        #module explicitely release resource, reset reacquisition flag
-        self.resources[resource][u'was_in_use'] = False
-        self.resources[resource][u'in_use'] = None
-
-        #and send released resource event
-        self.resource_released_event.send({u'resource': resource, u'module':self.__module})
-
-        return True
-
-    def _release_resource(self, resource, extra=None):
+    def _release_resource(self, resource_name):
         """
-        Release resource
+        Release specified resource
 
         Args:
-            resource (string): resource name
-            extra (any): extra parameters
-
-        Return:
-            bool: True if resource released
+            resource_name (string): Existing resource name (see resources core directory content)
         """
-        raise NotImplementedError(u'Method release_resource must be implemented')
+        return self.__critical_resources.release_resource(self.__class__.__name__, resource_name)
 
-    def need_resource(self, resource):
+    def _get_resources(self, pattern=None):
         """
-        Request for the need of a resource (internal use only)
+        Return loaded resources
 
         Args:
-            resource (string): resource name
+            pattern (string): optionnal pattern to use to search resource name
+
+        Returns:
+            list: list of found resources
         """
-        #self.logger.debug('need_resource: self.resources=%s' % self.resources)
-        if self.resources[resource][u'in_use']==self.__module:
-            #release resource owned by this module
-            if not self.release_resource(resource):
-                #unable to release resource
-                self.logger.warning('Unable to release resource %s while another module needs it' % resource)
-                return False
-
-            #flag used to reacquire resource automatically after other module releases it
-            self.resources[resource][u'was_in_use'] = True
-
-            return True
-
-        else:
-            #resource is not in use by this module
-            #self.logger.debug(u'Resource %s is not used by this module' % resource)
-            pass
-
-            return False
-
-    def _event_received(self, event):
-        """
-        Event received (overwrite default behaviour)
-
-        Args:
-            event (dict): event params
-        """
-        if event[u'event']==u'system.resource.acquired' and event[u'params'][u'resource'] in self.resources.keys():
-            #resource is acquired
-            self.resources[event[u'params'][u'resource']][u'in_use'] = event[u'params'][u'module']
-            self.resources[event[u'params'][u'resource']][u'waiting'] = False
-            #self.logger.debug(u'resources: %s' % self.resources)
-
-        elif event[u'event']==u'system.resource.released' and event[u'params'][u'resource'] in self.resources.keys():
-            #resource is released
-            self.resources[event[u'params'][u'resource']][u'in_use'] = None
-
-            if self.resources[event[u'params'][u'resource']][u'was_in_use']:
-                #reacquire resource because it was used before
-                self.logger.debug(u'Module %s will reacquire resource %s in %d seconds' % (self.__module, event[u'params'][u'resource'], self.delays[event[u'params'][u'resource']]))
-                self.resources[event[u'params'][u'resource']][u'was_in_use'] = False
-
-                #reacquire resource after delay
-                tempo = Timer(self.delays[event[u'params'][u'resource']], self.acquire_resource, [event[u'params'][u'resource']])
-                tempo.start()
-
-            #self.logger.debug(u'resources: %s' % self.resources)
-
-        #call parent method
-        RaspIotModule._event_received(self, event)
+        if pattern is None:
+            return self.__critical_resources.get_resources()
+        
+        return [resource for resource in self.__critical_resources.get_resources() if re.search(pattern, resource)]
 
  
 
