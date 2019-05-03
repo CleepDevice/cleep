@@ -5,8 +5,8 @@
 This file shares some constants, exceptions and classes
 """
 
-__all__ = [u'SYSTEM_MODULES', u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter', u'MissingParameter', 
-           u'InvalidMessage', u'Unauthorized', u'BusError', u'MessageResponse', u'MessageRequest']
+__all__ = [u'SYSTEM_MODULES', u'CATEGORIES', u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter',
+           u'MissingParameter', u'InvalidMessage', u'Unauthorized', u'BusError', u'MessageResponse', u'MessageRequest']
 
 """        
 CONSTANTS
@@ -18,6 +18,15 @@ SYSTEM_MODULES = [
     u'cleepbus',
     u'parameters'
 ]
+
+class CATEGORIES():
+    APPLICATION = u'APPLICATION'
+    MOBILE = u'MOBILE'
+    DRIVER = u'DRIVER'
+    HOMEAUTOMATION = u'HOMEAUTOMATION'
+    MEDIA = u'MEDIA'
+    SERVICE = u'SERVICE'
+    ALL = [u'APPLICATION', u'MOBILE', u'DRIVER', u'HOMEAUTOMATION', u'MEDIA', u'SERVICE']
 
 
 """
