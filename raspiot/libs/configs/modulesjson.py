@@ -13,7 +13,7 @@ class ModulesJson():
     """
 
     CONF = u'/etc/raspiot/modules.json'
-    REMOTE_CONF = u'https://raw.githubusercontent.com/tangb/cleep-os/master/modules.json'
+    REMOTE_CONF = u'https://raw.githubusercontent.com/tangb/cleep/master/modules.json'
 
     def __init__(self, cleep_filesystem):
         """
