@@ -1,3 +1,21 @@
+raspiot (0.0.19) unreleased; urgency=low
+
+  * Update modules.json url
+  * Remove obsolete files (exported in other modules)
+  * New RaspIotResources base class (based on new CriticalResource lib)
+  * Fix dependencies install while installing module with deps
+  * Update Console lib
+  * Add trace logging level
+  * Improve CleepFilesystem lib
+  * Add route to logs file content
+  * Add libraries for unit tests
+  * Rewrite rendering process
+  * Update frontend icon pack and angularjs library
+  * Fix some issues
+  * Add RaspIotRpcWrapper class to handle POST on /
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Mon, 25 feb 2019 19:00:00 +0000
+
 raspiot (0.0.18) unreleased; urgency=low
 
   * Improve module install/uninstall/update process
