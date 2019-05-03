@@ -560,6 +560,8 @@ class Install():
         #check params
         if module is None or len(module)==0:
             raise MissingParameter(u'Parameter "module" is missing')
+        if not isinstance(module_infos, dict):
+            raise InvalidParameter(u'Parameter "module_infos" must be a dict')
 
         #launch uninstallation
         uninstall = UninstallModule(module, module_infos, False, force, self.__callback_uninstall_module, self.cleep_filesystem, self.crash_report)
