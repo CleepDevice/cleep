@@ -775,7 +775,10 @@ class RaspIotResources(RaspIotModule):
 
     def _resource_acquired(self, resource_name):
         """
-        Function called when resource is acquired. Must be implemented!
+        Function called when resource is acquired.
+        
+        Note:
+            Must be implemented!
 
         Args:
             resource_name (string): acquired resource name
@@ -788,7 +791,9 @@ class RaspIotResources(RaspIotModule):
     def _resource_needs_to_be_released(self, resource_name):
         """
         Function called when resource is acquired by other module and needs to be released.
-        Must be implemented!
+
+        Note:
+            Must be implemented!
 
         Args:
             resource_name (string): acquired resource name
