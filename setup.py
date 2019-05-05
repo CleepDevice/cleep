@@ -20,7 +20,7 @@ setup(
     long_description = open('README.md').read(),
     install_requires = open('requirements.txt').readlines(),
     include_package_data = True,
-    url = 'http://www.github.com/tangb/cleep-os'
+    url = 'http://www.github.com/tangb/cleep'
 )
 
 #test_suite = 'nose.collector',

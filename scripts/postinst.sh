@@ -8,7 +8,7 @@
 CLEEPMODS=( audio cleepbus network parameters system )
 LOG_FILE=/tmp/cleepiso.log
 GITHUB_OWNER=tangb
-GITHUB_REPO=cleep-os
+GITHUB_REPO=cleep
 MODULES_JSON=https://github.com/$GITHUB_OWNER/$GITHUB_REPO/raw/master/modules.json
 
 # Check command result

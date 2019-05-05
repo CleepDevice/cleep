@@ -1,10 +1,11 @@
 #!/bin/bash
 
 #script that builds raspiot deb package and publish it to github repository
+#DEPRECATED use cleep-cli build command instead
 
 CUR_DIR=`pwd`
 GITHUB_OWNER=tangb
-GITHUB_REPO=cleep-os
+GITHUB_REPO=cleep
 GITHUB_ACCESS_TOKEN=`printenv GITHUB_ACCESS_TOKEN`
 SENTRY_DSN=`printenv SENTRY_DSN`
 #NO_PUBLISH=1

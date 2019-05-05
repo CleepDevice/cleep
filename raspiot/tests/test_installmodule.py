@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(filename)s:%(line
 class InstallModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",
@@ -184,7 +184,7 @@ class InstallModuleTests(unittest.TestCase):
 class UninstallModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",
@@ -417,7 +417,7 @@ class UninstallModuleTests(unittest.TestCase):
 class UpdateModuleTests(unittest.TestCase):
 
     def setUp(self):
-        self.url_archive = 'https://github.com/tangb/cleep-os/raw/master/cleepos/tests/resources/installmodule/%s.zip'
+        self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.archive_infos = {
             "description": "Test",
             "author": "Cleep",

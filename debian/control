@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Tanguy Bonneau <tanguy.bonneau@gmail.com>
 Build-Depends: debhelper (>=9), dh-python, python
 Standards-Version: 3.9.4
-Homepage: https://github.com/tangb/cleep-os
+Homepage: https://github.com/tangb/cleep
 
 Package: raspiot
 Architecture: armhf
