@@ -18,6 +18,7 @@ import importlib
 from raspiot import __version__ as VERSION
 from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.libs.internals.criticalresources import CriticalResources
+from raspiot.libs.internals.drivers import Drivers
 import raspiot.libs.internals.tools as tools
 
 from netifaces import version as netifaces_version
@@ -124,7 +125,7 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, u'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources):
+def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources, drivers):
     """
     Return bootstrap objects.
 
@@ -135,8 +136,9 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         cleep_filesystem (CleepFilesystem): cleep filesystem singleton instance
         crash_report (CrashReport): crash report singleton instance
         critical_resources (CriticalResources): critical resources handler singleton instance
+        drivers (Drivers): drivers handler singleton instance
 
-    Return:
+    Returns:
         dict: dict of bootstrap objects::
             {
                 message_bus (MessageBus): internal message bus
@@ -148,6 +150,7 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
                 log_file (string): log file path
                 test_mode: test mode flag
                 critical_resources (CriticalResources): critical resources handler
+                drivers (Drivers): drivers handler
             }
     """
     bootstrap = {
@@ -160,6 +163,7 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         u'log_file': LOG_FILE,
         u'test_mode': False,
         u'critical_resources': critical_resources,
+        u'drivers': drivers,
     }
 
     return bootstrap
@@ -260,9 +264,10 @@ if __name__ == u'__main__':
         events_factory = EventsFactory(debug)
         formatters_factory = FormattersFactory(debug)
         critical_resources = CriticalResources(debug)
+        drivers = Drivers(debug)
 
         #build bootstrap objects collection
-        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources)
+        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources, drivers)
 
         #configure factories
         events_factory.configure(bootstrap)

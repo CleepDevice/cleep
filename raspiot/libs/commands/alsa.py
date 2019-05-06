@@ -3,6 +3,9 @@
 
 from raspiot.libs.internals.console import AdvancedConsole
 from raspiot.libs.configs.asoundrc import Asoundrc
+from raspiot.libs.drivers.driver import Driver
+from raspiot.libs.drivers.audiodriver import AudioDriver
+from raspiot.utils import CommandError, MissingParameter, InvalidParameter
 import logging
 import re
 import os
@@ -13,9 +16,9 @@ class Alsa(AdvancedConsole):
     Alsa commands helper (aplay, arecord, amixer).
     """
     
-    OUTPUT_TYPE_JACK = 1
-    OUTPUT_TYPE_HDMI = 2
-    OUTPUT_TYPE_EXTERNAL = 3 #external soundcard like hifiberry, respeaker...
+    #OUTPUT_TYPE_JACK = 1
+    #OUTPUT_TYPE_HDMI = 2
+    #OUTPUT_TYPE_EXTERNAL = 3 #external soundcard like hifiberry, respeaker...
 
     FORMAT_S16LE = u'S16_LE'
     FORMAT_S24LE = u'S24_LE'
@@ -40,40 +43,41 @@ class Alsa(AdvancedConsole):
     # - playback_volume_data (tuple): key and pattern to get playback volume value
     # - capture_volume (string): alsa control for the capture volume 
     # - capture_volume_data (tuple): key and pattern to get capture volume value
-    DEVICES_PROFILES = {
-        u'bcm2835 ALSA': {
-            u'name': u'bcm2835 ALSA',
-            u'type': 1,
-            u'playback_volume': u'PCM',
-            u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
-            u'capture_volume': None,
-            u'capture_volume_data': None
-        },
-        u'bcm2835 IEC958/HDMI': {
-            u'name': u'bcm2835 IEC958/HDMI',
-            u'type': 2,
-            u'playback_volume': u'PCM',
-            u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
-            u'capture_volume': None,
-            u'capture_volume_data': None
-        },
-        u'seeed-2mic-voicecard': {
-            u'name': u'seeed-2mic-voicecard',
-            u'type': 3,
-            u'playback_volume': u'Playback',
-            u'playback_volume_data': (u'Front Left', r'\[(\d*)%\]'),
-            u'capture_volume': u'Capture',
-            u'capture_volume_data': (u'Front Left', r'\[(\d*)%\]')
-        }
-    }
+    #DEVICES_PROFILES = {
+    #    u'bcm2835 ALSA': {
+    #        u'name': u'bcm2835 ALSA',
+    #        u'type': 1,
+    #        u'playback_volume': u'PCM',
+    #        u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
+    #        u'capture_volume': None,
+    #        u'capture_volume_data': None
+    #    },
+    #    u'bcm2835 IEC958/HDMI': {
+    #        u'name': u'bcm2835 IEC958/HDMI',
+    #        u'type': 2,
+    #        u'playback_volume': u'PCM',
+    #        u'playback_volume_data': (u'Mono', r'\[(\d*)%\]'),
+    #        u'capture_volume': None,
+    #        u'capture_volume_data': None
+    #    },
+    #    u'seeed-2mic-voicecard': {
+    #        u'name': u'seeed-2mic-voicecard',
+    #        u'type': 3,
+    #        u'playback_volume': u'Playback',
+    #        u'playback_volume_data': (u'Front Left', r'\[(\d*)%\]'),
+    #        u'capture_volume': u'Capture',
+    #        u'capture_volume_data': (u'Front Left', r'\[(\d*)%\]')
+    #    }
+    #}
 
     SIMPLE_MIXER_CONTROL = u'Simple mixer control'
 
-    def __init__(self, cleep_filesystem):
+    def __init__(self, drivers, cleep_filesystem):
         """
         Constructor
 
         Args:
+            drivers (Drivers): Drivers instance (holds driver definition)
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
         AdvancedConsole.__init__(self)
@@ -82,6 +86,7 @@ class Alsa(AdvancedConsole):
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.asoundrc = Asoundrc(cleep_filesystem)
+        self.drivers = drivers.get_drivers(Driver.DRIVER_AUDIO)
 
     def __command(self, command):
         """
@@ -157,15 +162,15 @@ class Alsa(AdvancedConsole):
 
         #append card type and supported flag
         for name in entries.keys():
-            if name in self.DEVICES_PROFILES.keys():
+            if name in self.drivers:
                 #supported device
                 entries[name][u'supported'] = True
-                entries[name][u'type'] = self.DEVICES_PROFILES[name][u'type']
+                entries[name][u'output_type'] = self.drivers[name].type
     
             else:
                 #unsupported devices
                 entries[name][u'supported'] = False
-                entries[name][u'type'] = self.OUTPUT_TYPE_EXTERNAL
+                entries[name][u'output_type'] = AudioDriver.OUTPUT_TYPE_UNKNOWN
                 
         return entries
 
@@ -215,12 +220,12 @@ class Alsa(AdvancedConsole):
 
         return entries
 
-    def __get_current_audio_profile(self):
+    def __get_current_audio_driver(self):
         """
-        Return profile of current audio device
+        Return driver of current audio device
 
         Return:
-            dict: current profile (see DEVICES_PROFILES) or None if device is not supported
+            dict: current profile (see AudioDriver class) or None if device is not supported
         """
         #TODO handle cache
         config = self.asoundrc.get_raw_configuration()
@@ -241,12 +246,12 @@ class Alsa(AdvancedConsole):
         #check if device is supported
         card_name = self.__get_card_name(config[u'cardid'])
         self.logger.debug('card_name: %s' % card_name)
-        if card_name not in self.DEVICES_PROFILES.keys():
+        if card_name not in self.drivers:
             self.logger.error(u'Unable to get volumes: unsupported sound device (card name=%s)' % card_name)
             return None
 
         #get profile
-        profile = self.DEVICES_PROFILES[card_name]
+        profile = self.drivers[card_name]
         self.logger.debug('Found profile: %s' % profile)
 
         return profile
@@ -269,13 +274,13 @@ class Alsa(AdvancedConsole):
        
         return None
 
-    def __get_or_set_volume(self, profile, get_key, volume=None):
+    def __get_or_set_volume(self, driver, get_key, volume=None):
         """
         Get infos from amixer command, parse results and get volume value
         With volume specified set command is executed, otherwise it is get command
 
         Args:
-            profile (dict): current device profile
+            driver (Driver): current device driver
             get_key (string): GET_CAPTURE or GET_PLAYBACK
             volume (int): volume percentage or None
 
@@ -283,12 +288,13 @@ class Alsa(AdvancedConsole):
             int: volume value or None if error occured
         """
         #check parameters
-        if len(profile)==0:
-            #invalid profile specified, can't perform action
+        if driver is None:
+            #invalid driver specified, can't perform action
+            self.logger.error(u'Invalid driver specified (driver: %s)' % driver)
             return 0
 
         #get control
-        control = profile[get_key]
+        control = getattr(driver, get_key)
 
         #if no control, nothing else to do
         if control is None:
@@ -305,7 +311,7 @@ class Alsa(AdvancedConsole):
             return None
 
         #parse result to get volume value
-        (key, pattern) = profile[u'%s_data' % get_key]
+        (key, pattern) = getattr(driver, u'%s_data' % get_key)
         if key is None:
             self.logger.debug(u'No pattern specified for %s' % (get_key))
             return None
@@ -338,14 +344,14 @@ class Alsa(AdvancedConsole):
                     capture (int or None)
                 }
         """
-        #get current profile
-        profile = self.__get_current_audio_profile()
-        if profile is None:
+        #get current driver
+        driver = self.__get_current_audio_driver()
+        if driver is None:
             raise CommandError(u'Configured sound device is not supported')
 
         #get volume values
-        playback_volume = self.__get_or_set_volume(profile, self.__KEY_PLAYBACK)
-        capture_volume = self.__get_or_set_volume(profile, self.__KEY_CAPTURE)
+        playback_volume = self.__get_or_set_volume(driver, self.__KEY_PLAYBACK)
+        capture_volume = self.__get_or_set_volume(driver, self.__KEY_CAPTURE)
         self.logger.debug('Volumes: playback=%s capture=%s' % (playback_volume, capture_volume))
 
         return {
@@ -374,18 +380,18 @@ class Alsa(AdvancedConsole):
         if capture is not None and (capture<0 or capture>100):
             raise InvalidParameter(u'Cpature volume value must be 0..100')
 
-        #get current profile
-        profile = self.__get_current_audio_profile()
-        if profile is None:
+        #get current driver
+        driver = self.__get_current_audio_driver()
+        if driver is None:
             raise CommandError(u'Configured sound device is not supported')
 
         #set volume values
         playback_volume = None
         capture_volume = None
         if playback is not None:
-            playback_volume = self.__get_or_set_volume(profile, self.__KEY_PLAYBACK, playback)
+            playback_volume = self.__get_or_set_volume(driver, self.__KEY_PLAYBACK, playback)
         if capture is not None:
-            capture_volume = self.__get_or_set_volume(profile, self.__KEY_CAPTURE, capture)
+            capture_volume = self.__get_or_set_volume(driver, self.__KEY_CAPTURE, capture)
 
         return {
             u'playback': playback_volume,

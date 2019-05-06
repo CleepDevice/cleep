@@ -11,6 +11,7 @@ import time
 import copy
 import uuid
 from libs.internals.crashreport import CrashReport
+from libs.drivers.driver import Driver
 import re
 
 
@@ -25,6 +26,7 @@ class RaspIot(BusClient):
      - message bus access
      - logger with log level configured
      - custom crash report
+     - driver registration
     """
     CONFIG_DIR = u'/etc/raspiot/'
     MODULE_DEPS = []
@@ -49,6 +51,7 @@ class RaspIot(BusClient):
         #members
         self.events_factory = bootstrap[u'events_factory']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
+        self.drivers = bootstrap[u'drivers']
 
         #load and check configuration
         self.__configLock = Lock()
@@ -312,6 +315,31 @@ class RaspIot(BusClient):
         if fixed:
             self.logger.debug(u'Config file fixed')
             self.__save_config(config)
+
+    def _register_driver(self, driver):
+        """
+        Register driver
+
+        Raises:
+            InvalidParameter: if driver has invalid base class
+        """
+        #check driver
+        if not isinstance(driver, Driver):
+            raise InvalidParameter(u'Driver must be instance of base Driver class')
+
+        self.drivers.register(driver)
+
+    def _get_drivers(self, driver_type):
+        """
+        Returns drivers for specified type
+
+        Args:
+            driver_type (string): see Driver.DRIVER_XXX for values
+
+        Returns:
+            dict: drivers
+        """
+        return self.drivers.get_drivers(driver_type)
 
     def _get_unique_id(self):
         """
@@ -727,18 +755,25 @@ class RaspIotResources(RaspIotModule):
     loaded application using the same resource are not using it at the same time.
     """
 
-    #module resources: list of resource identifer. The identifier can be for example the 
-    #                  audio card name::
+    #module resources: list of resource identifer. The identifier is important and must be unique
+    #                  The identifier can be for example the physical audio device name::
     #
-    #   [
-    #       identifier (string): {
-    #           resource_name (string): resource name
-    #           permanent (bool): acquire permanently the resource
-    #       },
-    #       ...
-    #   ]
+    #   {
+    #       label (string): understandable resource label
+    #           {
+    #               resource_name (string): xxx.xxx (ie "audio.playback" for audio)
+    #                   [
+    #                       {
+    #                           hardware_id (string): hardware identifier if available (ie "bcm2835 ALSA" for audio)
+    #                           permanent (bool): acquire permanently the resource (only one app can get focus on the resource)
+    #                       },
+    #                       ...
+    #                   ]
+    #           },
+    #           ...
+    #   }
     #
-    MODULE_RESOURCES = []
+    MODULE_RESOURCES = {}
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -761,17 +796,26 @@ class RaspIotResources(RaspIotModule):
         """
         Register module resources
         """
-        for identifier in self.MODULE_RESOURCES:
-            self.__critical_resources.register_resource(
-                self.__class__.__name__,
-                self.MODULE_RESOURCES[identifier]['resource_name'],
-                self._resource_acquired,
-                self._resource_needs_to_be_released,
-                self.MODULE_RESOURCES[identifier][u'permanent'],
-                extra={
-                    identifier: identifier,
-                }
-            )
+        for label in self.MODULE_RESOURCES:
+            for resource_name, resource in self.MODULE_RESOURCES[label].items():
+
+                #check resource content
+                if u'hardware_id' not in resource:
+                    raise InvalidParameter(u'Field "hardware_id" is missing in MODULE_RESOURCES')
+                elif u'permanent' not in resource:
+                    raise InvalidParameter(u'Field "permanent" is missing in MODULE_RESOURCES')
+
+                self.__critical_resources.register_resource(
+                    self.__class__.__name__,
+                    resource_name,
+                    resource[u'hardware_id'],
+                    self._resource_acquired,
+                    self._resource_needs_to_be_released,
+                    resource[u'permanent'],
+                    extra={
+                        u'label': label,
+                    }
+                )
 
     def _resource_acquired(self, resource_name):
         """
@@ -837,29 +881,34 @@ class RaspIotResources(RaspIotModule):
         if pattern is None:
             return self.__critical_resources.get_resources()
         
-        return [resource for resource in self.__critical_resources.get_resources() if re.search(pattern, resource)]
+        return {resource_name:extra for resource_name, extra in self.__critical_resources.get_resources().items() if re.search(pattern, resource_name)}
 
  
 
 
 
-class RaspIotRenderer(RaspIotModule):
+class RaspIotRenderer():
     """
     Base raspiot class for renderer.
-    It implements:
-     - automatic renderer registration
-     - post function to post data to renderer
+    Don't forget to also inherit from other base class (RaspIotModule, RaspIotResources)
+
+    Note:
+        It implements:
+            - automatic renderer registration
+            - render function to render received profile
     """
-    def __init__(self, bootstrap, debug_enabled):
+    def __init__(self, debug_enabled):
         """
         Constructor.
 
         Args:
-            bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init raspiot
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+        #init logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
+        self.debug_enabled = debug_enabled
 
         #members
         self.profiles_types = []
@@ -868,6 +917,9 @@ class RaspIotRenderer(RaspIotModule):
         """
         Register internally available profiles and return it.
         This method is called by inventory at startup
+
+        Raises:
+            Exception: if RENDERER_PROFILES memebr is not defined
         """
         if getattr(self, u'RENDERER_PROFILES', None) is None:
             raise Exception(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
@@ -898,44 +950,20 @@ class RaspIotRenderer(RaspIotModule):
             raise InvalidParameter(u'Profile "%s" is not supported in this renderer' % profile.__class__.__name__)
 
         #call implementation
-        return self._render(profile)
+        try:
+            self._render(profile)
+            return True
+        except:
+            self.logger.exception('Rendering profile "%s" failed:' % profile.__class__.__name__ if profile else None)
+            return False
 
     def _render(self, profile):
         """
         Fake render method
+
+        Raises:
+            NotImplementedError: if not implemented
         """
-        pass
-
-
-
-
-
-class RaspIotDriver(RaspIotModule):
-    """
-    Base raspiot class to create a Cleep driver.
-    It implements:
-    """
-    def __init__(self, bootstrap, debug_enabled):
-        """
-        Constructor.
-
-        Args:
-            bootstrap (dict): bootstrap objects.
-            debug_enabled (bool): flag to set debug level to logger.
-        """
-        #init raspiot
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
-
-    def get_driver_config(self):
-        """
-        Register internally available resources and return it
-        This method is called by inventory at startup
-        """
-        if getattr(self, u'DRIVER_RESOURCES', None) is None:
-            raise Exception(u'DRIVER_RESOURCES is not defined in %s' % self.__class__.__name__)
-
-        return {
-            u'resources': self.DRIVER_RESOURCES
-        }
-
+        raise NotImplementedError(u'_render function must be implemented')
+        
 
