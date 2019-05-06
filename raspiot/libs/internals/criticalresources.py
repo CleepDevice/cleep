@@ -10,7 +10,7 @@ import locale
 import importlib
 from distutils.dir_util import copy_tree
 from queue import Queue
-from threading import Lock
+from threading import Lock, Timer
 
 
 class CriticalResources():
@@ -36,8 +36,8 @@ class CriticalResources():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        if debug_enabled:
-            self.logger.setLevel(logging.DEBUG)
+        #if debug_enabled:
+        self.logger.setLevel(logging.DEBUG)
 
         #members
         self.__mutex = Lock()
@@ -134,7 +134,9 @@ class CriticalResources():
                 }
     
         """
-        return {resource_name:self.extras[resource_name] for resource_name in self.resources.keys()}
+        self.logger.debug('self.extras=%s' % self.extras)
+        self.logger.debug('self.resources=%s' % self.resources)
+        return {resource_name:self.extras[resource_name] if resource_name in self.extras else {} for resource_name in self.resources.keys()}
 
     def __is_resource_referenced(self, resource_name):
         """
@@ -148,13 +150,14 @@ class CriticalResources():
         """
         return True if resource_name in self.resources else False
 
-    def register_resource(self, module_name, resource_name, acquired_callback, need_release_callback, permanent=False, extra=None):
+    def register_resource(self, module_name, resource_name, hardware_id, acquired_callback, need_release_callback, permanent=False, extra=None):
         """
         Register single resource usage
 
         Args:
             module_name (string): module name which registers the resource
             resource_name (string): resource name (format: <resource> or <resource>.<subresource>)
+            hardware_id (string): unique hardware identifier
             acquired_callback (function): function called when resource is acquired
             need_release_callback (function): function called when resource needs to be release
             permanent (bool): True if module declares the need to use the resource permanently.
@@ -169,6 +172,7 @@ class CriticalResources():
             raise Exception(u'Resource "%s" does not exists' % resource_name)
         if not callable(acquired_callback) or not callable(need_release_callback):
             raise Exception(u'Callbacks must be functions')
+        self.logger.debug('Registering "%s:%s" for module "%s" (permanent=%s, extra:%s)' % (resource_name, hardware_id, module_name, permanent, extra))
 
         #check if resource already registered and if it's not already have a permanent module
         if self.resources[resource_name][u'permanent'] is not None and permanent is True:
@@ -185,7 +189,7 @@ class CriticalResources():
         #save extra metadata
         if resource_name not in self.extras:
             self.extras[resource_name] = {}
-        self.extras[resource_name][module_name] = extra
+        self.extras[resource_name][hardware_id] = extra
         
         #configure resources if necessary
         if permanent:
@@ -227,7 +231,8 @@ class CriticalResources():
             #resource is not used at this time, acquire it right now
             self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
             self.resources[resource_name][u'using'] = module_name
-            self.callbacks[module_name][resource_name][u'acquired_callback'](resource_name)
+            timer = Timer(0.0, self.callbacks[module_name][resource_name][u'acquired_callback'], [resource_name])
+            timer.start()
         else:
             #resource is not free, add module to waiting queue
             if module_name not in self.resources[resource_name][u'waiting']:
@@ -235,7 +240,8 @@ class CriticalResources():
                 self.resources[resource_name][u'waiting'].insert(0, module_name)
 
             #and inform module that is using resource it must releases it
-            self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'](resource_name)
+            timer = Timer(0.0, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], [resource_name])
+            timer.start()
 
         self.__mutex.release()
 
@@ -278,7 +284,8 @@ class CriticalResources():
         #configure new resource acquirer
         self.resources[resource_name][u'using'] = next_module
         if next_module:
-            self.callbacks[next_module][resource_name][u'acquired_callback'](resource_name)
+            timer = Timer(0.0, self.callbacks[next_module][resource_name][u'acquired_callback'], [resource_name])
+            timer.start()
 
         self.__mutex.release()
 
