@@ -11,15 +11,14 @@
         </div>
         <div class="toolbar-spacer"></div>
         <div>
-            <h1 class="md-title">{{moduleCtl.module | firstUpper}}</h1>
+            <h1 class="md-title">
+                {{moduleCtl.module | firstUpper}}
+                <small ng-if="moduleCtl.version">(v{{moduleCtl.version}})</small>
+            </h1>
         </div>
         <div flex></div>
         <div>
-            <md-button ng-disabled="true" ng-if="moduleCtl.version">
-                <md-icon md-svg-icon="arrow-down-bold-box-outline"></md-icon>
-                v{{moduleCtl.version}}
-            </md-button>
-            <md-button class="md-raised" ng-if="moduleCtl.moduleUrls.site" ng-href="{{moduleCtl.moduleUrls.site}}" target="_blank">
+            <md-button class="md-raised md-primary" ng-if="moduleCtl.moduleUrls.site" ng-href="{{moduleCtl.moduleUrls.site}}" target="_blank">
                 <md-icon md-svg-icon="web"></md-icon>
                 Website
             </md-button>
