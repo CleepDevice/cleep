@@ -34,7 +34,7 @@ var confirmService = function($mdDialog) {
 
         var confirm_ = $mdDialog.confirm()
             .title(title)
-            .textContent(message)
+            .htmlContent(message)
             .ariaLabel('Confirm dialog')
             .ok(okLabel)
             .cancel(cancelLabel);
