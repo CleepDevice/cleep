@@ -21,7 +21,7 @@ class Task:
         Create new task
         
         Args:
-            interval (float): interval to repeat task (in seconds)
+            interval (float): interval to repeat task (in seconds). If None task is executed once
             task (callback): function to call periodically
             logger (logger): logger instance used to log message in task
         """
