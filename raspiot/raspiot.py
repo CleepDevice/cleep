@@ -528,7 +528,7 @@ class RaspIotRpcWrapper(RaspIot):
         Returns:
             returns any data
         """
-        raise NotImplementedError('wrap_request function must be implemented')
+        raise NotImplementedError('wrap_request function must be implemented in "%s"' % self.__class__.__name__)
 
 
 
@@ -830,7 +830,7 @@ class RaspIotResources(RaspIotModule):
         Raises:
             NotImplementedError: if function is not implemented
         """
-        raise NotImplementedError(u'Method "_resource_acquired" must be implemented')
+        raise NotImplementedError(u'Method "_resource_acquired" must be implemented in "%s"' % self.__class__.__name__)
 
     def _resource_needs_to_be_released(self, resource_name):
         """
@@ -845,7 +845,7 @@ class RaspIotResources(RaspIotModule):
         Raises:
             NotImplementedError: if function is not implemented
         """
-        raise NotImplementedError(u'Method "_resource_needs_to_be_released" must be implemented')
+        raise NotImplementedError(u'Method "_resource_needs_to_be_released" must be implemented in "%s"' % self.__class__.__name__)
 
     def _need_resource(self, resource_name):
         """
@@ -887,7 +887,7 @@ class RaspIotResources(RaspIotModule):
 
 
 
-class RaspIotRenderer():
+class RaspIotRenderer(RaspIotModule):
     """
     Base raspiot class for renderer.
     Don't forget to also inherit from other base class (RaspIotModule, RaspIotResources)
@@ -897,13 +897,16 @@ class RaspIotRenderer():
             - automatic renderer registration
             - render function to render received profile
     """
-    def __init__(self, debug_enabled):
+    def __init__(self, bootstrap, debug_enabled):
         """
-        Constructor.
+        Constructor
 
         Args:
+            bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger.
         """
+        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+
         #init logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
@@ -964,6 +967,6 @@ class RaspIotRenderer():
         Raises:
             NotImplementedError: if not implemented
         """
-        raise NotImplementedError(u'_render function must be implemented')
+        raise NotImplementedError(u'_render function must be implemented in "%s"' % self.__class__.__name__)
         
 
