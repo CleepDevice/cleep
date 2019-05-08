@@ -10,7 +10,8 @@ import locale
 import importlib
 from distutils.dir_util import copy_tree
 from queue import Queue
-from threading import Lock, Timer
+from threading import Lock
+from .task import Task
 
 
 class CriticalResources():
@@ -172,7 +173,7 @@ class CriticalResources():
             raise Exception(u'Resource "%s" does not exists' % resource_name)
         if not callable(acquired_callback) or not callable(need_release_callback):
             raise Exception(u'Callbacks must be functions')
-        self.logger.debug('Registering "%s:%s" for module "%s" (permanent=%s, extra:%s)' % (resource_name, hardware_id, module_name, permanent, extra))
+        self.logger.debug('Registering resource "%s[%s]" for module "%s" (permanent=%s, extra:%s)' % (resource_name, hardware_id, module_name, permanent, extra))
 
         #check if resource already registered and if it's not already have a permanent module
         if self.resources[resource_name][u'permanent'] is not None and permanent is True:
@@ -191,9 +192,10 @@ class CriticalResources():
             self.extras[resource_name] = {}
         self.extras[resource_name][hardware_id] = extra
         
-        #configure resources if necessary
+        #acquire resource right now if permanent
         if permanent:
             self.resources[resource_name][u'permanent'] = module_name
+            self.acquire_resource(module_name, resource_name)
 
     def is_resource_permanently_acquired(self, resource_name):
         """
@@ -231,8 +233,8 @@ class CriticalResources():
             #resource is not used at this time, acquire it right now
             self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
             self.resources[resource_name][u'using'] = module_name
-            timer = Timer(0.0, self.callbacks[module_name][resource_name][u'acquired_callback'], [resource_name])
-            timer.start()
+            task = Task(None, self.callbacks[module_name][resource_name][u'acquired_callback'], self.logger, [resource_name])
+            task.start()
         else:
             #resource is not free, add module to waiting queue
             if module_name not in self.resources[resource_name][u'waiting']:
@@ -240,8 +242,9 @@ class CriticalResources():
                 self.resources[resource_name][u'waiting'].insert(0, module_name)
 
             #and inform module that is using resource it must releases it
-            timer = Timer(0.0, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], [resource_name])
-            timer.start()
+            self.logger.debug(u'Inform module "%s" it resource is needed' % self.resources[resource_name][u'using'])
+            task = Task(None, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], self.logger, [resource_name])
+            task.start()
 
         self.__mutex.release()
 
@@ -284,8 +287,8 @@ class CriticalResources():
         #configure new resource acquirer
         self.resources[resource_name][u'using'] = next_module
         if next_module:
-            timer = Timer(0.0, self.callbacks[next_module][resource_name][u'acquired_callback'], [resource_name])
-            timer.start()
+            task = Task(None, self.callbacks[next_module][resource_name][u'acquired_callback'], self.logger, [resource_name])
+            task.start()
 
         self.__mutex.release()
 
