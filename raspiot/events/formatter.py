@@ -45,5 +45,5 @@ class Formatter():
            event_params (dict): event parameters
            profile (Profile): profile instance
         """
-        raise NotImplementedError('_fill_profile method must be implemented')
+        raise NotImplementedError('_fill_profile method must be implemented in "%s"' % self.__class__.__name__)
 

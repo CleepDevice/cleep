@@ -148,19 +148,19 @@ class ExternalBus():
         Return:
             dict: headers dict with parsed data as needed (json=>dict|list, '1'|'0'=>True|False, '666'=>int(666), ...)
         """
-        raise NotImplementedError('_parse_headers is not implemented')
+        raise NotImplementedError('_parse_headers is not implemented in "%s"' % self.__class__.__name__)
 
     def run(self):
         """
         Run external bus process
         """
-        raise NotImplementedError('run function is not implemented')
+        raise NotImplementedError('run function is not implemented in "%s"' % self.__class__.__name__)
 
     def run_once(self):
         """
         Run external bus process once
         """
-        raise NotImplementedError('run_once function is not implemented')
+        raise NotImplementedError('run_once function is not implemented in "%s"' % self.__class__.__name__)
 
     def broadcast_event(self, event, params, device_id):
         """
@@ -171,7 +171,7 @@ class ExternalBus():
             params (dict): event parameters
             device_id (uuid): device identifier that emits event
         """
-        raise NotImplementedError('broadcast_event function is not implemented')
+        raise NotImplementedError('broadcast_event function is not implemented "%s"' % self.__class__.__name__)
 
     def send_event(self, event, params, device_id, peer_id):
         """
@@ -183,7 +183,7 @@ class ExternalBus():
             device_id (uuid): device identifier that emits event
             peer_id (string): message recipient
         """
-        raise NotImplementedError('send_event function is not implemented')
+        raise NotImplementedError('send_event function is not implemented "%s"' % self.__class__.__name__)
 
     def get_peers(self):
         """

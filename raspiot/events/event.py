@@ -26,7 +26,7 @@ class Event():
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         if not hasattr(self, u'EVENT_NAME') or len(self.EVENT_NAME)==0:
-            raise NotImplementedError(u'EVENT_NAME class member must be declared')
+            raise NotImplementedError(u'EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
 
     def _check_params(self, params):
         """
@@ -38,7 +38,7 @@ class Event():
         Return:
             bool: True if params are valid, False otherwise
         """
-        raise NotImplementedError(u'_check_params method must implemented')
+        raise NotImplementedError(u'_check_params method must implemented in "%s"' % self.__class__.__name__)
 
     def send(self, params=None, device_id=None, to=None, render=True):
         """ 

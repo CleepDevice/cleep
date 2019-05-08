@@ -38,5 +38,5 @@ class Driver():
         Raises:
             NotImplementedError: when function is not implemented
         """
-        raise NotImplementedError(u'Function "_check_configuration" must be implemented')
+        raise NotImplementedError(u'Function "_check_configuration" must be implemented in "%s"' % self.__class__.__name__)
 
