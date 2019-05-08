@@ -13,7 +13,8 @@ class AudioDriver(Driver):
     OUTPUT_TYPE_UNKNOWN = 0
     OUTPUT_TYPE_JACK = 1 
     OUTPUT_TYPE_HDMI = 2 
-    OUTPUT_TYPE_EXTERNAL = 3 #external soundcard like hifiberry, respeaker...
+    OUTPUT_TYPE_HAT = 3 #HAT soundcard like hifiberry or respaker
+    OUTPUT_TYPE_EXT = 4 #external audio device like USB soundcard
 
     def __init__(self, driver_name, config):
         """
