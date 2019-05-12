@@ -6,17 +6,16 @@ from raspiot.utils import CommandError
 import logging
 import re
 
-class Asoundrc(Config):
+class EtcAsoundConf(Config):
     """
-    DEPRECATED: use EtcAsoundConf instead
-    Handles .asoundrc file from connected account
+    Handles /etc/asound.conf file
 
     It handles:
      - default playback device configuration
      - default capture device configuration
     """
 
-    CONF = u'~/.asoundrc'
+    CONF = u'/etc/asound.conf'
 
     CACHE_DURATION = 5.0
 
@@ -27,7 +26,7 @@ class Asoundrc(Config):
 }
 
 ctl.!default {
-    type hw           
+    type hw
     card %(card_id)s
 }"""
     PCM_SECTION = u'pcm.!default'
@@ -164,4 +163,10 @@ ctl.!default {
             raise CommandError(u'Unable to set default audio device')
 
         return True
+
+    def delete(self):
+        """
+        Delete /etc/asound.conf file to let system using its prefered device
+        """
+        self.cleep_filesystem.rm(self.CONF)
 
