@@ -3,6 +3,7 @@
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.configs.config import Config
+from raspiot.libs.internals.console import Console
 import os
 import re
 import io
@@ -26,6 +27,7 @@ class EtcModules(Config):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
         Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
+        self.console = Console()
 
     def __get_entries(self):
         """
@@ -55,106 +57,173 @@ class EtcModules(Config):
 
         return entries
 
-    def __is_module_enabled(self, module):
+    def __is_module_enabled(self, module_name):
         """
-        Return True if module is enabled
+        Return True if module is enabled in /etc/modules and it is enabled in system (using lsmod)
 
         Args:
-            module (string): module name
+            module_name (string): module name
         
         Returns:
             bool: True if module is enabled
         """
         entries = self.__get_entries()
-        return entries.has_key(module)
 
-    def __enable_module(self, module):
+        #fix module name that only can have _
+        module_name = module_name.replace(u'-', u'_')
+
+        #do not use lsmod lib do avoid dependency
+        found_lsmod = False
+        cmd = u'/sbin/lsmod | grep "%s" | wc -l' % module_name
+        resp = self.console.command(cmd)
+        if not resp[u'error'] and not resp[u'killed']:
+            try:
+                found_lsmod = True if int(resp[u'stdout'][0])>0 else False
+            except:
+                pass
+
+        return entries.has_key(module_name) and found_lsmod
+
+    def __enable_module(self, module_name):
         """
         Enable module
 
         Args:
-            module (string): module to enable
+            module_name (string): module to enable
 
         Returns:
             bool: Return True if module enabled. False if module already enabled
         """
+        out = False
+
         entries = self.__get_entries()
-        if not entries.has_key(module):
-            return self.add_lines([u'%s' % module])
+        if not entries.has_key(module_name):
+            out = self.add_lines([u'%s' % module_name])
 
-        #module already enabled
-        return True
+        #modprobe module
+        cmd = u'/sbin/modprobe -q "%s"' % module_name
+        self.console.command(cmd)
 
-    def __disable_module(self, module):
+        return out
+
+    def __disable_module(self, module_name):
         """
         Disable module
 
         Args:
-            module (string): module to disable
+            module_name (string): module to disable
 
         Returns:
             bool: Return True if module disabled
         """
-        entries = self.__get_entries()
-        if entries.has_key(module):
-            return self.remove_lines([u'%s' % module])
+        out = False
 
-        #module already disabled
-        return True
+        entries = self.__get_entries()
+        if entries.has_key(module_name):
+            out = self.remove_lines([u'%s' % module_name])
+
+        #modprobe module
+        cmd = u'/sbin/modprobe -q -r "%s"' % module_name
+        self.console.command(cmd)
+
+        return out
 
     def is_onewire_enabled(self):
         """
+        DEPRECATED: use is_module_enabled instead
         Return True if onewire modules are enabled
 
         Returns:
             bool: True if onewire enabled
         """
-        return self.__is_module_enabled(self.MODULE_ONEWIRETHERM) and self.__is_module_enabled(self.MODULE_ONEWIREGPIO)
+        return self.__is_module_enabled(self.MODULE_ONEWIRETHERM)
 
     def enable_onewire(self):
         """
+        DEPRECATED: use enable_module instead
         Enable onewire modules
 
         Returns:
             bool: True if onewire has been enabled
         """
-        return self.__enable_module(self.MODULE_ONEWIRETHERM) and self.__enable_module(self.MODULE_ONEWIREGPIO)
+        return self.__enable_module(self.MODULE_ONEWIRETHERM)
 
     def disable_onewire(self):
         """
+        DEPRECATED: use disable_module instead
         Disable onewire modules
 
         Returns:
             bool: True if onewire has been disabled
         """
-        return self.__disable_module(self.MODULE_ONEWIRETHERM) and self.__disable_module(self.MODULE_ONEWIREGPIO)
-
+        return self.__disable_module(self.MODULE_ONEWIRETHERM)
 
     def is_embedded_sound_enabled(self):
         """
+        DEPRECATED: use is_module_enabled instead
         Return True if embedded sound module is enabled
 
         Returns:
             bool: True if embedded sound module is enabled
         """
-        return self.__is_module_enabled(self.MODULE_BCM2835) and self.__is_module_enabled(self.MODULE_BCM2835)
+        return self.__is_module_enabled(self.MODULE_BCM2835)
 
     def enable_embedded_sound(self):
         """
+        DEPRECATED: use enable_module instead
         Enable embedded sound module
 
         Returns:
             bool: True if embedded sound module has been enabled
         """
-        return self.__enable_module(self.MODULE_BCM2835) and self.__enable_module(self.MODULE_BCM2835)
+        return self.__enable_module(self.MODULE_BCM2835)
 
     def disable_embedded_sound(self):
         """
+        DEPRECATED: use disable_module instead
         Disable embedded sound module
 
         Returns:
             bool: True if embedded sound module has been disabled
         """
-        return self.__disable_module(self.MODULE_BCM2835) and self.__disable_module(self.MODULE_BCM2835)
+        return self.__disable_module(self.MODULE_BCM2835)
 
+    def enable_module(self, module_name):
+        """
+        Enable specified module adding it into /etc/modules file and probing it
+        No error are returned in case of invalid module name
+
+        Args:
+            module_name (string): module name
+
+        Returns:
+            bool: True if module is enabled
+        """
+        return self.__enable_module(module_name)
+
+    def disable_module(self, module_name):
+        """
+        Disable specified module adding it into /etc/modules file and probing it
+        No error are returned in case of invalid module name
+
+        Args:
+            module_name (string): module name
+
+        Returns:
+            bool: True if module is disabled
+        """
+        return self.__disable_module(module_name)
+
+    def is_module_enabled(self, module_name):
+        """
+        Return True if specified module is enabled
+        No error are returned in case of invalid module name
+
+        Args:
+            module_name (string): module name
+
+        Returns:
+            bool: True if module is loaded
+        """
+        return self.__is_module_enabled(module_name)
 
