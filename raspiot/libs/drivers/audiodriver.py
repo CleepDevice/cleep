@@ -10,43 +10,81 @@ class AudioDriver(Driver):
     Audio driver base class
     """
 
-    OUTPUT_TYPE_UNKNOWN = 0
-    OUTPUT_TYPE_JACK = 1 
-    OUTPUT_TYPE_HDMI = 2 
-    OUTPUT_TYPE_HAT = 3 #HAT soundcard like hifiberry or respaker
-    OUTPUT_TYPE_EXT = 4 #external audio device like USB soundcard
-
-    def __init__(self, driver_name, config):
+    def __init__(self, cleep_filesystem, driver_name):
         """
         Constructor
 
         Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             driver_name (string): driver name
-            config (dict): driver configuration::
+        """
+        Driver.__init__(self, cleep_filesystem, Driver.DRIVER_AUDIO, driver_name)
+
+    def get_device_infos(self):
+        """
+        Returns infos about device associated to driver
+
+        Returns:
+            dict: device infos::
 
                 {
-                    output_type (int): output type (see OUTPUT_TYPE_XXX values)
-                    playback_volume (string): alsa control name for the playback volume
-                    playback_volume_data (tuple): (key, pattern) to get playback volume value
-                    capture_volume (string): alsa control name for the capture volume
-                    capture_volume_data (tuple): (key, pattern) to get capture volume value
+                    cardname (string): handled card name
+                    cardid (int): card id
+                    deviceid (int): device id
                 }
 
         """
-        Driver.__init__(self, Driver.DRIVER_AUDIO, driver_name, config)
+        raise NotImplementedError(u'Function "get_infos" must be implemented in "%s"' % self.__class__.__name__)
 
-    def _check_configuration(self, config):
+    def enable(self, params=None):
+        """ 
+        Enable driver
+
+        Args:
+            params (dict): additionnal parameters if necessary
         """
-        Check driver configuration
+        raise NotImplementedError(u'Function "enable" must be implemented in "%s"' % self.__class__.__name__)
+
+    def disable(self, params=None):
+        """ 
+        Disable driver
+
+        Args:
+            params (dict): additionnal parameters if necessary
         """
-        if u'output_type' not in config:
-            raise Exception(u'Field "output_type" is missing in audio driver configuration')
-        if u'playback_volume' not in config:
-            raise Exception(u'Field "playback_volume" is missing in audio driver configuration')
-        if u'playback_volume_data' not in config:
-            raise Exception(u'Field "playback_volume_data" is missing in audio driver configuration')
-        if u'capture_volume' not in config:
-            raise Exception(u'Field "capture_volume" is missing in audio driver configuration')
-        if u'capture_volume_data' not in config:
-            raise Exception(u'Field "capture_volume_data" is missing in audio driver configuration')
+        raise NotImplementedError(u'Function "disable" must be implemented in "%s"' % self.__class__.__name__)
+
+    def is_enabled(self):
+        """ 
+        Is driver enabled
+
+        Returns:
+            bool: True if driver enabled
+        """
+        raise NotImplementedError(u'Function "is_enabled" must be implemented in "%s"' % self.__class__.__name__)
+
+    def get_volumes(self):
+        """ 
+        Get volumes
+
+        Returns:
+            dict: volumes level::
+
+                {
+                    playback (float): playback volume
+                    capture (float): capture volume
+                }
+
+        """
+        raise NotImplementedError(u'Function "get_volumes" must be implemented in "%s"' % self.__class__.__name__)
+
+    def set_volumes(self, playback=None, capture=None):
+        """ 
+        Set volumes
+
+        Args:
+            playback (float): playback volume (None to disable update)
+            capture (float): capture volume (None to disable update)
+        """
+        raise NotImplementedError(u'Function "set_volumes" must be implemented in "%s"' % self.__class__.__name__)
 

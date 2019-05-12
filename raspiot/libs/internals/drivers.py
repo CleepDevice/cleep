@@ -66,3 +66,27 @@ class Drivers():
 
         return self.drivers[driver_type]
 
+    def get_driver(self, driver_type, driver_name):
+        """
+        Return specified driver instance
+
+        Args:
+            driver_type (string): driver type (see Driver.DRIVER_XXX values)
+            driver_name (string): driver name
+
+        Returns:
+            Driver: driver instance or None if no driver found
+
+        Raises:
+            InvalidParameter: if one of function parameter is invalid
+            MissingParameter: if one of function parameter is missing
+        """
+        if driver_type is None or len(driver_type)==0:
+            raise missingparameter(u'Parameter "driver_type" is missing')
+        if driver_type not in self.drivers:
+            raise InvalidParameter(u'Driver must be one of existing driver type (found "%s")' % driver.type)
+        if driver_name is None or len(driver_name)==0:
+            raise missingparameter(u'Parameter "driver_name" is missing')
+
+        return self.drivers[driver_type][driver_name] if driver_name in self.drivers[driver_type] else None
+

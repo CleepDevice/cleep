@@ -12,31 +12,44 @@ class Driver():
     #driver types
     DRIVER_AUDIO = u'audio'
 
-    def __init__(self, driver_type, driver_name, config):
+    def __init__(self, cleep_filesystem, driver_type, driver_name):
         """
         Constructor
 
         Args:
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             driver_type (string): driver type. Must be one of available DRIVER_XXX types
             driver_name (string): driver name.
-            config (dict): driver configuration.
         """
+        self.cleep_filesystem = cleep_filesystem
         self.type = driver_type
         self.name = driver_name
 
-        #check driver configuration
-        self._check_configuration(config)
-
-        #inject config values as driver members
-        for key,value in config.items():
-            setattr(self, key, value)
-
-    def _check_configuration(self, config):
+    def install(self, params=None):
         """
-        Check driver configuration
+        Install driver. Don't forget to enable writings during driver installation.
 
-        Raises:
-            NotImplementedError: when function is not implemented
+        Args:
+            params (dict): additionnal parameters if necessary
         """
-        raise NotImplementedError(u'Function "_check_configuration" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(u'Function "install" must be implemented in "%s"' % self.__class__.__name__)
+
+    def uninstall(self, params=None):
+        """
+        Uninstall driver. Don't forget to enable writings during driver installation.
+
+        Args:
+            params (dict): additionnal parameters if necessary
+        """
+        raise NotImplementedError(u'Function "uninstall" must be implemented in "%s"' % self.__class__.__name__)
+
+    def is_installed(self):
+        """
+        Is driver installed ?
+
+        Returns:
+            bool: True if driver installed
+        """
+        raise NotImplementedError(u'Function "is_installed" must be implemented in "%s"' % self.__class__.__name__)
+        
 
