@@ -59,7 +59,8 @@ class EtcModules(Config):
 
     def __is_module_enabled(self, module_name):
         """
-        Return True if module is enabled in /etc/modules and it is enabled in system (using lsmod)
+        Return True if module is enabled in /etc/modules.
+        It do not check if module is loaded! For that use Lsmod lib
 
         Args:
             module_name (string): module name
@@ -67,22 +68,7 @@ class EtcModules(Config):
         Returns:
             bool: True if module is enabled
         """
-        entries = self.__get_entries()
-
-        #fix module name that only can have _
-        module_name = module_name.replace(u'-', u'_')
-
-        #do not use lsmod lib do avoid dependency
-        found_lsmod = False
-        cmd = u'/sbin/lsmod | grep "%s" | wc -l' % module_name
-        resp = self.console.command(cmd)
-        if not resp[u'error'] and not resp[u'killed']:
-            try:
-                found_lsmod = True if int(resp[u'stdout'][0])>0 else False
-            except:
-                pass
-
-        return entries.has_key(module_name) and found_lsmod
+        return module_name.replace(u'_', u'-') in self.__get_entries()
 
     def __enable_module(self, module_name):
         """
