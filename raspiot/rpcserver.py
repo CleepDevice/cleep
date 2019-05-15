@@ -187,7 +187,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
 
     except KeyboardInterrupt:
         #user stops raspiot, close server properly
-        if not server.closed:
+        if server and not server.closed:
             server.close()
 
     except:
@@ -195,7 +195,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None):
         crash_report.report_exception({
             u'message': u'Fatal error starting rpcserver'
         })
-        if not server.closed:
+        if server and not server.closed:
             server.close()
 
 def check_auth(username, password):
