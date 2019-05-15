@@ -8,6 +8,7 @@ import io
 import os
 import logging
 import sys
+import subprocess
 
 from raspiot.libs.internals import __all__ as internals_libs
 #from raspiot.libs.externals import __all__ as externals_libs
@@ -15,6 +16,70 @@ from raspiot.libs.drivers import __all__ as drivers_libs
 from raspiot.libs.configs import __all__ as configs_libs
 from raspiot.libs.commands import __all__ as commands_libs
 
+RASPBERRY_PI_REVISIONS = {
+    u'unknown':{u'date': u'?',        u'model': u'?',                                u'pcbrevision': u'?',   u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 0,  u'memory': '?',              u'notes': u'Unknown model'},
+    u'0002':   {u'date': u'Q1 2012',  u'model': u'B',                                u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u''},
+    u'0003':   {u'date': u'Q3 2012',  u'model': u'B (ECN0001)',                      u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'Fuses mod and D14 removed'},
+    u'0004':   {u'date': u'Q3 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Sony)'},
+    u'0005':   {u'date': u'Q4 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Qisda)'},
+    u'0006':   {u'date': u'Q4 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Egoman)'},
+    u'0007':   {u'date': u'Q1 2013',  u'model': u'A',                                u'pcbrevision': u'2.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Egoman)'},
+    u'0008':   {u'date': u'Q1 2013',  u'model': u'A',                                u'pcbrevision': u'2.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Sony)'},
+    u'0009':   {u'date': u'Q1 2013',  u'model': u'A',                                u'pcbrevision': u'2.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Qisda)'},
+    u'000d':   {u'date': u'Q4 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'512 MB',        u'notes': u'(Mfg by Egoman)'},
+    u'000e':   {u'date': u'Q4 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'000f':   {u'date': u'Q4 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'512 MB',        u'notes': u'(Mfg by Qisda)'},
+    u'0010':   {u'date': u'Q3 2014',  u'model': u'B+',                               u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'0011':   {u'date': u'Q2 2014',  u'model': u'Compute Module 1',                 u'pcbrevision': u'1.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 0,  u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'0012':   {u'date': u'Q4 2014',  u'model': u'A+',                               u'pcbrevision': u'1.1', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'256 MB',        u'notes': u'(Mfg by Sony)'},
+    u'0013':   {u'date': u'Q1 2015',  u'model': u'B+',                               u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Embest)'},
+    u'0014':   {u'date': u'Q2 2014',  u'model': u'Compute Module 1',                 u'pcbrevision': u'1.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 0 , u'memory': u'512 MB',        u'notes': u'(Mfg by Embest)'},
+    u'0015':   {u'date': u'?',        u'model': u'A+',                               u'pcbrevision': u'1.1', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'256 MB/512 MB', u'notes': u'(Mfg by Embest)'},
+    u'a01040': {u'date': u'Unknown',  u'model': u'2 Model B',                        u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'a01041': {u'date': u'Q1 2015',  u'model': u'2 Model B',                        u'pcbrevision': u'1.1', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'a21041': {u'date': u'Q1 2015',  u'model': u'2 Model B',                        u'pcbrevision': u'1.1', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Embest)'},
+    u'a22042': {u'date': u'Q3 2016',  u'model': u'2 Model B (with BCM2837)',         u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Embest)'},
+    u'900021': {u'date': u'Q3 2016',  u'model': u'A+',                               u'pcbrevision': u'1.1', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'900032': {u'date': u'Q2 2016?', u'model': u'B+',                               u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'900092': {u'date': u'Q4 2015',  u'model': u'Zero',                             u'pcbrevision': u'1.2', u'ethernet': False, u'wireless': False, u'audio': False, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'900093': {u'date': u'Q2 2016',  u'model': u'Zero',                             u'pcbrevision': u'1.3', u'ethernet': False, u'wireless': False, u'audio': False, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'920093': {u'date': u'Q4 2016?', u'model': u'Zero',                             u'pcbrevision': u'1.3', u'ethernet': False, u'wireless': False, u'audio': False, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Embest)'},
+    u'9000c1': {u'date': u'Q1 2017',  u'model': u'Zero W',                           u'pcbrevision': u'1.1', u'ethernet': False, u'wireless': True,  u'audio': False, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'a02082': {u'date': u'Q1 2016',  u'model': u'3 Model B',                        u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'a020a0': {u'date': u'Q1 2017',  u'model': u'Compute Module 3 (and CM3 Lite)',  u'pcbrevision': u'1.0', u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 0,  u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'a22082': {u'date': u'Q1 2016',  u'model': u'3 Model B',                        u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Embest)'},
+    u'a32082': {u'date': u'Q4 2016',  u'model': u'3 Model B',                        u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony Japan)'},
+    u'a020d3': {u'date': u'Q1 2018',  u'model': u'3 Model B+',                       u'pcbrevision': u'1.3', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'9020e0': {u'date': u'Q4 2018',  u'model': u'3 Model A+',                       u'pcbrevision': u'1.0', u'ethernet': False, u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+}
+
+def raspberry_pi_infos():
+    """
+    Returns infos about current raspberry pi board
+
+    Note:
+        https://elinux.org/RPi_HardwareHistory#Board_Revision_History
+
+    Returns:
+        dict: raspberry pi board infos::
+
+            {
+                date (string): release date
+                model (string): model
+                pcbrevision (string): PCB revision
+                memory (string): memory amount
+                notes (string): extra infos about raspberry pi
+                ethernet (bool): True if natively available on board
+                wireless (bool): True if natively available on board
+                audio (bool): True if natively available on board
+            }
+
+    """
+    cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    stdout = p.communicate()[0].replace(u'\n', u'')
+    return RASPBERRY_PI_REVISIONS[stdout] if stdout and stdout in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
+        
 def install_trace_logging_level():
     """ 
     Install custom log level TRACE for library debugging principaly
