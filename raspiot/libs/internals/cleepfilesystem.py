@@ -77,7 +77,7 @@ class CleepFilesystem():
         """
         Check if readonly is configured in OS
 
-        Return:
+        Returns:
             bool: True if RO configured on OS
         """
         encoding = self.__get_default_encoding()
@@ -221,7 +221,7 @@ class CleepFilesystem():
         Args:
             path (string): path
 
-        Return:
+        Returns:
             bool: True if on /tmp
         """
         path = os.path.normpath(path)
@@ -237,16 +237,20 @@ class CleepFilesystem():
         Please make sure to call disable_write after you finished your job!
 
         Args:
-            root (bool): enable write on root partition
-            boot (bool): enable write on boot partition
+            root (bool): enable write on root partition (default True)
+            boot (bool): enable write on boot partition (default False)
         """
         self.__enable_write(root=root, boot=boot)
 
-    def disable_write(self, root=True, boot=False):
+    def disable_write(self, root=True, boot=True):
         """
         Disable write
         This function must be used in specific cases when you need to disable readonly mode for a while (like system update)
         Use this function only if you called enable_write function before!
+
+        Args:
+            root (bool): disable write on root partition (default True)
+            boot (bool): disable write on boot partition (default True)
         """
         context = ReadWriteContext()
         context.action = u'disable_write'
@@ -261,7 +265,7 @@ class CleepFilesystem():
             mode (string): mode as builtin open() function
             encoding (string): file encoding (default is system one)
 
-        Return:
+        Returns:
             descriptor: file descriptor
         """
         #enable writings if necessary
@@ -314,7 +318,7 @@ class CleepFilesystem():
             data (any): data to write
             encoding (string): file encoding (default is system one)
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         fp = None
@@ -349,7 +353,7 @@ class CleepFilesystem():
             path (string): file path
             encoding (string): file encoding (default is system one)
 
-        Return:
+        Returns:
             list: file lines or None if errors
         """
         fp = None
@@ -381,7 +385,7 @@ class CleepFilesystem():
             path (string): file path
             encoding (string): file encoding (default is system one)
 
-        Return:
+        Returns:
             dict: json content as dict
         """
         lines = self.read_data(path, encoding)
@@ -407,7 +411,7 @@ class CleepFilesystem():
             data (any): data to write as json
             encoding (string): file encoding (default is system one)
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
@@ -430,7 +434,7 @@ class CleepFilesystem():
             src (string): source
             dst (string): destination
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         moved = False
@@ -474,7 +478,7 @@ class CleepFilesystem():
             src (string): source file path
             dst (string): destination path
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         #enable writings if necessary
@@ -518,7 +522,7 @@ class CleepFilesystem():
             src (string): source dir path
             dst (string): destination path
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         #enable writings if necessary
@@ -560,7 +564,7 @@ class CleepFilesystem():
         Args:
             path (string): path
         
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         return self.rm(path)
@@ -572,7 +576,7 @@ class CleepFilesystem():
         Args:
             path (string): path
         
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         removed = False
@@ -613,7 +617,7 @@ class CleepFilesystem():
         Args:
             path (string): path
         
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         removed = False
@@ -655,7 +659,7 @@ class CleepFilesystem():
             path (string): path
             recursive (bool): recursive creation (default False)
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         created = False
@@ -700,7 +704,7 @@ class CleepFilesystem():
         Args:
             path (string): path
 
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         return self.mkdir(path, True)
@@ -715,7 +719,7 @@ class CleepFilesystem():
             dst (string): destination
             options (string): rsync options
         
-        Return:
+        Returns:
             bool: True if operation succeed
         """
         error = False
