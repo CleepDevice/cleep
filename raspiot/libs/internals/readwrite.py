@@ -5,6 +5,7 @@ from raspiot.libs.internals.console import Console
 import logging
 import os
 import traceback
+import subprocess
 
 class ReadWriteContext():
     """ 
@@ -57,6 +58,13 @@ class ReadWrite():
             crash_report (CrashReport): CrashReport instance
         """
         self.crash_report = crash_report
+
+    def __get_opened_files_for_writing(self):
+        """
+        Return opened files for writing for current program
+        """
+        cmd = u'/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
+        return [line.replace(u'\n','') for line in subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()]
 
     def is_path_on_root(self, path):
         """
@@ -151,14 +159,18 @@ class ReadWrite():
 
             #dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error(u'%s' % ''.join(lines))
+            self.logger.error(u'%s' % u''.join(lines))
+
+            #dump opened files to log
+            self.logger.error(u'Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
 
             #and send crash report
             if self.crash_report:
                 self.crash_report.manual_report(u'Error when turning on writing mode', {
                     u'result': res,
                     u'partition': partition,
-                    u'traceback': lines
+                    u'traceback': lines,
+                    u'files': self.__get_opened_files_for_writing(),
                 })
             
         #refresh status
@@ -189,7 +201,10 @@ class ReadWrite():
 
             #dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error(u'%s' % ''.join(lines))
+            self.logger.error(u'%s' % u''.join(lines))
+
+            #dump opened files to log
+            self.logger.error(u'Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
 
             #and send crash report
             if self.crash_report:
@@ -197,7 +212,8 @@ class ReadWrite():
                     u'result': res,
                     u'partition': partition,
                     u'traceback': lines,
-                    u'context': context.to_dict()
+                    u'context': context.to_dict(),
+                    u'files': self.__get_opened_files_for_writing(),
                 })
             
         #refresh status
