@@ -6,9 +6,9 @@ import re
 import time
 import logging
 
-class Modprob(Console):
+class Modprobe(Console):
     """
-    Modprob command helper
+    Modprobe command helper
     """
 
     CACHE_DURATION = 2.0
@@ -21,25 +21,37 @@ class Modprob(Console):
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.timestamp = None
-        self.modules = []
 
-    def get_loaded_modules(self):
+    def enable_module(self, module):
         """
-        Return all loaded modules
+        Enable specified module
 
-        Return:
-            list: list of modules
+        Args:
+            module (string): module name
+
+        Returns:
+            bool: True if module loaded successfully
         """
-        self.__refresh()
+        cmd = u'/sbin/modprobe "%s"' % module.replace(u'-', u'_')
+        self.logger.trace('Cmd: %s' % cmd)
+        resp = self.command(cmd)
+        self.logger.trace('Cmd "%s" resp: %s' % (cmd, resp))
 
-        return self.modules
+        return True if self.get_last_return_code()==0 else False
 
-    def is_module_loaded(self, module):
+    def disable_module(self, module):
         """
-        Return True if specified module is loaded
-        """
-        self.__refresh()
+        Disable specified module
 
-        return module in self.modules
+        Args:
+            module (string): module name
+
+        Returns:
+            bool: True if module unloaded successfully
+        """
+        cmd = u'/sbin/modprobe --remove "%s"' % module.replace(u'-', u'_')
+        resp = self.command(cmd)
+        self.logger.trace('Cmd "%s" resp: %s' % (cmd, resp))
+
+        return True if self.get_last_return_code()==0 else False
 
