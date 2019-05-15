@@ -16,6 +16,7 @@ class EtcAsoundConf(Config):
     """
 
     CONF = u'/etc/asound.conf'
+    ASOUND_STATE = u'/var/lib/alsa/asound.state'
 
     CACHE_DURATION = 5.0
 
@@ -166,7 +167,11 @@ ctl.!default {
 
     def delete(self):
         """
-        Delete /etc/asound.conf file to let system using its prefered device
+        Delete /etc/asound.conf and /var/lib/alsa/asound.state files to let system using its prefered device
         """
         self.cleep_filesystem.rm(self.CONF)
+        self.cleep_filesystem.rm(self.ASOUND_STATE)
+
+        return True
+
 
