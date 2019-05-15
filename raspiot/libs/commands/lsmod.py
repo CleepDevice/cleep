@@ -62,5 +62,5 @@ class Lsmod(Console):
         """
         self.__refresh()
 
-        return module in self.modules
+        return module.replace(u'_', u'-') in self.modules
 
