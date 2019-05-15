@@ -24,12 +24,16 @@ class ConfigTxt(Config):
 
     DTOVERLAY_ONEWIRE = u'w1-gpio'
     DTOVERLAY_LIRC = u'lirc-rpi'
+    DTOVERLAY_I2S_MMAP = u'i2s-mmap'
+
     DTPARAM_SPI = u'spi'
     DTPARAM_SPI_VALUE = u'on'
     DTPARAM_I2C = u'i2c_arm'
     DTPARAM_I2C_VALUE = u'on'
     DTPARAM_I2S = u'i2s'
     DTPARAM_I2S_VALUE = u'on'
+    DTPARAM_AUDIO = u'audio'
+    DTPARAM_AUDIO_VALUE = u'on'
 
     def __init__(self, cleep_filesystem, backup=True):
         """
@@ -255,6 +259,27 @@ class ConfigTxt(Config):
         """
         return self.__enable_dtparam(self.DTPARAM_SPI, self.DTPARAM_SPI_VALUE, True)
 
+    def is_audio_enabled(self):
+        """
+        Return True if audio is enabled (bcm2835)
+
+        Returns:
+            bool: True if audio enabled
+        """
+        return self.__is_dtparam_enabled(self.DTPARAM_AUDIO, self.DTPARAM_AUDIO_VALUE)
+
+    def enable_audio(self):
+        """
+        Enable audio support (bcm2835)
+        """
+        return self.__enable_dtparam(self.DTPARAM_AUDIO, self.DTPARAM_AUDIO_VALUE)
+
+    def disable_audio(self):
+        """
+        Disable audio support (bcm2835)
+        """
+        return self.__enable_dtparam(self.DTPARAM_AUDIO, self.DTPARAM_AUDIO_VALUE, True)
+
     def is_i2c_enabled(self):
         """
         Return True if i2c is enabled
@@ -296,5 +321,26 @@ class ConfigTxt(Config):
         Disable i2s support
         """
         return self.__enable_dtparam(self.DTPARAM_I2S, self.DTPARAM_I2S_VALUE, True)
+
+    def is_i2s_mmap_enabled(self):
+        """
+        Return True if i2s-mmap is enabled
+
+        Returns:
+            bool: True if i2s enabled
+        """
+        return self.__is_dtoverlay_enabled(self.DTOVERLAY_I2S_MMAP)
+
+    def enable_i2s_mmap(self):
+        """
+        Enable i2s-mmap support
+        """
+        return self.__enable_dtoverlay(self.DTOVERLAY_I2S_MMAP)
+
+    def disable_i2s_mmap(self):
+        """
+        Disable i2s-mmap support
+        """
+        return self.__enable_dtoverlay(self.DTOVERLAY_I2S_MMAP, True)
 
 
