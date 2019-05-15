@@ -196,7 +196,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
+            if( resp && resp.data && resp.data.error )
             {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
