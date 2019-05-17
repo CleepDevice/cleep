@@ -10,15 +10,17 @@ class AudioDriver(Driver):
     Audio driver base class
     """
 
-    def __init__(self, cleep_filesystem, driver_name):
+    def __init__(self, cleep_filesystem, driver_name, card_name):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             driver_name (string): driver name
+            card_name (string): audio card name (as found by alsa) 
         """
         Driver.__init__(self, cleep_filesystem, Driver.DRIVER_AUDIO, driver_name)
+        self.card_name = card_name
 
     def get_device_infos(self):
         """
@@ -31,6 +33,8 @@ class AudioDriver(Driver):
                     cardname (string): handled card name
                     cardid (int): card id
                     deviceid (int): device id
+                    playback (bool): True if audio playback is possible
+                    capture (bool): True if audio capture is possible
                 }
 
         """
