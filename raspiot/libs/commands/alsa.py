@@ -30,15 +30,19 @@ class Alsa(AdvancedConsole):
     CGET = u'cget'
     CSET = u'cset'
 
-    def __init__(self):
+    def __init__(self, cleep_filesystem):
         """
         Constructor
+
+        Args:
+            cleep_filesystem (CleepFilesystem): cleep filesystem instance
         """
         AdvancedConsole.__init__(self)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
+        self.cleep_filesystem = cleep_filesystem
 
     def __command(self, command):
         """
@@ -243,8 +247,10 @@ class Alsa(AdvancedConsole):
             raise InvalidParameter(u'Parameter "command" must be Alsa.CGET or Alsa.CSET')
         if not isinstance(numid, int):
             raise InvalidParameter(u'Parameter "numid" must be a string')
-        if command==self.CSET and (value is None or not isinstance(value, str) or len(value)==0):
+        if command==self.CSET and value is None:
             raise MissingParameter(u'Parameter "value" is missing')
+        if command==self.CSET and not isinstance(value, int) and not isinstance(value, str):
+            raise InvalidParameter(u'Parameter "value" is invalid. Int or str awaited')
 
         cmd = u'/usr/bin/amixer %s numid=%s %s' % (command, numid, value if value is not None else '')
         self.logger.debug(u'amixer command: "%s"' % cmd)
@@ -364,10 +370,11 @@ class Alsa(AdvancedConsole):
             raise InvalidParameter(u'Sound file doesn\'t exist (%s)' % path)
 
         #play sound
-        res = self.command(u'/usr/bin/aplay "%s"' % path, timeout=timeout)
-        if res[u'error'] and len(res[u'stderr'])>0 and not res[u'stderr'][0].startswith(u'Playing WAVE'):
-            #for some strange reasons, aplay output is on stderr
-            self.logger.error(u'Unable to play sound file "%s": %s' % (path, res))
+        cmd = u'/usr/bin/aplay "%s"' % path
+        resp = self.command(cmd, timeout=timeout)
+        self.logger.debug(u'Command "%s" resp: %s"' % (cmd, resp))
+        if self.get_last_return_code()!=0:
+            self.logger.error(u'Unable to play sound file "%s": %s' % (path, resp[u'error']))
             return False
         
         return True
@@ -406,14 +413,30 @@ class Alsa(AdvancedConsole):
         #record sound
         out = u'%s.wav' % os.path.join('/tmp', str(uuid.uuid4()))
         cmd = u'/usr/bin/arecord -f %s -c%d -r%d "%s"' % (format, channels, rate, out)
-        self.logger.debug(u'Command: %s' % cmd)
-        res = self.command(cmd, timeout=timeout)
+        resp = self.command(cmd, timeout=timeout)
+        self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
         
         #check errors
-        if res[u'error']:
+        if self.get_last_return_code()!=0:
             self.logger.error(u'Error occured during recording %s: %s' % (cmd, res))
             raise CommandError(u'Error during recording')
 
         return out
 
+    def save(self):
+        """
+        Save alsa configuration in /var/lib/alsa/asound.state
+        """
+        self.cleep_filesystem.enable_write()
+        
+        try:
+            cmd = u'/usr/sbin/alsactl store'
+            self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
+            return True if self.get_last_return_code()==0 else False
+    
+        except:
+            self.logger.exception(u'Error occured during alsa config saving:')
+
+        finally:
+            self.cleep_filesystem.disable_write()
 
