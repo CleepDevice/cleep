@@ -20,14 +20,42 @@ SYSTEM_MODULES = [
 ]
 
 class CATEGORIES():
+    """
+    Cleep application categories
+    """
+    #generic application
     APPLICATION = u'APPLICATION'
+    #mobile application for car, bike, hiking...
     MOBILE = u'MOBILE'
+    #application to configure and use hardware (soundcard, display...)
     DRIVER = u'DRIVER'
+    #home automation application (shutter, light...)
     HOMEAUTOMATION = u'HOMEAUTOMATION'
+    #media application (music player, video player...)
     MEDIA = u'MEDIA'
+    #application based on online service (sms broker, weather provider...)
     SERVICE = u'SERVICE'
+    
     ALL = [u'APPLICATION', u'MOBILE', u'DRIVER', u'HOMEAUTOMATION', u'MEDIA', u'SERVICE']
 
+
+class ExecutionStep():
+    """
+    Cleep execution steps
+    """
+    #boot step (init logger, factories...)
+    BOOT = 0
+    #init modules (constructor)
+    INIT = 1
+    #configure modules (_configure)
+    CONFIG = 2
+    #application and all modules are running
+    RUN = 3
+    #stopping cleep
+    STOP = 4
+
+    def __init__(self):
+        self.step = self.BOOT
 
 """
 Exceptions

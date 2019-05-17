@@ -13,7 +13,7 @@ from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
 from .libs.internals.install import Install
 import libs.internals.tools as Tools
-from utils import SYSTEM_MODULES
+from utils import SYSTEM_MODULES, ExecutionStep
 
 __all__ = [u'Inventory']
 
@@ -168,12 +168,11 @@ class Inventory(RaspIot):
                     #module is already loaded, nothing else to do
                     pass
 
-        #instanciate and start module
+        #instanciate module
         bootstrap = self.__get_bootstrap()
         self.__modules_instances[module_name] = module_class_(bootstrap, debug)
-        self.__modules_instances[module_name].start()
 
-        #append join event after module starts to make sure it can unlock it
+        #append module join event to make sure all modules are loaded
         self.__join_events.append(bootstrap[u'join_event'])
 
         #fix some metadata
@@ -297,6 +296,9 @@ class Inventory(RaspIot):
             self.modules[module_name][u'deps'] = []
             self.modules[module_name][u'dependsof'] = []
 
+        #execution step: BOOT->INIT
+        self.bootstrap[u'execution_step'].step = ExecutionStep.INIT
+
         #load mandatory modules
         for module_name in SYSTEM_MODULES:
             try:
@@ -330,6 +332,9 @@ class Inventory(RaspIot):
                 #failed to load module
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
 
+        #execution step: INIT->CONFIG
+        self.bootstrap[u'execution_step'].step = ExecutionStep.CONFIG
+
         #finalize loading process
         for module_name in self.modules:
             #fix final library status
@@ -341,10 +346,18 @@ class Inventory(RaspIot):
                 self.logger.debug(u'Store RpcWrapper instance "%s"' % module_name)
                 self.__rpc_wrappers.append(module_name)
 
-        #wait for all modules are completely loaded
-        self.logger.debug('Waiting for end of modules loading...')
+        #start installed modules
+        for module_name, module_ in self.__modules_instances.items():
+            module_.start()
+
+        #wait for all modules to be completely loaded
+        self.logger.info(u'Waiting for end of modules configuration...')
         for join_event in self.__join_events:
             join_event.wait()
+        self.logger.info(u'All modules are configured.')
+
+        #execution step: CONFIG->RUN
+        self.bootstrap[u'execution_step'].step = ExecutionStep.RUN
 
         self.__modules_loaded = True
         self.logger.debug('All modules are loaded')
@@ -470,7 +483,7 @@ class Inventory(RaspIot):
         Returns dict of modules
         
         Returns:
-            dict: dictof modules::
+            dict: dict of modules::
 
                 {
                     module name: {

@@ -6,7 +6,7 @@ import os
 import json
 from bus import BusClient
 from threading import Lock, Thread, Timer
-from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable
+from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable, ExecutionStep
 import time
 import copy
 import uuid
@@ -49,6 +49,7 @@ class RaspIot(BusClient):
         self.debug_enabled = debug_enabled
 
         #members
+        self.__execution_step = bootstrap[u'execution_step']
         self.events_factory = bootstrap[u'events_factory']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
         self.drivers = bootstrap[u'drivers']
@@ -323,6 +324,8 @@ class RaspIot(BusClient):
         Raises:
             InvalidParameter: if driver has invalid base class
         """
+        if self.__execution_step.step!=ExecutionStep.CONFIG:
+            self.logger.warn(u'Driver registration must be done during INIT step (in application constructor)')
         #check driver
         if not isinstance(driver, Driver):
             raise InvalidParameter(u'Driver must be instance of base Driver class')
