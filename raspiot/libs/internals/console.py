@@ -22,7 +22,13 @@ class EndlessConsole(Thread):
     This kind of console doesn't kill command line after timeout. It just let command running
     until end of it or if user explicitely requests to stop (or kill) it.
 
-    Note: Subprocess output async reading copied from https://stackoverflow.com/a/4896288
+    This class implements thread and is non blocking unless you use join function after starting it::
+
+        c = EndlessConsole(mycmd, myclb, myendclb)
+        c.join()
+
+    Notes:
+        Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
     def __init__(self, command, callback, callback_end=None):
@@ -239,9 +245,10 @@ class Console():
 
     def get_last_return_code(self):
         """
+        DEPRECATED: use returncode from command result
         Return last executed command return code
 
-        Return:
+        Returns:
             int: return code (can be None)
         """
         return self.last_return_code
@@ -256,12 +263,15 @@ class Console():
 
         Returns:
             dict: result of command::
+
                 {
+                    returncode (int): command return code
                     error (bool): True if error occured,
                     killed (bool): True if command was killed,
                     stdout (list): command line output
                     stderr (list): command line error
                 }
+
         """
         #check params
         if timeout is None or timeout<=0.0:
@@ -275,13 +285,14 @@ class Console():
         done = False
         start = time.time()
         killed = False
-        returncode = None
+        return_code = None
         while not done:
             #check if command has finished
             p.poll()
             if p.returncode is not None:
                 #command executed
-                self.last_return_code = p.returncode
+                return_code = p.returncode
+                self.last_return_code = return_code
                 done = True
                 break
             
@@ -298,6 +309,7 @@ class Console():
        
         #prepare result
         result = {
+            u'returncode': return_code,
             u'error': False,
             u'killed': killed,
             u'stdout': [],
@@ -333,7 +345,7 @@ class Console():
             timeout (float): timeout before killing command
             callback (function): function called when command is over. Command result is passed as function parameter
 
-        Note:
+        Notes:
             Command function to have more details
         
         Returns:
@@ -346,7 +358,7 @@ class Console():
 
 class AdvancedConsole(Console):
     """
-    Create console with advanced feature like find function
+    Create console with advanced feature like find function to match pattern on stdout
     """
     def __init__(self):
         """
@@ -364,10 +376,12 @@ class AdvancedConsole(Console):
 
         Returns:
             list: list of matches::
+
                 [
                     (group (string), subgroups (tuple)),
                     ...
                 ]
+
         """
         results = []
 
