@@ -324,7 +324,7 @@ class RaspIot(BusClient):
         Raises:
             InvalidParameter: if driver has invalid base class
         """
-        if self.__execution_step.step!=ExecutionStep.CONFIG:
+        if self.__execution_step.step!=ExecutionStep.INIT:
             self.logger.warn(u'Driver registration must be done during INIT step (in application constructor)')
         #check driver
         if not isinstance(driver, Driver):
