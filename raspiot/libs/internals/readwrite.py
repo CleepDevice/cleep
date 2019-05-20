@@ -12,7 +12,7 @@ class ReadWriteContext():
     Object to hold some data about current context
     """
     def __init__(self):
-        self.is_readonly = None
+        self.is_readonly_fs = None
         self.src = None
         self.dst = None
 	self.action = None
@@ -21,7 +21,7 @@ class ReadWriteContext():
 
     def to_dict(self):
         return {
-            u'is_readonly': self.is_readonly,
+            u'isreadonlyfs': self.is_readonly_fs,
             u'src': self.src,
             u'dst': self.dst,
             u'action': self.action,

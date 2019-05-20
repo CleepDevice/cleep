@@ -41,7 +41,7 @@ class CleepFilesystem():
         self.__errors = 0
 
         #check if os is in readonly mode
-        self.is_readonly = self.__is_readonly_filesystem()
+        self.is_readonly_fs = self.__is_readonly_filesystem()
 
     def __get_default_encoding(self):
         """
@@ -270,8 +270,8 @@ class CleepFilesystem():
         """
         #enable writings if necessary
         read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
-        self.logger.trace(u'Open %s read_mode=%s ro=%s' % (path, read_mode, self.is_readonly))
-        if self.is_readonly and not read_mode and not self.__is_on_tmp(path):
+        self.logger.trace(u'Open %s read_mode=%s rofs=%s' % (path, read_mode, self.is_readonly_fs))
+        if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
@@ -298,14 +298,14 @@ class CleepFilesystem():
 
         #disable writings
         read_mode = fd.mode.find(u'r')>=0 and not fd.mode.find(u'+')>=0
-        self.logger.trace(u'Close %s read_mode=%s ro=%s' % (fd.name, read_mode, self.is_readonly))
-        self.logger.trace(u'if self.is_readonly and not read_mode => %s' % (self.is_readonly and not read_mode))
-        self.logger.trace(u'if self.is_readonly and not read_mode and not in self.__is_on_tmp(path) => %s' % (self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name)))
-        if self.is_readonly and not read_mode and not self.__is_on_tmp(fd.name):
+        self.logger.trace(u'Close %s read_mode=%s ro=%s' % (fd.name, read_mode, self.is_readonly_fs))
+        self.logger.trace(u'if self.is_readonly_fs and not read_mode => %s' % (self.is_readonly_fs and not read_mode))
+        self.logger.trace(u'if self.is_readonly_fs and not read_mode and not in self.__is_on_tmp(path) => %s' % (self.is_readonly_fs and not read_mode and not self.__is_on_tmp(fd.name)))
+        if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(fd.name):
             context = ReadWriteContext()
             context.src = fd.name
             context.action = u'close'
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             root = self.rw.is_path_on_root(fd.name)
             self.__disable_write(context, root, not root)
 
@@ -440,7 +440,7 @@ class CleepFilesystem():
         moved = False
 
         #enable writings if necessary
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
             self.__enable_write(root=root, boot=root)
@@ -458,14 +458,14 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             context = ReadWriteContext()
             context.src = src
             context.dst = dst
             context.action = u'move'
             context.root = root
             context.boot = boot
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, boot)
 
         return moved
@@ -482,7 +482,7 @@ class CleepFilesystem():
             bool: True if operation succeed
         """
         #enable writings if necessary
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
             self.logger.trace('root=%s boot=%s src=%s dst=%s' % (root, boot, src, dst))
@@ -502,14 +502,14 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             context = ReadWriteContext()
             context.src = src
             context.dst = dst
             context.action = u'copy'
             context.root = root
             context.boot = boot
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, boot)
 
         return copied
@@ -526,7 +526,7 @@ class CleepFilesystem():
             bool: True if operation succeed
         """
         #enable writings if necessary
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
             self.__enable_write(root=root, boot=boot)
@@ -545,14 +545,14 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             context = ReadWriteContext()
             context.src = src
             context.dst = dst
             context.action = u'copy_dir'
             context.root = root
             context.boot = boot
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, boot)
 
         return copied
@@ -582,7 +582,7 @@ class CleepFilesystem():
         removed = False
 
         #enable writings if necessary
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
@@ -599,13 +599,13 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             context = ReadWriteContext()
             context.src = path
             context.action = u'rm'
             context.root = root
             context.boot = not root
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, not root)
 
         return removed
@@ -623,7 +623,7 @@ class CleepFilesystem():
         removed = False
 
         #enable writings if necessary
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
@@ -640,13 +640,13 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             context = ReadWriteContext()
             context.src = path
             context.action = u'rmdir'
             context.root = root
             context.boot = not root
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, not root)
 
         return removed
@@ -665,7 +665,7 @@ class CleepFilesystem():
         created = False
 
         #enable writings if necessary
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
 
@@ -686,13 +686,13 @@ class CleepFilesystem():
             })
 
         #disable writings
-        if self.is_readonly and not self.__is_on_tmp(path):
+        if self.is_readonly_fs and not self.__is_on_tmp(path):
             context = ReadWriteContext()
             context.src = path
             context.action = u'mkdir'
             context.root = root
             context.boot = not root
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, not root)
 
         return created
@@ -725,17 +725,24 @@ class CleepFilesystem():
         error = False
 
         #enable writings if necessary
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        self.logger.debug(u'here1')
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+            self.logger.debug(u'here2')
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
+            self.logger.debug(u'here3')
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
+            self.logger.debug(u'Enable write')
+
             self.__enable_write(root=root, boot=boot)
 
         #rsync
         try:
             console = Console()
             cmd = u'/usr/bin/rsync %s %s %s' % (options, src, dst)
-            console.command(cmd)
-            if console.get_last_return_code()!=0:
+            self.logger.error('%s' % cmd)
+            resp = console.command(cmd)
+            self.logger.error('%s resp: %s' % (cmd, resp))
+            if resp[u'returncode']!=0:
                 self.logger.error(u'Error occured during rsync command execution "%s" (return code %s)' % (cmd, console.get_last_return_code()))
                 error = True
 
@@ -750,7 +757,7 @@ class CleepFilesystem():
             error = True
 
         #disable writings
-        if self.is_readonly and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
             context = ReadWriteContext()
             context.src = src
             context.dst = dst
@@ -759,7 +766,7 @@ class CleepFilesystem():
             context.action = u'rsync'
             context.root = root
             context.boot = boot
-            context.is_readonly = self.is_readonly
+            context.is_readonly_fs = self.is_readonly_fs
             self.__disable_write(context, root, boot)
 
         return error

@@ -219,7 +219,7 @@ if __name__ == u'__main__':
 
         #create cleep filesystem singleton (will be saved in bootstrap context)
         cleep_filesystem = CleepFilesystem()
-        if cleep_filesystem.is_readonly:
+        if cleep_filesystem.is_readonly_fs:
             logger.info(u'Cleep is running on read-only feature enabled filesystem')
         if not readonly_enabled:
             logger.info(u'Filesystem readonly protection is disabled completely by application!')
