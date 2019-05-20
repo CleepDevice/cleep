@@ -3,7 +3,6 @@
 
 from raspiot.utils import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.configs.config import Config
-from raspiot.libs.internals.console import Console
 import os
 import re
 import io
@@ -27,7 +26,6 @@ class EtcModules(Config):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
         Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
-        self.console = Console()
 
     def __get_entries(self):
         """
@@ -80,15 +78,11 @@ class EtcModules(Config):
         Returns:
             bool: Return True if module enabled. False if module already enabled
         """
-        out = False
+        out = True
 
         entries = self.__get_entries()
         if not entries.has_key(module_name):
             out = self.add_lines([u'%s' % module_name])
-
-        #modprobe module
-        cmd = u'/sbin/modprobe -q "%s"' % module_name
-        self.console.command(cmd)
 
         return out
 
@@ -102,15 +96,11 @@ class EtcModules(Config):
         Returns:
             bool: Return True if module disabled
         """
-        out = False
+        out = True
 
         entries = self.__get_entries()
         if entries.has_key(module_name):
             out = self.remove_lines([u'%s' % module_name])
-
-        #modprobe module
-        cmd = u'/sbin/modprobe -q -r "%s"' % module_name
-        self.console.command(cmd)
 
         return out
 
