@@ -283,7 +283,7 @@ class Alsa(AdvancedConsole):
             results = self.__amixer_command(u'/usr/bin/amixer set "%s" %s%%' % (control, volume))
         self.logger.debug('Amixer command results: %s' % results)
         if len(results)==0 or control not in results.keys():
-            self.logger.warning(u'Unable to get volume: no control "%s" found in results, maybe device does not support it' % control)
+            self.logger.warning(u'Unable to get volume: no control "%s" found in results, maybe device is not the default card' % control)
             return None
 
         #parse result to get volume value
@@ -431,8 +431,9 @@ class Alsa(AdvancedConsole):
         
         try:
             cmd = u'/usr/sbin/alsactl store'
+            resp = self.command(cmd)
             self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
-            return True if self.get_last_return_code()==0 else False
+            return True if resp[u'returncode']==0 else False
     
         except:
             self.logger.exception(u'Error occured during alsa config saving:')
