@@ -4,6 +4,7 @@
 import time
 import logging
 from .driver import Driver
+from raspiot.libs.configs.cleepaudio import CleepAudio
 
 class AudioDriver(Driver):
     """
@@ -21,6 +22,30 @@ class AudioDriver(Driver):
         """
         Driver.__init__(self, cleep_filesystem, Driver.DRIVER_AUDIO, driver_name)
         self.card_name = card_name
+        self._cleep_audio = CleepAudio(self.cleep_filesystem)
+
+    def register_system_modules(self, modules):
+        """
+        Register audio driver system modules.
+        Call this function when installing driver.
+
+        This function appends specified modules to /etc/modprobe.d/cleep-audio.conf to
+        blacklist those modules from system startup. This allows cleep to load on-demand
+        specified audio device having only one available for alsa. This minimize problem
+        with audio when multiple soundcards are available.
+        """
+        for module in modules:
+            self._cleep_audio.blacklist_module(module)
+
+    def unregister_system_modules(self, modules):
+        """
+        Unregister audio driver system modules.
+        Call this function when uninstalling driver.
+
+        This function removes modules from /etc/modprobe.d/cleep-audio.conf file.
+        """
+        for module in modules:
+            self._cleep_audio.unblacklist_module(module)
 
     def get_device_infos(self):
         """
