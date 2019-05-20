@@ -11,8 +11,6 @@ class Modprobe(Console):
     Modprobe command helper
     """
 
-    CACHE_DURATION = 2.0
-
     def __init__(self):
         """
         Constructor
@@ -22,9 +20,9 @@ class Modprobe(Console):
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def enable_module(self, module):
+    def load_module(self, module):
         """
-        Enable specified module
+        Load specified module
 
         Args:
             module (string): module name
@@ -39,9 +37,9 @@ class Modprobe(Console):
 
         return True if self.get_last_return_code()==0 else False
 
-    def disable_module(self, module):
+    def unload_module(self, module):
         """
-        Disable specified module
+        Unload specified module
 
         Args:
             module (string): module name
