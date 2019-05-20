@@ -37,7 +37,7 @@ class Lsmod(Console):
         modules = []
         if not res[u'error'] and not res[u'killed']:
             for module in res[u'stdout']:
-                modules.append(module.replace(u'_', u'-'))
+                modules.append(module)
 
         #save devices
         self.modules = modules
@@ -62,5 +62,5 @@ class Lsmod(Console):
         """
         self.__refresh()
 
-        return module.replace(u'_', u'-') in self.modules
+        return module.replace(u'-', u'_') in self.modules
 
