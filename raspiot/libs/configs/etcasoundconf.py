@@ -4,6 +4,7 @@
 from raspiot.libs.configs.config import Config
 import logging
 import re
+import time
 
 class EtcAsoundConf(Config):
     """
@@ -43,101 +44,137 @@ ctl.!default {
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
-        self.__playback_devices = {}
+        self.__cache = None
+        self.__last_update = None
         self.timestamp = None
 
     def get_raw_configuration(self):
         """
-        Get raw configuration with all sections
+        Get raw configuration with all sections and their content (only direct objects are handled, sub-ones can be wrong)
 
-        Args:
-            command (string): command to execute
+        Returns:
+            dict: file content as dict::
 
-        Return:
-            dict: dict of outputs::
                 {
-                    config section: {
-                        section (string),
-                        type (string),
-                        cardid (int),
-                        deviceid (int)
+                    section: {
+                        field...
                     }
                 }
-        """
-        #search for main sections
-        results = self.find(r'(.*?)\s*{\s*(.*?)\s*}\s*', re.UNICODE | re.DOTALL)
-        self.logger.debug('results: %s' % results)
 
-        #first parse to identify sections and their content
+        """
+        #check cache
+        if self.__last_update is not None and (time.time()-self.__last_update)<self.CACHE_DURATION:
+            return self.__cache
+
+        #search for main sections
+        results = self.find(r'(?:^#.*$)|(?:(.*?\..*?)\s+)|(?:\{\r?\n?((?:.*?\r?\n?)*)\})', re.UNICODE | re.MULTILINE)
+        self.logger.trace('results: %s' % results)
+
         entries = {}
-        default_card_id = None
-        pcm_default_found = False
-        pattern = r'(type\s+(.*)\s*)|(card\s+(\d))|(device\s+(\d))'
-        for _, groups in results:
+        current_section = None
+        section_content_pattern = r'^\s*(.*?)\s+(.*?)$'
+        for match, groups in results:
             #filter None values
             groups = filter(None, groups)
-            self.logger.debug(groups)
+            if len(groups)==0:
+                continue
+            self.logger.trace('groups=%s' % (groups,))
 
-            if len(groups)==2:
-                #prepare values
-                section, content = groups
-                section = section.strip()
-                entry = {
-                    u'section': section,
-                    u'type': None,
-                    u'cardid': None,
-                    u'deviceid': None
-                }
+            if match and not match.startswith(u'{'):
+                #section
+                current_section = groups[0]
+                entries[current_section] = {}
 
-                #parse section  content
-                sub_results = self.find_in_string(pattern, content, re.UNICODE | re.MULTILINE)
+            elif current_section is not None:
+                #section content, parse it using defined pattern
+                sub_results = self.find_in_string(section_content_pattern, groups[0], re.MULTILINE | re.UNICODE)
                 for _, sub_groups in sub_results:
                     #filter None values
                     sub_groups = filter(None, sub_groups)
-                    self.logger.debug('section:%s => %s' % (section, sub_groups))
+                    self.logger.trace('subgroups=%s' % (sub_groups,))
 
                     if len(sub_groups)==2:
-                        if sub_groups[0].startswith(u'type'):
-                            #type <string>
-                            entry[u'type'] = sub_groups[1].strip()
-                        elif sub_groups[0].startswith(u'card'):
-                            #card <int>
-                            try:
-                                entry[u'cardid'] = int(sub_groups[1])
-                            except:
-                                self.logger.exception(u'Unable to get card id: "%s"' % sub_groups[1])
-                        elif sub_groups[0].startswith(u'device'):
-                            #device <int>
-                            try:
-                                entry[u'deviceid'] = int(sub_groups[1])
-                            except:
-                                self.logger.exception(u'Unable to get device id: "%s"' % sub_groups[1])
+                        entries[current_section][sub_groups[0]] = sub_groups[1]
 
-                #save entry
-                entries[section] = entry
+        #cache
+        self.__cache = entries
+        self.__last_update = time.time()
 
         return entries
 
-    def get_configuration(self):
+    def get_default_pcm_section(self):
         """
-        Return current configuration
+        Return default PCM section
 
-        Return:
-            dict: current pcm configuration or None if pcm section not found::
-                {
-                    section (string),
-                    type (string),
-                    cardid (int),
-                    deviceid (int)
-                }
+        Returns:
+            dict: section content or None if nothing
         """
         raw = self.get_raw_configuration()
 
         #return only pcm section
-        if self.PCM_SECTION in raw.keys():
-            return raw[self.PCM_SECTION]
+        return raw[self.PCM_SECTION] if self.PCM_SECTION in raw else None
 
-        return None
+    def get_default_ctl_section(self):
+        """
+        Return default CTL section
+
+        Returns:
+            dict: section content or None if nothing
+        """
+        raw = self.get_raw_configuration()
+
+        #return only pcm section
+        return raw[self.CTL_SECTION] if self.CTL_SECTION in raw else None
+
+    def add_default_pcm_section(self, card_id, device_id=0):
+        """
+        Add default PCM section if not exists
+
+        Args:
+            card_id (int): card identifier
+            device_id (int): device identifier
+
+        Returns:
+            bool: True if section added or already exists in file
+        """
+        if self.PCM_SECTION in self.get_raw_configuration():
+            self.logger.debug(u'PCM section already exists in file. Nothing updated.')
+            return True
+
+        CONF = [
+            u'pcm.!default {',
+            u'    type hw',
+            u'    card %(card_id)s',
+            u'    device %(device_id)s',
+            u'}'
+        ]
+        lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
+        return self.add_lines(lines)
+
+    def add_default_ctl_section(self, card_id, device_id=0):
+        """
+        Add default CTL section if not exists
+
+        Args:
+            card_id (int): card identifier
+            device_id (int): device identifier
+
+        Returns:
+            bool: True if section added or already exists in file
+        """
+        if self.CTL_SECTION in self.get_raw_configuration():
+            self.logger.debug(u'CTL section already exists in file. Nothing updated.')
+            return True
+
+        CONF = [
+            u'ctl.!default {',
+            u'    type hw',
+            u'    card %(card_id)s',
+            u'    device %(device_id)s',
+            u'}'
+        ]
+        lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
+        return self.add_lines(lines)
 
     def save_default_file(self, card_id, device_id=0):
         """
@@ -147,7 +184,7 @@ ctl.!default {
             card_id (int): card identifier as returned by alsa
             device_id (int): device identifier as returned by alsa
 
-        Return:
+        Returns:
             bool: True if config saved successfully
         """
         #generate and write new content
@@ -155,7 +192,7 @@ ctl.!default {
             u'card_id': card_id,
             u'device_id': device_id
         }
-        self.logger.debug('content=%s' % content)
+        self.logger.trace('content=%s' % content)
 
         if not self._write(content):
             return False
