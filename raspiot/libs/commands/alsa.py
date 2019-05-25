@@ -136,8 +136,24 @@ class Alsa(AdvancedConsole):
             selected_device_name = None
 
         #get selected device info
+        return self.get_device_infos(selected_device_name)
+
+    def get_device_infos(self, card_name):
+        """
+        Get device infos
+
+        Returns:
+            dict: selected device info or None if nothing found::
+
+                {
+                    cardname (string): card name
+                    cardid (int): card id
+                    deviceid (int): device id
+                }
+
+        """
         for _, device in self.get_playback_devices().items():
-            if device[u'name']==selected_device_name:
+            if device[u'name']==card_name:
                 return device
 
         return None
