@@ -24,29 +24,6 @@ class AudioDriver(Driver):
         self.card_name = card_name
         self._cleep_audio = CleepAudio(self.cleep_filesystem)
 
-    def register_system_modules(self, modules):
-        """
-        Register audio driver system modules.
-        Call this function when installing driver.
-
-        This function appends specified modules to /etc/modprobe.d/cleep-audio.conf to
-        blacklist those modules from system startup. This allows cleep to load on-demand
-        specified audio device having only one available for alsa. This minimize problem
-        with audio when multiple soundcards are available.
-        """
-        for module in modules:
-            self._cleep_audio.blacklist_module(module)
-
-    def unregister_system_modules(self, modules):
-        """
-        Unregister audio driver system modules.
-        Call this function when uninstalling driver.
-
-        This function removes modules from /etc/modprobe.d/cleep-audio.conf file.
-        """
-        for module in modules:
-            self._cleep_audio.unblacklist_module(module)
-
     def get_device_infos(self):
         """
         Returns infos about device associated to driver
@@ -63,7 +40,98 @@ class AudioDriver(Driver):
                 }
 
         """
-        raise NotImplementedError(u'Function "get_infos" must be implemented in "%s"' % self.__class__.__name__)
+        card_name = self._get_card_name()
+        alsa_infos = self._get_alsa_infos()
+        self.logger.debug(u'alsa infos=%s' % alsa_infos)
+        card_infos = {
+            u'cardid': None,
+            u'deviceid': None
+        }
+        if alsa_infos and u'devices' in alsa_infos and len(alsa_infos[u'devices'])>0:
+            card_infos[u'cardid'] = alsa_infos[u'devices'][0][u'cardid']
+            card_infos[u'deviceid'] = alsa_infos[u'devices'][0][u'deviceid']
+        capabilities = self._get_card_capabilities()
+        return {
+            u'cardname': card_name,
+            u'cardid': card_infos[u'cardid'],
+            u'deviceid': card_infos[u'deviceid'],
+            u'playback': capabilities[0],
+            u'capture': capabilities[1],
+        }
+
+    def _is_card_enabled(self, card_name):
+        """ 
+        Is specified card enabled ?
+
+        Args:
+            card_name (string): card name to check
+
+        Returns:
+            bool: True if enable
+        """
+        selected_device = self.alsa.get_selected_device()
+        if selected_device and selected_device[u'name']==card_name:
+            return True
+                
+        return False
+
+    def _get_cardid_deviceid(self):
+        """
+        Returns only cardid/deviceid for current card
+
+        Returns:
+            tuple: cardid/deviceid::
+
+                (
+                    cardid (int): card id or None if not found
+                    deviceid (int): device id or None if not found
+                )
+
+        """
+        infos = self._get_alsa_infos()
+        if infos and u'devices' in infos and len(infos[u'devices'])>0:
+            return (infos[u'devices'][0][u'cardid'], infos[u'devices'][0][u'deviceid'])
+
+        return (None, None)
+
+    def _get_alsa_infos(self):
+        """
+        Return alsa infos for current card
+
+        Returns:
+            dict: alsa infos or None if card not found::
+
+                {
+                    cardname (string): card name
+                    cardid (int): alsa card id
+                    deviceid (int): alsa device id
+                }
+
+        """
+        return self.alsa.get_device_infos(self._get_card_name())
+
+    def _get_card_capabilities(self):
+        """
+        Return card capabilities
+
+        Returns:
+            tuple: card capabilities::
+
+                (
+                    bool: playback capability,
+                    bool: capture capability
+                )
+        """
+        raise NotImplementedError(u'Function "_get_card_capabilities" must be implemented in "%s"' % self.__class__.__name__)
+
+    def _get_card_name(self):
+        """
+        Return card name as returned by alsa
+
+        Returns:
+            string: card name
+        """
+        raise NotImplementedError(u'Function "_get_card_name" must be implemented in "%s"' % self.__class__.__name__)
 
     def enable(self, params=None):
         """ 
@@ -82,15 +150,6 @@ class AudioDriver(Driver):
             params (dict): additionnal parameters if necessary
         """
         raise NotImplementedError(u'Function "disable" must be implemented in "%s"' % self.__class__.__name__)
-
-    def is_enabled(self):
-        """ 
-        Is driver enabled
-
-        Returns:
-            bool: True if driver enabled
-        """
-        raise NotImplementedError(u'Function "is_enabled" must be implemented in "%s"' % self.__class__.__name__)
 
     def get_volumes(self):
         """ 
