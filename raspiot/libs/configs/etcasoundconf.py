@@ -22,7 +22,6 @@ class EtcAsoundConf(Config):
     DEFAULT_CONF = u"""pcm.!default {
     type hw
     card %(card_id)s
-    device %(device_id)s
 }
 
 ctl.!default {
@@ -140,14 +139,13 @@ ctl.!default {
 
         return None
 
-    def set_default_device(self, card_id, device_id):
+    def save_default_file(self, card_id, device_id=0):
         """
-        Set default card for both controller and playback
-        Please be aware that no verification is done
+        Save default asound.conf file overwritting existing one.
 
         Args:
-            card_id (int): card identifier as returned by get_configuration
-            device_id (int): device identifier as returned by get_configuration
+            card_id (int): card identifier as returned by alsa
+            device_id (int): device identifier as returned by alsa
 
         Return:
             bool: True if config saved successfully
