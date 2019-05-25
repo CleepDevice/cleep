@@ -27,7 +27,7 @@ class CleepFilesystem():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.TRACE)
 
         #members
         self.crash_report = None
@@ -102,9 +102,11 @@ class CleepFilesystem():
         #handle debounce timer canceled
         if root and self.__debounce_timer_root is None:
             self.logger.trace(u'Debounce timer for root has already been canceled')
+            self.__rw_lock.release()
             return
         if boot and self.__debounce_timer_boot is None:
             self.logger.trace(u'Debounce timer for boot has already been canceled')
+            self.__rw_lock.release()
             return
         
         #reset flag and disable writings
@@ -134,8 +136,8 @@ class CleepFilesystem():
             return
 
         #acquire lock
-        self.__rw_lock.acquire()
         self.logger.trace(u'Acquire lock in enable_write')
+        self.__rw_lock.acquire()
 
         if root and self.__debounce_timer_root is not None:
             #debounce timer running and we need to enable write mode, cancel timer
@@ -557,6 +559,59 @@ class CleepFilesystem():
 
         return copied
 
+    def ln(self, src, link, force=False):
+        """
+        Create symbolic link
+
+        Args:
+            src (string): source path
+            link (string): link path
+            force (bool): if True will delete existing file or link specified for link path
+        
+        Returns:
+            bool: True if operation succeed
+        """
+        linked = False
+
+        #enable writings if necessary
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(link)):
+            root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(link)
+            boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(link)
+            self.__enable_write(root=root, boot=boot)
+
+        #remove file
+        try:
+            delete = False
+            if os.path.exists(link) and force==True:
+                delete = True
+
+            if delete:
+                os.remove(link)
+
+            os.symlink(src, link)
+            if os.path.exists(link) and os.path.islink(link):
+                linked = True
+        except:
+            self.logger.exception(u'Exception creating symlink from "%s" to "%s"' % (src, link))
+            self.__report_exception({
+                u'message': u'Exception symlinking "%s" to "%s"' % (src, link),
+                u'src': src,
+                u'link': link
+            })
+
+        #disable writings
+        if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(link)):
+            context = ReadWriteContext()
+            context.src = src
+            context.link = link
+            context.action = u'ln'
+            context.root = root
+            context.boot = boot
+            context.is_readonly_fs = self.is_readonly_fs
+            self.__disable_write(context, root, boot)
+
+        return linked
+
     def remove(self, path):
         """
         Remove file (alias of rm function)
@@ -582,6 +637,7 @@ class CleepFilesystem():
         removed = False
 
         #enable writings if necessary
+        self.logger.trace(u'is_readonly_fs=%s' % (self.is_readonly_fs))
         if self.is_readonly_fs and not self.__is_on_tmp(path):
             root = self.rw.is_path_on_root(path)
             self.__enable_write(root=root, boot=not root)
@@ -725,23 +781,17 @@ class CleepFilesystem():
         error = False
 
         #enable writings if necessary
-        self.logger.debug(u'here1')
         if self.is_readonly_fs and (not self.__is_on_tmp(src) or not self.__is_on_tmp(dst)):
-            self.logger.debug(u'here2')
             root = self.rw.is_path_on_root(src) or self.rw.is_path_on_root(dst)
-            self.logger.debug(u'here3')
             boot = not self.rw.is_path_on_root(src) or not self.rw.is_path_on_root(dst)
-            self.logger.debug(u'Enable write')
-
             self.__enable_write(root=root, boot=boot)
 
         #rsync
         try:
             console = Console()
             cmd = u'/usr/bin/rsync %s %s %s' % (options, src, dst)
-            self.logger.error('%s' % cmd)
             resp = console.command(cmd)
-            self.logger.error('%s resp: %s' % (cmd, resp))
+            self.logger.debug('%s resp: %s' % (cmd, resp))
             if resp[u'returncode']!=0:
                 self.logger.error(u'Error occured during rsync command execution "%s" (return code %s)' % (cmd, console.get_last_return_code()))
                 error = True
