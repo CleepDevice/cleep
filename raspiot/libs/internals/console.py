@@ -147,7 +147,7 @@ class EndlessConsole(Thread):
         #launch command
         return_code = None
         self.__start_time = time.time()
-        p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
         pid = p.pid
         self.logger.debug(u'PID=%d' % pid)
 
@@ -189,10 +189,11 @@ class EndlessConsole(Thread):
         self.logger.debug('Purge completed')
 
         #make sure process (and child processes) is really killed
-        try:
-            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
-        except Exception as e:
-            self.logger.debug(u'Kill exception: %s' % str(e))
+        if self.killed:
+            if ON_POSIX:
+                os.killpg(os.getpgid(pid), signal.SIGKILL)
+            else:
+                p.kill()
 
         #process is over
         self.running = False
@@ -222,7 +223,7 @@ class Console():
         self.encoding = sys.getfilesystemencoding()
         self.last_return_code = None
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(loggging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
     def __del__(self):
         """
@@ -278,7 +279,7 @@ class Console():
             raise Exception(u'Timeout is mandatory and must be greater than 0')
 
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
         pid = p.pid
 
         #wait for end of command line
@@ -299,8 +300,12 @@ class Console():
             #check timeout
             if time.time()>(start + timeout):
                 #timeout is over, kill command
-                self.logger.debug('Timeout over, kill command %s' % pid)
-                p.kill()
+                pgid = os.getpgid(pid)
+                self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
+                if ON_POSIX:
+                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+                else:
+                    p.kill()
                 killed = True
                 break
 
@@ -322,12 +327,6 @@ class Console():
                 result[u'stderr'] = err
             else:
                 result[u'stdout'] = self.__process_lines(p.stdout.readlines())
-
-        #make sure process (and child processes) is really killed
-        try:
-            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
-        except Exception as e:
-            self.logger.debug('Kill exception: %s' % str(e))
 
         #trigger callback
         if self.__callback:
