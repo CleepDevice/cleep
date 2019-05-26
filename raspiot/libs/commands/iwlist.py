@@ -41,12 +41,12 @@ class Iwlist(AdvancedConsole):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug(u'Don\'t refresh')
+            self.logger.trace(u'Don\'t refresh')
             return
 
         self.__last_scanned_interface = interface
         results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm|Frequency:(\d+\.\d+) GHz', timeout=15.0)
-        #self.logger.debug(u'Results: %s' % results)
+        #self.logger.trace(u'Results: %s' % results)
 
         #handle invalid interface for wifi scanning
         if len(results)==0 and self.get_last_return_code()!=0:

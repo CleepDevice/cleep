@@ -46,12 +46,12 @@ class Iwconfig(AdvancedConsole):
         for group, groups in results:
             #filter None values
             groups = filter(None, groups)
-            self.logger.debug(groups)
+            self.logger.trace(groups)
 
             #get useful values
             interface = groups[0]
             value = groups[1]
-            self.logger.debug('interface=%s value=%s' % (interface, value))
+            self.logger.trace('interface=%s value=%s' % (interface, value))
 
             #drop lo interface
             if interface==u'lo':
@@ -74,7 +74,7 @@ class Iwconfig(AdvancedConsole):
 
         #save data
         self.interfaces = entries
-        self.logger.debug('interfaces: %s' % entries)
+        self.logger.debug(u'Interfaces: %s' % entries)
 
         #update timestamp
         self.timestamp = time.time()
