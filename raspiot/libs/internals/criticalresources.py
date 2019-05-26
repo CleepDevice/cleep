@@ -22,7 +22,8 @@ class CriticalResources():
     This class only offers a smart resource lock mechanism for developers. It does not garantee to really
     lock a resource if another application wants to use directly the same (hardware or software) resource.
 
-    A good practice is to refer to existing resource and see if some other modules already implement it
+    Refer to raspiot resources directory to know available resources. Feel free to make pull request to add
+    new ones.
     
     A typical exemple of resource lock is audio capture. 2 applications can't access at the same time
     the microphone which results of problem during program execution. This class try to resolve that problem
@@ -52,8 +53,6 @@ class CriticalResources():
         self.resources = {}
         #list of callbacks by module
         self.callbacks = {}
-        #list of extra metadata:
-        self.extras = {}
 
         #load defined resources
         self.__load_resources()
@@ -126,18 +125,9 @@ class CriticalResources():
         Returns list of existing resources
 
         Returns:
-            list: list of resource names::
-            
-                {
-                    resourcename1: extras
-                    resourcename2: extras
-                    ...
-                }
-    
+            list: list of resource names
         """
-        self.logger.debug('self.extras=%s' % self.extras)
-        self.logger.debug('self.resources=%s' % self.resources)
-        return {resource_name:self.extras[resource_name] if resource_name in self.extras else {} for resource_name in self.resources.keys()}
+        return self.resources.keys()
 
     def __is_resource_referenced(self, resource_name):
         """
@@ -151,20 +141,18 @@ class CriticalResources():
         """
         return True if resource_name in self.resources else False
 
-    def register_resource(self, module_name, resource_name, hardware_id, acquired_callback, need_release_callback, permanent=False, extra=None):
+    def register_resource(self, module_name, resource_name, acquired_callback, need_release_callback, permanent=False):
         """
         Register single resource usage
 
         Args:
             module_name (string): module name which registers the resource
             resource_name (string): resource name (format: <resource> or <resource>.<subresource>)
-            hardware_id (string): unique hardware identifier
             acquired_callback (function): function called when resource is acquired
             need_release_callback (function): function called when resource needs to be release
             permanent (bool): True if module declares the need to use the resource permanently.
                               If other module needs to acquire the resource, the permanent module
                               will release temporarly the resource and acquire it again automatically.
-            extra (any): any extra data associated to resource
 
         Raises:
             Exception: if resource does not exist or resource already have permanent module configured
@@ -173,7 +161,7 @@ class CriticalResources():
             raise Exception(u'Resource "%s" does not exists' % resource_name)
         if not callable(acquired_callback) or not callable(need_release_callback):
             raise Exception(u'Callbacks must be functions')
-        self.logger.debug('Registering resource "%s[%s]" for module "%s" (permanent=%s, extra:%s)' % (resource_name, hardware_id, module_name, permanent, extra))
+        self.logger.debug('Registering resource "%s" for module "%s" (permanent=%s)' % (resource_name, module_name, permanent))
 
         #check if resource already registered and if it's not already have a permanent module
         if self.resources[resource_name][u'permanent'] is not None and permanent is True:
@@ -186,11 +174,6 @@ class CriticalResources():
             u'acquired_callback': acquired_callback,
             u'need_release_callback': need_release_callback,
         }
-        
-        #save extra metadata
-        if resource_name not in self.extras:
-            self.extras[resource_name] = {}
-        self.extras[resource_name][hardware_id] = extra
         
         #acquire resource right now if permanent
         if permanent:
@@ -229,24 +212,34 @@ class CriticalResources():
 
         self.__mutex.acquire()
 
-        if self.resources[resource_name][u'using']==None:
-            #resource is not used at this time, acquire it right now
-            self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
-            self.resources[resource_name][u'using'] = module_name
-            task = Task(None, self.callbacks[module_name][resource_name][u'acquired_callback'], self.logger, [resource_name])
-            task.start()
-        else:
-            #resource is not free, add module to waiting queue
-            if module_name not in self.resources[resource_name][u'waiting']:
-                self.logger.debug(u'Resource "%s" is in use by "%s", queue module "%s" (queue size=%s)' % (resource_name, self.resources[resource_name]['using'], module_name, len(self.resources[resource_name][u'waiting'])))
-                self.resources[resource_name][u'waiting'].insert(0, module_name)
+        try:
+            if self.resources[resource_name][u'using']==None:
+                #resource is not used at this time, acquire it right now
+                self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
+                self.resources[resource_name][u'using'] = module_name
+                task = Task(None, self.callbacks[module_name][resource_name][u'acquired_callback'], self.logger, [resource_name])
+                task.start()
+            else:
+                #resource is not free, add module to waiting queue
+                if module_name not in self.resources[resource_name][u'waiting']:
+                    self.logger.debug(u'Resource "%s" is in use by "%s", queue module "%s" (queue size=%s)' % (resource_name, self.resources[resource_name]['using'], module_name, len(self.resources[resource_name][u'waiting'])))
+                    self.resources[resource_name][u'waiting'].insert(0, module_name)
 
-            #and inform module that is using resource it must releases it
-            self.logger.debug(u'Inform module "%s" it resource is needed' % self.resources[resource_name][u'using'])
-            task = Task(None, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], self.logger, [resource_name])
-            task.start()
+                #and inform module that is using resource it must releases it
+                self.logger.debug(u'Inform module "%s" it resource is needed' % self.resources[resource_name][u'using'])
+                task = Task(None, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], self.logger, [resource_name])
+                task.start()
 
-        self.__mutex.release()
+        except:
+            self.logger.exception(u'Error occured acquiring critical resource "%s"' % resource_name)
+            self.__report_exception({
+                u'error': 'Error acquiring critical resource "%s"' % resource_name,
+                u'resource_name': resource_name,
+                u'module_name': module_name
+            })
+
+        finally:
+            self.__mutex.release()
 
     def release_resource(self, module_name, resource_name):
         """
@@ -277,20 +270,34 @@ class CriticalResources():
 
         self.__mutex.acquire()
 
-        #get next module that wants to acquire resource
-        next_module = None
-        if len(self.resources[resource_name][u'waiting'])>0:
-            next_module = self.resources[resource_name][u'waiting'].pop()
-        elif self.resources[resource_name][u'permanent'] is not None:
-            next_module = self.resources[resource_name][u'permanent']
+        error = False
+        try:
+            #get next module that wants to acquire resource
+            next_module = None
+            if len(self.resources[resource_name][u'waiting'])>0:
+                next_module = self.resources[resource_name][u'waiting'].pop()
+            elif self.resources[resource_name][u'permanent'] is not None:
+                next_module = self.resources[resource_name][u'permanent']
 
-        #configure new resource acquirer
-        self.resources[resource_name][u'using'] = next_module
-        if next_module:
-            task = Task(None, self.callbacks[next_module][resource_name][u'acquired_callback'], self.logger, [resource_name])
-            task.start()
+            #configure new resource acquirer
+            self.resources[resource_name][u'using'] = next_module
+            self.logger.trace(u'callbacks: %s' % self.callbacks)
+            self.logger.trace(u'next_module: %s' % next_module)
+            if next_module:
+                task = Task(None, self.callbacks[next_module][resource_name][u'acquired_callback'], self.logger, [resource_name])
+                task.start()
 
-        self.__mutex.release()
+        except:
+            self.logger.exception(u'Error occuring releasing critical resource "%s"' % resource_name)
+            self.__report_exception({
+                u'error': 'Error releasing critical resource "%s"' % resource_name,
+                u'resource_name': resource_name,
+                u'module_name': module_name
+            })
+            error = True
 
-        return True
+        finally:
+            self.__mutex.release()
+
+        return not error
 

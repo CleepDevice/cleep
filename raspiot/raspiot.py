@@ -762,18 +762,14 @@ class RaspIotResources(RaspIotModule):
     #                  The identifier can be for example the physical audio device name::
     #
     #   {
-    #       label (string): understandable resource label
+    #       resource_name (string): xxx.xxx (ie "audio.playback" for audio)
+    #       [
     #           {
-    #               resource_name (string): xxx.xxx (ie "audio.playback" for audio)
-    #                   [
-    #                       {
-    #                           hardware_id (string): hardware identifier if available (ie "bcm2835 ALSA" for audio)
-    #                           permanent (bool): acquire permanently the resource (only one app can get focus on the resource)
-    #                       },
-    #                       ...
-    #                   ]
+    #               permanent (bool): acquire permanently the resource
     #           },
     #           ...
+    #       ],
+    #       ...
     #   }
     #
     MODULE_RESOURCES = {}
@@ -799,26 +795,14 @@ class RaspIotResources(RaspIotModule):
         """
         Register module resources
         """
-        for label in self.MODULE_RESOURCES:
-            for resource_name, resource in self.MODULE_RESOURCES[label].items():
-
-                #check resource content
-                if u'hardware_id' not in resource:
-                    raise InvalidParameter(u'Field "hardware_id" is missing in MODULE_RESOURCES')
-                elif u'permanent' not in resource:
-                    raise InvalidParameter(u'Field "permanent" is missing in MODULE_RESOURCES')
-
-                self.__critical_resources.register_resource(
-                    self.__class__.__name__,
-                    resource_name,
-                    resource[u'hardware_id'],
-                    self._resource_acquired,
-                    self._resource_needs_to_be_released,
-                    resource[u'permanent'],
-                    extra={
-                        u'label': label,
-                    }
-                )
+        for resource_name, resource in self.MODULE_RESOURCES.items():
+            self.__critical_resources.register_resource(
+                self.__class__.__name__,
+                resource_name,
+                self._resource_acquired,
+                self._resource_needs_to_be_released,
+                resource[u'permanent'] if u'permanent' in resource else False
+            )
 
     def _resource_acquired(self, resource_name):
         """
@@ -871,20 +855,14 @@ class RaspIotResources(RaspIotModule):
         """
         return self.__critical_resources.release_resource(self.__class__.__name__, resource_name)
 
-    def _get_resources(self, pattern=None):
+    def _get_resources(self):
         """
-        Return loaded resources
-
-        Args:
-            pattern (string): optionnal pattern to use to search resource name
+        Return loaded resources with extra data
 
         Returns:
-            list: list of found resources
+            list: list of available resources
         """
-        if pattern is None:
-            return self.__critical_resources.get_resources()
-        
-        return {resource_name:extra for resource_name, extra in self.__critical_resources.get_resources().items() if re.search(pattern, resource_name)}
+        return self.__critical_resources.get_resources()
 
  
 
