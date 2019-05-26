@@ -145,7 +145,6 @@ ctl.!default {
             u'pcm.!default {',
             u'    type hw',
             u'    card %(card_id)s',
-            u'    device %(device_id)s',
             u'}'
         ]
         lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
@@ -170,7 +169,6 @@ ctl.!default {
             u'ctl.!default {',
             u'    type hw',
             u'    card %(card_id)s',
-            u'    device %(device_id)s',
             u'}'
         ]
         lines = [line % {'card_id':card_id, 'device_id':device_id} for line in CONF]
