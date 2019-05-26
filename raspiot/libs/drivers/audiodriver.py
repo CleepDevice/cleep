@@ -59,17 +59,21 @@ class AudioDriver(Driver):
             u'capture': capabilities[1],
         }
 
-    def _is_card_enabled(self, card_name):
+    def _is_card_enabled(self, card_name=None):
         """ 
         Is specified card enabled ?
 
         Args:
-            card_name (string): card name to check
+            card_name (string): card name to check. If None specified, driver card name is used
 
         Returns:
             bool: True if enable
         """
         selected_device = self.alsa.get_selected_device()
+
+        if card_name is None:
+            card_name = self._get_card_name()
+
         if selected_device and selected_device[u'name']==card_name:
             return True
                 
