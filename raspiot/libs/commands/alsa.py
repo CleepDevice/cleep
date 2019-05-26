@@ -118,7 +118,7 @@ class Alsa(AdvancedConsole):
             dict: selected device info or None if nothing found::
 
                 {
-                    cardname (string): caard name
+                    cardname (string): card name
                     cardid (int): card id
                     deviceid (int): device id
                 }
@@ -369,7 +369,7 @@ class Alsa(AdvancedConsole):
 
     def play_sound(self, path, timeout=5.0):
         """
-        Play specified sound using aplay command
+        Play specified sound using aplay command. Please take care of setting timeout accordingly to your duration!
 
         Args:
             path (string): sound file path
@@ -397,7 +397,7 @@ class Alsa(AdvancedConsole):
 
     def record_sound(self, channels=2, rate=44100, format=u'S32_LE', timeout=5.0):
         """
-        Record sound
+        Record sound. In charge of function caller to remove properly generated file
 
         Args:
             format (string): RECORD_FORMAT_XXX (default S32_LE)
@@ -427,17 +427,13 @@ class Alsa(AdvancedConsole):
             raise InvalidParameter(u'Parameter rate is invalid. Please check supported value.')
 
         #record sound
-        out = u'%s.wav' % os.path.join('/tmp', str(uuid.uuid4()))
-        cmd = u'/usr/bin/arecord -f %s -c%d -r%d "%s"' % (format, channels, rate, out)
+        record_path = u'%s.wav' % os.path.join('/tmp', str(uuid.uuid4()))
+        cmd = u'/usr/bin/arecord -f %s -c%d -r%d "%s"' % (format, channels, rate, record_path)
         resp = self.command(cmd, timeout=timeout)
         self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
-        
-        #check errors
-        if self.get_last_return_code()!=0:
-            self.logger.error(u'Error occured during recording %s: %s' % (cmd, res))
-            raise CommandError(u'Error during recording')
+        #do not check errors here because command will be killed after timeout
 
-        return out
+        return record_path
 
     def save(self):
         """
