@@ -582,7 +582,7 @@ class CleepFilesystem():
         #remove file
         try:
             delete = False
-            if os.path.exists(link) and force==True:
+            if (os.path.exists(link) or os.path.islink(link)) and force==True:
                 delete = True
 
             if delete:
@@ -644,7 +644,7 @@ class CleepFilesystem():
 
         #remove file
         try:
-            if os.path.exists(path):
+            if os.path.exists(path) or os.path.islink(path):
                 os.remove(path)
                 removed = True
         except:
