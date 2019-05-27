@@ -201,9 +201,9 @@ ctl.!default {
         """
         Delete /etc/asound.conf and /var/lib/alsa/asound.state files to let system using its prefered device
         """
-        self.cleep_filesystem.rm(self.CONF)
-        self.cleep_filesystem.rm(self.ASOUND_STATE)
+        conf = self.cleep_filesystem.rm(self.CONF)
+        state = self.cleep_filesystem.rm(self.ASOUND_STATE)
 
-        return True
+        return conf and state
 
 
