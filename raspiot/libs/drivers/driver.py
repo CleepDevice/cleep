@@ -13,6 +13,11 @@ class Driver():
     #driver types
     DRIVER_AUDIO = u'audio'
 
+    #PROCESSING STATUS
+    PROCESSING_NONE = 0
+    PROCESSING_INSTALLING = 1
+    PROCESSING_UNINSTALLING = 2
+
     def __init__(self, cleep_filesystem, driver_type, driver_name):
         """
         Constructor
@@ -26,20 +31,24 @@ class Driver():
         self.logger = logging.getLogger(self.__class__.__name__)
         self.type = driver_type
         self.name = driver_name
+        self._processing = self.PROCESSING_NONE
 
     def install(self, end_callback, params=None):
         """
         Install driver
 
         Args:
-            end_callback (function): function called when install complete. Function args: success (bool), message (string)
+            end_callback (function): function called when install complete. Function args: driver_type (string), driver_name (string), success (bool), message (string)
             params (dict): additionnal parameters if necessary
         """
+        if self._processing!=self.PROCESSING_NONE:
+            raise CommandError(u'Driver is already processing')
 
         def install(callback, params):
             message = None
             success = True
             self.cleep_filesystem.enable_write(root=True, boot=True)
+            self._processing = self.PROCESSING_INSTALLING
             try:
                 self._install(params)
             except Exception as e:
@@ -47,7 +56,8 @@ class Driver():
                 success = False
             finally:
                 self.cleep_filesystem.disable_write(root=True, boot=True)
-            callback(success, message)
+                self._processing = self.PROCESSING_NONE
+            callback(self.type, self.name, success, message)
 
         task = Task(None, install, self.logger, [end_callback, params])
         task.start()
@@ -66,14 +76,17 @@ class Driver():
         Uninstall driver
 
         Args:
-            end_callback (function): function called when install complete. Function args: success (bool), message (string)
+            end_callback (function): function called when install complete. Function args: driver type (string), driver name (string), success (bool), message (string)
             params (dict): additionnal parameters if necessary
         """
+        if self._processing!=self.PROCESSING_NONE:
+            raise CommandError(u'Driver is already processing')
 
         def uninstall(callback, params):
             message = None
             success = True
             self.cleep_filesystem.enable_write(root=True, boot=True)
+            self._processing = self.PROCESSING_UNINSTALLING
             try:
                 self._uninstall(params)
             except Exception as e:
@@ -81,7 +94,8 @@ class Driver():
                 success = False
             finally:
                 self.cleep_filesystem.disable_write(root=True, boot=True)
-            callback(success, message)
+                self._processing = self.PROCESSING_NONE
+            callback(self.type, self.name, success, message)
 
         task = Task(None, uninstall, self.logger, [end_callback, params])
         task.start()
@@ -104,4 +118,12 @@ class Driver():
         """
         raise NotImplementedError(u'Function "is_installed" must be implemented in "%s"' % self.__class__.__name__)
         
+    def processing(self):
+        """
+        Return processing status
+
+        Returns:
+            int: processing status (see Driver.PROCESSING_XXX)
+        """
+        return self._processing
 

@@ -9,10 +9,12 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     self.__deferred_modules = $q.defer();
     self.__deferred_events = $q.defer();
     self.__deferred_renderers = $q.defer();
+    self.__deferred_drivers = $q.defer();
     self.devices = [];
     self.modules = {};
     self.renderers = {};
     self.events = {};
+    self.drivers = {};
     self.modulesPath = 'js/modules/';
 
     /**
@@ -35,6 +37,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 self._setDevices(config.devices);
                 self._setRenderers(config.renderers);
                 self._setEvents(config.events);
+                self._setDrivers(config.drivers);
             });
     };
 
@@ -404,7 +407,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      */
     self.reloadModuleConfig = function(module)
     {
-        var d = $q.defer();
+        var deferred = $q.defer();
 
         if( self.modules[module] )
         {
@@ -415,28 +418,28 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                         //save new config
                         self.modules[module].config = resp.data;
                         //self.__setModuleIcon(module);
-                        d.resolve(resp.data);
+                        deferred.resolve(resp.data);
                     }
                     else
                     {
                         console.error(resp.message);
                         toast.error(resp.message);
-                        d.reject(resp.message);
+                        deferred.reject(resp.message);
                     }
                 }, function(err) {
                     //error occured
                     toast.error('Unable to reload module "' + module + '" configuration');
                     console.error('Unable to reload module "' + module + '" configuration', err);
-                    d.reject(err);
+                    deferred.reject(err);
                 });
         }
         else
         {
             console.error('Specified module "' + module + '" has no configuration');
-            d.reject('module has no config');
+            deferred.reject('module has no config');
         }
 
-        return d.promise;
+        return deferred.promise;
     };
 
     /**
@@ -449,7 +452,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         for( var module in devices )
         {
             //add specific ui stuff
-            for( uuid in devices[module] )
+            for( var uuid in devices[module] )
             {
                 //add widget infos
                 devices[module][uuid].__widget = {
@@ -463,20 +466,20 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
             }
 
             //store device
-            for( uuid in devices[module] )
+            for( var uuid in devices[module] )
             {
                 newDevices.push(devices[module][uuid]);
             }
         }
 
         //clear existing devices
-        for( i=self.devices.length-1; i>=0; i--)
+        for( var i=self.devices.length-1; i>=0; i--)
         {
             self.devices.splice(i, 1);
         }
 
         //save new devices
-        for( i=0; i<newDevices.length; i++ )
+        for( var i=0; i<newDevices.length; i++ )
         {
             self.devices.push(newDevices[i]);
         }
@@ -488,17 +491,17 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
      */
     self.reloadDevices = function()
     {
-        var d = $q.defer();
-        var uuid = null;
-        var i = 0;
+        var deferred = $q.defer();
 
         rpcService.getDevices()
             .then(function(devices) {
                 self._setDevices(devices);
-                d.resolve(self.devices);
+                deferred.resolve(self.devices);
+            }, function() {
+                deferred.reject();
             });
         
-        return d.promise;
+        return deferred.promise;
     };
 
     /**
@@ -575,13 +578,72 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         {
             self.__deferred_events.promise
                 .then(function() {
-                    console.log('resolve events');
                     deferred.resolve(self.events);
                 }, function() {
                     deferred.reject();
                 });
         }
 
+        return deferred.promise;
+    };
+
+    /**
+     * Set drivers
+     * Just set drivers list
+     */
+    self._setDrivers = function(drivers)
+    {
+        self.drivers = drivers;
+        //no deferred during reboot/restart, handle this case
+        if( self.__deferred_drivers )
+        {
+            self.__deferred_drivers.resolve();
+            self.__deferred_drivers = null;
+        }
+    };
+
+    /**
+     * Get drivers
+     * @return promise
+     */
+    self.getDrivers = function()
+    {
+        var deferred = $q.defer();
+
+        if( self.__deferred_drivers===null )
+        {
+            //drivers already loaded, return collection
+            deferred.resolve(self.drivers);
+        }
+        else
+        {
+            self.__deferred_drivers.promise
+                .then(function() {
+                    deferred.resolve(self.drivers);
+                }, function() {
+                    deferred.reject();
+                });
+        }
+
+        return deferred.promise;
+    };
+
+    /**
+     * Reload drivers
+     * Call getDrivers command again and set drivers
+     */
+    self.reloadDrivers = function()
+    {
+        var deferred = $q.defer();
+
+        rpcService.getDrivers()
+            .then(function(drivers) {
+                self._setDrivers(drivers);
+                deferred.resolve(self.drivers);
+            }, function() {
+                deferred.reject();
+            });
+        
         return deferred.promise;
     };
 

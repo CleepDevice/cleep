@@ -170,6 +170,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                 console.log('MODULES', raspiotService.modules);
                 console.log('RENDERERS', raspiotService.renderers);
                 console.log('EVENTS', raspiotService.events);
+                console.log('DRIVERS', raspiotService.drivers);
             });
     };
 

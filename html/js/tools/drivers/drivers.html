@@ -1,0 +1,43 @@
+<md-list>
+	<md-subheader class="md-no-sticky">Drivers</md-subheader>
+    <md-list-item ng-repeat="driver in driversCtl.drivers" class="md-2-line">
+
+        <!-- icon -->
+        <md-icon ng-if="driver.drivertype==='audio'" md-svg-icon="volume-high"></md-icon>
+
+        <!-- description -->
+        <div class="md-list-item-text">
+            <h3>{{driver.drivername}}</h3>
+            <p>{{driver.drivertype}} driver</p>
+        </div>
+
+        <!-- processing -->
+        <div ng-if="driver.processing!==0" style="min-width:200px">
+            <div style="display:block; margin-top:8px; margin-bottom:5px;">
+                <span ng-if="driver.processing===1">Installing...</span>
+                <span ng-if="driver.processing===2">Uninstalling...</span>
+            </div>
+            <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+        </div>
+
+		<!-- install -->
+        <md-button ng-if="!driver.installed" ng-disabled="driver.processing!==0" ng-click="driversCtl.install(driver)" class="md-raised md-primary">
+            <md-icon md-svg-icon="plus-circle"></md-icon>
+            Install
+        </md-button>
+
+		<!-- uninstall -->
+        <md-button ng-if="driver.installed" ng-disabled="driver.processing!==0" ng-click="driversCtl.uninstall(driver)" class="md-raised md-primary">
+            <md-icon md-svg-icon="minus-circle"></md-icon>
+            Uninstall
+        </md-button>
+
+		<!-- repair -->
+        <md-button ng-if="driver.installed" ng-disabled="driver.processing!==0" ng-click="driversCtl.repair(driver)" class="md-raised">
+            <md-icon md-svg-icon="wrench"></md-icon>
+            Repair
+        </md-button>
+
+    </md-list-item>
+</md-list>
+

@@ -670,3 +670,9 @@ class Inventory(RaspIot):
             except:
                 self.logger.exception(u'RpcWrapper wrap_request function failed:')
 
+    def get_drivers(self):
+        """
+        Return drivers
+        """
+        return self.bootstrap[u'drivers'].get_all_drivers()
+

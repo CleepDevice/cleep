@@ -49,6 +49,15 @@ class Drivers():
         self.logger.info(u'%s driver "%s" registered' % (driver.type.capitalize(), driver.name))
         self.drivers[driver.type][driver.name] = driver
 
+    def get_all_drivers(self):
+        """
+        Return all drivers
+
+        Returns:
+            dict: map of drivers
+        """
+        return self.drivers
+
     def get_drivers(self, driver_type):
         """
         Return drives for specified type

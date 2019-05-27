@@ -263,7 +263,7 @@ def send_command(command, to, params, timeout=None):
         params (dict): command parameters
         timeout (float): set new timeout (default no timeout)
 
-    Return:
+    Returns:
         MessageResonse: command response (None if broadcasted message)
     """
     #prepare and send command
@@ -282,7 +282,7 @@ def get_events():
     """
     Return used events
 
-    Return:
+    Returns:
         list: list of used events
     """
     return inventory.get_used_events()
@@ -291,7 +291,7 @@ def get_renderers():
     """
     Return renderers
 
-    Return:
+    Returns:
         list: list of renderers by type::
             {
                 'type1': {
@@ -313,7 +313,7 @@ def get_modules():
     """
     Return configurations for all loaded modules
 
-    Return:
+    Returns:
         dict: map of modules with their configuration, devices, commands...
     """
     return inventory.get_modules()
@@ -322,10 +322,29 @@ def get_devices():
     """
     Return all devices
 
-    Return:
+    Returns:
         dict: all devices by module
     """
     return inventory.get_devices()
+
+def get_drivers():
+    """
+    Return referenced drivers
+
+    Returns:
+        dict: map of drivers
+    """
+    drivers = []
+    for driver_type, data in inventory.get_drivers().items():
+        for driver_name, driver in data.items():
+            drivers.append({
+                u'drivername': driver_name,
+                u'drivertype': driver_type,
+                u'processing': driver.processing(),
+                u'installed': driver.is_installed(),
+            })
+
+    return drivers
 
 @app.route(u'/upload', method=u'POST')
 @authenticate()
@@ -339,7 +358,7 @@ def upload():
         to (string): command recipient
         params (dict): command parameters
 
-    Return:
+    Returns:
         MessageResponse: command response
     """
     path = None
@@ -409,7 +428,7 @@ def download():
         to (string): command recipient
         params (dict): command parameters
 
-    Return:
+    Returns:
         MessageResponse: command response
     """
     try:
@@ -470,7 +489,7 @@ def command():
         timeout (float): timeout
         params (dict): command parameters
 
-    Return:
+    Returns:
         MessageResponse: command response
     """
     logger.debug(u'COMMAND method=%s data=[%d]: %s' % (unicode(bottle.request.method), len(bottle.request.params), unicode(bottle.request.json)))
@@ -544,7 +563,7 @@ def modules():
     """
     Return configurations for all loaded modules
 
-    Return:
+    Returns:
         dict: map of modules with their configuration, devices, commands...
     """
     modules = get_modules()
@@ -558,7 +577,7 @@ def devices():
     """
     Return all devices
 
-    Return:
+    Returns:
         dict: all devices by module
     """
     devices = get_devices()
@@ -572,7 +591,7 @@ def renderers():
     """
     Returns all renderers
 
-    Return:
+    Returns:
         dict: all renderers by type
     """
     renderers = get_renderers()
@@ -580,13 +599,27 @@ def renderers():
 
     return json.dumps(renderers)
 
+@app.route(u'/drivers', method=u'POST')
+@authenticate()
+def drivers():
+    """
+    Returns all drivers
+
+    Returns:
+        dict: all drivers by type
+    """
+    drivers = get_drivers()
+    logger.debug(u'Drivers: %s' % drivers)
+
+    return json.dumps(drivers)
+
 @app.route(u'/events', method=u'POST')
 @authenticate()
 def events():
     """
     Return all used events
 
-    Return:
+    Returns:
         list: list of used events
     """
     events = get_events()
@@ -600,7 +633,7 @@ def config():
     """
     Return device config
 
-    Return:
+    Returns:
         dict: all device config::
             {
                 modules (dict): all devices by module
@@ -610,10 +643,11 @@ def config():
             }
     """
     config = {
-        'modules': get_modules(),
-        'events': get_events(),
-        'renderers': get_renderers(),
-        'devices': get_devices()
+        u'modules': get_modules(),
+        u'events': get_events(),
+        u'renderers': get_renderers(),
+        u'devices': get_devices(),
+        u'drivers': get_drivers(),
     }
 
     return json.dumps(config)
@@ -624,7 +658,7 @@ def registerpoll():
     """
     Register poll
 
-    Return:
+    Returns:
         dict: {'pollkey':''}
     """
     #subscribe to bus
@@ -650,7 +684,7 @@ def poll():
     """
     This is the endpoint for long poll clients.
 
-    Return:
+    Returns:
         dict: map of received event
     """
     with pollcounter():
@@ -731,7 +765,6 @@ def index():
     Return a default document if no path was specified.
     """
     return bottle.static_file(u'index.html', HTML_DIR)
-
 
 @app.route(u'/logs', method=u'GET')
 def logs():
