@@ -47,14 +47,17 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
          * Install driver
          */
         self.install = function(driver) {
-            rpcService.sendCommand('install_driver', 'system', {'driver_type': driver.drivertype, 'driver_name': driver.drivername});
+            confirmService.open('Install driver', 'Confirm "'+driver.drivername+'" driver installation ?<br><br>After installation device will reboot.', 'Install', 'Cancel')
+                .then(function() {
+                    rpcService.sendCommand('install_driver', 'system', {'driver_type': driver.drivertype, 'driver_name': driver.drivername});
+                });
         };
 
         /**
          * Uninstall driver
          */
         self.uninstall = function(driver) {
-            confirmService.open('Uninstall driver', 'Confirm uninstallation of "'+driver.drivername+'" driver?', 'Uninstall', 'Cancel')
+            confirmService.open('Uninstall driver', 'Confirm "'+driver.drivername+'" driver uninstallation ?<br><strong>Please note after driver uninstallation handled hardware should not work!</strong><br><br>After uninstallation device will reboot.', 'Uninstall', 'Cancel')
                 .then(function() {
                     rpcService.sendCommand('uninstall_driver', 'system', {'driver_type': driver.drivertype, 'driver_name': driver.drivername});
                 });
@@ -64,7 +67,7 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
          * Repair driver
          */
         self.repair = function(driver) {
-            confirmService.open('Repair driver', 'This will install again "'+driver.drivername+'" driver. Do you confirm ?', 'Reinstall', 'Cancel')
+            confirmService.open('Repair driver', 'This will reinstall "'+driver.drivername+'" driver. Do you confirm ?<br><br>After reinstall device will reboot.', 'Reinstall', 'Cancel')
                 .then(function() {
                     rpcService.sendCommand('install_driver', 'system', {'driver_type': driver.drivertype, 'driver_name': driver.drivername, 'force': true});
                 });
@@ -87,7 +90,6 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
          */
         $rootScope.$on('system.driver.install', function(event, uuid, params) {
             raspiotService.reloadDrivers();
-            console.log('install driver', params);
             if( params && params.success===true )
             {
                 toastService.success('Driver installed successfully');
@@ -95,6 +97,7 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
             else if( params && params.success===false )
             {
                 toastService.error('Error installing driver: "' + params.message + '"');
+                console.error('Install driver failed:', params.message);
             }
         });
 
@@ -103,7 +106,6 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
          */
         $rootScope.$on('system.driver.uninstall', function(event, uuid, params) {
             raspiotService.reloadDrivers();
-            console.log('uninstall driver', params);
             if( params && params.success===true )
             {
                 toastService.success('Driver uninstalled successfully');
@@ -111,6 +113,7 @@ var driversDirective = function($rootScope, rpcService, raspiotService, confirmS
             else if( params && params.success===false )
             {
                 toastService.error('Error uninstalling driver: "' + params.message + '"');
+                console.error('Uninstall driver failed:', params.message);
             }
         });
 
