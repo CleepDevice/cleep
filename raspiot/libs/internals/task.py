@@ -67,6 +67,7 @@ class Task:
         #run again task?
         if run_again:
             self.__timer = Timer(self._interval, self.__run)
+            self.__timer.daemon = True
             self.__timer.start()
 
     def set_interval(self, interval):
@@ -85,6 +86,7 @@ class Task:
         if self.__timer:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
+        self.__timer.daemon = True
         self.__timer.start()
   
     def stop(self):
