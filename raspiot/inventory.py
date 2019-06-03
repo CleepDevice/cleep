@@ -185,7 +185,7 @@ class Inventory(RaspIot):
         fixed_country = self.__fix_country(getattr(module_class_, u'MODULE_COUNTRY', None))
 
         #update metadata with local values
-        if module_name not in self.modules.keys():
+        if module_name not in self.modules:
             self.modules[module_name] = {}
         self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
         self.modules[module_name][u'author'] = getattr(module_class_, u'MODULE_AUTHOR', u'')
@@ -478,9 +478,67 @@ class Inventory(RaspIot):
 
         return output
 
+    def get_installable_modules(self):
+        """
+        Returns dict of installable modules
+
+        Returns:
+            dict: dict of modules::
+
+                {
+                    module name: {
+                        name: '',
+                        version: '',
+                        ...
+                    },
+                    ...
+                }
+
+        """
+        return self._get_modules(lambda k,v: k not in self.__modules_instances)
+
     def get_modules(self):
         """
-        Returns dict of modules
+        Returns dict of installed modules
+
+        Returns:
+            dict: dict of modules::
+
+                {
+                    module name: {
+                        name: '',
+                        version: '',
+                        ...
+                    },
+                    ...
+                }
+
+        """
+        events = self.events_factory.get_modules_events()
+        installed_modules = self._get_modules(lambda k,v: k in self.__modules_instances)
+
+        for module_name, module in installed_modules.items():
+            #current module config
+            module[u'config'] = self.__modules_instances[module_name].get_module_config()
+            
+            #module events
+            if module_name in events:
+                module[u'events'] = events[module_name]
+
+            #started flag
+            if module_name in self.__modules_in_errors:
+                module[u'started'] = False
+            else:
+                module[u'started'] = True
+
+        return installed_modules
+
+    def _get_modules(self, module_filter):
+        """
+        Returns dict of all modules
+
+        Args:
+            module_filter (function): filtering function
         
         Returns:
             dict: dict of modules::
@@ -496,53 +554,41 @@ class Inventory(RaspIot):
 
         """
         #init
-        modules = copy.deepcopy(self.modules)
-        events = self.events_factory.get_modules_events()
+        all_modules = copy.deepcopy(self.modules)
         conf = RaspiotConf(self.cleep_filesystem)
         raspiot_config = conf.as_dict()
         
         #inject volatile infos
-        for module_name in modules:
+        filtered_modules = {}
+        for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v)}.items():
             try:
-                #current module config
-                if module_name in self.__modules_instances:
-                    modules[module_name][u'config'] = self.__modules_instances[module_name].get_module_config()
-            
-                #module events
-                if module_name in events:
-                    modules[module_name][u'events'] = events[module_name]
-
                 #pending status
-                modules[module_name][u'pending'] = False
+                module[u'pending'] = False
                 if module_name in SYSTEM_MODULES:
                     #mandatory modules
-                    modules[module_name][u'pending'] = False
+                    module[u'pending'] = False
                 elif module_name in self.__modules_in_errors:
                     #module failed to start, force eventual pending state to false
-                    modules[module_name][u'pending'] = False
-                elif module_name in raspiot_config[u'general'][u'modules'] and not modules[module_name][u'installed']:
+                    module[u'pending'] = False
+                elif module_name in raspiot_config[u'general'][u'modules'] and not module[u'installed']:
                     #install pending
-                    modules[module_name][u'pending'] = True
-                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed'] and modules[module_name][u'library']:
+                    module[u'pending'] = True
+                elif module_name not in raspiot_config[u'general'][u'modules'] and module[u'installed'] and module[u'library']:
                     #module is installed as library
-                    modules[module_name][u'pending'] = False
-                elif module_name not in raspiot_config[u'general'][u'modules'] and modules[module_name][u'installed'] and not modules[module_name][u'library']:
+                    module[u'pending'] = False
+                elif module_name not in raspiot_config[u'general'][u'modules'] and module[u'installed'] and not module[u'library']:
                     #uninstall pending
-                    modules[module_name][u'pending'] = True
-                elif module_name in raspiot_config[u'general'][u'updated'] and modules[module_name][u'installed']:
+                    module[u'pending'] = True
+                elif module_name in raspiot_config[u'general'][u'updated'] and module[u'installed']:
                     #module updated, need to restart raspiot
-                    modules[module_name][u'pending'] = True
+                    module[u'pending'] = True
 
-                #started flag
-                if module_name in self.__modules_in_errors:
-                    modules[module_name][u'started'] = False
-                else:
-                    modules[module_name][u'started'] = True
+                filtered_modules[module_name] = module
 
             except:
                 self.logger.exception(u'Unable to get config of module "%s"' % module_name)
 
-        return modules
+        return filtered_modules
             
     def get_module_commands(self, module):
         """
