@@ -49,10 +49,10 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
         {
             //update list of modules name
             var modulesName = [];
-            for( moduleName in raspiotService.modules )
+            for( moduleName in raspiotService.installableModules )
             {
                 //fix module country alpha code
-                var countryAlpha = raspiotService.modules[module].country;
+                var countryAlpha = raspiotService.installableModules[moduleName].country;
                 if( countryAlpha===null || countryAlpha===undefined )
                 {
                     countryAlpha = "";
@@ -60,8 +60,8 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
 
                 //append module name if necessary
                 if(
-                    (!raspiotService.modules[moduleName].installed || (raspiotService.modules[moduleName].installed && raspiotService.modules[moduleName].library)) &&
-                    (countryAlpha.length===0 || countryAlpha==raspiotService.modules.parameters.config.country.alpha2)
+                    (!raspiotService.installableModules[moduleName].installed || (raspiotService.installableModules[moduleName].installed && raspiotService.installableModules[moduleName].library)) &&
+                    (countryAlpha.length===0 || countryAlpha==raspiotService.installableModules.parameters.config.country.alpha2)
                 )
                 {
                     modulesName.push(moduleName);
@@ -135,17 +135,21 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
          */
         $scope.$watchCollection(
             function() {
-                return raspiotService.modules;
+                return raspiotService.installableModules;
             },
             function(newValue, oldValue) {
-                self.init();
+                if( newValue ) {
+                    self.init();
+                }
             }
         );
 
     }];
 
     var installLink = function(scope, element, attrs, controller) {
-        //see watchcollection above !
+        //get installable modules. Once loaded, watchCollection above will trigger
+        //init() function of this controller
+        raspiotService.getInstallableModules();
     };
 
     return {

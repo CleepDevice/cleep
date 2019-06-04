@@ -98,12 +98,15 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     /**
      * Get loaded modules server side
      */
-    self.getModules = function() {
+    self.getModules = function(installable) {
         var d = $q.defer();
 
         $http({
             method: 'POST',
             url: self.uriModules,
+            data: {
+                installable: installable===undefined ? false : installable
+            },
             responseType: 'json'
         })
         .then(function(resp) {

@@ -480,7 +480,7 @@ class Inventory(RaspIot):
 
     def get_installable_modules(self):
         """
-        Returns dict of installable modules
+        Returns dict of installable modules. It also returns modules installed as library.
 
         Returns:
             dict: dict of modules::
@@ -495,11 +495,11 @@ class Inventory(RaspIot):
                 }
 
         """
-        return self._get_modules(lambda k,v: k not in self.__modules_instances)
+        return self._get_modules(lambda k,v: k not in self.__modules_instances or v[u'library'])
 
     def get_modules(self):
         """
-        Returns dict of installed modules
+        Returns dict of installed modules. It also returned modules installed as library.
 
         Returns:
             dict: dict of modules::

@@ -309,14 +309,14 @@ def get_renderers():
     """
     return inventory.get_renderers()
 
-def get_modules():
+def get_modules(installable=False):
     """
     Return configurations for all loaded modules
 
     Returns:
         dict: map of modules with their configuration, devices, commands...
     """
-    return inventory.get_modules()
+    return inventory.get_modules() if not installable else inventory.get_installable_modules()
 
 def get_devices():
     """
@@ -566,8 +566,17 @@ def modules():
     Returns:
         dict: map of modules with their configuration, devices, commands...
     """
-    modules = get_modules()
-    logger.debug(u'Modules: %s' % modules)
+    installable = False
+    params = bottle.request.json
+    if params and params.has_key(u'installable'):
+        installable = params[u'installable']
+
+    if not installable:
+        modules = get_modules()
+        logger.debug(u'Modules: %s' % modules)
+    else:
+        modules = get_modules(installable=installable)
+        logger.debug(u'Installable modules: %s' % modules)
 
     return json.dumps(modules)
 

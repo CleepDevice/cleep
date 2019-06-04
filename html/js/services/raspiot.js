@@ -6,19 +6,20 @@
  */
 var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
     var self = this;
-    self.__deferred_modules = $q.defer();
-    self.__deferred_events = $q.defer();
-    self.__deferred_renderers = $q.defer();
-    self.__deferred_drivers = $q.defer();
+    self.__deferredModules = $q.defer();
+    self.__deferredEvents = $q.defer();
+    self.__deferredRenderers = $q.defer();
+    self.__deferredDrivers = $q.defer();
     self.devices = [];
     self.modules = {};
+    self.installableModules = {};
     self.renderers = {};
     self.events = {};
     self.drivers = {};
     self.modulesPath = 'js/modules/';
 
     /**
-     * Load CleepOS config
+     * Load Cleep config
      */
     self.loadConfig = function()
     {
@@ -38,6 +39,22 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                 self._setRenderers(config.renderers);
                 self._setEvents(config.events);
                 self._setDrivers(config.drivers);
+
+                //load installable modules if necessary
+                if(Object.keys(self.installableModules).length>0)
+                {
+                    return rpcService.getModules(true);
+                }
+                else
+                {
+                    return Promise.resolve(null);
+                }
+            })
+            .then(function(installableModules) {
+                if(installableModules)
+                {
+                    self.installableModules = installableModules;
+                }
             });
     };
 
@@ -300,7 +317,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         //init
         var deferred = $q.defer();
 
-        if( self.__deferred_modules===null )
+        if( self.__deferredModules===null )
         {
             //module config already loaded, resolve it if available
             if( self.modules[module] )
@@ -316,7 +333,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         else
         {
             //module not loaded, wait for it
-            self.__deferred_modules.promise
+            self.__deferredModules.promise
                 .then(function() {
                     deferred.resolve(self.modules[module].desc);
                 }, function() {
@@ -356,10 +373,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
             })
             .finally(function() {
                 //no deferred during reboot/restart, handle this case
-                if( self.__deferred_modules )
+                if( self.__deferredModules )
                 {
-                    self.__deferred_modules.resolve();
-                    self.__deferred_modules = null;
+                    self.__deferredModules.resolve();
+                    self.__deferredModules = null;
                 }
             });
     };
@@ -373,7 +390,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         var deferred = $q.defer();
 
-        if( self.__deferred_modules===null )
+        if( self.__deferredModules===null )
         {
             //module config already loaded, resolve it if available
             if( self.modules[module] )
@@ -389,7 +406,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         else
         {
             //module not loaded, wait for it
-            self.__deferred_modules.promise
+            self.__deferredModules.promise
                 .then(function() {
                     deferred.resolve(self.modules[module].config);
                 }, function() {
@@ -437,6 +454,31 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
         {
             console.error('Specified module "' + module + '" has no configuration');
             deferred.reject('module has no config');
+        }
+
+        return deferred.promise;
+    };
+
+    /**
+     * Get list of installable modules
+     */
+    self.getInstallableModules = function()
+    {
+        var deferred = $q.defer();
+
+        if( Object.keys(self.installableModules).length>0 )
+        {
+            deferred.resolve(self.installableModules);
+        }
+        else
+        {
+            //installable modules not loaded, load it
+            rpcService.getModules(true)
+                .then(function(modules) {
+                    self.installableModules = modules;
+                }, function() {
+                    deferred.reject();
+                });
         }
 
         return deferred.promise;
@@ -512,10 +554,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         self.renderers = renderers;
         //no deferred during reboot/restart, handle this case
-        if( self.__deferred_renderers )
+        if( self.__deferredRenderers )
         {
-            self.__deferred_renderers.resolve();
-            self.__deferred_renderers = null;
+            self.__deferredRenderers.resolve();
+            self.__deferredRenderers = null;
         }
     };
 
@@ -527,14 +569,14 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         var deferred = $q.defer();
 
-        if( self.__deferred_renderers===null )
+        if( self.__deferredRenderers===null )
         {
             //renderers already loaded, return collection
             deferred.resolve(self.renderers);
         }
         else
         {
-            self.__deferred_renderers.promise
+            self.__deferredRenderers.promise
                 .then(function() {
                     console.log('resolve renderers');
                     deferred.resolve(self.renderers);
@@ -554,10 +596,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         self.events = events;
         //no deferred during reboot/restart, handle this case
-        if( self.__deferred_events )
+        if( self.__deferredEvents )
         {
-            self.__deferred_events.resolve();
-            self.__deferred_events = null;
+            self.__deferredEvents.resolve();
+            self.__deferredEvents = null;
         }
     };
 
@@ -569,14 +611,14 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         var deferred = $q.defer();
 
-        if( self.__deferred_events===null )
+        if( self.__deferredEvents===null )
         {
             //events already loaded, return collection
             deferred.resolve(self.events);
         }
         else
         {
-            self.__deferred_events.promise
+            self.__deferredEvents.promise
                 .then(function() {
                     deferred.resolve(self.events);
                 }, function() {
@@ -595,10 +637,10 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         self.drivers = drivers;
         //no deferred during reboot/restart, handle this case
-        if( self.__deferred_drivers )
+        if( self.__deferredDrivers )
         {
-            self.__deferred_drivers.resolve();
-            self.__deferred_drivers = null;
+            self.__deferredDrivers.resolve();
+            self.__deferredDrivers = null;
         }
     };
 
@@ -610,14 +652,14 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     {
         var deferred = $q.defer();
 
-        if( self.__deferred_drivers===null )
+        if( self.__deferredDrivers===null )
         {
             //drivers already loaded, return collection
             deferred.resolve(self.drivers);
         }
         else
         {
-            self.__deferred_drivers.promise
+            self.__deferredDrivers.promise
                 .then(function() {
                     deferred.resolve(self.drivers);
                 }, function() {
@@ -757,3 +799,4 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     
 var RaspIot = angular.module('RaspIot');
 RaspIot.service('raspiotService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', raspiotService]);
+
