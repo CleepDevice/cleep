@@ -125,6 +125,14 @@ md-toast.info .md-toast-content {
     min-height: 96px;
 }
 
+.icon-xxxl {
+    font-size: 112px;
+    width: 112px;
+    height: 112px;
+    min-width: 112px;
+    min-height: 112px;
+}
+
 /* remove input text error spacer */
 .no-error-spacer .md-errors-spacer {
     min-height: 0px !important;
@@ -235,5 +243,14 @@ md-toast.info .md-toast-content {
 .no-md-error .md-errors-spacer {
     min-height: 0px !important;
     height: 0px !important;
+}
+
+/********** subheader **********/
+.subheader {
+    color: rgba(0,0,0,0.54);
+    text-decoration: underline;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1em;
 }
 

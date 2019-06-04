@@ -1,7 +1,7 @@
 <md-dialog aria-label="Install dialog" flex="75">
     <md-toolbar>
         <div class="md-toolbar-tools">
-            <h2>Module install</h2>
+            <h2>Module installation</h2>
             <span flex></span>
             <md-button class="md-icon-button" ng-click="installCtl.closeDialog()" aria-label="Close dialog">
                 <md-icon md-svg-icon="close"></md-icon>
@@ -10,66 +10,76 @@
     </md-toolbar>
 
     <md-dialog-content>
-        <div class="md-dialog-content">
-            
-            <md-list ng-if="!installCtl.moduleToInstall.local">
-                <!-- header -->
-                <md-list-item>
-                    <p>You're going to install module "{{installCtl.moduleToInstall.name}}" version {{installCtl.moduleToInstall.version}}.</p>
-                </md-list-item>
-
-                <!-- description -->
-                <md-subheader style="background-color:white;" class="md-subheader-inner">Description</md-subheader>
-                <md-list-item>
-                    <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
-                    <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</span>
-                </md-list-item>
-
-                <!-- changelog -->
-                <md-subheader style="background-color:white;" class="md-subheader-inner">Changelog</md-subheader>
-                <md-list-item>
-                    <span ng-if="installCtl.moduleToInstall.changelog.length>0" ng-bind-html="installCtl.sceChangelog"></span>
-                    <span ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</span>
-                </md-list-item>
-
-                <!-- links -->
-                <md-subheader style="background-color:white;" class="md-subheader-inner">Links</md-subheader>
-                <md-list-item>
+        <div class="md-dialog-content" layout="row" layout-align="space-between start">
+        
+            <!-- app info -->
+            <div layout="column" layout-align="space-between start" flex="25">
+                <div style="width:100%; text-align:center; margin-bottom:15px;">
+                    <md-icon md-svg-icon="{{installCtl.moduleToInstall.icon}}" class="icon-xxxl"></md-icon>
+                </div>
+                <div class="md-headline" style="width:100%; text-align:center; margin-bottom:30px;">
+                    {{installCtl.moduleToInstall.name}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader">Version:</span> {{installCtl.moduleToInstall.version}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader">Author:</span> {{installCtl.moduleToInstall.author}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader" style="display:block; margin-bottom:5px;">External links:</span>
+                    <br>
                     <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.site" ng-href="{{installCtl.moduleToInstall.urls.site}}" target="_blank">
                         <md-icon md-svg-icon="web"></md-icon>
-                        Module website
+                        Website
                     </md-button>
                     <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.info" ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">
                         <md-icon md-svg-icon="information-outline"></md-icon>
-                        Module infos
+                        Infos
                     </md-button>
                     <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.bugs" ng-href="{{installCtl.moduleToInstall.urls.bugs}}" target="_blank">
                         <md-icon md-svg-icon="bug"></md-icon>
-                        Module bugs page
+                        Bugs
                     </md-button>
                     <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.help" ng-href="{{installCtl.moduleToInstall.urls.help}}" target="_blank">
                         <md-icon md-svg-icon="lifebuoy"></md-icon>
-                        Module help page
+                        Help
                     </md-button>
-                </md-list-item>
+                </div>
+            </div>
 
-                <!-- screenshots -->
-                <md-subheader style="background-color:white;" class="md-subheader-inner">Screenshots</md-subheader>
-                <md-list-item>
-                    <div ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
-                        <img ng-src="{{installCtl.moduleToInstall.screenshots[1]}}" style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"/>
-                    </div>
-                    <span ng-if="!installCtl.moduleToInstall.screenshots || installCtl.moduleToInstall.screenshots.length===0">No screenshot</span>
-                </md-list-item>
-                    
-            </md-list>
+            <div flex>
+                <md-list ng-if="!installCtl.moduleToInstall.local">
+                    <!-- long description -->
+                    <md-subheader style="background-color:white;" class="md-subheader-inner">Description</md-subheader>
+                    <md-list-item>
+                        <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
+                        <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</span>
+                    </md-list-item>
 
-            <md-list ng-if="installCtl.moduleToInstall.local">
-                <!-- header -->
-                <md-list-item>
-                    <p>You're going to enable locally installed module "{{installCtl.moduleToInstall.name}}".</p>
-                </md-list-item>
-            </md-list>
+                    <!-- changelog -->
+                    <md-subheader style="background-color:white;" class="md-subheader-inner">Changelog</md-subheader>
+                    <md-list-item>
+                        <span ng-if="installCtl.moduleToInstall.changelog.length>0" ng-bind-html="installCtl.sceChangelog"></span>
+                        <span ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</span>
+                    </md-list-item>
+
+                    <!-- screenshots -->
+                    <md-subheader style="background-color:white;" class="md-subheader-inner">Screenshots</md-subheader>
+                    <md-list-item>
+                        <div ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
+                            <img ng-src="{{installCtl.moduleToInstall.screenshots[1]}}" style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"/>
+                        </div>
+                        <span ng-if="!installCtl.moduleToInstall.screenshots || installCtl.moduleToInstall.screenshots.length===0">No screenshot</span>
+                    </md-list-item>
+                </md-list>
+
+                <md-list ng-if="installCtl.moduleToInstall.local">
+                    <md-list-item>
+                        <p>This module has no info because it is installed locally (surely during developments)</p>
+                    </md-list-item>
+                </md-list>
+            </div>
 
         </div>
     </md-dialog-content>
