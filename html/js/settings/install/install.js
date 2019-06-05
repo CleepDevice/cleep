@@ -29,7 +29,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
         self.install = function(module)
         {
             //lock button asap
-            raspiotService.modules[module].processing = true;
+            raspiotService.installableModules[module].processing = true;
 
             //close modal
             self.closeDialog();
@@ -38,7 +38,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
             raspiotService.installModule(module)
                 .catch(function(error) {
                     //toast should be already displayed, just cancel install
-                    raspiotService.modules[module].processing = false;
+                    raspiotService.installableModules[module].processing = false;
                 });
         };
 

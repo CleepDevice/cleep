@@ -15,7 +15,7 @@
             <!-- app info -->
             <div layout="column" layout-align="space-between start" flex="25">
                 <div style="width:100%; text-align:center; margin-bottom:15px;">
-                    <md-icon md-svg-icon="{{installCtl.moduleToInstall.icon}}" class="icon-xxxl"></md-icon>
+                    <md-icon md-svg-icon="{{installCtl.moduleToInstall.icon || 'help-rhombus'}}" class="icon-xxxl"></md-icon>
                 </div>
                 <div class="md-headline" style="width:100%; text-align:center; margin-bottom:30px;">
                     {{installCtl.moduleToInstall.name}}
@@ -76,7 +76,7 @@
 
                 <md-list ng-if="installCtl.moduleToInstall.local">
                     <md-list-item>
-                        <p>This module has no info because it is installed locally (surely during developments)</p>
+                        <p>This module has no info because it is installed locally (surely for your developments)</p>
                     </md-list-item>
                 </md-list>
             </div>

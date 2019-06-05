@@ -36,11 +36,11 @@
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">{{moduleName | firstUpper}}</span>
-                        <span class="md-subhead module-desc">{{modulesCtl.raspiotService.modules[moduleName].description}}</span>
+                        <span class="md-subhead module-desc">{{modulesCtl.raspiotService.modules[moduleName].description || 'No description'}}</span>
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-svg-icon="{{modulesCtl.raspiotService.modules[moduleName].icon}}" class="icon-xl" style="padding:4px;"></md-icon>
+                            <md-icon md-svg-icon="{{modulesCtl.raspiotService.modules[moduleName].icon || 'help-rhombus'}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
