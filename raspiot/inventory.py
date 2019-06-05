@@ -495,7 +495,7 @@ class Inventory(RaspIot):
                 }
 
         """
-        return self._get_modules(lambda k,v: k not in self.__modules_instances or v[u'library'])
+        return self._get_modules(lambda name,module,modules: name in modules and (modules[name][u'library'] or not modules[name][u'installed']))
 
     def get_modules(self):
         """
@@ -515,9 +515,13 @@ class Inventory(RaspIot):
 
         """
         events = self.events_factory.get_modules_events()
-        installed_modules = self._get_modules(lambda k,v: k in self.__modules_instances)
+        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name][u'installed'])
 
         for module_name, module in installed_modules.items():
+            #drop not launched modules
+            if module_name not in self.__modules_instances:
+                continue
+                
             #current module config
             module[u'config'] = self.__modules_instances[module_name].get_module_config()
             
@@ -538,7 +542,7 @@ class Inventory(RaspIot):
         Returns dict of all modules
 
         Args:
-            module_filter (function): filtering function
+            module_filter (function): filtering function. Params: module name, module data, all modules
         
         Returns:
             dict: dict of modules::
@@ -560,7 +564,7 @@ class Inventory(RaspIot):
         
         #inject volatile infos
         filtered_modules = {}
-        for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v)}.items():
+        for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v,all_modules)}.items():
             try:
                 #pending status
                 module[u'pending'] = False
