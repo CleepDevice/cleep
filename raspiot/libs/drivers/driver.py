@@ -12,6 +12,7 @@ class Driver():
 
     #driver types
     DRIVER_AUDIO = u'audio'
+    DRIVER_GPIO = u'gpio'
 
     #PROCESSING STATUS
     PROCESSING_NONE = 0
