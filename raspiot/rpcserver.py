@@ -561,7 +561,10 @@ def command():
 @authenticate()
 def modules():
     """
-    Return configurations for all loaded modules
+    Return modules with their configuration
+
+    Args:
+        installable (bool): if True will return installable modules only. Otherwise returns installed modules
 
     Returns:
         dict: map of modules with their configuration, devices, commands...
