@@ -7,6 +7,8 @@ from raspiot.utils import NoResponse
 from raspiot import bus
 from raspiot.events import event
 import raspiot.libs.internals.tools as tools
+from raspiot.utils import ExecutionStep
+from raspiot.libs.internals.drivers import Drivers
 from threading import Event
 import os
 import logging
@@ -29,6 +31,8 @@ class Session():
         logging.getLogger().setLevel(log_level)
         self.logger = logging.getLogger('TestSession')
         self.logger.setLevel(log_level)
+        root_logger = logging.getLogger()
+        root_logger.setLevel(log_level)
         tools.install_trace_logging_level()
         self.__debug_enabled = True if log_level==logging.DEBUG else False
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
@@ -67,6 +71,8 @@ class Session():
             'join_event': Event(),
             'test_mode': True,
             'critical_resources': critical_resources,
+            'execution_step': ExecutionStep(),
+            'drivers': Drivers(debug),
         }
 
     def setup(self, module_class, debug_enabled = False):
@@ -131,37 +137,38 @@ class Session():
         self.__module_instance.stop()
         self.__module_instance.join()
 
-    def add_command_handler(self, command, handler, disabled=False, no_response=False):
+    def mock_command(self, command, handler, fail=False, no_response=False):
         """
-        Add command handler
+        Mock command handler
 
         Args:
             command (string): name of command to handle
             handler (function): function to call when command triggered
-            disable (bool): if True will return error like if the command has failed
+            fail (bool): if True will return error like if the command has failed
+            no_response: if True will simulate no response
         """
         self.__bus_command_handlers[command] = {
             u'handler': handler,
             u'calls': 0,
-            u'disabled': disabled,
+            u'fail': fail,
             u'no_response': no_response
         }
 
-    def enable_command_handler(self, command):
+    def succeed_command(self, command):
         """
-        Enable specified command, will return valid response
-        """
-        if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command][u'disabled'] = False
-
-    def disable_command_handler(self, command):
-        """
-        Disable specified command, useful to return temporarly an error
+        Flag command as succeed will return handler output
         """
         if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command][u'disabled'] = True
+            self.__bus_command_handlers[command][u'fail'] = False
 
-    def get_command_handler_calls(self, command):
+    def fail_command(self, command):
+        """
+        Flag command as fail will return error when called
+        """
+        if command in self.__bus_command_handlers:
+            self.__bus_command_handlers[command][u'fail'] = True
+
+    def get_command_calls(self, command):
         """
         Return how many times the command handler has been called
 
@@ -176,13 +183,29 @@ class Session():
 
         return 0
 
-    def get_event_send_calls(self, event_name):
+    def get_event_calls(self, event_name):
         """
+        Returns event calls count
+
+        Returns:
+            int: number of event calls count or 0 if event not handled
         """
         if event_name in self.__event_handlers:
             return self.__event_handlers[event_name][u'sends']
 
         return 0
+
+    def get_event_last_params(self, event_name):
+        """
+        Returns event params of last call
+
+        Returns:
+            dict: last event call params or None if event not handled
+        """
+        if event_name in self.__event_handlers:
+            return self.__event_handlers[event_name][u'lastparams']
+
+        return None
 
     def _message_bus_push_mock(self, request, timeout):
         """
@@ -192,12 +215,12 @@ class Session():
             self.logger.debug('TEST: push command "%s"' % request.command)
             self.__bus_command_handlers[request.command][u'calls'] += 1
 
-            if self.__bus_command_handlers[request.command][u'disabled']:
-                self.logger.debug('TEST: command "%s" disabled for tests' % request.command)
+            if self.__bus_command_handlers[request.command][u'fail']:
+                self.logger.debug('TEST: command "%s" fails for tests' % request.command)
                 return {
                     'error': True,
                     'data': None,
-                    'message': 'TEST: command disabled for tests'
+                    'message': 'TEST: command fails for tests'
                 }
             elif self.__bus_command_handlers[request.command][u'no_response']:
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
@@ -220,16 +243,18 @@ class Session():
         e_.EVENT_NAME = event_name
         instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_factory'], self.bootstrap['events_factory'])
         self.__event_handlers[event_name] = {
-            u'sends': 0
+            u'sends': 0,
+            u'lastparams': None,
+            u'lastdeviceid': None,
         }
-        event_handler = self.__event_handlers[event_name]
+        event_handlers = self.__event_handlers
         #monkey patch new event send() method
         def event_send_mock(self, params=None, device_id=None, to=None, render=True):
             self.logger.debug('TEST: send event "%s"' % event_name)
-            event_handler[u'sends'] += 1
+            event_handlers[event_name][u'sends'] += 1
+            event_handlers[event_name][u'lastparams'] = params
+            event_handlers[event_name][u'lastdeviceid'] = device_id
         instance.send = types.MethodType(event_send_mock, instance)
 
         return instance
-
-
 
