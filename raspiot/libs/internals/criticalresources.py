@@ -38,8 +38,8 @@ class CriticalResources():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #if debug_enabled:
-        self.logger.setLevel(logging.DEBUG)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
 
         #members
         self.__mutex = Lock()
