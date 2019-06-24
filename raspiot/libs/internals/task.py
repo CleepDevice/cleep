@@ -97,6 +97,15 @@ class Task:
             self.__timer.cancel()
             self.__timer = None
 
+    def is_running(self):
+        """
+        Returns True is task is running
+
+        Returns:
+            bool: True if running
+        """
+        return True if self.__timer and self.__timer.is_alive() else False
+
 
 class CountTask(Task):
     """
