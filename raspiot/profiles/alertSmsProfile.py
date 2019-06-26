@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from rendererProfile import RendererProfile
+from raspiot.libs.internals.rendererprofile import RendererProfile
 
 class AlertSmsProfile(RendererProfile):
     """
