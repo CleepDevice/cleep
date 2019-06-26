@@ -1,6 +1,6 @@
 from raspiot.libs.internals.crashreport import CrashReport
-from raspiot.eventsFactory import EventsFactory
-from raspiot.formattersFactory import FormattersFactory
+from raspiot.libs.internals.eventsbroker import EventsBroker
+from raspiot.libs.internals.formattersbroker import FormattersBroker
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.criticalresources import CriticalResources
 from raspiot.utils import NoResponse
@@ -50,8 +50,8 @@ class Session():
         debug = False
         crash_report = CrashReport(None, u'Test', u'0.0.0', {}, debug, True)
 
-        events_factory = EventsFactory(debug)
-        events_factory.get_event_instance = self._events_factory_get_event_instance_mock
+        events_broker = EventsBroker(debug)
+        events_broker.get_event_instance = self._events_broker_get_event_instance_mock
 
         message_bus = bus.MessageBus(crash_report, debug)
         message_bus.push = self._message_bus_push_mock
@@ -64,8 +64,8 @@ class Session():
 
         return {
             'message_bus': message_bus,
-            'events_factory': events_factory,
-            'formatters_factory': EventsFactory(debug),
+            'events_broker': events_broker,
+            'formatters_broker': EventsBroker(debug),
             'cleep_filesystem': cleep_filesystem,
             'crash_report': crash_report,
             'join_event': Event(),
@@ -235,13 +235,13 @@ class Session():
             'message': 'TEST: Command "%s" not handled. Please mock it.' % request.command
         }
 
-    def _events_factory_get_event_instance_mock(self, event_name):
+    def _events_broker_get_event_instance_mock(self, event_name):
         """
         Create monkey-patched Event of specified name
         """
         e_ = event.Event
         e_.EVENT_NAME = event_name
-        instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_factory'], self.bootstrap['events_factory'])
+        instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_broker'], self.bootstrap['events_broker'])
         self.__event_handlers[event_name] = {
             u'sends': 0,
             u'lastparams': None,

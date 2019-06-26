@@ -50,8 +50,8 @@ class Inventory(RaspIot):
         self.configured_modules = configured_modules
         self.debug_config = debug_config
         self.bootstrap = bootstrap
-        self.events_factory = bootstrap[u'events_factory']
-        self.formatters_factory = bootstrap[u'formatters_factory']
+        self.events_broker = bootstrap[u'events_broker']
+        self.formatters_broker = bootstrap[u'formatters_broker']
         #dict to store event to synchronize module startups
         self.__join_events = []
         #used to store modules status (library or not) during modules loading
@@ -323,7 +323,7 @@ class Inventory(RaspIot):
                 #fill renderers
                 if issubclass(self.__modules_instances[module_name].__class__, RaspIotRenderer):
                     config = self.__modules_instances[module_name].get_renderer_config()
-                    self.formatters_factory.register_renderer(module_name, config[u'profiles'])
+                    self.formatters_broker.register_renderer(module_name, config[u'profiles'])
 
             except:
                 #flag modules has in error
@@ -514,7 +514,7 @@ class Inventory(RaspIot):
                 }
 
         """
-        events = self.events_factory.get_modules_events()
+        events = self.events_broker.get_modules_events()
         installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name][u'installed'])
 
         for module_name, module in installed_modules.items():
@@ -676,12 +676,12 @@ class Inventory(RaspIot):
 
     def get_renderers(self):
         """
-        Return renderers from events factory
+        Return renderers from events broker
 
         Returns:
             list: list of renderers with their handled profiles
         """
-        return self.formatters_factory.get_renderers_profiles()
+        return self.formatters_broker.get_renderers_profiles()
 
     def get_modules_events(self):
         """
@@ -697,7 +697,7 @@ class Inventory(RaspIot):
                 }
 
         """
-        return self.events_factory.get_modules_events()
+        return self.events_broker.get_modules_events()
 
     def get_used_events(self):
         """
@@ -706,7 +706,7 @@ class Inventory(RaspIot):
         Returns:
             list: list of used events
         """
-        return self.events_factory.get_used_events()
+        return self.events_broker.get_used_events()
 
     def rpc_wrapper(self, route, request):
         """

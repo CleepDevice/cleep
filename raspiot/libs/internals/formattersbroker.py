@@ -5,15 +5,14 @@ import logging
 import os
 import importlib
 import inspect
-from utils import MissingParameter, InvalidParameter, CommandError
-from libs.internals.tools import full_path_split
-from utils import SYSTEM_MODULES
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError, SYSTEM_MODULES
+from raspiot.libs.internals.tools import full_path_split
 
-__all__ = [u'FormattersFactory']
+__all__ = [u'FormattersBroker']
 
-class FormattersFactory():
+class FormattersBroker():
     """
-    Formatters factory is in charge of centralizing all formatters
+    Formatters broker is in charge of centralizing all formatters
     It also ensures formatters use exiting events
     """
 
@@ -28,7 +27,7 @@ class FormattersFactory():
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
-        self.events_factory = None
+        self.events_broker = None
         #list of renderer module names with format:
         #[
         #   'renderer_module_name1',
@@ -73,13 +72,13 @@ class FormattersFactory():
 
     def configure(self, bootstrap):
         """
-        Configure factory
+        Configure broker
 
         Args:
             bootstrap (dict): bootstrap objects
         """
         #set members
-        self.events_factory = bootstrap[u'events_factory']
+        self.events_broker = bootstrap[u'events_broker']
 
         #configure crash report
         self.crash_report = bootstrap[u'crash_report']
@@ -104,7 +103,7 @@ class FormattersFactory():
         Raises:
             Exception if internal error occured
         """
-        path = os.path.join(os.path.dirname(__file__), u'modules')
+        path = os.path.join(os.path.dirname(__file__), u'../..', u'modules')
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 u'message': 'Invalid module path',
@@ -126,7 +125,7 @@ class FormattersFactory():
                         formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
                         if formatter_class_name:
                             formatter_class_ = getattr(mod_, formatter_class_name)
-                            formatter_instance_ = formatter_class_(self.events_factory)
+                            formatter_instance_ = formatter_class_(self.events_broker)
 
                             #save reference on module where formatter was found
                             if formatter_instance_.event_name not in self.__loaded_formatters:

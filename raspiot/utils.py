@@ -43,7 +43,7 @@ class ExecutionStep():
     """
     Cleep execution steps
     """
-    #boot step (init logger, factories...)
+    #boot step (init logger, brokers...)
     BOOT = 0
     #init modules (constructor)
     INIT = 1

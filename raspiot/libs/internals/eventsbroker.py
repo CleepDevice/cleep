@@ -5,16 +5,16 @@ import logging
 import os
 import importlib
 import inspect
-from utils import MissingParameter, InvalidParameter, CommandError
-from events.formatter import Formatter
-from libs.internals.tools import full_path_split
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError
+from raspiot.libs.internals.formatter import Formatter
+from raspiot.libs.internals.tools import full_path_split
 
-__all__ = [u'EventsFactory']
+__all__ = [u'EventsBroker']
 
-class EventsFactory():
+class EventsBroker():
     """
-    Events factory
-    The goal of this factory is to centralize events to make only used ones available in ui.
+    Events broker
+    The goal of this broker is to centralize events to make only used ones available in ui.
     It is also used to check event content before posting them and make sure it is compatible with system.
     """
 
@@ -33,20 +33,20 @@ class EventsFactory():
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.bus = None
-        self.formatters_factory = None
+        self.formatters_broker = None
         self.events_not_rendered = []
         self.crash_report = None
 
     def configure(self, bootstrap):
         """
-        Configure factory loading needed objects (formatters, events...)
+        Configure broker loading needed objects (formatters, events...)
 
         Args:
             bootstrap (dict): bootstrap objects
         """
         #set members
         self.bus = bootstrap[u'message_bus']
-        self.formatters_factory = bootstrap[u'formatters_factory']
+        self.formatters_broker = bootstrap[u'formatters_broker']
 
         #configure crash report
         self.crash_report = bootstrap[u'crash_report']
@@ -92,7 +92,7 @@ class EventsFactory():
         """
         Load existing events from modules directory
         """
-        path = os.path.join(os.path.dirname(__file__), u'modules')
+        path = os.path.join(os.path.dirname(__file__), u'../..', u'modules')
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 u'message': u'Invalid modules path',
@@ -124,7 +124,7 @@ class EventsFactory():
         """
         Load existing events from events directory
         """
-        path = os.path.join(os.path.dirname(__file__), u'events')
+        path = os.path.join(os.path.dirname(__file__), u'profiles')
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 u'message': u'Invalid events path',
@@ -191,7 +191,7 @@ class EventsFactory():
                     self.events_by_module[module] = []
                 self.events_by_module[module].append(event_name)
 
-            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_factory, self)
+            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_broker, self)
 
         raise Exception(u'Event "%s" does not exist' % event_name)
 

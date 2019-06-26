@@ -50,7 +50,7 @@ class RaspIot(BusClient):
 
         #members
         self.__execution_step = bootstrap[u'execution_step']
-        self.events_factory = bootstrap[u'events_factory']
+        self.events_broker = bootstrap[u'events_broker']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
         self.drivers = bootstrap[u'drivers']
 
@@ -388,7 +388,7 @@ class RaspIot(BusClient):
         Return:
             Event instance
         """
-        return self.events_factory.get_event_instance(event_name)
+        return self.events_broker.get_event_instance(event_name)
 
     def get_module_config(self):
         """
@@ -903,7 +903,7 @@ class RaspIotRenderer(RaspIotModule):
         This method is called by inventory at startup
 
         Raises:
-            Exception: if RENDERER_PROFILES memebr is not defined
+            Exception: if RENDERER_PROFILES member is not defined
         """
         if getattr(self, u'RENDERER_PROFILES', None) is None:
             raise Exception(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)

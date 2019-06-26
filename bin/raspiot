@@ -8,8 +8,8 @@ import logging
 from logging.config import dictConfig
 from threading import Event
 from raspiot.raspiot import RaspIot
-from raspiot.eventsFactory import EventsFactory
-from raspiot.formattersFactory import FormattersFactory
+from raspiot.libs.internals.eventsbroker import EventsBroker
+from raspiot.libs.internals.formattersbroker import FormattersBroker
 from raspiot import rpcserver, bus
 from raspiot import inventory as raspiot_inventory
 from raspiot.libs.configs.raspiotconf import RaspiotConf
@@ -126,14 +126,14 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, u'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources, drivers):
+def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers):
     """
     Return bootstrap objects.
 
     Args:
         message_bus (MessageBus): message bus instance
-        events_factory (EventsFactory): events factory instance
-        formatters_factory (FormattersFactory): formatters factory instance
+        events_broker (EventsBroker): events broker instance
+        formatters_broker (FormattersBroker): formatters broker instance
         cleep_filesystem (CleepFilesystem): cleep filesystem singleton instance
         crash_report (CrashReport): crash report singleton instance
         critical_resources (CriticalResources): critical resources handler singleton instance
@@ -143,8 +143,8 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
         dict: dict of bootstrap objects::
             {
                 message_bus (MessageBus): internal message bus
-                events_factory (EventsFactory): events factory
-                formatters_factory (FormattersFactory) : formatters factory
+                events_broker (EventsBroker): events broker
+                formatters_broker (FormattersBroker) : formatters broker
                 join_event (Threading.Event): module startup join event
                 cleep_filesystem (CleepFilesystem): filesystem helper (handle readonly filesystem)
                 crash_report (CrashReport): crash report helper
@@ -156,8 +156,8 @@ def get_bootstrap_objects(message_bus, events_factory, formatters_factory, cleep
             }
     """
     bootstrap = {
-        u'events_factory': events_factory,
-        u'formatters_factory': formatters_factory,
+        u'events_broker': events_broker,
+        u'formatters_broker': formatters_broker,
         u'message_bus': message_bus,
         u'join_event': Event(),
         u'cleep_filesystem': cleep_filesystem,
@@ -264,17 +264,17 @@ if __name__ == u'__main__':
         debug = False
         if trace_enabled or debug_system:
             debug = True
-        events_factory = EventsFactory(debug)
-        formatters_factory = FormattersFactory(debug)
+        events_broker = EventsBroker(debug)
+        formatters_broker = FormattersBroker(debug)
         critical_resources = CriticalResources(debug)
         drivers = Drivers(debug)
 
         #build bootstrap objects collection
-        bootstrap = get_bootstrap_objects(bus, events_factory, formatters_factory, cleep_filesystem, crash_report, critical_resources, drivers)
+        bootstrap = get_bootstrap_objects(bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers)
 
-        #configure factories
-        events_factory.configure(bootstrap)
-        formatters_factory.configure(bootstrap)
+        #configure brokers
+        events_broker.configure(bootstrap)
+        formatters_broker.configure(bootstrap)
 
         #create inventory
         logger.debug(u'Initializing inventory')

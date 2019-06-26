@@ -13,7 +13,7 @@ class Event():
     EVENT_NAME = u''
     EVENT_SYSTEM = False
 
-    def __init__(self, bus, formatters_factory, events_factory):
+    def __init__(self, bus, formatters_broker, events_broker):
         """
         Construtor
 
@@ -21,8 +21,8 @@ class Event():
             bus (MessageBus): message bus instance
         """
         self.bus = bus
-        self.formatters_factory = formatters_factory
-        self.events_factory = events_factory
+        self.formatters_broker = formatters_broker
+        self.events_broker = events_broker
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         if not hasattr(self, u'EVENT_NAME') or len(self.EVENT_NAME)==0:
@@ -89,7 +89,7 @@ class Event():
             params (dict): list of event parameters
         """
         #get formatters
-        formatters = self.formatters_factory.get_renderers_formatters(self.EVENT_NAME)
+        formatters = self.formatters_broker.get_renderers_formatters(self.EVENT_NAME)
         self.logger.debug('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
 
         #handle no formatters found

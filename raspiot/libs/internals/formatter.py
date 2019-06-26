@@ -11,12 +11,12 @@ class Formatter():
     Base formatter class
     """
 
-    def __init__(self, events_factory, event_name, profile):
+    def __init__(self, events_broker, event_name, profile):
         """
         Constructor
 
         Args:
-            events_factory (EventsFactory): events factory instance
+            events_broker (EventsBroker): events broker instance
             event_name (string): event name compatible with formatter
             output_profile (RendererProfile): Renderer profile instance
         """
@@ -26,7 +26,7 @@ class Formatter():
             raise InvalidParameter(u'Invalid profile specified. Instance must inherits from RendererProfile.')
 
         #members
-        self.events_factory = events_factory
+        self.events_broker = events_broker
         self.event_name = event_name
         self.profile_name = profile.__class__.__name__
         self.profile = profile
