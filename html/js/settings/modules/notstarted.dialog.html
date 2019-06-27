@@ -10,19 +10,25 @@
     </md-toolbar>
 
     <md-dialog-content>
-        <div class="md-dialog-content">
+        <div class="md-dialog-content" layout="row">
 
-            <span>It appears installed module "{{notstartedCtl.moduleNotStarted.name}}" was unable to start correctly.</span>
-            <br/><br/>
-            <span>To try to fix this problem check if the module has an available update and update it consequently.</span>
-            <br/>
-            <span>If no update is available uninstall it and try to install it again.</span>
-            <br/>
-            <span>If uninstall always failed, force uninstall clicking on available button in uninstall logs dialog</span>
-            <br/></br>
-            <span>If you enable crash report in system module ("Advanced" tab), the error is already reported.</span>
-            <br/>
-            <span>If the option is disabled, you can post issue on module bug page.</span>
+            <div flex="20" layout="row" layout-align="center center">
+                <md-icon md-svg-icon="emoticon-cry-outline" class="icon-xxl"></md-icon>
+            </div>
+
+            <div flex>
+                <span>It appears installed module "{{notstartedCtl.moduleNotStarted.name}}" was unable to start correctly.</span>
+                <br/><br/>
+                <span>To try to fix this problem check if the module has an available update and update it consequently.</span>
+                <br/>
+                <span>If no update is available uninstall it and try to install it again.</span>
+                <br/>
+                <span>If uninstall always failed, force uninstall clicking on available button in uninstall logs dialog</span>
+                <br/></br>
+                <span>If you enable crash report in system module ("Advanced" tab), the error is already reported.</span>
+                <br/>
+                <span>If the option is disabled, you can post issue on module bug page.</span>
+            </div>
 
         </div>
     </md-dialog-content>
