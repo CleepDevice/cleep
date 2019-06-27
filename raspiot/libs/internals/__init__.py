@@ -1,2 +1,25 @@
-__all__ = ['cleepfilesystem', 'console', 'download', 'externalbus', 'github', 'installdeb', 'installmodule', 'install', 'installraspiot', 'pid', 'readwrite', 'task', 'tools']
+__all__ = [
+    'cleepfilesystem',
+    'console',
+    'crashreport',
+    'criticalresources',
+    'download',
+    'drivers',
+    'event',
+    'eventsbroker',
+    'externalbus',
+    'formatter',
+    'formattersbroker',
+    'github',
+    'installdeb',
+    'installmodule',
+    'install',
+    'installraspiot',
+    'pid',
+    'raspiotbackup',
+    'readwrite',
+    'rendererprofile',
+    'task',
+    'tools'
+]
 

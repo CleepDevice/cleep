@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.utils import InvalidParameter
-from raspiot.events.rendererProfile import RendererProfile
+from raspiot.libs.internals.rendererprofile import RendererProfile
 
 __all__ = ['Formatter']
 

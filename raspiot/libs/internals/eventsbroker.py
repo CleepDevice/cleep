@@ -68,7 +68,6 @@ class EventsBroker():
         """
         Load existing events
         """
-        #self.__load_events_from_events_dir()
         self.__load_events_from_modules_dir()
 
         self.logger.debug('Found %d events: %s' % (len(self.events_by_event), self.events_by_event.keys()))
@@ -120,35 +119,6 @@ class EventsBroker():
             self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
             raise Exception('Invalid event tryed to be loaded')
 
-    def __load_events_from_events_dir(self):
-        """
-        Load existing events from events directory
-        """
-        path = os.path.join(os.path.dirname(__file__), u'profiles')
-        if not os.path.exists(path):
-            self.crash_report.report_exception({
-                u'message': u'Invalid events path',
-                u'path': path
-            })
-            raise Exception(u'Invalid events path')
-
-        try:
-            for f in os.listdir(path):
-                fullpath = os.path.join(path, f)
-                (event, ext) = os.path.splitext(f)
-                if os.path.isfile(fullpath) and ext==u'.py' and event!=u'__init__' and event!=u'event':
-                    mod_ = importlib.import_module(u'raspiot.events.%s' % event)
-                    event_class_name = self.__get_event_class_name(event, mod_)
-                    if event_class_name:
-                        class_ = getattr(mod_, event.capitalize())
-                        self.__save_event(class_)
-                    else:
-                        self.logger.error(u'Event class must have the same name than filename')
-
-        except AttributeError:
-            self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
-            raise Exception('Invalid event tryed to be loaded')
-
     def get_event_instance(self, event_name):
         """
         Return event instance according to event name
@@ -165,17 +135,17 @@ class EventsBroker():
         if event_name in self.events_by_event.keys():
             #get module caller
             stack = inspect.stack()
-            caller = stack[1][0].f_locals["self"]
+            caller = stack[1][0].f_locals[u'self']
             module = None
             formatter = None
             if issubclass(caller.__class__, Formatter):
                 #formatter registers event
                 formatter = caller.__class__.__name__.lower()
-                self.logger.debug('Formatter %s registers event %s' % (formatter, event_name))
+                self.logger.debug(u'Formatter %s registers event %s' % (formatter, event_name))
             else:
                 #module registers event
                 module = caller.__class__.__name__.lower()
-                self.logger.debug('Module %s registers event %s' % (module, event_name))
+                self.logger.debug(u'Module %s registers event %s' % (module, event_name))
 
             #update events by event dict
             self.events_by_event[event_name][u'used'] = True

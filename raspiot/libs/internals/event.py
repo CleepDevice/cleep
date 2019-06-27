@@ -10,8 +10,17 @@ class Event():
     Base event class
     """
 
+    #event name. Must follow following format: <appname>.<type>.<action>, with:
+    # - appname is the name of application which sends event
+    # - type is the type of event (monitoring, sms, email, temperature...)
+    # - and action the event action. It is usually a verb (update, change, add...)
     EVENT_NAME = u''
+    #is event a system event
     EVENT_SYSTEM = False
+    #list of event params
+    EVENT_PARAMS = []
+    #enable chart generation for this event
+    EVENT_CHARTABLE = False
 
     def __init__(self, bus, formatters_broker, events_broker):
         """
@@ -38,7 +47,15 @@ class Event():
         Return:
             bool: True if params are valid, False otherwise
         """
-        raise NotImplementedError(u'_check_params method must implemented in "%s"' % self.__class__.__name__)
+        try:
+            if len(self.EVENT_PARAMS)==0 and params is None:
+                return True
+
+            return all(key in self.EVENT_PARAMS for key in params.keys())
+        except:
+            self.logger.exception(u'Invalid EVENT_PARAMS for event "%s"' % self.EVENT_NAME)
+        
+        return False
 
     def send(self, params=None, device_id=None, to=None, render=True):
         """ 
@@ -79,7 +96,7 @@ class Event():
             return self.bus.push(request, None)
 
         else:
-            raise Exception(u'Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params.keys()))
+            raise Exception(u'Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
 
     def render(self, params=None):
         """
@@ -117,4 +134,33 @@ class Event():
 
                 except:
                     self.logger.exception(u'Unable to push event "%s" to bus:' % self.EVENT_NAME)
+
+    def get_chart_values(self, params):
+        """
+        Returns chart values
+        
+        Args:
+            params (dict): event parameters
+
+        Returns:
+            list: list of field+value or None if no value ::
+
+                [
+                    {
+                        field (string): field name,
+                        value (any): value
+                    },
+                    ...
+                ]
+             
+        """
+        try:
+            if not self.EVENT_CHARTABLE:
+                return None
+
+            return [{u'field': param, u'value': params.get(param, None)} for param in self.EVENT_PARAMS]
+        except:
+            self.logger.exception(u'Invalid EVENT_PARAMS for event "%s"' % self.EVENT_NAME)
+        
+        return []
 

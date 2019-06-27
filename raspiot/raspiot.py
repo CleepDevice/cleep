@@ -385,8 +385,8 @@ class RaspIot(BusClient):
         Args:
             event_name (string): event name
 
-        Return:
-            Event instance
+        Returns:
+            Event: Event instance
         """
         return self.events_broker.get_event_instance(event_name)
 

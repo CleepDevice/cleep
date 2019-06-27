@@ -1,2 +1,2 @@
-from raspiot.events import *
+from raspiot.profiles import *
 

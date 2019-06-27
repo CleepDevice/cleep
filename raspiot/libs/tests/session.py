@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.libs.internals.eventsbroker import EventsBroker
 from raspiot.libs.internals.formattersbroker import FormattersBroker
@@ -5,7 +8,7 @@ from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.criticalresources import CriticalResources
 from raspiot.utils import NoResponse
 from raspiot import bus
-from raspiot.events import event
+from raspiot.libs.internals import event
 import raspiot.libs.internals.tools as tools
 from raspiot.utils import ExecutionStep
 from raspiot.libs.internals.drivers import Drivers
