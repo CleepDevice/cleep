@@ -690,15 +690,15 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
     };
 
     /**
-     * Check if specified module name is loaded
+     * Check if specified application is installed
      * @param module: module name
      * @return true if module is loaded, false otherwise
      */
-    self.hasModule = function(module)
+    self.isAppInstalled = function(app)
     {
         for( var name in self.modules )
         {
-            if( name===module && self.modules[name].installed )
+            if( name===app && self.modules[name].installed )
             {
                 return true;
             }
