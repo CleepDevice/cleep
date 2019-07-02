@@ -518,22 +518,25 @@ class Inventory(RaspIot):
         installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name][u'installed'])
 
         for module_name, module in installed_modules.items():
-            #drop not launched modules
-            if module_name not in self.__modules_instances:
-                continue
-                
-            #current module config
-            module[u'config'] = self.__modules_instances[module_name].get_module_config()
+            try:
+                #drop not launched modules
+                if module_name not in self.__modules_instances:
+                    continue
+                    
+                #current module config
+                module[u'config'] = self.__modules_instances[module_name].get_module_config()
             
-            #module events
-            if module_name in events:
-                module[u'events'] = events[module_name]
-
-            #started flag
-            if module_name in self.__modules_in_errors:
-                module[u'started'] = False
-            else:
-                module[u'started'] = True
+                #module events
+                if module_name in events:
+                    module[u'events'] = events[module_name]
+    
+                #started flag
+                if module_name in self.__modules_in_errors:
+                    module[u'started'] = False
+                else:
+                    module[u'started'] = True
+            except:
+                self.logger.exception(u'Unable to get data from module "%s"' % module_name)
 
         return installed_modules
 

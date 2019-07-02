@@ -337,12 +337,15 @@ def get_drivers():
     drivers = []
     for driver_type, data in inventory.get_drivers().items():
         for driver_name, driver in data.items():
-            drivers.append({
-                u'drivername': driver_name,
-                u'drivertype': driver_type,
-                u'processing': driver.processing(),
-                u'installed': driver.is_installed(),
-            })
+            try:
+                drivers.append({
+                    u'drivername': driver_name,
+                    u'drivertype': driver_type,
+                    u'processing': driver.processing(),
+                    u'installed': driver.is_installed(),
+                })
+            except:
+                logger.exception(u'Error getting data for driver "%s"' % driver_name)
 
     return drivers
 
@@ -654,13 +657,16 @@ def config():
                 events (list): all used events
             }
     """
-    config = {
-        u'modules': get_modules(),
-        u'events': get_events(),
-        u'renderers': get_renderers(),
-        u'devices': get_devices(),
-        u'drivers': get_drivers(),
-    }
+    try:
+        config = {
+            u'modules': get_modules(),
+            u'events': get_events(),
+            u'renderers': get_renderers(),
+            u'devices': get_devices(),
+            u'drivers': get_drivers(),
+        }
+    except:
+        logger.exception('Error getting config')
 
     return json.dumps(config)
 
