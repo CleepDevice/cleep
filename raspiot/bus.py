@@ -454,7 +454,7 @@ class BusClient(threading.Thread):
             elif param==u'command_sender':
                 #function needs request sender value
                 args[u'command_sender'] = sender
-            elif not message.has_key(param) and not params_with_default[param]:
+            elif not isinstance(message, dict) or (not message.has_key(param) and not params_with_default[param]):
                 #missing parameter
                 return False, None
             else:
