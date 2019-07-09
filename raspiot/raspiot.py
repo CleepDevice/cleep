@@ -560,6 +560,13 @@ class RaspIotModule(RaspIot):
                 u'devices': {}
             })
 
+        #events
+        self.delete_device_event = None
+        try:
+            self.delete_device_event = self.events_broker.get_event_instance(u'system.device.delete')
+        except:
+            pass
+
     def _add_device(self, data):
         """
         Helper function to add device in module configuration file.
@@ -616,7 +623,13 @@ class RaspIotModule(RaspIot):
         del devices[uuid]
 
         #save config
-        return self._set_config_field(u'devices', devices)
+        conf_res = self._set_config_field(u'devices', devices)
+
+        #send device deleted event
+        if conf_res and self.delete_device_event:
+            self.delete_device_event.send(device_id=uuid)
+
+        return conf_res
 
     def _update_device(self, uuid, data):
         """
