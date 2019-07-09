@@ -131,14 +131,15 @@ class Session():
         if not self.__setup_executed:
             return
 
+        #process
+        self.__module_instance.stop()
+        self.__module_instance.join()
+
         #config
         path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
         if os.path.exists(path):
             os.remove(path)
 
-        #process
-        self.__module_instance.stop()
-        self.__module_instance.join()
 
     def mock_command(self, command, handler, fail=False, no_response=False):
         """
