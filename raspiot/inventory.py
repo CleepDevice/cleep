@@ -677,6 +677,15 @@ class Inventory(RaspIot):
         """
         self.__rpcserver.set_debug(debug)
 
+    def set_rpc_cache_control(self, no_cache):
+        """
+        Set RPC server cache control
+
+        Args:
+            no_cache (bool): True to disable cache control
+        """
+        self.__rpcserver.set_cache_control(no_cache)
+
     def get_renderers(self):
         """
         Return renderers from events broker

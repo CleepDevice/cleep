@@ -43,7 +43,6 @@ AUTH_FILE = u'/etc/raspiot/auth.conf'
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900 #15mins
 
-
 #globals
 polling = 0
 subscribed = False
@@ -58,6 +57,7 @@ cleep_filesystem = None
 inventory = None
 bus = None
 crash_report = None
+no_cache_control = False
 
 def bottle_logger(func):
     """
@@ -123,6 +123,16 @@ def configure(bootstrap, inventory_, debug_enabled_):
 
     #load auth
     load_auth()
+
+def set_cache_control(no_cache):
+    """
+    Set cache control values
+
+    Args:
+        no_cache (bool): disable cache control
+    """
+    global cache_control
+    no_cache_control = no_cache
 
 def set_debug(debug_enabled_):
     """
@@ -463,8 +473,7 @@ def download():
                 download = data[u'filename']
             logger.info(u'Download file root=%s filename=%s download=%s' % (root, filename, download))
             bottle.response.set_header(u'Cache-Control', u'max-age=5')
-            http_resp = bottle.static_file(filename=filename, root=root, download=download)
-            return http_resp
+            return bottle.static_file(filename=filename, root=root, download=download)
 
         else:
             #error during filepath retrieving
@@ -774,6 +783,7 @@ def default(path):
     """
     Servers static files from HTML_DIR.
     """
+    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if no_cache_control else u'max-age=3600')
     return bottle.static_file(path, HTML_DIR)
 
 @app.route(u'/', method=u'GET')
@@ -782,6 +792,7 @@ def index():
     """
     Return a default document if no path was specified.
     """
+    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if no_cache_control else u'max-age=3600')
     return bottle.static_file(u'index.html', HTML_DIR)
 
 @app.route(u'/logs', method=u'GET')
