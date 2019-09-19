@@ -323,6 +323,9 @@ def get_modules(installable=False):
     """
     Return configurations for all loaded modules
 
+    Args:
+        installable (bool): If true returns all installable modules. If false (default) returns installed modules
+
     Returns:
         dict: map of modules with their configuration, devices, commands...
     """
