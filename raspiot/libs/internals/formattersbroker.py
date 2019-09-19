@@ -138,10 +138,10 @@ class FormattersBroker():
                             self.logger.error(u'Formatter class name must have the same name than filename in "%s"' % formatter)
 
                 except AttributeError:
-                    self.logger.exception(u'Formatter in "%s" not loaded: it has surely invalid name. Please refer to coding rules.' % formatter)
+                    self.logger.exception(u'Formatter in "%s" was not loaded: it has surely invalid name. Please refer to coding rules.' % formatter)
 
                 except:
-                    self.logger.exception(u'Formatter in "%s" not loaded: it has some problem from inside. Please check code.' % formatter)
+                    self.logger.exception(u'Formatter in "%s" was not loaded: it has some problem from inside. Please check code.' % formatter)
 
         self.__dump_formatters_content(self.__loaded_formatters)
 

@@ -110,6 +110,10 @@ class CriticalResources():
             self.logger.exception(u'Resource "%s" has surely invalid name, please refer to coding rules:' % resource)
             raise Exception('Invalid resource "%s" tryed to be loaded' % resource)
 
+        except:
+            self.logger.exception(u'Resource "%s" wasn\'t imported successfully. Please check event source code.' % resource)
+            raise Exception('Invalid resource "%s" tryed to be loaded' % resource)
+
     def __get_resource_class_name(self, filename, module):
         """ 
         Search for resource class name trying to match filename with item in module

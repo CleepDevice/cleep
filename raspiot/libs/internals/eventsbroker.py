@@ -117,7 +117,11 @@ class EventsBroker():
 
         except AttributeError:
             self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
-            raise Exception('Invalid event tryed to be loaded')
+            raise Exception(u'Invalid event tried to be loaded')
+
+        except:
+            self.logger.exception(u'Event "%s" wasn\'t imported successfully. Please check event source code.' % event)
+            raise Exception(u'Invalid event tried to be loaded')
 
     def get_event_instance(self, event_name):
         """
