@@ -16,8 +16,9 @@ from raspiot.libs.drivers import __all__ as drivers_libs
 from raspiot.libs.configs import __all__ as configs_libs
 from raspiot.libs.commands import __all__ as commands_libs
 
+#from https://elinux.org/RPi_HardwareHistory
 RASPBERRY_PI_REVISIONS = {
-    u'unknown':{u'date': u'?',        u'model': u'?',                                u'pcbrevision': u'?',   u'ethernet': False, u'wireless': False, u'audio': True, u'gpiopins': 0,  u'memory': '?',              u'notes': u'Unknown model'},
+    u'unknown':{u'date': u'?',        u'model': u'?',                                u'pcbrevision': u'?',   u'ethernet': False, u'wireless': False, u'audio':False, u'gpiopins': 0,  u'memory': '?',              u'notes': u'Unknown model'},
     u'0002':   {u'date': u'Q1 2012',  u'model': u'B',                                u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u''},
     u'0003':   {u'date': u'Q3 2012',  u'model': u'B (ECN0001)',                      u'pcbrevision': u'1.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'Fuses mod and D14 removed'},
     u'0004':   {u'date': u'Q3 2012',  u'model': u'B',                                u'pcbrevision': u'2.0', u'ethernet': True,  u'wireless': False, u'audio': True, u'gpiopins': 26, u'memory': u'256 MB',        u'notes': u'(Mfg by Sony)'},
@@ -51,6 +52,9 @@ RASPBERRY_PI_REVISIONS = {
     u'a32082': {u'date': u'Q4 2016',  u'model': u'3 Model B',                        u'pcbrevision': u'1.2', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony Japan)'},
     u'a020d3': {u'date': u'Q1 2018',  u'model': u'3 Model B+',                       u'pcbrevision': u'1.3', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
     u'9020e0': {u'date': u'Q4 2018',  u'model': u'3 Model A+',                       u'pcbrevision': u'1.0', u'ethernet': False, u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'512 MB',        u'notes': u'(Mfg by Sony)'},
+    u'a03111': {u'date': u'Q2 2019',  u'model': u'4 Model B',                        u'pcbrevision': u'1.1', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'1 GB',          u'notes': u'(Mfg by Sony)'},
+    u'b03111': {u'date': u'Q2 2019',  u'model': u'4 Model B',                        u'pcbrevision': u'1.1', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'2 GB',          u'notes': u'(Mfg by Sony)'},
+    u'c03111': {u'date': u'Q2 2019',  u'model': u'4 Model B',                        u'pcbrevision': u'1.1', u'ethernet': True,  u'wireless': True,  u'audio': True, u'gpiopins': 40, u'memory': u'4 GB',          u'notes': u'(Mfg by Sony)'},
 }
 
 def raspberry_pi_infos():
@@ -77,8 +81,10 @@ def raspberry_pi_infos():
     """
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    stdout = p.communicate()[0].replace(u'\n', u'')
-    return RASPBERRY_PI_REVISIONS[stdout] if stdout and stdout in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
+    code = p.communicate()[0].replace(u'\n', u'')
+    infos = RASPBERRY_PI_REVISIONS[code] if code and code in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
+    infos[u'code'] = code
+    return infos
         
 def install_trace_logging_level():
     """ 
