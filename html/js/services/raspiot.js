@@ -211,8 +211,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
 
                 //set module icon
                 self.modules[module].icon = 'bookmark';
-                if( resp.data.icon )
-                {
+                if( resp.data.icon ) {
                     self.modules[module].icon = resp.data.icon;
                 }
 
@@ -236,7 +235,7 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
                     self.__loadCssFiles(files.css);
                 }
 
-                //load html files first
+                //load html files
                 return self.__loadHtmlFiles(modulePath, files.html);
 
             }, function(err) {
@@ -335,7 +334,11 @@ var raspiotService = function($injector, $q, toast, rpcService, $http, $ocLazyLo
             //module not loaded, wait for it
             self.__deferredModules.promise
                 .then(function() {
-                    deferred.resolve(self.modules[module].desc);
+                    if( self.modules[module] ) {
+                        deferred.resolve(self.modules[module].desc);
+                    } else {
+                        deferred.reject('Module "' + module + '" does not exist');
+                    }
                 }, function() {
                     deferred.reject(null);
                 });
