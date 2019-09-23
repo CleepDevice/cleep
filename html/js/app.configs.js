@@ -26,8 +26,8 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
         .when('/module/:name', {
             template: '<div module-directive></div>'
         })
-        .when('/module/actions/edit/:script', {
-            template: '<div codemirror-python-directive></div>'
+        .when('/module/:name/:page', {
+            template: '<div page-directive></div>'
         })
         .otherwise({
             redirectTo: '/dashboard'

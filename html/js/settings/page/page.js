@@ -1,0 +1,183 @@
+/**
+ * Page directive
+ * Handle module extra pages
+ */
+var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
+
+    var pageController = ['$scope','$element', function($scope, $element) {
+        var self = this;
+        self.modulesPath = 'js/modules/';
+        self.module = '';
+        self.page = '';
+        self.error = false;
+
+        /**
+         * Get list of custom page files to lazy load
+         * @param desc: desc file content (json)
+         * @param module: module name
+         * @param page: page name
+         */
+        self.__getPageFilesToLoad = function(desc, module, page)
+        {
+            //init
+            var url = self.modulesPath + module + '/';
+            var files = {
+                'html': [],
+                'jscss': []
+            };
+            var types = ['js', 'css', 'html'];
+
+            //check desc content
+            if( !desc || !desc.pages || !desc.pages[self.page] ) {
+                self.error = true;
+                return null;
+            }
+
+            //append files by types
+            for( var j=0; j<types.length; j++ )
+            {
+                if( desc.pages[self.page][types[j]] )
+                {
+                    for( var i=0; i<desc.pages[self.page][types[j]].length; i++)
+                    {
+                        if( types[j]=='html' )
+                        {
+                            files['html'].push(url + desc.pages[self.page][types[j]][i]);
+                        }
+                        else
+                        {
+                            files['jscss'].push(url + desc.pages[self.page][types[j]][i]);
+                        }
+                    }
+                }
+            }
+
+            return files;
+        };
+
+        /**
+         * Load js and css files
+         * @param files: list of js files
+         */
+        self.__loadJsCssFiles = function(files)
+        {
+            //load js files using lazy loader
+            return $ocLazyLoad.load({
+                'reconfig': false,
+                'rerun': false,
+                'files': files
+            });
+        };
+
+        /**
+         * Load html files as templates
+         * @param htmlFile: list of html files
+         */
+        self.__loadHtmlFiles = function(htmlFiles)
+        {
+            //init
+            var promises = [];
+            var d = $q.defer();
+
+            //fill templates promises
+            for( var i=0; i<htmlFiles.length; i++ )
+            {
+                //load only missing templates
+                var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                if( !$templateCache.get(templateName) )
+                {
+                    promises.push($http.get(htmlFiles[i]));
+                }
+            }
+
+            //and execute them
+            $q.all(promises)
+                .then(function(templates) {
+                    //check if templates available
+                    if( !templates )
+                        return;
+    
+                    //cache templates
+                    for( var i=0; i<templates.length; i++ )
+                    {
+                        var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
+                        $templateCache.put(templateName, templates[i].data);
+                    }
+                }, function(err) {
+                    console.error('Error occured loading html files:', err);
+                })
+                .finally(function() {
+                    d.resolve();
+                });
+    
+            return d.promise;
+        };
+
+        /**
+         * Init controller
+         * @param module (string): module name
+         * @param page (string): module page
+         */
+        self.init = function(module, page)
+        {
+            //save module name
+            self.module = module;
+            self.page = page;
+            var files;
+
+            //load module description
+            raspiotService.getModuleDescription(module)
+                .then(function(desc) {
+                    files = self.__getPageFilesToLoad(desc, module, page);
+                    if( files===null ) {
+                        return $q.reject('Page "'+page+'" not found');
+                    }
+
+                    //load html templates first
+                    return self.__loadHtmlFiles(files.html);
+
+                }, function(err) {
+                    console.error('Unable to get module "' + module + '" description');
+                    return $q.reject('STOPCHAIN');
+                })
+                .then(function() {
+                    //load js and css files
+                    return self.__loadJsCssFiles(files.jscss);
+
+                }, function(err) {
+                    //remove rejection warning
+                    if( err!=='STOPCHAIN' ) {
+                        console.error('error loading html files:', err);
+                    }
+                    return $q.reject('STOPCHAIN');
+                })
+                .then(function() {
+                    //everything is loaded successfully, inject module directive
+                    var container = $element.find('#pageContainer');
+                    var template = '<div ' + page + '-page-directive=""></div>';
+                    var directive = $compile(template)($scope);
+                    $element.append(directive);
+                }, function(err) {
+                    if( err!=='STOPCHAIN' ) {
+                        console.error('Error loading module js/css files:', err);
+                    }
+                });
+        };
+    }];
+
+    var pageLink = function(scope, element, attrs, controller) {
+        controller.init($routeParams.name, $routeParams.page);
+    };
+
+    return {
+        templateUrl: 'js/settings/page/page.html',
+        replace: true,
+        controller: pageController,
+        controllerAs: 'pageCtl',
+        link: pageLink
+    };
+};
+
+var RaspIot = angular.module('RaspIot');
+RaspIot.directive('pageDirective', ['$q', 'raspiotService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', pageDirective]);
+

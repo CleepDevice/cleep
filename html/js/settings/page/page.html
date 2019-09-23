@@ -1,0 +1,25 @@
+<div layout="column" id="moduleContainer">
+
+    <!-- toolbar -->
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div>
+            <md-button ng-href="#!module/{{pageCtl.module}}" class="md-raised" aria-label="Go back">
+                <md-icon md-svg-icon="arrow-left"></md-icon>
+                <md-tooltip>Back to {{pageCtl.module}} configuration page</md-tooltip>
+                Back to {{pageCtl.module}}
+            </md-button>
+        </div>
+    </div>
+
+    <!-- module content will be appended here -->
+    <div ng-if="pageCtl.error" layout="row" layout-align="center center" layout-padding="15px">
+        <div>
+            <md-icon md-svg-icon="alien-outline" class="icon-xl"></md-icon>
+        </div>
+        <div>
+            The page "{{pageCtl.page}}" is out there.
+        </div>
+    </div>
+
+</div>
+
