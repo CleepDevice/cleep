@@ -131,6 +131,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
                 }, function(err) {
                     console.error('Unable to get module "' + module + '" description');
+                    return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
                     //load js and css files
@@ -138,7 +139,10 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
                 }, function(err) {
                     //remove rejection warning
-                    console.error('error loading html files:', err);
+                    if( err!=='STOPCHAIN' ) {
+                        console.error('error loading html files:', err);
+                    }
+                    return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
                     //everything is loaded successfully, inject module directive
@@ -154,7 +158,9 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                     self.version = raspiotService.modules[module].version;
 
                 }, function(err) {
-                    console.error('Error loading module js/css files:', err);
+                    if( err!=='STOPCHAIN' ) {
+                        console.error('Error loading module js/css files:', err);
+                    }
                 });
         };
     }];
