@@ -1,4 +1,4 @@
-<div layout="column" id="moduleContainer">
+<div layout="column" id="pageContainer">
 
     <!-- toolbar -->
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
@@ -9,9 +9,23 @@
                 Back to {{pageCtl.module}}
             </md-button>
         </div>
+        <div class="toolbar-spacer"></div>
+        <div ng-if="pageCtl.title">
+            <h1 class="md-title">
+                {{pageCtl.title | firstUpper}}
+            </h1>
+        </div>
+        <div flex></div>
+        <div ng-if="pageCtl.tools && pageCtl.tools.length>0">
+            <md-button ng-repeat="tool in pageCtl.tools" class="md-raised md-primary" ng-click="pageCtl.onToolClick(tool)">
+                <md-icon md-svg-icon="{{tool.icon}}"></md-icon>
+                <md-tooltip ng-if="tool.tooltip" md-direction="top">{{tool.tooltip}}</md-tooltip>
+                {{tool.label}}
+            </md-button>
+        </div>
     </div>
 
-    <!-- module content will be appended here -->
+    <!-- error -->
     <div ng-if="pageCtl.error" layout="row" layout-align="center center" layout-padding="15px">
         <div>
             <md-icon md-svg-icon="alien-outline" class="icon-xl"></md-icon>
@@ -20,6 +34,8 @@
             The page "{{pageCtl.page}}" is out there.
         </div>
     </div>
+
+    <!-- page content will be appended here -->
 
 </div>
 

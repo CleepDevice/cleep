@@ -10,6 +10,33 @@ var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParam
         self.module = '';
         self.page = '';
         self.error = false;
+        // custom settings that page can update
+        self.title = null;
+        self.tools = []; // must contains item with { label:string, click:function, icon:mdi icon string }
+
+        /**
+         * Configure toolbar
+         * @param title (string): title to display on toolbar (near back button)
+         * @param tools (array): array of tool. A tool is an object like:
+         *      {
+         *          label (string): button label,
+         *          icon (string): button mdi icon,
+         *          click (function): on click event
+         *          tooltip (string): button tooltip
+         *      }
+         */
+        self.setToolbar = function(title, tools) {
+            self.title = title || '';
+            if( tools ) {
+                self.tools = tools;
+            }
+        };
+
+        self.onToolClick = function(tool) {
+            if( tool.click ) {
+                tool.click();
+            }
+        };
 
         /**
          * Get list of custom page files to lazy load
@@ -17,8 +44,7 @@ var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParam
          * @param module: module name
          * @param page: page name
          */
-        self.__getPageFilesToLoad = function(desc, module, page)
-        {
+        self.__getPageFilesToLoad = function(desc, module, page) {
             //init
             var url = self.modulesPath + module + '/';
             var files = {
@@ -152,11 +178,11 @@ var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParam
                     return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
-                    //everything is loaded successfully, inject module directive
-                    var container = $element.find('#pageContainer');
-                    var template = '<div ' + page + '-page-directive=""></div>';
+                    //everything is loaded successfully, inject page directive
+                    var template = '<div ' + page.toKebab() + '-page-directive=""></div>';
                     var directive = $compile(template)($scope);
                     $element.append(directive);
+
                 }, function(err) {
                     if( err!=='STOPCHAIN' ) {
                         console.error('Error loading module js/css files:', err);
