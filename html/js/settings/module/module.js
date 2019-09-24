@@ -10,6 +10,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
         self.module = '';
         self.moduleUrls = {};
         self.version = '';
+        self.error = false;
 
         /**
          * Get list of config files to lazy load
@@ -130,6 +131,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                     return self.__loadHtmlFiles(files.html);
 
                 }, function(err) {
+                    self.error = true;
                     console.error('Unable to get module "' + module + '" description');
                     return $q.reject('STOPCHAIN');
                 })
@@ -139,6 +141,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
 
                 }, function(err) {
                     //remove rejection warning
+                    self.error = true;
                     if( err!=='STOPCHAIN' ) {
                         console.error('error loading html files:', err);
                     }
@@ -146,7 +149,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                 })
                 .then(function() {
                     //everything is loaded successfully, inject module directive
-                    var container = $element.find('#moduleContainer');
                     var template = '<div ' + module + '-config-directive=""></div>';
                     var directive = $compile(template)($scope);
                     $element.append(directive);
@@ -158,6 +160,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                     self.version = raspiotService.modules[module].version;
 
                 }, function(err) {
+                    self.error = true;
                     if( err!=='STOPCHAIN' ) {
                         console.error('Error loading module js/css files:', err);
                     }

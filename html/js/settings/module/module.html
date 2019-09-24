@@ -38,6 +38,16 @@
         <div class="toolbar-spacer"></div>
     </div>
 
+    <!-- error loading module -->
+    <div ng-if="moduleCtl.error" layout="row" layout-align="center center" layout-padding="15px">
+        <div>
+            <md-icon md-svg-icon="car-traction-control" class="icon-xl"></md-icon>
+        </div>
+        <div>
+            The application "{{moduleCtl.module}}" is not properly started.
+        </div>
+    </div>
+
     <!-- module content will be appended here -->
 
 </div>
