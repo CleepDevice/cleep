@@ -101,7 +101,7 @@ class EventsBroker():
 
         for root, _, filenames in os.walk(path):
             for filename in filenames:
-                try
+                try:
                     fullpath = os.path.join(root, filename)
                     (event, ext) = os.path.splitext(filename)
                     parts = full_path_split(fullpath)
@@ -117,11 +117,9 @@ class EventsBroker():
 
                 except AttributeError:
                     self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
-                    raise Exception(u'Invalid event tried to be loaded')
 
                 except:
                     self.logger.exception(u'Event "%s" wasn\'t imported successfully. Please check event source code.' % event)
-                    raise Exception(u'Invalid event tried to be loaded')
 
     def get_event_instance(self, event_name):
         """
