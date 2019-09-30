@@ -14,6 +14,7 @@ raspiot (0.0.19) unreleased; urgency=low
   * Add RaspIotRpcWrapper class to handle POST on /
   * Change Cleep repository
   * Update python libs
+  * Implement Driver feature
   * Implement tests execution on applications (add internal libs)
   * Implement docs generation on applications
   * Rewrite events handling
