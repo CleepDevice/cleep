@@ -53,7 +53,7 @@ clean() {
 #add log if --newversion specified in command line
 #dch -i
 
-#jump in raspiot root directory
+#jump in cleep root directory
 cd ..
 
 #clean previous build
@@ -83,6 +83,8 @@ rm -rf raspiot.egg-info
 rm -rf pyraspiot.egg-info/
 
 #move to previous directory where archive was generated
+DUMMY_DIR=`pwd`
+SRC_DIR=`basename $DUMMY_DIR`
 cd ..
 
 #collect variables
@@ -90,8 +92,8 @@ DEB=`ls -A1 raspiot* | grep \.deb`
 CHANGES=`ls -A1 raspiot* | grep \.changes`
 ARCHIVE=raspiot_$VERSION.zip
 SHA256=raspiot_$VERSION.sha256
-PREINST=raspiot/scripts/preinst.sh
-POSTINST=raspiot/scripts/postinst.sh
+PREINST=$SRC_DIR/scripts/preinst.sh
+POSTINST=$SRC_DIR/scripts/postinst.sh
 
 #build zip archive
 rm -f *.zip
