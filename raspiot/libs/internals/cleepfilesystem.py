@@ -283,10 +283,25 @@ class CleepFilesystem():
         self.logger.trace(u'Encoding: %s' % encoding)
 
         #check binary mode
-        if mode.find(u'b')==-1:
-            return io.open(path, mode=mode, encoding=encoding)
-        else:
-            return io.open(path, mode=mode)
+        try:
+            if mode.find(u'b')==-1:
+                return io.open(path, mode=mode, encoding=encoding)
+            else:
+                return io.open(path, mode=mode)
+        except:
+            #error occured, disable write and rethrow exception
+            read_mode = mode.find(u'r')>=0 and not mode.find('+')>=0
+            self.logger.trace(u'Open %s read_mode=%s rofs=%s' % (path, read_mode, self.is_readonly_fs))
+            if self.is_readonly_fs and not read_mode and not self.__is_on_tmp(path):
+                root = self.rw.is_path_on_root(path)
+                context = ReadWriteContext()
+                context.src = path,
+                context.action = u'open'
+                context.is_readonly_fs = self.is_readonly_fs
+                context.root = root
+                context.boot = not root
+                self.__disable_write(context, root=root, boot=not root)
+            raise
 
     def close(self, fd):
         """
