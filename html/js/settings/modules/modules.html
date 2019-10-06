@@ -54,7 +54,7 @@
                     <!-- open module + uninstall info -->
                     <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].hasConfig" ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending || modulesCtl.raspiotService.modules[moduleName].processing" ng-href="{{'#!module/'+moduleName}}">
                         <md-icon md-svg-icon="open-in-app"></md-icon>
-                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].processing">Open</span>
+                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].processing || modulesCtl.raspiotService.modules[moduleName].processing!=='uninstall'">Open</span>
                         <span ng-if="modulesCtl.raspiotService.modules[moduleName].processing==='uninstall'">Uninstalling</span>
                     </md-button>
 
