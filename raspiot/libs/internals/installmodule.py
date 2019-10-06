@@ -887,6 +887,7 @@ class UpdateModule(threading.Thread):
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
         self.status = self.STATUS_IDLE
+        self.__process_status = []
         self.__is_uninstalling = True
         self.__uninstall_status = {
             u'status': InstallModule.STATUS_IDLE,
@@ -916,7 +917,8 @@ class UpdateModule(threading.Thread):
             u'status': self.status,
             u'uninstall': self.__uninstall_status,
             u'install': self.__install_status,
-            u'module': self.module
+            u'module': self.module,
+            u'process': self.__process_status,
         }
 
     def __callback(self, status):
@@ -947,49 +949,55 @@ class UpdateModule(threading.Thread):
         """
         Run module update
         """
-        #init
-        self.logger.info(u'Start module "%s" update' % self.module)
-        error_uninstall = False
-        error_install = False
-        self.status = self.STATUS_UPDATING
+        try:
+            #init
+            self.logger.info(u'Start module "%s" update' % self.module)
+            error_uninstall = False
+            error_install = False
+            self.status = self.STATUS_UPDATING
 
-        #run uninstall
-        self.__is_uninstalling = True
-        uninstall = UninstallModule(self.module, True, self.force_uninstall, self.__callback, self.cleep_filesystem, self.crash_report)
-        uninstall.start()
-        time.sleep(0.5)
-        while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:
+            #run uninstall
+            self.__is_uninstalling = True
+            uninstall = UninstallModule(self.module, self.module_infos, True, self.force_uninstall, self.__callback, self.cleep_filesystem, self.crash_report)
+            uninstall.start()
             time.sleep(0.5)
-        if uninstall.get_status()[u'status']!=uninstall.STATUS_UNINSTALLED:
-            #module can have error during uninstall but all process is still done
-            self.logger.warning(u'Error during module "%s" update: uninstall encountered errors but continue anyway the new version installation' % self.module)
-            error_uninstall = True
+            while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:
+                time.sleep(0.5)
+            if uninstall.get_status()[u'status']!=uninstall.STATUS_UNINSTALLED:
+                #module can have error during uninstall but all process is still done
+                self.logger.warning(u'Error during module "%s" update: uninstall encountered errors but continue anyway the new version installation' % self.module)
+                error_uninstall = True
 
-        #callback
-        if self.callback:
-            self.callback(self.get_status())
-        
-        #run new package install
-        self.__is_uninstalling = False
-        install = InstallModule(self.module, self.module_infos, True, self.__callback, self.cleep_filesystem, self.crash_report)
-        install.start()
-        time.sleep(0.5)
-        while install.get_status()[u'status']==install.STATUS_INSTALLING:
+            #callback
+            if self.callback:
+                self.callback(self.get_status())
+            
+            #run new package install
+            self.__is_uninstalling = False
+            install = InstallModule(self.module, self.module_infos, True, self.__callback, self.cleep_filesystem, self.crash_report)
+            install.start()
             time.sleep(0.5)
+            while install.get_status()[u'status']==install.STATUS_INSTALLING:
+                time.sleep(0.5)
 
-        #check install status
-        if install.get_status()[u'status']!=install.STATUS_INSTALLED:
+            #check install status
+            if install.get_status()[u'status']!=install.STATUS_INSTALLED:
+                self.status = self.STATUS_ERROR
+                error_install = True
+                self.logger.error(u'Error during module "%s" update: install encountered errors' % self.module)
+
+            else:
+                #module updated
+                self.status = self.STATUS_UPDATED
+    
+            #callback
+            if self.callback:
+                self.callback(self.get_status())
+
+        except:
             self.status = self.STATUS_ERROR
             error_install = True
-            self.logger.error(u'Error during module "%s" update: install encountered errors' % self.module)
-
-        else:
-            #module updated
-            self.status = self.STATUS_UPDATED
-
-        #callback
-        if self.callback:
-            self.callback(self.get_status())
+            self.logger.exception(u'Error occured updating module "%s"' % self.module)
 
         if error_install:
             self.logger.info(u'Module "%s" update terminated (success: False)' % self.module)
@@ -997,4 +1005,8 @@ class UpdateModule(threading.Thread):
             self.logger.info(u'Module "%s" update terminated (success: True with error during uninstall)' % self.module)
         else:
             self.logger.info(u'Module "%s" update terminated (success: True)' % self.module)
+
+        #final callback
+        if self.callback:
+            self.callback(self.get_status())
 
