@@ -81,9 +81,10 @@ def raspberry_pi_infos():
     """
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    code = p.communicate()[0].replace(u'\n', u'')
-    infos = RASPBERRY_PI_REVISIONS[code] if code and code in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
-    infos[u'code'] = code
+    revision = p.communicate()[0].replace(u'\n', u'')
+    infos = RASPBERRY_PI_REVISIONS[revision] if revision and revision in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
+    infos[u'revision'] = revision
+
     return infos
         
 def install_trace_logging_level():
