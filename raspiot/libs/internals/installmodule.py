@@ -900,7 +900,7 @@ class UpdateModule(threading.Thread):
             u'module': self.module,
             u'status': UninstallModule.STATUS_IDLE,
             u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None}
+            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None},
             u'updateprocess': True,
             u'process': [],
         }
