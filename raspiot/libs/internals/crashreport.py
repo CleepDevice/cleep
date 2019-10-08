@@ -3,33 +3,26 @@
 
 import logging
 import sys
-from raven import Client
-from raven.handlers.logging import SentryHandler
+import sentry_sdk as Sentry
+from sentry_sdk.integrations.excepthook import ExcepthookIntegration
 import platform
 import traceback
-
 
 class CrashReport():
     """
     Crash report class
-    Use Sentry (Raven) to send crash reports.
-
-    Usage:
-        To report specific exception, simply use <CrashReport instance>.report_exception() function (without params)
-        To report manually something uses <CrashReport instance>.manual_report() specifiying a message and extra infos
-        Unhandled exceptions are reported automatically (if enabled!)
     """
 
-    def __init__(self, sentry_dsn, product, product_version, libs_version={}, debug=False, forced=False):
+    def __init__(self, token, product, product_version, libs_version={}, debug=False, forced=False):
         """
         Constructor
 
         Args:
-            sentry_dsn (string): sentry DSN
+            token (string): crash report service token (like sentry dsn)
             product (string): product name
             product_version (string): product version
-            libs_version (dict): dict of libraries with their version
-            debug (bool): enable debug on this library (default False)
+            libs_version (dict): important libraries versions
+            debug (bool): debug flag
             forced (bool): used by system to force crash report deactivation
         """
         #logger
@@ -37,49 +30,59 @@ class CrashReport():
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.INFO)
+            self.logger.setLevel(logging.WARN)
 
         #members
-        self.libs_version = libs_version
-        self.extra = libs_version
-        self.product = product
-        self.product_version = product_version
-        self.extra['platform'] = platform.platform()
-        self.extra['product'] = product
-        self.extra['product_version'] = product_version
         self.__forced = forced
-        self.__enabled = True
-        self.report_exception = self.__binded_report_exception
-        if self.__forced or sentry_dsn in (None, u''):
+        self.__extra = libs_version
+        self.__enabled = False
+        self.__token = token
+
+        #disable crash report if necessary
+        if self.__forced or not token:
             self.disable()
-        self.__handler = None
 
+        #fill metadata collection
+        self.__extra['platform'] = platform.platform()
+        self.__extra['product'] = product
+        self.__extra['product_version'] = product_version
+        try:
+            #append more metadata for raspberry
+            import gpiozero
+            info = gpiozero.pi_info()
+            self.__extra['raspberrypi_model'] = info.model
+            self.__extra['raspberrypi_revision'] = info.revision
+            self.__extra['raspberrypi_pcb_revision'] = info.pcb_revision
+            self.__extra['raspberrypi_storage'] = info.storage
+        except:
+            self.logger.debug('Application is not running on a reaspberry pi')
+        
         #create and configure raven client
-        self.client = Client(
-            dsn = sentry_dsn,
-            ignore_exceptions = [u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException'],
-            tags = self.extra
+        Sentry.init(
+            dsn=self.__token,
+            attach_stacktrace=True,
+            before_send=self.__filter_exception,
+            integrations=[ExcepthookIntegration(always_run=True)],
         )
-        #sys.excepthook = self.__crash_report
 
-    def __unbinded_report_exception(self, *argv, **kwargs):
+    def __filter_exception(self, event, hint):
         """
-        Unbinded report exception when sentry is disabled
+        Callback used to filter sent exceptions
         """
-        pass
+        if 'exc_info' in hint:
+            exc_type, exc_value, tb = hint["exc_info"]
+            if type(exc_value).__name__ in (u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException'):
+                self.logger.debug('Exception "%s" filtered' % type(exc_value).__name__)
+                return None
 
-    def __binded_report_exception(self, *args, **kwargs):
-        """
-        Binded report exception when sentry is enabled
-        """
-        self.client.captureException(args=args, kwargs=kwargs, extra=self.extra)
+        return event
 
     def is_enabled(self):
         """
-        Return True if crash report enabled
+        Returns True if crash report is enabled
 
         Returns:
-            bool: True is enabled
+            bool: True if enabled
         """
         return self.__enabled
 
@@ -87,16 +90,8 @@ class CrashReport():
         """
         Enable crash report
         """
-        #avoid enabling again if forced by system
-        if self.__forced:
-            self.logger.info(u'Unable to enable crash report because system disabled it for current execution')
-            return
-
         self.logger.debug('Crash report is enabled')
         self.__enabled = True
-
-        #bind report_exception
-        self.report_exception = self.__binded_report_exception
 
     def disable(self):
         """
@@ -105,63 +100,63 @@ class CrashReport():
         self.logger.debug('Crash report is disabled')
         self.__enabled = False
 
-        #unbind report exception
-        self.report_exception = self.__unbinded_report_exception
+    def report_exception(self, extra=None):
+        """
+        Exception handler that report crashes. It automatically include stack trace
 
-    def crash_report(self, exc_type, exc_value, exc_traceback):
+        Args:
+            extra (dict): extra metadata to post with the report
         """
-        Exception handler that report crashes
-        """
-        #message = u'\n'.join(traceback.format_tb(tb))
-        #message += '\n%s %s' % (str(type), value)
-        #self.logger.fatal(message)
         if self.__enabled:
-            self.client.captureException((exc_type, exc_value, exc_traceback), extra=self.extra)
+            self.logger.debug('Send crash report')
+            with Sentry.push_scope() as scope:
+                self.__set_extra(scope, extra)
+                Sentry.capture_exception()
 
     def manual_report(self, message, extra=None):
         """
-        Report manually a crash report dumping current stack trace to report thx to raven
+        Report manually a crash report dumping current stack trace to report error
 
         Args:
             message (string): message to attach to crash report
-            extra (dict): extra metadata to post with the report (stack...)
+            extra (dict): extra metadata to post with the report
         """
         if self.__enabled:
-            self.client.capture(u'raven.events.Message', message=message, stack=True, extra=extra)
+            self.logger.debug('Send manual report')
+            with Sentry.push_scope() as scope:
+                self.__set_extra(scope, extra)
+                Sentry.capture_message(message)
 
-    def get_logging_handler(self, level=logging.ERROR):
+    def __set_extra(self, scope, more_extra={}):
         """
-        Return sentry logging handler
+        Set extra data to specified Sentry scope (typically )
 
         Args:
-            level (int): logging level (see logging.XXX)
-
-        Returns:
-            SentryHandler: sentry logging handler
+            scope: Sentry scope
         """
-        if self.__handler is None:
-            self.__handler = SentryHandler(self.client)
-            self.__handler.setLevel(logging.ERROR)
-
-        return self.__handler
-
+        for key, value in self.__extra.items():
+            scope.set_extra(key, value)
+        if isinstance(more_extra, dict) and more_extra:
+            for key, value in more_extra.items():
+                scope.set_extra(key, value)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
     #test crash report
-    cr = CrashReport('Test', '0.0.0')
-    cr.disable()
-    #cr.enable()
+    dsn = 'https://67a672c8a4124ba1a11dfcaf37910a30@sentry.io/1773136'
+    cr = CrashReport(dsn, 'Test', '0.0.0', debug=True)
+    cr.enable()
 
     #test local catched exception
     try:
         raise Exception('My custom exception')
     except:
         cr.report_exception()
-        pass
+    print('Done')
 
     #try main exception
     1/0
 
     print('Done')
+
