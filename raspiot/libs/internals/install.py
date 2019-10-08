@@ -449,7 +449,7 @@ class Install():
         #send status
         if self.status_callback:
             current_status = self.get_status()
-            #inject module name and updateprocess
+            #inject more data
             current_status[u'module'] = status[u'module']
             current_status[u'updateprocess'] = status[u'updateprocess']
             current_status[u'process'] = status[u'process']
@@ -540,7 +540,7 @@ class Install():
         #send status
         if self.status_callback:
             current_status = self.get_status()
-            #inject module name and updateprocess status
+            #inject more data
             current_status[u'module'] = status[u'module']
             current_status[u'updateprocess'] = status[u'updateprocess']
             current_status[u'process'] = status[u'process']
@@ -607,6 +607,7 @@ class Install():
             self.status = self.STATUS_ERROR
 
         #save install/uninstall status at end of process
+        process = [u'No process output']
         if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
             #uninstall prescript
             if status[u'uninstall'][u'prescript'][u'returncode']:
@@ -636,11 +637,15 @@ class Install():
             else:
                 self.stdout = [u'', u'No postinstall script']
 
+            #process
+            process = [u'Uninstall process:'] + status[u'uninstall'][u'process'] + [u'Install process'] + status[u'install'][u'process']
+
         #send status
         if self.status_callback:
             current_status = self.get_status()
-            #inject module name
+            #inject more data
             current_status[u'module'] = status[u'module']
+            current_status[u'process'] = process
             self.logger.debug('current_status=%s' % current_status)
             self.status_callback(current_status)
 

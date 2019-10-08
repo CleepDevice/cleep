@@ -887,17 +887,22 @@ class UpdateModule(threading.Thread):
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
         self.status = self.STATUS_IDLE
-        self.__process_status = []
         self.__is_uninstalling = True
         self.__uninstall_status = {
+            u'module': self.module,
             u'status': InstallModule.STATUS_IDLE,
             u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None}
+            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None},
+            u'updateprocess': True,
+            u'process': [],
         }
         self.__install_status = {
+            u'module': self.module,
             u'status': UninstallModule.STATUS_IDLE,
             u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
             u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None}
+            u'updateprocess': True,
+            u'process': [],
         }
 
     def get_status(self):
@@ -914,16 +919,15 @@ class UpdateModule(threading.Thread):
                 }
         """
         return {
+            u'module': self.module,
             u'status': self.status,
             u'uninstall': self.__uninstall_status,
             u'install': self.__install_status,
-            u'module': self.module,
-            u'process': self.__process_status,
         }
 
-    def __callback(self, status):
+    def __status_callback(self, status):
         """
-        Install/Uninstall callback
+        Install/Uninstall status callback
 
         Args:
             status (dict): status returned by install/uninstall
@@ -934,6 +938,7 @@ class UpdateModule(threading.Thread):
             self.__uninstall_status[u'status'] = status[u'status']
             self.__uninstall_status[u'prescript'] = status[u'prescript']
             self.__uninstall_status[u'postscript'] = status[u'postscript']
+            self.__uninstall_status[u'process'] = status[u'process']
 
         else:
             #callback from install process
@@ -941,6 +946,7 @@ class UpdateModule(threading.Thread):
             self.__install_status[u'status'] = status[u'status']
             self.__install_status[u'prescript'] = status[u'prescript']
             self.__install_status[u'postscript'] = status[u'postscript']
+            self.__install_status[u'process'] = status[u'process']
 
         if self.callback:
             self.callback(self.get_status())
@@ -958,7 +964,7 @@ class UpdateModule(threading.Thread):
 
             #run uninstall
             self.__is_uninstalling = True
-            uninstall = UninstallModule(self.module, self.module_infos, True, self.force_uninstall, self.__callback, self.cleep_filesystem, self.crash_report)
+            uninstall = UninstallModule(self.module, self.module_infos, True, self.force_uninstall, self.__status_callback, self.cleep_filesystem, self.crash_report)
             uninstall.start()
             time.sleep(0.5)
             while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:
@@ -974,7 +980,7 @@ class UpdateModule(threading.Thread):
             
             #run new package install
             self.__is_uninstalling = False
-            install = InstallModule(self.module, self.module_infos, True, self.__callback, self.cleep_filesystem, self.crash_report)
+            install = InstallModule(self.module, self.module_infos, True, self.__status_callback, self.cleep_filesystem, self.crash_report)
             install.start()
             time.sleep(0.5)
             while install.get_status()[u'status']==install.STATUS_INSTALLING:
