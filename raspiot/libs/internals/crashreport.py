@@ -5,6 +5,7 @@ import logging
 import sys
 import sentry_sdk as Sentry
 from sentry_sdk.integrations.excepthook import ExcepthookIntegration
+from sentry_sdk import configure_scope
 import platform
 import traceback
 
@@ -34,7 +35,6 @@ class CrashReport():
 
         #members
         self.__forced = forced
-        self.__extra = libs_version
         self.__enabled = False
         self.__token = token
 
@@ -42,27 +42,32 @@ class CrashReport():
         if self.__forced or not token:
             self.disable()
 
-        #fill metadata collection
-        self.__extra['platform'] = platform.platform()
-        self.__extra['product'] = product
-        self.__extra['product_version'] = product_version
-        try:
-            #append more metadata for raspberry
-            import raspiot.libs.internals.tools as Tools
-            infos = Tools.raspberry_pi_infos()
-            self.__extra['raspberrypi_model'] = infos[u'model']
-            self.__extra['raspberrypi_revision'] = infos['revision']
-            self.__extra['raspberrypi_pcbrevision'] = infos['pcbrevision']
-        except:
-            self.logger.debug('Application is not running on a reaspberry pi')
-        
         #create and configure raven client
         Sentry.init(
             dsn=self.__token,
+            release=product_version,
             attach_stacktrace=True,
             before_send=self.__filter_exception,
             integrations=[ExcepthookIntegration(always_run=True)],
         )
+
+        #fill current scope
+        with configure_scope() as scope:
+            scope.set_tag('platform', platform.platform())
+            scope.set_tag('product', product)
+            scope.set_tag('product_version', product_version)
+            for key, value in libs_version.items():
+                scope.set_tag(key, value)
+            try:
+                #append more metadata for raspberry
+                import raspiot.libs.internals.tools as Tools
+                infos = Tools.raspberry_pi_infos()
+                scope.set_tag('raspberrypi_model', infos[u'model'])
+                scope.set_tag('raspberrypi_revision', infos[u'revision'])
+                scope.set_tag('raspberrypi_pcbrevision', infos[u'pcbrevision'])
+            except:
+                self.logger.debug('Application is not running on a raspberry pi')
+        
 
     def __filter_exception(self, event, hint):
         """
@@ -133,8 +138,6 @@ class CrashReport():
         Args:
             scope: Sentry scope
         """
-        for key, value in self.__extra.items():
-            scope.set_extra(key, value)
         if isinstance(more_extra, dict) and more_extra:
             for key, value in more_extra.items():
                 scope.set_extra(key, value)
