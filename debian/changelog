@@ -1,3 +1,10 @@
+raspiot (0.0.20) unreleased; urgency=low
+
+  * Migrate raven lib to sentry-sdk lib (raven is deprecated)
+  * Fix issue during module update
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Mon, 8 oct 2019 19:00:00 +0000
+
 raspiot (0.0.19) unreleased; urgency=low
 
   * Update modules.json url
