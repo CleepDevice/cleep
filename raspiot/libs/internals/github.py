@@ -7,6 +7,7 @@ import urllib3
 urllib3.disable_warnings()
 import json
 import re
+import os
 
 class Github():
     """
@@ -29,6 +30,9 @@ class Github():
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
         self.version_pattern = r'\d+\.\d+\.\d+'
+        self.github_token = os.environ[u'GITHUB_TOKEN'] if u'GITHUB_TOKEN' in os.environ else None
+        if self.github_token:
+            self.http_headers[u'Authorization'] = u'token %s' % self.github_token
 
     def get_api_rate(self):
         """
@@ -204,6 +208,10 @@ class Github():
         Returns:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
+        #if github token specified, it means we want draft releases so force only_released to False
+        if self.github_token:
+            only_released = False
+
         #get all releases
         if only_released:
             releases = self.__get_released_releases(owner, repository)
