@@ -48,12 +48,11 @@ class CrashReport():
         self.__extra['product_version'] = product_version
         try:
             #append more metadata for raspberry
-            import gpiozero
-            info = gpiozero.pi_info()
-            self.__extra['raspberrypi_model'] = info.model
-            self.__extra['raspberrypi_revision'] = info.revision
-            self.__extra['raspberrypi_pcb_revision'] = info.pcb_revision
-            self.__extra['raspberrypi_storage'] = info.storage
+            import raspiot.libs.internals.tools as Tools
+            infos = Tools.raspberry_pi_infos()
+            self.__extra['raspberrypi_model'] = infos[u'model']
+            self.__extra['raspberrypi_revision'] = infos['revision']
+            self.__extra['raspberrypi_pcbrevision'] = infos['pcbrevision']
         except:
             self.logger.debug('Application is not running on a reaspberry pi')
         
