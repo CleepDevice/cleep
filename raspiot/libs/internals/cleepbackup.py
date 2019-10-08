@@ -4,15 +4,15 @@
 import logging
 from zipfile import ZipFile, ZIP_DEFLATED
 
-class RaspiotBackup:
+class CleepBackup:
     """
-    RaspiotBackup allows you:
-     - to backup raspiot configuration files on filesystem (in /etc/raspiot.bak directory)
+    CleepBackup allows you:
+     - to backup cleep configuration files on filesystem (in /etc/raspiot.bak directory)
      - to generate backup archive of configuration files
 
     It uses rsync to backup files locally
     """
-    RASPIOT_PATH = u'/etc/raspiot/'
+    CLEEP_PATH = u'/etc/raspiot/'
     BACKUP_PATH = u'/etc/raspiot.bak/'
 
     def __init__(self, cleep_filesystem, crash_report):
@@ -32,7 +32,7 @@ class RaspiotBackup:
         Returns:
             bool: True if backup completed sucessfully
         """
-        return self.cleep_filesystem.rsync(self.RASPIOT_PATH, self.BACKUP_PATH)
+        return self.cleep_filesystem.rsync(self.CLEEP_PATH, self.BACKUP_PATH)
 
     def generate_archive(self):
         """
@@ -44,9 +44,9 @@ class RaspiotBackup:
         fd = NamedTemporaryFile(delete=False)
         archive_name = fd.name
         archive = ZipFile(fd, u'w', ZIP_DEFLATED)
-        for f in os.listdir(self.RASPIOT_PATH):
+        for f in os.listdir(self.CLEEP_PATH):
             #build path
-            fullpath = os.path.join(self.RASPIOT_PATH, f)
+            fullpath = os.path.join(self.CLEEP_PATH, f)
             #archive.write()
         archive.close()
 
