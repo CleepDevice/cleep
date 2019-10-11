@@ -29,13 +29,13 @@ class Download():
     STATUS_ERROR_BADCHECKSUM = 5
     STATUS_DONE = 6
 
-    def __init__(self, cleep_filesystem, status_callback=None):
+    def __init__(self, cleep_filesystem, auth_token=None):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance. If None does not handle R/O mode
-            status_callback (function): status callback. Params: status, filesize, percent
+            auth_token (string): Authorization token. If specified passed to http request header
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -48,8 +48,13 @@ class Download():
         self.__cancel = False
         self.status = self.STATUS_IDLE
         self.percent = 0
-        self.status_callback = status_callback
+        self.status_callback = None
         self.http = urllib3.PoolManager(num_pools=1)
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0'
+        }
+        if auth_token:
+            self.headers['Authorization'] = 'token %s' % auth_token
 
         #purge previously downloaded files
         self.purge_files()
@@ -215,7 +220,7 @@ class Download():
     def download_file(self, url):
         """
         Download file from specified url.
-        The function is blocking and no status is reported with status_callback
+        Get result status getting Download instance member value
         Also no file validation is performed
         Prefer using this function to download small file
 
@@ -227,10 +232,16 @@ class Download():
         """
         #initialize download
         try:
-            resp = self.http.request('GET', url, preload_content=False)
+            self.logger.debug('Headers=%s' % self.headers)
+            resp = self.http.request('GET', url, preload_content=False, headers=self.headers)
+            if resp.status!=200:
+                self.logger.error(u'Download "%s" failed' % url)
+                self.status = self.STATUS_ERROR
+                return None
+
         except:
             self.status = self.STATUS_ERROR
-            self.logger.exception('Error initializing http request:')
+            self.logger.exception(u'Error initializing http request:')
             return None
 
         #process download
@@ -245,18 +256,18 @@ class Download():
                     break
 
                 #save data 
-                content += buf
+                content += buf.decode('utf-8')
         
                 #update final status
                 self.status = self.STATUS_DONE
 
         except:
-            self.logger.exception(u'Error during file "%s" downloading' % url)
+            self.logger.exception(u'Error downloading file "%s"' % url)
             self.status = self.STATUS_ERROR
 
         return content
 
-    def download_file_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
+    def download_file_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None, status_callback=None):
         """
         Download file from specified url. Specify key to validate file if necessary.
         This function is blocking but status can be followed with status_callback (passed in constructor)
@@ -267,10 +278,13 @@ class Download():
             check_sha256 (string): sha256 key to check
             check_md5 (string): md5 key to check
             cache (string): specify name to enable file caching (will not be purged automatically). None to disable caching
+            status_callback (function): status callback. Params: status, filesize, percent
 
         Returns:
             string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
         """
+        self.status_callback = status_callback
+
         #prepare filename
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, u'%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
@@ -299,7 +313,13 @@ class Download():
 
         #initialize download
         try:
-            resp = self.http.request(u'GET', url, preload_content=False)
+            resp = self.http.request(u'GET', url, preload_content=False, headers=self.headers)
+            if resp.status!=200:
+                self.logger.error(u'Download "%s" failed' % url)
+                self.status = self.STATUS_ERROR
+                self.__status_callback(self.status, 0, 0)
+                return None
+
         except:
             self.logger.exception(u'Error initializing http request:')
             self.status = self.STATUS_ERROR
@@ -422,15 +442,17 @@ class Download():
 
         return self.download
 
-#last_percent = 0
-#def cb(status, size, percent):
-#    global last_percent
-#    if not percent%5 and last_percent!=percent:
-#        print(status, size, percent)
-#        last_percent = percent
-#
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-#d = Download(cb)
-#d.purge_files()
-#d.download_url('https://downloads.raspberrypi.org/raspbian_lite_latest', check_sha256='52e68130c152895905abe66279dd9feaa68091ba55619f5b900f2ebed381427b')
+if __name__ == '__main__':
+    last_percent = 0
+    def cb(status, size, percent):
+        global last_percent
+        if not percent%5 and last_percent!=percent:
+            logging.info('status=%s size=%s percent=%s' % (status, size, percent))
+            last_percent = percent
+
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    d = Download(None, '06976d88de4e4ecd77df9ac10660d90c99019909')
+    #d.purge_files()
+    content = d.download_file('https://github.com/tangb/cleep/releases/download/untagged-d90471152ab9d6d34a09/raspiot_0.0.20.sha256')
+    logging.info('status=%s content=%s' % (d.status, content[:20] if content else None))
     
