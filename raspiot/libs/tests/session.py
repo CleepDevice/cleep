@@ -19,7 +19,7 @@ import types
 
 logging.basicConfig(format=u'%(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s')
 
-class Session():
+class TestSession():
     """
     Create session to be able to run tests on a Cleep module
     """

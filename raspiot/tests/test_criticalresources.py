@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.internals.criticalresources import CriticalResources
-from raspiot.libs.tests.lib import Lib
+from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
 import os
@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s %(levelna
 class CriticalResourcesTests(unittest.TestCase):
 
     def setUp(self):
-        l = Lib()
+        TestLib()
         enable_log = True if logging.getLogger().getEffectiveLevel()==logging.DEBUG else False
         self.c = CriticalResources(enable_log)
         self.acquired_cb_count = 0

@@ -5,9 +5,9 @@ import raspiot.libs.internals.tools as tools
 import os
 import logging
 
-class Lib():
+class TestLib():
     """
-    Create lib to be able to run tests on a Cleep library
+    Instanciate TestLib to enable some features to be able to run tests on a library for Cleep
     """
 
     def __init__(self):
@@ -15,4 +15,3 @@ class Lib():
         Constructor
         """
         tools.install_trace_logging_level()
-
