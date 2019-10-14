@@ -18,9 +18,12 @@ class Github():
     GITHUB_URL = u'https://api.github.com/repos/%s/%s/releases'
     GITHUB_RATE = u'https://api.github.com/rate_limit'
 
-    def __init__(self):
+    def __init__(self, auth_token=None):
         """
         Constructor
+
+        Args:
+            auth_token (string): if specified add authorization field in requests header
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -30,9 +33,8 @@ class Github():
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
         self.version_pattern = r'\d+\.\d+\.\d+'
-        self.github_token = os.environ[u'GITHUB_TOKEN'] if u'GITHUB_TOKEN' in os.environ else None
-        if self.github_token:
-            self.http_headers[u'Authorization'] = u'token %s' % self.github_token
+        if auth_token:
+            self.http_headers[u'Authorization'] = u'token %s' % auth_token
 
     def get_api_rate(self):
         """
@@ -208,10 +210,6 @@ class Github():
         Returns:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
-        #if github token specified, it means we want draft releases so force only_released to False
-        if self.github_token:
-            only_released = False
-
         #get all releases
         if only_released:
             releases = self.__get_released_releases(owner, repository)
@@ -223,4 +221,12 @@ class Github():
             return releases[0:1]
 
         return releases
+
+if __name__ == '__main__':
+    g = Github()
+    releases = g.get_releases('tangb', 'cleep', True, False)
+    release = releases[0]
+    print(release.keys())
+    changelog = g.get_release_changelog(release)
+    print(changelog)
 
