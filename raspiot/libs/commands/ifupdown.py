@@ -23,23 +23,6 @@ class Ifupdown(Console):
         self.ifup = u'/sbin/ifup'
         self.ifdown = u'/sbin/ifdown'
 
-    def __up_interface(self, interface):
-        """
-        Ensure interface is up
-
-        Args:
-            interface (string): interface to restart
-
-        Result:
-            bool: True if command succeed (but maybe not connected!)
-        """
-        res = self.command(u'%s link set %s up' % (self.ip, interface), timeout=30.0)
-        if res[u'killed']:
-            self.logger.error(u'Unable to link up interface %s: %s' % (interface, res))
-            return False
-
-        return True
-
     def stop_interface(self, interface):
         """
         Stop specified interface
@@ -50,11 +33,8 @@ class Ifupdown(Console):
         Result:
             bool: True if command succeed (but maybe not connected!)
         """
-        #ensure interface is up
-        #self.__up_interface(interface)
-
         res = self.command(u'%s %s' % (self.ifdown, interface), timeout=60.0)
-        if res[u'killed']:
+        if self.get_last_return_code()!=0:
             self.logger.error(u'Unable to ifdown interface %s: %s' % (interface, res))
             return False
 
@@ -70,11 +50,8 @@ class Ifupdown(Console):
         Result:
             bool: True if command succeed (but maybe not connected!)
         """
-        #ensure interface is up
-        #self.__up_interface(interface)
-
         res = self.command(u'%s %s' % (self.ifup, interface), timeout=60.0)
-        if res[u'killed']:
+        if self.get_last_return_code()!=0:
             self.logger.error(u'Unable to ifup interface %s: %s' % (interface, res))
             return False
 
@@ -102,4 +79,3 @@ class Ifupdown(Console):
             return False
 
         return True
-

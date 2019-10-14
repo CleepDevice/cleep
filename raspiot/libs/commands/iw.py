@@ -60,6 +60,7 @@ class Iw(AdvancedConsole):
             groups = list(filter(None, groups))
         
             if group.startswith(u'ssid') and current_entry is not None:
+                # pylint: disable=E1137
                 current_entry[u'network'] = groups[0]
             elif group.startswith(u'Interface'):
                 current_entry = {
@@ -69,6 +70,7 @@ class Iw(AdvancedConsole):
                 entries[groups[0]] = current_entry
 
             elif group.startswith(u'ssid') and current_entry is not None:
+                # pylint: disable=E1137
                 current_entry[u'network'] = groups[0]
 
         #save adapters
@@ -84,7 +86,7 @@ class Iw(AdvancedConsole):
         Return:
             dict: list of adapters and connected network
                 {
-                    adapter: {
+                    adapter (string): {
                         interface (string): associated interface name
                         network (string): connected network
                     }

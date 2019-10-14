@@ -30,7 +30,7 @@ class Ifconfig():
         Refresh all data
         """
         #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma: no cover
             self.logger.debug('Don\'t refresh')
             return
 

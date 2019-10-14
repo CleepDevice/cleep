@@ -32,7 +32,7 @@ class Blkid(Console):
         if not res[u'error'] and not res[u'killed']:
             #parse data
             matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==2:
                     self.devices[groups[0]] = groups[1]
@@ -44,8 +44,13 @@ class Blkid(Console):
         """
         Get all devices infos
 
-        Return:
-            dict: dict of devices
+        Returns:
+            dict: dict of devices::
+
+                {
+                    mountpoint (string): device uuid (string)
+                }
+
         """
         self.__refresh()
         return self.devices
@@ -57,8 +62,8 @@ class Blkid(Console):
         Args:
             uuid (string): device uuid
 
-        Return:
-            dict: dict of device infos
+        Returns:
+            string: device mountpoint
         """
         self.__refresh()
 
@@ -74,8 +79,8 @@ class Blkid(Console):
         Args:
             device (string): device to search for
 
-        Return:
-            dict: dict of device infos
+        Returns:
+            string: device uuid
         """
         self.__refresh()
 
