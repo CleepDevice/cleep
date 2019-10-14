@@ -72,23 +72,23 @@ class Alsa(AdvancedConsole):
         """
         results = self.find(command, r'^(?:card (\d)):.*\[(.*)\].*(?:device (\d)).*\[(.*)\].*$')
         entries = {}
-        for group, groups in results:
-            self.logger.debug('groups (%d): %s' % (len(groups), groups))
+        for _, groups in results:
+            self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
             if len(groups)==4:
                 #card id
                 card_id = 0
                 try:
                     card_id = int(groups[0])
-                except:
+                except: # pragma: no cover
                     self.logger.exception('Invalid card id:')
 
                 #device id
                 device_id = 0
                 try:
                     device_id = int(groups[2])
-                except:
-                    self.logger.exception('Invalid card id:')
+                except: # pragma: no cover
+                    self.logger.exception('Invalid device id:')
 
                 #names (prefer using 2nd names if not empty)
                 if len(groups[3].strip())>0:
@@ -118,20 +118,24 @@ class Alsa(AdvancedConsole):
             dict: selected device info or None if nothing found::
 
                 {
-                    cardname (string): card name
-                    cardid (int): card id
-                    deviceid (int): device id
+                    name (string): device name (first device name)
+                    devices (list): list of devices
+                        {
+                            cardid (string),
+                            deviceid (string),
+                            name (string)
+                        }
                 }
 
         """
         #get selected device name
         cmd = u'amixer info | grep "Card default"'
         resp = self.command(cmd)
-        if resp[u'error'] or resp[u'killed']:
-            return None
+        if resp[u'error'] or resp[u'killed']: 
+            return None # pragma: no cover
         try:
             selected_device_name = resp[u'stdout'][0].split('/')[1].replace('\'','')
-        except:
+        except: # pragma: no cover
             self.logger.exception(u'Error parsing amixer command result:')
             selected_device_name = None
 
@@ -146,9 +150,13 @@ class Alsa(AdvancedConsole):
             dict: selected device info or None if nothing found::
 
                 {
-                    cardname (string): card name
-                    cardid (int): card id
-                    deviceid (int): device id
+                    name (string): device name (first device name)
+                    devices (list): list of devices
+                        {
+                            cardid (string),
+                            deviceid (string),
+                            name (string)
+                        }
                 }
 
         """
@@ -205,10 +213,10 @@ class Alsa(AdvancedConsole):
 
         entries = {}
         current_control = None
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
-            self.logger.debug(groups)
+            self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
             if groups[0].startswith(self.SIMPLE_MIXER_CONTROL):
                 #new section found
@@ -228,16 +236,26 @@ class Alsa(AdvancedConsole):
             command (string): amixer command. No check is performed to make sure it is a amixer command
 
         Returns:
-            dict:
+            dict: amixer output command::
+
+                {
+                    iface (string),
+                    name (string),
+                    min (string),
+                    max (string),
+                    step (string),
+                    values (string)
+                }
+
         """
         self.logger.debug('Amixer control command: %s' % command)
         results = self.find(command, r'(?:(iface)=(.*),)|(?:(name)=\'(.*)\')|(?:(min)=(\d))|(?:(max)=(\d))|(?:(step)=(\d))|(?:: (values)=(.*))')
 
         values = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
-            self.logger.debug(groups)
+            self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
             values[groups[0]] = groups[1]
 
@@ -249,7 +267,7 @@ class Alsa(AdvancedConsole):
 
         Args:
             command (string): Alsa.CGET or Alsa.CSET
-            numid (int): amixer numid
+            numid (int): amixer numid. Use command "amixer controls" to get available numids
             value (string): value to use with CSET
 
         Raises:
@@ -297,23 +315,23 @@ class Alsa(AdvancedConsole):
             results = self.__amixer_command(u'/usr/bin/amixer get "%s"' % control)
         else:
             results = self.__amixer_command(u'/usr/bin/amixer set "%s" %s%%' % (control, volume))
-        self.logger.debug('Amixer command results: %s' % results)
+        self.logger.trace('Amixer command results: %s' % results)
         if len(results)==0 or control not in results.keys():
             self.logger.warning(u'Unable to get volume: no control "%s" found in results, maybe device is not the default card' % control)
             return None
 
         #parse result to get volume value
         sub_results = self.find_in_string(results[control][pattern[0]], pattern[1], re.UNICODE)
-        self.logger.debug(u'sub_results=%s' % sub_results)
+        self.logger.trace(u'sub_results=%s' % sub_results)
         if len(sub_results)!=1 or len(sub_results[0])!=2 or len(sub_results[0][1])!=1:
-            self.logger.error(u'Unable to get volume: pattern "%s" seems no valid for string "%s"' % (pattern[1], results[control][pattern[0]]))
+            self.logger.error(u'Unable to get volume: pattern "%s" seems no valid for string "%s"' % (pattern[1], results[control][pattern[0]])) # pragma: no cover
 
         #cast value to int
         volume = None
         try:
             volume = sub_results[0][1][0]
             volume = int(volume)
-        except:
+        except: # pragma: no cover
             self.logger.exception(u'Unable to get volume for string "%s"' % sub_results[0][1][0])
 
         return volume
@@ -323,7 +341,7 @@ class Alsa(AdvancedConsole):
         Return current playback volume on current device
 
         Args:
-            control (string): amixer control that contains volume level
+            control (string): amixer control that contains volume level. To get list of controls execute "amixer scontrols"
             pattern (string): pattern to use to parse volume level
 
         Returns:
@@ -332,7 +350,7 @@ class Alsa(AdvancedConsole):
         Raises:
             MissingParameter: if parameter is missing
         """
-        #check parameters done in __get_or_set_volume
+        #all parameters checked in __get_or_set_volume
 
         volume = self.__get_or_set_volume(control, pattern)
         self.logger.debug('Volume: %s' % volume)
@@ -356,6 +374,7 @@ class Alsa(AdvancedConsole):
             MissingParameter: if parameter is missing
         """
         #check parameters
+        #other parameters checked in __get_or_set_volume
         if volume is None:
             raise MissingParameter(u'Parameter "volume" is missing')
         if volume<0.0 or volume>100.0:
@@ -380,8 +399,11 @@ class Alsa(AdvancedConsole):
 
         Raises:
             InvalidParameter: if parameter is invalid
+            MissingParameter
         """
         #check params
+        if path is None or len(path)==0:
+            raise MissingParameter(u'Parameter "path" is missing')
         if not os.path.exists(path):
             raise InvalidParameter(u'Sound file doesn\'t exist (%s)' % path)
 
@@ -389,7 +411,7 @@ class Alsa(AdvancedConsole):
         cmd = u'/usr/bin/aplay "%s"' % path
         resp = self.command(cmd, timeout=timeout)
         self.logger.debug(u'Command "%s" resp: %s"' % (cmd, resp))
-        if self.get_last_return_code()!=0:
+        if self.get_last_return_code()!=0: # pragma: no cover
             self.logger.error(u'Unable to play sound file "%s": %s' % (path, resp[u'error']))
             return False
         
@@ -398,10 +420,12 @@ class Alsa(AdvancedConsole):
     def record_sound(self, channels=2, rate=44100, format=u'S32_LE', timeout=5.0):
         """
         Record sound. In charge of function caller to remove properly generated file
+        After timeout command is killed so use timeout to record specific duration.
 
         Args:
-            format (string): RECORD_FORMAT_XXX (default S32_LE)
-            channels (int): number of channels to record (default 2 for stereo)
+            channels (int): number of channels to record. Default CHANNELS_STEREO.
+            rate (int): record rate. Default RATE_44K.
+            format (string): RECORD_FORMAT_XXX. Default FORMAT_S32LE.
             timeout (float): max recording duration
 
         Returns:
@@ -413,31 +437,36 @@ class Alsa(AdvancedConsole):
             CommandError: if error occured during command execution
         """
         #check params
-        if format is None:
-            raise MissingParameter(u'Parameter format is missing')
-        if format not in (self.FORMAT_S16LE, self.FORMAT_S24LE, self.FORMAT_S32LE):
-            raise InvalidParameter(u'Parameter format is invalid. Please check supported value.')
         if channels is None:
-            raise MissingParameter(u'Parameter channels is missing')
+            raise MissingParameter(u'Parameter "channels" is missing')
         if channels not in (self.CHANNELS_MONO, self.CHANNELS_STEREO, self.CHANNELS_DOLBY):
-            raise InvalidParameter(u'Parameter channels is invalid. Please check supported value.')
+            raise InvalidParameter(u'Parameter "channels" is invalid. Please check supported value.')
         if rate is None:
-            raise MissingParameter(u'Parameter rate is missing')
+            raise MissingParameter(u'Parameter "rate" is missing')
         if rate not in (self.RATE_22K, self.RATE_44K, self.RATE_48K):
-            raise InvalidParameter(u'Parameter rate is invalid. Please check supported value.')
+            raise InvalidParameter(u'Parameter "rate" is invalid. Please check supported value.')
+        if format is None:
+            raise MissingParameter(u'Parameter "format" is missing')
+        if format not in (self.FORMAT_S16LE, self.FORMAT_S24LE, self.FORMAT_S32LE):
+            raise InvalidParameter(u'Parameter "format" is invalid. Please check supported value.')
 
         #record sound
         record_path = u'%s.wav' % os.path.join('/tmp', str(uuid.uuid4()))
         cmd = u'/usr/bin/arecord -f %s -c%d -r%d "%s"' % (format, channels, rate, record_path)
         resp = self.command(cmd, timeout=timeout)
         self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
-        #do not check errors here because command will be killed after timeout
+        
+        if self.get_last_return_code()!=0:
+            raise CommandError('Unable to record audio')
 
-        return record_path
+        return record_path # pragma: no cover
 
     def save(self):
         """
         Save alsa configuration in /var/lib/alsa/asound.state
+
+        Returns:
+            bool: True if configuration saved successfully, False otherwise
         """
         self.cleep_filesystem.enable_write()
         
@@ -445,11 +474,11 @@ class Alsa(AdvancedConsole):
             cmd = u'/usr/sbin/alsactl store'
             resp = self.command(cmd)
             self.logger.debug(u'Command "%s" resp: %s' % (cmd, resp))
-            return True if resp[u'returncode']==0 else False
+            return True if self.get_last_return_code()==0 else False
     
-        except:
+        except: # pragma: no cover
             self.logger.exception(u'Error occured during alsa config saving:')
+            return False
 
         finally:
             self.cleep_filesystem.disable_write()
-
