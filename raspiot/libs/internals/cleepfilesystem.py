@@ -43,6 +43,24 @@ class CleepFilesystem():
         #check if os is in readonly mode
         self.is_readonly_fs = self.__is_readonly_filesystem()
 
+    def _get_counters(self):
+        """
+        Useful during test to check if counters have awaited value
+
+        Returns:
+            dict: counters::
+
+                {
+                    root (int),
+                    boot (int)
+                }
+
+        """
+        return {
+            'root': self.__counter_root,
+            'boot': self.__counter_boot,
+        }
+
     def __get_default_encoding(self):
         """
         Return default encoding
