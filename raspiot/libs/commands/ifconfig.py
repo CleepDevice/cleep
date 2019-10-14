@@ -91,9 +91,9 @@ class Ifconfig():
 
     def get_configurations(self):
         """
-        Return current network configuration
+        Returns current network configuration
 
-        Return:
+        Returns:
             dict: interfaces configurations::
                 {
                     interface1: {

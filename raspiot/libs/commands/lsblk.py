@@ -113,9 +113,9 @@ class Lsblk(Console):
 
     def get_devices_infos(self):
         """
-        Return all devices ordered by drive/partition
+        Returns all devices ordered by drive/partition
 
-        Return:
+        Returns:
             dict: dict of devices
         """
         self.__refresh()
@@ -124,9 +124,9 @@ class Lsblk(Console):
 
     def get_drives(self):
         """
-        Return drives infos only
+        Returns drives infos only
 
-        Return:
+        Returns:
             dict: dict of drives
         """
         self.__refresh()
@@ -142,9 +142,9 @@ class Lsblk(Console):
 
     def get_partitions(self):
         """
-        Return partitions infos only
+        Returns partitions infos only
 
-        Return:
+        Returns:
             dict: dict of partitions
         """
         self.__refresh()
@@ -160,12 +160,12 @@ class Lsblk(Console):
 
     def get_device_infos(self, device):
         """
-        Return device infos according to device name (sda, sdb1...)
+        Returns device infos according to device name (sda, sdb1...)
 
         Args:
             device (string): existing device name
 
-        Return:
+        Returns:
             dict: dict of device infos or None if device not found
         """
         self.__refresh()

@@ -47,9 +47,9 @@ class Lsmod(Console):
 
     def get_loaded_modules(self):
         """
-        Return all loaded modules
+        Returns all loaded modules
 
-        Return:
+        Returns:
             list: list of modules
         """
         self.__refresh()
@@ -58,7 +58,10 @@ class Lsmod(Console):
 
     def is_module_loaded(self, module):
         """
-        Return True if specified module is loaded
+        Returns True if specified module is loaded
+
+        Returns:
+            bool: True if module is loaded
         """
         self.__refresh()
 

@@ -9,7 +9,7 @@ import unittest
 import logging
 from mock import Mock
 
-logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
 FAKE_OUPUT = """enxb827eb729ebf  no wireless extensions.
 
@@ -42,7 +42,7 @@ class IwconfigTests(unittest.TestCase):
 
     def test_get_interfaces(self):
         self.i.command = Mock(return_value={
-            'error': None,
+            'error': False,
             'killed': False,
             'stdout': FAKE_OUPUT.split('\n'),
             'stderr': None,

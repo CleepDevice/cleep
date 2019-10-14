@@ -30,7 +30,7 @@ class Ifupdown(Console):
         Args:
             interface (string): interface to restart
 
-        Result:
+        Returns:
             bool: True if command succeed (but maybe not connected!)
         """
         res = self.command(u'%s %s' % (self.ifdown, interface), timeout=60.0)
@@ -47,7 +47,7 @@ class Ifupdown(Console):
         Args:
             interface (string): interface to restart
 
-        Result:
+        Returns:
             bool: True if command succeed (but maybe not connected!)
         """
         res = self.command(u'%s %s' % (self.ifup, interface), timeout=60.0)
@@ -64,7 +64,7 @@ class Ifupdown(Console):
         Args:
             interface (string): interface to restart
 
-        Result:
+        Returns:
             bool: True if command succeed (but maybe not connected!)
         """
         #stop interface

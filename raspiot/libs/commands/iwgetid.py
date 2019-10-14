@@ -30,16 +30,15 @@ class Iwgetid(AdvancedConsole):
         Refresh all data
         """
         #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
             self.logger.debug('Don\'t refresh')
             return
 
         results = self.find(u'%s' % self._command, r'^(.*?)\s+ESSID:\"(.*)\"$')
         self.logger.debug(results)
 
-        current_entry = None
         entries = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
 

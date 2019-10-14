@@ -40,7 +40,7 @@ class Iwlist(AdvancedConsole):
             interface (string): interface to scan
         """
         #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
             self.logger.trace(u'Don\'t refresh')
             return
 
@@ -79,9 +79,10 @@ class Iwlist(AdvancedConsole):
                 #network
                 if len(groups[0])>0 and groups[0] not in entries:
                     #new network detected, store item in final entries list
+                    # pylint: disable=E1137
                     current_entry[u'network'] = groups[0]
                     if frequency is not None:
-                        current_entry[u'frequencies'].append(frequency)
+                        current_entry[u'frequencies'].append(frequency) # pylint: disable=E1136
                     entries[groups[0]] = current_entry
 
                 elif len(groups[0])>0 and frequency is not None:
@@ -94,15 +95,15 @@ class Iwlist(AdvancedConsole):
 
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2')>=0:
                 #wpa2
-                current_entry[u'wpa2'] = True
+                current_entry[u'wpa2'] = True # pylint: disable=E1137
 
             elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa')>=0:
                 #wpa
-                current_entry[u'wpa'] = True
+                current_entry[u'wpa'] = True # pylint: disable=E1137
 
             elif group.startswith(u'Encryption key') and current_entry is not None:
                 #encryption key (wep or unsecured)
-                current_entry[u'encryption_key'] = groups[0]
+                current_entry[u'encryption_key'] = groups[0] # pylint: disable=E1137
 
             elif group.startswith(u'Frequency'):
                 #frequency
@@ -115,17 +116,17 @@ class Iwlist(AdvancedConsole):
                 #signal level
                 if groups[0].isdigit():
                     try:
-                        current_entry[u'signallevel'] = float(groups[0])
+                        current_entry[u'signallevel'] = float(groups[0]) # pylint: disable=E1137
                     except:
-                        current_entry[u'signallevel'] = 0
+                        current_entry[u'signallevel'] = 0 # pylint: disable=E1137
                 elif groups[0].startswith(u'-'):
                     try:
-                        current_entry[u'signallevel'] = Tools.dbm_to_percent(int(groups[0]))
-                    except:
-                        current_entry[u'signallevel'] = 0
+                        current_entry[u'signallevel'] = Tools.dbm_to_percent(int(groups[0])) # pylint: disable=E1137
+                    except: # pragma no cover
+                        current_entry[u'signallevel'] = 0 # pylint: disable=E1137
                 else:
-                    current_entry[u'signallevel'] = groups[0]
-
+                    current_entry[u'signallevel'] = groups[0] # pylint: disable=E1137
+ 
         #log entries
         self.logger.debug('entries: %s' % entries)
 
@@ -156,7 +157,7 @@ class Iwlist(AdvancedConsole):
         """
         Return True if error occured
         
-        Return:
+        Returns:
             bool: True if error, False otherwise
         """
         return self.error
