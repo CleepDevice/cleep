@@ -4,7 +4,7 @@
 import logging
 try:
     from raspiot.libs.internals.console import AdvancedConsole, Console
-except:
+except: # pragma no cover
     from console import AdvancedConsole, Console
 import time
 import os
@@ -44,12 +44,12 @@ class Iw(AdvancedConsole):
         Refresh all data
         """
         #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
             self.logger.debug('Don\'t refresh')
             return
 
         results = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')
-        if len(results)==0:
+        if len(results)==0: # pragma no cover: unable to test if no interface
             self.adapters = {}
             return
     
@@ -62,6 +62,7 @@ class Iw(AdvancedConsole):
             if group.startswith(u'ssid') and current_entry is not None:
                 # pylint: disable=E1137
                 current_entry[u'network'] = groups[0]
+
             elif group.startswith(u'Interface'):
                 current_entry = {
                     u'interface': groups[0],

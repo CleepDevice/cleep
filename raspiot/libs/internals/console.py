@@ -386,7 +386,7 @@ class AdvancedConsole(Console):
 
         #execute command
         res = self.command(command, timeout)
-        if res[u'error'] or res[u'killed']:
+        if self.get_last_return_code()!=0:
             #command failed
             return []
 
@@ -394,7 +394,7 @@ class AdvancedConsole(Console):
         content = u'\n'.join(res[u'stdout'])
         matches = re.finditer(pattern, content, options)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 #results[group] = match.groups()

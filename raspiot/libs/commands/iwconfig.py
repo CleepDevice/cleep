@@ -33,17 +33,16 @@ class Iwconfig(AdvancedConsole):
         Refresh all data
         """
         #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
             self.logger.debug('Don\'t refresh')
             return
 
         pattern = r'^(?:(\w+)\s+(?:IEEE 802\.11)\s+(?:ESSID:(?:(off/any)|\"(\w+)\"))).*|(?:(\w+)\s+(no wireless extensions).*)|(?:(\w+)\s+(unassociated).*)$'
         results = self.find(u'%s 2>&1' % self._command, pattern, timeout=5.0)
-        self.logger.debug(results)
+        self.logger.trace('Results: %s' % results)
 
-        current_entry = None
         entries = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
             self.logger.trace(groups)
@@ -65,7 +64,6 @@ class Iwconfig(AdvancedConsole):
             elif value==self.NOT_CONNECTED or value==self.UNASSOCIATED:
                 network = None
             else:
-                wifi_interface = True
                 network = value
 
             entries[interface] = {
@@ -85,33 +83,35 @@ class Iwconfig(AdvancedConsole):
 
         Returns:
             dict: dictionnary of found wifi networks::
+
                 {
-                    interface: {
+                    interface (string): {
                         network (string): connected network name
                     },
                     ...
                 }
+
         """
         self.__refresh()
 
         return self.interfaces
 
-    def set_network_to_connect_to(self, interface, network):
+    def set_network_to_connect_to(self, interface, network): # pragma no cover
         """
         Connect interface to specified network
+        /!\ May not work as expected
 
         Args:
             interface (string): interface name
             network (string): network name
 
-        Return:
-            bool: True if command succeed (not connection!)
+        Returns:
+            bool: True if command succeed (may not be connected!)
         """
         res = self.command('%s "%s" essid "%s"' % (self._command, interface, network))
         self.logger.debug('Command output: %s' % res[u'stdout'])
-        if res[u'error'] or res[u'killed']:
+        if self.get_last_return_code()!=0:
             self.logger.error(u'Unable to start interface %s' % interface)
             return False
         
         return True
-
