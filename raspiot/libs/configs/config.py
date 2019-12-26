@@ -470,11 +470,15 @@ class Config():
         index = 0
         count = 0
         for line in lines:
-            self.logger.trace('start=%s' % start)
-            self.logger.trace('%s => %s' % (line.strip(), re.match(line_pattern, line)))
+            self.logger.trace('LINE #%s = %s' % (index, line.rstrip()))
+            if len(line.strip())==0:
+                #emtpy line continue
+                index += 1
+                continue
+
             if re.match(header_pattern, line):
                 #header found, start
-                self.logger.trace('Header found')
+                self.logger.trace('Header found, start removing lines')
                 start = True
                 if remove_header:
                     indexes.append(index)
@@ -485,9 +489,10 @@ class Config():
                 break
             elif start and self.comment_tag is not None and line.strip().startswith(self.comment_tag):
                 #commented line
-                continue
+                pass
             elif start and re.match(line_pattern, line):
                 #save index of line to delete
+                self.logger.trace('Line pattern "%s" found' % line_pattern)
                 indexes.append(index)
                 count += 1
             index += 1
