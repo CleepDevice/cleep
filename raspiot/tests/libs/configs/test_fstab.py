@@ -1,17 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.utils import MissingParameter, InvalidParameter
-from raspiot.libs.fstab import Fstab
-import unittest
 import os
+import sys 
+sys.path.append('/root/cleep/raspiot/libs/configs')
+from fstab import Fstab
+from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError
+from raspiot.libs.tests.lib import TestLib
+import unittest
+import logging
+from pprint import pprint
+import io
+from mock import Mock
 
+logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
-class configtxtTests(unittest.TestCase):
-    def setUp(self):
-        #fake config file
-        fd = open('fstab.txt', 'w')
-        fd.write("""# /etc/fstab: static file system information.
+class FstabTests(unittest.TestCase):
+
+    FILE_NAME = 'fstab'
+    CONTENT = u"""# /etc/fstab: static file system information.
 #
 # Use 'blkid' to print the universally unique identifier for a
 # device; this may be used with UUID= as a more robust way to name devices
@@ -27,6 +35,9 @@ UUID=58337582-3a9e-4a15-b4ad-4a7f354d9af3 none            swap    sw            
 /dev/sdb1       /media/usb0     auto    rw,user,noauto  0       0
 /dev/sdb2       /media/usb1     auto    rw,user,noauto  0       0
 
+#invalid type
+TEST=b8e3f3c7-6324-4f58-8009-eace60bda876 /               ext4    discard,noatime,commit=600,errors=remount-ro 0       1
+
 #server
 192.168.1.1:/data/test       /media/test       nfs     soft,rw,nfsvers=3,rsize=32768,wsize=32768,timeo=600,actimeo=0,intr 0   0
 desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=32768,wsize=32768,timeo=600,actimeo=0,intr   0   0
@@ -36,14 +47,26 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
 #192.168.1.10:/media/backup /media/tangmedia    nfs rsize=8192,wsize=8192,timeo=14,intr,vers=3
 
 #store
-192.168.1.53:/media/raid    /media/tangstore    nfs     soft,rw,nfsvers=3,rsize=32768,wsize=32768,timeo=600,actimeo=0,intr  0   0""")
-        fd.close()
-        
-        self.f = Fstab(backup=False)
-        self.f.CONF = 'fstab.txt'
+192.168.1.53:/media/raid    /media/tangstore    nfs     soft,rw,nfsvers=3,rsize=32768,wsize=32768,timeo=600,actimeo=0,intr  0   0"""
+
+    def setUp(self):
+      	TestLib()
+        self.fs = CleepFilesystem()
+        self.fs.enable_write()
+        self.path = os.path.join(os.getcwd(), self.FILE_NAME)
+        logging.debug('Using conf file "%s"' % self.path)
+
+        #fill with default content
+        with io.open(self.path, 'w') as f:
+            f.write(self.CONTENT)
+
+        f = Fstab
+        f.CONF = self.FILE_NAME
+        self.f = f(self.fs, False)
 
     def tearDown(self):
-        os.remove('fstab.txt')
+        if os.path.exists('%s' % self.FILE_NAME):
+            os.remove('%s' % self.FILE_NAME)
 
     def test_get_mountpoints(self):
         mountpoints = self.f.get_mountpoints()
@@ -84,3 +107,36 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
         mountpoints = self.f.get_mountpoints()
         self.assertFalse(mountpoints.has_key(u'/media/tangstore'))
 
+    def test_delete_mountpoint_invalid_parameters(self):
+        with self.assertRaises(MissingParameter) as cm:
+            self.f.delete_mountpoint(None)
+        self.assertEqual(cm.exception.message, 'Parameter "mountpoint" is missing')
+        with self.assertRaises(MissingParameter) as cm:
+            self.f.delete_mountpoint('')
+        self.assertEqual(cm.exception.message, 'Parameter "mountpoint" is missing')
+
+    def test_reload_fstab(self):
+        self.f.console = Mock()
+        self.f.console.command.return_value = {
+            'error': ['Error occured'],
+            'killed': False,
+        }
+        self.assertFalse(self.f.reload_fstab())
+
+        self.f.console.command.return_value = {
+            'error': [],
+            'killed': True,
+        }
+        self.assertFalse(self.f.reload_fstab())
+
+        self.f.console.command.return_value = {
+            'error': [],
+            'killed': False,
+        }
+        self.assertTrue(self.f.reload_fstab())
+
+
+if __name__ == '__main__':
+    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_fstab.py
+    #coverage report -m
+    unittest.main()

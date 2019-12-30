@@ -24,20 +24,23 @@ class Fstab(Config):
         """
         Config.__init__(self, cleep_filesystem, self.CONF, None, backup)
         self.blkid = Blkid()
+        self.console = Console()
 
     def get_all_devices(self):
         """
         Return all devices as returned by command blkid
 
         Returns:
-            dict: list of devices
+            dict: list of devices::
+
                 {
-                    'device': {
-                        device: '',
-                        uuid: ''
+                    device (string): device name {
+                        device (string): device name,
+                        uuid (string): device uuid
                     },
                     ...
                 }
+
         """
         devices = {}
 
@@ -55,17 +58,21 @@ class Fstab(Config):
         Return all mountpoints as presented in /etc/fstab file
 
         Returns:
-            dict: list of mountpoints
+            dict: list of mountpoints::
+
                 {
-                    'mountpoint': {
-                        device: '',
-                        uuid: '',
-                        mountpoint: '',
-                        mounttype: '',
-                        options: ''
+                    mountpoint (string): mountpoint name {
+                        group (string): found group,
+                        local (bool): local or remote mountpoint,
+                        device (string): device,
+                        uuid (string): device uuid,
+                        mountpoint (string): mountpoint name,
+                        mounttype (string): mount type,
+                        options (string): mountpoint options
                     },
                     ...
                 }
+
         """
         mountpoints = {}
         pattern_type = r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:)(.*?)$|^(UUID)(=)(.*?)$|^\/(dev)(\/)(.*?)$|^(.*?)(:)(.*?)$'
@@ -107,7 +114,7 @@ class Fstab(Config):
                             mounttype = groups[2]
                             options = groups[3]
                             local = False
-                        else:
+                        else: # pragma: no cover
                             #unknown entry
                             continue
 
@@ -121,13 +128,6 @@ class Fstab(Config):
                             u'mounttype': mounttype,
                             u'options': options
                         }
-                    else:
-                        #invalid type, drop line
-                        continue
-                
-            else:
-                #invalid line, drop result
-                continue
 
         return mountpoints
 
@@ -180,7 +180,7 @@ class Fstab(Config):
         """
         #check params
         if mountpoint is None or len(mountpoint)==0:
-            raise MissingParameter(u'Mountpoint parameter is missing')
+            raise MissingParameter(u'Parameter "mountpoint" is missing')
 
         #check if mountpoint exists
         mountpoints = self.get_mountpoints()
@@ -198,10 +198,4 @@ class Fstab(Config):
             bool: True if command successful, False otherwise
         """
         res = self.console.command(u'/bin/mount -a')
-        if res[u'error'] or res[u'killed']:
-            return False
-
-        else:
-            return True
-
-
+        return False if res[u'error'] or res[u'killed'] else True

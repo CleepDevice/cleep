@@ -90,4 +90,3 @@ if __name__ == '__main__':
     #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_etcmodules.py
     #coverage report -m
     unittest.main()
-
