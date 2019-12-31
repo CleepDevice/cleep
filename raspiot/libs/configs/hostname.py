@@ -35,19 +35,23 @@ class Hostname(Config):
             bool: True if hostname saved successfully, False otherwise
         """
         if hostname is None or len(hostname)==0:
-            raise MissingParameter('Hostname parameter is missing')
+            raise MissingParameter('Parameter "hostname" is missing')
 
         self.hostname = hostname
+        result = False
 
+        fd = None
         try:
             fd = self.cleep_filesystem.open(self.CONF, u'w')
             fd.write(u'%s' % self.hostname)
-            self.cleep_filesystem.close(fd)
+            result = True
         except:
+            self.hostname = None
             self.logger.exception(u'Unable to write hostname file:')
-            return False
+        finally:
+            self.cleep_filesystem.close(fd)
 
-        return True
+        return result
 
     def get_hostname(self):
         """
