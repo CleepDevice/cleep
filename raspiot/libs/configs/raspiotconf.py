@@ -4,10 +4,9 @@
 from raspiot.utils import InvalidParameter, MissingParameter
 from ConfigParser import SafeConfigParser
 import ast
-import io
 import os
-import codecs
 import time
+import logging
 
 class RaspiotConf():
     """
@@ -43,6 +42,7 @@ class RaspiotConf():
         """
         #members
         self.cleep_filesystem = cleep_filesystem
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def __open(self):
         """
@@ -79,14 +79,10 @@ class RaspiotConf():
             f = self.cleep_filesystem.open(self.CONF, u'w')
             self.__conf.write(f.buffer)
             self.cleep_filesystem.close(f)
-            #self.__conf.write(codecs.open(self.CONF, u'w', u'utf-8'))
 
     def check(self):
         """
         Check configuration file content, adding missing section or options
-        
-        Returns:
-            bool: always return True
         """
         config = self.__open()
         updated = False
@@ -106,8 +102,6 @@ class RaspiotConf():
 
         #write changes to filesystem
         self.__close(updated)
-
-        return True
 
     def as_dict(self):
         """
@@ -142,11 +136,12 @@ class RaspiotConf():
             bool: True if module installed
         """
         conf = self.__open()
+        self.logger.trace('Conf=%s' % conf)
         
         #check if module isn't already installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module in modules:
-            return False
+            return True
 
         #install module
         modules.append(module)
@@ -170,6 +165,7 @@ class RaspiotConf():
         #check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
+            self.logger.warn(u'Trying to uninstall not installed module "%s"' % module)
             return False
 
         #uninstall module
@@ -194,10 +190,15 @@ class RaspiotConf():
         #check if module installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
+            self.logger.warn(u'Trying to update not installed module "%s"' % module)
             return False
 
-        #update module
+        #check if module not already updated
         updated = ast.literal_eval(conf.get(u'general', u'updated'))
+        if module in updated:
+            return True
+
+        #update module
         updated.append(module)
         conf.set(u'general', u'updated', unicode(updated))
         self.__close(True)
@@ -232,9 +233,25 @@ class RaspiotConf():
 
         return module in modules
 
+    def is_module_updated(self, module):
+        """
+        Return True if specified module is installed
+        
+        Args:
+            module (string): module name to check
+
+        Returns:
+            bool: True if module is installed
+        """
+        conf = self.__open()
+        self.__close()
+        modules = ast.literal_eval(conf.get(u'general', u'updated'))
+
+        return module in modules
+
     def enable_trace(self):
         """
-        Enable trace
+        Enable trace logging mode
         """
         conf = self.__open()
         conf.set(u'debug', u'trace_enabled', unicode(True))
@@ -242,7 +259,7 @@ class RaspiotConf():
 
     def disable_trace(self):
         """
-        Disable trace
+        Disable trace logging mode
         """
         conf = self.__open()
         conf.set(u'debug', u'trace_enabled', unicode(False))
@@ -297,6 +314,12 @@ class RaspiotConf():
             bool: True if module debug enabled
         """
         conf = self.__open()
+
+        #check if module is installed
+        modules = ast.literal_eval(conf.get(u'general', u'modules'))
+        if module not in modules:
+            self.logger.warn(u'Trying to enable debug for not installed module "%s"' % module)
+            return False
         
         #check if module is in debug list
         modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
@@ -327,7 +350,7 @@ class RaspiotConf():
         modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
         if module not in modules:
             #module not in debug list
-            return True
+            return False
 
         #remove module from debug list
         modules.remove(module)
