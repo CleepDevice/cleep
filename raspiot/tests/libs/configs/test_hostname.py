@@ -14,7 +14,6 @@ from pprint import pprint
 import io
 from mock import Mock
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class HostnameTests(unittest.TestCase):
 
@@ -23,6 +22,8 @@ class HostnameTests(unittest.TestCase):
 
     def setUp(self):
       	TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+        
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILE_NAME)
