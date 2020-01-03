@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*
 
 import logging
+import os
 from zipfile import ZipFile, ZIP_DEFLATED
+from tempfile import NamedTemporaryFile
 
 class CleepBackup:
     """
@@ -36,7 +38,8 @@ class CleepBackup:
 
     def generate_archive(self):
         """
-        Generate backup archive (tar.gz format)
+        Generate backup archive (zip format)
+        /!\ caller is in charge of file deletion
 
         Returns:
             string: generated archive fullpath
@@ -47,7 +50,7 @@ class CleepBackup:
         for f in os.listdir(self.CLEEP_PATH):
             #build path
             fullpath = os.path.join(self.CLEEP_PATH, f)
-            #archive.write()
+            archive.write(fullpath)
         archive.close()
 
         return archive_name
