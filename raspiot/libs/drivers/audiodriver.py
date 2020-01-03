@@ -5,10 +5,16 @@ import time
 import logging
 from .driver import Driver
 from raspiot.libs.configs.cleepaudio import CleepAudio
+from raspiot.libs.commands.alsa import Alsa
 
 class AudioDriver(Driver):
     """
     Audio driver base class
+
+    As mentionned in Driver base class, you must implement following methods:
+     - _install
+     - _uninstall
+     - is_installed
     """
 
     def __init__(self, cleep_filesystem, driver_name, card_name):
@@ -23,6 +29,7 @@ class AudioDriver(Driver):
         Driver.__init__(self, cleep_filesystem, Driver.DRIVER_AUDIO, driver_name)
         self.card_name = card_name
         self._cleep_audio = CleepAudio(self.cleep_filesystem)
+        self.alsa = Alsa(cleep_filesystem)
 
     def get_device_infos(self):
         """
