@@ -421,7 +421,7 @@ class AdvancedConsole(Console):
         results = []
         matches = re.finditer(pattern, string, options)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 results.append((group, match.groups()))
