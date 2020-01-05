@@ -35,7 +35,7 @@ class WpacliTests(unittest.TestCase):
         self.assertTrue('encryption' in networks[interface][network_name].keys())
         self.assertTrue('signallevel' in networks[interface][network_name].keys())
 
-    def test_status(self):
+    def test_get_status(self):
         status = self.w.get_status(u'wlan0')
         self.assertNotEqual(status, self.w.STATE_UNKNOWN)
         

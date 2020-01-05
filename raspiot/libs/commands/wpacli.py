@@ -153,7 +153,7 @@ class Wpacli(AdvancedConsole):
             results = self.find(u'%s scan_results' % (self.wpacli), r'^(Selected interface) \'(.*?)\'|(.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s+(\d+)\s+(.*?)\s+(\[.*\])\s+(.*)$')
         entries = {}
         current_interface = interface
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
 
@@ -428,7 +428,7 @@ class Wpacli(AdvancedConsole):
         network = None
         ip_address = None
         state = self.STATE_UNKNOWN
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
 
