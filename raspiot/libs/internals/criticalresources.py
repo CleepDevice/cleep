@@ -11,7 +11,7 @@ import importlib
 from distutils.dir_util import copy_tree
 from queue import Queue
 from threading import Lock
-from .task import Task
+from raspiot.libs.internals.task import Task
 
 
 class CriticalResources():
@@ -38,7 +38,7 @@ class CriticalResources():
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        if debug_enabled:
+        if debug_enabled: # pragma: no cover
             self.logger.setLevel(logging.DEBUG)
 
         #members
@@ -92,7 +92,7 @@ class CriticalResources():
                 (resource, ext) = os.path.splitext(f)
                 self.logger.trace('Resource=%s ext=%s' % (resource, ext))
                 if os.path.isfile(fullpath) and ext==u'.py' and resource!=u'__init__' and resource!=u'resource':
-                    self.logger.debug('Importing %s' % u'raspiot.%s.%s' % (self.RESOURCES_DIR, resource))
+                    self.logger.trace('Importing %s' % u'raspiot.%s.%s' % (self.RESOURCES_DIR, resource))
                     mod_ = importlib.import_module(u'raspiot.%s.%s' % (self.RESOURCES_DIR, resource))
                     resource_class_name = self.__get_resource_class_name(resource, mod_)
                     self.logger.trace('resource_class_name=%s' % resource_class_name)
@@ -105,6 +105,7 @@ class CriticalResources():
                         }
                     else:
                         self.logger.error(u'Resource class must have the same name than filename')
+                        raise AttributeError('Invalid resource "%s" tryed to be loaded' % resource)
 
         except AttributeError:
             self.logger.exception(u'Resource "%s" has surely invalid name, please refer to coding rules:' % resource)
@@ -112,7 +113,7 @@ class CriticalResources():
 
         except:
             self.logger.exception(u'Resource "%s" wasn\'t imported successfully. Please check event source code.' % resource)
-            raise Exception('Invalid resource "%s" tryed to be loaded' % resource)
+            raise Exception('Error occured trying to load resource "%s"' % resource)
 
     def __get_resource_class_name(self, filename, module):
         """ 
@@ -222,7 +223,11 @@ class CriticalResources():
                 self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
                 self.resources[resource_name][u'using'] = module_name
                 task = Task(None, self.callbacks[module_name][resource_name][u'acquired_callback'], self.logger, [resource_name])
-                task.start()
+                task.start(wait_started=True)
+
+            elif self.resources[resource_name]['using']==module_name:
+                self.logger.debug(u'Module "%s" is trying to acquire resource "%s" already acquired by itself. Drop request' % (module_name, resource_name))
+
             else:
                 #resource is not free, add module to waiting queue
                 if module_name not in self.resources[resource_name][u'waiting']:
@@ -230,9 +235,9 @@ class CriticalResources():
                     self.resources[resource_name][u'waiting'].insert(0, module_name)
 
                 #and inform module that is using resource it must releases it
-                self.logger.debug(u'Inform module "%s" it resource is needed' % self.resources[resource_name][u'using'])
+                self.logger.debug(u'Inform module "%s" its acquired resource "%s" is needed by another module' % (self.resources[resource_name][u'using'], resource_name))
                 task = Task(None, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], self.logger, [resource_name])
-                task.start()
+                task.start(wait_started=True)
 
         except:
             self.logger.exception(u'Error occured acquiring critical resource "%s"' % resource_name)
@@ -288,8 +293,9 @@ class CriticalResources():
             self.logger.trace(u'callbacks: %s' % self.callbacks)
             self.logger.trace(u'next_module: %s' % next_module)
             if next_module:
+                self.logger.debug(u'Request next module "%s" for resource "%s" acquisition' % (next_module, resource_name))
                 task = Task(None, self.callbacks[next_module][resource_name][u'acquired_callback'], self.logger, [resource_name])
-                task.start()
+                task.start(wait_started=True)
 
         except:
             self.logger.exception(u'Error occuring releasing critical resource "%s"' % resource_name)
