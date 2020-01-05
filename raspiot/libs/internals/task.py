@@ -29,10 +29,7 @@ class Task:
         self._args = task_args
         self.logger = logger
         self._kwargs = task_kwargs
-        if interval is None:
-            self._interval = 0.0
-        else:
-            self._interval = interval
+        self._interval = 0.0 if interval is None else interval
         self.__timer = None
         self._run_count = None
 
@@ -79,15 +76,20 @@ class Task:
         """
         self._interval = interval
   
-    def start(self):
+    def start(self, wait_started=False):
         """
         Start the task
+
+        Args:
+            wait_started (bool): If True make sure task is really started
         """
         if self.__timer:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
         self.__timer.daemon = True
         self.__timer.start()
+        if wait_started:
+            self.__timer.join()
   
     def stop(self):
         """
