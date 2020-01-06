@@ -11,7 +11,7 @@ class AudioDriver(Driver):
     """
     Audio driver base class
 
-    As mentionned in Driver base class, you must implement following methods:
+    As mentionned in Driver base class, we implements following methods:
      - _install
      - _uninstall
      - is_installed
