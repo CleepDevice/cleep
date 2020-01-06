@@ -8,12 +8,12 @@ from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class IfconfigTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.i = Ifconfig()
 
     def tearDown(self):

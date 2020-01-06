@@ -10,12 +10,12 @@ import logging
 import os
 from shutil import copyfile
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class WpacliTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.w = Wpacli()
 
     def tearDown(self):

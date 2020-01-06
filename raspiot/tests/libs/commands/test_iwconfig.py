@@ -9,8 +9,6 @@ import unittest
 import logging
 from mock import Mock
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-
 FAKE_OUPUT = """enxb827eb729ebf  no wireless extensions.
 
 wlan0     IEEE 802.11  ESSID:"TangWifi"  
@@ -35,6 +33,7 @@ class IwconfigTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.i = Iwconfig()
 
     def tearDown(self):

@@ -12,7 +12,6 @@ import unittest
 import logging
 from pprint import pformat
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class AlsaTests(unittest.TestCase):
 
@@ -21,6 +20,7 @@ class AlsaTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.fs = CleepFilesystem()
         self.a = Alsa(self.fs)
 

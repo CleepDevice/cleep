@@ -12,12 +12,12 @@ import unittest
 import logging
 from pprint import pformat
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class BlkidTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.b = Blkid()
 
     def tearDown(self):

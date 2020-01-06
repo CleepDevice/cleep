@@ -9,12 +9,12 @@ import unittest
 import logging
 from mock import Mock
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class IfupdownTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.i = Ifupdown()
 
     def tearDown(self):
