@@ -34,7 +34,7 @@ class Iwconfig(AdvancedConsole):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
-            self.logger.debug('Don\'t refresh')
+            self.logger.trace('Use cached data')
             return
 
         pattern = r'^(?:(\w+)\s+(?:IEEE 802\.11)\s+(?:ESSID:(?:(off/any)|\"(\w+)\"))).*|(?:(\w+)\s+(no wireless extensions).*)|(?:(\w+)\s+(unassociated).*)$'

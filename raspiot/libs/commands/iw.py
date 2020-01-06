@@ -45,7 +45,7 @@ class Iw(AdvancedConsole):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
-            self.logger.debug('Don\'t refresh')
+            self.logger.trace('Use cached data')
             return
 
         results = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')

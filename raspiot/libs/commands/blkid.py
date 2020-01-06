@@ -25,6 +25,7 @@ class Blkid(Console):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+            self.logger.trace('Use cached data')
             return
 
         res = self.command(u'/sbin/blkid')

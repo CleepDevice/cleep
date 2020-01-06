@@ -30,7 +30,7 @@ class Lsmod(Console):
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug('Don\'t refresh')
+            self.logger.trace('Use cached data')
             return
 
         res = self.command(u'/bin/lsmod | /usr/bin/awk \'NR>1 { print $1}\'')
