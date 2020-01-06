@@ -59,7 +59,8 @@ class Task:
                     run_again = True
         else:
             #interval not configured, don't run task again
-            self._timer = None
+            run_again = False
+            self.__timer = None
 
         #run again task?
         if run_again:
@@ -82,6 +83,7 @@ class Task:
         """
         if not self.__timer:
             self.logger.warn(u'No task is running')
+            return
         self.__timer.join()
   
     def start(self):
