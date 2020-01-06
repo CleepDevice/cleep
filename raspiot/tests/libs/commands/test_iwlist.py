@@ -11,8 +11,6 @@ import unittest
 import logging
 from pprint import pformat
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
-
 SAMPLE = """wlan0     Scan completed :
           Cell 01 - Address: 00:11:95:07:EC:7A
                     Channel:6
@@ -298,6 +296,7 @@ class IwlistTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.i = Iwlist()
 
     def tearDown(self):

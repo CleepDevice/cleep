@@ -9,12 +9,11 @@ import unittest
 import logging
 from mock import Mock
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-
 class IwgetidTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.i = Iwgetid()
 
     def tearDown(self):
@@ -37,6 +36,5 @@ class IwgetidTests(unittest.TestCase):
         self.assertEqual(connections[key]['network'], 'mywifinetwork', 'Invalid returned network name')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_iwgetid.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_iwgetid.py; coverage report -m
     unittest.main()
