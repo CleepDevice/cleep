@@ -27,6 +27,29 @@ class Lsblk(Console):
     def __refresh(self):
         """
         Refresh all data
+
+        Returns:
+            dict: partitions infos::
+
+                {
+                    drive partition name (string): {
+                        partition name (string): {
+                            name (string): partition name
+                            major (string): major number,
+                            minor (string): minor number,
+                            size (long): partition size,
+                            totalsize (long): drive total size,
+                            percent (int): partition size over drive total size,
+                            readonly (bool): True if partition is readonly,
+                            mountpoint (string): mountpoint name,
+                            partition (string): ,
+                            removable (bool): True if partition is removable (external disk/usb stick...)
+                            drivemodel (string): drive model,
+                        },
+                        ...
+                    },
+                }
+
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
@@ -40,7 +63,7 @@ class Lsblk(Console):
 
             #parse data
             matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==10:
                     #name
@@ -56,7 +79,7 @@ class Lsblk(Console):
                         total_size = groups[5]
                         try:
                             total_size = int(total_size)
-                        except:
+                        except: # pragma: no cover
                             pass
 
                     #readonly flag
@@ -78,7 +101,7 @@ class Lsblk(Console):
                     try:
                         size = int(size)
                         percent = int(float(size)/float(total_size)*100.0)
-                    except:
+                    except: # pragma: no cover
                         pass
 
                     #fill device
