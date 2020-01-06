@@ -99,7 +99,7 @@ class Wpacli(AdvancedConsole):
         """
         results = self.find(u'%s list_networks' % (self.wpacli), r'^(\d)\s+(.*?)\s+(any|.{2}:.{2}:.{2}:.{2}:.{2}:.{2})\s*(?:\[(.*?)\])?$')
         entries = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = filter(None, groups)
 
