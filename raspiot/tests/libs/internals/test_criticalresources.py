@@ -98,14 +98,16 @@ class CriticalResourcesTests(unittest.TestCase):
         self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
         self.c.register_resource('test2', 'audio.playback', self._acquired_cb, self._need_release_cb)
 
-        self.c.acquire_resource('test1', 'audio.playback')
-        self.c.acquire_resource('test2', 'audio.playback')
+        t = self.c.acquire_resource('test1', 'audio.playback')
+        t = self.c.acquire_resource('test2', 'audio.playback')
+        t.wait()
         self.assertEqual(self.c.resources['audio.playback']['using'], 'test1', 'Module test1 should using resource')
         self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 1, 'Resource should have 1 waiting module')
         self.assertEqual(self.need_release_cb_count, 1, 'need_release callback should be called once')
         self.assertEqual(self.acquired_cb_count, 1, 'acquired_release callback should be called once')
         
-        self.c.release_resource('test1', 'audio.playback')
+        t = self.c.release_resource('test1', 'audio.playback')
+        t.wait()
         self.assertEqual(self.acquired_cb_count, 2, 'acquired_release callback should be called once')
         self.assertEqual(self.c.resources['audio.playback']['using'], 'test2', 'Module test2 should use the resource')
         self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 0, 'Resource should have no waiting module')
@@ -117,8 +119,8 @@ class CriticalResourcesTests(unittest.TestCase):
         self.c.acquire_resource('test1', 'audio.playback')
         self.c.acquire_resource('test2', 'audio.playback')
         #test2 should acquire resource
-        self.assertTrue(self.c.release_resource('test1', 'audio.playback'), 'Resource release should succeed')
-        time.sleep(0.5)
+        t = self.c.release_resource('test1', 'audio.playback')
+        t.wait()
         self.assertEqual(self.c.resources['audio.playback']['using'], 'test2', 'Module test2 should use the resource')
         #test1 should acquire again resource
         self.assertTrue(self.c.release_resource('test2', 'audio.playback'), 'Resource release should succeed')

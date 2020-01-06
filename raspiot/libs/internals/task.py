@@ -75,21 +75,24 @@ class Task:
             interval (int): task interval (in seconds)
         """
         self._interval = interval
+
+    def wait(self):
+        """
+        Wait for current tsk to be done
+        """
+        if not self.__timer:
+            self.logger.warn(u'No task is running')
+        self.__timer.join()
   
-    def start(self, wait_started=False):
+    def start(self):
         """
         Start the task
-
-        Args:
-            wait_started (bool): If True make sure task is really started
         """
         if self.__timer:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
         self.__timer.daemon = True
         self.__timer.start()
-        if wait_started:
-            self.__timer.join()
   
     def stop(self):
         """

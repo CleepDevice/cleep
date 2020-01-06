@@ -207,6 +207,9 @@ class CriticalResources():
         Args:
             resource_name (string): existing resource name
 
+        Returns:
+            Task: acquire resource task
+
         Raises:
             Exception: if resource does not exist
         """
@@ -217,13 +220,14 @@ class CriticalResources():
 
         self.__mutex.acquire()
 
+        self.logger.trace(u'Module "%s" is acquiring resource "%s"' % (module_name, resource_name))
         try:
             if self.resources[resource_name][u'using']==None:
                 #resource is not used at this time, acquire it right now
                 self.logger.debug(u'Resource "%s" is available, "%s" acquire it right now' % (resource_name, module_name))
                 self.resources[resource_name][u'using'] = module_name
                 task = Task(None, self.callbacks[module_name][resource_name][u'acquired_callback'], self.logger, [resource_name])
-                task.start(wait_started=True)
+                task.start()
 
             elif self.resources[resource_name]['using']==module_name:
                 self.logger.debug(u'Module "%s" is trying to acquire resource "%s" already acquired by itself. Drop request' % (module_name, resource_name))
@@ -237,7 +241,8 @@ class CriticalResources():
                 #and inform module that is using resource it must releases it
                 self.logger.debug(u'Inform module "%s" its acquired resource "%s" is needed by another module' % (self.resources[resource_name][u'using'], resource_name))
                 task = Task(None, self.callbacks[self.resources[resource_name][u'using']][resource_name][u'need_release_callback'], self.logger, [resource_name])
-                task.start(wait_started=True)
+                task.start()
+                return task
 
         except:
             self.logger.exception(u'Error occured acquiring critical resource "%s"' % resource_name)
@@ -259,7 +264,7 @@ class CriticalResources():
             resource_name (string): resource name to release
 
         Returns:
-            bool: True if resource release, False otherwise
+            Task: release resource task
 
         Raises:
             Exception: if resource does not exist
@@ -279,7 +284,7 @@ class CriticalResources():
 
         self.__mutex.acquire()
 
-        error = False
+        self.logger.trace(u'Module "%s" is releasing resource "%s"' % (module_name, resource_name))
         try:
             #get next module that wants to acquire resource
             next_module = None
@@ -295,7 +300,8 @@ class CriticalResources():
             if next_module:
                 self.logger.debug(u'Request next module "%s" for resource "%s" acquisition' % (next_module, resource_name))
                 task = Task(None, self.callbacks[next_module][resource_name][u'acquired_callback'], self.logger, [resource_name])
-                task.start(wait_started=True)
+                task.start()
+                return task
 
         except:
             self.logger.exception(u'Error occuring releasing critical resource "%s"' % resource_name)
@@ -304,10 +310,6 @@ class CriticalResources():
                 u'resource_name': resource_name,
                 u'module_name': module_name
             })
-            error = True
 
         finally:
             self.__mutex.release()
-
-        return not error
-
