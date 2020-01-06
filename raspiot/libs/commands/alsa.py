@@ -120,11 +120,14 @@ class Alsa(AdvancedConsole):
                 {
                     name (string): device name (first device name)
                     devices (list): list of devices
-                        {
-                            cardid (string),
-                            deviceid (string),
-                            name (string)
-                        }
+                        [
+                            {
+                                cardid (string),
+                                deviceid (string),
+                                name (string)
+                            },
+                            ...
+                        ]
                 }
 
         """
@@ -152,11 +155,14 @@ class Alsa(AdvancedConsole):
                 {
                     name (string): device name (first device name)
                     devices (list): list of devices
-                        {
-                            cardid (string),
-                            deviceid (string),
-                            name (string)
-                        }
+                        [
+                            {
+                                cardid (string): card id,
+                                deviceid (string): device id,
+                                name (string): device name,
+                            },
+                            ...
+                        ]
                 }
 
         """

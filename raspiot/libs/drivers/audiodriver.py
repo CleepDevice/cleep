@@ -3,7 +3,7 @@
 
 import time
 import logging
-from .driver import Driver
+from raspiot.libs.drivers.driver import Driver
 from raspiot.libs.configs.cleepaudio import CleepAudio
 from raspiot.libs.commands.alsa import Alsa
 
@@ -77,9 +77,11 @@ class AudioDriver(Driver):
             bool: True if enable
         """
         selected_device = self.alsa.get_selected_device()
+        self.logger.trace(u'Selected device: %s' % selected_device)
 
         if card_name is None:
             card_name = self._get_card_name()
+        self.logger.trace(u'Card name=%s' % card_name)
 
         if selected_device and selected_device[u'name']==card_name:
             return True
@@ -121,7 +123,7 @@ class AudioDriver(Driver):
         """
         return self.alsa.get_device_infos(self._get_card_name())
 
-    def _get_card_capabilities(self):
+    def _get_card_capabilities(self): # pragma: no cover
         """
         Return card capabilities
 
@@ -135,7 +137,7 @@ class AudioDriver(Driver):
         """
         raise NotImplementedError(u'Function "_get_card_capabilities" must be implemented in "%s"' % self.__class__.__name__)
 
-    def _get_card_name(self):
+    def _get_card_name(self): # pragma: no cover
         """
         Return card name as returned by alsa
 
@@ -144,7 +146,7 @@ class AudioDriver(Driver):
         """
         raise NotImplementedError(u'Function "_get_card_name" must be implemented in "%s"' % self.__class__.__name__)
 
-    def enable(self, params=None):
+    def enable(self, params=None): # pragma: no cover
         """ 
         Enable driver
 
@@ -153,7 +155,7 @@ class AudioDriver(Driver):
         """
         raise NotImplementedError(u'Function "enable" must be implemented in "%s"' % self.__class__.__name__)
 
-    def disable(self, params=None):
+    def disable(self, params=None): # pragma: no cover
         """ 
         Disable driver
 
@@ -162,7 +164,7 @@ class AudioDriver(Driver):
         """
         raise NotImplementedError(u'Function "disable" must be implemented in "%s"' % self.__class__.__name__)
 
-    def get_volumes(self):
+    def get_volumes(self): # pragma: no cover
         """ 
         Get volumes
 
@@ -177,7 +179,7 @@ class AudioDriver(Driver):
         """
         raise NotImplementedError(u'Function "get_volumes" must be implemented in "%s"' % self.__class__.__name__)
 
-    def set_volumes(self, playback=None, capture=None):
+    def set_volumes(self, playback=None, capture=None): # pragma: no cover
         """ 
         Set volumes
 
