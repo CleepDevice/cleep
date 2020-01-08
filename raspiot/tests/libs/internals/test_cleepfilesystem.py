@@ -3,7 +3,6 @@
 
 import os
 import sys
-from raspiot.libs.internals.task import Task
 sys.path.append('/root/cleep/raspiot/libs/internals')
 from cleepfilesystem import CleepFilesystem
 from raspiot.libs.tests.lib import TestLib
