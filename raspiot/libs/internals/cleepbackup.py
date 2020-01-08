@@ -27,7 +27,7 @@ class CleepBackup:
         self.crash_report = crash_report
         self.cleep_filesystem = cleep_filesystem
 
-    def backup(self):
+    def backup(self): # pragma: no cover
         """
         Backup configuration files on filesystem
 
