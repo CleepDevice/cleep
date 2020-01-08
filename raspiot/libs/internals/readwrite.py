@@ -36,6 +36,7 @@ class ReadWrite():
 
     STATUS_WRITE = 0
     STATUS_READ = 1
+    STATUS_UNKNOWN = 2
 
     PARTITION_ROOT = u'/'
     PARTITION_BOOT = u'/boot'
@@ -106,6 +107,7 @@ class ReadWrite():
             self.status[partition] = self.STATUS_READ
             self.logger.debug(u'Partition "%s" is in READ mode' % partition)
         else:
+            self.status[partition] = self.STATUS_UNKNOWN
             self.logger.error(u'Unable to get partition "%s" status: %s' % (partition, res[u'stdout']))
             raise Exception(u'Unable to get partition "%s" status' % partition)
 
