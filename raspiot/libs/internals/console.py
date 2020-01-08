@@ -345,7 +345,7 @@ class Console():
             callback (function): function called when command is over. Command result is passed as function parameter
 
         Notes:
-            Command function to have more details
+            See command function to have more details
         
         Returns:
             bool: True if command delayed succesfully or False otherwise
@@ -367,7 +367,7 @@ class AdvancedConsole(Console):
 
     def find(self, command, pattern, options=re.UNICODE | re.MULTILINE, timeout=2.0):
         """
-        Find all pattern matches in command stdout. Found order is respected.
+        Find all pattern matches in command stdout. Found order is preseved
 
         Args:
             pattern (string): search pattern
@@ -413,10 +413,12 @@ class AdvancedConsole(Console):
 
         Returns:
             list: list of matches::
+
                 [
                     (group (string), subgroups (tuple)),
                     ...
                 ]
+
         """
         results = []
         matches = re.finditer(pattern, string, options)
