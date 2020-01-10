@@ -3,7 +3,10 @@
 
 import logging
 import sys
-import sentry_sdk as Sentry
+from sentry_sdk import init as SentryInit
+from sentry_sdk import push_scope as SentryPushScope
+from sentry_sdk import capture_message as SentryCaptureMessage
+from sentry_sdk import capture_exception as SentryCaptureException
 from sentry_sdk.integrations.excepthook import ExcepthookIntegration
 from sentry_sdk import configure_scope
 import platform
@@ -43,7 +46,7 @@ class CrashReport():
             self.disable()
 
         #create and configure raven client
-        Sentry.init(
+        SentryInit(
             dsn=self.__token,
             release=product_version,
             attach_stacktrace=True,
@@ -65,11 +68,11 @@ class CrashReport():
                 scope.set_tag('raspberrypi_model', infos[u'model'])
                 scope.set_tag('raspberrypi_revision', infos[u'revision'])
                 scope.set_tag('raspberrypi_pcbrevision', infos[u'pcbrevision'])
-            except:
+            except: # pragma: no cover
                 self.logger.debug('Application is not running on a raspberry pi')
         
 
-    def __filter_exception(self, event, hint):
+    def __filter_exception(self, event, hint): # pragma: no cover
         """
         Callback used to filter sent exceptions
         """
@@ -113,9 +116,9 @@ class CrashReport():
         """
         if self.__enabled:
             self.logger.debug('Send crash report')
-            with Sentry.push_scope() as scope:
+            with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
-                Sentry.capture_exception()
+                SentryCaptureException()
 
     def manual_report(self, message, extra=None):
         """
@@ -127,9 +130,9 @@ class CrashReport():
         """
         if self.__enabled:
             self.logger.debug('Send manual report')
-            with Sentry.push_scope() as scope:
+            with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
-                Sentry.capture_message(message)
+                SentryCaptureMessage(message)
 
     def __set_extra(self, scope, more_extra={}):
         """
@@ -141,24 +144,4 @@ class CrashReport():
         if isinstance(more_extra, dict) and more_extra:
             for key, value in more_extra.items():
                 scope.set_extra(key, value)
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-
-    #test crash report
-    dsn = 'https://67a672c8a4124ba1a11dfcaf37910a30@sentry.io/1773136'
-    cr = CrashReport(dsn, 'Test', '0.0.0', debug=True)
-    cr.enable()
-
-    #test local catched exception
-    try:
-        raise Exception('My custom exception')
-    except:
-        cr.report_exception()
-    print('Done')
-
-    #try main exception
-    1/0
-
-    print('Done')
 

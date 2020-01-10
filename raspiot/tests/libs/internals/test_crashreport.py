@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+sys.path.append('/root/cleep/raspiot/libs/internals')
+import crashreport
+from raspiot.libs.tests.lib import TestLib
+import unittest
+import logging
+from mock import Mock
+
+class MockedScope():
+    def __init__(self):
+        self.set_tag_calls = 0
+        self.set_extra_calls = 0
+        self.called = False
+    def __call__(self, *args, **kwargs):
+        self.called = True
+    def set_tag(self, *args, **kwargs):
+        self.set_tag_calls += 1
+    def set_extra(self, *args, **kwargs):
+        self.set_extra_calls += 1
+
+class CrashReportTests(unittest.TestCase):
+
+    def setUp(self):
+        TestLib()
+        logging.basicConfig(level=logging.TRACE, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+
+        self.sentry_configure_scope = Mock()
+        self.sentry_configure_scope.return_value.__enter__ = Mock()
+        self.sentry_configure_scope.return_value.__enter__.return_value = MockedScope()
+        self.sentry_configure_scope.return_value.__exit__ = Mock()
+        #self.sentry_configure_scope.set_tag = Mock()
+        crashreport.configure_scope = self.sentry_configure_scope
+
+        self.sentry_push_scope = Mock()
+        self.sentry_push_scope.return_value.__enter__ = Mock()
+        self.sentry_push_scope.return_value.__enter__.return_value = MockedScope()
+        self.sentry_push_scope.return_value.__exit__ = Mock()
+        crashreport.SentryPushScope = self.sentry_push_scope
+
+        self.sentry_init_mock = Mock()
+        crashreport.SentryInit = self.sentry_init_mock
+
+        self.sentry_capture_message = Mock()
+        crashreport.SentryCaptureMessage = self.sentry_capture_message
+
+        self.sentry_capture_exception = Mock()
+        crashreport.SentryCaptureException = self.sentry_capture_exception
+
+        self.c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', {'mylib': 'mylibversion'})
+
+    def tearDown(self):
+        pass
+
+    def test_init(self):
+        #crash report is disabled by default
+        self.assertFalse(self.c.is_enabled())
+        #crash report must init sentry stuff
+        self.assertTrue(self.sentry_init_mock.called)
+        #crash report must set some custom tags at startup
+        self.assertTrue(self.sentry_configure_scope.return_value.__enter__.called)
+        self.assertGreaterEqual(self.sentry_configure_scope.return_value.__enter__.return_value.set_tag_calls, 7)
+
+    def test_check_disable_at_startup(self):
+        c = crashreport.CrashReport(None, 'myproduct', 'myversion')
+        self.assertFalse(c.is_enabled())
+        c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', forced=True)
+        self.assertFalse(c.is_enabled())
+
+    def test_debug_mode(self):
+        c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', debug=True)
+        self.assertEqual(c.logger.getEffectiveLevel(), logging.DEBUG)
+        c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', debug=False)
+        self.assertEqual(c.logger.getEffectiveLevel(), logging.WARN)
+
+    def test_is_enabled(self):
+        self.assertFalse(self.c.is_enabled())
+        self.c.enable()
+        self.assertTrue(self.c.is_enabled())
+        self.c.disable()
+        self.assertFalse(self.c.is_enabled())
+
+    def test_report_exception(self):
+        self.c.enable()
+        try:
+            1/0
+        except:
+            self.c.report_exception(extra={'key': 'value'})
+        self.assertTrue(self.sentry_capture_exception.called)
+        self.assertTrue(self.sentry_push_scope.called)
+        self.assertGreater(self.sentry_push_scope.return_value.__enter__.return_value.set_extra_calls, 0)
+
+    def test_manual_report(self):
+        self.c.enable()
+        self.c.manual_report('test message', extra={'key': 'value'})
+        self.assertTrue(self.sentry_capture_message.called)
+        self.assertTrue(self.sentry_push_scope.called)
+        self.assertGreater(self.sentry_push_scope.return_value.__enter__.return_value.set_extra_calls, 0)
+
+
+
+if __name__ == '__main__':
+    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_crashreport.py; coverage report -m
+    unittest.main()
