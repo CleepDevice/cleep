@@ -5,9 +5,9 @@ import sys
 import subprocess
 import time
 from threading import Timer, Thread
-try:
+try: # pragma: no cover
     from Queue import Queue, Empty
-except ImportError:
+except ImportError: # pragma: no cover
     from queue import Queue, Empty  # python 3.x
 import os
 import signal
@@ -67,13 +67,11 @@ class EndlessConsole(Thread):
         for line in iter(output.readline, b''):
             if not self.running:
                 break
-            #self.logger.info('line = %s' % line)
             queue.put(line.decode('utf-8').rstrip())
         try:
             output.close()
-        except:
+        except: # pragma: no cover
             pass
-        self.logger.debug('Enqueued thread stopped')
 
     def get_start_time(self):
         """
@@ -121,14 +119,14 @@ class EndlessConsole(Thread):
             stdout = self.__stdout_queue.get_nowait()
         except Empty:
             pass
-        except:
+        except: # pragma: no cover
             self.logger.exception(u'Error getting stdout queue')
 
         try:
             stderr = self.__stderr_queue.get_nowait()
         except Empty:
             pass
-        except:
+        except: # pragma: no cover
             self.logger.exception(u'Error getting stderr queue')
 
         if stdout is not None or stderr is not None:
@@ -149,7 +147,7 @@ class EndlessConsole(Thread):
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
         pid = p.pid
-        self.logger.debug(u'PID=%d' % pid)
+        self.logger.trace(u'PID=%d' % pid)
 
         if self.callback:
             #async stdout reading
@@ -171,6 +169,7 @@ class EndlessConsole(Thread):
             self.__send_stds()
 
             #check end of command
+            #self.logger.trace(u'Return code=%s' % p.returncode)
             if p.returncode is not None:
                 return_code = p.returncode
                 self.logger.debug(u'Process is terminated with return code %s' % p.returncode)
@@ -180,19 +179,19 @@ class EndlessConsole(Thread):
             time.sleep(0.25)
 
         #purge queues
-        self.logger.debug('Purging outputs...')
+        self.logger.trace('Purging outputs...')
         count = 0
         while self.__send_stds() or count<=5:
-            self.logger.debug(' purging...')
+            self.logger.trace(' purging...')
             count += 1
             time.sleep(0.05)
-        self.logger.debug('Purge completed')
+        self.logger.trace('Purge completed')
 
         #make sure process (and child processes) is really killed
         if self.killed:
             if ON_POSIX:
                 os.killpg(os.getpgid(pid), signal.SIGKILL)
-            else:
+            else: # pragma: no cover
                 p.kill()
 
         #process is over
@@ -200,12 +199,11 @@ class EndlessConsole(Thread):
 
         #stop callback
         if self.callback_end:
-            self.logger.debug('Call end callback')
+            self.logger.trace('Call end callback')
             try:
                 self.callback_end(return_code, self.killed)
             except:
                 self.logger.exception(u'Exception occured during EndlessCommand end callback:')
-            return True
 
 
 class Console():
@@ -229,7 +227,7 @@ class Console():
         """
         Destroy console object
         """
-        if self.timer:
+        if self.timer: # pragma: no cover
             self.timer.cancel()
 
     def __process_lines(self, lines):
@@ -274,6 +272,7 @@ class Console():
                 }
 
         """
+        self.logger.trace('Launch command "%s"' % command)
         #check params
         if timeout is None or timeout<=0.0:
             raise Exception(u'Timeout is mandatory and must be greater than 0')
@@ -291,7 +290,8 @@ class Console():
             #check if command has finished
             p.poll()
             if p.returncode is not None:
-                #command executed
+                #command terminated
+                self.logger.trace('Command terminated with returncode %s' % p.returncode)
                 return_code = p.returncode
                 self.last_return_code = return_code
                 done = True
@@ -304,7 +304,7 @@ class Console():
                 self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
                 if ON_POSIX:
                     os.killpg(os.getpgid(pid), signal.SIGKILL)
-                else:
+                else: # pragma: no cover
                     p.kill()
                 killed = True
                 break
@@ -321,14 +321,12 @@ class Console():
             u'stderr': []
         }
         if not killed:
-            err = self.__process_lines(p.stderr.readlines())
-            if len(err)>0:
-                result[u'error'] = True
-                result[u'stderr'] = err
-            else:
-                result[u'stdout'] = self.__process_lines(p.stdout.readlines())
+            result[u'stderr'] = self.__process_lines(p.stderr.readlines())
+            result[u'error'] = True if len(result['stderr'])>0 else False
+            result[u'stdout'] = self.__process_lines(p.stdout.readlines())
+        self.logger.trace('Result: %s' % result)
 
-        #trigger callback
+        #trigger callback (used for delayed command)
         if self.__callback:
             self.__callback(result)
 
@@ -342,13 +340,10 @@ class Console():
             command (string): command to execute
             delay (int): time to wait before executing command (milliseconds)
             timeout (float): timeout before killing command
-            callback (function): function called when command is over. Command result is passed as function parameter
+            callback (function): function called when command is over. Callback will received command result as single function parameter
 
         Notes:
             See command function to have more details
-        
-        Returns:
-            bool: True if command delayed succesfully or False otherwise
         """
         self.__callback = callback
         self.timer = Timer(delay, self.command, [command, timeout])
@@ -367,17 +362,19 @@ class AdvancedConsole(Console):
 
     def find(self, command, pattern, options=re.UNICODE | re.MULTILINE, timeout=2.0):
         """
-        Find all pattern matches in command stdout. Found order is preseved
+        Find all pattern matches in command stdout. Found order is preserved
 
         Args:
+            command (string): command to execute
             pattern (string): search pattern
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+            timeout (float): timeout before killing command
 
         Returns:
             list: list of matches::
 
                 [
-                    (group (string), subgroups (tuple)),
+                    (group (string), matches in group (tuple)),
                     ...
                 ]
 
@@ -392,23 +389,15 @@ class AdvancedConsole(Console):
 
         #parse command output
         content = u'\n'.join(res[u'stdout'])
-        matches = re.finditer(pattern, content, options)
-
-        for _, match in enumerate(matches):
-            group = match.group().strip()
-            if len(group)>0 and len(match.groups())>0:
-                #results[group] = match.groups()
-                results.append((group, match.groups()))
-
-        return results
+        return self.find_in_string(content, pattern, options)
 
     def find_in_string(self, string, pattern, options=re.UNICODE | re.MULTILINE):
         """
         Find all pattern matches in specified string. Found order is respected.
 
         Args:
-            pattern (string): search pattern
             string (string): string to search in
+            pattern (string): search pattern
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
 
         Returns:
