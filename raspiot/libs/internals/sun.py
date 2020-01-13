@@ -1,245 +1,254 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*
-
-"""
-Code from https://michelanders.blogspot.com/2010/12/calulating-sunrise-and-sunset-in-python.html
-"""
-
-from math import cos,sin,acos,asin,tan
-from math import degrees as deg, radians as rad
-from datetime import date, datetime, time, tzinfo, timedelta
-import time as _time
+import calendar
+import math
+import datetime
+from dateutil import tz
 import logging
-from pytz import timezone
-from tzlocal import get_localzone
 
-ZERO = timedelta(0)
-HOUR = timedelta(hours=1)
-STDOFFSET = timedelta(seconds = -_time.timezone)
-if _time.daylight:
-    DSTOFFSET = timedelta(seconds = -_time.altzone)
-else:
-    DSTOFFSET = STDOFFSET
-DSTDIFF = DSTOFFSET - STDOFFSET
-
-class LocalTimezone(tzinfo):
-    """
-    Code from https://docs.python.org/2.7/library/datetime.html#datetime.tzinfo.fromutc
-    """
-    def utcoffset(self, dt):
-        if self._isdst(dt):
-            return DSTOFFSET
-        else:
-            return STDOFFSET
-
-    def dst(self, dt):
-        if self._isdst(dt):
-            return DSTDIFF
-        else:
-            return ZERO
-
-    def tzname(self, dt):
-        return _time.tzname[self._isdst(dt)]
-
-    def _isdst(self, dt):
-        tt = (dt.year, dt.month, dt.day,
-              dt.hour, dt.minute, dt.second,
-              dt.weekday(), 0, 0)
-        stamp = _time.mktime(tt)
-        tt = _time.localtime(stamp)
-        return tt.tm_isdst > 0
 
 class Sun:
     """
-    Calculate sunrise and sunset based on equations from NOAA
-    http://www.srrb.noaa.gov/highlights/sunrise/calcdetails.html
-    
-    typical use, calculating the sunrise at the present day:
-    
-    import datetime
-    import sunrise
-    s = sun(lat=49,long=3)
-    print('sunrise at ',s.sunrise(when=datetime.datetime.now())
+    Sunset/sunrise times computation according to geographic position
+
+    See:
+        Code copied and adapted for Cleep from https://github.com/SatAgro/suntime/blob/master/suntime/suntime.py
+
+    Notes:
+        Approximated calculation of sunrise and sunset datetimes. Adapted from:
+        https://stackoverflow.com/questions/19615350/calculate-sunrise-and-sunset-times-for-a-given-gps-coordinate-within-postgresql
     """
     def __init__(self):
         """
         Constructor
         """
-        #member
+        self.latitude = 0.0
+        self.longitude = 0.0
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
 
-    def setPosition(self, lat, long, timezone_name=None):
+    def set_position(self, latitude, longitude):
         """
-        Set position to use for computation
-    
+        Set latitude and longitude for sunset/sunrise times computation
+        
         Args:
-            lat (float): latitude
-            long (flat): longitude
+            latitude (float): latitude
+            longitude( float): longitude
         """
-        self.lat = lat
-        self.long = long
-        self.timezone_name = timezone_name
+        self.latitude = latitude
+        self.longitude = longitude
 
-        if not timezone_name:
-            self.timezone_obj = get_localzone()
+    def get_sunrise_time(self, date=None):
+        """
+        Calculate the sunrise time for given date.
+
+        Args:
+            date (datetime): reference date (default is today if nothing specified)
+        
+        Returns:
+            datetime: UTC sunrise datetime
+        
+        Raises:
+            Exception when there is no sunrise and sunset on given location and date
+        """
+        date = datetime.date.today() if date is None else date
+        sr = self._calc_sun_time(date, True)
+        if sr is None:
+            raise Exception('The sun never rises on this location (on the specified date)')
         else:
-            self.timezone_obj = timezone(timezone_name)
+            return sr
 
-    def sunrise(self, when=None):
+    def get_local_sunrise_time(self, date=None, local_time_zone=tz.tzlocal()):
         """
-        return the time of sunrise as a datetime.time object
-        when is a datetime.datetime object. If none is given
-        a local time zone is assumed (including daylight saving
-        if present)
-        """
-        #if self.timezone_name is not None:
-        #    when = datetime.now(tz=timezone(self.timezone_name))
-        #elif when is None:
-        #    when = datetime.now(tz=LocalTimezone())
-        when = self.timezone_obj.localize(datetime.now())
-        self.__preptime(when)
-        self.__calc()
-
-        return self.__to_datetime(self.sunrise_t)
-
-    def sunset(self, when=None):
-        #if self.timezone_name is not None:
-        #    when = datetime.now(tz=timezone(self.timezone_name))
-        #elif when is None:
-        #    when = datetime.now(tz=LocalTimezone())
-        when = self.timezone_obj.localize(datetime.now())
-        self.__preptime(when)
-        self.__calc()
-
-        return self.__to_datetime(self.sunset_t)
-
-    def solarnoon(self):
-        #if self.timezone_name is not None:
-        #    when = datetime.now(tz=timezone(self.timezone_name))
-        #elif when is None:
-        #    when = datetime.now(tz=LocalTimezone())
-        when = self.timezone_obj.localize(datetime.now())
-        self.__preptime(when)
-        self.__calc()
-
-        return self.__to_datetime(self.solarnoon_t)
-
-    def __timefromdecimalday(self, day):
-        """
-        returns a datetime.time object.
-
-        day is a decimal day between 0.0 and 1.0, e.g. noon = 0.5
-        """ 
-        hours = 24.0*day
-        h = int(hours)
-        minutes = (hours-h)*60
-        m = int(minutes)
-        seconds = (minutes-m)*60
-        s = int(seconds)
-
-        return time(hour=h,minute=m,second=s)
-
-    def __to_datetime(self, day):
-        """
-        Convert time instance to timestamp
+        Get sunrise time for local or custom time zone.
+        
+        Args:
+            date (datetime): reference date (default is today if nothing specified)
+            local_time_zone (tzlocal): local or custom time zone.
 
         Returns:
-            float: timestamp
+            datetime: local time zone sunrise datetime
+
+        Raises:
+            Exception if error occured
         """
-        try:
-            hours = 24.0 * day
-            h = int(hours)
-            minutes = (hours-h)*60
-            m = int(minutes)
-            seconds = (minutes-m)*60
-            s = int(seconds)
-            t = time(hour=h,minute=m,second=s)
+        date = datetime.date.today() if date is None else date
+        sr = self._calc_sun_time(date, True)
+        if sr is None:
+            raise Exception('The sun never rises on this location (on the specified date)')
+        else:
+            return sr.astimezone(local_time_zone)
 
-            now = self.timezone_obj.localize(datetime.now())
-            now_str = '%d/%0.2d/%0.2d %0.2d:%0.2d:%0.2d' % (now.day, now.month, now.year, t.hour, t.minute, t.second)
-
-            dt = datetime.strptime(now_str, '%d/%m/%Y %H:%M:%S')
-            dt_localized = self.timezone_obj.localize(dt)
-            #self.logger.error(when.tzinfo.dst(when))
-            return dt_localized
-
-        except ValueError:
-            raise Exception(u'Trying to convert time from invalid position')
-
-    def __preptime(self, when):
+    def sunrise(self):
         """
-        Extract information in a suitable format from when,
-        a datetime.datetime object.
+        Returns locale sunrise time
+        Alias to get_local_sunrise_time for current date
+
+        Returns:
+            datetime: local sunrise datetime
         """
-        # datetime days are numbered in the Gregorian calendar
-        # while the calculations from NOAA are distibuted as
-        # OpenOffice spreadsheets with days numbered from
-        # 1/1/1900. The difference are those numbers taken for
-        # 18/12/2010
-        self.day = when.toordinal()-(734124-40529)
-        t=when.time()
-        self.time = (t.hour + t.minute/60.0 + t.second/3600.0)/24.0
+        return self.get_local_sunrise_time()
 
-        self.timezone = 0
-        offset = when.utcoffset()
-        if not offset is None:
-            #self.timezone=offset.seconds/3600.0
-            self.timezone = offset.seconds/3600.0 + (offset.days * 24)
-
-    def __calc(self):
+    def get_sunset_time(self, date=None):
         """
-        Perform the actual calculations for sunrise, sunset and
-        a number of related quantities.
+        Calculate the sunset time for given date.
 
-        The results are stored in the instance variables
-        sunrise_t, sunset_t and solarnoon_t
+        Args:
+            date (datetime): custom date used for computation (default is today if not specified)
+
+        Returns:
+            datetime: UTC sunset datetime
+
+        Raises:
+            Exception if error occured
         """
-        timezone = self.timezone # in hours, east is positive
-        longitude = self.long     # in decimal degrees, east is positive
-        latitude = self.lat      # in decimal degrees, north is positive
+        date = datetime.date.today() if date is None else date
+        ss = self._calc_sun_time(date, False)
+        if ss is None:
+            raise Exception('The sun never sets on this location (on the specified date)')
+        else:
+            return ss
 
-        time = self.time # percentage past midnight, i.e. noon  is 0.5
-        day = self.day     # daynumber 1=1/1/1900
+    def get_local_sunset_time(self, date=None, local_time_zone=tz.tzlocal()):
+        """
+        Get sunset time for local or custom time zone.
 
-        Jday = day+2415018.5+time-timezone/24 # Julian day
-        Jcent = (Jday-2451545)/36525    # Julian century
+        Args:
+            date (datetime): reference date (default to today if nothing specified)
+            local_time_zone (tzlocal): local or custom time zone.
 
-        Manom = 357.52911+Jcent*(35999.05029-0.0000001267*Jcent)
-        Mlong = 280.46646+Jcent*(36000.76983+Jcent*0.0003032)%360
-        Eccent = 0.016708634-Jcent*(0.000042037+0.0000001267*Jcent)
-        Mobliq = 23+(26+((21.448-Jcent*(46.815+Jcent*(0.00059-Jcent*0.001813))))/60)/60
-        obliq = Mobliq+0.00256*cos(rad(125.04-1934.136*Jcent))
-        vary = tan(rad(obliq/2))*tan(rad(obliq/2))
-        Seqcent = sin(rad(Manom))*(1.914602-Jcent*(0.004817+0.000014*Jcent))+sin(rad(2*Manom))*(0.019993-0.000101*Jcent)+sin(rad(3*Manom))*0.000289
-        Struelong = Mlong+Seqcent
-        Sapplong = Struelong-0.00569-0.00478*sin(rad(125.04-1934.136*Jcent))
-        declination = deg(asin(sin(rad(obliq))*sin(rad(Sapplong)))) 
+        Returns:
+            datetime: local time zone sunset datetime
 
-        eqtime = 4*deg(vary*sin(2*rad(Mlong))-2*Eccent*sin(rad(Manom))+4*Eccent*vary*sin(rad(Manom))*cos(2*rad(Mlong))-0.5*vary*vary*sin(4*rad(Mlong))-1.25*Eccent*Eccent*sin(2*rad(Manom)))
+        Raises:
+            Exception if error occured
+        """
+        date = datetime.date.today() if date is None else date
+        ss = self._calc_sun_time(date, False)
+        if ss is None:
+            raise Exception('The sun never sets on this location (on the specified date)')
+        else:
+            return ss.astimezone(local_time_zone)
 
-        hourangle = deg(acos(cos(rad(90.833))/(cos(rad(latitude))*cos(rad(declination)))-tan(rad(latitude))*tan(rad(declination))))
+    def sunset(self):
+        """
+        Returns locale sunset time
+        Alias to get_local_sunset_time for current date
 
-        self.solarnoon_t = (720-4*longitude-eqtime+timezone*60)/1440
-        self.sunrise_t = self.solarnoon_t-hourangle*4/1440
-        self.sunset_t = self.solarnoon_t+hourangle*4/1440
+        Returns:
+            datetime: local sunset datetime
+        """
+        return self.get_local_sunset_time()
 
-if __name__ == "__main__":
-    import logging
-    logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+    def _calc_sun_time(self, date, is_rise_time=True, zenith=90.8):
+        """
+        Calculate sunrise or sunset date.
 
-    s = Sun()
-    #rennes
-    s.setPosition(47.9832, -1.6236)
-    #WDC
-    #s.setPosition(38.89958342598271, -77.01278686523439)
-    #fiji
-    #s.setPosition(-18.1279, 178.4492)
-    #NY USA
-    #s.setPosition(40.6971, -73.9796)
-    logging.info(datetime.today())
-    sunrise = s.sunrise()
-    logging.info('SUNRISE=%s - %s - %s' % (sunrise, sunrise.strftime('%s'), sunrise.hour))
-    sunset = s.sunset()
-    logging.info('SUNSET=%s' % (sunset))
+        Args:
+            date (datetime): reference date
+            is_rise_time (bool): True if you want to calculate sunrise time.
+            zenith (float): sun reference zenith
+        
+        Returns:
+            datetime: UTC sunset or sunrise datetime
+        
+        Raises:
+            Exception when there is no sunrise and sunset on given location and date
+        """
+        day = date.day
+        month = date.month
+        year = date.year
+
+        TO_RAD = math.pi/180.0
+
+        # 1. first calculate the day of the year
+        N1 = math.floor(275 * month / 9)
+        N2 = math.floor((month + 9) / 12)
+        N3 = (1 + math.floor((year - 4 * math.floor(year / 4) + 2) / 3))
+        N = N1 - (N2 * N3) + day - 30
+
+        # 2. convert the longitude to hour value and calculate an approximate time
+        lngHour = self.longitude / 15
+
+        if is_rise_time:
+            t = N + ((6 - lngHour) / 24)
+        else: #sunset
+            t = N + ((18 - lngHour) / 24)
+
+        # 3. calculate the Sun's mean anomaly
+        M = (0.9856 * t) - 3.289
+
+        # 4. calculate the Sun's true longitude
+        L = M + (1.916 * math.sin(TO_RAD*M)) + (0.020 * math.sin(TO_RAD * 2 * M)) + 282.634
+        L = self._force_range(L, 360 ) #NOTE: L adjusted into the range [0,360)
+
+        # 5a. calculate the Sun's right ascension
+
+        RA = (1/TO_RAD) * math.atan(0.91764 * math.tan(TO_RAD*L))
+        RA = self._force_range(RA, 360 ) #NOTE: RA adjusted into the range [0,360)
+
+        # 5b. right ascension value needs to be in the same quadrant as L
+        Lquadrant  = (math.floor( L/90)) * 90
+        RAquadrant = (math.floor(RA/90)) * 90
+        RA = RA + (Lquadrant - RAquadrant)
+
+        # 5c. right ascension value needs to be converted into hours
+        RA = RA / 15
+
+        # 6. calculate the Sun's declination
+        sinDec = 0.39782 * math.sin(TO_RAD*L)
+        cosDec = math.cos(math.asin(sinDec))
+
+        # 7a. calculate the Sun's local hour angle
+        cosH = (math.cos(TO_RAD*zenith) - (sinDec * math.sin(TO_RAD*self.latitude))) / (cosDec * math.cos(TO_RAD*self.latitude))
+
+        if cosH > 1:
+            return None     # The sun never rises on this location (on the specified date)
+        if cosH < -1:
+            return None     # The sun never sets on this location (on the specified date)
+
+        # 7b. finish calculating H and convert into hours
+
+        if is_rise_time:
+            H = 360 - (1/TO_RAD) * math.acos(cosH)
+        else: #setting
+            H = (1/TO_RAD) * math.acos(cosH)
+
+        H = H / 15
+
+        #8. calculate local mean time of rising/setting
+        T = H + RA - (0.06571 * t) - 6.622
+
+        #9. adjust back to UTC
+        UT = T - lngHour
+        UT = self._force_range(UT, 24)   # UTC time in decimal format (e.g. 23.23)
+
+        #10. Return
+        hr = self._force_range(int(UT), 24)
+        min = round((UT - int(UT))*60, 0)
+        if min == 60:
+            hr += 1
+            min = 0
+
+        #10. check corner case https://github.com/SatAgro/suntime/issues/1
+        if hr == 24:
+            hr = 0
+            day += 1
+            
+            if day > calendar.monthrange(year, month)[1]:
+                day = 1
+                month += 1
+
+                if month > 12:
+                    month = 1
+                    year += 1
+
+        return datetime.datetime(year, month, day, int(hr), int(min), tzinfo=tz.tzutc())
+
+    @staticmethod
+    def _force_range(v, max):
+        # force v to be >= 0 and < max
+        if v < 0:
+            return v + max
+        elif v >= max:
+            return v - max
+
+        return v
 
