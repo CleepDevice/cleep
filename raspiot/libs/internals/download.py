@@ -12,6 +12,7 @@ import platform
 import tempfile
 import base64
 import io
+from raspiot.libs.internals.task import Task
 
 class Download():
     """
@@ -28,14 +29,15 @@ class Download():
     STATUS_ERROR_INVALIDSIZE = 4
     STATUS_ERROR_BADCHECKSUM = 5
     STATUS_DONE = 6
+    STATUS_CANCELED = 7
+    STATUS_CACHED = 8
 
-    def __init__(self, cleep_filesystem, auth_token=None):
+    def __init__(self, cleep_filesystem):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance. If None does not handle R/O mode
-            auth_token (string): Authorization token. If specified passed to http request header
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -44,26 +46,33 @@ class Download():
         #members
         self.cleep_filesystem = cleep_filesystem
         self.temp_dir = tempfile.gettempdir()
-        self.download = None
         self.__cancel = False
-        self.status = self.STATUS_IDLE
-        self.percent = 0
-        self.status_callback = None
+        self.__status_callback = None
+        self.__end_callback = None
+        self.__download_task = None
+        self.download = None
         self.http = urllib3.PoolManager(num_pools=1)
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0'
         }
-        if auth_token:
-            self.headers['Authorization'] = 'token %s' % auth_token
 
-        #purge previously downloaded files
-        self.purge_files()
+    def add_auth_token(self, token):
+        """
+        Add auth token for download authentication
 
-    def cancel(self):
+        Args:
+            token (string): auth token
         """
-        Cancel current download
+        self.headers['Authorization'] = 'Token %s' % token
+
+    def add_auth_bearer(self, bearer):
         """
-        self.__cancel = True
+        Add auth bearer for download authentication
+
+        Args:
+            bearer (string): bearer
+        """
+        self.headers['Authorization'] = 'Bearer %s' % bearer
 
     def purge_files(self, force_all=False):
         """
@@ -72,8 +81,9 @@ class Download():
         Args:
             force_all (bool): force deletion of all files (cached ones too)
         """
-        for root, dirs, dls in os.walk(self.temp_dir):
+        for _, _, dls in os.walk(self.temp_dir):
             for dl in dls:
+                self.logger.trace('Purge found file "%s"' % dl)
                 #delete temp files
                 if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
@@ -100,17 +110,23 @@ class Download():
         """
         Return list of cached files
 
-        Return:
-            list: cached filepaths::
+        Returns:
+            list: list of cached files::
+
                 [
-                    {filename, filepath, filesize}
-                    {filename, filepath, filesize}
+                    {
+                        filename (string): real filename,
+                        filepath (string): full file path,
+                        filesize (long): file size
+                    }
                     ...
                 ]
+
         """
         cached = []
 
-        for root, dirs, dls in os.walk(self.temp_dir):
+        self.logger.trace('Get cached files from "%s"' % self.temp_dir)
+        for _, _, dls in os.walk(self.temp_dir):
             for dl in dls:
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     filepath = os.path.join(self.temp_dir, dl)
@@ -123,6 +139,29 @@ class Download():
                     })
 
         return cached
+
+    def is_file_cached(self, filename):
+        """
+        Return infos if file is already downloaded and hence cached
+
+        Args:
+            filename (string): filename to search
+
+        Returns:
+            dict: cached file infos or None if file not cached::
+
+                {
+                    filename (string): real filename,
+                    filepath (string): full file path,
+                    filesize (long): file size
+                }
+
+        """
+        for cached_file in self.get_cached_files():
+            if cached_file['filename']==filename:
+                return cached_file
+
+        return None
 
     def generate_sha1(self, file_path):
         """
@@ -144,7 +183,7 @@ class Download():
         if self.cleep_filesystem:
             self.cleep_filesystem.close(fd)
         else:
-            fd.close()
+            fd.close() # pragma: no cover
 
         return sha1.hexdigest()
 
@@ -168,7 +207,7 @@ class Download():
         if self.cleep_filesystem:
             self.cleep_filesystem.close(fd)
         else:
-            fd.close()
+            fd.close() # pragma: no cover
 
         return sha256.hexdigest()
 
@@ -188,64 +227,46 @@ class Download():
             buf = fd.read(1024)
             if not buf:
                 break
-            sha1.update(buf)
+            md5.update(buf)
         if self.cleep_filesystem:
             self.cleep_filesystem.close(fd)
         else:
-            fd.close()
+            fd.close() # pragma: no cover
 
         return md5.hexdigest()
 
-    def __status_callback(self, status, size, percent):
+    def download_content(self, url):
         """
-        Call status callback if configured
-
-        Args:
-            status (int): current download status
-            size (int): downloaded filesize (bytes)
-            percent (int): percentage of download
-        """
-        if self.status_callback:
-            self.status_callback(status, size, percent)
-
-    def get_status(self):
-        """
-        Return current status
-
-        Return:
-            int: current status code (see STATUS_XXX codes)
-        """
-        return self.status
-
-    def download_file(self, url):
-        """
-        Download file from specified url.
-        Get result status getting Download instance member value
-        Also no file validation is performed
-        Prefer using this function to download small file
+        Download file content from specified url.
+        This function is blocking.
+        Prefer using this function to download small files.
 
         Args:
             url (string): url of file to download
         
-        Return:
-            string: file content
+        Returns:
+            tuple: download status and downloaded content::
+            
+                (
+                    status (int): see STATUS_XXX for possible values,
+                    content (string): downloaded content
+                )
+
         """
         #initialize download
+        self.__cancel = False
         try:
-            self.logger.debug('Headers=%s' % self.headers)
-            resp = self.http.request('GET', url, preload_content=False, headers=self.headers)
+            self.logger.trace(u'Headers=%s' % self.headers)
+            resp = self.http.request(u'GET', url, preload_content=False, headers=self.headers)
             if resp.status!=200:
                 self.logger.error(u'Download "%s" failed' % url)
-                self.status = self.STATUS_ERROR
-                return None
+                return self.STATUS_ERROR, None
 
         except:
-            self.status = self.STATUS_ERROR
             self.logger.exception(u'Error initializing http request:')
-            return None
+            return self.STATUS_ERROR, None
 
         #process download
-        self.status = self.STATUS_DOWNLOADING
         content = u''
         try:
             while True:
@@ -257,34 +278,97 @@ class Download():
 
                 #save data 
                 content += buf.decode('utf-8')
-        
-                #update final status
-                self.status = self.STATUS_DONE
 
         except:
             self.logger.exception(u'Error downloading file "%s"' % url)
-            self.status = self.STATUS_ERROR
+            return self.STATUS_ERROR, None
 
-        return content
+        return self.STATUS_DONE, content
 
-    def download_file_advanced(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None, status_callback=None):
+    def __send_download_status(self, status, size, percent):
         """
-        Download file from specified url. Specify key to validate file if necessary.
-        This function is blocking but status can be followed with status_callback (passed in constructor)
+        Call download status callback if configured
+
+        Args:
+            status (int): current download status
+            size (int): downloaded filesize (bytes)
+            percent (int): percentage of download
+        """
+        if self.__status_callback:
+            self.__status_callback(status, size, percent)
+
+    def __send_download_end(self, status, filepath):
+        """
+        Call download end callback if configured
+
+        Args:
+            status (int): final download status
+            filepath (string): downloaded local filepath or None if download failed
+        """
+        if self.__end_callback:
+            self.__end_callback(status, filepath)
+
+        return status, filepath
+
+    def cancel(self):
+        """
+        Cancel current download (only possible for download_file_advanced)
+        """
+        self.logger.debug('Cancel file downloading')
+        self.__cancel = True
+        if self.__download_task:
+            self.__download_task.stop()
+
+    def download_file_async(self, url, end_callback, status_callback=None, check_sha1=None, check_sha256=None, check_md5=None, cache_filename=None):
+        """
+        Same as download_file function but embedded in Task instance to run it in background
+        Call cancel instance function to stop current download
 
         Args:
             url (string): url to download
+            end_callback (function): function called when download is terminated (params: status (int), filepath (string))
+            status_callback (function): status callback. (params: status (int), filesize (long), percent (int))
             check_sha1 (string): sha1 key to check
             check_sha256 (string): sha256 key to check
             check_md5 (string): md5 key to check
-            cache (string): specify name to enable file caching (will not be purged automatically). None to disable caching
-            status_callback (function): status callback. Params: status, filesize, percent
-
-        Returns:
-            string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
+            cache_filename (string): specify output filename and enable caching (the file will not be purged automatically)
         """
-        self.status_callback = status_callback
+        self.__cancel = False
+        self.__status_callback = status_callback
+        self.__end_callback = end_callback
 
+        self.__download_task = Task(None, self.download_file, self.logger, task_kwargs={
+            'url': url,
+            'end_callback': end_callback,
+            'check_sha1': check_sha1,
+            'check_sha256': check_sha256,
+            'check_md5': check_md5,
+            'cache_filename': cache_filename,
+        })
+        self.__download_task.start()
+
+    def download_file(self, url, end_callback, check_sha1=None, check_sha256=None, check_md5=None, cache_filename=None):
+        """
+        Download specified file url and check its integrity if specified.
+        This function is blocking. Run download_file_async if you need to download a file asynchronously
+
+        Args:
+            url (string): url to download
+            end_callback (function): function called when download is terminated (params: downloaded filepath (string))
+            check_sha1 (string): sha1 key to check
+            check_sha256 (string): sha256 key to check
+            check_md5 (string): md5 key to check
+            cache_filename (string): specify output filename and enable caching (the file will not be purged automatically)
+        
+        Returns:
+            tuple: download status and downloaded filepath (or None if error occured) ::
+
+                (
+                    status (int): download status (see STATUS_XXX),
+                    filepath (string): downloaded filepath
+                )
+
+        """
         #prepare filename
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, u'%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
@@ -292,12 +376,12 @@ class Download():
         download = None
 
         #check if file is cached
-        if os.path.exists(self.download):
-            #file cached, return it
-            filesize = os.path.getsize(self.download)
-            self.status = self.STATUS_DONE
-            self.__status_callback(self.status, filesize, 100)
-            return self.download
+        if cache_filename:
+            cached_file = self.is_file_cached(cache_filename)
+            if cached_file:
+                self.__send_download_status(self.STATUS_CACHED, os.path.getsize(cached_file['filepath']), 100)
+                self.__send_download_end(self.STATUS_DONE, cached_file['filepath'])
+                return self.STATUS_DONE, cached_file['filepath']
         
         #prepare download
         try:
@@ -307,45 +391,51 @@ class Download():
                 download = io.open(self.download, u'wb')
         except:
             self.logger.exception(u'Unable to create file:')
-            self.status = self.STATUS_ERROR
-            self.__status_callback(self.status, 0, 0)
-            return None
+            return self.__send_download_end(self.STATUS_ERROR, None)
 
         #initialize download
         try:
             resp = self.http.request(u'GET', url, preload_content=False, headers=self.headers)
             if resp.status!=200:
                 self.logger.error(u'Download "%s" failed' % url)
-                self.status = self.STATUS_ERROR
-                self.__status_callback(self.status, 0, 0)
-                return None
+                return self.__send_download_end(self.STATUS_ERROR, None)
 
         except:
             self.logger.exception(u'Error initializing http request:')
-            self.status = self.STATUS_ERROR
-            self.__status_callback(self.status, 0, 0)
-            return None
+            return self.__send_download_end(self.STATUS_ERROR, None)
 
         #get file size
         file_size = 0
+        downloading_status = self.STATUS_DOWNLOADING
         try:
             content_length = resp.getheader('Content-Length')
             file_size = int(content_length)
-            self.status = self.STATUS_DOWNLOADING
+            downloading_status = self.STATUS_DOWNLOADING
         except Exception as e:
-            self.logger.warning('Unable to get content-length value from header. Disable filesize check: %s' % str(e))
-            self.status = self.STATUS_DOWNLOADING_NOSIZE
-        self.__status_callback(self.status, 0, 0)
-        self.logger.debug('Size to download: %d bytes' % file_size)
+            self.logger.warning(u'Unable to get content-length value from header. Disable filesize check: %s' % str(e))
+            downloading_status = self.STATUS_DOWNLOADING_NOSIZE
+        self.__send_download_status(downloading_status, 0, 0)
+        self.logger.trace(u'Size to download: %d bytes' % file_size)
 
         #download file
         downloaded_size = 0
+        percent = 0
         last_percent = -1
         while True:
+            #cancel download
+            if self.__cancel:
+                if self.cleep_filesystem:
+                    self.cleep_filesystem.close(download)
+                else:
+                    download.close() # pragma: no cover
+                self.logger.debug(u'Download canceled')
+                return self.__send_download_end(self.STATUS_CANCELED, None)
+
             #read data
             buf = resp.read(1024)
             if not buf:
                 #download ended or failed, stop statement
+                self.logger.trace('Download terminated')
                 break
 
             #save data to output file
@@ -353,47 +443,34 @@ class Download():
             try:
                 download.write(buf)
             except:
-                self.logger.exception('Unable to write to download file "%s":' % self.download)
-                self.status = self.STATUS_ERROR
-                self.__status_callback(self.status, downloaded_size, self.percent)
+                self.logger.exception(u'Unable to write to download file "%s":' % self.download)
                 if self.cleep_filesystem:
                     self.cleep_filesystem.close(download)
                 else:
-                    download.close()
-                return None
+                    download.close() # pragma: no cover
+                return self.__send_download_end(self.STATUS_ERROR, None)
             
             #compute percentage
             if file_size!=0:
-                self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
-                self.__status_callback(self.status, downloaded_size, self.percent)
-                if not self.percent%5 and last_percent!=self.percent:
-                    last_percent = self.percent
-                    self.logger.debug('Downloading %s %d%%' % (self.download, self.percent))
+                percent = int(float(downloaded_size) / float(file_size) * 100.0)
+                self.__send_download_status(downloading_status, downloaded_size, percent)
+                if not percent%5 and last_percent!=percent:
+                    last_percent = percent
+                    self.logger.trace(u'Downloading %s %d%%' % (self.download, percent))
 
-            #cancel download
-            if self.__cancel:
-                if self.cleep_filesystem:
-                    self.cleep_filesystem.close(download)
-                else:
-                    download.close()
-                self.logger.debug('Flash process canceled during download')
-                return None
-
-        #download over
+        #download terminated
         if self.cleep_filesystem:
             self.cleep_filesystem.close(download)
         else:
-            download.close()
+            download.close() # pragma: no cover
 
         #file size
         if file_size>0:
             if downloaded_size==file_size:
-                self.logger.debug('File size is valid')
+                self.logger.debug(u'File size is valid')
             else:
-                self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
-                self.status = self.STATUS_ERROR_INVALIDSIZE
-                self.__status_callback(self.status, downloaded_size, self.percent)
-                return None
+                self.logger.error(u'Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
+                return self.__send_download_end(self.STATUS_ERROR_INVALIDSIZE, None)
 
         #checksum
         checksum_computed = None
@@ -401,37 +478,35 @@ class Download():
         if check_sha1:
             checksum_computed = self.generate_sha1(self.download)
             checksum_provided = check_sha1
-            self.logger.debug('SHA1 for %s: %s' % (self.download, checksum_computed))
+            self.logger.trace(u'SHA1 for %s: %s' % (self.download, checksum_computed))
         elif check_sha256:
             checksum_computed = self.generate_sha256(self.download)
             checksum_provided = check_sha256
-            self.logger.debug('SHA256 for %s: %s' % (self.download, checksum_computed))
+            self.logger.trace(u'SHA256 for %s: %s' % (self.download, checksum_computed))
         elif check_md5:
             checksum_computed = self.generate_md5(self.download)
             checksum_provided = check_md5
-            self.logger.debug('MD5 for %s: %s' % (self.download, checksum_computed))
+            self.logger.trace(u'MD5 for %s: %s' % (self.download, checksum_computed))
         if checksum_provided is not None:
             if checksum_computed.lower()==checksum_provided.lower():
-                self.logger.debug('Checksum is valid')
+                self.logger.debug(u'Checksum is valid')
             else:
-                self.logger.error('Checksum from downloaded file is invalid (computed=%s provided=%s)' % (checksum_computed, checksum_provided))
-                self.status = self.STATUS_ERROR_BADCHECKSUM
-                self.__status_callback(self.status, file_size, self.percent)
-                return None
+                self.logger.error(u'Checksum from downloaded file is invalid (computed=%s provided=%s)' % (checksum_computed, checksum_provided))
+                return self.__send_download_end(self.STATUS_ERROR_BADCHECKSUM, None)
         else:
-            self.logger.debug('No checksum to verify :(')
+            self.logger.debug(u'No checksum to verify :(')
 
-        #last status callback
-        self.status = self.STATUS_DONE
-        self.__status_callback(self.status, file_size, 100)
+        #send last status callback
+        self.__send_download_status(downloading_status, file_size, 100)
 
         #rename file
-        if not cache:
-            download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
+        if not cache_filename:
+            download = os.path.join(self.temp_dir, u'%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
         else:
-            hashname = base64.urlsafe_b64encode(cache.encode('utf-8')).decode('utf-8')
-            download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
+            hashname = base64.urlsafe_b64encode(cache_filename.encode(u'utf-8')).decode(u'utf-8')
+            download = os.path.join(self.temp_dir, u'%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
         try:
+            self.logger.trace('Rename downloaded file "%s" to "%s"' % (self.download, download))
             if self.cleep_filesystem:
                 self.cleep_filesystem.rename(self.download, download)
             else:
@@ -439,20 +514,7 @@ class Download():
             self.download = download
         except:
             self.logger.exception(u'Unable to rename downloaded file:')
+            return self.__send_download_end(self.STATUS_ERROR, None)
 
-        return self.download
+        return self.__send_download_end(self.STATUS_DONE, self.download)
 
-if __name__ == '__main__':
-    last_percent = 0
-    def cb(status, size, percent):
-        global last_percent
-        if not percent%5 and last_percent!=percent:
-            logging.info('status=%s size=%s percent=%s' % (status, size, percent))
-            last_percent = percent
-
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-    d = Download(None, '06976d88de4e4ecd77df9ac10660d90c99019909')
-    #d.purge_files()
-    content = d.download_file('https://github.com/tangb/cleep/releases/download/untagged-d90471152ab9d6d34a09/raspiot_0.0.20.sha256')
-    logging.info('status=%s content=%s' % (d.status, content[:20] if content else None))
-    
