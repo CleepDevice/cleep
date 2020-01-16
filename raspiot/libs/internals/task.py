@@ -14,7 +14,7 @@ __all__ = [u'Task', u'BackgroundTask', u'CountTask']
 class Task:
     """
     Run a task asynchronously
-    If interval specified task is executed periodically. If interval is not specified, task is executed immediately once
+    If interval specified task is executed periodically. If interval is None or 0 task is executed immediately and only once
     """
     def __init__(self, interval, task, logger, task_args=[], task_kwargs={}):
         """
