@@ -130,7 +130,7 @@ class Event():
 
                     resp = self.bus.push(request)
                     if resp[u'error']:
-                        self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (renderer, resp[u'message']))
+                        self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (module_name, resp[u'message']))
 
                 except:
                     self.logger.exception(u'Unable to push event "%s" to bus:' % self.EVENT_NAME)

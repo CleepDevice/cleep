@@ -333,11 +333,11 @@ class PyreBus(ExternalBus):
                 interface = ipaddress.ip_interface(u(interface_string))
 
                 if interface.is_loopback:
-                    logger.debug("Interface {0} is a loopback device.".format(name))
+                    self.logger.debug("Interface {0} is a loopback device.".format(name))
                     continue
 
                 if interface.is_link_local:
-                    logger.debug("Interface {0} is a link-local device.".format(name))
+                    self.logger.debug("Interface {0} is a link-local device.".format(name))
                     continue
 
                 macs.append(mac_str)
@@ -378,7 +378,7 @@ class PyreBus(ExternalBus):
         """
         #check params
         if headers is None:
-            raise MissingParameter('Parameter "headers" is not specified')
+            raise Exception('Parameter "headers" is not specified')
 
         #zmq context
         if self.context is None:

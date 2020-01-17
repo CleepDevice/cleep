@@ -231,5 +231,3 @@ class EventsBroker():
                 return False
 
         return True
-
-
