@@ -17,25 +17,35 @@ class Event():
     EVENT_NAME = u''
     #is event a system event
     EVENT_SYSTEM = False
-    #list of event params
+    #list of event parameters
     EVENT_PARAMS = []
     #enable chart generation for this event
     EVENT_CHARTABLE = False
 
-    def __init__(self, bus, formatters_broker, events_broker):
+    def __init__(self, bus, formatters_broker):
         """
         Construtor
 
         Args:
             bus (MessageBus): message bus instance
+            formatters_broker (FormattersBroker): FormattersBroker singleton instance
         """
         self.bus = bus
         self.formatters_broker = formatters_broker
-        self.events_broker = events_broker
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
-        if not hasattr(self, u'EVENT_NAME') or len(self.EVENT_NAME)==0:
+        if not hasattr(self, u'EVENT_NAME'):
             raise NotImplementedError(u'EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
+        if (not isinstance(self.EVENT_NAME, str) and not isinstance(self.EVENT_NAME, unicode)) or len(self.EVENT_NAME)==0:
+            raise NotImplementedError(u'EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__)
+        if not hasattr(self, u'EVENT_PARAMS'):
+            raise NotImplementedError(u'EVENT_PARAMS class member must be declared in "%s"' % self.__class__.__name__)
+        if not isinstance(self.EVENT_PARAMS, list):
+            raise NotImplementedError(u'EVENT_PARAMS class member declared in "%s" must be a list' % self.__class__.__name__)
+        if not hasattr(self, u'EVENT_CHARTABLE'):
+            raise NotImplementedError(u'EVENT_CHARTABLE class member must be declared in "%s"' % self.__class__.__name__)
+        if not isinstance(self.EVENT_CHARTABLE, bool):
+            raise NotImplementedError(u'EVENT_CHARTABLE class member declared in "%s" must be a bool' % self.__class__.__name__)
 
     def _check_params(self, params):
         """
@@ -47,15 +57,10 @@ class Event():
         Return:
             bool: True if params are valid, False otherwise
         """
-        try:
-            if len(self.EVENT_PARAMS)==0 and params is None:
-                return True
+        if len(self.EVENT_PARAMS)==0 and (params is None or len(params)==0):
+            return True
 
-            return all(key in self.EVENT_PARAMS for key in params.keys())
-        except:
-            self.logger.exception(u'Invalid EVENT_PARAMS for event "%s"' % self.EVENT_NAME)
-        
-        return False
+        return all(key in self.EVENT_PARAMS for key in params.keys())
 
     def send(self, params=None, device_id=None, to=None, render=True):
         """ 
@@ -68,7 +73,7 @@ class Event():
             render (bool): also propagate event to renderer. False to disable it
 
         Returns:
-            None: event always returns None.
+            bool: True if event sent successfully
         """
         #get event caller
         stack = inspect.stack()
@@ -90,10 +95,16 @@ class Event():
                 try:
                     self.render(params)
                 except:
+                    #can't let render call crash the process
                     self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
 
-            #pus event to internal bus
-            return self.bus.push(request, None)
+            #push event to internal bus
+            resp = self.bus.push(request, None)
+            self.logger.trace('Send push result: %s' % resp)
+            if resp[u'error']:
+                self.logger.error(u'Unable to render event "%s" to "%s": %s' % (self.EVENT_NAME, to, resp[u'message']))
+                return False
+            return True
 
         else:
             raise Exception(u'Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
@@ -104,36 +115,41 @@ class Event():
 
         Args:
             params (dict): list of event parameters
+
+        Returns:
+            bool: True if at least one event was renderered successfully
         """
         #get formatters
         formatters = self.formatters_broker.get_renderers_formatters(self.EVENT_NAME)
-        self.logger.debug('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
+        self.logger.trace('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
 
         #handle no formatters found
         if not formatters:
             return False
 
         #render profiles
+        result = True
         for profile_name in formatters:
             for module_name in formatters[profile_name]:
                 #format event params to profile
                 profile = formatters[profile_name][module_name].format(params)
                 if profile is None:
+                    self.logger.trace('Profile returns None')
                     continue
 
                 #and post profile to renderer
-                try:
-                    request = MessageRequest()
-                    request.command = u'render'
-                    request.to = module_name
-                    request.params = {u'profile': profile}
+                request = MessageRequest()
+                request.command = u'render'
+                request.to = module_name
+                request.params = {u'profile': profile}
 
-                    resp = self.bus.push(request)
-                    if resp[u'error']:
-                        self.logger.error(u'Unable to post profile to "%s" renderer: %s' % (module_name, resp[u'message']))
+                self.logger.trace('Push message to render %s' % request)
+                resp = self.bus.push(request)
+                if resp[u'error']:
+                    self.logger.error(u'Unable to render profile "%s" to "%s": %s' % (profile_name, module_name, resp[u'message']))
+                    result = False
 
-                except:
-                    self.logger.exception(u'Unable to push event "%s" to bus:' % self.EVENT_NAME)
+        return result
 
     def get_chart_values(self, params):
         """
@@ -154,13 +170,7 @@ class Event():
                 ]
              
         """
-        try:
-            if not self.EVENT_CHARTABLE:
-                return None
+        if not self.EVENT_CHARTABLE:
+            return None
 
-            return [{u'field': param, u'value': params.get(param, None)} for param in self.EVENT_PARAMS]
-        except:
-            self.logger.exception(u'Invalid EVENT_PARAMS for event "%s"' % self.EVENT_NAME)
-        
-        return []
-
+        return [{u'field': param, u'value': params.get(param, None)} for param in self.EVENT_PARAMS]
