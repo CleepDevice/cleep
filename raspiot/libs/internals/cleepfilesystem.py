@@ -76,12 +76,12 @@ class CleepFilesystem():
         self.crash_report = crash_report
         self.rw.set_crash_report(crash_report)
 
-    def __report_exception(self, *args, **kwargs):
+    def __report_exception(self, extra=None):
         """
         Report exception using crash report instance if configured
         """
         if self.crash_report:
-            self.crash_report.report_exception(args=args, kwargs=kwargs)
+            self.crash_report.report_exception(extra)
 
     def __is_readonly_filesystem(self):
         """
