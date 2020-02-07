@@ -634,6 +634,7 @@ class RaspIotModule(RaspIot):
     def _update_device(self, uuid, data):
         """
         Helper function to update device.
+        This function only update fields that already exists in device data. Other new fields are dropped.
 
         Args:
             uuid (string): device identifier.
@@ -642,6 +643,8 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if device updated, False otherwise.
         """
+        data_ = copy.deepcopy(data)
+
         #check values
         if not self._has_config_field(u'devices'):
             self.logger.error(u'"devices" config file entry doesn\'t exist')
@@ -651,12 +654,11 @@ class RaspIotModule(RaspIot):
             self.logger.debug(u'Trying to update unknown device "%s"' % uuid)
             return False
 
-        #check uuid key existence
-        if not data.has_key(u'uuid'):
-            data[u'uuid'] = uuid
+        #always force uuid to make sure data is always valid
+        data_[u'uuid'] = uuid
 
         #update data
-        devices[uuid] = data
+        devices[uuid].update({k:v for k,v in data_.iteritems() if k in devices[uuid].keys()})
 
         #save data
         return self._set_config_field(u'devices', devices)
