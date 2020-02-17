@@ -6,7 +6,7 @@ import os
 import json
 from bus import BusClient
 from threading import Lock, Thread, Timer
-from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable, ExecutionStep
+from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable, ExecutionStep, CORE_MODULES
 import time
 import copy
 import uuid
@@ -71,16 +71,18 @@ class RaspIot(BusClient):
             bootstrap[u'crash_report'].disabled = bootstrap[u'crash_report'].is_enabled()
             self.crash_report = CrashReport(self.MODULE_SENTRY_DSN, product, product_version, libs_version, False, disabled)
 
-        elif getattr(self, u'MODULE_CORE', None) is True:
+        elif self._get_module_name() in CORE_MODULES:
             #set default crash report for core module
-            self.logger.debug(u'Crash report enabled for core')
+            self.logger.debug(u'Crash report enabled for core module')
             self.crash_report = bootstrap[u'crash_report']
 
         else:
             #no crash report specified, set dummy one (no dsn provided)
             if not bootstrap[u'test_mode']:
-                self.logger.warning(u'No Sentry DSN found, crash report disabled')
-            self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
+                self.logger.debug(u'Test mode enabled, crash report disabled')
+            else:
+                self.logger.debug(u'Initialize empty crashreport')
+                self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
 
     def __del__(self):
         """
@@ -377,6 +379,15 @@ class RaspIot(BusClient):
 
         #update debug flag
         self.debug_enabled = debug
+
+    def _get_module_name(self):
+        """
+        Return module name
+
+        Returns:
+            string: module name
+        """
+        return self.__class__.__name__.tolower()
 
     def _get_event(self, event_name):
         """

@@ -5,13 +5,13 @@
 This file shares some constants, exceptions and classes
 """
 
-__all__ = [u'SYSTEM_MODULES', u'CATEGORIES', u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter',
+__all__ = [u'CORE_MODULES', u'CATEGORIES', u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter',
            u'MissingParameter', u'InvalidMessage', u'Unauthorized', u'BusError', u'MessageResponse', u'MessageRequest']
 
 """        
 CONSTANTS
 """
-SYSTEM_MODULES = [
+CORE_MODULES = [
     u'system',
     u'audio',
     u'network',

@@ -13,7 +13,7 @@ from utils import CommandError, MissingParameter, InvalidParameter
 from .libs.configs.raspiotconf import RaspiotConf
 from .libs.internals.install import Install
 import libs.internals.tools as Tools
-from utils import SYSTEM_MODULES, ExecutionStep
+from utils import CORE_MODULES, ExecutionStep
 
 __all__ = [u'Inventory']
 
@@ -300,7 +300,7 @@ class Inventory(RaspIot):
         self.bootstrap[u'execution_step'].step = ExecutionStep.INIT
 
         #load mandatory modules
-        for module_name in SYSTEM_MODULES:
+        for module_name in CORE_MODULES:
             try:
                 #load module
                 self.__load_module(module_name, local_modules)
@@ -571,7 +571,7 @@ class Inventory(RaspIot):
             try:
                 #pending status
                 module[u'pending'] = False
-                if module_name in SYSTEM_MODULES:
+                if module_name in CORE_MODULES:
                     #mandatory modules
                     module[u'pending'] = False
                 elif module_name in self.__modules_in_errors:
