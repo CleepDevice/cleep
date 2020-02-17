@@ -130,23 +130,27 @@ class Event():
         #render profiles
         result = True
         for profile_name in formatters:
-            for module_name in formatters[profile_name]:
+            for renderer_name in formatters[profile_name]:
+                if not formatters[profile_name][renderer_name].can_render_event(self.EVENT_NAME):
+                    self.logger.trace(u'Event "%s" rendering disabled' % self.EVENT_NAME)
+                    continue
+
                 #format event params to profile
-                profile = formatters[profile_name][module_name].format(params)
+                profile = formatters[profile_name][renderer_name].format(params)
                 if profile is None:
-                    self.logger.trace('Profile returns None')
+                    self.logger.trace(u'Profile returns None')
                     continue
 
                 #and post profile to renderer
                 request = MessageRequest()
                 request.command = u'render'
-                request.to = module_name
+                request.to = renderer_name
                 request.params = {u'profile': profile}
 
-                self.logger.trace('Push message to render %s' % request)
+                self.logger.trace(u'Push message to render %s' % request)
                 resp = self.bus.push(request)
                 if resp[u'error']:
-                    self.logger.error(u'Unable to render profile "%s" to "%s": %s' % (profile_name, module_name, resp[u'message']))
+                    self.logger.error(u'Unable to render profile "%s" to "%s": %s' % (profile_name, renderer_name, resp[u'message']))
                     result = False
 
         return result
@@ -173,4 +177,9 @@ class Event():
         if not self.EVENT_CHARTABLE:
             return None
 
-        return [{u'field': param, u'value': params.get(param, None)} for param in self.EVENT_PARAMS]
+        chart_params = self.EVENT_PARAMS
+        if hasattr(self, u'EVENT_CHART_PARAMS'):
+            chart_params = self.EVENT_CHART_PARAMS
+
+        return [{u'field': param, u'value': params.get(param, None)} for param in chart_params]
+
