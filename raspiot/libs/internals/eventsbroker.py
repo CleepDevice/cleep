@@ -14,9 +14,11 @@ __all__ = [u'EventsBroker']
 class EventsBroker():
     """
     Events broker
-    The goal of this broker is to centralize events to make only used ones available in ui.
-    It is also used to check event content before posting them and make sure it is compatible with system.
+    The goal of this broker is to centralize events to reference all them all in the core.
+    It is also used to check event content before posting them and make sure it is compatible with core.
     """
+
+    EVENTS_DIR_MODULES = u'../../modules'
 
     def __init__(self, debug_enabled):
         """
@@ -28,13 +30,11 @@ class EventsBroker():
         #members
         self.events_by_event = {}
         self.events_by_module = {}
-        self.events_by_formatter = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.bus = None
         self.formatters_broker = None
-        self.events_not_rendered = []
         self.crash_report = None
 
     def configure(self, bootstrap):
@@ -84,14 +84,15 @@ class EventsBroker():
             u'used': False,
             u'modules': [],
             u'formatters': [],
-            u'profiles': []
+            u'profiles': [],
         }
 
     def __load_events_from_modules_dir(self):
         """
         Load existing events from modules directory
         """
-        path = os.path.join(os.path.dirname(__file__), u'../..', u'modules')
+        path = os.path.join(os.path.dirname(__file__), self.EVENTS_DIR_MODULES)
+        self.logger.trace(u'Loading events from modules dir "%s"' % path)
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 u'message': u'Invalid modules path',
@@ -113,7 +114,7 @@ class EventsBroker():
                             class_ = getattr(mod_, event_class_name)
                             self.__save_event(class_)
                         else:
-                            self.logger.error(u'Event class must have the same name than filename')
+                            self.logger.error(u'Event class must have the same name than the filename')
 
                 except AttributeError:
                     self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
@@ -176,23 +177,14 @@ class EventsBroker():
 
                 {
                     event1: {
-                        used (bool),
-                        modules (list),
-                        instance (Event)
+                        modules (list): list of modules that reference the event,
+                        profiles (Event): list of profiles that references the event
                     },
                     ...
                 }
 
         """
-        used_events = {}
-        for ev in self.events_by_event:
-            if self.events_by_event[ev][u'used']:
-                used_events[ev] = {
-                    u'modules': self.events_by_event[ev][u'modules'],
-                    u'profiles': self.events_by_event[ev][u'profiles']
-                }
-
-        return used_events
+        return { k:{u'modules':v[u'modules'], u'profiles':v[u'profiles']} for k,v in self.events_by_event.iteritems() if v['used']}
 
     def get_modules_events(self):
         """
@@ -202,32 +194,28 @@ class EventsBroker():
             dict: dict of events::
 
                 {
-                    module1: [event1, event2,...],
-                    module2: [event1],
+                    module1 (list): [event_name (string), event_name (string), ...],
                     ...
                 }
 
         """
         return self.events_by_module
 
-    def update_events_not_rendered(self, events_not_rendered):
+    def get_module_events(self, module_name):
         """
-        Update events to not render
+        Return list of events handled by specified module
 
         Args:
-            events_not_rendered (list): list of events to not render (see system module)
-        """
-        self.events_not_rendered = events_not_rendered
-
-    def can_render_event(self, event, renderer):
-        """
-        Return True if event can be rendered on specified renderer
+            module_name (string): module name
 
         Returns:
-            bool: True if event can be rendered, False otherwise
-        """
-        for item in self.events_not_rendered:
-            if item[u'event']==event and item[u'rendered']==renderer:
-                return False
+            list: list of events
 
-        return True
+        Raises:
+            Exception if module name does not exist
+        """
+        if module_name not in self.events_by_module.keys():
+            raise Exception(u'Module name "%s" is not referenced in system' % module_name)
+
+        return self.events_by_module[module_name]
+
