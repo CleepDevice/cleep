@@ -7,7 +7,6 @@ from sentry_sdk import init as SentryInit
 from sentry_sdk import push_scope as SentryPushScope
 from sentry_sdk import capture_message as SentryCaptureMessage
 from sentry_sdk import capture_exception as SentryCaptureException
-from sentry_sdk.integrations.excepthook import ExcepthookIntegration
 from sentry_sdk import configure_scope
 import platform
 import traceback
@@ -51,7 +50,7 @@ class CrashReport():
             release=product_version,
             attach_stacktrace=True,
             before_send=self.__filter_exception,
-            integrations=[ExcepthookIntegration(always_run=True)],
+            default_integrations=False
         )
 
         #fill current scope
