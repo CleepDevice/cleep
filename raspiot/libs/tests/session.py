@@ -17,8 +17,6 @@ import os
 import logging
 import types
 
-logging.basicConfig(format=u'%(name)-12s[%(filename)s:%(lineno)d] %(levelname)-5s : %(message)s')
-
 TRACE = tools.TRACE
 
 class TestSession():
@@ -29,15 +27,7 @@ class TestSession():
     def __init__(self, log_level):
         """
         Constructor
-
-        Args:
-            log_level (int): set default log level (see logging.ERROR... or use TestSession.TRACE)
         """
-        logging.getLogger().setLevel(log_level)
-        self.logger = logging.getLogger('TestSession')
-        self.logger.setLevel(log_level)
-        root_logger = logging.getLogger()
-        root_logger.setLevel(log_level)
         tools.install_trace_logging_level()
         self.__debug_enabled = True if log_level==logging.DEBUG else False
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
@@ -247,7 +237,7 @@ class TestSession():
         """
         e_ = event.Event
         e_.EVENT_NAME = event_name
-        instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_broker'], self.bootstrap['events_broker'])
+        instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_broker'])
         self.__event_handlers[event_name] = {
             u'sends': 0,
             u'lastparams': None,

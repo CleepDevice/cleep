@@ -5,7 +5,7 @@ import logging
 import os
 import importlib
 import inspect
-from raspiot.utils import MissingParameter, InvalidParameter, CommandError, SYSTEM_MODULES
+from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CORE_MODULES
 from raspiot.libs.internals.tools import full_path_split
 
 __all__ = [u'FormattersBroker']
@@ -197,9 +197,6 @@ class FormattersBroker():
                     if profile_name==profile.__name__:
                         if module_name not in self.__loaded_formatters[event_name][profile_name]:
                             #no formatter for current renderer, set one of existing formatter for this renderer
-                            #first_key = self.__loaded_formatters[event_name][profile_name].keys()[0]
-                            #self.logger.debug('----> %s' % self.__loaded_formatters[event_name][profile_name].keys())
-                            #found_formatter = self.__loaded_formatters[event_name][profile_name][first_key]
                             found_formatter = self.__get_best_formatter(module_name, self.__loaded_formatters[event_name][profile_name])
                             self.logger.debug(u'Found formatter "%s" for renderer "%s" for "%s" event' % (found_formatter.__class__.__name__, module_name, event_name))
                         else:
@@ -226,7 +223,7 @@ class FormattersBroker():
         """
         system_formatter = None
         for module in module_formatters:
-            if module in SYSTEM_MODULES:
+            if module in CORE_MODULES:
                 #system modules provides a formatter, save it to fallback on it
                 system_formatter = module_formatters[module]
             elif module_name==module:
@@ -256,7 +253,7 @@ class FormattersBroker():
 
     def get_renderers_formatters(self, event_name):
         """
-        Return all formatters by modules that are loaded
+        Return all event formatters by modules that are loaded
 
         Args:
             event_name (string): event name to search formatters for
