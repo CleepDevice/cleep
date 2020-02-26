@@ -11,8 +11,9 @@ import logging
 from mock import Mock
 
 class DummyModule():
-    def __init__(self, format_output={}):
+    def __init__(self, format_output={}, can_render_event_output=True):
         self.format = Mock(return_value=format_output)
+        self.can_render_event = Mock(return_value=can_render_event_output)
 
 class EventTests(unittest.TestCase):
 
@@ -28,7 +29,7 @@ class EventTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _init_context(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[], bus_push_result={'error':False, 'message':''}):
+    def _init_context(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[], bus_push_result={'error':False, 'message':''}, event_chart_params=None):
         self.bus = Mock()
         self.bus.push = Mock(return_value=bus_push_result)
         self.formatters_broker = Mock()
@@ -38,6 +39,7 @@ class EventTests(unittest.TestCase):
         e.EVENT_NAME = event_name
         e.EVENT_PARAMS = event_params
         e.EVENT_CHARTABLE = event_chartable
+        e.EVENT_CHART_PARAMS = event_chart_params
         self.e = e(self.bus, self.formatters_broker)
 
     def test_invalid_event(self):
@@ -168,6 +170,16 @@ class EventTests(unittest.TestCase):
         self._init_context(event_params=['param'], get_renderers_formatters=self.formatters, bus_push_result={'error':True, 'message':'test error'})
         self.assertFalse(self.e.render({}))
 
+    def test_render_can_render_event_return_false(self):
+        formatters = {
+            'profile1': {
+                'module1': DummyModule(format_output=None, can_render_event_output=False)
+            }
+        }
+        self._init_context(event_params=['param1'], get_renderers_formatters=formatters)
+        self.assertTrue(self.e.render({'param1': 'value1'}))
+        self.assertEqual(self.bus.push.call_count, 0)
+
     def test_get_chart_values(self):
         self._init_context(event_params=['param1'], event_chartable=True)
         values = self.e.get_chart_values({'param1': 'value1'})
@@ -182,6 +194,17 @@ class EventTests(unittest.TestCase):
         self._init_context(event_params=['param1'], event_chartable=False)
         self.assertIsNone(self.e.get_chart_values({'param1': 'value1'}))
 
+    def test_get_chart_values_params_filtered(self):
+        self._init_context(event_params=['param1', 'param2', 'param3'], event_chartable=True, event_chart_params=['param1', 'param3'])
+        values = self.e.get_chart_values({'param1': 'value1', 'param2':'value2', 'param3':'value3'})
+        self.assertEqual(len(values), 2)
+        values_as_dict = { value['field']:value['value'] for value in values }
+        logging.debug('Values_as_dict=%s' % values_as_dict)
+        self.assertTrue('param1' in values_as_dict.keys())
+        self.assertTrue('param3' in values_as_dict.keys())
+        self.assertFalse('param2' in values_as_dict.keys())
+        self.assertEqual(values_as_dict['param1'], 'value1')
+        self.assertEqual(values_as_dict['param3'], 'value3')
 
 if __name__ == '__main__':
     #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_event.py; coverage report -m

@@ -178,7 +178,7 @@ class Event():
             return None
 
         chart_params = self.EVENT_PARAMS
-        if hasattr(self, u'EVENT_CHART_PARAMS'):
+        if hasattr(self, u'EVENT_CHART_PARAMS') and self.EVENT_CHART_PARAMS is not None:
             chart_params = self.EVENT_CHART_PARAMS
 
         return [{u'field': param, u'value': params.get(param, None)} for param in chart_params]
