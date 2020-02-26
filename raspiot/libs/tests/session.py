@@ -29,6 +29,8 @@ class TestSession():
         Constructor
         """
         tools.install_trace_logging_level()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(log_level)
         self.__debug_enabled = True if log_level==logging.DEBUG else False
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.__setup_executed = False
@@ -70,7 +72,7 @@ class TestSession():
             'drivers': Drivers(debug),
         }
 
-    def setup(self, module_class, debug_enabled = False):
+    def setup(self, module_class, debug_enabled=False):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
@@ -253,4 +255,21 @@ class TestSession():
         instance.send = types.MethodType(event_send_mock, instance)
 
         return instance
+
+    def clone_class(self, base_class):
+        """
+        Clone specified base class. This can be useful when you need to alter class (adding mock)
+        keeping original one clean.
+
+        Args:
+            base_class (Class): class object (not instance!)
+
+        Returns:
+            Class: cloned class that can be instanciated. Cloned class name is prefixed by "C"
+        """
+        class ClonedClass(base_class):
+            pass
+        ClonedClass.__name__ = 'C%s' % base_class.__name__
+
+        return ClonedClass
 
