@@ -387,7 +387,7 @@ class RaspIot(BusClient):
         Returns:
             string: module name
         """
-        return self.__class__.__name__.tolower()
+        return self.__class__.__name__.lower()
 
     def _get_event(self, event_name):
         """
