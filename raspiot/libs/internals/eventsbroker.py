@@ -18,7 +18,8 @@ class EventsBroker():
     It is also used to check event content before posting them and make sure it is compatible with core.
     """
 
-    EVENTS_DIR_MODULES = u'../../modules'
+    PYTHON_RASPIOT_IMPORT_PATH = u'raspiot.modules.'
+    MODULES_DIR = u'../../modules'
 
     def __init__(self, debug_enabled):
         """
@@ -91,40 +92,45 @@ class EventsBroker():
         """
         Load existing events from modules directory
         """
-        path = os.path.join(os.path.dirname(__file__), self.EVENTS_DIR_MODULES)
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.MODULES_DIR))
         self.logger.trace(u'Loading events from modules dir "%s"' % path)
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 u'message': u'Invalid modules path',
                 u'path': path
             })
-            raise Exception(u'Invalid modules path')
+            raise Exception(u'Invalid modules path "%s"' % path)
 
         for root, _, filenames in os.walk(path):
             for filename in filenames:
+                self.logger.debug('Analyzing file "%s"' % filename)
                 try:
                     fullpath = os.path.join(root, filename)
                     (event, ext) = os.path.splitext(filename)
                     parts = full_path_split(fullpath)
                     if filename.lower().find(u'event')>=0 and ext==u'.py':
-                        self.logger.debug('Loading "%s"' % u'raspiot.modules.%s.%s' % (parts[-2], event))
-                        mod_ = importlib.import_module(u'raspiot.modules.%s.%s' % (parts[-2], event))
+                        self.logger.debug('Loading "%s"' % u'%s%s.%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, parts[-2], event))
+                        mod_ = importlib.import_module(u'%s%s.%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, parts[-2], event))
                         event_class_name = self.__get_event_class_name(event, mod_)
+                        self.logger.trace('Found event class name: %s' % event_class_name)
                         if event_class_name:
                             class_ = getattr(mod_, event_class_name)
                             self.__save_event(class_)
                         else:
                             self.logger.error(u'Event class must have the same name than the filename')
 
-                except AttributeError:
+                except AttributeError: # pragma: no cover
                     self.logger.exception(u'Event "%s" has surely invalid name, please refer to coding rules:' % event)
+                    continue
 
                 except:
                     self.logger.exception(u'Event "%s" wasn\'t imported successfully. Please check event source code.' % event)
+                    continue
 
     def get_event_instance(self, event_name):
         """
         Return event instance according to event name
+        It also register event callers for event
 
         Args:
             event_name (string): full event name (xxx.xxx.xxx)
@@ -164,7 +170,7 @@ class EventsBroker():
                     self.events_by_module[module] = []
                 self.events_by_module[module].append(event_name)
 
-            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_broker, self)
+            return self.events_by_event[event_name][u'instance'](self.bus, self.formatters_broker)
 
         raise Exception(u'Event "%s" does not exist' % event_name)
 
@@ -215,7 +221,7 @@ class EventsBroker():
             Exception if module name does not exist
         """
         if module_name not in self.events_by_module.keys():
-            raise Exception(u'Module name "%s" is not referenced in system' % module_name)
+            raise Exception(u'Module name "%s" is not referenced in raspiot' % module_name)
 
         return self.events_by_module[module_name]
 
