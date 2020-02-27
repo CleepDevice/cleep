@@ -103,7 +103,7 @@ class EventsBroker():
 
         for root, _, filenames in os.walk(path):
             for filename in filenames:
-                self.logger.debug('Analyzing file "%s"' % filename)
+                self.logger.trace('Analyzing file "%s"' % filename)
                 try:
                     fullpath = os.path.join(root, filename)
                     (event, ext) = os.path.splitext(filename)
