@@ -9,7 +9,7 @@ import json
 import re
 import os
 
-class Github():
+class CleepGithub():
     """
     Github release helper
     This class get releases from specified project and return content as dict
@@ -18,23 +18,22 @@ class Github():
     GITHUB_URL = u'https://api.github.com/repos/%s/%s/releases'
     GITHUB_RATE = u'https://api.github.com/rate_limit'
 
-    def __init__(self, auth_token=None):
+    def __init__(self, auth_string=None):
         """
         Constructor
 
         Args:
-            auth_token (string): if specified add authorization field in requests header
+            auth_string (string): if specified add authorization field in requests header (Bearer xxxx, Token xxx)
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
         self.version_pattern = r'\d+\.\d+\.\d+'
-        if auth_token:
-            self.http_headers[u'Authorization'] = u'token %s' % auth_token
+        if auth_string:
+            self.http_headers[u'Authorization'] = auth_string
 
     def get_api_rate(self):
         """
@@ -49,19 +48,25 @@ class Github():
                     reset (int): timestamp when rate is resetted to limit
                 }
         """
-        resp = self.http.urlopen('GET', self.GITHUB_RATE, headers=self.http_headers)
+        try:
+            resp = self.http.urlopen('GET', self.GITHUB_RATE, headers=self.http_headers)
+            self.logger.trace('GET "%s": %s' % (self.GITHUB_RATE, resp.data))
 
-        if resp.status==200:
-            #response successful, parse data to get current latest version
-            data = json.loads(resp.data.decode('utf-8'))
-            self.logger.debug('Data: %s' % data)
+            if resp.status==200:
+                # response successful, parse data to get current latest version
+                data = json.loads(resp.data.decode('utf-8'))
+                self.logger.debug('Data: %s' % data)
 
-            if u'rate' in data:
-                return data[u'rate']
+                if u'rate' in data:
+                    return data[u'rate']
+                else:
+                    raise Exception(u'Invalid data from github rate_limit request')
             else:
-                raise Exception(u'Invalid data from github rate_limit request')
-        else:
-            raise Exception(u'Invalid response (status=%d): %s' % (resp.status, resp.data))
+                raise Exception(u'Invalid response (status=%d)' % resp.status)
+
+        except Exception as e:
+            self.logger.exception('Unable to get api rate:')
+            raise Exception('Unable to get api rate: %s' % str(e))
 
     def get_release_version(self, release):
         """
@@ -101,7 +106,7 @@ class Github():
         if u'body' in release.keys():
             return release[u'body']
         else:
-            #no body tag found, return empty string
+            # no body tag found, return empty string
             return u''
 
     def is_released(self, release):
@@ -171,13 +176,14 @@ class Github():
         try:
             url = self.GITHUB_URL % (owner, repository)
             resp = self.http.urlopen('GET', url, headers=self.http_headers)
+            self.logger.trace('GET "%s"' % url)
 
             if resp.status==200:
-                #response successful, parse data to get current latest version
+                # response successful, parse data to get current latest version
                 data = json.loads(resp.data.decode('utf-8'))
                 self.logger.debug('Data: %s' % data)
 
-                #return all releases
+                # return all releases
                 return data
 
             else:
@@ -210,23 +216,15 @@ class Github():
         Returns:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
-        #get all releases
+        # get all releases
         if only_released:
             releases = self.__get_released_releases(owner, repository)
         else:
             releases = self.__get_all_releases(owner, repository)
 
         if only_latest:
-            #return only latest release
+            # return only latest release
             return releases[0:1]
 
         return releases
-
-if __name__ == '__main__':
-    g = Github()
-    releases = g.get_releases('tangb', 'cleep', True, False)
-    release = releases[0]
-    print(release.keys())
-    changelog = g.get_release_changelog(release)
-    print(changelog)
 
