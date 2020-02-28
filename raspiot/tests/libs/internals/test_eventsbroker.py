@@ -121,6 +121,8 @@ class EventsBrokerTests(unittest.TestCase):
     def test_enable_debug(self):
         e = EventsBroker(debug_enabled=True)
         self.assertEqual(e.logger.getEffectiveLevel(), logging.DEBUG)
+        # restore original log level
+        e.logger.setLevel(logging.getLogger().getEffectiveLevel())
 
     def test_invalid_modules_path(self):
         self.e.MODULES_DIR = 'dummy'
