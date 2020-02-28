@@ -256,7 +256,8 @@ class TestSession():
 
         return instance
 
-    def clone_class(self, base_class):
+    @staticmethod
+    def clone_class(base_class):
         """
         Clone specified base class. This can be useful when you need to alter class (adding mock)
         keeping original one clean.

@@ -172,3 +172,22 @@ class TestLib():
             fs.open.return_value = open_response
 
         return fs
+
+    @staticmethod
+    def clone_class(base_class):
+        """ 
+        Clone specified base class. This can be useful when you need to alter class (adding mock)
+        keeping original one clean.
+
+        Args:
+            base_class (Class): class object (not instance!)
+
+        Returns:
+            Class: cloned class that can be instanciated. Cloned class name is prefixed by "C"
+        """
+        class ClonedClass(base_class):
+            pass
+        ClonedClass.__name__ = 'C%s' % base_class.__name__
+
+        return ClonedClass
+
