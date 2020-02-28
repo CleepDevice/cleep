@@ -42,6 +42,7 @@ class CleepGithub():
 
         Returns:
             dict: general rate values::
+
                 {
                     limit (int): limit of requests
                     remaining (int): number of requests processed
@@ -77,6 +78,9 @@ class CleepGithub():
 
         Returns:
             string: version of release
+
+        Raises:
+            Exception if version field not found or input release is invalid
         """
         if not isinstance(release, dict):
             raise Exception('Invalid release format. Dict type awaited')
@@ -99,6 +103,9 @@ class CleepGithub():
 
         Returns:
             string: changelog of release. Can be empty string if no changelog specified.
+
+        Raises:
+            Exception if version field not found or input release is invalid
         """
         if not isinstance(release, dict):
             raise Exception('Invalid release format. Dict type awaited')
@@ -118,6 +125,9 @@ class CleepGithub():
 
         Returns:
             bool: True if release is released
+
+        Raises:
+            Exception if input release is invalid
         """
         if not isinstance(release, dict):
             raise Exception('Invalid release format. Dict type awaited')
@@ -140,16 +150,23 @@ class CleepGithub():
 
         Returns:
             list of dict: list of assets infos (name, url, size)::
+
                 [
-                    {name (string), url (string), size (int)},
-                    {name (string), url (string), size (int)},
+                    {
+                        name (string): asset name
+                        url (string): download url
+                        size (int): asset size
+                    },
                     ...
                 ]
+
+        Raises:
+            Exception if input release is invalid
         """
         if not isinstance(release, dict):
             raise Exception(u'Invalid release format. Dict type awaited')
         if u'assets' not in release.keys():
-            raise Exception(u'Invalid release format.')
+            raise Exception(u'Invalid release format')
 
         out = []
         for asset in release[u'assets']:
@@ -172,6 +189,9 @@ class CleepGithub():
 
         Returns:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
+
+        Raises:
+            Exception if error occured during request
         """
         try:
             url = self.GITHUB_URL % (owner, repository)
