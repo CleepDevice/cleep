@@ -8,11 +8,11 @@ import inspect
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CORE_MODULES
 from raspiot.libs.internals.tools import full_path_split
 
-__all__ = [u'FormattersBroker']
+__all__ = [u'ProfileFormattersBroker']
 
-class FormattersBroker():
+class ProfileFormattersBroker():
     """
-    Formatters broker is in charge of centralizing all formatters
+    ProfileFormatters broker is in charge of centralizing all formatters
     It also ensures formatters use exiting events
     """
 
@@ -23,50 +23,56 @@ class FormattersBroker():
         Args:
             debug_enabled (bool): debug flag
         """
-        #members
+        # members
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.events_broker = None
-        #list of renderer module names with format:
-        #[
-        #   'renderer_module_name1',
-        #   'renderer_module_name2',
-        #   ...
-        #]
+        # list of renderer module names with format::
+        # 
+        #   [
+        #       'renderer_module_name1',
+        #       'renderer_module_name2',
+        #       ...
+        #   ]
+        #
         self.__renderers = []
-        #dict of formatters sorted by event->profile->module
-        #{
-        #   "event#1": {
-        #       "profile#1": {
-        #           "module#1": formatter_instance#1,
-        #           ...
+        # dict of formatters sorted by event->profile->module::
+        #
+        #   {
+        #       'event#1': {
+        #           'profile#1': {
+        #               'module#1': formatter_instance#1,
+        #               ...
+        #           },
+        #           'profile#2': {
+        #               'module#1': formatter_instance#1
+        #               'module#3': formatter_instance#3
+        #           }
         #       },
-        #       "profile#2": {
-        #           "module#1": formatter_instance#1
-        #           "module#3": formatter_instance#3
-        #       }
-        #   },
-        #   "event#2": {
-        #       "profile#1": ...,
-        #       "profile#3": ...
-        #   },
-        #   ...
-        #}
+        #       'event#2': {
+        #           'profile#1': ...,
+        #           'profile#3': ...
+        #       },
+        #       ...
+        #   }
+        #
         self.__loaded_formatters = {}
         self.__formatters = {}
-        #mapping list of referenced renderer module profiles with format:
-        #{
-        #   "module_name1": [
-        #       "profile_name1",
-        #       "profile_name2",
-        #   ],
-        #   "module_name2": [
-        #       "profile_name3,
+        # mapping list of referenced renderer module profiles with format::
+        #
+        #   {
+        #       'module_name1': [
+        #           'profile_name1',
+        #           'profile_name2',
+        #       ],
+        #       'module_name2': [
+        #           'profile_name3',
+        #           ...
+        #       ],
         #       ...
-        #   ],
-        #   ...
-        #}
+        #   }
+        #
         self.__renderers_profiles = {}
         self.crash_report = None
 
@@ -77,13 +83,13 @@ class FormattersBroker():
         Args:
             bootstrap (dict): bootstrap objects
         """
-        #set members
+        # set members
         self.events_broker = bootstrap[u'events_broker']
 
-        #configure crash report
+        # configure crash report
         self.crash_report = bootstrap[u'crash_report']
 
-        #load formatters
+        # load formatters
         self.__load_formatters()
 
     def __get_formatter_class_name(self, filename, module):
@@ -127,7 +133,7 @@ class FormattersBroker():
                             formatter_class_ = getattr(mod_, formatter_class_name)
                             formatter_instance_ = formatter_class_(self.events_broker)
 
-                            #save reference on module where formatter was found
+                            # save reference on module where formatter was found
                             if formatter_instance_.event_name not in self.__loaded_formatters:
                                 self.__loaded_formatters[formatter_instance_.event_name] = {}
                             if formatter_instance_.profile_name not in self.__loaded_formatters[formatter_instance_.event_name]:
@@ -175,7 +181,7 @@ class FormattersBroker():
             MissingParameter, InvalidParameter
         """
         self.logger.debug(u'Register new renderer "%s" with profiles: %s' % (module_name, [profile.__name__ for profile in profiles]))
-        #check values
+        # check values
         if profiles is None:
             raise MissingParameter(u'Profiles is missing')
         if not isinstance(profiles, list):
@@ -183,28 +189,28 @@ class FormattersBroker():
         if len(profiles)==0:
             raise InvalidParameter(u'Profiles must contains at least one profile')
 
-        #update renderers list
+        # update renderers list
         self.__renderers.append(module_name)
 
-        #update renderers profiles names list (not instance!)
+        # update renderers profiles names list (not instance!)
         self.__renderers_profiles[module_name] = [profile.__name__ for profile in profiles]
 
-        #update renderer profiles list
+        # update renderer profiles list
         for profile in profiles:
             for event_name in self.__loaded_formatters:
                 for profile_name in self.__loaded_formatters[event_name]:
                     found_formatter = None
                     if profile_name==profile.__name__:
                         if module_name not in self.__loaded_formatters[event_name][profile_name]:
-                            #no formatter for current renderer, set one of existing formatter for this renderer
+                            # no formatter for current renderer, set one of existing formatter for this renderer
                             found_formatter = self.__get_best_formatter(module_name, self.__loaded_formatters[event_name][profile_name])
                             self.logger.debug(u'Found formatter "%s" for renderer "%s" for "%s" event' % (found_formatter.__class__.__name__, module_name, event_name))
                         else:
-                            #custom formatter found
+                            # custom formatter found
                             found_formatter = self.__loaded_formatters[event_name][profile_name][module_name]
                             self.logger.debug(u'Found custom formatter "%s" for renderer "%s" for "%s" event' % (found_formatter.__class__.__name__, module_name, event_name))
 
-                    #save formatter if possible
+                    # save formatter if possible
                     if found_formatter:
                         if event_name not in self.__formatters:
                             self.__formatters[event_name] = {}
@@ -224,20 +230,20 @@ class FormattersBroker():
         system_formatter = None
         for module in module_formatters:
             if module in CORE_MODULES:
-                #system modules provides a formatter, save it to fallback on it
+                # system modules provides a formatter, save it to fallback on it
                 system_formatter = module_formatters[module]
             elif module_name==module:
-                #current module provides a formatter use it in priority
+                # current module provides a formatter use it in priority
                 return module_formatters[module]
 
-        #fallback to system formatter
+        # fallback to system formatter
         return system_formatter
 
     def get_renderers_profiles(self):
         """
         Return list of profiles handled by renderers
 
-        Return:
+        Returns:
             list: list of profile handled by renderers
         """
         return self.__renderers_profiles
