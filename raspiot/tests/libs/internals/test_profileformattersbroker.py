@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os, io, shutil
-import sys, time
+import sys
 sys.path.append('%s/../../../libs/internals' % os.getcwd())
-# from profileformattersbroker import ProfileFormattersBroker, CORE_MODULES
 import profileformattersbroker
 from raspiot.libs.tests.lib import TestLib
 from raspiot.libs.internals.formatter import Formatter
