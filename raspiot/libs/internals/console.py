@@ -43,12 +43,12 @@ class EndlessConsole(Thread):
         Thread.__init__(self)
         Thread.daemon = True
 
-        #members
+        # members
         self.command = command
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.running = True
         self.killed = False
         self.__start_time = 0
@@ -188,11 +188,14 @@ class EndlessConsole(Thread):
         self.logger.trace('Purge completed')
 
         #make sure process (and child processes) is really killed
-        if self.killed:
-            if ON_POSIX:
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
-            else: # pragma: no cover
-                p.kill()
+        if self.killed and pid!=1:
+            try:
+                if ON_POSIX:
+                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+                else: # pragma: no cover
+                    p.kill()
+            except: # pragma: no cover
+                pass
 
         #process is over
         self.running = False
@@ -302,10 +305,13 @@ class Console():
                 #timeout is over, kill command
                 pgid = os.getpgid(pid)
                 self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
-                if ON_POSIX:
-                    os.killpg(os.getpgid(pid), signal.SIGKILL)
-                else: # pragma: no cover
-                    p.kill()
+                try:
+                    if ON_POSIX:
+                        os.killpg(pgid, signal.SIGKILL)
+                    else: # pragma: no cover
+                        p.kill()
+                except: # pragma: no cover
+                    pass
                 killed = True
                 break
 
