@@ -39,48 +39,72 @@ class InstallRaspiot(threading.Thread):
     STATUS_ERROR_DEB = 8
     STATUS_ERROR_POSTINST = 9
 
-    def __init__(self, url_archive, url_checksum, callback, cleep_filesystem, crash_report):
+    def __init__(self, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
-            url_archive (string): url of cleepos archive
-            url_checksum (string): url of checksum
-            callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
         """
         threading.Thread.__init__(self)
         threading.Thread.daemon = True
 
-        #logger   
+        # logger   
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.status = self.STATUS_IDLE
-        self.running = True
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
-        self.url_archive = url_archive
-        self.url_checksum = url_checksum
+        self.__reset()
+
+    def __reset(self):
+        self.running = True
+        self.__progress = 0
         self.__script_running = True
         self.__pre_script_execution = False
-        self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
-        self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
-        self.__deb_status = {u'status': InstallDeb.STATUS_IDLE, u'stdout': [], u'stderr': [], u'returncode':None}
-        self.callback = callback
+        self.__pre_script_status = {
+            u'stdout': [],
+            u'stderr':[],
+            u'returncode': None
+        }
+        self.__post_script_status = {
+            u'stdout': [],
+            u'stderr':[],
+            u'returncode': None
+        }
+        self.__deb_status = {
+            u'status': InstallDeb.STATUS_IDLE,
+            u'stdout': [],
+            u'returncode': None
+        }
         self.__last_download_percent = None
 
-    def get_status(self, progress=0):
+    def install(self, url_archive, url_checksum, callback):
+        """
+        Launch installation.
+        The process is non blocking. Follow install process status using get_status.
+
+        Args:
+            url_archive (string): url of cleepos archive
+            url_checksum (string): url of checksum
+            callback (function): status callback
+        """
+        self.url_archive = url_archive
+        self.url_checksum = url_checksum
+        self.callback = callback
+        self.__reset()
+        self.start()
+
+    def get_status(self):
         """
         Return current status
 
-        Args:
-            progress (int): current process progress (percentage)
-
-        Return:
+        Returns:
             dict: update status::
+
                 {
                     progress (int): progress percentage
                     status (int): see STATUS_XXX for available codes
@@ -88,9 +112,10 @@ class InstallRaspiot(threading.Thread):
                     postscript (dict): postinst status (returncode, stdout, stderr)
                     deb (dict): deb status (status, returncode, stdout, stderr)
                 }
+
         """
         return {
-            u'progress': progress,
+            u'progress': self.__progress,
             u'status': self.status,
             u'prescript': self.__pre_script_status,
             u'postscript': self.__post_script_status,
@@ -101,8 +126,8 @@ class InstallRaspiot(threading.Thread):
         """
         Download callback
         """
-        #just log download status
-        if not percent % 10 and percent!=self.__last_download_percent:
+        # just log download status
+        if not percent % 10 and percent!=self.__last_download_percent: # pragma: no cover
             self.__last_download_percent = percent
             self.logger.debug('Download callback: %s %s %s' % (status, filesize, percent))
 
@@ -138,7 +163,7 @@ class InstallRaspiot(threading.Thread):
             killed (bool): True if script killed, False otherwise
         """
         self.logger.debug(u'Script execution terminated with returncode=%s and killed=%s' % (return_code, killed))
-        if killed:
+        if killed: # pragma: no cover
             if self.__pre_script_execution:
                 self.__pre_script_status[u'returncode'] = 130
             else:
@@ -149,7 +174,7 @@ class InstallRaspiot(threading.Thread):
             else:
                 self.__post_script_status[u'returncode'] = return_code
 
-        #script execution terminated
+        # script execution terminated
         self.__script_running = False
 
     def __execute_script(self, path):
@@ -160,38 +185,32 @@ class InstallRaspiot(threading.Thread):
         Args:
             path (string): script path
 
-        Return
+        Returns:
+            bool: True if script execution succeed
         """
-        #init
+        # init
         out = False
 
-        #exec
+        # exec
         os.chmod(path, stat.S_IEXEC)
         console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
 
-        #launch script execution
+        # launch script execution
         console.start()
 
-        #monitor end of script execution
+        # monitor end of script execution
         self.__script_running = True
         while self.__script_running:
             #pause
             time.sleep(0.25)
 
-        #check script result
+        # check script result
         if self.__pre_script_execution and self.__pre_script_status[u'returncode']==0:
             out = True
         elif self.__post_script_status[u'returncode']==0:
             out = True
 
         return out
-
-    def stop(self):
-        """
-        Stop update
-        """
-        #not implemented. No way to stop core update
-        pass
 
     def __download_checksum(self, download, url_checksum):
         """
@@ -207,17 +226,13 @@ class InstallRaspiot(threading.Thread):
         checksum = None
 
         try:
-            #download checksum
+            # download checksum
             self.logger.debug(u'Download file "%s"' % url_checksum)
-            checksum_content = download.download_file(url_checksum)
-            self.logger.debug('Checksum file content: %s' % checksum_content)
+            download_status, checksum_content = download.download_content(url_checksum)
+            self.logger.debug(u'Checksum file content: %s' % checksum_content)
 
-            if checksum_content is None:
-                #failed to download checksum file
-                checksum = None
-            else:
-                checksum, _ = checksum_content.split()
-                self.logger.debug(u'Raspiot archive checksum: %s' % checksum)
+            checksum = None if checksum_content is None else checksum_content.split()[0]
+            self.logger.debug(u'Raspiot archive checksum: %s' % checksum)
 
         except:
             self.logger.exception(u'Exception occured during checksum file download "%s":' % url_checksum)
@@ -242,16 +257,15 @@ class InstallRaspiot(threading.Thread):
 
         try:
             self.logger.debug(u'Download file "%s"' % self.url_archive)
-            archive_path = download.download_file_advanced(url_archive, check_sha256=checksum)
+            download_status, archive_path = download.download_file(url_archive, check_sha256=checksum)
 
-            self.logger.debug(u'Download terminated with result: %s' % archive_path)
+            self.logger.debug(u'Download terminated with status "%s" and archive path "%s"' % (download_status, archive_path))
             if archive_path is None:
-                download_status = download.get_status()
-                if download_status==download.STATUS_ERROR:
+                if download_status==Download.STATUS_ERROR:
                     error = u'Error during "%s" download: internal error' % self.url_archive
-                elif download_status==download.STATUS_ERROR_INVALIDSIZE:
+                elif download_status==Download.STATUS_ERROR_INVALIDSIZE:
                     error = u'Error during "%s" download: invalid filesize' % self.url_archive
-                elif download_status==download.STATUS_ERROR_BADCHECKSUM:
+                elif download_status==Download.STATUS_ERROR_BADCHECKSUM:
                     error = u'Error during "%s" download: invalid checksum' % self.url_archive
                 else:
                     error = u'Error during "%s" download: unknown error' % self.url_archive
@@ -313,7 +327,7 @@ class InstallRaspiot(threading.Thread):
             if os.path.exists(path):
                 self.__script_running = True
                 if not self.__execute_script(path):
-                    #script failed
+                    # script failed
                     self.logger.debug(u'Script preinst.sh execution failed')
                     self.crash_report.manual_report(u'Raspiot update failed: prescript failed', self.__pre_script_status)
                     error = True
@@ -348,7 +362,7 @@ class InstallRaspiot(threading.Thread):
             if os.path.exists(path):
                 self.__script_running = True
                 if not self.__execute_script(path):
-                    #script failed
+                    # script failed
                     self.logger.debug(u'Script postinst.sh execution failed: %s' % self.__post_script_status)
                     self.crash_report.manual_report(u'Raspiot update failed: postscript failed', self.__post_script_status)
                     error = True
@@ -369,29 +383,34 @@ class InstallRaspiot(threading.Thread):
         Install deb
 
         Args:
+            extract_path (string): archive extraction path
+
+        Returns:
+            bool: True if installation succeed, False otherwise
         """
         error = False
 
         try:
-            #prepare installer
+            # prepare installer
             deb_path = os.path.join(extract_path, u'raspiot.deb')
             self.logger.debug('Installing "%s" debian package' % deb_path)
-            installer = InstallDeb(None, self.cleep_filesystem, blocking=True)
+            installer = InstallDeb(self.cleep_filesystem, self.crash_report)
 
-            #dry run install
+            # dry run install
             if not installer.dry_run(deb_path):
                 #dry run failed, report error and quit install
                 self.logger.error(u'Install dry-run failed: %s' % installer.get_status())
                 self.crash_report.manual_report(u'Dry-run raspiot install failed', installer.get_status())
                 raise ForcedException()
 
-            #install deb
+            # install deb
             self.logger.debug(u'Waiting for end of debian package install...')
-            installer.install(deb_path)
+            installer.install(deb_path, blocking=True)
             self.logger.debug(u'Deb package install terminated with status: %s' % installer.get_status())
 
-            #check deb install result
+            # check deb install result
             if installer.get_status()[u'status']!=installer.STATUS_DONE:
+                self.logger.error('Raspiot updated failed (installer returns status "%s" while "%s" awaited)' % (installer.get_status()[u'status'], installer.STATUS_DONE))
                 self.crash_report.manual_report(u'Raspiot update failed: deb install failed', installer.get_status())
                 error = True
 
@@ -403,6 +422,10 @@ class InstallRaspiot(threading.Thread):
             self.logger.exception(u'Exception occured during deb package install:')
             self.crash_report.report_exception()
             error = True
+
+        finally:
+            if installer:
+                self.__deb_status = installer.get_status()
 
         return not error
 
@@ -417,73 +440,79 @@ class InstallRaspiot(threading.Thread):
         archive_path = None
         extract_path = None
 
-        #send status asap to update frontend
-        if self.callback:
-            self.callback(self.get_status(0))
 
         try:
-            #init
-            download = Download(self.cleep_filesystem, self.__download_callback)
+            # send status asap to update frontend
+            if self.callback:
+                self.__progress = 0
+                self.callback(self.get_status())
 
-            #download checksum file
+            # download checksum file
+            download = Download(self.cleep_filesystem)
             checksum = self.__download_checksum(download, self.url_checksum)
             if not checksum:
                 self.status = self.STATUS_ERROR_DOWNLOAD_CHECKSUM
                 raise ForcedException(0)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(16))
+                self.__progress = 16
+                self.callback(self.get_status())
 
-            #download raspiot archive
+            # download raspiot archive
             archive_path = self.__download_archive(download, self.url_archive, checksum)
             if not archive_path:
                 self.status = self.STATUS_ERROR_DOWNLOAD_ARCHIVE
                 raise ForcedException(1)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(32))
+                self.__progress = 32
+                self.callback(self.get_status())
 
-            #extract archive
+            # extract archive
             extract_path = self.__extract_archive(archive_path)
             if not extract_path:
                 self.status = self.STATUS_ERROR_EXTRACT
                 raise ForcedException(2)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(48))
+                self.__progress = 48
+                self.callback(self.get_status())
 
-            #pre update script
+            # pre update script
             if not self.__execute_preinst_script(extract_path):
                 self.status = self.STATUS_ERROR_PREINST
                 raise ForcedException(3)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(64))
+                self.__progress = 64
+                self.callback(self.get_status())
 
-            #install deb package
+            # install deb package
             if not self.__install_deb(extract_path):
                 self.status = self.STATUS_ERROR_DEB
                 raise ForcedException(4)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(80))
+                self.__progress = 80
+                self.callback(self.get_status())
 
-            #post update script
+            # post update script
             if not self.__execute_postinst_script(extract_path):
                 self.status = self.STATUS_ERROR_POSTINST
                 raise ForcedException(5)
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(96))
+                self.__progress = 96
+                self.callback(self.get_status())
 
         except ForcedException as e:
-            #a step failed, error should already be logged
+            # a step failed, error should already be logged
             self.logger.debug(u'Error occured during raspiot update [%s]' % e.code)
             error = True
 
@@ -493,30 +522,30 @@ class InstallRaspiot(threading.Thread):
             error = True
 
         finally:
-            #clean stuff
+            # clean stuff
             try:
                 if archive_path:
                     self.cleep_filesystem.rm(archive_path)
                 if extract_path:
                     self.cleep_filesystem.rmdir(extract_path)
-
-            except:
+            except: # pragma: no cover
                 self.logger.exception(u'Exception during raspiot update cleaning:')
 
             if error:
-                #error occured
+                # error occured
                 self.logger.debug('Error occured during raspiot update')
 
-                #fix unspecified error status
-                if self.status==self.STATUS_UPDATING:
+                # fix unspecified error status
+                if self.status==self.STATUS_UPDATING: # pragma: no cover
                     self.status = self.STATUS_ERROR_INTERNAL
             else:
-                #update terminated successfully
+                # update terminated successfully
                 self.status = self.STATUS_UPDATED
 
-            #send status
+            # send status
             if self.callback:
-                self.callback(self.get_status(100))
+                self.__progress = 100
+                self.callback(self.get_status())
 
         self.logger.info(u'Raspiot update terminated (success: %s)' % (not error))
     
