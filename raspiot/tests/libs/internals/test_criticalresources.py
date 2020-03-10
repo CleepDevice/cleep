@@ -4,7 +4,7 @@
 import os
 import sys
 from raspiot.libs.internals.task import Task
-sys.path.append('/root/cleep/raspiot/libs/internals')
+sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from criticalresources import CriticalResources
 from raspiot.libs.tests.lib import TestLib
 import unittest

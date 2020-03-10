@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/internals')
+sys.path.append('%s/../../../libs/internals' % os.getcwd())
 import crashreport
 from raspiot.libs.tests.lib import TestLib
 import unittest

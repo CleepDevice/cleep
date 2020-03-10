@@ -4,7 +4,7 @@
 import os
 import sys
 import time
-sys.path.append('/root/cleep/raspiot/libs/internals')
+sys.path.append('%s/../../../libs/internals' % os.getcwd())
 import download
 from download import Download
 from raspiot.libs.tests.lib import TestLib, Urllib3RequestResponseMock, FileDescriptorMock
