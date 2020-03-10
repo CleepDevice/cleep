@@ -7,6 +7,7 @@ import logging
 from mock import Mock
 
 TRACE = tools.TRACE
+KEY_FUNCTIONAL_TEST = 'UNITTEST_FUNC'
 
 class Urllib3RequestResponseMock():
     """
@@ -120,11 +121,21 @@ class TestLib():
     Instanciate TestLib to enable some features to be able to run tests on a library for Cleep
     """
 
-    def __init__(self):
+    def __init__(self, test_case=None):
         """
         Constructor
+
+        Args:
+            test_case (TestCase): test case instance. Optional
         """
+        self.test_case = test_case
         tools.install_trace_logging_level()
+
+    def declare_functional_test(self):
+        if self.test_case is None:
+            logging.warning('Can\'t declare functional test if "test_case" param not specified during TestLib() init')
+        if KEY_FUNCTIONAL_TEST not in os.environ:
+            self.test_case.skipTest('Do not play functional test')
 
     @staticmethod
     def mock_urllib3(request_response, request_side_effect=None):
