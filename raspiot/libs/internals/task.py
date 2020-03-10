@@ -37,7 +37,7 @@ class Task:
         """
         Run the task
         """
-        #execute task
+        # execute task
         if self._run_count is not None:
             self._run_count -= 1
         run_again = False
@@ -48,21 +48,21 @@ class Task:
             if self.logger:
                 self.logger.exception(u'Exception occured in task execution:')
 
-        #launch again the timer if periodic task
+        # launch again the timer if periodic task
         if self._interval:
             if self._run_count is None:
-                #interval specified + run_count is NOT configured
+                # interval specified + run_count is NOT configured
                 run_again = True
             else:
-                #interval specified + run_count is configured
+                # interval specified + run_count is configured
                 if self._run_count>0:
                     run_again = True
         else:
-            #interval not configured, don't run task again
+            # interval not configured, don't run task again
             run_again = False
             self.__timer = None
 
-        #run again task?
+        # run again task?
         if run_again:
             self.__timer = Timer(self._interval, self.__run)
             self.__timer.daemon = True

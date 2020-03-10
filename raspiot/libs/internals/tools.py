@@ -11,7 +11,6 @@ import sys
 import subprocess
 
 from raspiot.libs.internals import __all__ as internals_libs
-#from raspiot.libs.externals import __all__ as externals_libs
 from raspiot.libs.drivers import __all__ as drivers_libs
 from raspiot.libs.configs import __all__ as configs_libs
 from raspiot.libs.commands import __all__ as commands_libs
@@ -136,7 +135,7 @@ def dbm_to_percent(dbm):
     Args:
         dbm (int): dbm value
 
-    Return:
+    Returns:
         int: percentage value
     """
     if dbm in DBM_TO_PERCENT.keys():
@@ -156,7 +155,7 @@ def wpa_passphrase(ssid, password):
         ssid (string): network ssid
         password (string): password
 
-    Return:
+    Returns:
         string: generated psk
     """
     psk = pbkdf2.pbkdf2(str.encode(password), str.encode(ssid), 4096, 32)
@@ -169,7 +168,7 @@ def file_to_base64(path):
     Args:
         path (string): path to file
 
-    Return:
+    Returns:
         string: base64 encoded file content
     """
     with io.open(path, u'rb') as file_to_convert:
@@ -182,7 +181,7 @@ def hr_uptime(uptime):
     Note:
         http://unix.stackexchange.com/a/27014
 
-    Params:
+    Args:
         uptime (int): uptime value
 
     Returns:
@@ -229,7 +228,7 @@ def compare_versions(old_version, new_version):
         old_version (string): old version
         new_version (string): new version
 
-    Return:
+    Returns:
         bool: True if new version available
     """
     #check versions
@@ -334,7 +333,7 @@ def full_path_split(path):
     Args:
         path (string): path to split
 
-    Return:
+    Returns:
         list: list of path parts
     """
     if path is None:

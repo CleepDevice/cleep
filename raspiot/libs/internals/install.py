@@ -76,13 +76,15 @@ class Install():
         """
         Return current installation status
 
-        Return:
+        Returns:
             dict: status::
+
                 {
                     status (string): current status
                     stdout (list): list of messages received on console
                     stderr (list): list of messages received on stderr
                 }
+
         """
         return {
             u'status': self.status,
@@ -183,7 +185,7 @@ class Install():
         Args:
             package_name (string): package name to install
 
-        Return:
+        Returns:
             bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
@@ -223,7 +225,7 @@ class Install():
             package_name (string): package name to install
             purge (bool): purge package (remove config files)
 
-        Return:
+        Returns:
             bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
@@ -286,7 +288,7 @@ class Install():
         Install .deb file using dpkg
         Cannot be canceled once launched
 
-        Return:
+        Returns:
             bool: True if install succeed or None if non blocking
         """
         if self.status==self.STATUS_PROCESSING:
@@ -343,7 +345,7 @@ class Install():
             archive (string): archive full path
             install_path (string): installation fullpath directory
 
-        Return:
+        Returns:
             bool: True if install succeed
         """
         if self.status==self.STATUS_PROCESSING:
@@ -459,7 +461,7 @@ class Install():
         """
         Install specified module
 
-        Params:
+        Args:
             module (string): module name to install
             modules_infos (dict): module infos reported in modules.json
 
@@ -550,7 +552,7 @@ class Install():
         """
         Uninstall specified module
 
-        Params:
+        Args:
             module (string): module name to uninstall
             modules_infos (dict): module infos reported in modules.json
             force (bool): uninstall module and continue if error occured
