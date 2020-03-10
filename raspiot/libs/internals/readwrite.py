@@ -41,6 +41,8 @@ class ReadWrite():
     PARTITION_ROOT = u'/'
     PARTITION_BOOT = u'/boot'
 
+    RASPIOT_DIR = u'/tmp/raspiot'
+
     def __init__(self):
         """
         Constructor
@@ -93,23 +95,22 @@ class ReadWrite():
         #self.logger.debug('Command "%s" result: %s' % (command, res))
 
         #check errors
-        if res[u'error'] or res[u'killed']:
+        if res[u'error'] or res[u'killed'] or len(res[u'stdout'])==0:
             self.logger.error('Error when getting rw/ro flag: %s' % res)
-        if len(res[u'stdout'])==0:
-            self.logger.error('Error when getting rw/ro flag: %s' % res)
+            self.status[partition] = self.STATUS_UNKNOWN
+            return
 
         #parse result
         line = res[u'stdout'][0].strip()
         if line==u'rw':
             self.status[partition] = self.STATUS_WRITE
-            self.logger.debug(u'Partition "%s" is in WRITE mode' % partition)
+            self.logger.trace(u'Partition "%s" is in WRITE mode' % partition)
         elif line==u'ro':
             self.status[partition] = self.STATUS_READ
-            self.logger.debug(u'Partition "%s" is in READ mode' % partition)
+            self.logger.trace(u'Partition "%s" is in READ mode' % partition)
         else:
             self.status[partition] = self.STATUS_UNKNOWN
             self.logger.error(u'Unable to get partition "%s" status: %s' % (partition, res[u'stdout']))
-            raise Exception(u'Unable to get partition "%s" status' % partition)
 
     def __is_cleep_iso(self):
         """
@@ -118,26 +119,31 @@ class ReadWrite():
         Returns:
             bool: True if it's cleep iso
         """
-        if os.path.exists(u'/tmp/raspiot'):
+        if os.path.exists(self.RASPIOT_DIR):
             return True
 
         return False
 
     def get_status(self):
         """
-        Return current filesystem status
+        Return current filesystem status requesting mount command
 
         Returns:
             dict: partition status (please check STATUS_UNKNOWN that appears when problem occurs)::
+
                 {
                     boot (int): STATUS_READ|STATUS_WRITE
                     root (int): STATUS_READ|STATUS_WRITE
                 }
+
         """
         self.__refresh(self.PARTITION_BOOT)
         self.__refresh(self.PARTITION_ROOT)
 
-        return self.status
+        return {
+            'boot': self.status[self.PARTITION_BOOT],
+            'root': self.status[self.PARTITION_ROOT],
+        }
 
     def __enable_write(self, partition):
         """
