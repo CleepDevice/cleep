@@ -312,7 +312,7 @@ class Download():
 
     def cancel(self):
         """
-        Cancel current download (only possible for download_file_advanced)
+        Cancel current download (only possible for download_file_async)
         """
         self.logger.debug('Cancel file downloading')
         self.__cancel = True
@@ -335,7 +335,6 @@ class Download():
         """
         self.__cancel = False
         self.__status_callback = status_callback
-        self.__end_callback = end_callback
 
         self.__download_task = Task(None, self.download_file, self.logger, task_kwargs={
             'url': url,
@@ -347,14 +346,14 @@ class Download():
         })
         self.__download_task.start()
 
-    def download_file(self, url, end_callback, check_sha1=None, check_sha256=None, check_md5=None, cache_filename=None):
+    def download_file(self, url, end_callback=None, check_sha1=None, check_sha256=None, check_md5=None, cache_filename=None):
         """
         Download specified file url and check its integrity if specified.
         This function is blocking. Run download_file_async if you need to download a file asynchronously
 
         Args:
             url (string): url to download
-            end_callback (function): function called when download is terminated (params: downloaded filepath (string))
+            end_callback (function): function called when download is terminated (params: status (int), downloaded filepath (string))
             check_sha1 (string): sha1 key to check
             check_sha256 (string): sha256 key to check
             check_md5 (string): md5 key to check
@@ -369,6 +368,8 @@ class Download():
                 )
 
         """
+        self.__end_callback = end_callback
+
         #prepare filename
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, u'%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
@@ -380,8 +381,7 @@ class Download():
             cached_file = self.is_file_cached(cache_filename)
             if cached_file:
                 self.__send_download_status(self.STATUS_CACHED, os.path.getsize(cached_file['filepath']), 100)
-                self.__send_download_end(self.STATUS_DONE, cached_file['filepath'])
-                return self.STATUS_DONE, cached_file['filepath']
+                return self.__send_download_end(self.STATUS_DONE, cached_file['filepath'])
         
         #prepare download
         try:
