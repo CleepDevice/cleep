@@ -15,22 +15,6 @@ import subprocess
 import tempfile
 from threading import Timer
 
-class MockedReturnCode():
-
-    """
-    Return return_code after count iteration
-    """
-
-    def __init__(self, return_code=0, count=0):
-        self.return_code = return_code
-        self.count = count
-        self.__count = 0
-
-    def return_code(self):
-        if self.count==self.__count:
-            self.__count += 1
-            return self.return_code
-        return None
 
 class InstallDebTests(unittest.TestCase):
 
@@ -61,7 +45,6 @@ class InstallDebTests(unittest.TestCase):
 
     def callback(self, status):
         logging.debug('Callback status=%s' % status)
-        pass
 
     @patch('subprocess.Popen')
     def test_install_blocking(self, popen_mock):
@@ -280,7 +263,28 @@ class InstallDebTests(unittest.TestCase):
         self.assertEqual(status['status'], i.STATUS_TIMEOUT)
         self.assertIsNone(status['returncode'])
 
-    def test_fonc_install_blocking(self):
+class InstallDebFunctionalTests(unittest.TestCase):
+
+    def setUp(self):
+        t = TestLib(self)
+        t.declare_functional_test()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        self.resources_path = os.path.abspath('../../resources')
+        self.archive_name = 'wiringpi'
+        self.archive_path = os.path.join(self.resources_path, '%s.deb' % self.archive_name)
+        self.fs = Mock()
+        self.crash_report = Mock()
+        self.crash_report.manual_report = Mock()
+
+    def tearDown(self):
+        if os.path.exists('/usr/bin/gpio'):
+            logging.info('Uninstalling "%s"...' % self.archive_name)
+            os.system('/usr/bin/yes 2>/dev/null | apt-get purge %s > /dev/null 2>&1' % self.archive_name)
+
+    def callback(self, status):
+        logging.debug('Callback status=%s' % status)
+
+    def test_install_blocking(self):
         i = InstallDeb(self.fs, self.crash_report)
         res = i.install(self.archive_path, blocking=True, status_callback=self.callback)
         self.assertTrue(res)
@@ -291,7 +295,7 @@ class InstallDebTests(unittest.TestCase):
         # make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-    def test_fonc_install_non_blocking(self):
+    def test_install_non_blocking(self):
         i = InstallDeb(self.fs, self.crash_report)
         res = i.install(self.archive_path, blocking=False, status_callback=self.callback)
         self.assertIsNone(res)
