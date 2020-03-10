@@ -166,9 +166,7 @@ class InstallDeb():
             time.sleep(0.25)
             
         # handle result
-        if not error and self.status==self.STATUS_DONE:
-            return True
-        return False
+        return True if not error and self.status==self.STATUS_DONE else False
 
     def install(self, deb, blocking=False, status_callback=None):
         """
@@ -230,9 +228,7 @@ class InstallDeb():
             self.cleep_filesystem.disable_write()
 
             # handle result
-            if not error and self.status==self.STATUS_DONE:
-                return True
-            return False
+            return True if not error and self.status==self.STATUS_DONE else False
 
         else:
             # useless result
