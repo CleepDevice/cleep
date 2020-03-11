@@ -545,7 +545,10 @@ class InstallRaspiot(threading.Thread):
             # send status
             if self.callback:
                 self.__progress = 100
-                self.callback(self.get_status())
+                try:
+                    self.callback(self.get_status())
+                except: # pragma: no cover
+                    pass
 
         self.logger.info(u'Raspiot update terminated (success: %s)' % (not error))
     
