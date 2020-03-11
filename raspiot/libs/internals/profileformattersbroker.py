@@ -6,7 +6,7 @@ import os
 import importlib
 import inspect
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CORE_MODULES
-from raspiot.libs.internals.tools import full_path_split
+from raspiot.libs.internals.tools import full_split_path
 
 __all__ = [u'ProfileFormattersBroker']
 
@@ -128,7 +128,7 @@ class ProfileFormattersBroker():
                 try:
                     fullpath = os.path.join(root, filename)
                     (formatter, ext) = os.path.splitext(filename)
-                    parts = full_path_split(fullpath)
+                    parts = full_split_path(fullpath)
                     module_name = parts[-2]
                     if ext==u'.py' and formatter.lower().endswith(u'formatter'):
                         self.logger.debug(' Found "%s"' % formatter)

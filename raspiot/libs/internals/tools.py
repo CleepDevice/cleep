@@ -105,7 +105,7 @@ def install_trace_logging_level():
     logging.addLevelName(level, "TRACE")
     logging.trace = log_root
 
-def install_unhandled_exception_handler(crash_report):
+def install_unhandled_exception_handler(crash_report): # pragma: no cover (can test it)
     """
     Overwrite default exception handler to log errors
     @see https://stackoverflow.com/a/16993115
@@ -170,6 +170,9 @@ def file_to_base64(path):
 
     Returns:
         string: base64 encoded file content
+
+    Raises:
+        Exception of all kind if something wrong occured
     """
     with io.open(path, u'rb') as file_to_convert:
         return base64.b64encode(file_to_convert.read())
@@ -222,7 +225,7 @@ def hr_bytes(n):
 
 def compare_versions(old_version, new_version):
     """ 
-    Compare specified version and return True if new version is greater than old one
+    Compare specified version and return True if new version is strictly greater than old one
 
     Args:
         old_version (string): old version
@@ -232,20 +235,13 @@ def compare_versions(old_version, new_version):
         bool: True if new version available
     """
     #check versions
-    try:
-        old_vers = tuple(map(int, (old_version.split(u'.'))))
-        if len(old_vers)!=3:
-            raise Exception('Invalid version format for "%s"' % old_version)
-    except:
-        self.logger.exception(u'Invalid version format, only 3 digits format allowed:')
-        return False
-    try:
-        new_vers = tuple(map(int, (new_version.split(u'.'))))
-        if len(new_vers)!=3:
-            raise Exception('Invalid version format for "%s"' % new_version)
-    except:
-        self.logger.exception(u'Invalid version format, only 3 digits format allowed:')
-        return False
+    old_vers = tuple(map(int, (old_version.split(u'.'))))
+    if len(old_vers)!=3:
+        raise Exception('Invalid version "%s" format, only 3 digits format allowed' % old_version)
+
+    new_vers = tuple(map(int, (new_version.split(u'.'))))
+    if len(new_vers)!=3:
+        raise Exception('Invalid version "%s" format, only 3 digits format allowed' % new_version)
 
     #compare version
     if old_vers<new_vers:
@@ -253,7 +249,7 @@ def compare_versions(old_version, new_version):
 
     return False
 
-def split_all(path):
+def full_split_path(path):
     """
     Split path completely /home/test/test.txt => ['/', 'home', 'test', 'test.py']
 
@@ -275,34 +271,29 @@ def split_all(path):
         else:
             path = parts[0]
             allparts.insert(0, parts[1])
+    
+    return filter(lambda p: len(p)>0, allparts)
 
-    return allparts
-
-def is_system_lib(path):
+def is_core_lib(path):
     """ 
-    Check if specified lib is a system one (provided by raspiot)
+    Check if specified lib is a core library (provided by raspiot)
 
     Args:
         path (string): lib path
 
     Returns:
-        bool: True if lib is system lib, False otherwise
+        bool: True if lib is core lib, False otherwise
     """
     #split path
-    parts = split_all(path)
+    parts = full_split_path(path)
     if len(parts)<=2:
         #invalid path specified, cannot be a library
         return False
 
-    #get useful infos (supposing libs path is ../../libs/XXXX/libname.py
+    #get useful infos (supposing libs path is ../../libs/**/*.py
     filename_wo_ext = os.path.splitext(parts[len(parts)-1])[0]
     libs_part = parts[len(parts)-3]
     sublibs_part = parts[len(parts)-2]
-    #print('==> internals_libs: %s' % internals_libs)
-    #print('==> drivers_libs: %s' % drivers_libs)
-    #print('==> commands_libs: %s' % commands_libs)
-    #print('==> configs_libs: %s' % configs_libs)
-    #print('==> %s %s %s' % (filename_wo_ext, libs_part, sublibs_part))
 
     #check
     if libs_part!=u'libs':
@@ -311,8 +302,6 @@ def is_system_lib(path):
         return False
     if sublibs_part==u'internals' and filename_wo_ext not in internals_libs:
         return False
-    #elif sublibs_part==u'externals' and filename not in externals_libs:
-    #    return False
     elif sublibs_part==u'drivers' and filename_wo_ext not in drivers_libs:
         return False
     elif sublibs_part==u'commands' and filename_wo_ext not in commands_libs:
@@ -321,34 +310,4 @@ def is_system_lib(path):
         return False
 
     return True
-
-
-def full_path_split(path):
-    """ 
-    Explode path into dir/dir/.../filename
-
-    Source:
-        https://stackoverflow.com/a/27065945
-
-    Args:
-        path (string): path to split
-
-    Returns:
-        list: list of path parts
-    """
-    if path is None:
-        path = u'' 
-    parts = []
-    (path, tail) = os.path.split(path)
-    while path and tail:
-        parts.append(tail)
-        (path, tail) = os.path.split(path)
-    parts.append(os.path.join(path, tail))
-
-    out = list(map(os.path.normpath, parts))[::-1]
-    if len(out) > 0 and out[0] == u'.':
-        #remove starting .
-        return out[1:]
-
-    return out 
 

@@ -7,7 +7,7 @@ import importlib
 import inspect
 from raspiot.utils import MissingParameter, InvalidParameter, CommandError
 from raspiot.libs.internals.formatter import Formatter
-from raspiot.libs.internals.tools import full_path_split
+from raspiot.libs.internals.tools import full_split_path
 
 __all__ = [u'EventsBroker']
 
@@ -107,7 +107,7 @@ class EventsBroker():
                 try:
                     fullpath = os.path.join(root, filename)
                     (event, ext) = os.path.splitext(filename)
-                    parts = full_path_split(fullpath)
+                    parts = full_split_path(fullpath)
                     if filename.lower().find(u'event')>=0 and ext==u'.py':
                         self.logger.debug('Loading "%s"' % u'%s%s.%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, parts[-2], event))
                         mod_ = importlib.import_module(u'%s%s.%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, parts[-2], event))
