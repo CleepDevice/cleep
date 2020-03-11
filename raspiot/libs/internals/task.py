@@ -3,9 +3,6 @@
     
 import os
 import logging
-import glob
-import uuid as moduuid
-import json
 from threading import Timer, Thread
 import time
 
@@ -24,6 +21,8 @@ class Task:
             interval (float): interval to repeat task (in seconds). If None task is executed once
             task (callback): function to call periodically
             logger (logger): logger instance used to log message in task
+            task_args (list): list of task parameters
+            task_kwargs (dict): dict of task parameters
         """
         self._task = task
         self._args = task_args
@@ -40,27 +39,29 @@ class Task:
         # execute task
         if self._run_count is not None:
             self._run_count -= 1
+
         run_again = False
         try:
             self._task(*self._args, **self._kwargs)
+
+            # launch again the timer if periodic task
+            if self._interval:
+                if self._run_count is None:
+                    # interval specified + run_count is NOT configured
+                    run_again = True
+                else:
+                    # interval specified + run_count is configured
+                    if self._run_count>0:
+                        run_again = True
+            else:
+                # interval not configured, don't run task again
+                run_again = False
+                self.__timer = None
+
         except:
-            #exception occured
+            # exception occured
             if self.logger:
                 self.logger.exception(u'Exception occured in task execution:')
-
-        # launch again the timer if periodic task
-        if self._interval:
-            if self._run_count is None:
-                # interval specified + run_count is NOT configured
-                run_again = True
-            else:
-                # interval specified + run_count is configured
-                if self._run_count>0:
-                    run_again = True
-        else:
-            # interval not configured, don't run task again
-            run_again = False
-            self.__timer = None
 
         # run again task?
         if run_again:
@@ -68,23 +69,19 @@ class Task:
             self.__timer.daemon = True
             self.__timer.start()
 
-    def set_interval(self, interval):
-        """
-        Define a task interval to repeat the task
-
-        Args:
-            interval (int): task interval (in seconds)
-        """
-        self._interval = interval
-
     def wait(self):
         """
-        Wait for current tsk to be done
+        Wait for current task to be done
         """
-        if not self.__timer:
+        if self._run_count is None and not self.__timer:
             self.logger.warn(u'No task is running')
             return
-        self.__timer.join()
+
+        if self._run_count is None:
+            self.__timer.join()
+        else:
+            while self._run_count>0:
+                self.__timer.join()
   
     def start(self):
         """
@@ -119,89 +116,18 @@ class CountTask(Task):
     Run task X times
     """
 
-    def __init__(self, interval, task, count, task_args=[], task_kwargs={}):
+    def __init__(self, interval, task, logger, count, task_args=[], task_kwargs={}):
         """
         Constructor
         
         Args:
             interval (int): interval to repeat task (in seconds)
             task (function): function to call periodically
+            logger (logger): logger instance used to log message in task
             count (int): number of times to run task
+            task_args (list): list of task parameters
+            task_kwargs (dict): dict of task parameters
         """
-        Task.__init__(self, interval, task, task_args, task_kwargs)
+        Task.__init__(self, interval, task, logger, task_args, task_kwargs)
         self._run_count = count
-
-
-class BackgroundTask(Thread):
-    """
-    Run background task indefinitely (thread helper)
-    Difference between Task class is BackgroundTask does not add pause between callback (task) execution.
-    It's just a thread helper
-    """
-
-    def __init__(self, task, logger, pause=0.25):
-        """
-        Constructor
-        Args:
-            task (callback): function to call
-            logger (logger): logger instance to log task messages
-            pause (int): pause between task call (in seconds)
-        """
-        Thread.__init__(self)
-        Thread.daemon = True
-        self.task = task
-        self.logger = logger
-        if pause<=0.25:
-            pause = 0.25
-        self.pause = int(float(pause)/0.25)
-        self.running = True
-
-    def __del__(self):
-        """
-        Destructor
-        """
-        self.stop()
-
-    def run(self):
-        """
-        Run task
-        """
-        while self.running:
-            try:
-                self.task()
-            except:
-                if self.logger:
-                    self.logger.exception(u'Exception occured during task execution:')
-            for i in range(self.pause):
-                if not self.running:
-                    break
-                time.sleep(0.25)
-
-    def stop(self):
-        """
-        Stop task
-        """
-        self.running = False
-
-
-if __name__ == '__main__':
-    #testu
-    def tick(msg):
-        print 'msg=%s' % unicode(msg)
-
-    def tock():
-        print 'tock'
-
-    #t = Task(2.0, tick, ['hello'])
-    #t.start()
-
-    #t = BackgroundTask(1.0, tock)
-    #t.start()
-
-    t = CountTask(1.0, tick, 1, ['coucou'])
-    t.start()
-
-    time.sleep(10.0)
-    print '-> stop task'
-    t.stop()
 
