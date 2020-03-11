@@ -127,6 +127,7 @@ class InstallRaspiotTests(unittest.TestCase):
         self.fs = Mock()
         self.crash_report = Mock()
         self.crash_report.manual_report = Mock()
+        self.crash_report.report_exception = Mock()
 
         if download_mock:
             DownloadStatus.init_mock(download_mock)
@@ -252,6 +253,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_INTERNAL)
+        self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installraspiot.InstallDeb')
     @patch('installraspiot.Download')
@@ -280,6 +282,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_CHECKSUM)
+        self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installraspiot.InstallDeb')
     @patch('installraspiot.Download')
@@ -294,6 +297,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installraspiot.Download')
     def test_extract_archive_failed(self, download_mock):
@@ -307,6 +311,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_EXTRACT)
+        self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installraspiot.Download')
     def test_install_deb_invalid_deb_archive(self, download_mock):
@@ -320,6 +325,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_DEB)
+        self.assertTrue(self.crash_report.manual_report.called)
 
     @patch('installraspiot.InstallDeb')
     @patch('installraspiot.Download')
@@ -334,6 +340,7 @@ class InstallRaspiotTests(unittest.TestCase):
         status = i.get_status()
         logging.debug('Status=%s' % status)
         self.assertEqual(status['status'], i.STATUS_ERROR_DEB)
+        self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installraspiot.InstallDeb')
     @patch('installraspiot.Download')
