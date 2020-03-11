@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class Resource():
+class CleepResource():
     """
     Base resource class
     """

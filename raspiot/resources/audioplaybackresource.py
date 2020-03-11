@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class Audioplaybackresource():
+from raspiot.libs.internals.cleepresource import CleepResource
+
+class AudioPlaybackResource(CleepResource):
     """
     Audio playback resource definition
     """

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class Audiocaptureresource():
+from raspiot.libs.internals.cleepresource import CleepResource
+
+class AudioCaptureResource(CleepResource):
     """
     Audio capture resource definition
     """

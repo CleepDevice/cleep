@@ -22,9 +22,9 @@ class InstallDebTests(unittest.TestCase):
         TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
-        self.resources_path = os.path.abspath('../../resources')
+        self.data_path = os.path.abspath('../../data')
         self.archive_name = 'wiringpi'
-        self.archive_path = os.path.join(self.resources_path, '%s.deb' % self.archive_name)
+        self.archive_path = os.path.join(self.data_path, '%s.deb' % self.archive_name)
         self.fs = Mock()
         self.crash_report = Mock()
         self.crash_report.manual_report = Mock()
@@ -269,9 +269,9 @@ class InstallDebFunctionalTests(unittest.TestCase):
         t = TestLib(self)
         t.declare_functional_test()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        self.resources_path = os.path.abspath('../../resources')
+        self.data_path = os.path.abspath('../../data')
         self.archive_name = 'wiringpi'
-        self.archive_path = os.path.join(self.resources_path, '%s.deb' % self.archive_name)
+        self.archive_path = os.path.join(self.data_path, '%s.deb' % self.archive_name)
         self.fs = Mock()
         self.crash_report = Mock()
         self.crash_report.manual_report = Mock()
