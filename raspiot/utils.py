@@ -77,8 +77,9 @@ class NoResponse(Exception):
         self.value = value
         self.timeout = timeout
         self.to = to
+        self.message = 'No response from %s (%.1f seconds) for request: %s' % (self.to, self.timeout, self.value)
     def __str__(self):
-        return u'No response from %s (%d seconds) for request: %s' % (self.to, self.timeout, self.value)
+        return self.message
 
 class NoMessageAvailable(Exception):
     def __str__(self):
@@ -107,14 +108,17 @@ class MissingParameter(Exception):
         return u'%s' % self.message
 
 class InvalidMessage(Exception):
+    def __init__(self):
+        self.message = u'Invalid message'
     def __str__(self):
-        return u'Invalid message'
+        return self.message
 
 class InvalidModule(Exception):
     def __init__(self, module):
         self.module = module
+        self.message = u'Invalid module "%s" (not loaded or unknown)' % self.module
     def __str__(self):
-        return u'Invalid module %s (not loaded or unknown)' % self.module
+        return self.message
 
 class Unauthorized(Exception):
     def __init__(self, message):
@@ -131,8 +135,9 @@ class BusError(Exception):
 class ForcedException(Exception):
     def __init__(self, code=-1):
         self.code = code
+        self.message = u'ForcedException(%s)' % self.code
     def __str__(self):
-        return u'ForcedException(%s)' % self.code
+        return self.message
 
 
 """
@@ -153,7 +158,7 @@ class MessageResponse():
         self.broadcast = False
 
     def __str__(self):
-        return u'{error:%r, message:%s, data:%s, broadcast:%r}' % (self.error, self.message, unicode(self.data), self.broadcast)
+        return u'{error:%r, message:"%s", data:%s, broadcast:%r}' % (self.error, self.message, unicode(self.data), self.broadcast)
 
     def to_dict(self):
         """ 
