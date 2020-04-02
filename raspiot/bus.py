@@ -114,7 +114,7 @@ class MessageBus():
             timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            MessageResponse: message response instance.
+            dict: message response
             None: if no response awaited (request is an event or a broadcast command or if timeout is None)
 
         Raises:
@@ -290,7 +290,13 @@ class MessageBus():
             timeout (float): time to wait, default is blocking (0.5s)
 
         Returns:
-            MessageResponse: received message.
+            dict: received message::
+
+                {
+                    message (dict): MessageRequest as dict
+                    event (Event): sync event or None if no response awaited (broadcast, event message)
+                    response (MessageResponse): request response or None if no response
+                }
 
         Raises:
             InvalidModule: if module is unknown.
@@ -466,10 +472,13 @@ class BusClient(threading.Thread):
             sender (string): message sender ("from" item from MessageRequest).
 
         Returns:
-            tuple: (
-                bool: True or False,
-                dict: args to pass during command call or None
-            )
+            tuple: parameters check response::
+    
+                (
+                    bool: True if parameters are valid otherwise False,
+                    dict: args to pass during command call or None
+                )
+
         """
         args = {}
         params_with_default = {}
@@ -514,8 +523,7 @@ class BusClient(threading.Thread):
             timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            MessageResponse: message response instance.
-            None: if request is event or broadcast.
+            dict: MessageResponse as dict or None if no response awaited (event or broadcast)
 
         Raises:
             InvalidParameter: if request is not a MessageRequest instance.
@@ -596,8 +604,7 @@ class BusClient(threading.Thread):
             timeout (float): change default timeout if you wish. Default is 3 seconds.
 
         Returns:
-            MessageResponse: push response.
-            None: if command is broadcast.
+            dict: MessageResponse as dict or None if no response waited
         """
         if to==self.__module:
             # message recipient is the module itself, bypass bus and execute directly the command
@@ -646,15 +653,16 @@ class BusClient(threading.Thread):
     def _custom_process(self):
         """
         Overwrite this function to execute something during bus message polling
+        This function is called at every process tick just before message pulling from queue
 
         Note:
-            This function mustn't be blocking!
+            This function mustn't be blocking otherwise no message will be pulled from queue
         """
         pass
 
     def _configure(self):
         """
-        Module configuration. This method is called at beginning of thread.
+        Module configuration. This method is called once at beginning of thread.
 
         Note:
             This function mustn't be blocking!
@@ -666,7 +674,14 @@ class BusClient(threading.Thread):
         Module received an event message
 
         Params:
-            event (): event parameters
+            event (dict): MessageRequest as dict with event values::
+
+                {
+                    event (string): event name
+                    params (dict): event parameters
+                    device_id (string): device that emits event or None
+                }
+
         """
         pass
 
