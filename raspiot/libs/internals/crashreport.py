@@ -10,13 +10,14 @@ from sentry_sdk import capture_exception as SentryCaptureException
 from sentry_sdk import configure_scope
 import platform
 import traceback
+import copy
 
 class CrashReport():
     """
     Crash report class
     """
 
-    def __init__(self, token, product, product_version, libs_version={}, debug=False, forced=False):
+    def __init__(self, token, product, product_version, libs_version={}, debug=False, disabled_by_system=False):
         """
         Constructor
 
@@ -26,7 +27,7 @@ class CrashReport():
             product_version (string): product version
             libs_version (dict): important libraries versions
             debug (bool): debug flag
-            forced (bool): used by system to force crash report deactivation
+            disabled_by_system (bool): used by system to force crash report deactivation
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -36,12 +37,15 @@ class CrashReport():
             self.logger.setLevel(logging.WARN)
 
         #members
-        self.__forced = forced
+        self.__disabled_by_system = disabled_by_system
         self.__enabled = False
         self.__token = token
+        self.__libs_version = libs_version
+        self.__product = product
+        self.__product_version = product_version
 
         #disable crash report if necessary
-        if self.__forced or not token:
+        if self.__disabled_by_system or not token:
             self.disable()
 
         #create and configure raven client
@@ -143,4 +147,36 @@ class CrashReport():
         if isinstance(more_extra, dict) and more_extra:
             for key, value in more_extra.items():
                 scope.set_extra(key, value)
+
+    def get_infos(self):
+        """
+        Return infos from crash report instance
+
+        Returns:
+            dict: crash report infos
+
+                {
+                    libsversion (dict): libs version (lib: version),
+                    product (string): product name,
+                    productversion (string): product version
+                }
+
+        """
+        return {
+            'libsversion': copy.deepcopy(self.__libs_version),
+            'product': self.__product,
+            'productversion': self.__product_version,
+        }
+
+    def add_module_version(self, module_name, module_version):
+        """
+        Add module version to libs version
+
+        Args:
+            module_name (string): module name
+            module_version (string): module version
+        """
+        self.__libs_version[module_name.lower()] = module_version
+        with configure_scope() as scope:
+            scope.set_tag(module_name, module_version)
 

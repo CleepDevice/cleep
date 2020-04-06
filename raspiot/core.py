@@ -4,15 +4,16 @@
 import logging
 import os
 import json
-from bus import BusClient
+from raspiot.bus import BusClient
 from threading import Lock, Thread, Timer
-from utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable, ExecutionStep, CORE_MODULES
+from raspiot.utils import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable, ExecutionStep, CORE_MODULES
 import time
 import copy
 import uuid
-from libs.internals.crashreport import CrashReport
-from libs.drivers.driver import Driver
+from raspiot.libs.internals.crashreport import CrashReport
+from raspiot.libs.drivers.driver import Driver
 import re
+from mock import Mock
 
 
 __all__ = [u'RaspIot', u'RaspIotRenderer', u'RaspIotModule']
@@ -39,50 +40,59 @@ class RaspIot(BusClient):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init bus
+        # init bus
         BusClient.__init__(self, bootstrap)
 
-        #init logger
+        # init logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.debug_enabled = debug_enabled
 
-        #members
+        # members
         self.__execution_step = bootstrap[u'execution_step']
         self.events_broker = bootstrap[u'events_broker']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
         self.drivers = bootstrap[u'drivers']
 
-        #load and check configuration
+        # load and check configuration
         self.__configLock = Lock()
         self.__config = self.__load_config()
         if getattr(self, u'DEFAULT_CONFIG', None) is not None:
             self.__check_config(self.DEFAULT_CONFIG)
 
-        #crash report
-        if getattr(self, u'MODULE_SENTRY_DSN', None) is not None:
-            #set custom crash report instance
+        # crash report
+        if getattr(self, u'MODULE_SENTRY_DSN', None) is not None and self.MODULE_SENTRY_DSN:
+            # create custom crash report instance for this module with specified DSN
             self.logger.debug(u'Sentry DSN found in module, create dedicated crash report for this module.')
-            libs_version = bootstrap[u'crash_report'].libs_version
-            libs_version[self.__class__.__name__] = self.MODULE_VERSION
-            product = bootstrap[u'crash_report'].product
-            product_version = bootstrap[u'crash_report'].product_version
-            bootstrap[u'crash_report'].disabled = bootstrap[u'crash_report'].is_enabled()
-            self.crash_report = CrashReport(self.MODULE_SENTRY_DSN, product, product_version, libs_version, False, disabled)
+
+            # get libs from main crash report instance and append current module version
+            infos = bootstrap[u'crash_report'].get_infos()
+            infos[u'libsversion'][self.__class__.__name__.lower()] = self.MODULE_VERSION if hasattr(self, u'MODULE_VERSION') else '0.0.0'
+            
+            self.crash_report = CrashReport(
+                self.MODULE_SENTRY_DSN,
+                infos['product'],
+                infos['productversion'],
+                infos['libsversion'],
+                disabled_by_system=bootstrap[u'crash_report'].is_enabled()
+            )
 
         elif self._get_module_name() in CORE_MODULES:
-            #set default crash report for core module
+            # set default crash report for core module
             self.logger.debug(u'Crash report enabled for core module')
             self.crash_report = bootstrap[u'crash_report']
 
+            # add core module version to libs version
+            self.crash_report.add_module_version(self.__class__.__name__, getattr(self, u'MODULE_VERSION', '0.0.0'))
+
+        elif bootstrap[u'test_mode']: # pragma: no cover
+            self.logger.debug('Test mode: do not set crash report to module')
+
         else:
-            #no crash report specified, set dummy one (no dsn provided)
-            if not bootstrap[u'test_mode']:
-                self.logger.debug(u'Test mode enabled, crash report disabled')
-            else:
-                self.logger.debug(u'Initialize empty crashreport')
-                self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
+            # no crash report specified, set dummy one (no dsn provided)
+            self.logger.debug(u'Initialize empty crashreport')
+            self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
 
     def __del__(self):
         """
@@ -119,25 +129,26 @@ class RaspIot(BusClient):
         Load config file.
 
         Returns:
-            dict: configuration file content or None if error occured.
+            dict: configuration file content
         """
-        #check if module have config file
+        # check if module have config file
         if not self._has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return None
 
+        out = {}
         self.__configLock.acquire(True)
-        out = None
         try:
             path = os.path.join(self.CONFIG_DIR, self.MODULE_CONFIG_FILE)
-            self.logger.debug(u'Loading conf file %s' % path)
+            self.logger.debug(u'Loading conf file from path "%s"' % os.path.abspath(path))
             if os.path.exists(path) and not self.__file_is_empty(path):
                 out = self.cleep_filesystem.read_json(path)
-                if out is None:
-                    #should not happen but handle it
+                if out is None: # pragma: no cover
+                    # should not happen but handle it
                     out = {}
             else:
-                #no conf file yet. Create default one
+                # no conf file yet. Create default one
+                self.logger.debug(u'No config file found, create default one')
                 out = {}
                 self.cleep_filesystem.write_json(path, out)
                 time.sleep(0.25)
@@ -161,12 +172,7 @@ class RaspIot(BusClient):
         out = False
         force_reload = False
 
-        #check if module have config file
-        if not self._has_config_file():
-            self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
-            return False
-
-        #get lock
+        # get lock
         self.__configLock.acquire(True)
 
         try:
@@ -178,7 +184,7 @@ class RaspIot(BusClient):
         except:
             self.logger.exception(u'Unable to write config file %s:' % path)
 
-        #release lock
+        # release lock
         self.__configLock.release()
 
         return out
@@ -196,25 +202,27 @@ class RaspIot(BusClient):
         Raises:
             InvalidParameter if input params are invalid
         """
-        #check params
+        # check params
         if not isinstance(config, dict):
-            raise InvalidParameter(u'Parameter config must be a dict')
+            raise InvalidParameter(u'Parameter "config" must be a dict')
+        if not self._has_config_file():
+            raise Exception(u'Module %s has no configuration file configured' % self.__class__.__name__)
 
-        #get lock
+        # get lock
         self.__configLock.acquire(True)
 
-        #keep copy of old config
+        # keep copy of old config
         old_config = copy.deepcopy(self.__config)
 
-        #update config
+        # update config
         self.__config.update(config)
 
-        #release lock
+        # release lock
         self.__configLock.release()
 
-        #save new config
+        # save new config
         if not self.__save_config(self.__config):
-            #revert changes
+            # revert changes
             self.__configLock.acquire(True)
             self.__config = old_config
             self.__configLock.release()
@@ -225,23 +233,23 @@ class RaspIot(BusClient):
 
     def _get_config(self):
         """
-        Return copy of config dict.
+        Return deep copy of config dict.
 
         Returns:
-            dict: config file content (copy).
+            dict: config file content
         """
-        #check if module have config file
+        # check if module have config file
         if not self._has_config_file():
             self.logger.debug(u'Module %s has no configuration file configured' % self.__class__.__name__)
             return {}
 
-        #get lock
+        # get lock
         self.__configLock.acquire(True)
 
-        #make deep copy of structure
+        # make deep copy of structure
         copy_ = copy.deepcopy(self.__config)
 
-        #release lock
+        # release lock
         self.__configLock.release()
 
         return copy_
@@ -289,7 +297,7 @@ class RaspIot(BusClient):
         Returns:
             bool: result of _update_config function
         """
-        #check params
+        # check params
         if field not in self.__config:
             raise InvalidParameter(u'Parameter "%s" doesn\'t exist in config' % field)
 
@@ -308,6 +316,12 @@ class RaspIot(BusClient):
             None: nothing, only check configuration file consistency.
         """
         config = self._get_config()
+    
+        # check config is a dict, only supported format for config file
+        if not isinstance(config, dict):
+            self.logger.warning(u'Invalid configuration file content, only dict content are supported. Reset its content.')
+            config = {}
+
         fixed = False
         for key in keys:
             if key not in config:
@@ -328,7 +342,7 @@ class RaspIot(BusClient):
         """
         if self.__execution_step.step!=ExecutionStep.INIT:
             self.logger.warn(u'Driver registration must be done during INIT step (in application constructor)')
-        #check driver
+        # check driver
         if not isinstance(driver, Driver):
             raise InvalidParameter(u'Driver must be instance of base Driver class')
 
@@ -371,13 +385,13 @@ class RaspIot(BusClient):
         Args:
             debug (bool): debug enabled if True, otherwise info level
         """
-        #change current logger debug level
+        # change current logger debug level
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
 
-        #update debug flag
+        # update debug flag
         self.debug_enabled = debug
 
     def _get_module_name(self):
@@ -408,25 +422,7 @@ class RaspIot(BusClient):
         Returns:
             dict: all config content except 'devices' entry.
         """
-        config = self._get_config()
-
-        #remove devices from config
-        if config.has_key(u'devices'):
-            del config[u'devices']
-
-        return config
-
-    def get_module_devices(self):
-        """
-        Returns module devices.
-
-        Returns:
-            dict: all devices registered in 'devices' config section.
-        """
-        if self.__config is not None and self.__config.has_key(u'devices'):
-            return self.__config[u'devices']
-        else:
-            return {}
+        return self._get_config()
 
     def get_module_commands(self):
         """
@@ -438,16 +434,22 @@ class RaspIot(BusClient):
         ms = dir(self)
         for m in ms[:]:
             if not callable(getattr(self, m)):
-                #filter module members
+                # filter module members
                 ms.remove(m)
             elif m.startswith('_'):
-                #filter protected or private commands
+                # filter protected or private commands
                 ms.remove(m)
-            elif m in (u'send_command', u'send_event', u'start', u'stop', u'push', u'render_event', u'event_received'):
-                #filter bus commands
+            elif m in ( u'send_command', u'send_event', u'send_external_event',
+                        u'get_module_commands', u'get_module_commands', u'get_module_config',
+                        u'is_debug_enabled', u'set_debug', u'is_module_loaded',
+                        u'start', u'stop', u'push', u'event_received', ):
+                # filter bus commands
                 ms.remove(m)
             elif m in (u'getName', u'isAlive', u'isDaemon', u'is_alive', u'join', u'run', u'setDaemon', u'setName'):
-                #filter system commands
+                # filter Thread functions
+                ms.remove(m)
+            elif isinstance(getattr(self, m, None), Mock):
+                # only for unittest
                 ms.remove(m)
 
         return ms
@@ -456,7 +458,7 @@ class RaspIot(BusClient):
         """
         Start module.
         """
-        #start thread (non blocking)
+        # start thread (non blocking)
         BusClient.start(self)
 
     def stop(self):
@@ -466,10 +468,12 @@ class RaspIot(BusClient):
         BusClient.stop(self)
         self._stop()
 
-    def _stop(self):
+    def _stop(self): # pragma: no cover
         """
         Pre stop: called just before module is stopped.
-        This function is used to stop specific processes like threads.
+
+        Note:
+            Implement this function to stop specific processes like threads during stop process
         """
         pass
 
@@ -506,11 +510,19 @@ class RaspIot(BusClient):
         Args:
             event (dict): event infos (event, params)
         """
-        if hasattr(self, u'event_received'):
-            #function implemented in instance, execute it
-            event_received = getattr(self, u'event_received')
-            if event_received is not None:
-                event_received(event)
+        self.event_received(event)
+
+    def event_received(self, event): # pragma: no cover
+        """
+        Event message received
+
+        Note:
+            Implement this function to handle event on your module
+
+        Args:
+            event (dict): TODO
+        """
+        pass
 
 
 
@@ -530,11 +542,14 @@ class RaspIotRpcWrapper(RaspIot):
         """
         #init raspiot
         RaspIot.__init__(self, bootstrap, debug_enabled)
-    
-    def wrap_request(self, route, request):
+
+    def _wrap_request(self, route, request): # pragma: no cover
         """
         Function called when web request from / in POST is called
         By default this access point is not supported by Cleep but it can be wrapped here
+
+        Note:
+            Must be implemented!
 
         Args:
             request (bottle.request): web server bottle request content. See doc https://bottlepy.org/docs/dev/tutorial.html#request-data
@@ -562,16 +577,16 @@ class RaspIotModule(RaspIot):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init raspiot
+        # init raspiot
         RaspIot.__init__(self, bootstrap, debug_enabled)
 
-        #add devices section if missing
+        # add devices section if missing
         if self._has_config_file() and not self._has_config_field(u'devices'):
             self._update_config({
                 u'devices': {}
             })
 
-        #events
+        # events
         self.delete_device_event = None
         try:
             self.delete_device_event = self.events_broker.get_event_instance(u'system.device.delete')
@@ -591,22 +606,26 @@ class RaspIotModule(RaspIot):
         Returns:
             dict: device data if process was successful, None otherwise.
         """
-        #prepare config file
+        # check parameters
+        if not isinstance(data, dict):
+            raise InvalidParameter(u'Parameter "data" must be a dict')
+
+        # prepare config file
         devices = {}
         if self._has_config_field(u'devices'):
             devices = self._get_config_field(u'devices')
 
-        #prepare data
+        # prepare data
         uuid = self._get_unique_id()
         data['uuid'] = uuid
         if u'name' not in data:
-            data[u'name'] = u'No name'
+            data[u'name'] = u'noname'
         devices[uuid] = data
-        self.logger.debug(u'devices: %s' % devices)
+        self.logger.trace(u'devices: %s' % devices)
 
-        #save data
+        # save data
         if not self._update_config({u'devices': devices}):
-            #error occured
+            # error occured
             return None
 
         return data
@@ -621,26 +640,23 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if device was deleted, False otherwise.
         """
-        #check values
-        if not self._has_config_field(u'devices'):
-            self.logger.error(u'"devices" config file entry doesn\'t exist')
-            raise Exception(u'"devices" config file entry doesn\'t exist')
+        # check values
         devices = self._get_config_field(u'devices')
         if uuid not in devices:
             self.logger.error(u'Trying to delete unknown device')
             return False
 
-        #delete device entry
+        # delete device entry
         del devices[uuid]
 
-        #save config
-        conf_res = self._set_config_field(u'devices', devices)
+        # save config
+        conf_result = self._set_config_field(u'devices', devices)
 
-        #send device deleted event
-        if conf_res and self.delete_device_event:
+        # send device deleted event
+        if conf_result and self.delete_device_event:
             self.delete_device_event.send(device_id=uuid)
 
-        return conf_res
+        return conf_result
 
     def _update_device(self, uuid, data):
         """
@@ -654,24 +670,25 @@ class RaspIotModule(RaspIot):
         Returns:
             bool: True if device updated, False otherwise.
         """
+        # check parameters
+        if not isinstance(data, dict):
+            raise InvalidParameter(u'Parameter "data" must be a dict')
+
         data_ = copy.deepcopy(data)
 
-        #check values
-        if not self._has_config_field(u'devices'):
-            self.logger.error(u'"devices" config file entry doesn\'t exist')
-            raise Exception(u'"devices" config file entry doesn\'t exist')
+        # check values
         devices = self._get_config_field(u'devices')
         if uuid not in devices:
-            self.logger.debug(u'Trying to update unknown device "%s"' % uuid)
+            self.logger.warn(u'Trying to update unknown device "%s"' % uuid)
             return False
 
-        #always force uuid to make sure data is always valid
+        # always force uuid to make sure data is always valid
         data_[u'uuid'] = uuid
 
-        #update data
+        # update data
         devices[uuid].update({k:v for k,v in data_.iteritems() if k in devices[uuid].keys()})
 
-        #save data
+        # save data
         return self._set_config_field(u'devices', devices)
 
     def _search_device(self, key, value):
@@ -686,19 +703,15 @@ class RaspIotModule(RaspIot):
         Returns
             dict: the device data if key-value found, or None otherwise.
         """
-        #check values
-        if not self._has_config_field(u'devices'):
-            self.logger.error(u'"devices" config file entry doesn\'t exist')
-            return None
         devices = self._get_config_field(u'devices')
         if len(devices)==0:
-            #no device in dict, return no match
+            # no device in dict, return no match
             return None
 
-        #search
+        # search
         for uuid in devices:
             if key in devices[uuid] and devices[uuid][key]==value:
-                #device found
+                # device found
                 return devices[uuid]
 
         return None
@@ -713,23 +726,20 @@ class RaspIotModule(RaspIot):
             value (any): property value.
 
         Returns
-            dict: the device data if key-value found, or None otherwise.
+            list: list of devices which key-value matches, empty list if nothing found
         """
         output = []
 
-        #check values
-        if not self._has_config_field(u'devices'):
-            self.logger.warning(u'"devices" config file entry doesn\'t exist')
-            return output
+        # check values
         devices = self._get_config_field(u'devices')
         if len(devices)==0:
-            #no device in dict, return no match
+            # no device in dict, return no match
             return output
 
-        #search
+        # search
         for uuid in devices:
             if key in devices[uuid] and devices[uuid][key]==value:
-                #device found
+                # device found
                 output.append(devices[uuid])
 
         return output
@@ -744,37 +754,80 @@ class RaspIotModule(RaspIot):
         Returns:
             dict: None if device not found, device data otherwise.
         """
-        #check values
-        if not self._has_config_field(u'devices'):
-            self.logger.error(u'"devices" config file entry doesn\'t exist')
-            return None
-
         devices = self._get_config_field(u'devices')
         if uuid in devices:
             return devices[uuid]
 
         return None
 
-    def _get_devices(self):
+    def get_module_devices(self):
         """
-        Return module devices (alias to get_module_devices function).
+        Returns module devices.
 
         Returns:
-            list: list of devices.
+            dict: all devices registered in 'devices' config section::
+
+                {
+                    device uuid (string): device data (dict),
+                    ...
+                }
+
+        """
+        return self._get_config()[u'devices']
+
+    def _get_devices(self):
+        """
+        Return module devices (get_module_devices alias).
+
+        Returns:
+            dict: all devices registered in 'devices' config section::
+
+                {
+                    device uuid (string): device data (dict),
+                    ...
+                }
+
         """
         return self.get_module_devices()
 
     def _get_device_count(self):
         """
-        Return number of devices in configuration file".
+        Return number of devices registered in module.
 
         Returns:
             int: number of saved devices.
         """
-        if self._has_config_field(u'devices'):
-            return len(self._get_config_field(u'devices'))
-        else:
-            return 0
+        return len(self._get_config_field(u'devices'))
+
+    def get_module_config(self):
+        """
+        Returns module configuration.
+        
+        Returns:
+            dict: all config content except 'devices' entry.
+        """
+        config = self._get_config()
+
+        # remove devices from config
+        if config.has_key(u'devices'):
+            del config[u'devices']
+
+        return config
+
+    def get_module_commands(self):
+        """
+        Return available module commands.
+        
+        Returns:
+            list: list of command names.
+        """
+        ms = RaspIot.get_module_commands(self)
+
+        ms.remove('get_module_devices')
+
+        return ms
+
+
 
 
 
@@ -782,13 +835,15 @@ class RaspIotResources(RaspIotModule):
     """
     Base raspiot class to handle critical resources such as audio capture and make sure
     loaded application using the same resource are not using it at the same time.
+    It implements a mechanism of acquire/release and an auto acquisition (or permanent).
     """
 
-    #module resources: list of resource identifer. The identifier is important and must be unique
-    #                  The identifier can be for example the physical audio device name::
+    # module resources:
+    # list of resource identifer. The identifier is important and must be unique
+    # The identifier can be for example the physical audio device name::
     #
     #   {
-    #       resource_name (string): xxx.xxx (ie "audio.playback" for audio)
+    #       resource_name (string): xxx.xxx (eg "audio.playback" for audio)
     #       [
     #           {
     #               permanent (bool): acquire permanently the resource
@@ -808,13 +863,13 @@ class RaspIotResources(RaspIotModule):
             bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
-        #init raspiot
+        # init raspiot
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
-        #members
+        # members
         self.__critical_resources = bootstrap[u'critical_resources']
 
-        #register resources
+        # register resources
         self.__register_resources()
 
     def __register_resources(self):
@@ -897,7 +952,7 @@ class RaspIotResources(RaspIotModule):
 class RaspIotRenderer(RaspIotModule):
     """
     Base raspiot class for renderer.
-    Don't forget to also inherit from other base class (RaspIotModule, RaspIotResources)
+    Don't forget to also implements methods from other base class (RaspIotModule)
 
     Note:
         It implements:
@@ -914,27 +969,31 @@ class RaspIotRenderer(RaspIotModule):
         """
         RaspIotModule.__init__(self, bootstrap, debug_enabled)
 
-        #init logger
+        # init logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        if debug_enabled:
-            self.logger.setLevel(logging.DEBUG)
-        self.debug_enabled = debug_enabled
 
-        #members
+        # members
         self.profiles_types = []
 
-    def get_renderer_config(self):
+    def _get_renderer_config(self):
         """
         Register internally available profiles and return it.
-        This method is called by inventory at startup
+        This method is called once by inventory at startup
+
+        Returns:
+            dict: handled profiles by instance::
+
+                {
+                    profiles: list (RendererProfile)
+                }
 
         Raises:
             Exception: if RENDERER_PROFILES member is not defined
         """
         if getattr(self, u'RENDERER_PROFILES', None) is None:
-            raise Exception(u'RENDERER_PROFILES is not defined in %s' % self.__class__.__name__)
+            raise Exception(u'RENDERER_PROFILES is not defined in "%s"' % self.__class__.__name__)
 
-        #cache profile types as string
+        # cache profile types as string
         for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__name__)
 
@@ -955,11 +1014,11 @@ class RaspIotRenderer(RaspIotModule):
         Raises:
             MissingParameter, InvalidParameter
         """
-        #check profile type
+        # check profile type
         if profile.__class__.__name__ not in self.profiles_types:
             raise InvalidParameter(u'Profile "%s" is not supported in this renderer' % profile.__class__.__name__)
 
-        #call implementation
+        # call implementation
         try:
             self._render(profile)
             return True
@@ -969,11 +1028,26 @@ class RaspIotRenderer(RaspIotModule):
 
     def _render(self, profile):
         """
-        Fake render method
+        Use specified profile values to render them
+
+        Note:
+            Must be implemented!
 
         Raises:
             NotImplementedError: if not implemented
         """
-        raise NotImplementedError(u'_render function must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(u'Method "_render" must be implemented in "%s"' % self.__class__.__name__)
         
+    def get_module_commands(self):
+        """
+        Return available module commands.
+        
+        Returns:
+            list: list of command names.
+        """
+        ms = RaspIotModule.get_module_commands(self)
+
+        ms.remove('render')
+
+        return ms
 

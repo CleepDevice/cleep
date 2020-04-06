@@ -322,7 +322,7 @@ class Inventory(RaspIot):
 
                 #fill renderers
                 if issubclass(self.__modules_instances[module_name].__class__, RaspIotRenderer):
-                    config = self.__modules_instances[module_name].get_renderer_config()
+                    config = self.__modules_instances[module_name]._get_renderer_config()
                     self.formatters_broker.register_renderer(module_name, config[u'profiles'])
 
             except:
