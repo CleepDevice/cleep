@@ -9,11 +9,11 @@ from zipfile import ZipFile
 import threading
 import tempfile
 from raspiot.libs.internals.console import EndlessConsole
-from raspiot.raspiot import RaspIotModule
+from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
 from raspiot.libs.internals.installmodule import InstallModule, UninstallModule, UpdateModule
 from raspiot.libs.internals.installdeb import InstallDeb
-from raspiot.utils import MissingParameter, InvalidParameter
+from raspiot.exceptions import MissingParameter, InvalidParameter
 
 __all__ = ['Install']
 

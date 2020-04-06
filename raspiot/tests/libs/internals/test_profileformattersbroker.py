@@ -8,7 +8,7 @@ import profileformattersbroker
 from raspiot.libs.tests.lib import TestLib
 from raspiot.libs.internals.formatter import Formatter
 from raspiot.libs.internals.rendererprofile import RendererProfile
-from raspiot.utils import MissingParameter, InvalidParameter
+from raspiot.exceptions import MissingParameter, InvalidParameter
 import unittest
 import logging
 from mock import Mock

@@ -7,9 +7,9 @@ import getopt
 import logging
 from logging.config import dictConfig
 from threading import Event
-from raspiot.raspiot import RaspIot
+from raspiot.core import RaspIot
 from raspiot.libs.internals.eventsbroker import EventsBroker
-from raspiot.libs.internals.formattersbroker import FormattersBroker
+from raspiot.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from raspiot import rpcserver, bus
 from raspiot import inventory as raspiot_inventory
 from raspiot.libs.configs.raspiotconf import RaspiotConf
@@ -20,7 +20,7 @@ from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.libs.internals.criticalresources import CriticalResources
 from raspiot.libs.internals.drivers import Drivers
 import raspiot.libs.internals.tools as tools
-from raspiot.utils import ExecutionStep
+from raspiot.common import ExecutionStep
 
 from netifaces import version as netifaces_version
 from bottle import __version__ as bottle_version
@@ -133,7 +133,7 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
     Args:
         message_bus (MessageBus): message bus instance
         events_broker (EventsBroker): events broker instance
-        formatters_broker (FormattersBroker): formatters broker instance
+        formatters_broker (ProfileFormattersBroker): formatters broker instance
         cleep_filesystem (CleepFilesystem): cleep filesystem singleton instance
         crash_report (CrashReport): crash report singleton instance
         critical_resources (CriticalResources): critical resources handler singleton instance
@@ -144,7 +144,7 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
             {
                 message_bus (MessageBus): internal message bus
                 events_broker (EventsBroker): events broker
-                formatters_broker (FormattersBroker) : formatters broker
+                formatters_broker (ProfileFormattersBroker) : formatters broker
                 join_event (Threading.Event): module startup join event
                 cleep_filesystem (CleepFilesystem): filesystem helper (handle readonly filesystem)
                 crash_report (CrashReport): crash report helper
@@ -265,7 +265,7 @@ if __name__ == u'__main__':
         if trace_enabled or debug_system:
             debug = True
         events_broker = EventsBroker(debug)
-        formatters_broker = FormattersBroker(debug)
+        formatters_broker = ProfileFormattersBroker(debug)
         critical_resources = CriticalResources(debug)
         drivers = Drivers(debug)
 

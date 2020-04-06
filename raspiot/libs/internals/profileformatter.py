@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.utils import InvalidParameter
+from raspiot.exceptions import InvalidParameter
 from raspiot.libs.internals.rendererprofile import RendererProfile
 
 __all__ = ['ProfileFormatter']

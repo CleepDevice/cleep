@@ -14,7 +14,7 @@ import threading
 import tempfile
 import stat
 from raspiot.libs.internals.console import EndlessConsole
-from raspiot.raspiot import RaspIotModule
+from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
 import raspiot.libs.internals.tools as Tools
 

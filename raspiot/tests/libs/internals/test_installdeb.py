@@ -6,7 +6,7 @@ import sys
 sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from installdeb import InstallDeb
 from raspiot.libs.tests.lib import TestLib
-from raspiot.utils import MissingParameter, InvalidParameter
+from raspiot.exceptions import MissingParameter, InvalidParameter
 import unittest
 import logging
 import time

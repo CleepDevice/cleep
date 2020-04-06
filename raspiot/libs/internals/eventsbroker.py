@@ -5,8 +5,8 @@ import logging
 import os
 import importlib
 import inspect
-from raspiot.utils import MissingParameter, InvalidParameter, CommandError
-from raspiot.libs.internals.formatter import Formatter
+from raspiot.exceptions import MissingParameter, InvalidParameter, CommandError
+from raspiot.libs.internals.profileformatter import ProfileFormatter
 from raspiot.libs.internals.tools import full_split_path
 
 __all__ = [u'EventsBroker']

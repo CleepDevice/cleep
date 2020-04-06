@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.utils import MissingParameter
+from raspiot.exceptions import MissingParameter
 from raspiot.libs.configs.config import Config
 
 class Hostname(Config):

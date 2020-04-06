@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath('%s/../' % os.getcwd()))
 from core import RaspIot, RaspIotRpcWrapper, RaspIotModule, RaspIotResources, RaspIotRenderer
 from raspiot.libs.tests.lib import TestLib
-from raspiot.utils import InvalidParameter, MissingParameter
+from raspiot.exceptions import InvalidParameter, MissingParameter
 from raspiot.libs.drivers.driver import Driver
 from raspiot.libs.internals.rendererprofile import RendererProfile
 import unittest

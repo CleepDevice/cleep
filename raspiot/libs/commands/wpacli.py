@@ -6,7 +6,7 @@ import time
 from raspiot.libs.internals.console import AdvancedConsole
 from raspiot.libs.configs.wpasupplicantconf import WpaSupplicantConf
 import raspiot.libs.internals.tools as Tools
-from raspiot.utils import MissingParameter, InvalidParameter
+from raspiot.exceptions import MissingParameter, InvalidParameter
 
 class Wpacli(AdvancedConsole):
     """

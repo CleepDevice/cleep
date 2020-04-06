@@ -6,7 +6,7 @@ import sys
 sys.path.append('/root/cleep/raspiot/libs/configs')
 from cmdlinetxt import CmdlineTxt
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.utils import MissingParameter, InvalidParameter, CommandError
+from raspiot.exceptions import MissingParameter, InvalidParameter, CommandError
 from raspiot.libs.tests.lib import TestLib, TRACE
 import unittest
 import logging

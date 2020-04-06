@@ -7,13 +7,13 @@ import importlib
 import inspect
 import copy
 from threading import Event
-from raspiot import RaspIot, RaspIotRenderer, RaspIotRpcWrapper
-from .libs.configs.modulesjson import ModulesJson
-from utils import CommandError, MissingParameter, InvalidParameter
-from .libs.configs.raspiotconf import RaspiotConf
-from .libs.internals.install import Install
-import libs.internals.tools as Tools
-from utils import CORE_MODULES, ExecutionStep
+from raspiot.core import RaspIot, RaspIotRenderer, RaspIotRpcWrapper
+from raspiot.libs.configs.modulesjson import ModulesJson
+from raspiot.exceptions import CommandError, MissingParameter, InvalidParameter
+from raspiot.libs.configs.raspiotconf import RaspiotConf
+from raspiot.libs.internals.install import Install
+import raspiot.libs.internals.tools as Tools
+from raspiot.common import CORE_MODULES, ExecutionStep
 
 __all__ = [u'Inventory']
 

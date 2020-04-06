@@ -97,7 +97,7 @@ class CriticalResources():
                     resource_class_name = self.__get_resource_class_name(resource, mod_)
                     self.logger.trace('resource_class_name=%s' % resource_class_name)
                     if resource_class_name:
-                        class_ = getattr(mod_, resource.capitalize())
+                        class_ = getattr(mod_, resource_class_name)
                         self.resources[class_.RESOURCE_NAME] = {
                             u'using': None,
                             u'waiting': [],

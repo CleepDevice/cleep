@@ -4,7 +4,7 @@
 from raspiot.libs.configs.config import Config
 from raspiot.libs.commands.blkid import Blkid
 from raspiot.libs.internals.console import Console
-from raspiot.utils import MissingParameter
+from raspiot.exceptions import MissingParameter
 import re
 
 class Fstab(Config):

@@ -4,7 +4,7 @@
 import time
 import logging
 from raspiot.libs.drivers.driver import Driver
-from raspiot.utils import InvalidParameter, MissingParameter
+from raspiot.exceptions import InvalidParameter, MissingParameter
 
 class Drivers():
     """

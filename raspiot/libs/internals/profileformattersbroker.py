@@ -5,7 +5,8 @@ import logging
 import os
 import importlib
 import inspect
-from raspiot.utils import MissingParameter, InvalidParameter, CommandError, CORE_MODULES
+from raspiot.exceptions import MissingParameter, InvalidParameter, CommandError
+from raspiot.common import CORE_MODULES
 from raspiot.libs.internals.tools import full_split_path
 
 __all__ = [u'ProfileFormattersBroker']
@@ -16,7 +17,7 @@ class ProfileFormattersBroker():
     It also ensures formatters use exiting events
     """
 
-    PYTHON_RASPIOT_IMPORT_PATH = u'raspiot.modules'
+    PYTHON_RASPIOT_IMPORT_PATH = u'raspiot.modules.'
     MODULES_DIR = u'../../modules'
 
     def __init__(self, debug_enabled):
@@ -30,6 +31,7 @@ class ProfileFormattersBroker():
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.TRACE)
         self.events_broker = None
         # list of renderer module names with format::
         # 
@@ -131,7 +133,7 @@ class ProfileFormattersBroker():
                     parts = full_split_path(fullpath)
                     module_name = parts[-2]
                     if ext==u'.py' and formatter.lower().endswith(u'formatter'):
-                        self.logger.debug(' Found "%s"' % formatter)
+                        self.logger.debug(' Found "%s.%s"' % (module_name, formatter))
                         mod_ = importlib.import_module(u'%s%s.%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, module_name, formatter))
                         formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
                         if formatter_class_name:

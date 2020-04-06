@@ -4,7 +4,7 @@
 import time
 import logging
 from raspiot.libs.internals.task import Task
-from raspiot.utils import CommandError
+from raspiot.exceptions import CommandError
 
 class Driver():
     """

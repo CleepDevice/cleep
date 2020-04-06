@@ -12,7 +12,8 @@ from collections import deque
 from threading import Event
 from raspiot.libs.internals.task import Task
 from Queue import Queue
-from raspiot.utils import MessageResponse, MessageRequest, NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
+from raspiot.common import MessageResponse, MessageRequest
+from raspiot.exceptions import NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
 
 __all__ = [u'MessageBus', u'BusClient']
 

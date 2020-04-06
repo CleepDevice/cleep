@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.configs.config import Config
-from raspiot.utils import InvalidParameter
+from raspiot.exceptions import InvalidParameter
 import logging
 import re
 import time

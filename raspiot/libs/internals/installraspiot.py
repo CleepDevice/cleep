@@ -9,9 +9,9 @@ from zipfile import ZipFile
 import threading
 import tempfile
 import stat
-from raspiot.utils import ForcedException
+from raspiot.exceptions import ForcedException
 from raspiot.libs.internals.console import EndlessConsole
-from raspiot.raspiot import RaspIotModule
+from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
 from raspiot.libs.internals.installdeb import InstallDeb
 
