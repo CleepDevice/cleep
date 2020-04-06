@@ -449,7 +449,7 @@ class BusClient(threading.Thread):
 
         # members
         self.__continue = True
-        self.bus = bootstrap[u'message_bus']
+        self.__bus = bootstrap[u'message_bus']
         self.crash_report = bootstrap[u'crash_report']
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
@@ -457,7 +457,7 @@ class BusClient(threading.Thread):
         self.join_event.clear()
 
         # subscribe module to bus
-        self.bus.add_subscription(self.__module)
+        self.__bus.add_subscription(self.__module)
 
     def stop(self):
         self.__continue = False
@@ -541,7 +541,7 @@ class BusClient(threading.Thread):
         # push message
         if request.is_broadcast() or timeout is None or timeout==0.0:
             # broadcast message or no timeout, so no response
-            self.bus.push(request, timeout)
+            self.__bus.push(request, timeout)
 
             # broadcast response
             resp = MessageResponse()
@@ -550,7 +550,7 @@ class BusClient(threading.Thread):
 
         else:
             # response awaited
-            resp = self.bus.push(request, timeout)
+            resp = self.__bus.push(request, timeout)
             return resp
 
     def send_event(self, event, params=None, device_id=None, to=None):
@@ -721,7 +721,7 @@ class BusClient(threading.Thread):
                 msg = {}
                 try:
                     # get message
-                    msg = self.bus.pull(self.__module)
+                    msg = self.__bus.pull(self.__module)
 
                 except NoMessageAvailable:
                     # no message available
@@ -836,157 +836,7 @@ class BusClient(threading.Thread):
                 })
                 self.stop()
 
-            # self.logger.debug('----> sleep')
-            # time.sleep(1.0)
-
         # remove subscription
-        self.bus.remove_subscription(self.__module)
+        self.__bus.remove_subscription(self.__module)
         self.logger.debug(u'BusClient %s stopped' % self.__module)
 
-
-
-#class TestPolling(threading.Thread):
-#    """
-#    Only for debug purpose
-#    Object to send periodically message to subscriber
-#    """
-#    def __init__(self, bus):
-#        threading.Thread.__init__(self)
-#        threading.Thread.daemon = True
-#        self.bus = bus
-#        self.c = True
-#
-#    def stop(self):
-#        self.c = False
-#
-#    def run(self):
-#        while self.c:
-#            bus.push(time.strftime(u'%A %d %B, %H:%M:%S'))
-#            time.sleep(5)
-#
-#if __name__ == '__main__':
-#    logger = logging.getLogger(u'test')
-#
-#    class TestProcess1(BusClient):
-#        def __init__(self, bus):
-#            BusClient.__init__(self, bus)
-#
-#        def command1(self):
-#            print u'command1'
-#            return u'command1 executed'
-#
-#        def command2(self, p1, p2):
-#            print u'command2 wih p1=%s and p2=%s' % (unicode(p1), unicode(p2))
-#
-#    class TestProcess2(BusClient):
-#        def __init__(self, bus):
-#            BusClient.__init__(self, bus)
-#
-#        def command3(self):
-#            print u'command3 started'
-#            time.sleep(3.5)
-#            print u'command3 ended'
-#
-#        def command4(self, param):
-#            print u'command4 wih param=%s' % (unicode(param))
-#
-#    try:
-#        bus = MessageBus()
-#        p1 = TestProcess1(bus)
-#        p2 = TestProcess2(bus)
-#        p1.start()
-#        p2.start()
-#        msg0 = {u'command':u'command', u'param1':u'hello'}
-#        msg1 = {u'command':u'command1', u'param1':u'hello'}
-#        msg2 = {u'command':u'command2', u'p1':u'hello', u'p2':u'world'}
-#        msg3 = {u'command':u'command2', u'p1':u'hello', u'p3':u'world'}
-#        msg4 = {u'command':u'command3', u'param1':u'hello'}
-#        msg5 = {u'command':u'command4', u'param':u'ola que tal'}
-#
-#        #pause to make sure everything is started
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info(u'TEST1: send command to non existing module')
-#        try:
-#            bus.push(msg0, u'TestProcess')
-#        except InvalidParameter as e:
-#            if e.value.lower().find('unknown destination')!=-1:
-#                logger.info(' -> ok')
-#            else:
-#                logger.error(' -> ko')
-#        time.sleep(1.0)
-#        
-#        #==============================================
-#        logger.info('TEST2: send command with result')
-#        try:
-#            resp = bus.push(msg1, 'TestProcess1')
-#            if resp and resp['data']=='command1 executed':
-#                logger.info(' -> ok')
-#            else:
-#                logger.error(' -> ko')
-#        except:
-#            logger.exception(' -> ko')
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info('TEST3: send command with 2 params')
-#        try:
-#            resp = bus.push(msg2, 'TestProcess1')
-#            if resp['error']:
-#                logger.error(' -> ko')
-#            else:
-#                logger.info(' -> ok')
-#        except:
-#            logger.exception(' -> ko')
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info('TEST4: send command with 2 params with one invalid')
-#        try:
-#            resp = bus.push(msg3, 'TestProcess1')
-#            if resp['error'] and resp['message']=='Some command parameters are missing':
-#                logger.info(' -> ok')
-#            else:
-#                logger.error(' -> ko')
-#        except:
-#            logger.exception(' -> ko')
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info('TEST5: send command to module that doesn\'t implement command')
-#        try:
-#            resp = bus.push(msg3, 'TestProcess2')
-#            if resp['error'] and resp['message']=='Command command2 doesn\'t exist in TestProcess2 module':
-#                logger.info(' -> ok')
-#            else:
-#                logger.error(' -> ko')
-#        except:
-#            logger.exception(' -> ko')
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info('TEST6: test push timeout')
-#        try:
-#            resp = bus.push(msg4, 'TestProcess2')
-#            logger.error(' -> ko')
-#        except NoResponse:
-#            logger.info(' -> ok')
-#        except:
-#            logger.exception(' -> ko')
-#        time.sleep(1.0)
-#
-#        #==============================================
-#        logger.info('--------------------------')
-#        logger.info('Tests ended CTRL-C to quit')
-#        #==============================================
-#        while True:
-#            time.sleep(0.25)
-#            
-#    except KeyboardInterrupt:
-#        print 'CTRL-C'
-#        p1.stop()
-#        p2.stop()
-#        sys.exit(1)
-
-    
