@@ -234,7 +234,7 @@ class MessageBus():
         # append message to queues
         for q in self._queues:
             # do not send command to message sender
-            if q==request.from_:
+            if q==request.sender:
                 continue
 
             # enqueue message
@@ -533,7 +533,7 @@ class BusClient(threading.Thread):
             raise InvalidParameter(u'Request parameter must be MessageRequest instance')
         
         # fill sender
-        request.from_ = self.__module
+        request.sender = self.__module
 
         # drop message send to the same module
         if request.to is not None and request.to==self.__module:

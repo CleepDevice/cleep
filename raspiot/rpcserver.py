@@ -281,7 +281,7 @@ def send_command(command, to, params, timeout=None):
     request = MessageRequest()
     request.command = command
     request.to = to
-    request.from_ = u'rpcserver'
+    request.sender = u'rpcserver'
     request.params = params
 
     if timeout is not None:

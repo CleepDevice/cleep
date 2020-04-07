@@ -5,6 +5,8 @@
 This file shares some constants and classes
 """
 
+from raspiot.exceptions import InvalidMessage
+
 __all__ = [ u'CORE_MODULES', u'CATEGORIES',
             u'ExecutionStep', u'MessageResponse', u'MessageRequest']
 
@@ -94,7 +96,7 @@ class MessageRequest():
      - in case of an event:
        - an event name
        - event parameters
-       - eventsystem flag to say if event is a system one (and may not be pushed away from device)
+       - core_event flag to say if event is a core event (and may not be pushed away from device)
        - a device id
        - a startup flag that indicates this event was sent during raspiot startup
        - peer infos if message comes from external device
@@ -105,10 +107,10 @@ class MessageRequest():
         """
         self.command = None
         self.event = None
-        self.eventsystem = False
+        self.core_event = False
         self.params = {}
         self.to = None
-        self.from_ = None
+        self.sender = None
         self.device_id = None
         self.peer_infos = None
 
@@ -117,9 +119,9 @@ class MessageRequest():
         Stringify function
         """
         if self.command:
-            return u'{command:%s, params:%s, to:%s}' % (self.command, unicode(self.params), self.to)
+            return u'{command:%s, params:%s, to:%s, sender:%s}' % (self.command, unicode(self.params), self.to, self.sender)
         elif self.event:
-            return u'{event:%s, eventsystem:%s, params:%s, to:%s, peer_infos:%s}' % (self.event, self.eventsystem, unicode(self.params), self.to, self.peer_infos)
+            return u'{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (self.event, self.core_event, unicode(self.params), self.to, self.device_id, self.peer_infos)
         else:
             return u'Invalid message'
 
@@ -130,10 +132,7 @@ class MessageRequest():
         Return:
             bool: True if the request is broadcast
         """
-        if self.to==None:
-            return True
-        else:
-            return False
+        return True if self.to is None else False
 
     def is_external_event(self):
         """
@@ -142,10 +141,7 @@ class MessageRequest():
         Return:
             bool: True if event comes from external device
         """
-        if self.peer_infos is not None:
-            return True
-
-        return False
+        return True if self.peer_infos is not None else False
 
     def to_dict(self, startup=False):
         """
@@ -158,13 +154,13 @@ class MessageRequest():
             InvalidMessage if message is not valid
         """
         if self.command:
-            return {u'command':self.command, u'params':self.params, u'from':self.from_, u'broadcast': self.is_broadcast()}
+            return {u'command':self.command, u'params':self.params, u'to':self.to, u'sender':self.sender, u'broadcast': self.is_broadcast()}
 
-        elif self.event:
-            if not self.peer_infos:
-                return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'from':self.from_}
-            else:
-                return {u'event':self.event, u'params':self.params, u'startup':False, u'device_id':None, u'from':u'PEER', u'peer_infos':self.peer_infos}
+        elif self.event and not self.peer_infos:
+            return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'sender':self.sender}
+
+        elif self.event and self.peer_infos:
+            return {u'event':self.event, u'params':self.params, u'startup':False, u'device_id':None, u'sender':u'PEER', u'peer_infos':self.peer_infos}
 
         else:
             raise InvalidMessage()

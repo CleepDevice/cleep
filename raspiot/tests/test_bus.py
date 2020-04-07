@@ -38,7 +38,7 @@ class DummyModule(Thread):
         self.running = False
 
     def push(self, msg, timeout=3.0):
-        msg.from_ = self.name
+        msg.sender = self.name
         self._messages_to_send.append({
             'message': msg,
             'timeout': timeout
