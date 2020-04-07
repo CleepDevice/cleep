@@ -13,7 +13,7 @@ from threading import Event
 from raspiot.libs.internals.task import Task
 from Queue import Queue
 from raspiot.common import MessageResponse, MessageRequest
-from raspiot.exceptions import NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
+from raspiot.exception import NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
 
 __all__ = [u'MessageBus', u'BusClient']
 

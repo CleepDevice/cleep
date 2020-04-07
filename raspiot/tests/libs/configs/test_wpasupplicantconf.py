@@ -7,7 +7,7 @@ sys.path.append('/root/cleep/raspiot/libs/configs')
 from wpasupplicantconf import WpaSupplicantConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.console import Console
-from raspiot.exceptions import MissingParameter, InvalidParameter, CommandError
+from raspiot.exception import MissingParameter, InvalidParameter, CommandError
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging

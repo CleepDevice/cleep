@@ -6,7 +6,7 @@ from raspiot.libs.internals.eventsbroker import EventsBroker
 from raspiot.libs.internals.formattersbroker import FormattersBroker
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.criticalresources import CriticalResources
-from raspiot.exceptions import NoResponse
+from raspiot.exception import NoResponse
 from raspiot import bus
 from raspiot.libs.internals import event
 import raspiot.libs.internals.tools as tools

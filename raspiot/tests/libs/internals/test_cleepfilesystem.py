@@ -6,7 +6,7 @@ import sys
 sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from cleepfilesystem import CleepFilesystem
 from raspiot.libs.tests.lib import TestLib
-from raspiot.exceptions import InvalidParameter
+from raspiot.exception import InvalidParameter
 import unittest
 import logging
 from mock import Mock

@@ -6,7 +6,7 @@ import sys
 sys.path.append('%s/../' % os.getcwd())
 from common import MessageResponse, MessageRequest, ExecutionStep
 from raspiot.libs.tests.lib import TestLib
-from raspiot.exceptions import InvalidMessage
+from raspiot.exception import InvalidMessage
 import unittest
 import logging
 

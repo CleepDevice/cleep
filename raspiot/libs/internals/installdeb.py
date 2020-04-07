@@ -9,7 +9,7 @@ import logging
 import time
 import os
 from raspiot.libs.internals.console import EndlessConsole
-from raspiot.exceptions import MissingParameter, InvalidParameter
+from raspiot.exception import MissingParameter, InvalidParameter
 
 class InstallDeb():
     """

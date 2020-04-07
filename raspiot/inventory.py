@@ -9,7 +9,7 @@ import copy
 from threading import Event
 from raspiot.core import RaspIot, RaspIotRenderer, RaspIotRpcWrapper
 from raspiot.libs.configs.modulesjson import ModulesJson
-from raspiot.exceptions import CommandError, MissingParameter, InvalidParameter
+from raspiot.exception import CommandError, MissingParameter, InvalidParameter
 from raspiot.libs.configs.raspiotconf import RaspiotConf
 from raspiot.libs.internals.install import Install
 import raspiot.libs.internals.tools as Tools
@@ -40,11 +40,11 @@ class Inventory(RaspIot):
             configured_modules (dict): list of configured modules to start
             debug_config (dict): debug computed from config and command line
         """
-        #init
+        # init
         RaspIot.__init__(self, bootstrap, debug_enabled)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.__modules_loaded = False
         self.__rpcserver = rpcserver
         self.configured_modules = configured_modules
@@ -52,19 +52,19 @@ class Inventory(RaspIot):
         self.bootstrap = bootstrap
         self.events_broker = bootstrap[u'events_broker']
         self.formatters_broker = bootstrap[u'formatters_broker']
-        #dict to store event to synchronize module startups
+        # dict to store event to synchronize module startups
         self.__join_events = []
-        #used to store modules status (library or not) during modules loading
+        # used to store modules status (library or not) during modules loading
         self.__modules_loaded_as_dependency = {}
-        #list of modules: dict(<module name>:dict(<module config>), ...)
+        # list of modules: dict(<module name>:dict(<module config>), ...)
         self.modules = {}
-        #direct access to modules instances
+        # direct access to modules instances
         self.__modules_instances = {}
-        #modules that failed to starts
+        # modules that failed to starts
         self.__modules_in_errors = []
-        #module names that are RaspIotRpcWrapper instances
+        # module names that are RaspIotRpcWrapper instances
         self.__rpc_wrappers = []
-        #modules dependencies
+        # modules dependencies
         self.__dependencies = {}
 
     def _configure(self):
@@ -80,7 +80,7 @@ class Inventory(RaspIot):
         Args:
             event (MessageRequest): event data
         """
-        #handle module installation/uninstallation/update
+        # handle module installation/uninstallation/update
         if event[u'event'] in (u'system.module.install', u'system.module.uninstall', u'system.module.update'):
             if event[u'params'][u'module'] in self.modules:
                 if event[u'params'][u'status']==Install.STATUS_PROCESSING:
@@ -106,10 +106,7 @@ class Inventory(RaspIot):
         return bootstrap
 
     def __fix_country(self, country):
-        if not country:
-            return u''
-        else:
-            return country.lower()
+        return u'' if not country else country.lower()
 
     def __fix_urls(self, site_url, bugs_url, info_url, help_url):
         return {
@@ -133,49 +130,49 @@ class Inventory(RaspIot):
         else:
             self.logger.debug(u'Loading module "%s"' % module_name)
 
-        #set module is installed
+        # set module is installed
         self.modules[module_name][u'installed'] = True
 
-        #import module file and get module class
+        # import module file and get module class
         module_ = importlib.import_module(u'raspiot.modules.%s.%s' % (module_name, module_name))
         module_class_ = getattr(module_, module_name.capitalize())
                     
-        #enable or not debug
+        # enable or not debug
         debug = False
         if self.debug_config[u'trace_enabled'] or self.debug_config[u'debug_modules'].count(module_name)==1:
             self.logger.debug(u'Debug enabled for module "%s"' % module_name)
             debug = True
 
-        #instanciate module class
+        # instanciate module class
         self.logger.debug(u'Starting module "%s"' % module_name)
 
-        #load module dependencies
+        # load module dependencies
         if module_class_.MODULE_DEPS:
             for dependency in module_class_.MODULE_DEPS:
-                #update dependencies list
+                # update dependencies list
                 if dependency not in self.__dependencies:
                     self.__dependencies[dependency] = []
                 self.__dependencies[dependency].append(module_name)
                 
                 if dependency not in self.__modules_loaded_as_dependency:
-                    #load dependency
+                    # load dependency
                     self.__load_module(dependency, local_modules, True)
 
-                    #flag module is loaded as dependency and not module
+                    # flag module is loaded as dependency and not module
                     self.__modules_loaded_as_dependency[dependency] = True
             
                 else:
-                    #module is already loaded, nothing else to do
+                    # module is already loaded, nothing else to do
                     pass
 
-        #instanciate module
+        # instanciate module
         bootstrap = self.__get_bootstrap()
         self.__modules_instances[module_name] = module_class_(bootstrap, debug)
 
-        #append module join event to make sure all modules are loaded
+        # append module join event to make sure all modules are loaded
         self.__join_events.append(bootstrap[u'join_event'])
 
-        #fix some metadata
+        # fix some metadata
         fixed_urls = self.__fix_urls(
             getattr(module_class_, u'MODULE_URLSITE', None),
             getattr(module_class_, u'MODULE_URLBUGS', None),
@@ -184,7 +181,7 @@ class Inventory(RaspIot):
         )
         fixed_country = self.__fix_country(getattr(module_class_, u'MODULE_COUNTRY', None))
 
-        #update metadata with local values
+        # update metadata with local values
         if module_name not in self.modules:
             self.modules[module_name] = {}
         self.modules[module_name][u'description'] = module_class_.MODULE_DESCRIPTION
@@ -197,12 +194,12 @@ class Inventory(RaspIot):
         self.modules[module_name][u'screenshots'] = getattr(module_class_, u'MODULE_SCREENSHOTS', [])
         self.modules[module_name][u'deps'] = getattr(module_class_, u'MODULE_DEPS', [])
 
-        #handle properly version and updatable flag
+        # handle properly version and updatable flag
         if u'version' in self.modules[module_name] and Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
             self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
         self.modules[module_name][u'version'] = module_class_.MODULE_VERSION
 
-        #flag module is loaded as module and not dependency
+        # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
     def __get_modules_json(self):
@@ -215,7 +212,7 @@ class Inventory(RaspIot):
         modules_json = ModulesJson(self.cleep_filesystem)
 
         if not modules_json.exists():
-            #modules.json doesn't exists, download it
+            # modules.json doesn't exists, download it
             self.logger.info(u'No modules.json still loaded from CleepOS website. Download it now')
             if modules_json.update():
                 self.logger.info(u'File modules.json downloaded successfully')
@@ -231,22 +228,22 @@ class Inventory(RaspIot):
         Reload modules refreshing only not installed modules
         """
         self.logger.debug(u'Reloading modules')
-        #get list of all available modules (from remote list)
+        # get list of all available modules (from remote list)
         modules_json_content = self.__get_modules_json()
         modules_json = modules_json_content[u'list']
 
-        #iterates over modules.json
+        # iterates over modules.json
         for module_name in modules_json:
             if module_name not in self.modules:
                 self.logger.debug(u'Append module "%s" to list of modules' % module_name)
-                #new module, add new entry in existing modules list
+                # new module, add new entry in existing modules list
                 self.modules[module_name] = {}
                 
-                #add data from modules.json
+                # add data from modules.json
                 for key in modules_json[module_name]:
                     self.modules[module_name][key] = copy.deepcopy(modules_json[module_name][key])
 
-                #add internal data
+                # add internal data
                 self.modules[module_name][u'name'] = module_name
                 self.modules[module_name][u'installed'] = False
                 self.modules[module_name][u'library'] = False
@@ -260,16 +257,16 @@ class Inventory(RaspIot):
         """
         Load all modules
         """
-        #init
+        # init
         if self.__modules_loaded:
             raise Exception(u'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
         local_modules = []
                 
-        #get list of all available modules (from remote list)
+        # get list of all available modules (from remote list)
         modules_json_content = self.__get_modules_json()
         self.modules = modules_json_content[u'list']
 
-        #append manually installed modules (surely module in development)
+        # append manually installed modules (surely module in development)
         path = os.path.join(os.path.dirname(__file__), u'modules')
         if not os.path.exists(path):
             raise CommandError(u'Invalid modules path')
@@ -282,7 +279,7 @@ class Inventory(RaspIot):
                 local_modules.append(module_name)
                 self.modules[module_name] = {}
 
-        #add default metadata
+        # add default metadata
         for module_name in self.modules:
             self.modules[module_name][u'name'] = module_name
             self.modules[module_name][u'installed'] = False
@@ -296,17 +293,17 @@ class Inventory(RaspIot):
             self.modules[module_name][u'deps'] = []
             self.modules[module_name][u'dependsof'] = []
 
-        #execution step: BOOT->INIT
+        # execution step: BOOT->INIT
         self.bootstrap[u'execution_step'].step = ExecutionStep.INIT
 
-        #load mandatory modules
+        # load mandatory modules
         for module_name in CORE_MODULES:
             try:
-                #load module
+                # load module
                 self.__load_module(module_name, local_modules)
 
             except:
-                #failed to load mandatory module
+                # failed to load mandatory module
                 self.logger.fatal(u'Unable to load main module "%s". System will be instable' % module_name)
                 self.logger.exception(u'Module "%s" exception:' % module_name)
                 self.crash_report.report_exception({
@@ -314,49 +311,49 @@ class Inventory(RaspIot):
                     u'module_name': module_name
                 })
 
-        #load installed modules
+        # load installed modules
         for module_name in self.configured_modules:
             try:
-                #load module
+                # load module
                 self.__load_module(module_name, local_modules)
 
-                #fill renderers
+                # fill renderers
                 if issubclass(self.__modules_instances[module_name].__class__, RaspIotRenderer):
                     config = self.__modules_instances[module_name]._get_renderer_config()
                     self.formatters_broker.register_renderer(module_name, config[u'profiles'])
 
             except:
-                #flag modules has in error
+                # flag modules has in error
                 self.__modules_in_errors.append(module_name)
 
-                #failed to load module
+                # failed to load module
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
 
-        #execution step: INIT->CONFIG
+        # execution step: INIT->CONFIG
         self.bootstrap[u'execution_step'].step = ExecutionStep.CONFIG
 
-        #finalize loading process
+        # finalize loading process
         for module_name in self.modules:
-            #fix final library status
+            # fix final library status
             if module_name in self.__modules_loaded_as_dependency:
                 self.modules[module_name][u'library'] = self.__modules_loaded_as_dependency[module_name]
 
-            #store rpc wrappers
+            # store rpc wrappers
             if module_name in self.__modules_instances and isinstance(self.__modules_instances[module_name], RaspIotRpcWrapper):
                 self.logger.debug(u'Store RpcWrapper instance "%s"' % module_name)
                 self.__rpc_wrappers.append(module_name)
 
-        #start installed modules
+        # start installed modules
         for module_name, module_ in self.__modules_instances.items():
             module_.start()
 
-        #wait for all modules to be completely loaded
+        # wait for all modules to be completely loaded
         self.logger.info(u'Waiting for end of modules configuration...')
         for join_event in self.__join_events:
             join_event.wait()
         self.logger.info(u'All modules are configured.')
 
-        #execution step: CONFIG->RUN
+        # execution step: CONFIG->RUN
         self.bootstrap[u'execution_step'].step = ExecutionStep.RUN
 
         self.__modules_loaded = True
@@ -366,11 +363,11 @@ class Inventory(RaspIot):
         """
         Unload all modules stopping them
         """
-        #stpo all running modules
+        # stop all running modules
         for module_name in self.__modules_instances:
             self.__modules_instances[module_name].stop()
 
-        #clear collection
+        # clear collection
         self.__modules_instances.clear()
 
     def get_device_module(self, uuid):
@@ -408,11 +405,11 @@ class Inventory(RaspIot):
         Raises:
             CommandError: if module doesn't exists
         """
-        #check values
+        # check values
         if module in self.modules:
             raise CommandError(u'Module %s doesn\'t exist' % module)
 
-        #search module devices
+        # search module devices
         devices = self.get_devices()
         for module_name in devices:
             if module_name==module:
@@ -439,10 +436,10 @@ class Inventory(RaspIot):
                 }
 
         """
-        #init
+        # init
         devices = {}
 
-        #get all devices
+        # get all devices
         for module_name in self.__modules_instances:
             try:
                 module_devices = self.__modules_instances[module_name].get_module_devices()
@@ -471,7 +468,7 @@ class Inventory(RaspIot):
         if module in self.modules:
             output = copy.deepcopy(self.modules[module])
 
-            #inject module dependencies
+            # inject module dependencies
             output[u'dependsof'] = []
             if module in self.__dependencies:
                 output[u'dependsof'] = self.__dependencies[module]
@@ -519,18 +516,18 @@ class Inventory(RaspIot):
 
         for module_name, module in installed_modules.items():
             try:
-                #drop not launched modules
+                # drop not launched modules
                 if module_name not in self.__modules_instances:
                     continue
                     
-                #current module config
+                # current module config
                 module[u'config'] = self.__modules_instances[module_name].get_module_config()
             
-                #module events
+                # module events
                 if module_name in events:
                     module[u'events'] = events[module_name]
     
-                #started flag
+                # started flag
                 if module_name in self.__modules_in_errors:
                     module[u'started'] = False
                 else:
@@ -560,34 +557,34 @@ class Inventory(RaspIot):
                 }
 
         """
-        #init
+        # init
         all_modules = copy.deepcopy(self.modules)
         conf = RaspiotConf(self.cleep_filesystem)
         raspiot_config = conf.as_dict()
         
-        #inject volatile infos
+        # inject volatile infos
         filtered_modules = {}
         for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v,all_modules)}.items():
             try:
-                #pending status
+                # pending status
                 module[u'pending'] = False
                 if module_name in CORE_MODULES:
-                    #mandatory modules
+                    # mandatory modules
                     module[u'pending'] = False
                 elif module_name in self.__modules_in_errors:
-                    #module failed to start, force eventual pending state to false
+                    # module failed to start, force eventual pending state to false
                     module[u'pending'] = False
                 elif module_name in raspiot_config[u'general'][u'modules'] and not module[u'installed']:
-                    #install pending
+                    # install pending
                     module[u'pending'] = True
                 elif module_name not in raspiot_config[u'general'][u'modules'] and module[u'installed'] and module[u'library']:
-                    #module is installed as library
+                    # module is installed as library
                     module[u'pending'] = False
                 elif module_name not in raspiot_config[u'general'][u'modules'] and module[u'installed'] and not module[u'library']:
-                    #uninstall pending
+                    # uninstall pending
                     module[u'pending'] = True
                 elif module_name in raspiot_config[u'general'][u'updated'] and module[u'installed']:
-                    #module updated, need to restart raspiot
+                    # module updated, need to restart raspiot
                     module[u'pending'] = True
 
                 filtered_modules[module_name] = module
@@ -610,10 +607,7 @@ class Inventory(RaspIot):
                 ['command1', 'command2', ...]
 
         """
-        if module in self.__modules_instances:
-            return self.__modules_instances[module].get_module_commands()
-
-        return None
+        return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else None
 
     def is_module_loaded(self, module):
         """
@@ -642,11 +636,11 @@ class Inventory(RaspIot):
         """
         debugs = {}
         for module in self.modules:
-            #installed module ?
+            # installed module ?
             if not self.modules[module][u'installed']:
                 continue
 
-            #get debug status
+            # get debug status
             try:
                 debugs[module] = {
                     u'debug': self.__modules_instances[module].is_debug_enabled()
@@ -658,14 +652,16 @@ class Inventory(RaspIot):
                     u'debug': False
                 }
 
-        #append system modules
-        debugs[u'inventory'] = {
-            u'debug': self.is_debug_enabled()
-        }
-        debugs[u'rpc'] = {
-            u'debug': self.__rpcserver.get_debug()
-        }
-    
+        # append core modules
+        debugs.update({
+            u'inventory': {
+                u'debug': self.is_debug_enabled()
+            },
+            u'rpc': {
+                u'debug': self.__rpcserver.get_debug()
+            }
+        })
+
         return debugs
 
     def set_rpc_debug(self, debug):

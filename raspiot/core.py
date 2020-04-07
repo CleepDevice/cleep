@@ -6,7 +6,7 @@ import os
 import json
 from raspiot.bus import BusClient
 from threading import Lock, Thread, Timer
-from raspiot.exceptions import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable
+from raspiot.exception import CommandError, MissingParameter, InvalidParameter, ResourceNotAvailable
 from raspiot.common import ExecutionStep, CORE_MODULES
 import time
 import copy

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from raspiot.exceptions import InvalidParameter, MissingParameter, CommandError
+from raspiot.exception import InvalidParameter, MissingParameter, CommandError
 from raspiot.libs.configs.config import Config
 from raspiot.libs.internals.console import Console
 import os

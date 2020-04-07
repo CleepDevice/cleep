@@ -26,7 +26,7 @@ from gevent import monkey; monkey.patch_all()
 from gevent import queue
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
-from raspiot.exceptions import NoMessageAvailable, CommandError, NoResponse
+from raspiot.exception import NoMessageAvailable, CommandError, NoResponse
 from raspiot.common import MessageResponse, MessageRequest
 import bottle
 from bottle import auth_basic

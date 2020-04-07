@@ -6,7 +6,7 @@ import sys
 sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from installraspiot import InstallRaspiot, Download, InstallDeb, EndlessConsole
 from raspiot.libs.tests.lib import TestLib
-from raspiot.exceptions import MissingParameter, InvalidParameter
+from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 import time

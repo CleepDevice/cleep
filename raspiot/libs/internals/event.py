@@ -4,7 +4,7 @@
 import logging
 import inspect
 from raspiot.common import MessageRequest
-from raspiot.exceptions import InvalidParameter
+from raspiot.exception import InvalidParameter
 
 class Event():
     """

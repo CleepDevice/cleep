@@ -3,7 +3,7 @@
 
 from raspiot.libs.internals.console import Console
 from raspiot.libs.internals.readwrite import ReadWrite, ReadWriteContext
-from raspiot.exceptions import InvalidParameter
+from raspiot.exception import InvalidParameter
 import logging
 import os
 from threading import Timer, Lock

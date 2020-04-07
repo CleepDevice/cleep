@@ -13,7 +13,7 @@ from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
 from raspiot.libs.internals.installmodule import InstallModule, UninstallModule, UpdateModule
 from raspiot.libs.internals.installdeb import InstallDeb
-from raspiot.exceptions import MissingParameter, InvalidParameter
+from raspiot.exception import MissingParameter, InvalidParameter
 
 __all__ = ['Install']
 

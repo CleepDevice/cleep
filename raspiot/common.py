@@ -5,7 +5,7 @@
 This file shares some constants and classes
 """
 
-from raspiot.exceptions import InvalidMessage
+from raspiot.exception import InvalidMessage
 
 __all__ = [ u'CORE_MODULES', u'CATEGORIES',
             u'ExecutionStep', u'MessageResponse', u'MessageRequest']

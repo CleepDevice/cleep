@@ -5,9 +5,9 @@
 Cleep exceptions
 """
 
-__all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'InvalidParameter', u'ResourceNotAvailable'
-           u'NoCityFound', u'InvalidParameter', u'MissingParameter', u'InvalidMessage', u'InvalidModule', u'Unauthorized', u'BusError',
-           u'ForcedException']
+__all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'ResourceNotAvailable'
+           u'NoCityFound', u'InvalidParameter', u'MissingParameter', u'InvalidMessage', u'InvalidModule',
+           u'Unauthorized', u'BusError', u'ForcedException']
 
 class CommandError(Exception):
     def __init__(self, message):
@@ -31,8 +31,10 @@ class NoResponse(Exception):
         return self.message
 
 class NoMessageAvailable(Exception):
+    def __init__(self):
+        self.message = u'No message available'
     def __str__(self):
-        return u'No message available'
+        return self.message
 
 class ResourceNotAvailable(Exception):
     def __init__(self, resource):
@@ -41,8 +43,10 @@ class ResourceNotAvailable(Exception):
         return u'Resource %s not available' % self.resource
 
 class NoCityFound(Exception):
+    def __init__(self):
+        self.message = u'No city found'
     def __str__(self):
-        return u'No city found'
+        return self.message
 
 class InvalidParameter(Exception):
     def __init__(self, message):

@@ -7,7 +7,7 @@ sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from profileformatter import ProfileFormatter
 from raspiot.libs.tests.lib import TestLib
 from raspiot.libs.internals.rendererprofile import RendererProfile
-from raspiot.exceptions import InvalidParameter
+from raspiot.exception import InvalidParameter
 import unittest
 import logging
 

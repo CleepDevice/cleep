@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.libs.internals.console import AdvancedConsole
-from raspiot.exceptions import CommandError, MissingParameter, InvalidParameter
+from raspiot.exception import CommandError, MissingParameter, InvalidParameter
 import logging
 import re
 import os

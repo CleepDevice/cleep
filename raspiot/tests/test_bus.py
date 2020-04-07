@@ -7,7 +7,7 @@ sys.path.append('%s/../' % os.getcwd())
 from bus import MessageBus, BusClient, deque, inspect
 from raspiot.libs.tests.lib import TestLib
 from raspiot.common import MessageRequest, MessageResponse
-from raspiot.exceptions import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage
+from raspiot.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage
 import unittest
 import logging
 from mock import Mock, patch

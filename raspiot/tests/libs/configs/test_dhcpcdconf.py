@@ -6,7 +6,7 @@ import sys
 sys.path.append('/root/cleep/raspiot/libs/configs')
 from dhcpcdconf import DhcpcdConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.exceptions import MissingParameter, InvalidParameter, CommandError
+from raspiot.exception import MissingParameter, InvalidParameter, CommandError
 from raspiot.libs.tests.lib import TestLib, TRACE
 import unittest
 import logging
