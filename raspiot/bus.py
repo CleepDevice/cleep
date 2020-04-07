@@ -745,12 +745,12 @@ class BusClient(threading.Thread):
                             try:
                                 # get command reference
                                 command = getattr(self, msg[u'message'][u'command'])
-                                self.logger.debug(u'%s received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'from'], msg[u'message'][u'params']))
+                                self.logger.debug(u'%s received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
 
                                 # check if command was found
                                 if command is not None:
                                     # check if message contains all command parameters
-                                    (ok, args) = self.__check_params(command, msg[u'message'][u'params'], msg[u'message'][u'from'])
+                                    (ok, args) = self.__check_params(command, msg[u'message'][u'params'], msg[u'message'][u'sender'])
                                     # self.logger.debug(u'Command ok=%s args=%s' % (ok, args))
                                     if ok:
                                         # execute command
@@ -808,8 +808,8 @@ class BusClient(threading.Thread):
                             msg[u'event'].set()
                     
                     elif msg[u'message'].has_key(u'event'):
-                        self.logger.debug(u'%s received event "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'event'], msg[u'message'][u'from'], msg[u'message'][u'params']))
-                        if msg[u'message'].has_key(u'from') and msg[u'message'][u'from']==self.__module: # pragma: no cover
+                        self.logger.debug(u'%s received event "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'event'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
+                        if msg[u'message'].has_key(u'sender') and msg[u'message'][u'sender']==self.__module: # pragma: no cover
                             # robustness: this cas should not happen because bus already check it
                             # drop event sent to the same module
                             self.logger.trace('Do not process event from same module')

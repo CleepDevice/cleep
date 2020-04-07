@@ -327,7 +327,7 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         
         self.mod1.push(self._get_message_request(to='otherdummy'), timeout=None)
-        time.sleep(0.25)
+        time.sleep(0.5)
         self.b.add_subscription(self.mod2.name)
         self.b.app_configured()
         
