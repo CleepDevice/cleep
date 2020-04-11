@@ -184,7 +184,7 @@ class EventsBroker():
                 {
                     event1: {
                         modules (list): list of modules that reference the event,
-                        profiles (Event): list of profiles that references the event
+                        profiles (list[Event]): list of profiles that references the event
                     },
                     ...
                 }
