@@ -142,7 +142,7 @@ class EndlessConsole(Thread):
         """
         Console process
         """
-        #launch command
+        # launch command
         return_code = None
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
@@ -150,35 +150,34 @@ class EndlessConsole(Thread):
         self.logger.trace(u'PID=%d' % pid)
 
         if self.callback:
-            #async stdout reading
+            # async stdout reading
             self.__stdout_thread = Thread(target=self.__enqueue_output, args=(p.stdout, self.__stdout_queue))
             self.__stdout_thread.daemon = True
             self.__stdout_thread.start()
 
-            #async stderr reading
+            # async stderr reading
             self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue))
             self.__stderr_thread.daemon = True
             self.__stderr_thread.start()
 
-        #wait for end of command line
+        # wait for end of command line
         while self.running:
-            #check process status
+            # check process status
             p.poll()
 
-            #read outputs and trigger callback
+            # read outputs and trigger callback
             self.__send_stds()
 
-            #check end of command
-            #self.logger.trace(u'Return code=%s' % p.returncode)
+            # check end of command
             if p.returncode is not None:
                 return_code = p.returncode
                 self.logger.debug(u'Process is terminated with return code %s' % p.returncode)
                 break
             
-            #pause
+            # pause
             time.sleep(0.25)
 
-        #purge queues
+        # purge queues
         self.logger.trace('Purging outputs...')
         count = 0
         while self.__send_stds() or count<=5:
@@ -187,7 +186,17 @@ class EndlessConsole(Thread):
             time.sleep(0.05)
         self.logger.trace('Purge completed')
 
-        #make sure process (and child processes) is really killed
+        # make sure all stds are closed
+        try:
+            p.stdout.close()
+        except:
+            pass
+        try:
+            p.stderr.close()
+        except:
+            pass
+
+        # make sure process (and child processes) is really killed
         if self.killed and pid!=1:
             try:
                 if ON_POSIX:
@@ -197,10 +206,10 @@ class EndlessConsole(Thread):
             except: # pragma: no cover
                 pass
 
-        #process is over
+        # process is over
         self.running = False
 
-        #stop callback
+        # stop callback
         if self.callback_end:
             self.logger.trace('Call end callback')
             try:
@@ -218,13 +227,13 @@ class Console():
         """
         Constructor
         """
-        #members
+        # members
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
         self.last_return_code = None
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
     def __del__(self):
         """
@@ -276,33 +285,33 @@ class Console():
 
         """
         self.logger.trace('Launch command "%s"' % command)
-        #check params
+        # check params
         if timeout is None or timeout<=0.0:
             raise Exception(u'Timeout is mandatory and must be greater than 0')
 
-        #launch command
+        # launch command
         p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
         pid = p.pid
 
-        #wait for end of command line
+        # wait for end of command line
         done = False
         start = time.time()
         killed = False
         return_code = None
         while not done:
-            #check if command has finished
+            # check if command has finished
             p.poll()
             if p.returncode is not None:
-                #command terminated
+                # command terminated
                 self.logger.trace('Command terminated with returncode %s' % p.returncode)
                 return_code = p.returncode
                 self.last_return_code = return_code
                 done = True
                 break
             
-            #check timeout
+            # check timeout
             if time.time()>(start + timeout):
-                #timeout is over, kill command
+                # timeout is over, kill command
                 pgid = os.getpgid(pid)
                 self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
                 try:
@@ -315,10 +324,10 @@ class Console():
                 killed = True
                 break
 
-            #pause
+            # pause
             time.sleep(0.125)
        
-        #prepare result
+        # prepare result
         result = {
             u'returncode': return_code,
             u'error': False,
@@ -332,7 +341,17 @@ class Console():
             result[u'stdout'] = self.__process_lines(p.stdout.readlines())
         self.logger.trace('Result: %s' % result)
 
-        #trigger callback (used for delayed command)
+        # make sure all stds are closed
+        try:
+            p.stdout.close()
+        except:
+            pass
+        try:
+            p.stderr.close()
+        except:
+            pass
+
+        # trigger callback (used for delayed command)
         if self.__callback:
             self.__callback(result)
 
@@ -387,13 +406,13 @@ class AdvancedConsole(Console):
         """
         results = []
 
-        #execute command
+        # execute command
         res = self.command(command, timeout)
         if self.get_last_return_code()!=0:
-            #command failed
+            # command failed
             return []
 
-        #parse command output
+        # parse command output
         content = u'\n'.join(res[u'stdout'])
         return self.find_in_string(content, pattern, options)
 
