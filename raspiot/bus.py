@@ -681,6 +681,8 @@ class BusClient(threading.Thread):
                     event (string): event name
                     params (dict): event parameters
                     device_id (string): device that emits event or None
+                    sender (string): event sender
+                    startup (bool): startup event flag
                 }
 
         """

@@ -508,7 +508,16 @@ class RaspIot(BusClient):
         Event is received on bus
 
         Args:
-            event (dict): event infos (event, params)
+            event (dict): MessageRequest as dict with event values::
+
+                {
+                    event (string): event name
+                    params (dict): event parameters
+                    device_id (string): device that emits event or None
+                    sender (string): event sender
+                    startup (bool): startup event flag
+                }
+
         """
         self.event_received(event)
 
@@ -520,7 +529,16 @@ class RaspIot(BusClient):
             Implement this function to handle event on your module
 
         Args:
-            event (dict): TODO
+            event (dict): MessageRequest as dict with event values::
+
+                {
+                    event (string): event name
+                    params (dict): event parameters
+                    device_id (string): device that emits event or None
+                    sender (string): event sender
+                    startup (bool): startup event flag
+                }
+
         """
         pass
 

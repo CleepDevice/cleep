@@ -154,12 +154,15 @@ class MessageRequest():
             InvalidMessage if message is not valid
         """
         if self.command:
+            # command
             return {u'command':self.command, u'params':self.params, u'to':self.to, u'sender':self.sender, u'broadcast': self.is_broadcast()}
 
         elif self.event and not self.peer_infos:
+            # internal event
             return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'sender':self.sender}
 
         elif self.event and self.peer_infos:
+            # external event
             return {u'event':self.event, u'params':self.params, u'startup':False, u'device_id':None, u'sender':u'PEER', u'peer_infos':self.peer_infos}
 
         else:
