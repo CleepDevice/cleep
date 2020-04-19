@@ -59,7 +59,7 @@ cleep_filesystem = None
 inventory = None
 bus = None
 crash_report = None
-no_cache_control = False
+cache_enabled = True
 
 
 def load_auth():
@@ -113,15 +113,15 @@ def configure(bootstrap, inventory_, debug_enabled_):
     # load auth
     load_auth()
 
-def set_cache_control(no_cache):
+def set_cache_control(cache_enabled_):
     """
-    Set cache control values
+    Set cache control
 
     Args:
-        no_cache (bool): False to disable cache control
+        cache_enabled_ (bool): True to enable cache
     """
-    global no_cache_control
-    no_cache_control = no_cache
+    global cache_enabled
+    cache_enabled = cache_enabled_
 
 def set_debug(debug_enabled_):
     """
@@ -138,7 +138,7 @@ def set_debug(debug_enabled_):
     else:
         logger.setLevel(logging.getLogger().getEffectiveLevel())
 
-def get_debug():
+def is_debug_enabled():
     """
     Return debug status
 
@@ -770,7 +770,7 @@ def rpc_wrapper(route):
     Custom rpc route used to implement wrappers (ie REST=>RPC)
     This route is intended to be used with external services like alexa
     """
-    return inventory.rpc_wrapper(route, bottle.request)
+    return inventory._rpc_wrapper(route, bottle.request)
 
 @app.route(u'/<path:path>', method=u'GET')
 @authenticate()
@@ -778,7 +778,7 @@ def default(path):
     """
     Servers static files from HTML_DIR.
     """
-    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if no_cache_control else u'max-age=3600')
+    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if not cache_enabled else u'max-age=3600')
     return bottle.static_file(path, HTML_DIR)
 
 @app.route(u'/', method=u'GET')
@@ -787,7 +787,7 @@ def index():
     """
     Return a default document if no path was specified.
     """
-    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if no_cache_control else u'max-age=3600')
+    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if not cache_enabled else u'max-age=3600')
     return bottle.static_file(u'index.html', HTML_DIR)
 
 @app.route(u'/logs', method=u'GET')
