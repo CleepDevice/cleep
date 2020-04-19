@@ -78,7 +78,7 @@ class RaspIot(BusClient):
                 disabled_by_system=bootstrap[u'crash_report'].is_enabled()
             )
 
-        elif self._get_module_name() in CORE_MODULES:
+        elif self._get_module_name() in CORE_MODULES or self._get_module_name()==u'inventory':
             # set default crash report for core module
             self.logger.debug(u'Crash report enabled for core module')
             self.crash_report = bootstrap[u'crash_report']
@@ -772,11 +772,11 @@ class RaspIotModule(RaspIot):
         Returns:
             dict: None if device not found, device data otherwise.
         """
-        devices = self._get_config_field(u'devices')
-        if uuid in devices:
-            return devices[uuid]
+        if not self._has_config_file():
+            return None
 
-        return None
+        devices = self._get_config_field(u'devices')
+        return devices[uuid] if uuid in devices else None
 
     def get_module_devices(self):
         """
@@ -791,7 +791,7 @@ class RaspIotModule(RaspIot):
                 }
 
         """
-        return self._get_config()[u'devices']
+        return self._get_config()[u'devices'] if self._has_config_file() else {}
 
     def _get_devices(self):
         """
@@ -815,7 +815,7 @@ class RaspIotModule(RaspIot):
         Returns:
             int: number of saved devices.
         """
-        return len(self._get_config_field(u'devices'))
+        return len(self._get_config_field(u'devices')) if self._has_config_file() else 0
 
     def get_module_config(self):
         """
