@@ -253,12 +253,12 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.set_debug(True)
             self.assertEqual(rpcserver.debug_enabled, True)
             self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.DEBUG)
-            self.assertTrue(rpcserver.get_debug())
+            self.assertTrue(rpcserver.is_debug_enabled())
 
             rpcserver.set_debug(False)
             self.assertEqual(rpcserver.debug_enabled, False)
             self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.getLogger().getEffectiveLevel())
-            self.assertFalse(rpcserver.get_debug())
+            self.assertFalse(rpcserver.is_debug_enabled())
 
     def test_debug_enabled_with_configure(self):
         self._init_context(debug_enabled=True)
@@ -266,7 +266,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertEqual(rpcserver.debug_enabled, True)
             self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.DEBUG)
-            self.assertTrue(rpcserver.get_debug())
+            self.assertTrue(rpcserver.is_debug_enabled())
 
     def test_debug_disabled_with_configure(self):
         self._init_context(debug_enabled=False)
@@ -274,7 +274,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertEqual(rpcserver.debug_enabled, False)
             self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.getLogger().getEffectiveLevel())
-            self.assertFalse(rpcserver.get_debug())
+            self.assertFalse(rpcserver.is_debug_enabled())
 
     def test_send_command(self):
         self._init_context()
