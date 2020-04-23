@@ -4,7 +4,7 @@
 import os
 import sys
 sys.path.append('%s/../' % os.getcwd())
-from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, NoCityFound, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError, ForcedException
+from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError, ForcedException
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -43,11 +43,6 @@ class ExceptionTests(unittest.TestCase):
         e = ResourceNotAvailable('dummy')
         self.assertNotEqual(e.message, 0)
         self.assertEqual('%s' % e, 'Resource dummy not available')
-
-    def test_nocityfound(self):
-        e = NoCityFound()
-        self.assertNotEqual(e.message, 0)
-        self.assertEqual('%s' % e, 'No city found')
 
     def test_invalidparameter(self):
         e = InvalidParameter('message')
