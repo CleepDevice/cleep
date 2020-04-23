@@ -11,7 +11,7 @@ from raspiot.libs.drivers.driver import Driver
 from raspiot.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
-from mock import Mock, patch
+from mock import Mock, MagicMock, patch
 import time
 import io
 import copy
@@ -94,7 +94,7 @@ class RaspIotTests(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': Mock(),
+            'message_bus': MagicMock(),
             'join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
@@ -501,7 +501,7 @@ class RaspIotModuleTests(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': Mock(),
+            'message_bus': MagicMock(),
             'join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
@@ -800,7 +800,7 @@ class RaspIotRpcWrapperTests(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': Mock(),
+            'message_bus': MagicMock(),
             'join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
@@ -896,7 +896,7 @@ class RaspIotResourcesTests(unittest.TestCase):
         self.critical_resources = Mock()
 
         self.bootstrap = {
-            'message_bus': Mock(),
+            'message_bus': MagicMock(),
             'join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
@@ -1011,7 +1011,7 @@ class RaspIotRendererTests(unittest.TestCase):
         self.critical_resources = Mock()
 
         self.bootstrap = {
-            'message_bus': Mock(),
+            'message_bus': MagicMock(),
             'join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,

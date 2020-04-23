@@ -7,10 +7,10 @@ This file shares some constants and classes
 
 from raspiot.exception import InvalidMessage
 
-__all__ = [ u'CORE_MODULES', u'CATEGORIES',
-            u'ExecutionStep', u'MessageResponse', u'MessageRequest']
+__all__ = [u'CORE_MODULES', u'CATEGORIES',
+           u'ExecutionStep', u'MessageResponse', u'MessageRequest']
 
-"""        
+"""
 CONSTANTS
 """
 CORE_MODULES = [
@@ -21,7 +21,7 @@ CORE_MODULES = [
     u'parameters'
 ]
 
-class CATEGORIES():
+class CATEGORIES(object):
     """
     Cleep application categories
     """
@@ -37,14 +37,13 @@ class CATEGORIES():
     MEDIA = u'MEDIA'
     #application based on online service (sms broker, weather provider...)
     SERVICE = u'SERVICE'
-    
+
     ALL = [u'APPLICATION', u'MOBILE', u'DRIVER', u'HOMEAUTOMATION', u'MEDIA', u'SERVICE']
 
+    def __init__(self):
+        pass
 
-"""
-Shared classes
-"""
-class ExecutionStep():
+class ExecutionStep(object):
     """
     Cleep execution steps
     """
@@ -62,8 +61,8 @@ class ExecutionStep():
     def __init__(self):
         self.step = self.BOOT
 
-class MessageResponse():
-    """ 
+class MessageResponse(object):
+    """
     Object that holds message response
     A response is composed of:
      - an error flag: True if error, False otherwise
@@ -77,15 +76,20 @@ class MessageResponse():
         self.broadcast = False
 
     def __str__(self):
-        return u'{error:%r, message:"%s", data:%s, broadcast:%r}' % (self.error, self.message, unicode(self.data), self.broadcast)
+        return u'{error:%r, message:"%s", data:%s, broadcast:%r}' % (
+            self.error,
+            self.message,
+            unicode(self.data),
+            self.broadcast
+        )
 
     def to_dict(self):
-        """ 
+        """
         Return message response
         """
         return {u'error':self.error, u'message':self.message, u'data':self.data}
 
-class MessageRequest():
+class MessageRequest(object):
     """
     Object that holds message request
     A message request is composed of:
@@ -119,11 +123,22 @@ class MessageRequest():
         Stringify function
         """
         if self.command:
-            return u'{command:%s, params:%s, to:%s, sender:%s}' % (self.command, unicode(self.params), self.to, self.sender)
+            return u'{command:%s, params:%s, to:%s, sender:%s}' % (
+                self.command,
+                unicode(self.params),
+                self.to, self.sender
+            )
         elif self.event:
-            return u'{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (self.event, self.core_event, unicode(self.params), self.to, self.device_id, self.peer_infos)
-        else:
-            return u'Invalid message'
+            return u'{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (
+                self.event,
+                self.core_event,
+                unicode(self.params),
+                self.to,
+                self.device_id,
+                self.peer_infos
+            )
+
+        return u'Invalid message'
 
     def is_broadcast(self):
         """
@@ -155,15 +170,34 @@ class MessageRequest():
         """
         if self.command:
             # command
-            return {u'command':self.command, u'params':self.params, u'to':self.to, u'sender':self.sender, u'broadcast': self.is_broadcast()}
+            return {
+                u'command': self.command,
+                u'params': self.params,
+                u'to': self.to,
+                u'sender': self.sender,
+                u'broadcast': self.is_broadcast()
+            }
 
         elif self.event and not self.peer_infos:
             # internal event
-            return {u'event':self.event, u'params':self.params, u'startup':startup, u'device_id':self.device_id, u'sender':self.sender}
+            return {
+                u'event': self.event,
+                u'params': self.params,
+                u'startup': startup,
+                u'device_id': self.device_id,
+                u'sender': self.sender
+            }
 
         elif self.event and self.peer_infos:
             # external event
-            return {u'event':self.event, u'params':self.params, u'startup':False, u'device_id':None, u'sender':u'PEER', u'peer_infos':self.peer_infos}
+            return {
+                u'event': self.event,
+                u'params': self.params,
+                u'startup': False,
+                u'device_id': None,
+                u'sender': u'PEER',
+                u'peer_infos': self.peer_infos
+            }
 
         else:
             raise InvalidMessage()
