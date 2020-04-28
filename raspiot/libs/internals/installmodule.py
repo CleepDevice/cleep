@@ -17,7 +17,6 @@ from raspiot.libs.internals.console import EndlessConsole
 from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
 import raspiot.libs.internals.tools as Tools
-from raspiot.exception import ForcedException
 
 __all__ = ['UninstallModule', 'InstallModule', 'UpdateModule']
 
@@ -31,7 +30,14 @@ TESTS_DIR = u'tests/'
 
 
 class Context():
-    pass
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return '%s' % self.to_dict()
+
+    def to_dict(self):
+        return {k: v for k, v in self.__dict__.iteritems()}
 
 class LocalModuleException(Exception):
     pass
@@ -39,29 +45,20 @@ class LocalModuleException(Exception):
 class CancelException(Exception):
     pass
 
-class UninstallModule(threading.Thread):
-    """
-    Uninstall module in background task
-    This class executes preuninstall script, removes all installed files and executes postuninstall script
-    """
-    STATUS_IDLE = 0
-    STATUS_UNINSTALLING = 1
-    STATUS_UNINSTALLED = 2
-    STATUS_ERROR_INTERNAL = 3
-    STATUS_UNINSTALLED_ERROR_PREUNINST = 4
-    STATUS_UNINSTALLED_ERROR_REMOVE = 5
-    STATUS_UNINSTALLED_ERROR_POSTUNINST = 6
+class ForcedException(Exception):
+    pass
 
-    def __init__(self, module, module_infos, update_process, force, callback, cleep_filesystem, crash_report):
+class CommonProcess(threading.Thread):
+    """
+    Common process class for install/uninstall/update module
+    """
+
+    def __init__(self, status_callback, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
-            module (string): module name to install
-            module_infos (dict): all module infos from modules.json file
-            update_process (bool): True if module uninstall occured during update process
-            force (bool): uninstall module and continue if error occured
-            callback (function): status callback
+            status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
         """
@@ -70,24 +67,201 @@ class UninstallModule(threading.Thread):
 
         # logger   
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
+
+        # members
+        self.running = False
+        self.status_callback = status_callback
+        self.cleep_filesystem = cleep_filesystem
+        self.crash_report = crash_report
+        self._script_running = False
+        self._pre_script_execution = False
+        self._pre_script_status = {
+            u'returncode': None,
+            u'stdout': [],
+            u'stderr': []
+        }
+        self._post_script_status = {
+            u'returncode': None,
+            u'stdout': [],
+            u'stderr': []
+        }
+        self._process_status = []
+
+    def _script_callback(self, stdout, stderr):
+        """
+        Get stdout/stderr from script execution
+
+        Args:
+            stdout (string): stdout line
+            stderr (string): stderr line
+        """
+        self.logger.debug('Script callback: stdout=%s stderr=%s' % (stdout, stderr))
+        if self._pre_script_execution:
+            if stdout:
+                self._pre_script_status[u'stdout'].append(stdout)
+            if stderr:
+                self._pre_script_status['stderr'].append(stderr)
+
+        else:
+            if stdout:
+                self._post_script_status[u'stdout'].append(stdout)
+            if stderr:
+                self._post_script_status[u'stderr'].append(stderr)
+
+    def _script_terminated_callback(self, return_code, killed):
+        """
+        Get infos when script is terminated
+
+        Note:
+            see http://www.tldp.org/LDP/abs/html/exitcodes.html for return codes
+
+        Args:
+            return_code (int): script return code
+            killed (bool): True if script killed, False otherwise
+        """
+        self.logger.debug('Script terminated callback (return_code=%s killed=%s)' % (return_code, killed))
+        if killed:
+            if self._pre_script_execution:
+                self._pre_script_status[u'returncode'] = 130
+            else:
+                self._post_script_status[u'returncode'] = 130
+        else:
+            if self._pre_script_execution:
+                self._pre_script_status[u'returncode'] = return_code
+            else:
+                self._post_script_status[u'returncode'] = return_code
+
+        # script execution terminated
+        self._script_running = False
+
+    def _execute_script(self, path):
+        """ 
+        Execute specified script
+
+        Args:
+            path (string): script path
+
+        Return
+        """
+        # init
+        os.chmod(path, stat.S_IEXEC)
+
+        # exec
+        self._script_running = True
+        self.logger.debug(u'Executing %s script' % path)
+        console = EndlessConsole(path, self._script_callback, self._script_terminated_callback)
+
+        # launch script execution
+        console.start()
+
+        # monitor end of script execution
+        while self._script_running:
+            # pause
+            time.sleep(0.25)
+
+        # check script result
+        if self._pre_script_execution and self._pre_script_status[u'returncode'] == 0:
+            return True
+        elif self._post_script_status[u'returncode'] == 0:
+            return True
+        return False
+
+    def _log_process_status(self, context, log_level, message, force_crash_report=False):
+        """
+        Log exception to stdout and keep track of message in install log file
+
+        Args:
+            context (Context): install context
+            log_level (int): logging level
+            message (string): message to log
+            force_crash_report (bool): send crash report if True (default False)
+        """
+        # logging
+        if log_level == logging.NOTSET:
+            self.logger.exception(message)
+        else:
+            self.logger.log(log_level, message)
+
+        # crash report
+        if (log_level == logging.NOTSET or force_crash_report) and self.crash_report:
+            self.crash_report.report_exception(extra={ u'message': message, 'context': context.to_dict()})
+
+        # save track of error in install process messages
+        self._process_status.append(message)
+
+    def _step(self, context, cancel=True):
+        """
+        Process step, check process is not canceled and send current status
+
+        Args:
+            context (Context): install context
+            cancel (bool): allow cancel (True) or not (False)
+        """
+        if cancel and not self.running:
+            raise CancelException()
+
+        if self.status_callback:
+            try:
+                self.status_callback(self.get_status())
+            except:
+                self.logger.exception('Exception occured during status callback call')
+                self.status_callback = None
+
+    def get_status(self): # pragma: no cover
+        raise NotImplementedError('_get_status method must be implemented')
+
+    def run(self): # pragma: no cover
+        raise NotImplementedError('_get_status method must be implemented')
+
+
+
+
+
+class UninstallModule(CommonProcess):
+    """
+    Uninstall module in background task
+    This class executes preuninstall script, removes all installed files and executes postuninstall script
+    """
+    STATUS_IDLE = 0
+    STATUS_UNINSTALLING = 1
+    STATUS_UNINSTALLED = 2
+    STATUS_ERROR_INTERNAL = 3
+    STATUS_ERROR_PREUNINST = 4
+    STATUS_ERROR_REMOVE = 5
+    STATUS_ERROR_POSTUNINST = 6
+
+    def __init__(self, module_name, module_infos, update_process, force_uninstall, status_callback, cleep_filesystem, crash_report):
+        """
+        Constructor
+
+        Args:
+            module_name (string): module name to install
+            module_infos (dict): all module infos from modules.json file
+            update_process (bool): True if module uninstall occured during update process
+            force_uninstall (bool): uninstall module and continue if error occured. Process will always succeed
+            callback (function): status callback
+            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            crash_report (CrashReport): CrashReport instance
+        """
+        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report)
 
         # members
         self.status = self.STATUS_IDLE
-        self.crash_report = crash_report
         self.update_process = update_process
-        self.force = force
+        self.force_uninstall = force_uninstall
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
-        self.running = True
-        self.module = module
+        self.module_name = module_name
         self.module_infos = module_infos
-        self.cleep_filesystem = cleep_filesystem
-        self.__script_running = True
-        self.__pre_script_execution = False
-        self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
-        self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode': None}
-        self.callback = callback
-        self.__process_status = []
+
+    def is_uninstalling(self):
+        """
+        Return True is process is running
+
+        Returns:
+            bool: True if running
+        """
+        return True if self.status == self.STATUS_UNINSTALLING else False
 
     def get_status(self):
         """
@@ -105,109 +279,121 @@ class UninstallModule(threading.Thread):
                 }
         """
         return {
-            u'module': self.module,
+            u'module': self.module_name,
             u'status': self.status,
-            u'prescript': self.__pre_script_status,
-            u'postscript': self.__post_script_status,
+            u'prescript': self._pre_script_status,
+            u'postscript': self._post_script_status,
             u'updateprocess': self.update_process,
-            u'process': self.__process_status
+            u'process': self._process_status
         }
 
-    def __script_callback(self, stdout, stderr):
+    def _run_script(self, context, script):
         """
-        Get stdout/stderr from script execution
+        Execute preinst.sh script
 
         Args:
-            stdout (string): stdout line
-            stderr (string): stderr line
+            context (Context): install context
+            script (string): script to execute (preinst.sh, postinst.sh, ...)
+
+        Returns:
+            bool: True if operation succeed
         """
-        self.logger.debug('Script callback: stdout=%s stderr=%s' % (stdout, stderr))
-        if self.__pre_script_execution:
-            if stdout:
-                self.__pre_script_status[u'stdout'].append(stdout)
-            if stderr:
-                self.__pre_script_status['stderr'].append(stderr)
-
-        else:
-            if stdout:
-                self.__post_script_status[u'stdout'].append(stdout)
-            if stderr:
-                self.__post_script_status[u'stderr'].append(stderr)
-
-    def __script_terminated_callback(self, return_code, killed):
-        """
-        Get infos when script is terminated
-
-        Note:
-            see http://www.tldp.org/LDP/abs/html/exitcodes.html for return codes
-
-        Args:
-            return_code (int): script return code
-            killed (bool): True if script killed, False otherwise
-        """
-        self.logger.debug('Script terminated callback: return_code=%s killed=%s' % (return_code, killed))
-        if killed:
-            if self.__pre_script_execution:
-                self.__pre_script_status[u'returncode'] = 130
+        self.logger.debug(u'Running script "%s"' % script)
+        try:
+            self._pre_script_execution = True if script == 'preuninst.sh' else False
+            path = os.path.join(os.path.join(PATH_INSTALL, self.module_name, script))
+            if os.path.exists(path):
+                if not self._execute_script(path):
+                    self._log_process_status(context, logging.ERROR, u'Error occured during "%s" script execution of module "%s"' % (script, self.module_name), force_crash_report=True)
+                    return False
             else:
-                self.__post_script_status[u'returncode'] = 130
-        else:
-            if self.__pre_script_execution:
-                self.__pre_script_status[u'returncode'] = return_code
-            else:
-                self.__post_script_status[u'returncode'] = return_code
+                self.logger.debug('No script found at "%s"' % path)
 
-        # script execution terminated
-        self.__script_running = False
+            return True
 
-    def __execute_script(self, path):
+        except:
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during "%s" script execution of module "%s"' % (script, self.module_name))
+            return False
+
+    def _remove_installed_files(self, context):
         """
-        Execute specified script
+        Remove all installed module files
 
         Args:
-            script (string): script path
+            context (Context): install context
 
-        Return
+        Returns:
+            bool: True if operation succeed
         """
-        # init
-        os.chmod(path, stat.S_IEXEC)
+        paths = []
+        try:
+            # read install log file
+            self._log_process_status(context, logging.INFO, u'Remove installed files')
+            context.module_log = os.path.join(PATH_INSTALL, self.module_name, u'%s.log' % self.module_name)
+            self.logger.debug(u'Open install log file "%s"' % context.module_log)
+            if not os.path.exists(context.module_log):
+                self._log_process_status(context, logging.WARN, u'Install log file "%s" for module "%s" was not found' % (context.module_log, self.module_name))
+                return True if context.force_uninstall else False
+            install_log_fd = self.cleep_filesystem.open(context.module_log, u'r')
+            lines = install_log_fd.readlines()
+            self.cleep_filesystem.close(install_log_fd)
+            self.logger.trace('lines = %s' % lines)
 
-        # exec
-        self.logger.debug(u'Executing "%s" script' % path)
-        console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
-        out = False
+            # remove files
+            for line in lines:
+                self.logger.trace(u'Processing file "%s"' % line)
+                line = line.strip()
+                if len(line)==0:
+                    # empty line, drop it
+                    self.logger.trace(u'Drop empty line')
+                    continue
 
-        # launch script execution
-        console.start()
+                # check if file exists on filesystem
+                if not os.path.exists(line):
+                    self._log_process_status(context, logging.ERROR, u'Unable to remove file "%s" that does not exist during module "%s" uninstallation' % (line, self.module_name))
+                    continue
 
-        # monitor end of script execution
-        while self.__script_running:
-            #pause
-            time.sleep(0.25)
+                # check if we try to remove system library file (should not happen but we are never too careful)
+                if Tools.is_core_lib(line):
+                    # it's a core library, log warning and continue
+                    self._log_process_status(context, logging.WARN, u'Trying to remove core library file "%s" during module "%s" uninstallation. Drop deletion.' % (line, self.module_name))
+                    continue
 
-        # check script result
-        if self.__pre_script_execution and self.__pre_script_status[u'returncode']==0:
-            out = True
-        elif self.__post_script_status[u'returncode']==0:
-            out = True
+                # try to delete file
+                if not self.cleep_filesystem.rm(line):
+                    # just log error and continu processing, we must try to delete as much file as possible
+                    self._log_process_status(context, logging.ERROR, u'Unable to remove file "%s" during module "%s" uninstallation' % (line, self.module_name))
 
-        return out
+                # keep track of file path
+                path = os.path.dirname(line)
+                if path not in paths:
+                    paths.append(path)
+
+            # clear paths
+            self.logger.trace(u'Clearing paths: %s' % paths)
+            for path in paths:
+                if os.path.exists(path) and not self.cleep_filesystem.rmdir(path):
+                    self._log_process_status(context, logging.ERROR, u'Unable to remove directory "%s" during module "%s" uninstallation' % (path, self.module_name))
+
+            return True
+
+        except:
+            self._log_process_status(context, logging.NOTSET, u'Exception occured removing files during "%s" module uninstallation' % self.module_name)
+            return True if context.force_uninstall else False
 
     def run(self):
         """
         Run uninstall
         """
         # init
-        self.logger.info(u'Start app "%s" uninstallation' % self.module)
-        self.__process_status.append(u'Start app "%s" uninstallation' % self.module)
+        self.running = True
         self.status = self.STATUS_UNINSTALLING
-        error = False
-        module_log = None
-        preuninst_sh = None
-        postuninst_sh = None
-        error_during_prescript = False
-        error_during_remove = False
-        error_during_postscript = False
+        context = Context()
+        context.step = 'init'
+        context.force_uninstall = self.force_uninstall
+        context.module_log = None
+
+        self._log_process_status(context, logging.INFO, u'Start module "%s" uninstallation' % self.module_name)
 
         try:
             # enable write mode
@@ -219,178 +405,75 @@ class UninstallModule(threading.Thread):
                 raise LocalModuleException()
 
             # pre uninstallation script
-            try:
-                self.logger.debug(u'Run pre uninstallation script')
-                self.__process_status.append(u'Run pre uninstallation script')
-                self.__pre_script_execution = True
-                preuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'preuninst.sh'))
-                if os.path.exists(preuninst_sh):
-                    self.logger.debug(u'Pre uninstallation script found "%s"' % preuninst_sh)
-                    self.__script_running = True
-                    if not self.__execute_script(preuninst_sh):
-                        # script failed
-                        raise Exception(u'Forced exception')
-                else:
-                    self.logger.debug(u'No preuninst script found at "%s"' % preuninst_sh)
-                    self.__process_status.append(u'No pre uninstallation script')
-
-            except Exception as e:
-                if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
-                    self.__process_status.append(u'Exception occured during preuninst.sh script execution of module "%s"' % self.module)
-                error_during_prescript = True
-                # do not stop uninstall process, it's not blocking
-
-            # send status
-            if self.callback:
-                self.callback(self.get_status())
+            context.step = 'preuninst'
+            if not self._run_script(context, u'preuninst.sh'):
+                self.status = self.STATUS_ERROR_PREUNINST
+                raise ForcedException()
+            self._step(context)
 
             # remove all installed files
-            paths = []
-            try:
-                self.__process_status.append(u'Remove installed files')
-                module_log = os.path.join(PATH_INSTALL, self.module, u'%s.log' % self.module)
-                self.logger.debug(u'Open install log file "%s"' % module_log)
-                if not os.path.exists(module_log):
-                    self.logger.warning(u'Problem during app "%s" uninstallation because "%s" file doesn\'t exist' % (self.module, module_log))
-                install_log = self.cleep_filesystem.open(module_log, u'r')
-                lines = install_log.readlines()
-                self.cleep_filesystem.close(install_log)
-                for line in lines:
-                    line = line.strip()
-                    if len(line)==0:
-                        # empty line, drop it
-                        continue
-
-                    # check if we try to remove system library file (should not happen but we are never too careful)
-                    if Tools.is_system_lib(line):
-                        # it's a system library, log warning and continue
-                        self.logger.warning(u'Trying to remove system library "%s" during app "%s" uninstallation. Drop deletion.' % (line, self.module))
-                        continue
-
-                    # try to delete file
-                    if os.path.exists(line) and not self.cleep_filesystem.rm(line):
-                        self.logger.warning(u'File "%s" was not removed during "%s" app uninstallation' % (line, self.module))
-
-                    # keep track of file path
-                    path = os.path.dirname(line)
-                    if path not in paths:
-                        paths.append(path)
-
-                # clear paths
-                for path in paths:
-                    if os.path.exists(path):
-                        if not self.cleep_filesystem.rmdir(path):
-                            self.logger.warning(u'Directory "%s" was not removed during "%s" app uninstallation' % (path, self.module))
-
-            except IOError as e:
-                if e.errno==2:
-                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, u'installation file not found'))
-                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, u'installation file not found'))
-                else:
-                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, os.strerror(e.errno)))
-                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, os.strerro(e.errno)))
-                error_during_remove = True
-
-            except Exception as e:
-                if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, str(e)))
-                    self.__process_status.append(u'Exception occured during "%s" files app uninstallation: %s' % (self.module, str(e)))
-                error_during_remove = True
-                # do not stop uninstall process, some files could still remain after uninstall
-
-            # send status
-            if self.callback:
-                self.callback(self.get_status())
+            context.step = 'remove'
+            if not self._remove_installed_files(context):
+                self.status = self.STATUS_ERROR_REMOVE
+                raise ForcedException()
+            self._step(context)
 
             # post uninstallation script
-            try:
-                self.logger.debug(u'Run post uninstallation script')
-                self.__process_status.append(u'Run post uninstallation script')
-                self.__pre_script_execution = False
-                postuninst_sh = os.path.join(os.path.join(PATH_INSTALL, self.module, u'postuninst.sh'))
-                if os.path.exists(postuninst_sh):
-                    self.logger.debug(u'Post uninstallation script found "%s"' % postuninst_sh)
-                    self.__script_running = True
-                    if not self.__execute_script(postuninst_sh):
-                        # script failed
-                        raise Exception(u'Forced exception')
-                else:
-                    self.logger.debug(u'No postuninst script found at "%s"' % postuninst_sh)
-                    self.__process_status.append(u'No post uninstallation script')
+            context.step = 'postuninst'
+            if not self._run_script(context, u'postuninst.sh'):
+                self.status = self.STATUS_ERROR_POSTUNINST
+                raise ForcedException()
+            self._step(context)
 
-            except Exception as e:
-                if e.message!=u'Forced exception':
-                    self.logger.exception(u'Exception occured during postuninst.sh script execution of app "%s"' % self.module)
-                    self.__process_status.append(u'Exception occured during postuninst.sh script execution of app "%s"' % self.module)
-                error_during_postscript = True
-                # do not stop uninstall process
+            # set final status
+            self.status = self.STATUS_UNINSTALLED
 
         except LocalModuleException:
             # local module to uninstall, proper exit
+            self.status = self.STATUS_UNINSTALLED
+
+        except ForcedException:
+            # error during installation, nothing else to do here
             pass
 
         except:
-            # unexpected exception
-            self.logger.exception(u'Unexpected exception during uninstall:')
+            # unexpected error occured, invalid state
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" uninstallation' % self.module_name)
+            self.status = self.STATUS_ERROR_INTERNAL
 
-            # local exception raised, invalid state :S
-            error = True
-
-            # report exception
-            self.crash_report.report_exception()
+            # report crash
+            self.crash_report.report_exception(extra={'context': context.to_dict()})
 
         finally:
-            self.logger.debug(u'Uninstall finalization')
             # clean stuff
             try:
-                path = os.path.join(PATH_INSTALL, self.module)
+                # clean backend
+                path = os.path.join(self.raspiot_path, 'modules', self.module_name)
                 if path and os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
-                path = os.path.join(PATH_FRONTEND, 'js/modules/%s' % self.module)
+                # clean frontend
+                path = os.path.join(PATH_FRONTEND, 'js/modules/%s' % self.module_name)
                 if path and os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
-                if module_log and os.path.exists(module_log):
-                    self.cleep_filesystem.rm(module_log)
+                # clean install log file
+                if context.module_log and os.path.exists(context.module_log):
+                    self.cleep_filesystem.rm(context.module_log)
             except:
-                self.logger.exception(u'Exception during "%s" install cleaning:' % self.module)
-
-            self.logger.debug('error=%s error_during_prescript=%s error_during_postscript=%s error_during_remove=%s' % (error, error_during_prescript, error_during_postscript, error_during_remove))
-            if self.force:
-                # whatever the result return uninstalled
-                self.status = self.STATUS_UNINSTALLED
-            elif error:
-                # error occured
-                self.logger.debug(u'Error occured during "%s" app uninstallation' % self.module)
-                self.status = self.STATUS_ERROR_INTERNAL
-            elif error_during_prescript:
-                error = True
-                self.status = self.STATUS_UNINSTALLED_ERROR_PREUNINST
-            elif error_during_remove:
-                error = True
-                self.status = self.STATUS_UNINSTALLED_ERROR_REMOVE
-            elif error_during_postscript:
-                error = True
-                self.status = self.STATUS_UNINSTALLED_ERROR_POSTUNINST
-            else:
-                # install terminated successfully
-                self.status = self.STATUS_UNINSTALLED
-
-            # send status
-            if self.callback:
-                self.callback(self.get_status())
+                self._log_process_status(context, logging.NOTSET, u'Exception occured during "%s" uninstall cleaning' % self.module_name)
 
             # disable write mode
             self.cleep_filesystem.disable_write()
 
-        self.__process_status.append(u'App "%s" uninstallation terminated (success:%s, forced:%s)' % (self.module, not error, self.force))
-        self.logger.info(u'App "%s" uninstallation terminated (success: %s)' % (self.module, not error))
+        # finalize installation
+        success = True if self.status == self.STATUS_UNINSTALLED else False
+        self._log_process_status(context, logging.INFO, u'Module "%s" uninstallation terminated (success:%s, force:%s)' % (self.module_name, success, self.force_uninstall))
+        self._step(context)
 
 
 
 
 
-class InstallModule(threading.Thread):
+class InstallModule(CommonProcess):
     """
     Install module in background task
     """
@@ -403,10 +486,11 @@ class InstallModule(threading.Thread):
     STATUS_ERROR_DOWNLOAD = 5
     STATUS_ERROR_EXTRACT = 6
     STATUS_ERROR_PREINST = 7
-    STATUS_ERROR_COPY = 8
-    STATUS_ERROR_POSTINST = 9
+    STATUS_ERROR_BACKUP = 8
+    STATUS_ERROR_COPY = 9
+    STATUS_ERROR_POSTINST = 10
 
-    def __init__(self, module_name, module_infos, update_process, callback, cleep_filesystem, crash_report):
+    def __init__(self, module_name, module_infos, update_process, status_callback, cleep_filesystem, crash_report):
         """
         Constructor
 
@@ -414,33 +498,18 @@ class InstallModule(threading.Thread):
             module_name (string): module name to install
             module_infos (dict): all module infos from modules.json file
             update_process (bool): True if module install occured during update process
-            callback (function): status callback
+            status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
         """
-        threading.Thread.__init__(self)
-        threading.Thread.daemon = True
-
-        # logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-        # self.logger.setLevel(logging.DEBUG)
+        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report)
 
         # members
-        self.callback = callback
-        self.crash_report = crash_report
         self.update_process = update_process
         self.status = self.STATUS_IDLE
         self.raspiot_path = os.path.dirname(inspect.getfile(RaspIotModule))
-        self.running = True
         self.module_name = module_name
         self.module_infos = module_infos
-        self.cleep_filesystem = cleep_filesystem
-        self.__script_running = True
-        self.__pre_script_execution = False
-        self.__pre_script_status = {u'stdout': [], u'stderr':[], u'returncode':None}
-        self.__post_script_status = {u'stdout': [], u'stderr':[], u'returncode':None}
-        self.__process_status = []
-        self.status = self.STATUS_IDLE
 
         # make sure install paths exist
         if not os.path.exists(PATH_SCRIPTS):
@@ -452,8 +521,17 @@ class InstallModule(threading.Thread):
         """
         Cancel installation
         """
-        self.logger.info(u'Module "%s" installation canceled' % self.module_name)
+        self.logger.info(u'Received module "%s" installation cancelation' % self.module_name)
         self.running = False
+
+    def is_installing(self):
+        """
+        Return True is process is running
+
+        Returns:
+            bool: True if running
+        """
+        return True if self.status == self.STATUS_INSTALLING else False
 
     def get_status(self):
         """
@@ -473,122 +551,14 @@ class InstallModule(threading.Thread):
         return {
             u'module': self.module_name,
             u'status': self.status,
-            u'prescript': self.__pre_script_status,
-            u'postscript': self.__post_script_status,
+            u'prescript': self._pre_script_status,
+            u'postscript': self._post_script_status,
             u'updateprocess': self.update_process,
-            u'process': self.__process_status
+            u'process': self._process_status
         }
 
-    def __script_callback(self, stdout, stderr):
-        """
-        Get stdout/stderr from script execution
 
-        Args:
-            stdout (string): stdout line
-            stderr (string): stderr line
-        """
-        self.logger.debug('Script callback: stdout=%s stderr=%s' % (stdout, stderr))
-        if self.__pre_script_execution:
-            if stdout:
-                self.__pre_script_status[u'stdout'].append(stdout)
-            if stderr:
-                self.__pre_script_status['stderr'].append(stderr)
-
-        else:
-            if stdout:
-                self.__post_script_status[u'stdout'].append(stdout)
-            if stderr:
-                self.__post_script_status[u'stderr'].append(stderr)
-
-    def __script_terminated_callback(self, return_code, killed):
-        """
-        Get infos when script is terminated
-
-        Note:
-            see http://www.tldp.org/LDP/abs/html/exitcodes.html for return codes
-
-        Args:
-            return_code (int): script return code
-            killed (bool): True if script killed, False otherwise
-        """
-        self.logger.debug('Script terminated callback: return_code=%s killed=%s' % (return_code, killed))
-        if killed:
-            if self.__pre_script_execution:
-                self.__pre_script_status[u'returncode'] = 130
-            else:
-                self.__post_script_status[u'returncode'] = 130
-        else:
-            if self.__pre_script_execution:
-                self.__pre_script_status[u'returncode'] = return_code
-            else:
-                self.__post_script_status[u'returncode'] = return_code
-
-        # script execution terminated
-        self.__script_running = False
-
-    def __execute_script(self, path):
-        """ 
-        Execute specified script
-
-        Args:
-            path (string): script path
-
-        Return
-        """
-        # init
-        os.chmod(path, stat.S_IEXEC)
-
-        # exec
-        self.logger.debug(u'Executing %s script' % path)
-        console = EndlessConsole(path, self.__script_callback, self.__script_terminated_callback)
-        out = False
-
-        # launch script execution
-        console.start()
-
-        # monitor end of script execution
-        while self.__script_running:
-            # pause
-            time.sleep(0.25)
-
-        # check script result
-        if self.__pre_script_execution and self.__pre_script_status[u'returncode']==0:
-            out = True
-        elif self.__post_script_status[u'returncode']==0:
-            out = True
-
-        return out
-
-    def is_installing(self):
-        """
-        Return True is process is running
-
-        Returns:
-            bool: True if running
-        """
-        return True if self.status==self.STATUS_INSTALLING else False
-
-    def __log_process_status(self, context, log_level, message):
-        """
-        Log exception to stdout and keep track of message in install log file
-
-        Args:
-            context (Context): install context
-            log_level (int): logging level
-            message (string): message to log
-        """
-        if log_level==logging.NOTSET:
-            self.logger.exception(message)
-
-            # exception occured, crash report
-            if self.crash_report:
-                self.crash_report.report_exception(extra={ u'message': message })
-        else:
-            self.logger.log(log_level, message)
-
-        self.__process_status.append(message)
-
-    def __download_archive(self, context):
+    def _download_archive(self, context):
         """
         Download module archive
 
@@ -602,29 +572,31 @@ class InstallModule(threading.Thread):
         try:
             download = Download(self.cleep_filesystem)
             context.archive_path = download.download_file(self.module_infos[u'download'], check_sha256=self.module_infos[u'sha256'])
+            self.logger.trace(u'archive_path: %s' % context.archive_path)
             if context.archive_path is None:
                 download_status = download.get_status()
+                self.logger.trace(u'download_status: %s' % download_status)
 
-                if download_status==download.STATUS_ERROR:
+                if download_status == download.STATUS_ERROR:
                     self.error = u'Error during "%s" download: internal error' % self.module_infos[u'download']
-                elif download_status==download.STATUS_ERROR_INVALIDSIZE:
+                elif download_status == download.STATUS_ERROR_INVALIDSIZE:
                     self.error = u'Error during "%s" download: invalid filesize' % self.module_infos[u'download']
-                elif download_status==download.STATUS_ERROR_BADCHECKSUM:
+                elif download_status == download.STATUS_ERROR_BADCHECKSUM:
                     self.error = u'Error during "%s" download: invalid checksum' % self.module_infos[u'download']
                 else:
                     self.error = u'Error during "%s" download: unknown error' % self.module_infos[u'download']
     
-                self.__log_process_status(context, logging.ERROR, self.error)
+                self._log_process_status(context, logging.ERROR, self.error, force_crash_report=True)
 
                 return False
 
             return True
 
         except:
-            self.__log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" package download "%s":' % (self.module_name, self.module_infos[u'download']))
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" archive download "%s":' % (self.module_name, self.module_infos[u'download']))
             return False
 
-    def __extract_archive(self, context):
+    def _extract_archive(self, context):
         """
         Extract module archive
 
@@ -636,19 +608,18 @@ class InstallModule(threading.Thread):
         """
         self.logger.debug(u'Extracting archive "%s"' % context.archive_path)
         try:
-            zipfile = ZipFile(context.archive_path, u'r')
-            context.extract_path = tempfile.mkdtemp()
-            self.logger.debug(u'Extract archive to "%s"' % context.extract_path)
-            zipfile.extractall(context.extract_path)
-            zipfile.close()
+            with ZipFile(context.archive_path, u'r') as zipfile:
+                context.extract_path = tempfile.mkdtemp()
+                self.logger.debug(u'Extract archive to "%s"' % context.extract_path)
+                zipfile.extractall(context.extract_path)
 
             return True
 
         except:
-            self.__log_process_status(context, logging.NOTSET, u'Error decompressing module "%s" package "%s" in "%s":' % (self.module_name, context.archive_path, context.extract_path))
+            self._log_process_status(context, logging.NOTSET, u'Exception decompressing module "%s" archive "%s" in "%s":' % (self.module_name, context.archive_path, context.extract_path))
             return False
 
-    def __backup_scripts(self, context):
+    def _backup_scripts(self, context):
         """
         Backup uninstall scripts
 
@@ -658,36 +629,22 @@ class InstallModule(threading.Thread):
         Returns:
             bool: True if operation succeed
         """
-        self.logger.debug(u'Save module "%s" uninstall scripts')
+        self.logger.debug(u'Save module "%s" uninstall scripts', self.module_name)
         try:
-            # preinst
-            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'preinst.sh')
-            dst_path = os.path.join(PATH_INSTALL, self.module_name, u'preinst.sh')
-            if os.path.exists(src_path):
-                self.cleep_filesystem.copy(src_path, dst_path)
-            else:
-                self.logger.trace(u'Script preinst.sh not found in archive')
-
-            # postinst
-            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'postinst.sh')
-            dst_path = os.path.join(PATH_INSTALL, self.module_name, u'postinst.sh')
-            if os.path.exists(src_path):
-                self.cleep_filesystem.copy(src_path, dst_path)
-            else:
-                self.logger.trace(u'Script postinst.sh not found in archive')
-
             # preuninst
-            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'preuninst.sh')
+            src_path = os.path.join(context.extract_path, SCRIPTS_DIR, u'preuninst.sh')
             dst_path = os.path.join(PATH_INSTALL, self.module_name, u'preuninst.sh')
             if os.path.exists(src_path):
+                self.logger.trace(u'Copying "%s" to "%s"' % (src_path, dst_path))
                 self.cleep_filesystem.copy(src_path, dst_path)
             else:
                 self.logger.trace(u'Script preuninst.sh not found in archive')
 
             # postuninst
-            src_path = os.path.join(extract_path, SCRIPTS_DIR, u'postuninst.sh')
+            src_path = os.path.join(context.extract_path, SCRIPTS_DIR, u'postuninst.sh')
             dst_path = os.path.join(PATH_INSTALL, self.module_name, u'postuninst.sh')
             if os.path.exists(src_path):
+                self.logger.trace(u'Copying "%s" to "%s"' % (src_path, dst_path))
                 self.cleep_filesystem.copy(src_path, dst_path)
             else:
                 self.logger.trace(u'Script postuninst.sh not found in archive')
@@ -695,10 +652,10 @@ class InstallModule(threading.Thread):
             return True
 
         except:
-            self.__log_process_status(context, logging.NOTSET, u'Error saving module "%s" uninstall scripts:' % self.module_name)
+            self._log_process_status(context, logging.NOTSET, u'Exception saving module "%s" scripts:' % self.module_name)
             return False
 
-    def __run_script(self, context, script):
+    def _run_script(self, context, script):
         """
         Execute preinst.sh script
 
@@ -709,13 +666,13 @@ class InstallModule(threading.Thread):
         Returns:
             bool: True if operation succeed
         """
-        self.logger.debug(u'Executing preinst.sh')
+        self.logger.debug(u'Running script "%s"' % script)
         try:
-            self.__pre_script_execution = True
+            self._pre_script_execution = True if script == 'preinst.sh' else False
             path = os.path.join(context.extract_path, SCRIPTS_DIR, script)
             if os.path.exists(path):
-                self.__script_running = True
-                if not self.__execute_script(path):
+                if not self._execute_script(path):
+                    self._log_process_status(context, logging.ERROR, u'Error occured during "%s" script execution of module "%s"' % (script, self.module_name), force_crash_report=True)
                     return False
             else:
                 self.logger.debug('No script found at "%s"' % path)
@@ -723,10 +680,10 @@ class InstallModule(threading.Thread):
             return True
 
         except:
-            self.__log_process_status(context, logging.NOTSET, u'Exception occured during "%s" script execution of module "%s"' % (script, self.module_name))
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during "%s" script execution of module "%s"' % (script, self.module_name))
             return False
 
-    def __copy_module_files(self, context):
+    def _copy_module_files(self, context):
         """
         Install module files
 
@@ -744,44 +701,46 @@ class InstallModule(threading.Thread):
                 for filename in files:
                     full_path = os.path.join(directory, filename)
                     rel_path = full_path.replace(context.extract_path, u'')
-                    if rel_path[0]==u'/':
-                        rel_path = rel_path[1:]
+                    rel_path = rel_path[1:] if rel_path[0]==u'/' else rel_path
                     archive_files.append(rel_path)
             self.logger.trace(u'archive_files: %s' % archive_files)
 
             # process them according to their directory
-            for f in archive_files:
-                if f.startswith(BACKEND_DIR):
+            for archive_file in archive_files:
+                self.logger.trace('Processing archive file "%s"' % archive_file)
+                if archive_file.startswith(BACKEND_DIR):
                     # copy python files
-                    src_path = os.path.join(context.extract_path, f)
-                    dst_path = os.path.join(self.raspiot_path, f).replace(BACKEND_DIR, u'')
+                    src_path = os.path.join(context.extract_path, archive_file)
+                    dst_path = os.path.join(self.raspiot_path, archive_file).replace(BACKEND_DIR, u'')
                     self.logger.trace(u'Backend src=%s dst=%s' % (src_path, dst_path))
 
                     # check file overwritings
                     if os.path.exists(dst_path):
                         if Tools.is_core_lib(dst_path):
                             # system lib, just drop file install with warning
-                            self.__log_process_status(context, logging.WARNING, u'File "%s" is a core lib and shouldn\'t be exists in module "%s" package. File is dropped.' % (dst_path, self.module_name))
+                            self._log_process_status(context, logging.WARNING, u'File "%s" is a core lib and shouldn\'t be exists in module "%s" package. File is dropped.' % (dst_path, self.module_name))
                             continue
                         else:
-                            # it's a third part file, can't overwrite existing one, trigger exception
-                            self.__log_process_status(context, logging.WARNING, u'Module "%s" installation overwrites existing file "%s"' % (self.module_name, dst_path))
+                            # warning about file overwriting
+                            self._log_process_status(context, logging.WARNING, u'Module "%s" installation overwrites existing file "%s"' % (self.module_name, dst_path))
 
                     self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                     if not self.cleep_filesystem.copy(src_path, dst_path):
+                        self._log_process_status(context, logging.ERROR, u'Error copying file "%s" to "%s" during module "%s" installation' % (src_path, dst_path, self.module_name), force_crash_report=True)
                         return False
 
                     # keep track of copied file for uninstall
                     context.install_log_fd.write(u'%s\n' % dst_path)
                     context.install_log_fd.flush()
 
-                elif f.startswith(FRONTEND_DIR):
+                elif archive_file.startswith(FRONTEND_DIR):
                     # copy ui files
-                    src_path = os.path.join(extract_path, f)
-                    dst_path = os.path.join(PATH_FRONTEND, f).replace(FRONTEND_DIR, u'')
+                    src_path = os.path.join(context.extract_path, archive_file)
+                    dst_path = os.path.join(PATH_FRONTEND, archive_file).replace(FRONTEND_DIR, u'')
                     self.logger.trace(u'Frontend src=%s dst=%s' % (src_path, dst_path))
                     self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
                     if not self.cleep_filesystem.copy(src_path, dst_path):
+                        self._log_process_status(context, logging.ERROR, u'Error copying file "%s" to "%s" during module "%s" installation' % (src_path, dst_path, self.module_name), force_crash_report=True)
                         return False
 
                     # keep track of copied file for uninstall
@@ -790,50 +749,40 @@ class InstallModule(threading.Thread):
 
                 else:
                     # drop file
-                    self.logger.debug(u'Drop archive file: %s' % f)
+                    self.logger.debug(u'Drop unhandled archive file: %s' % archive_file)
 
             return True
                 
         except Exception as e:
-            self.__log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" files copy:' % self.module_name)
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" files copy' % self.module_name)
             return False
 
-    def __step(self, context, cancel=True):
-        """
-        Process step, check process is not canceled and send current status
-
-        Args:
-            context (Context): install context
-            cancel (bool): allow cancel (True) or not (False)
-        """
-        if cancel and not self.running:
-            raise CancelException()
-
-        if self.callback:
-            self.callback(self.get_status())
-
-    def __rollback_install(self, context):
+    def _rollback_install(self, context):
         """
         Rollback installation, removing installed files
         """
         self.logger.debug(u'Rollbacking installation')
-        # remove installed files
         if context.install_log is not None and os.path.exists(context.install_log):
             try:
+                # remove installed files
                 fd = self.cleep_filesystem.open(context.install_log, u'r')
                 lines = fd.readlines()
                 for line in lines:
+                    self.logger.trace(u'Removing "%s" module "%s" file.' % (line, self.module_name))
                     self.cleep_filesystem.rm(line.strip())
+
+                # remove module install dir
                 self.cleep_filesystem.rmdir(os.path.dirname(context.install_log))
 
             except:
-                self.__log_process_status(context, logging.NOTSET, u'Unable to revert "%s" module installation:' % self.module_name)
+                self._log_process_status(context, logging.NOTSET, u'Exception ocurred during "%s" module installation rollback' % self.module_name)
 
     def run(self):
         """
         Run install
         """
         # init
+        self.running = True
         self.status = self.STATUS_INSTALLING
         context = Context()
         rollback = False
@@ -841,8 +790,9 @@ class InstallModule(threading.Thread):
         context.install_log_fd = None
         context.extract_path = None
         context.archive_path = None
+        context.step = 'init'
 
-        self.__log_process_status(context, logging.INFO, u'Start module "%s" installation' % self.module_name)
+        self._log_process_status(context, logging.INFO, u'Start module "%s" installation' % self.module_name)
 
         try:
             # enable write mode
@@ -853,50 +803,50 @@ class InstallModule(threading.Thread):
                 # nothing to process for local modules, quit current process triggering no error
                 raise LocalModuleException()
         
-            # open log file for writing installed files
+            # init install
             context.install_log = os.path.join(PATH_INSTALL, self.module_name, u'%s.log' % self.module_name)
             self.logger.debug(u'Create install log file "%s"' % context.install_log)
-            try:
-                self.cleep_filesystem.mkdirs(os.path.join(PATH_INSTALL, self.module_name))
-                context.install_log_fd = self.cleep_filesystem.open(context.install_log, u'w')
-                context.install_log_fd.flush()
-            except:
-                self.__log_process_status(context, logging.NOTSET, u'Exception occured during install log init "%s":' % path)
-                self.status = self.STATUS_ERROR_INTERNAL
-                raise Exception(u'Forced exception')
-            self.__step(context)
+            self.cleep_filesystem.mkdirs(os.path.join(PATH_INSTALL, self.module_name))
+            context.install_log_fd = self.cleep_filesystem.open(context.install_log, u'w')
+            context.install_log_fd.flush()
 
             # download module package
-            if not self.__download_archive(context):
+            context.step = 'download'
+            if not self._download_archive(context):
                 self.status = self.STATUS_ERROR_DOWNLOAD
                 raise ForcedException()
-            self.__step(context)
+            self._step(context)
 
             # extract archive
-            if not self.__extract_archive(context):
+            context.step = 'extract'
+            if not self._extract_archive(context):
                 self.status = self.STATUS_ERROR_EXTRACT
                 raise ForcedException()
-            self.__step(context)
+            self._step(context)
 
             # copy uninstall scripts to install path (to make them available during uninstallation)
-            if not self.__backup_scripts(context):
-                # TODO handle fs errors
+            context.step = 'backup'
+            if not self._backup_scripts(context):
+                self.status = self.STATUS_ERROR_BACKUP
                 raise ForcedException()
 
             # pre installation script
-            if not self.__run_script(context, u'preinst.sh'):
+            context.step = 'preinst'
+            if not self._run_script(context, u'preinst.sh'):
                 self.status = self.STATUS_ERROR_PREINST
                 raise ForcedException()
-            self.__step(context)
+            self._step(context)
 
             # copy module files
-            if not self.__copy_module_files(context):
+            context.step = 'copy'
+            if not self._copy_module_files(context):
                 self.status = self.STATUS_ERROR_COPY
                 raise ForcedException()
-            self.__step(context, cancel=False)
+            self._step(context, cancel=False)
 
             # post installation script
-            if not self.__run_script(context, u'postinst.sh'):
+            context.step = 'postinst'
+            if not self._run_script(context, u'postinst.sh'):
                 self.status = self.STATUS_ERROR_POSTINST
                 raise ForcedException()
 
@@ -910,20 +860,22 @@ class InstallModule(threading.Thread):
 
         except CancelException:
             # install canceled
+            self._log_process_status(context, logging.INFO, u'Module "%s" installation canceled' % self.module_name)
             rollback = True
             self.status = self.STATUS_CANCELED
 
         except ForcedException:
-            # error during installation, nothing else to do here
+            # error during installation
             rollback = True
 
         except:
             # unexpected error occured, invalid state
+            self._log_process_status(context, logging.NOTSET, u'Exception occured during module "%s" installation' % self.module_name)
             rollback = True
             self.status = self.STATUS_ERROR_INTERNAL
 
             # report crash
-            self.crash_report.report_exception()
+            self.crash_report.report_exception(extra={'context': context.to_dict()})
 
         finally:
             # clean stuff
@@ -935,20 +887,20 @@ class InstallModule(threading.Thread):
                 if context.archive_path:
                     self.cleep_filesystem.rm(context.archive_path)
             except:
-                self.__log_process_status(context, logging.NOTSET, u'Exception during "%s" install cleaning:' % self.module_name)
+                self._log_process_status(context, logging.NOTSET, u'Exception occured during "%s" install cleaning' % self.module_name)
 
             if rollback:
                 # perform requested rollback
-                self.__log_process_status(context, logging.INFO, u'Error occured during module "%s" install, rollback installation' % self.module_name)
-                self.__rollback_install(context)
+                self._log_process_status(context, logging.INFO, u'Rollback module "%s" installation after error' % self.module_name)
+                self._rollback_install(context)
 
             # disable write mode
             self.cleep_filesystem.disable_write()
 
         # finalize installation
-        success = True if self.status==self.STATUS_INSTALLED else False
-        self.__log_process_status(context, logging.INFO, u'Module "%s" installation terminated (success:%s, rollback:%s)' % (self.module_name, success, rollback))
-        self.__step(context, cancel=False)
+        success = True if self.status == self.STATUS_INSTALLED else False
+        self._log_process_status(context, logging.INFO, u'Module "%s" installation terminated (success:%s, rollback:%s)' % (self.module_name, success, rollback))
+        self._step(context, cancel=False)
 
 
 
@@ -963,15 +915,17 @@ class UpdateModule(threading.Thread):
     STATUS_UPDATED = 2
     STATUS_ERROR = 3
 
-    def __init__(self, module, module_infos, force_uninstall, callback, cleep_filesystem, crash_report):
+    def __init__(self, module_name, current_module_infos, new_module_infos, force_uninstall, status_callback, cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
-            module (string): module name to install
+            module_name (string): module name to update
+            current_module_infos (dict): current module infos
+            new_module_infos (dict): new module infos
             update_process (bool): True if module uninstall occured during update process
             force_uninstall (bool): force module uninstall even if error occured
-            callback (function): status callback
+            status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
         """
@@ -983,30 +937,18 @@ class UpdateModule(threading.Thread):
         # self.logger.setLevel(logging.DEBUG)
 
         # members
-        self.module = module
-        self.module_infos = module_infos
+        self.module_name = module_name
+        self.current_module_infos = current_module_infos
+        self.new_module_infos = new_module_infos
         self.force_uninstall = force_uninstall
-        self.callback = callback
+        self.status_callback = status_callback
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
         self.status = self.STATUS_IDLE
         self.__is_uninstalling = True
-        self.__uninstall_status = {
-            u'module': self.module,
-            u'status': InstallModule.STATUS_IDLE,
-            u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'updateprocess': True,
-            u'process': [],
-        }
-        self.__install_status = {
-            u'module': self.module,
-            u'status': UninstallModule.STATUS_IDLE,
-            u'prescript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'postscript': {u'stdout': [], u'stderr':[], u'returncode': None},
-            u'updateprocess': True,
-            u'process': [],
-        }
+        # initialized when update process starts
+        self.__uninstall_status = None
+        self.__install_status = None
 
     def get_status(self):
         """
@@ -1017,12 +959,12 @@ class UpdateModule(threading.Thread):
                 {
                     status (int): see STATUS_XXX
                     uninstall (dict): dict as returned by uninstall module status
-                    install (dict): dict as returned by uninstall module status
+                    install (dict): dict as returned by install module status
                     module (string): module name
                 }
         """
         return {
-            u'module': self.module,
+            u'module': self.module_name,
             u'status': self.status,
             u'uninstall': self.__uninstall_status,
             u'install': self.__install_status,
@@ -1038,21 +980,25 @@ class UpdateModule(threading.Thread):
         if self.__is_uninstalling:
             # callback from uninstall process
             self.logger.debug('Update callback from uninstall: %s' % status)
-            self.__uninstall_status[u'status'] = status[u'status']
-            self.__uninstall_status[u'prescript'] = status[u'prescript']
-            self.__uninstall_status[u'postscript'] = status[u'postscript']
-            self.__uninstall_status[u'process'] = status[u'process']
+            self.__uninstall_status.update(status)
 
         else:
             # callback from install process
             self.logger.debug('Update callback from install: %s' % status)
-            self.__install_status[u'status'] = status[u'status']
-            self.__install_status[u'prescript'] = status[u'prescript']
-            self.__install_status[u'postscript'] = status[u'postscript']
-            self.__install_status[u'process'] = status[u'process']
+            self.__install_status.update(status)
 
-        if self.callback:
-            self.callback(self.get_status())
+        self._step()
+
+    def _step(self):
+        """
+        Process step
+        """
+        if self.status_callback:
+            try:
+                self.status_callback(self.get_status())
+            except:
+                self.logger.exception('Exception occured during status callback call')
+                self.status_callback = None
 
     def run(self):
         """
@@ -1060,62 +1006,52 @@ class UpdateModule(threading.Thread):
         """
         try:
             # init
-            self.logger.info(u'Start module "%s" update' % self.module)
-            error_uninstall = False
-            error_install = False
+            self.logger.info(u'Start module "%s" update' % self.module_name)
             self.status = self.STATUS_UPDATING
+            uninstall = UninstallModule(self.module_name, self.new_module_infos, True, self.force_uninstall, self.__status_callback, self.cleep_filesystem, self.crash_report)
+            self.__uninstall_status = uninstall.get_status()
+            install = InstallModule(self.module_name, self.new_module_infos, True, self.__status_callback, self.cleep_filesystem, self.crash_report)
+            self.__install_status = install.get_status()
 
             # run uninstall
             self.__is_uninstalling = True
-            uninstall = UninstallModule(self.module, self.module_infos, True, self.force_uninstall, self.__status_callback, self.cleep_filesystem, self.crash_report)
             uninstall.start()
             time.sleep(0.5)
-            while uninstall.get_status()[u'status']==uninstall.STATUS_UNINSTALLING:
-                time.sleep(0.5)
-            if uninstall.get_status()[u'status']!=uninstall.STATUS_UNINSTALLED:
-                # module can have error during uninstall but all process is still done
-                self.logger.warning(u'Error during module "%s" update: uninstall encountered errors but continue anyway the new version installation' % self.module)
-                error_uninstall = True
-
-            # callback
-            if self.callback:
-                self.callback(self.get_status())
+            while uninstall.is_uninstalling():
+                time.sleep(0.25)
+            if uninstall.get_status()[u'status'] != uninstall.STATUS_UNINSTALLED:
+                # uninstall failed
+                # TODO implement rollback reinstalling previous module version
+                self.logger.warning(u'Error uninstalling "%s" module during update. Try to install new version anyway' % self.module_name)
+            self._step()
             
             # run new package install
             self.__is_uninstalling = False
-            install = InstallModule(self.module, self.module_infos, True, self.__status_callback, self.cleep_filesystem, self.crash_report)
             install.start()
             time.sleep(0.5)
-            while install.get_status()[u'status']==install.STATUS_INSTALLING:
-                time.sleep(0.5)
+            while install.is_installing():
+                time.sleep(0.25)
+            if install.get_status()[u'status'] != install.STATUS_INSTALLED:
+                # install failed
+                # TODO implement rollback reinstalling previous module version
+                self.logger.error(u'Error installing new "%s" module version during update' % self.module_name)
+                raise ForcedException()
+            self._step()
 
-            # check install status
-            if install.get_status()[u'status']!=install.STATUS_INSTALLED:
-                self.status = self.STATUS_ERROR
-                error_install = True
-                self.logger.error(u'Error during module "%s" update: install encountered errors' % self.module)
-
-            else:
-                # module updated
-                self.status = self.STATUS_UPDATED
+            # set final status
+            self.status = self.STATUS_UPDATED
     
-            # callback
-            if self.callback:
-                self.callback(self.get_status())
+        except ForcedException:
+            # error during update
+            self.status = self.STATUS_ERROR
 
         except:
+            # unexpected error
             self.status = self.STATUS_ERROR
-            error_install = True
-            self.logger.exception(u'Error occured updating module "%s"' % self.module)
+            self.logger.exception(u'Exception occured during "%s" module update' % self.module_name)
 
-        if error_install:
-            self.logger.info(u'Module "%s" update terminated (success: False)' % self.module)
-        elif error_uninstall:
-            self.logger.info(u'Module "%s" update terminated (success: True with error during uninstall)' % self.module)
-        else:
-            self.logger.info(u'Module "%s" update terminated (success: True)' % self.module)
-
-        # final callback
-        if self.callback:
-            self.callback(self.get_status())
+        # finalize update
+        success = True if self.status == self.STATUS_UPDATED else False
+        self.logger.info(u'Module "%s" installation terminated (success:%s)' % (self.module_name, success))
+        self._step()
 
