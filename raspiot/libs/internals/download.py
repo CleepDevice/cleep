@@ -39,11 +39,11 @@ class Download():
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance. If None does not handle R/O mode
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.cleep_filesystem = cleep_filesystem
         self.temp_dir = tempfile.gettempdir()
         self.__cancel = False
@@ -84,7 +84,7 @@ class Download():
         for _, _, dls in os.walk(self.temp_dir):
             for dl in dls:
                 self.logger.trace('Purge found file "%s"' % dl)
-                #delete temp files
+                # delete temp files
                 if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
@@ -95,7 +95,7 @@ class Download():
                     except:
                         self.logger.exception(u'Unable to purge downloaded file:')
 
-                #delete cached files
+                # delete cached files
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
@@ -158,7 +158,7 @@ class Download():
 
         """
         for cached_file in self.get_cached_files():
-            if cached_file['filename']==filename:
+            if cached_file['filename'] == filename:
                 return cached_file
 
         return None
@@ -253,12 +253,11 @@ class Download():
                 )
 
         """
-        #initialize download
         self.__cancel = False
         try:
             self.logger.trace(u'Headers=%s' % self.headers)
             resp = self.http.request(u'GET', url, preload_content=False, headers=self.headers)
-            if resp.status!=200:
+            if resp.status != 200:
                 self.logger.error(u'Download "%s" failed' % url)
                 return self.STATUS_ERROR, None
 
@@ -266,17 +265,17 @@ class Download():
             self.logger.exception(u'Error initializing http request:')
             return self.STATUS_ERROR, None
 
-        #process download
+        # process download
         content = u''
         try:
             while True:
-                #read data
+                # read data
                 buf = resp.read(1024)
                 if not buf:
-                    #download ended or failed, stop statement
+                    # download ended or failed, stop statement
                     break
 
-                #save data 
+                # save data 
                 content += buf.decode('utf-8')
 
         except:
@@ -370,20 +369,20 @@ class Download():
         """
         self.__end_callback = end_callback
 
-        #prepare filename
+        # prepare filename
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, u'%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
         self.logger.debug(u'File will be saved to "%s"' % self.download)
         download = None
 
-        #check if file is cached
+        # check if file is cached
         if cache_filename:
             cached_file = self.is_file_cached(cache_filename)
             if cached_file:
                 self.__send_download_status(self.STATUS_CACHED, os.path.getsize(cached_file['filepath']), 100)
                 return self.__send_download_end(self.STATUS_DONE, cached_file['filepath'])
         
-        #prepare download
+        # prepare download
         try:
             if self.cleep_filesystem:
                 download = self.cleep_filesystem.open(self.download, u'wb')
@@ -393,10 +392,10 @@ class Download():
             self.logger.exception(u'Unable to create file:')
             return self.__send_download_end(self.STATUS_ERROR, None)
 
-        #initialize download
+        # initialize download
         try:
             resp = self.http.request(u'GET', url, preload_content=False, headers=self.headers)
-            if resp.status!=200:
+            if resp.status != 200:
                 self.logger.error(u'Download "%s" failed' % url)
                 return self.__send_download_end(self.STATUS_ERROR, None)
 
@@ -404,7 +403,7 @@ class Download():
             self.logger.exception(u'Error initializing http request:')
             return self.__send_download_end(self.STATUS_ERROR, None)
 
-        #get file size
+        # get file size
         file_size = 0
         downloading_status = self.STATUS_DOWNLOADING
         try:
@@ -417,12 +416,12 @@ class Download():
         self.__send_download_status(downloading_status, 0, 0)
         self.logger.trace(u'Size to download: %d bytes' % file_size)
 
-        #download file
+        # download file
         downloaded_size = 0
         percent = 0
         last_percent = -1
         while True:
-            #cancel download
+            # cancel download
             if self.__cancel:
                 if self.cleep_filesystem:
                     self.cleep_filesystem.close(download)
@@ -431,14 +430,14 @@ class Download():
                 self.logger.debug(u'Download canceled')
                 return self.__send_download_end(self.STATUS_CANCELED, None)
 
-            #read data
+            # read data
             buf = resp.read(1024)
             if not buf:
-                #download ended or failed, stop statement
+                # download ended or failed, stop statement
                 self.logger.trace('Download terminated')
                 break
 
-            #save data to output file
+            # save data to output file
             downloaded_size += len(buf)
             try:
                 download.write(buf)
@@ -450,29 +449,29 @@ class Download():
                     download.close() # pragma: no cover
                 return self.__send_download_end(self.STATUS_ERROR, None)
             
-            #compute percentage
-            if file_size!=0:
+            # compute percentage
+            if file_size != 0:
                 percent = int(float(downloaded_size) / float(file_size) * 100.0)
                 self.__send_download_status(downloading_status, downloaded_size, percent)
-                if not percent%5 and last_percent!=percent:
+                if not percent%5 and last_percent != percent:
                     last_percent = percent
                     self.logger.trace(u'Downloading %s %d%%' % (self.download, percent))
 
-        #download terminated
+        # download terminated
         if self.cleep_filesystem:
             self.cleep_filesystem.close(download)
         else:
             download.close() # pragma: no cover
 
-        #file size
+        # file size
         if file_size>0:
-            if downloaded_size==file_size:
+            if downloaded_size == file_size:
                 self.logger.debug(u'File size is valid')
             else:
                 self.logger.error(u'Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
                 return self.__send_download_end(self.STATUS_ERROR_INVALIDSIZE, None)
 
-        #checksum
+        # checksum
         checksum_computed = None
         checksum_provided = None
         if check_sha1:
@@ -488,7 +487,7 @@ class Download():
             checksum_provided = check_md5
             self.logger.trace(u'MD5 for %s: %s' % (self.download, checksum_computed))
         if checksum_provided is not None:
-            if checksum_computed.lower()==checksum_provided.lower():
+            if checksum_computed.lower() == checksum_provided.lower():
                 self.logger.debug(u'Checksum is valid')
             else:
                 self.logger.error(u'Checksum from downloaded file is invalid (computed=%s provided=%s)' % (checksum_computed, checksum_provided))
@@ -496,10 +495,10 @@ class Download():
         else:
             self.logger.debug(u'No checksum to verify :(')
 
-        #send last status callback
+        # send last status callback
         self.__send_download_status(downloading_status, file_size, 100)
 
-        #rename file
+        # rename file
         if not cache_filename:
             download = os.path.join(self.temp_dir, u'%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
         else:
