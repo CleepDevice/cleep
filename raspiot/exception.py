@@ -7,7 +7,7 @@ Cleep exceptions
 
 __all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'ResourceNotAvailable',
            u'InvalidParameter', u'MissingParameter', u'InvalidMessage', u'InvalidModule', u'Unauthorized',
-           u'BusError', u'ForcedException']
+           u'BusError']
 
 class CommandError(Exception):
     """
@@ -127,15 +127,4 @@ class BusError(Exception):
         self.message = message
     def __str__(self):
         return u'%s' % self.message
-
-class ForcedException(Exception):
-    """
-    Specific exception used internally to volontary stop current process.
-    """
-    def __init__(self, code=-1):
-        Exception.__init__(self)
-        self.code = code
-        self.message = u'ForcedException(%s)' % self.code
-    def __str__(self):
-        return self.message
 
