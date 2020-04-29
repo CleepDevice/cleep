@@ -267,7 +267,7 @@ class InstallDebFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         t = TestLib(self)
-        t.declare_functional_test()
+        t.set_functional_tests()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.data_path = os.path.abspath('../../data')
         self.archive_name = 'wiringpi'

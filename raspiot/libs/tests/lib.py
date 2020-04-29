@@ -131,11 +131,11 @@ class TestLib():
         self.test_case = test_case
         tools.install_trace_logging_level()
 
-    def declare_functional_test(self):
+    def set_functional_tests(self):
         if self.test_case is None:
             logging.warning('Can\'t declare functional test if "test_case" param not specified during TestLib() init')
         if KEY_FUNCTIONAL_TEST not in os.environ:
-            self.test_case.skipTest('Do not play functional test')
+            self.test_case.skipTest('Functional tests are skipped')
 
     @staticmethod
     def mock_urllib3(request_response, request_side_effect=None):
