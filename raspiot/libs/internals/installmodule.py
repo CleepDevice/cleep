@@ -330,6 +330,7 @@ class UninstallModule(CommonProcess):
             # read install log file
             self._log_process_status(context, logging.INFO, u'Remove installed files')
             context.module_log = os.path.join(PATH_INSTALL, self.module_name, u'%s.log' % self.module_name)
+            context.install_dir = os.path.join(PATH_INSTALL, self.module_name)
             self.logger.debug(u'Open install log file "%s"' % context.module_log)
             if not os.path.exists(context.module_log):
                 self._log_process_status(context, logging.WARN, u'Install log file "%s" for module "%s" was not found' % (context.module_log, self.module_name))
@@ -392,6 +393,7 @@ class UninstallModule(CommonProcess):
         context.step = 'init'
         context.force_uninstall = self.force_uninstall
         context.module_log = None
+        context.install_dir = None
 
         self._log_process_status(context, logging.INFO, u'Start module "%s" uninstallation' % self.module_name)
 
@@ -458,6 +460,10 @@ class UninstallModule(CommonProcess):
                 # clean install log file
                 if context.module_log and os.path.exists(context.module_log):
                     self.cleep_filesystem.rm(context.module_log)
+                if context.install_dir and os.path.exists(os.path.join(context.install_dir, u'preuninst.sh')):
+                    self.cleep_filesystem.rm(os.path.join(context.install_dir, u'preuninst.sh'))
+                if context.install_dir and os.path.exists(os.path.join(context.install_dir, u'postuninst.sh')):
+                    self.cleep_filesystem.rm(os.path.join(context.install_dir, u'postuninst.sh'))
             except:
                 self._log_process_status(context, logging.NOTSET, u'Exception occured during "%s" uninstall cleaning' % self.module_name)
 
@@ -521,7 +527,7 @@ class InstallModule(CommonProcess):
         """
         Cancel installation
         """
-        self.logger.info(u'Received module "%s" installation cancelation' % self.module_name)
+        self.logger.trace(u'Received module "%s" installation cancelation' % self.module_name)
         self.running = False
 
     def is_installing(self):
@@ -571,10 +577,9 @@ class InstallModule(CommonProcess):
         self.logger.debug(u'Download file "%s"' % self.module_infos[u'download'])
         try:
             download = Download(self.cleep_filesystem)
-            context.archive_path = download.download_file(self.module_infos[u'download'], check_sha256=self.module_infos[u'sha256'])
+            download_status, context.archive_path = download.download_file(self.module_infos[u'download'], check_sha256=self.module_infos[u'sha256'])
             self.logger.trace(u'archive_path: %s' % context.archive_path)
             if context.archive_path is None:
-                download_status = download.get_status()
                 self.logger.trace(u'download_status: %s' % download_status)
 
                 if download_status == download.STATUS_ERROR:
@@ -945,10 +950,19 @@ class UpdateModule(threading.Thread):
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
         self.status = self.STATUS_IDLE
-        self.__is_uninstalling = True
+        self._is_uninstalling = True
         # initialized when update process starts
-        self.__uninstall_status = None
-        self.__install_status = None
+        self.__uninstall_status = {}
+        self.__install_status = {}
+
+    def is_updating(self):
+        """
+        Return True is process is running
+
+        Returns:
+            bool: True if running
+        """
+        return True if self.status == self.STATUS_UPDATING else False
 
     def get_status(self):
         """
@@ -970,22 +984,19 @@ class UpdateModule(threading.Thread):
             u'install': self.__install_status,
         }
 
-    def __status_callback(self, status):
+    def _status_callback(self, status):
         """
         Install/Uninstall status callback
 
         Args:
             status (dict): status returned by install/uninstall
         """
-        if self.__is_uninstalling:
-            # callback from uninstall process
-            self.logger.debug('Update callback from uninstall: %s' % status)
-            self.__uninstall_status.update(status)
-
-        else:
-            # callback from install process
-            self.logger.debug('Update callback from install: %s' % status)
-            self.__install_status.update(status)
+        message = 'Update callback from uninstall: %s' if self._is_uninstalling else 'Update callback from install: %s'
+        update = self.__uninstall_status.update if self._is_uninstalling else self.__install_status.update
+        
+        # callback from uninstall process
+        self.logger.debug(message % status)
+        update(status)
 
         self._step()
 
@@ -1008,13 +1019,13 @@ class UpdateModule(threading.Thread):
             # init
             self.logger.info(u'Start module "%s" update' % self.module_name)
             self.status = self.STATUS_UPDATING
-            uninstall = UninstallModule(self.module_name, self.new_module_infos, True, self.force_uninstall, self.__status_callback, self.cleep_filesystem, self.crash_report)
+            uninstall = UninstallModule(self.module_name, self.new_module_infos, True, self.force_uninstall, self._status_callback, self.cleep_filesystem, self.crash_report)
             self.__uninstall_status = uninstall.get_status()
-            install = InstallModule(self.module_name, self.new_module_infos, True, self.__status_callback, self.cleep_filesystem, self.crash_report)
+            install = InstallModule(self.module_name, self.new_module_infos, True, self._status_callback, self.cleep_filesystem, self.crash_report)
             self.__install_status = install.get_status()
 
             # run uninstall
-            self.__is_uninstalling = True
+            self._is_uninstalling = True
             uninstall.start()
             time.sleep(0.5)
             while uninstall.is_uninstalling():
@@ -1026,7 +1037,7 @@ class UpdateModule(threading.Thread):
             self._step()
             
             # run new package install
-            self.__is_uninstalling = False
+            self._is_uninstalling = False
             install.start()
             time.sleep(0.5)
             while install.is_installing():
