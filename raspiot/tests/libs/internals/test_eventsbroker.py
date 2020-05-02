@@ -3,10 +3,10 @@
 
 import os, io, shutil
 import sys, time
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from eventsbroker import EventsBroker
 from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.internals.formatter import Formatter
+from raspiot.libs.internals.profileformatter import ProfileFormatter
 from raspiot.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
@@ -15,7 +15,7 @@ from mock import Mock
 class DummyProfile(RendererProfile):
     pass
 
-class DummyFormatter(Formatter):
+class DummyFormatter(ProfileFormatter):
 
     def __init__(self, events_broker):
         self.events_broker = events_broker
@@ -52,13 +52,14 @@ class %(event_class)s(Event):
 
 class EventsBrokerTests(unittest.TestCase):
 
-    MODULES_DIR = 'test_modules'
+    MODULES_DIR = '/tmp/test_modules'
     EVENT_NAME1 = 'event1'
     EVENT_NAME2 = 'event2'
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.CRITICAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+
         self.crash_report = Mock()
         self.bus = Mock()
         self.formatters_broker = Mock()
@@ -101,7 +102,8 @@ class EventsBrokerTests(unittest.TestCase):
         sys.path.append(os.path.join(os.getcwd(), self.MODULES_DIR))
 
         # overwrite module paths
-        self.e.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
+        # self.e.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
+        self.e.MODULES_DIR = self.MODULES_DIR
         self.e.PYTHON_RASPIOT_IMPORT_PATH = ''
 
     def test_configure_with_event(self):
@@ -214,5 +216,5 @@ class EventsBrokerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_eventsbroker.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_eventsbroker.py; coverage report -m -i
     unittest.main()

@@ -3,10 +3,10 @@
 
 import os, io, shutil
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import profileformattersbroker
 from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.internals.formatter import Formatter
+from raspiot.libs.internals.profileformatter import ProfileFormatter
 from raspiot.libs.internals.rendererprofile import RendererProfile
 from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
@@ -16,7 +16,7 @@ from mock import Mock
 class DummyProfile(RendererProfile):
     pass
 
-class DummyFormatter(Formatter):
+class DummyFormatter(ProfileFormatter):
 
     def __init__(self, events_broker):
         self.events_broker = events_broker
@@ -66,7 +66,7 @@ class Dummy(ProfileFormatter):
 
 class ProfileFormattersBrokerTests(unittest.TestCase):
 
-    MODULES_DIR = 'test_modules'
+    MODULES_DIR = '/tmp/test_modules'
     EVENT_NAME1 = 'event1'
     EVENT_NAME2 = 'event2'
 
@@ -122,7 +122,8 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         sys.path.append(os.path.join(os.getcwd(), self.MODULES_DIR))
 
         # overwrite module paths
-        self.p.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
+        # self.p.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
+        self.p.MODULES_DIR = self.MODULES_DIR
         self.p.PYTHON_RASPIOT_IMPORT_PATH = ''
 
     def test_configure_with_formatters(self):
@@ -279,6 +280,6 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_profileformattersbroker.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_profileformattersbroker.py; coverage report -m -i
     unittest.main()
 

@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/commands')
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from alsa import Alsa
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -231,5 +231,5 @@ class AlsaTests(unittest.TestCase):
         self.assertTrue(self.a.save(), 'Configuration not saved')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_alsa.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_alsa.py; coverage report -m -i
     unittest.main()

@@ -3,8 +3,8 @@
 
 import os
 import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from raspiot.libs.internals.task import Task
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
 from criticalresources import CriticalResources
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -243,5 +243,5 @@ class Mydummyresource():
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_criticalresources.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_criticalresources.py; coverage report -m -i
     unittest.main()

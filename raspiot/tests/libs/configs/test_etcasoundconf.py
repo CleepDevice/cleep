@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/configs')
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from etcasoundconf import EtcAsoundConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -232,7 +232,6 @@ class EtcAsoundConfTestNoCtlSection(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_etcasoundconf.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_etcasoundconf.py; coverage report -m -i
     unittest.main()
 

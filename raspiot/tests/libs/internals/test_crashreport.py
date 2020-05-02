@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import crashreport
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -64,10 +64,10 @@ class CrashReportTests(unittest.TestCase):
         self.assertTrue(self.sentry_configure_scope.return_value.__enter__.called)
         self.assertGreaterEqual(self.sentry_configure_scope.return_value.__enter__.return_value.set_tag_calls, 7)
 
-    def test_check_disable_at_startup(self):
+    def test_check_disabled_at_startup(self):
         c = crashreport.CrashReport(None, 'myproduct', 'myversion')
         self.assertFalse(c.is_enabled())
-        c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', forced=True)
+        c = crashreport.CrashReport('mytoken', 'myproduct', 'myversion', disabled_by_core=True)
         self.assertFalse(c.is_enabled())
 
     def test_debug_mode(self):
@@ -103,5 +103,5 @@ class CrashReportTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_crashreport.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_crashreport.py; coverage report -m -i
     unittest.main()

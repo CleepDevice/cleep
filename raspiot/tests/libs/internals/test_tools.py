@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import tools
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -162,6 +162,6 @@ class ToolsTestsLogLevelTrace(unittest.TestCase):
             self.fail('logging.TRACE not installed')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_tools.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_tools.py; coverage report -m -i
     unittest.main()
 

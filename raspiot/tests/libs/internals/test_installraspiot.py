@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from installraspiot import InstallRaspiot, Download, InstallDeb, EndlessConsole
 from raspiot.libs.tests.lib import TestLib
 from raspiot.exception import MissingParameter, InvalidParameter
@@ -457,7 +457,7 @@ class InstallRaspiotFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         t = TestLib(self)
-        t.declare_functional_test()
+        t.set_functional_tests()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
         self.fs = CleepFilesystem()
@@ -545,6 +545,6 @@ class InstallRaspiotFunctionalTests(unittest.TestCase):
 
     
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_installraspiot.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_installraspiot.py; coverage report -m -i
     unittest.main()
 

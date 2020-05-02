@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from cleepgithub import CleepGithub
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -369,7 +369,7 @@ class CleepGithubTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.TRACE, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.owner = 'dummy'
         self.repo = 'dummy'
@@ -481,7 +481,7 @@ class CleepGithubTests(unittest.TestCase):
         del release['assets']
         with self.assertRaises(Exception) as cm:
             self.g.get_release_assets_infos(release)
-        self.assertEqual(cm.exception.message, 'iInvalid release format')
+        self.assertEqual(cm.exception.message, 'Invalid release format')
 
     def test_is_release(self):
         self._init_context(resp_data=json.dumps(GET_RELEASES))
@@ -534,6 +534,6 @@ class CleepGithubTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-     #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_cleepgithub.py; coverage report -m
+     #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_cleepgithub.py; coverage report -m -i
      unittest.main()
 

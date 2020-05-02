@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys 
-sys.path.append('/root/cleep/raspiot/libs/configs')
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from etcnetworkinterfaces import EtcNetworkInterfaces
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -425,6 +425,5 @@ iface eth3 inet static
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_etcnetworkinterfaces.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_etcnetworkinterfaces.py; coverage report -m -i
     unittest.main()

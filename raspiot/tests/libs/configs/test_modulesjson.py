@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys 
-sys.path.append('/root/cleep/raspiot/libs/configs')
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from modulesjson import ModulesJson
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.download import Download
@@ -118,5 +118,5 @@ class ModulesJsonTests(unittest.TestCase):
         self.assertEqual(cm.exception.message, 'File "modules.json" doesn\'t exist. Please update it first.')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_modulesjson.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_modulesjson.py; coverage report -m -i
     unittest.main()

@@ -3,8 +3,9 @@
 
 import os
 import sys
-sys.path.append('%s/../' % os.getcwd())
-from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError, ForcedException
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
+print(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
+from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -74,13 +75,8 @@ class ExceptionTests(unittest.TestCase):
         self.assertNotEqual(e.message, 0)
         self.assertEqual('%s' % e, 'message')
 
-    def test_forcedexception(self):
-        e = ForcedException('message')
-        self.assertNotEqual(e.message, 0)
-        self.assertEqual('%s' % e, 'ForcedException(message)')
-
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_exception.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
     unittest.main()
 

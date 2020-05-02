@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append('/root/cleep/raspiot/libs/commands')
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from modprobe import Modprobe
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -46,5 +47,5 @@ class ModprobeTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_modprobe.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_modprobe.py; coverage report -m -i
     unittest.main()

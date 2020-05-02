@@ -4,23 +4,25 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from alertsmsprofile import AlertSmsProfile
-import logging
+from install import Install
+from raspiot.libs.tests.lib import TestLib
+from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
+import logging
+from mock import Mock, patch
 
-class AlertSmsProfileTests(unittest.TestCase):
+
+class InstallTests(unittest.TestCase):
 
     def setUp(self):
+        TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        self.p = AlertSmsProfile()
 
     def tearDown(self):
         pass
 
-    def test_members(self):
-        for attr in ['message']:
-            self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_alertsmsprofile.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_install.py; coverage report -m -i
     unittest.main()
+

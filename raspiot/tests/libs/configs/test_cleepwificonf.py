@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/configs')
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from cleepwificonf import CleepWifiConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -13,8 +13,8 @@ import logging
 from pprint import pformat
 import io
 import json
+import time
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class CleepWifiConfTest(unittest.TestCase):
 
@@ -28,9 +28,12 @@ class CleepWifiConfTest(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
-        self.path = os.path.join(os.getcwd(), self.FILE_NAME)
+        # self.path = os.path.join(os.getcwd(), self.FILE_NAME)
+        self.path = os.path.join('/tmp', self.FILE_NAME)
         logging.debug('Using conf file "%s"' % self.path)
 
         #fill with default content
@@ -38,7 +41,8 @@ class CleepWifiConfTest(unittest.TestCase):
             f.write(self.CONTENT)
 
         c = CleepWifiConf
-        c.CONF = self.FILE_NAME
+        # c.CONF = self.FILE_NAME
+        c.CONF = self.path
         self.c = c()
 
     def tearDown(self):
@@ -65,7 +69,7 @@ class CleepWifiConfTest(unittest.TestCase):
 
     def test_delete(self):
         self.assertTrue(self.c.delete(self.fs), 'config file should be deleted')
-        self.assertFalse(self.c.delete(self.fs), 'config file should already be deleted')
+        self.assertFalse(os.path.exists(self.c.CONF), 'config file should already be deleted')
 
     def test_create_content(self):
         string = self.c.create_content('thenetwork', 'thepassword', 'wpa2', False)
@@ -104,7 +108,6 @@ class CleepWifiConfTest(unittest.TestCase):
         self.assertEqual(parsed['encryption'], 'wpa2', 'Invalid default encryption')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_cleepwificonf.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_cleepwificonf.py; coverage report -m -i
     unittest.main()
 

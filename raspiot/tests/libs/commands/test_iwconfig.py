@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append('/root/cleep/raspiot/libs/commands')
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from iwconfig import Iwconfig
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -57,6 +58,5 @@ class IwconfigTests(unittest.TestCase):
             self.assertTrue('network' in interface.keys())
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_iwconfig.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_iwconfig.py; coverage report -m -i
     unittest.main()

@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 import rpcserver
 from raspiot.libs.tests.lib import TestLib
 from raspiot.libs.drivers.driver import Driver
@@ -241,10 +241,10 @@ class RpcServerTests(unittest.TestCase):
 
         with boddle():
             rpcserver.set_cache_control(True)
-            self.assertTrue(rpcserver.no_cache_control)
+            self.assertTrue(rpcserver.cache_enabled)
 
             rpcserver.set_cache_control(False)
-            self.assertFalse(rpcserver.no_cache_control)
+            self.assertFalse(rpcserver.cache_enabled)
 
     def test_set_debug(self):
         self._init_context()
@@ -612,7 +612,7 @@ class RpcServerTests(unittest.TestCase):
 
         with boddle(query={'p1':'v1', 'p2':'v2'}):
             rpcserver.rpc_wrapper('')
-            self.assertTrue(self.inventory.rpc_wrapper.called)
+            self.assertTrue(self.inventory._rpc_wrapper.called)
 
     def test_default(self):
         self._init_context()
@@ -663,6 +663,6 @@ class RpcServerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_rpcserver.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
     unittest.main()
 

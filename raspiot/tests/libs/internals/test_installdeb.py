@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from installdeb import InstallDeb
 from raspiot.libs.tests.lib import TestLib
 from raspiot.exception import MissingParameter, InvalidParameter
@@ -22,7 +22,7 @@ class InstallDebTests(unittest.TestCase):
         TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
-        self.data_path = os.path.abspath('../../data')
+        self.data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
         self.archive_name = 'wiringpi'
         self.archive_path = os.path.join(self.data_path, '%s.deb' % self.archive_name)
         self.fs = Mock()
@@ -311,6 +311,6 @@ class InstallDebFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_installdeb.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_installdeb.py; coverage report -m -i
     unittest.main()
 

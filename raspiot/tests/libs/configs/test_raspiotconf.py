@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys 
-sys.path.append('/root/cleep/raspiot/libs/configs')
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from raspiotconf import RaspiotConf
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.download import Download
@@ -170,5 +170,5 @@ class RaspiotConfTests(unittest.TestCase):
         self.assertIsInstance(self.rc.as_dict(), dict)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_raspiotconf.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_raspiotconf.py; coverage report -m -i
     unittest.main()

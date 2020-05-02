@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/commands')
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from blkid import Blkid
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -62,6 +62,5 @@ class BlkidTests(unittest.TestCase):
         self.assertEqual(self.b.get_device('mountpoint'), None)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_blkid.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_blkid.py; coveverage report -m -i
     unittest.main()

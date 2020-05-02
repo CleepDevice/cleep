@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('/root/cleep/raspiot/libs/configs')
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from configtxt import ConfigTxt
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -283,7 +283,6 @@ dtparam=audio=on
         self.assertFalse(self.c.is_onewire_enabled())
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_configtxt.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_configtxt.py; coverage report -m -i
     unittest.main()
 

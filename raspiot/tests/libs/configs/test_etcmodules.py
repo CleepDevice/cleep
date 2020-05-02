@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys 
-sys.path.append('/root/cleep/raspiot/libs/configs')
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from etcmodules import EtcModules
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.exception import MissingParameter, InvalidParameter, CommandError
@@ -87,6 +87,5 @@ bcm4522"""
         self.assertTrue(self.e.is_embedded_sound_enabled())
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_etcmodules.py
-    #coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_etcmodules.py; coverage report -m -i
     unittest.main()

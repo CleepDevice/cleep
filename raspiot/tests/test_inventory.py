@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from inventory import Inventory
 from raspiot.libs.tests.lib import TestLib
 from raspiot.exception import InvalidParameter
@@ -1216,6 +1216,6 @@ class %(module_name)s(%(inherit)s):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_inventory.py; coverage report -i -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
     unittest.main()
 

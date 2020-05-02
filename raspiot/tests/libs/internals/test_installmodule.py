@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../../libs/internals' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from installmodule import InstallModule, UninstallModule, UpdateModule, Download, Context, PATH_FRONTEND
 import raspiot.libs.internals.download
 from raspiot.libs.internals.installdeb import InstallDeb
@@ -2044,6 +2044,6 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_installmodule.py; coverage report -i -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
     unittest.main()
 

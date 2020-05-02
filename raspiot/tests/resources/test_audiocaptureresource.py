@@ -3,7 +3,7 @@
 
 import os
 import sys
-sys.path.append('%s/../../resources' % os.getcwd())
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from audiocaptureresource import AudioCaptureResource
 from raspiot.libs.tests.lib import TestLib
 import unittest
@@ -26,5 +26,5 @@ class AudioCaptureResourceTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","test_*" --concurrency=thread test_audiocaptureresource.py; coverage report -m
+    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_audiocaptureresource.py; coverage report -m -i
     unittest.main()
