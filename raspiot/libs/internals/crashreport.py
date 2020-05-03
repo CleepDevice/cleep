@@ -17,7 +17,7 @@ class CrashReport():
     Crash report class
     """
 
-    def __init__(self, token, product, product_version, libs_version={}, debug=False, disabled_by_system=False):
+    def __init__(self, token, product, product_version, libs_version={}, debug=False, disabled_by_core=False):
         """
         Constructor
 
@@ -27,7 +27,7 @@ class CrashReport():
             product_version (string): product version
             libs_version (dict): important libraries versions
             debug (bool): debug flag
-            disabled_by_system (bool): used by system to force crash report deactivation
+            disabled_by_core (bool): used by core to force crash report deactivation
         """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -37,7 +37,7 @@ class CrashReport():
             self.logger.setLevel(logging.WARN)
 
         #members
-        self.__disabled_by_system = disabled_by_system
+        self.__disabled_by_core = disabled_by_core
         self.__enabled = False
         self.__token = token
         self.__libs_version = libs_version
@@ -45,7 +45,7 @@ class CrashReport():
         self.__product_version = product_version
 
         #disable crash report if necessary
-        if self.__disabled_by_system or not token:
+        if self.__disabled_by_core or not token:
             self.disable()
 
         #create and configure raven client

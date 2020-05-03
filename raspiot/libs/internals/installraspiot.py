@@ -9,7 +9,6 @@ from zipfile import ZipFile
 import threading
 import tempfile
 import stat
-from raspiot.exception import ForcedException
 from raspiot.libs.internals.console import EndlessConsole
 from raspiot.core import RaspIotModule
 from raspiot.libs.internals.download import Download
@@ -21,6 +20,11 @@ PATH_INSTALL = u'/etc/raspiot/install/'
 FRONTEND_DIR = u'frontend/'
 BACKEND_DIR = u'backend/'
 
+
+class ForcedException(Exception):
+    def __init__(self, code):
+        Exception.__init__(self)
+        self.code = code
 
 class InstallRaspiot(threading.Thread):
     """

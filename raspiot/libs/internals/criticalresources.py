@@ -30,7 +30,8 @@ class CriticalResources():
     giving a possibilty to acquire the resource, release it and acquire it again if necessary.
     """
 
-    RESOURCES_DIR = 'resources'
+    PYTHON_RASPIOT_IMPORT_PATH = u'raspiot.resources.'
+    RESOURCES_DIR = u'../../resources'
 
     def __init__(self, debug_enabled):
         """
@@ -77,7 +78,7 @@ class CriticalResources():
         """
         Load existing resources
         """
-        path = os.path.join(os.path.dirname(__file__), '../../', self.RESOURCES_DIR)
+        path = os.path.join(os.path.dirname(__file__), self.RESOURCES_DIR)
         if not os.path.exists(path):
             self.__report_exception({
                 u'message': u'Invalid resources path',
@@ -87,13 +88,14 @@ class CriticalResources():
 
         try:
             for f in os.listdir(path):
-                fullpath = os.path.join(path, f)
+                fullpath = os.path.abspath(os.path.join(path, f))
                 self.logger.trace('Found resource file "%s"' % fullpath)
                 (resource, ext) = os.path.splitext(f)
                 self.logger.trace('Resource=%s ext=%s' % (resource, ext))
                 if os.path.isfile(fullpath) and ext==u'.py' and resource!=u'__init__' and resource!=u'resource':
-                    self.logger.trace('Importing %s' % u'raspiot.%s.%s' % (self.RESOURCES_DIR, resource))
-                    mod_ = importlib.import_module(u'raspiot.%s.%s' % (self.RESOURCES_DIR, resource))
+                    self.logger.debug('Loading "%s"' % u'%s%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, resource))
+                    mod_ = importlib.import_module(u'%s%s' % (self.PYTHON_RASPIOT_IMPORT_PATH, resource))
+
                     resource_class_name = self.__get_resource_class_name(resource, mod_)
                     self.logger.trace('resource_class_name=%s' % resource_class_name)
                     if resource_class_name:

@@ -12,6 +12,7 @@ import logging
 import time
 from mock import Mock
 import io
+import shutil
 
 class CriticalResourcesTests(unittest.TestCase):
 
@@ -199,47 +200,54 @@ class Mydummyresource():
         TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
+        self.resources_dir = '/tmp/resources'
+
     def test_load_resources_invalid_path(self):
         c = CriticalResources
-        c.RESOURCES_DIR = '/dummy'
+        c.RESOURCES_DIR = self.resources_dir
+        c.PYTHON_RASPIOT_IMPORT_PATH = ''
         with self.assertRaises(Exception) as cm:
             c(False)
         self.assertEqual(cm.exception.message, 'Invalid resources path "%s"' % c.RESOURCES_DIR)
 
     def test_load_resources_invalid_resource_path(self):
-        dummy_file = '../../../libs/dummyResource.py'
-        with io.open(dummy_file, 'w') as fp:
-            fp.write(self.CONTENT)
-            time.sleep(1.0)
         try:
+            os.mkdir(self.resources_dir)
+            dummy_file = os.path.join(self.resources_dir, 'dummyResource.py')
+            with io.open(dummy_file, 'w') as fp:
+                fp.write(self.CONTENT)
+
+            time.sleep(1.0)
             c = CriticalResources
-            c.RESOURCES_DIR = 'libs'
+            c.RESOURCES_DIR = self.resources_dir
+            c.PYTHON_RASPIOT_IMPORT_PATH = 'resources'
             with self.assertRaises(Exception) as cm:
                 c(False)
             self.assertEqual(cm.exception.message, 'Error occured trying to load resource "dummyResource"')
         finally:
-            if os.path.exists(dummy_file):
-                os.remove(dummy_file)
+            if os.path.exists(self.resources_dir):
+                shutil.rmtree(self.resources_dir)
 
     def test_load_resources_invalid_resource_class_name(self):
-        dummy_file1 = '../../../resources/dummyResource.py'
-        dummy_file2 = '/usr/lib/python2.7/dist-packages/raspiot/resources/dummyResource.py'
-        with io.open(dummy_file1, 'w') as fp:
-            fp.write(self.CONTENT)
-        with io.open(dummy_file2, 'w') as fp:
-            fp.write(self.CONTENT)
-            time.sleep(1.0)
         try:
+            os.mkdir(self.resources_dir)
+            
+            dummy_file = os.path.join(self.resources_dir, 'dummyResource.py')
+            with io.open(dummy_file, 'w') as fp:
+                fp.write(self.CONTENT)
+
+            # make dummy dir content importable
+            sys.path.append(self.resources_dir)
+
             c = CriticalResources
-            c.RESOURCES_DIR = 'resources'
+            c.RESOURCES_DIR = self.resources_dir
+            c.PYTHON_RASPIOT_IMPORT_PATH = ''
             with self.assertRaises(Exception) as cm:
                 c(False)
             self.assertEqual(cm.exception.message, 'Invalid resource "dummyResource" tryed to be loaded')
         finally:
-            if os.path.exists(dummy_file1):
-                os.remove(dummy_file1)
-            if os.path.exists(dummy_file2):
-                os.remove(dummy_file2)
+            if os.path.exists(self.resources_dir):
+                shutil.rmtree(self.resources_dir)
 
 
 if __name__ == '__main__':

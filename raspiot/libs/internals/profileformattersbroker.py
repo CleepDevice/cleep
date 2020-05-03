@@ -31,7 +31,6 @@ class ProfileFormattersBroker():
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
-        self.logger.setLevel(logging.TRACE)
         self.events_broker = None
         # list of renderer module names with format::
         # 

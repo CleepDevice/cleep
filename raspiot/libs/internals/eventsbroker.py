@@ -147,7 +147,7 @@ class EventsBroker():
             caller = stack[1][0].f_locals[u'self']
             module = None
             formatter = None
-            if issubclass(caller.__class__, Formatter):
+            if issubclass(caller.__class__, ProfileFormatter):
                 #formatter registers event
                 formatter = caller.__class__.__name__.lower()
                 self.logger.debug(u'Formatter %s registers event %s' % (formatter, event_name))

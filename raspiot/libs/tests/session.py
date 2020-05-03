@@ -3,7 +3,7 @@
 
 from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.libs.internals.eventsbroker import EventsBroker
-from raspiot.libs.internals.formattersbroker import FormattersBroker
+from raspiot.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
 from raspiot.libs.internals.criticalresources import CriticalResources
 from raspiot.exception import NoResponse
@@ -24,14 +24,16 @@ class TestSession():
     Create session to be able to run tests on a Cleep module
     """
 
-    def __init__(self, log_level):
+    def __init__(self):
         """
         Constructor
         """
         tools.install_trace_logging_level()
+
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(log_level)
-        self.__debug_enabled = True if log_level==logging.DEBUG else False
+        log_level = logging.getLogger().getEffectiveLevel()
+        self.__debug_enabled = True if log_level <= logging.DEBUG else False
+
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.__setup_executed = False
         self.__bus_command_handlers = {}

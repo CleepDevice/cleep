@@ -78,7 +78,7 @@ class RaspIot(BusClient):
                 infos['product'],
                 infos['productversion'],
                 infos['libsversion'],
-                disabled_by_system=bootstrap[u'crash_report'].is_enabled()
+                disabled_by_core=bootstrap[u'crash_report'].is_enabled()
             )
 
         elif self._get_module_name() in CORE_MODULES or self._get_module_name() == u'inventory':
