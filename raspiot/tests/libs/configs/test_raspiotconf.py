@@ -13,7 +13,7 @@ import unittest
 import logging
 from pprint import pprint
 import io
-from mock import Mock
+from unittest.mock import Mock
 from configparser import SafeConfigParser
 
 class RaspiotConfTests(unittest.TestCase):

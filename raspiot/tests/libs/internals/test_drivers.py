@@ -9,7 +9,7 @@ from raspiot.libs.tests.lib import TestLib
 from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 
 class DummyDriver():

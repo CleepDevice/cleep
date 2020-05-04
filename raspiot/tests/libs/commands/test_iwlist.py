@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', '')
 from iwlist import Iwlist
 from raspiot.libs.configs.wpasupplicantconf import WpaSupplicantConf
 from raspiot.libs.tests.lib import TestLib
-from mock import Mock
+from unittest.mock import Mock
 import unittest
 import logging
 from pprint import pformat

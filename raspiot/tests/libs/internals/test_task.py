@@ -8,7 +8,7 @@ from task import Task, CountTask
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 import time
 
 class TaskTests(unittest.TestCase):

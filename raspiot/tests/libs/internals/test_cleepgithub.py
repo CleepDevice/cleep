@@ -9,7 +9,7 @@ from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
 import json
-from mock import Mock
+from unittest.mock import Mock
 from copy import deepcopy
 
 GET_API_RATE = {

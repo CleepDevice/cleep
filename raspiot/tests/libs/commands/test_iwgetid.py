@@ -8,7 +8,7 @@ from iwgetid import Iwgetid
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 class IwgetidTests(unittest.TestCase):
 

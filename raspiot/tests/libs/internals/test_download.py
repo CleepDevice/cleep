@@ -10,7 +10,7 @@ from download import Download
 from raspiot.libs.tests.lib import TestLib, Urllib3RequestResponseMock, FileDescriptorMock
 import unittest
 import logging
-from mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock
 import shutil
 import io
 import base64

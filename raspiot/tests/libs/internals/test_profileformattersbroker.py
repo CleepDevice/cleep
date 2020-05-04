@@ -11,7 +11,7 @@ from raspiot.libs.internals.rendererprofile import RendererProfile
 from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 class DummyProfile(RendererProfile):
     pass

@@ -8,7 +8,7 @@ from ifupdown import Ifupdown
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 
 class IfupdownTests(unittest.TestCase):

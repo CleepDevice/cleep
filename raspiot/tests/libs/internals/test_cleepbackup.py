@@ -8,7 +8,7 @@ from cleepbackup import CleepBackup
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 import subprocess
 
 class CleepBackupTests(unittest.TestCase):

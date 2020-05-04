@@ -8,7 +8,7 @@ from readwrite import ReadWrite, Console, ReadWriteContext
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 class ReadWriteTests(unittest.TestCase):
 

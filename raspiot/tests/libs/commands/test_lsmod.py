@@ -8,7 +8,7 @@ from lsmod import Lsmod
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 import time
 
 class LsmodTests(unittest.TestCase):

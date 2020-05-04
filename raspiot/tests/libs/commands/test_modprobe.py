@@ -9,7 +9,7 @@ from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
 import time
-from mock import Mock
+from unittest.mock import Mock
 
 class ModprobeTests(unittest.TestCase):
 

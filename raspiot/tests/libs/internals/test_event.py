@@ -8,7 +8,7 @@ from event import Event
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 class DummyModule():
     def __init__(self, format_output={}, can_render_event_output=True):

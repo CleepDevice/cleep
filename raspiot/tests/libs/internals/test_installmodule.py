@@ -12,7 +12,7 @@ from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 import time
-from mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock
 import subprocess
 import tempfile
 from threading import Timer

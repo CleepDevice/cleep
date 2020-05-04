@@ -10,7 +10,7 @@ from raspiot.libs.internals.profileformatter import ProfileFormatter
 from raspiot.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 class DummyProfile(RendererProfile):
     pass

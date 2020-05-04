@@ -8,7 +8,7 @@ from iwconfig import Iwconfig
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 FAKE_OUPUT = """enxb827eb729ebf  no wireless extensions.
 

@@ -12,7 +12,7 @@ import unittest
 import logging
 from pprint import pprint
 import io
-from mock import Mock
+from unittest.mock import Mock
 
 logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 

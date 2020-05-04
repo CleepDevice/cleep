@@ -13,7 +13,7 @@ import unittest
 import logging
 from boddle import boddle
 from bottle import HTTPError, HTTPResponse
-from mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch, mock_open
 import json
 import time
 

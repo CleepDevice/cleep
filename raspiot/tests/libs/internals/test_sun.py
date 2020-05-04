@@ -10,7 +10,7 @@ import unittest
 import logging
 import datetime
 from dateutil.tz import gettz
-from mock import Mock
+from unittest.mock import Mock
 
 class SunTests(unittest.TestCase):
 

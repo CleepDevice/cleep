@@ -10,7 +10,7 @@ from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 import time
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 import zipfile
 import StringIO
 

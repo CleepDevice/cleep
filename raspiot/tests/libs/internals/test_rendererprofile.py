@@ -8,7 +8,7 @@ from rendererprofile import RendererProfile
 from raspiot.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 class DummyProfile(RendererProfile):
     def __init__(self):
