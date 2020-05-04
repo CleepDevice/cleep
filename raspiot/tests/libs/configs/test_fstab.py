@@ -72,9 +72,9 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
         mountpoints = self.f.get_mountpoints()
         self.assertEqual(len(mountpoints), 9)
 
-        self.assertTrue(mountpoints.has_key(u'/media/usb1'))
+        self.assertTrue('/media/usb1' in mountpoints)
         self.assertEqual(mountpoints[u'/media/usb1'][u'local'], True)
-        self.assertTrue(mountpoints.has_key(u'/media/toserver'))
+        self.assertTrue('/media/toserver' in mountpoints)
         self.assertEqual(mountpoints[u'/media/toserver'][u'local'], False)
 
     def test_devices(self):
@@ -94,7 +94,7 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
         self.assertTrue(self.f.add_mountpoint('/dev/sda1', '/media/mount', 'ext4', 'discard,noatime'))
 
         mountpoints = self.f.get_mountpoints()
-        self.assertTrue(mountpoints.has_key(u'/media/mount'))
+        self.assertTrue('/media/mount' in mountpoints)
 
     def test_add_existing_mountpoint(self):
         self.assertFalse(self.f.add_mountpoint('/dev/sda1', '/media/tangstore', 'ext4', 'discard,noatime'))
@@ -105,7 +105,7 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
     def test_delete_mountpoint(self):
         self.assertTrue(self.f.delete_mountpoint('/media/tangstore'))
         mountpoints = self.f.get_mountpoints()
-        self.assertFalse(mountpoints.has_key(u'/media/tangstore'))
+        self.assertFalse('/media/tangstore' in mountpoints)
 
     def test_delete_mountpoint_invalid_parameters(self):
         with self.assertRaises(MissingParameter) as cm:

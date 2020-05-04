@@ -10,7 +10,7 @@ from raspiot.common import MessageRequest, MessageResponse
 from raspiot.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage
 import unittest
 import logging
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 import time
 from threading import Event, Thread
 
@@ -22,8 +22,7 @@ class DummyModule(Thread):
             response (MessageResponse): message response instance
             name (string): module name
         """
-        Thread.__init__(self)
-        Thread.daemon = True
+        Thread.__init__(self, daemon=True)
         self.name = name
         self.bus = bus
         self.running = True

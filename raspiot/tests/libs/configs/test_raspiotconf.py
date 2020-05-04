@@ -14,7 +14,7 @@ import logging
 from pprint import pprint
 import io
 from mock import Mock
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 class RaspiotConfTests(unittest.TestCase):
 

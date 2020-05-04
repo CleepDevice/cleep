@@ -11,7 +11,7 @@ from raspiot.libs.drivers.driver import Driver
 from raspiot.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
-from mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 import time
 import io
 import copy
