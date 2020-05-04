@@ -1,3 +1,13 @@
+raspiot (0.0.21) unreleased; urgency=low
+
+  * Rename raspiot to cleep
+  * Add unittests for major core files (89% coverage)
+  * Fix some small and major issues
+  * Rewrite some part of code
+  * Migrate to python3
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 3 may 2020 23:00:00 +0000
+
 raspiot (0.0.20) unreleased; urgency=low
 
   * Migrate raven lib to sentry-sdk lib (raven is deprecated)

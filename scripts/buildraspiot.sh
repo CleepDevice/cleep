@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#script that builds raspiot deb package and publish it to github repository
-#DEPRECATED use cleep-cli build command instead
+# Script that builds raspiot deb package and publish it to github repository
+# DEPRECATED use cleep-cli build command instead
 
 CUR_DIR=`pwd`
 GITHUB_OWNER=tangb

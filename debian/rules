@@ -4,7 +4,7 @@
 export PYBUILD_NAME=raspiot
 
 %:
-	dh $@ --with python2
+	dh $@ --with python3 --buildsystem=pybuild
 
 clean:
 	-rm -rf debian/raspiot

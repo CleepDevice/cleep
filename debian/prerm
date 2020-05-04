@@ -13,7 +13,7 @@ case "$1" in
         ;; 
 
     upgrade)
-        #after upgrade let cleepos restart by itself
+        #after upgrade let cleep restart by itself
         ;;
         
     failed-upgrade)
