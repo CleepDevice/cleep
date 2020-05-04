@@ -11,7 +11,7 @@ import inspect
 from collections import deque
 from threading import Event
 from raspiot.libs.internals.task import Task
-from Queue import Queue
+from queue import Queue
 from raspiot.common import MessageResponse, MessageRequest
 from raspiot.exception import NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
 
@@ -138,7 +138,7 @@ class MessageBus():
         self.logger.trace(u'Received message %s to push to "%s" module with timeout %s' % (request_dict, request.to, timeout))
 
         # push message according to context
-        if self._queues.has_key(request.to):
+        if request.to in self._queues:
             # recipient exists and has queue
             return self.__push_to_recipient(request, request_dict, timeout)
         elif request.to==u'rpc':
@@ -305,7 +305,7 @@ class MessageBus():
             NoMessageAvailable: if no message is available.
         """
         module_lc = module.lower()
-        if self._queues.has_key(module_lc):
+        if module_lc in self._queues:
 
             # log module activity
             self.__activities[module_lc] = int(uptime.uptime())
@@ -397,7 +397,7 @@ class MessageBus():
         """
         module_lc = module.lower()
         self.logger.debug(u'Remove subscription for module "%s"' % module_lc)
-        if self._queues.has_key(module_lc):
+        if module_lc in self._queues:
             del self._queues[module_lc]
             del self.__activities[module_lc]
         else:
@@ -415,7 +415,7 @@ class MessageBus():
         Returns:
             bool: True if module is subscribed.
         """
-        return self._queues.has_key(module.lower())
+        return module.lower() in self._queues
 
     def purge_subscriptions(self):
         """
@@ -503,12 +503,12 @@ class BusClient(threading.Thread):
             elif param==u'command_sender':
                 # function needs request sender value
                 args[u'command_sender'] = sender
-            elif not isinstance(message, dict) or (not message.has_key(param) and not params_with_default[param]):
+            elif not isinstance(message, dict) or (param not in message and not params_with_default[param]):
                 # missing parameter
                 return False, None
             else:
                 # update function arguments list
-                if message.has_key(param):
+                if param in message:
                     args[param] = message[param]
 
         return True, args
@@ -740,10 +740,10 @@ class BusClient(threading.Thread):
                 resp = MessageResponse()
        
                 # process message
-                if msg.has_key(u'message'):
-                    if msg[u'message'].has_key(u'command'):
+                if 'message' in msg:
+                    if 'command' in msg[u'message']:
                         # command received, process it
-                        if msg[u'message'].has_key(u'command') and msg[u'message'][u'command']!=None and len(msg[u'message'][u'command'])>0:
+                        if 'command' in msg[u'message'] and msg[u'message'][u'command']!=None and len(msg[u'message'][u'command'])>0:
                             try:
                                 # get command reference
                                 command = getattr(self, msg[u'message'][u'command'])
@@ -809,9 +809,9 @@ class BusClient(threading.Thread):
                             # event available, client is waiting for response, unblock it
                             msg[u'event'].set()
                     
-                    elif msg[u'message'].has_key(u'event'):
+                    elif 'event' in msg[u'message']:
                         self.logger.debug(u'%s received event "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'event'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
-                        if msg[u'message'].has_key(u'sender') and msg[u'message'][u'sender']==self.__module: # pragma: no cover
+                        if 'sender' in msg[u'message'] and msg[u'message'][u'sender']==self.__module: # pragma: no cover
                             # robustness: this cas should not happen because bus already check it
                             # drop event sent to the same module
                             self.logger.trace('Do not process event from same module')

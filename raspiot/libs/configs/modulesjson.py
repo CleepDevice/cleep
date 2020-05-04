@@ -13,7 +13,7 @@ class ModulesJson():
     """
 
     CONF = u'/etc/raspiot/modules.json'
-    REMOTE_CONF = u'https://raw.githubusercontent.com/tangb/cleep/master/modules.json'
+    REMOTE_URL = u'https://raw.githubusercontent.com/tangb/cleep/master/modules.json'
 
     def __init__(self, cleep_filesystem):
         """
@@ -90,8 +90,10 @@ class ModulesJson():
         self.logger.debug('Updating "modules.json" file...')
         #download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
-        raw = download.download_file(self.REMOTE_CONF)
-        self.logger.trace('Raw=%s' % raw)
+        download_status, raw = download.download_content(self.REMOTE_URL)
+        self.logger.info('Raw: %s' % raw)
+        if raw is None:
+            raise Exception('Download of modules.json failed (download status %s)' % download_status)
         remote_modules_json = json.loads(raw)
         self.logger.debug(u'Downloaded modules.json=%s' % remote_modules_json)
 

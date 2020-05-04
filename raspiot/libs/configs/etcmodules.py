@@ -81,7 +81,7 @@ class EtcModules(Config):
         out = True
 
         entries = self.__get_entries()
-        if not entries.has_key(module_name):
+        if module_name not in entries:
             out = self.add_lines([u'%s' % module_name])
 
         return out
@@ -99,7 +99,7 @@ class EtcModules(Config):
         out = True
 
         entries = self.__get_entries()
-        if entries.has_key(module_name):
+        if module_name in entries:
             out = self.remove_lines([u'%s' % module_name])
 
         return out

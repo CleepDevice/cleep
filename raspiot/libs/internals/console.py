@@ -40,8 +40,7 @@ class EndlessConsole(Thread):
             callback (function): callback when message is received (the function will be called with 2 arguments: stdout (string) and stderr (string))
             callback_end (function): callback when process is terminated (the function will be called with 2 arguments: return code (string) and killed (bool))
         """
-        Thread.__init__(self)
-        Thread.daemon = True
+        Thread.__init__(self, daemon=True)
 
         # members
         self.command = command
@@ -151,13 +150,11 @@ class EndlessConsole(Thread):
 
         if self.callback:
             # async stdout reading
-            self.__stdout_thread = Thread(target=self.__enqueue_output, args=(p.stdout, self.__stdout_queue))
-            self.__stdout_thread.daemon = True
+            self.__stdout_thread = Thread(target=self.__enqueue_output, args=(p.stdout, self.__stdout_queue), daemon=True)
             self.__stdout_thread.start()
 
             # async stderr reading
-            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue))
-            self.__stderr_thread.daemon = True
+            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue), daemon=True)
             self.__stderr_thread.start()
 
         # wait for end of command line

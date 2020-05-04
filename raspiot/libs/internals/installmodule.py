@@ -62,8 +62,7 @@ class CommonProcess(threading.Thread):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
         """
-        threading.Thread.__init__(self)
-        threading.Thread.daemon = True
+        threading.Thread.__init__(self, daemon=True)
 
         # logger   
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -934,8 +933,7 @@ class UpdateModule(threading.Thread):
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
         """
-        threading.Thread.__init__(self)
-        threading.Thread.daemon = True
+        threading.Thread.__init__(self, daemon=True)
 
         # logger   
         self.logger = logging.getLogger(self.__class__.__name__)

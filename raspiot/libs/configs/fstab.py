@@ -159,7 +159,7 @@ class Fstab(Config):
 
         #check if mountpoint not already exists
         mountpoints = self.get_mountpoints()
-        if mountpoints.has_key(mountpoint):
+        if mountpoint in mountpoints:
             return False
 
         line = u'\n%s\t%s\t%s\t%s\t0\t0\n' % (device, mountpoint, mounttype, options)
@@ -184,7 +184,7 @@ class Fstab(Config):
 
         #check if mountpoint exists
         mountpoints = self.get_mountpoints()
-        if not mountpoints.has_key(mountpoint):
+        if mountpoint not in mountpoints:
             return False
 
         #delete mountpoint

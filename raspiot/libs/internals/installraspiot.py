@@ -51,8 +51,7 @@ class InstallRaspiot(threading.Thread):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
         """
-        threading.Thread.__init__(self)
-        threading.Thread.daemon = True
+        threading.Thread.__init__(self, daemon=True)
 
         # logger   
         self.logger = logging.getLogger(self.__class__.__name__)

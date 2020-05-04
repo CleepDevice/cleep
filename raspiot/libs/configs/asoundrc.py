@@ -76,7 +76,7 @@ ctl.!default {
         pattern = r'(type\s+(.*)\s*)|(card\s+(\d))|(device\s+(\d))'
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
             self.logger.debug(groups)
 
             if len(groups)==2:
@@ -94,7 +94,7 @@ ctl.!default {
                 sub_results = self.find_in_string(pattern, content, re.UNICODE | re.MULTILINE)
                 for _, sub_groups in sub_results:
                     #filter None values
-                    sub_groups = filter(None, sub_groups)
+                    sub_groups = list(filter(None, sub_groups))
                     self.logger.debug('section:%s => %s' % (section, sub_groups))
 
                     if len(sub_groups)==2:

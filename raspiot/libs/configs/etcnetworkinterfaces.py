@@ -106,24 +106,24 @@ class EtcNetworkInterfaces(Config):
             mode = None
 
             #filter none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if group.startswith(u'allow-hotplug'):
-                if not entries.has_key(groups[1]):
+                if groups[1] not in entries:
                     hotplug = True
                     new_entry = groups[1]
                 else:
                     current_entry[u'hotplug'] = True
 
             elif group.startswith(u'allow-auto') or group.startswith(u'auto'):
-                if not entries.has_key(groups[1]):
+                if groups[1] not in entries:
                     auto = True
                     new_entry = groups[1]
                 else: # pragma: no cover
                     current_entry[u'auto'] = True
 
             elif group.startswith(u'iface'):
-                if not entries.has_key(groups[0]):
+                if groups[0] not in entries:
                     new_entry = groups[0]
                     mode = groups[1]
                 else:
@@ -195,7 +195,7 @@ class EtcNetworkInterfaces(Config):
             raise MissingParameter(u'Parameter "interface" is missing')
 
         interfaces = self.get_configurations()
-        if interfaces.has_key(interface):
+        if interface in interfaces:
             return interfaces[interface]
 
         return None

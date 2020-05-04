@@ -92,7 +92,7 @@ class ConfigTxt(Config):
         """
         entries = self.__get_entries(self.KEY_DTOVERLAY)
 
-        if entries.has_key(dtoverlay):
+        if dtoverlay in entries:
             return not entries[dtoverlay][u'disabled']
         else:
             return False
@@ -107,7 +107,7 @@ class ConfigTxt(Config):
         """
         entries = self.__get_entries(self.KEY_DTOVERLAY)
 
-        if entries.has_key(dtoverlay):
+        if dtoverlay in entries:
             if entries[dtoverlay][u'disabled']:
                 #dtoverlay is disabled
                 if disable:
@@ -191,7 +191,7 @@ class ConfigTxt(Config):
         else:
             key = u'%s' % dtparam
 
-        if entries.has_key(key):
+        if key in entries:
             return not entries[key][u'disabled']
         else:
             return False
@@ -211,7 +211,7 @@ class ConfigTxt(Config):
         else:
             key = u'%s' % dtparam
 
-        if entries.has_key(key):
+        if key in entries:
             if entries[key][u'disabled']:
                 #dtparam is disabled
                 if disable:

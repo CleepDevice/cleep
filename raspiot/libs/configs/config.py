@@ -202,7 +202,7 @@ class Config():
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 if remove_none:
-                    groups = filter(None, match.groups())
+                    groups = list(filter(None, match.groups()))
                 else:
                     groups = match.groups()
                 results.append((group, groups))
@@ -236,7 +236,7 @@ class Config():
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 if remove_none:
-                    groups = filter(None, match.groups())
+                    groups = list(filter(None, match.groups()))
                 else:
                     groups = match.groups()
                 results.append((group, groups))
@@ -682,6 +682,6 @@ class Config():
         self._close()
 
         #print lines
-        print u''.join(lines)
+        self.logger.debug(u''.join(lines))
 
 

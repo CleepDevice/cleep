@@ -44,7 +44,7 @@ class Iwconfig(AdvancedConsole):
         entries = {}
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
             self.logger.trace(groups)
 
             #get useful values

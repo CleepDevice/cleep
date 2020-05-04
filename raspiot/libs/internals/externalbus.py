@@ -622,8 +622,7 @@ if __name__ == '__main__':
 
     class Test(Thread):
         def __init__(self):
-            Thread.__init__(self)
-            Thread.daemon = True
+            Thread.__init__(self, daemon=True)
             self.bus = PyreBus(self.message_received, self.on_connection, self.on_disconnection, self.decode_headers, True, None)
 
         def stop(self):

@@ -110,8 +110,6 @@ class CmdlineTxt(Config):
             bool: True if console enabled
         """
         entries = self.__get_entries()
-        #self.logger.trace('console_enabled? %s, %s' % (entries.has_key(self.KEY_CONSOLE), entries[self.KEY_CONSOLE]))
-        #return entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE in entries[self.KEY_CONSOLE]
         return self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries)
 
     def enable_console(self):
@@ -124,7 +122,6 @@ class CmdlineTxt(Config):
         """
         entries = self.__get_entries()
         self.logger.trace('entries: %s' % entries)
-        #if not entries.has_key(self.KEY_CONSOLE) or (entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE not in entries[self.KEY_CONSOLE]):
         if not self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries):
             #add entry
             entries.append((self.KEY_CONSOLE, self.VALUE_CONSOLE))
@@ -145,7 +142,6 @@ class CmdlineTxt(Config):
             bool: Return True if serial disabled. False if serial already disabled
         """
         entries = self.__get_entries()
-        #if entries.has_key(self.KEY_CONSOLE) and self.VALUE_CONSOLE in entries[self.KEY_CONSOLE]:
         if self.__key_value_exists(self.KEY_CONSOLE, self.VALUE_CONSOLE, entries):
             #remove value from entry values
             for entry in entries:

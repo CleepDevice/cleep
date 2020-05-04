@@ -116,7 +116,7 @@ class DhcpcdConf(Config):
             new_entry = None
 
             #filter none values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if group.startswith(u'interface'):
                 new_entry = groups[0]
@@ -160,7 +160,7 @@ class DhcpcdConf(Config):
         to_del = []
         for (name, entry) in entries.iteritems():
             if entry[u'fallback'] is not None:
-                if entries.has_key(entry[u'fallback']):
+                if 'fallback' in entries:
                     profile = entries[entry[u'fallback']]
                     entry[u'gateway'] = profile[u'gateway']
                     entry[u'ip_address'] = profile[u'ip_address']
@@ -196,7 +196,7 @@ class DhcpcdConf(Config):
             raise MissingParameter(u'Parameter "interface" is missing')
 
         interfaces = self.get_configurations()
-        if interfaces.has_key(interface):
+        if interface in interfaces:
             return interfaces[interface]
 
         return None

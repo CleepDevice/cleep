@@ -79,7 +79,7 @@ ctl.!default {
         section_content_pattern = r'^\s*(.*?)\s+(.*?)$'
         for match, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
             if len(groups)==0: # pragma: no cover
                 continue
             self.logger.trace('groups=%s' % (groups,))
@@ -94,7 +94,7 @@ ctl.!default {
                 sub_results = self.find_in_string(section_content_pattern, groups[0], re.MULTILINE | re.UNICODE)
                 for _, sub_groups in sub_results:
                     #filter None values
-                    sub_groups = filter(None, sub_groups)
+                    sub_groups = list(filter(None, sub_groups))
                     self.logger.trace('subgroups=%s' % (sub_groups,))
 
                     if len(sub_groups)==2:

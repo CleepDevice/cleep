@@ -101,7 +101,7 @@ class Wpacli(AdvancedConsole):
         entries = {}
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             #status
             status = self.STATUS_ENABLED
@@ -155,7 +155,7 @@ class Wpacli(AdvancedConsole):
         current_interface = interface
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if groups[0].startswith('Selected interface'):
                 #set current interface
@@ -430,7 +430,7 @@ class Wpacli(AdvancedConsole):
         state = self.STATE_UNKNOWN
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             if groups[0].startswith(u'ssid'):
                 #network

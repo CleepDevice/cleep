@@ -210,13 +210,13 @@ def check_auth(username, password):
     ip = bottle.request.environ.get(u'REMOTE_ADDR')
     logger.trace('Ip: %s' % ip)
     session_key = u'%s-%s' % (ip, username)
-    if sessions.has_key(session_key) and sessions[session_key]>=uptime.uptime():
+    if session_key in sessions and sessions[session_key]>=uptime.uptime():
         # user still logged, update session timeout
         sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
         return True
 
     # check auth
-    if auth_config[u'accounts'].has_key(username):
+    if username in auth_config[u'accounts']:
         logger.trace('Check password "%s"' % password)
         try:
             if sha256_crypt.verify(password, auth_config[u'accounts'][username]):
@@ -437,9 +437,9 @@ def download():
         try:
             params = dict(bottle.request.query)
             # remove useless parameters
-            if params.has_key(u'command'):
+            if 'command' in params:
                 del params[u'command']
-            if params.has_key(u'to'):
+            if 'to' in params:
                 del params[u'to']
         except: # pragma: no cover
             params = {}
@@ -511,9 +511,9 @@ def command():
                 # no params value specified, use all query string
                 params = dict(bottle.request.query)
                 # remove useless parameters
-                if params.has_key(u'command'):
+                if 'command' in params:
                     del params[u'command']
-                if params.has_key(u'to'):
+                if 'to' in params:
                     del params[u'to']
             else:
                 # params specified in query string, unjsonify it
@@ -527,16 +527,16 @@ def command():
             tmp_params = bottle.request.json
             if tmp_params is None:
                 raise Exception(u'Invalid payload, json required.')
-            if tmp_params.has_key(u'to'):
+            if 'to' in tmp_params:
                 to = tmp_params[u'to']
                 del tmp_params[u'to']
-            if tmp_params.has_key(u'command'):
+            if 'command' in tmp_params:
                 command = tmp_params[u'command']
                 del tmp_params[u'command']
-            if tmp_params.has_key(u'timeout') and tmp_params[u'timeout'] is not None and type(tmp_params[u'timeout']).__name__ in (u'float', u'int'):
+            if 'timeout' in tmp_params and tmp_params[u'timeout'] is not None and type(tmp_params[u'timeout']).__name__ in (u'float', u'int'):
                 timeout = float(tmp_params[u'timeout'])
                 del tmp_params[u'timeout']
-            if tmp_params.has_key(u'params'):
+            if 'params' in tmp_params:
                 params = tmp_params[u'params']
             else:
                 params = None
@@ -568,7 +568,7 @@ def modules():
     """
     installable = False
     params = bottle.request.json
-    if params and params.has_key(u'installable'):
+    if params and 'installable' in params:
         installable = params[u'installable']
 
     if not installable:
@@ -723,7 +723,7 @@ def poll():
             message[u'message'] = u'Bus not available'
             time.sleep(1.0)
 
-        elif not params.has_key(u'pollKey'):
+        elif not 'pollKey' in params:
             # rpc client no registered yet
             logger.debug(u'polling: registration key must be sent to poll request')
             message[u'message'] = u'Polling key is missing'

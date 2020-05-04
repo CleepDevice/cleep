@@ -40,7 +40,7 @@ class Iwgetid(AdvancedConsole):
         entries = {}
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
 
             #get useful values
             interface = groups[0]

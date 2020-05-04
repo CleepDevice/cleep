@@ -221,7 +221,7 @@ class Alsa(AdvancedConsole):
         current_control = None
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
             self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
             if groups[0].startswith(self.SIMPLE_MIXER_CONTROL):
@@ -260,7 +260,7 @@ class Alsa(AdvancedConsole):
         values = {}
         for _, groups in results:
             #filter None values
-            groups = filter(None, groups)
+            groups = list(filter(None, groups))
             self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
             values[groups[0]] = groups[1]

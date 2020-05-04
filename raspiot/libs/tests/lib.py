@@ -4,7 +4,7 @@
 import raspiot.libs.internals.tools as tools
 import os
 import logging
-from mock import Mock
+from unittest.mock import Mock
 
 TRACE = tools.TRACE
 KEY_FUNCTIONAL_TEST = 'UNITTEST_FUNC'

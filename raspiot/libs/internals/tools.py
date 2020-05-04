@@ -272,7 +272,7 @@ def full_split_path(path):
             path = parts[0]
             allparts.insert(0, parts[1])
     
-    return filter(lambda p: len(p)>0, allparts)
+    return list(filter(lambda p: len(p)>0, allparts))
 
 def is_core_lib(path):
     """ 

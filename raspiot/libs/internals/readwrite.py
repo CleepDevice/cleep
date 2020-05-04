@@ -15,7 +15,7 @@ class ReadWriteContext():
         self.is_readonly_fs = None
         self.src = None
         self.dst = None
-	self.action = None
+        self.action = None
         self.boot = None
         self.root = None
 

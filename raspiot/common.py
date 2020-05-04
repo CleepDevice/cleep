@@ -79,7 +79,7 @@ class MessageResponse(object):
         return u'{error:%r, message:"%s", data:%s, broadcast:%r}' % (
             self.error,
             self.message,
-            unicode(self.data),
+            str(self.data),
             self.broadcast
         )
 
@@ -125,14 +125,14 @@ class MessageRequest(object):
         if self.command:
             return u'{command:%s, params:%s, to:%s, sender:%s}' % (
                 self.command,
-                unicode(self.params),
+                str(self.params),
                 self.to, self.sender
             )
         elif self.event:
             return u'{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (
                 self.event,
                 self.core_event,
-                unicode(self.params),
+                str(self.params),
                 self.to,
                 self.device_id,
                 self.peer_infos

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.exception import InvalidParameter, MissingParameter
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import ast
 import os
 import time
@@ -49,7 +49,7 @@ class RaspiotConf():
         Open config file
         
         Returns:
-            ConfigParser: ConfigParser instance
+            SafeConfigParser: SafeConfigParser instance
 
         Raises:
             Exception: if file doesn't exist
@@ -77,7 +77,8 @@ class RaspiotConf():
         if self.__conf and write:
             #workaround for unicode writing http://bugs.python.org/msg187829
             f = self.cleep_filesystem.open(self.CONF, u'w')
-            self.__conf.write(f.buffer)
+            # self.logger.info('===> %s' % f.buffer)
+            self.__conf.write(f)
             self.cleep_filesystem.close(f)
 
     def check(self):
@@ -97,7 +98,7 @@ class RaspiotConf():
             #fix missing section keys
             for key in self.DEFAULT_CONFIG[section].keys():
                 if not config.has_option(section, key):
-                    config.set(section, key, unicode(self.DEFAULT_CONFIG[section][key]))
+                    config.set(section, key, str(self.DEFAULT_CONFIG[section][key]))
                     updated = True
 
         #write changes to filesystem
@@ -145,7 +146,7 @@ class RaspiotConf():
 
         #install module
         modules.append(module)
-        conf.set(u'general', u'modules', unicode(modules))
+        conf.set(u'general', u'modules', str(modules).encode('UTF-8'))
         self.__close(True)
 
         return True
@@ -170,7 +171,7 @@ class RaspiotConf():
 
         #uninstall module
         modules.remove(module)
-        conf.set(u'general', u'modules', unicode(modules))
+        conf.set(u'general', u'modules', str(modules).encode('UTF-8'))
         self.__close(True)
 
         return True
@@ -200,7 +201,7 @@ class RaspiotConf():
 
         #update module
         updated.append(module)
-        conf.set(u'general', u'updated', unicode(updated))
+        conf.set(u'general', u'updated', str(updated).encode('UTF-8'))
         self.__close(True)
 
         return True
@@ -214,7 +215,7 @@ class RaspiotConf():
         #clear list content
         updated = ast.literal_eval(conf.get(u'general', u'updated'))
         updated[:] = []
-        conf.set(u'general', u'updated', unicode(updated))
+        conf.set(u'general', u'updated', str(updated))
         self.__close(True)
 
     def is_module_installed(self, module):
@@ -254,7 +255,7 @@ class RaspiotConf():
         Enable trace logging mode
         """
         conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', unicode(True))
+        conf.set(u'debug', u'trace_enabled', str(True).encode('UTF-8'))
         self.__close(True)
 
     def disable_trace(self):
@@ -262,7 +263,7 @@ class RaspiotConf():
         Disable trace logging mode
         """
         conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', unicode(False))
+        conf.set(u'debug', u'trace_enabled', str(False).encode('UTF-8'))
         self.__close(True)
 
     def is_trace_enabled(self):
@@ -281,7 +282,7 @@ class RaspiotConf():
         Enable system debug
         """
         conf = self.__open()
-        conf.set(u'debug', u'debug_system', unicode(True))
+        conf.set(u'debug', u'debug_system', str(True).encode('UTF-8'))
         self.__close(True)
 
     def disable_system_debug(self):
@@ -289,7 +290,7 @@ class RaspiotConf():
         Disable system debug
         """
         conf = self.__open()
-        conf.set(u'debug', u'debug_system', unicode(False))
+        conf.set(u'debug', u'debug_system', str(False).encode('UTF-8'))
         self.__close(True)
 
     def is_system_debugged(self):
@@ -329,7 +330,7 @@ class RaspiotConf():
 
         #add module to debug list
         modules.append(module)
-        conf.set(u'debug', u'debug_modules', unicode(modules))
+        conf.set(u'debug', u'debug_modules', str(modules).encode('UTF-8'))
         self.__close(True)
 
         return True
@@ -354,7 +355,7 @@ class RaspiotConf():
 
         #remove module from debug list
         modules.remove(module)
-        conf.set(u'debug', u'debug_modules', unicode(modules))
+        conf.set(u'debug', u'debug_modules', str(modules).encode('UTF-8'))
         self.__close(True)
 
         return True
@@ -389,7 +390,7 @@ class RaspiotConf():
         conf = self.__open()
 
         conf.set(u'rpc', u'rpc_host', host)
-        conf.set(u'rpc', u'rpc_port', unicode(port))
+        conf.set(u'rpc', u'rpc_port', str(port).encode('UTF-8'))
         self.__close(True)
 
         return True

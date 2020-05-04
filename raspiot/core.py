@@ -11,7 +11,7 @@ import time
 import copy
 import uuid
 from threading import Lock
-from mock import Mock
+from unittest.mock import Mock
 from raspiot.bus import BusClient
 from raspiot.exception import InvalidParameter
 from raspiot.common import ExecutionStep, CORE_MODULES
@@ -833,7 +833,7 @@ class RaspIotModule(RaspIot):
         config = self._get_config()
 
         # remove devices from config
-        if config.has_key(u'devices'):
+        if 'devices' in config:
             del config[u'devices']
 
         return config
