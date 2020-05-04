@@ -37,7 +37,7 @@ class Context():
         return '%s' % self.to_dict()
 
     def to_dict(self):
-        return {k: v for k, v in self.__dict__.iteritems()}
+        return {k: v for k, v in self.__dict__.items()}
 
 class LocalModuleException(Exception):
     pass

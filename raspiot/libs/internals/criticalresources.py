@@ -276,12 +276,12 @@ class CriticalResources():
 
         if not self.resources[resource_name][u'using']:
             #no module has acquired the resource
-            self.logger.warn(u'Unable to release not acquired resource "%s"' % resource_name)
+            self.logger.warning(u'Unable to release not acquired resource "%s"' % resource_name)
             return False
 
         if self.resources[resource_name][u'using']!=module_name:
             #module is not using resource at this time, it can't release it
-            self.logger.warn(u'Module "%s" can\'t release resource "%s" not acquired by it' % (module_name, resource_name))
+            self.logger.warning(u'Module "%s" can\'t release resource "%s" not acquired by it' % (module_name, resource_name))
             return False
 
         self.__mutex.acquire()

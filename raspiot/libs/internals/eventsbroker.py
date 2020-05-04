@@ -190,7 +190,7 @@ class EventsBroker():
                 }
 
         """
-        return { k:{u'modules':v[u'modules'], u'profiles':v[u'profiles']} for k,v in self.events_by_event.iteritems() if v['used']}
+        return { k:{u'modules':v[u'modules'], u'profiles':v[u'profiles']} for k,v in self.events_by_event.items() if v['used']}
 
     def get_modules_events(self):
         """

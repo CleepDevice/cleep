@@ -74,7 +74,7 @@ class Task:
         Wait for current task to be done
         """
         if self._run_count is None and not self.__timer:
-            self.logger.warn(u'No task is running')
+            self.logger.warning(u'No task is running')
             return
 
         if self._run_count is None:

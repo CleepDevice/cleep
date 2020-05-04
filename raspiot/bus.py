@@ -423,7 +423,7 @@ class MessageBus():
         """
         now = int(uptime.uptime())
         copy = self.__activities.copy()
-        for module, last_pull in copy.iteritems():
+        for module, last_pull in copy.items():
             if now>(last_pull + self.SUBSCRIPTION_LIFETIME):
                 # remove inactive subscription
                 self.logger.debug(u'Remove obsolete subscription "%s"' % module)

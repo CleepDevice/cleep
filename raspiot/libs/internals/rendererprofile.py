@@ -24,5 +24,5 @@ class RendererProfile():
         Returns:
             dict: profile
         """
-        return {k:v for k,v in self.__dict__.iteritems() if not k.startswith(u'_')}
+        return {k:v for k,v in self.__dict__.items() if not k.startswith(u'_')}
 

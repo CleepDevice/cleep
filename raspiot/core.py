@@ -344,7 +344,7 @@ class RaspIot(BusClient):
             InvalidParameter: if driver has invalid base class
         """
         if self.__execution_step.step != ExecutionStep.INIT:
-            self.logger.warn(u'Driver registration must be done during INIT step (in application constructor)')
+            self.logger.warning(u'Driver registration must be done during INIT step (in application constructor)')
         # check driver
         if not isinstance(driver, Driver):
             raise InvalidParameter(u'Driver must be instance of base Driver class')
@@ -371,7 +371,7 @@ class RaspIot(BusClient):
         Returns:
             string: new unique id (uuid4 format).
         """
-        return unicode(uuid.uuid4())
+        return str(uuid.uuid4())
 
     def is_debug_enabled(self):
         """
@@ -706,14 +706,14 @@ class RaspIotModule(RaspIot):
         # check values
         devices = self._get_config_field(u'devices')
         if device_uuid not in devices:
-            self.logger.warn(u'Trying to update unknown device "%s"', device_uuid)
+            self.logger.warning(u'Trying to update unknown device "%s"', device_uuid)
             return False
 
         # always force uuid to make sure data is always valid
         data_[u'uuid'] = device_uuid
 
         # update data
-        devices[device_uuid].update({k: v for k, v in data_.iteritems() if k in devices[device_uuid].keys()})
+        devices[device_uuid].update({k: v for k, v in data_.items() if k in devices[device_uuid].keys()})
 
         # save data
         return self._set_config_field(u'devices', devices)

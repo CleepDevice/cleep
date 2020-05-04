@@ -255,7 +255,7 @@ class Config():
         """
         if self.comment_tag is None:
             #no way to add comment
-            self.logger.warn(u'Command tag not set. Unable to add command to config file.')
+            self.logger.warning(u'Command tag not set. Unable to add command to config file.')
             return False
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
@@ -294,7 +294,7 @@ class Config():
         """
         if self.comment_tag is None:
             #no way to add comment
-            self.logger.warn(u'Command tag not set. Unable to add command to config file.')
+            self.logger.warning(u'Command tag not set. Unable to add command to config file.')
             return False
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())

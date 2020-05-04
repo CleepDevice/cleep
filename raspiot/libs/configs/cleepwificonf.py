@@ -83,7 +83,7 @@ class CleepWifiConf():
             string: cleepwifi.conf file content
         """
         if encryption not in (u'wpa', u'wpa2', u'wep', u'unsecured'):
-            self.logger.warn(u'Invalid encryption value specified, set it to wpa2')
+            self.logger.warning(u'Invalid encryption value specified, set it to wpa2')
             encryption = 'wpa2'
 
         #encrypt password

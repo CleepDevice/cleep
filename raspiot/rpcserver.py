@@ -228,7 +228,7 @@ def check_auth(username, password):
                 logger.warning(u'Invalid password for user "%s"' % username)
                 return False
         except:
-            logger.warn(u'Password failed for user from ip "%s"' % ip)
+            logger.warning(u'Password failed for user from ip "%s"' % ip)
             return False
     else:
         # username doesn't exist

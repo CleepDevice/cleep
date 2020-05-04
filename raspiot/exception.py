@@ -64,8 +64,9 @@ class ResourceNotAvailable(Exception):
     def __init__(self, resource):
         Exception.__init__(self)
         self.resource = resource
+        self.message = u'Resource %s not available' % self.resource
     def __str__(self):
-        return u'Resource %s not available' % self.resource
+        return self.message
 
 class InvalidParameter(Exception):
     """

@@ -277,7 +277,7 @@ class Inventory(RaspIot):
         self.logger.trace(u'modules.json: %s' % modules_json)
 
         # iterates over new modules.json
-        for module_name, module_data in modules_json.iteritems():
+        for module_name, module_data in modules_json.items():
             if module_name not in self.modules:
                 # new module, add new entry in existing modules list
                 self.logger.debug(u'Add new module "%s" to list of available modules' % module_name)

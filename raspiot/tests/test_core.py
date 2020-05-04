@@ -203,7 +203,7 @@ class RaspIotTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.assertTrue(self.r._update_config(666))
-        self.assertEqual(cm.exception.message, 'Parameter "config" must be a dict')
+        self.assertEqual(str(cm.exception), 'Parameter "config" must be a dict')
 
     def test_update_config_rollback(self):
         self._init_context(default_config=self.DEFAULT_CONFIG, current_config=self.DEFAULT_CONFIG, write_json_side_effect=Exception('Test exception'))
@@ -226,7 +226,7 @@ class RaspIotTests(unittest.TestCase):
                 'newfield': 'newvalue',
                 'newvalue': 666,
             })
-        self.assertEqual(cm.exception.message, 'Module DummyRaspiot has no configuration file configured')
+        self.assertEqual(str(cm.exception), 'Module DummyRaspiot has no configuration file configured')
 
     def test_get_config_field(self):
         self._init_context(default_config=self.DEFAULT_CONFIG, current_config=self.DEFAULT_CONFIG)
@@ -239,7 +239,7 @@ class RaspIotTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.r._get_config_field('dummy')
-        self.assertEqual(cm.exception.message, 'Unknown config field "dummy"')
+        self.assertEqual(str(cm.exception), 'Unknown config field "dummy"')
 
     def test_has_config_field(self):
         self._init_context(default_config=self.DEFAULT_CONFIG, current_config=self.DEFAULT_CONFIG)
@@ -262,7 +262,7 @@ class RaspIotTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r._set_config_field('dummy', 'hello world')
-        self.assertEqual(cm.exception.message, 'Parameter "dummy" doesn\'t exist in config')
+        self.assertEqual(str(cm.exception), 'Parameter "dummy" doesn\'t exist in config')
 
     def test_sentry_with_dsn(self):
         self._init_context(with_sentry=True)
@@ -310,7 +310,7 @@ class RaspIotTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r._register_driver(Mock())
-        self.assertEqual(cm.exception.message, 'Driver must be instance of base Driver class')
+        self.assertEqual(str(cm.exception), 'Driver must be instance of base Driver class')
 
     def test_get_drivers(self):
         self._init_context()
@@ -597,7 +597,7 @@ class RaspIotModuleTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r._add_device('hello')
-        self.assertEqual(cm.exception.message, 'Parameter "data" must be a dict')
+        self.assertEqual(str(cm.exception), 'Parameter "data" must be a dict')
 
     def test_add_device_save_config_failed(self):
         self._init_context(write_json_side_effect=[True, True, Exception('Test exception')])
@@ -684,7 +684,7 @@ class RaspIotModuleTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r._update_device('786d1b69-a603-4eb8-9178-fed2a195a1ed', 'string')
-        self.assertEqual(cm.exception.message, 'Parameter "data" must be a dict')
+        self.assertEqual(str(cm.exception), 'Parameter "data" must be a dict')
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r._update_device('786d1b69-a603-4eb8-9178-fed2a195a1ed', True)
@@ -920,11 +920,11 @@ class RaspIotResourcesTests(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError) as cm:
             r._resource_acquired('dummy')
-        self.assertEqual(cm.exception.message, 'Method "_resource_acquired" must be implemented in "RaspIotResources"')
+        self.assertEqual(str(cm.exception), 'Method "_resource_acquired" must be implemented in "RaspIotResources"')
 
         with self.assertRaises(NotImplementedError) as cm:
             r._resource_needs_to_be_released('dummy')
-        self.assertEqual(cm.exception.message, 'Method "_resource_needs_to_be_released" must be implemented in "RaspIotResources"')
+        self.assertEqual(str(cm.exception), 'Method "_resource_needs_to_be_released" must be implemented in "RaspIotResources"')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -1035,7 +1035,7 @@ class RaspIotRendererTests(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError) as cm:
             r._render('dummy')
-        self.assertEqual(cm.exception.message, 'Method "_render" must be implemented in "RaspIotRenderer"')
+        self.assertEqual(str(cm.exception), 'Method "_render" must be implemented in "RaspIotRenderer"')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -1064,7 +1064,7 @@ class RaspIotRendererTests(unittest.TestCase):
         r = RaspIotRenderer(self.bootstrap, False)
         with self.assertRaises(Exception) as cm:
             r._get_renderer_config()
-        self.assertEqual(cm.exception.message, 'RENDERER_PROFILES is not defined in "RaspIotRenderer"')
+        self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "RaspIotRenderer"')
 
     def test_render(self):
         self._init_context()
@@ -1085,7 +1085,7 @@ class RaspIotRendererTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.r.render(p)
-        self.assertEqual(cm.exception.message, 'Profile "RendererProfile" is not supported in this renderer')
+        self.assertEqual(str(cm.exception), 'Profile "RendererProfile" is not supported in this renderer')
 
     def test_render_exception(self):
         self._init_context()

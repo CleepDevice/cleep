@@ -158,7 +158,7 @@ class DhcpcdConf(Config):
 
         #fill interfaces with profiles
         to_del = []
-        for (name, entry) in entries.iteritems():
+        for (name, entry) in entries.items():
             if entry[u'fallback'] is not None:
                 if 'fallback' in entries:
                     profile = entries[entry[u'fallback']]

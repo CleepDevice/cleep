@@ -75,7 +75,7 @@ class WpaSupplicantConf(Config):
 
         else:
             #no iso3166 file, set to empty dict
-            self.logger.warn('Unable to get countries, countries file "%s" was not found' % self.COUNTRIES_ISO3166)
+            self.logger.warning('Unable to get countries, countries file "%s" was not found' % self.COUNTRIES_ISO3166)
             self.__country_codes = {}
 
         self.logger.trace(u'Found country codes: %s' % self.__country_codes)

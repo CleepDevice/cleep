@@ -44,7 +44,7 @@ class Fstab(Config):
         """
         devices = {}
 
-        for device, uuid in self.blkid.get_devices().iteritems():
+        for device, uuid in self.blkid.get_devices().items():
             entry = {
                 u'device': device,
                 u'uuid': uuid

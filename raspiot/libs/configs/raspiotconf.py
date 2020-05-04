@@ -166,7 +166,7 @@ class RaspiotConf():
         #check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
-            self.logger.warn(u'Trying to uninstall not installed module "%s"' % module)
+            self.logger.warning(u'Trying to uninstall not installed module "%s"' % module)
             return False
 
         #uninstall module
@@ -191,7 +191,7 @@ class RaspiotConf():
         #check if module installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
-            self.logger.warn(u'Trying to update not installed module "%s"' % module)
+            self.logger.warning(u'Trying to update not installed module "%s"' % module)
             return False
 
         #check if module not already updated
@@ -319,7 +319,7 @@ class RaspiotConf():
         #check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
         if module not in modules:
-            self.logger.warn(u'Trying to enable debug for not installed module "%s"' % module)
+            self.logger.warning(u'Trying to enable debug for not installed module "%s"' % module)
             return False
         
         #check if module is in debug list
