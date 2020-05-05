@@ -51,7 +51,7 @@ class Udevadm(Console):
         res = self.command(u'/bin/udevadm info --query=property --name="%s"' % device)
         if not res[u'error'] and not res[u'killed']:
             #parse data
-            matches = re.finditer(r'^(?:(ID_DRIVE_FLASH_SD)=(\d)|(ID_DRIVE_MEDIA_FLASH_SD)=(\d)|(ID_BUS)=(.*?)|(ID_USB_DRIVER)=(.*?)|(ID_ATA)=(\d))$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'^(?:(ID_DRIVE_FLASH_SD)=(\d)|(ID_DRIVE_MEDIA_FLASH_SD)=(\d)|(ID_BUS)=(.*?)|(ID_USB_DRIVER)=(.*?)|(ID_ATA)=(\d)|(ID_PATH_TAG)=(.*?))$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for _, match in enumerate(matches):
                 #get values and filter None values
                 groups = match.groups()

@@ -14,14 +14,16 @@ class LsblkTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.TRACE, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.u = Udevadm()
 
     def tearDown(self):
         pass
 
     def test_get_device_type(self):
-        self.assertEqual(self.u.get_device_type('mmcblk0'), self.u.TYPE_MMC)
+        mmcblk0 = self.u.get_device_type('mmcblk0')
+        logging.debug('Mmcblk0: %s' % mmcblk0)
+        self.assertEqual(mmcblk0, self.u.TYPE_MMC)
 
     def test_use_cache(self):
         tick = time.time()

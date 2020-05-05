@@ -25,7 +25,7 @@ class IwlistTests(unittest.TestCase):
 
     def test_get_adapters(self):
         adapters = self.i.get_adapters()
-        print(adapters)
+        logging.debug('Adapters: %s' % adapters)
         self.assertGreaterEqual(len(adapters), 1)
         for adapter, values in adapters.items():
             self.assertTrue('interface' in values)

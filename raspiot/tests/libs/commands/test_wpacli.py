@@ -26,12 +26,12 @@ class WpacliTests(unittest.TestCase):
         networks = self.w.scan_networks(interface='wlan0')
         logging.debug(networks)
         self.assertNotEqual(0, len(networks))
-        interface = networks.keys()[0]
-        network_name = networks[interface].keys()[0]
-        self.assertTrue('interface' in networks[interface][network_name].keys())
-        self.assertTrue('network' in networks[interface][network_name].keys())
-        self.assertTrue('encryption' in networks[interface][network_name].keys())
-        self.assertTrue('signallevel' in networks[interface][network_name].keys())
+        interface = list(networks.keys())[0]
+        network_name = list(networks[interface].keys())[0]
+        self.assertTrue('interface' in list(networks[interface][network_name].keys()))
+        self.assertTrue('network' in list(networks[interface][network_name].keys()))
+        self.assertTrue('encryption' in list(networks[interface][network_name].keys()))
+        self.assertTrue('signallevel' in list(networks[interface][network_name].keys()))
 
     def test_get_configured_networks(self):
         logging.info('Unable to test get_configured_networks, need to know valid wifi network')

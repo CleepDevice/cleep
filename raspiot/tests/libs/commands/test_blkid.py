@@ -33,7 +33,7 @@ class BlkidTests(unittest.TestCase):
     def test_get_device_by_uuid(self):
         devices = self.b.get_devices()
         logging.debug('Devices: %s' % self.b.devices)
-        device = devices[devices.keys()[0]]
+        device = devices[list(devices.keys())[0]]
         logging.debug('Device: %s' % device)
         result = self.b.get_device_by_uuid(device[u'uuid'])
         self.assertEqual(result['device'], device['device'])
@@ -44,7 +44,7 @@ class BlkidTests(unittest.TestCase):
     def test_get_device_by_partuuid(self):
         devices = self.b.get_devices()
         logging.debug('Devices: %s' % self.b.devices)
-        device = devices[devices.keys()[0]]
+        device = devices[list(devices.keys())[0]]
         logging.debug('Device: %s' % device)
         result = self.b.get_device_by_partuuid(device[u'partuuid'])
         self.assertEqual(result['device'], device['device'])
@@ -54,7 +54,7 @@ class BlkidTests(unittest.TestCase):
 
     def test_get_device(self):
         devices = self.b.get_devices()
-        mountpoint = devices.keys()[0]
+        mountpoint = list(devices.keys())[0]
         uuid = devices[mountpoint]
         self.assertEqual(self.b.get_device(mountpoint), uuid)
 

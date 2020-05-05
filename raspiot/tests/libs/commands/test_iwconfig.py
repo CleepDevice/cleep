@@ -51,11 +51,11 @@ class IwconfigTests(unittest.TestCase):
 
         interfaces = self.i.get_interfaces()
         logging.debug(interfaces)
-        self.assertFalse('lo' in interfaces.keys())
+        self.assertFalse('lo' in list(interfaces.keys()))
         self.assertGreaterEqual(len(interfaces), 1)
         if len(interfaces)>0:
-            interface = interfaces[interfaces.keys()[0]]
-            self.assertTrue('network' in interface.keys())
+            interface = interfaces[list(interfaces.keys())[0]]
+            self.assertTrue('network' in list(interface.keys()))
 
 if __name__ == '__main__':
     #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_iwconfig.py; coverage report -m -i

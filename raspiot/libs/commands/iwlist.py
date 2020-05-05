@@ -46,7 +46,7 @@ class Iwlist(AdvancedConsole):
 
         self.__last_scanned_interface = interface
         results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm|Frequency:(\d+\.\d+) GHz', timeout=15.0)
-        #self.logger.trace(u'Results: %s' % results)
+        # self.logger.trace(u'Results: %s' % results)
 
         #handle invalid interface for wifi scanning
         if len(results)==0 and self.get_last_return_code()!=0:
@@ -56,11 +56,10 @@ class Iwlist(AdvancedConsole):
 
         current_entry = None
         entries = {}
-        #frequencies = {}
         frequency = None
         for group, groups in results:
             #filter None values
-            groups = filter(lambda v: v is not None, groups)
+            groups = list(filter(lambda v: v is not None, groups))
 
             if group.startswith(u'Cell'):
                 #create new empty entry

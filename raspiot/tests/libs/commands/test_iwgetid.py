@@ -32,7 +32,7 @@ class IwgetidTests(unittest.TestCase):
         connections = self.i.get_connections()
         logging.debug(connections)
         self.assertEqual(len(connections), 1, 'Connections list should contains 1 element')
-        key = connections.keys()[0]
+        key = list(connections.keys())[0]
         self.assertTrue('network' in connections[key], 'Network key should exists in connection item')
         self.assertEqual(connections[key]['network'], 'mywifinetwork', 'Invalid returned network name')
 

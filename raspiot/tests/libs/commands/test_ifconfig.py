@@ -22,7 +22,7 @@ class IfconfigTests(unittest.TestCase):
 
     def test_get_configurations(self):
         interfaces = self.i.get_configurations()
-        interface = interfaces.keys()[0]
+        interface = list(interfaces.keys())[0]
         self.assertFalse('lo' in interfaces.keys())
         self.assertGreaterEqual(len(interfaces), 1)
         self.assertTrue('mac' in interfaces[interface].keys())
