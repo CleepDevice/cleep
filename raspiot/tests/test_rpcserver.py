@@ -16,6 +16,7 @@ from bottle import HTTPError, HTTPResponse
 from unittest.mock import Mock, patch, mock_open
 import json
 import time
+from collections import OrderedDict
 
 class DummyDriver(Driver):
     def __init__(self, processing=False, is_installed=False, is_installed_exception=False):
@@ -188,7 +189,8 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(len(rpcserver.sessions.keys()), 0)
             self.assertTrue(rpcserver.check_auth('test', 'test'))
             self.assertEqual(len(rpcserver.sessions.keys()), 1)
-            session_key = rpcserver.sessions.keys()[0]
+            logging.debug('Sessions: %s' % type(rpcserver.sessions.keys()))
+            session_key = list(rpcserver.sessions.keys())[0]
             old_time = rpcserver.sessions[session_key]
 
             # check it uses sessions
@@ -349,11 +351,25 @@ class RpcServerTests(unittest.TestCase):
 
     def test_drivers(self):
         self._init_context()
-
+        a1 = OrderedDict({
+            "drivertype": "audio",
+            "processing": True,
+            "drivername": "driver1",
+            "installed": False,
+        })
+        a2 = OrderedDict({
+            "drivertype": "audio",
+            "processing": False,
+            "drivername": "driver2",
+            "installed": True,
+        })
         with boddle(method='POST'):
             d = json.loads(rpcserver.drivers())
             logging.debug('Drivers: %s' % d)
-            self.assertEqual(d, [{"drivertype": "audio", "processing": True, "drivername": "driver1", "installed": False}, {"drivertype": "audio", "processing": False, "drivername": "driver2", "installed": True}])
+            self.assertEqual(len(d), 2)
+            d1 = OrderedDict(d[0])
+            d2 = OrderedDict(d[1])
+            self.assertEqual(d1, a1)
 
     def test_drivers_one_driver_exception(self):
         self._init_context(get_drivers_gpio_exception=True)
@@ -636,12 +652,15 @@ class RpcServerTests(unittest.TestCase):
 
     def test_logs(self):
         self._init_context()
+        message = 'cleep log file content'
+        self.cleep_filesystem.read_data.return_value = message
 
-        with patch('__builtin__.open', mock_open(read_data='raspiot log file content')) as mock_file:
-            with boddle():
-                resp = rpcserver.logs()
-                logging.debug('Resp: %s' % resp)
-            mock_file.assert_called_with('/var/log/raspiot.log', 'r')
+        with boddle():
+            resp = rpcserver.logs()
+            logging.debug('Resp: %s' % resp)
+            self.assertTrue(message in resp)
+
+        self.cleep_filesystem.read_data.assert_called_with('/var/log/raspiot.log', 'r')
 
     def test_authenticate(self):
         self._init_context()

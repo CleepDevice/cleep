@@ -362,12 +362,12 @@ def upload(): # pragma: no cover
     try:
         # get form fields
         command = bottle.request.forms.get(u'command')
-        logger.trace(u'command=%s' % unicode(command))
+        logger.trace(u'command=%s' % str(command))
         to = bottle.request.forms.get(u'to')
-        logger.trace(u'to=%s' % unicode(to))
+        logger.trace(u'to=%s' % str(to))
         params = bottle.request.forms.get(u'params')
         params = {} if params is None else params
-        logger.trace(u'params=%s' % unicode(params))
+        logger.trace(u'params=%s' % str(params))
 
         # check params
         if command is None or to is None:
@@ -394,14 +394,14 @@ def upload(): # pragma: no cover
             params[u'filepath'] = path
 
             # execute specified command
-            logger.debug(u'Upload command:%s to:%s params:%s' % (unicode(command), unicode(to), unicode(params)))
+            logger.debug(u'Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
             resp = send_command(command, to, params, 10.0)
 
     except Exception as e:
         logger.exception(u'Exception in upload:')
         # something went wrong
         msg = MessageResponse()
-        msg.message = unicode(e)
+        msg.message = str(e)
         msg.error = True
         resp = msg.to_dict()
 
@@ -467,7 +467,7 @@ def download():
         logger.exception(u'Exception in download:')
         # something went wrong
         msg = MessageResponse()
-        msg.message = unicode(e)
+        msg.message = str(e)
         msg.error = True
         resp = msg.to_dict()
 
@@ -488,7 +488,7 @@ def command():
     Returns:
         MessageResponse: command response
     """
-    logger.trace(u'Received command: method=%s data=[%d] json=%s' % (unicode(bottle.request.method), len(bottle.request.params), unicode(bottle.request.json)))
+    logger.trace(u'Received command: method=%s data=[%d] json=%s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
     try:
         command = None
@@ -548,7 +548,7 @@ def command():
         logger.exception(u'Exception in command:')
         # something went wrong
         msg = MessageResponse()
-        msg.message = unicode(e)
+        msg.message = str(e)
         msg.error = True
         resp = msg.to_dict()
 
@@ -676,7 +676,7 @@ def registerpoll():
         dict: {'pollkey':''}
     """
     # subscribe to bus
-    poll_key = unicode(uuid.uuid4())
+    poll_key = str(uuid.uuid4())
     if bus:
         logger.trace(u'Subscribe to bus %s' % poll_key)
         bus.add_subscription(u'rpc-%s' % poll_key)
@@ -795,7 +795,7 @@ def logs(): # pragma: no cover
     """
     Serve log file
     """
-    SCRIPT = """<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    SCRIPT = u"""<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script type="text/javascript">
     function scrollBottom() {
         setTimeout(function(){
@@ -803,10 +803,10 @@ def logs(): # pragma: no cover
         }, 500);
     }
     </script>"""
-    CONTENT = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
+    CONTENT = u'<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
 
-    page = ['<html>', '<head>', SCRIPT, '</head>', '<body onload="scrollBottom()">']
-    with open(u'/var/log/raspiot.log', 'r') as f:
-        page.append(CONTENT % ''.join(f.readlines()))
-    return page + ['</body>', '</html>']
+    lines = cleep_filesystem.read_data(u'/var/log/raspiot.log', u'r')
+    lines = '' if not lines else lines
+
+    return u'<html>\n<head>\n' + SCRIPT + u'\n</head>\n<body onload="scrollBottom()">\n' + CONTENT % u''.join(lines) + u'\n</body>\n</html>'
 
