@@ -67,7 +67,7 @@ class DummyModule(Thread):
                     logging.debug('DummyModule "%s" receive response %s' % (self.name, resp))
                     self._received_messages.append(resp)
                 except Exception as e:
-                    logging.debug('Exception pushing on DummyModule "%s": %s[%s]' % (self.name, e.__class__.__name__, e.message))
+                    logging.exception('Exception pushing on DummyModule "%s": %s' % (self.name, e.__class__.__name__))
                     self._last_exception = e
 
             if not self.manual_pull:
@@ -75,7 +75,7 @@ class DummyModule(Thread):
                     self.__pull()
                 except Exception as e:
                     if not isinstance(e, NoMessageAvailable):
-                        logging.debug('Exception pulling on DummyModule "%s": %s[%s]' % (self.name, e.__class__.__name__, e.message))
+                        logging.debug('Exception pulling on DummyModule "%s": %s' % (self.name, e.__class__.__name__))
 
             time.sleep(0.10)
 
@@ -142,7 +142,7 @@ class MessageBusTests(unittest.TestCase):
 
         with self.assertRaises(InvalidModule) as cm:
             self.b.remove_subscription('otherdummy')
-        self.assertEqual(cm.exception.message, 'Invalid module "otherdummy" (not loaded or unknown)')
+        self.assertEqual(str(cm.exception), 'Invalid module "otherdummy" (not loaded or unknown)')
 
         self.b.SUBSCRIPTION_LIFETIME = 0
         self.b.add_subscription('dummy')
@@ -275,7 +275,7 @@ class MessageBusTests(unittest.TestCase):
         self.b.app_configured()
         with self.assertRaises(InvalidMessage) as cm:
             self.b.push(self._get_message_request(command=None, to='dummy'))
-        self.assertEqual(cm.exception.message, 'Invalid message')
+        self.assertEqual(str(cm.exception), 'Invalid message')
 
     def test_push_no_timeout(self):
         self._init_context()
@@ -359,7 +359,7 @@ class MessageBusTests(unittest.TestCase):
         last_exception = self.mod1.last_exception()
         logging.debug('Last exception: "%s"' % last_exception)
         self.assertTrue(isinstance(last_exception, NoResponse))
-        self.assertTrue(last_exception.message.startswith('No response from %s (%.1f seconds)' % (self.mod2.name, self.b.STARTUP_TIMEOUT)))
+        self.assertTrue(str(last_exception).startswith('No response from %s (%.1f seconds)' % (self.mod2.name, self.b.STARTUP_TIMEOUT)))
 
     def test_push_while_stopped(self):
         self._init_context()
@@ -371,12 +371,12 @@ class MessageBusTests(unittest.TestCase):
         # broadcast message
         with self.assertRaises(Exception) as cm:
             self.b.push(self._get_message_request())
-        self.assertEqual(cm.exception.message, 'Bus stopped')
+        self.assertEqual(str(cm.exception), 'Bus stopped')
 
         # message with recipient
         with self.assertRaises(Exception) as cm:
             self.b.push(self._get_message_request(to='dummy'))
-        self.assertEqual(cm.exception.message, 'Bus stopped')
+        self.assertEqual(str(cm.exception), 'Bus stopped')
 
     def test_push_invalid_parameters(self):
         self._init_context()
@@ -386,9 +386,8 @@ class MessageBusTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.b.push({'dummy': 666})
-        logging.debug('Exception: %s' % cm.exception.message)
-        logging.debug('Exception: %s' % cm.exception)
-        self.assertEqual(cm.exception.message, 'Parameter "request" must be MessageRequest instance')
+        logging.debug('Exception: %s' % str(cm.exception))
+        self.assertEqual(str(cm.exception), 'Parameter "request" must be MessageRequest instance')
 
     def test_push_invalid_module(self):
         self._init_context()
@@ -396,10 +395,9 @@ class MessageBusTests(unittest.TestCase):
         self.b.add_subscription('dummy')
         self.b.app_configured()
 
-        # self.assertEqual(cm.exception.message, 'Invalid module "otherdummy" (not loaded or unknown)')
         with self.assertRaises(InvalidModule) as cm:
             self.b.push(self._get_message_request(to='otherdummy'))
-        self.assertEqual(cm.exception.message, 'Invalid module "otherdummy" (not loaded or unknown)')
+        self.assertEqual(str(cm.exception), 'Invalid module "otherdummy" (not loaded or unknown)')
 
     def test_stop_broadcasted_messages(self):
         self._init_context()
@@ -699,7 +697,7 @@ class BusClientTests(unittest.TestCase):
 
         with self.assertRaises(InvalidModule) as cm:
             self.p1.send_command(command='command_with_params', params={'param1':'hello'}, to='dummy')
-        self.assertEqual(cm.exception.message, 'Invalid module "dummy" (not loaded or unknown)')
+        self.assertEqual(str(cm.exception), 'Invalid module "dummy" (not loaded or unknown)')
 
     def test_send_command_invalid_command(self):
         self._init_context()
@@ -780,8 +778,9 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(resp['error'])
         self.assertEqual(resp['message'], 'Command "command_unknown" doesn\'t exist in "testprocess1" module')
 
-    @patch('inspect.getargspec')
-    def test_send_command_to_myself_exception(self, getargspec_mock):
+    @patch('inspect.signature')
+    def test_send_command_to_myself_exception(self, signature_mock):
+        signature_mock.side_effect = Exception('Test exception')
         self._init_context()
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
@@ -871,22 +870,22 @@ class BusClientTests(unittest.TestCase):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.p1.push({})
-        self.assertEqual(cm.exception.message, 'Request parameter must be MessageRequest instance')
+        self.assertEqual(str(cm.exception), 'Request parameter must be MessageRequest instance')
 
         with self.assertRaises(InvalidParameter) as cm:
             self.p1.push(123)
-        self.assertEqual(cm.exception.message, 'Request parameter must be MessageRequest instance')
+        self.assertEqual(str(cm.exception), 'Request parameter must be MessageRequest instance')
 
         with self.assertRaises(InvalidParameter) as cm:
             self.p1.push('hello')
-        self.assertEqual(cm.exception.message, 'Request parameter must be MessageRequest instance')
+        self.assertEqual(str(cm.exception), 'Request parameter must be MessageRequest instance')
 
     def test_push_to_myself(self):
         self._init_context()
 
         with self.assertRaises(Exception) as cm:
             self.p1.push(self._get_message_request(to='testprocess1'))
-        self.assertEqual(cm.exception.message, 'Unable to send message to same module')
+        self.assertEqual(str(cm.exception), 'Unable to send message to same module')
 
     def test_command_sender_filled(self):
         self._init_context()

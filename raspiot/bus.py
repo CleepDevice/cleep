@@ -91,7 +91,7 @@ class MessageBus():
         while not self.__deferred_broadcasted_messages.empty():
             msg = self.__deferred_broadcasted_messages.get()
             # msg.startup = True
-            self.logger.trace(u'Push deferred message: %s' % unicode(msg))
+            self.logger.trace(u'Push deferred message: %s' % str(msg))
             for q in self._queues:
                 self._queues[q].append(msg)
 
@@ -166,7 +166,7 @@ class MessageBus():
             u'event': event,
             u'response': None
         }
-        self.logger.debug(u'Push to recipient "%s" message %s' % (request.to, unicode(msg)))
+        self.logger.debug(u'Push to recipient "%s" message %s' % (request.to, str(msg)))
 
         # log module activity to avoid purge
         self.__activities[request.to] = int(uptime.uptime())
@@ -179,10 +179,10 @@ class MessageBus():
             return None
 
         # wait for response
-        self.logger.trace(u'Push wait for response (%s seconds)....' % unicode(timeout))
+        self.logger.trace(u'Push wait for response (%s seconds)....' % str(timeout))
         if event.wait(timeout):
             # response received
-            self.logger.trace(u' - resp received %s' % unicode(msg))
+            self.logger.trace(u' - resp received %s' % str(msg))
             return msg[u'response']
         else:
             # no response in time
@@ -203,7 +203,7 @@ class MessageBus():
             u'event': None,
             u'response': None
         }
-        self.logger.debug(u'Broadcast to RPC clients message %s' % unicode(msg))
+        self.logger.debug(u'Broadcast to RPC clients message %s' % str(msg))
 
         # append message to rpc queues
         for q in self._queues.keys():
@@ -223,11 +223,11 @@ class MessageBus():
             u'event': None,
             u'response':None
         }
-        self.logger.debug(u'Broadcast message %s' % unicode(msg))
+        self.logger.debug(u'Broadcast message %s' % str(msg))
 
         if not self.__app_configured:
             # defer message if app not configured yet
-            self.logger.trace(u'Defer message: %s' % unicode(msg))
+            self.logger.trace(u'Defer message: %s' % str(msg))
             self.__deferred_broadcasted_messages.put(msg)
             return None
 
@@ -263,7 +263,7 @@ class MessageBus():
             u'event': event,
             u'response': None
         }
-        self.logger.debug(u'Push to "%s" delayed message %s (timeout=%s)' % (request.to, unicode(msg), timeout))
+        self.logger.debug(u'Push to "%s" delayed message %s (timeout=%s)' % (request.to, str(msg), timeout))
 
         # append message to queue
         self._queues[request.to] = deque(maxlen=self.DEQUE_MAX_LEN)
@@ -272,10 +272,10 @@ class MessageBus():
         # wait for response
         if not timeout:
             return None
-        self.logger.trace(u'Wait for startup message response (%s seconds)...' % unicode(self.STARTUP_TIMEOUT))
+        self.logger.trace(u'Wait for startup message response (%s seconds)...' % str(self.STARTUP_TIMEOUT))
         if event.wait(self.STARTUP_TIMEOUT):
             # response received
-            self.logger.trace(u' - resp received %s' % unicode(msg))
+            self.logger.trace(u' - resp received %s' % str(msg))
             return msg[u'response']
         else:
             # no reponse in time
@@ -485,15 +485,12 @@ class BusClient(threading.Thread):
         params_with_default = {}
 
         # get function parameters
-        (params, _, _, defaults) = inspect.getargspec(function)
+        func_signature = inspect.signature(function)
+        params = func_signature.parameters
 
-        # check params with default value
-        if defaults is None:
-            defaults = ()
-        for param in params:
-            params_with_default[param] = False
-        for pos in range(len(params)-len(defaults), len(params)):
-            params_with_default[params[pos]] = True
+        # get params with default value
+        for param in func_signature.parameters:
+            params_with_default[param] = False if func_signature.parameters[param].default == func_signature.empty else True
 
         # fill parameters list
         for param in params:
@@ -622,7 +619,7 @@ class BusClient(threading.Thread):
                         except Exception as e:
                             self.logger.exception(u'Exception during send_command in the same module:')
                             resp.error = True
-                            resp.message = unicode(e)
+                            resp.message = str(e)
 
                     else:
                         # invalid command
@@ -760,20 +757,20 @@ class BusClient(threading.Thread):
                                             resp.data = command(**args)
 
                                         except CommandError as e:
-                                            self.logger.error(u'Command error: %s' % unicode(e))
+                                            self.logger.error(u'Command error: %s' % str(e))
                                             resp.error = True
-                                            resp.message = unicode(e)
+                                            resp.message = str(e)
 
                                         except CommandInfo as e:
                                             # informative message
                                             resp.error = False
-                                            resp.message = unicode(e)
+                                            resp.message = str(e)
 
                                         except Exception as e:
                                             # command failed
                                             self.logger.exception(u'Exception running command "%s" on module "%s"' % (msg[u'message'][u'command'], self.__module))
                                             resp.error = True
-                                            resp.message = u'%s' % unicode(e)
+                                            resp.message = u'%s' % str(e)
                                     else:
                                         self.logger.error(u'Some command "%s" parameters are missing: %s' % (msg[u'message'][u'command'], msg[u'message'][u'params']))
                                         resp.error = True
