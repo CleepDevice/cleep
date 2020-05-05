@@ -591,7 +591,7 @@ class %(module_name)s(%(inherit)s):
         logging.debug('Modules: %s' % self.i.modules)
         with self.assertRaises(Exception) as cm:
             self.i._load_modules()
-        self.assertEqual(cm.exception.message, 'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
+        self.assertEqual(str(cm.exception), 'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', ['module1'])
@@ -1163,19 +1163,19 @@ class %(module_name)s(%(inherit)s):
         self._init_context()
 
         self.i.get_renderers()
-        self.formatters_broker.get_renderers_profiles.assert_called()
+        self.formatters_broker.get_renderers_profiles.assert_called_with()
 
     def test_get_modules_events(self):
         self._init_context()
 
         self.i.get_modules_events()
-        self.events_broker.get_modules_events.assert_called()
+        self.events_broker.get_modules_events.assert_called_with()
 
     def test_get_used_events(self):
         self._init_context()
 
         self.i.get_used_events()
-        self.events_broker.get_used_events.assert_called()
+        self.events_broker.get_used_events.assert_called_with()
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
