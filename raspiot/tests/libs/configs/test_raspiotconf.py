@@ -14,7 +14,7 @@ import logging
 from pprint import pprint
 import io
 from unittest.mock import Mock
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 class RaspiotConfTests(unittest.TestCase):
 
@@ -30,10 +30,10 @@ class RaspiotConfTests(unittest.TestCase):
         logging.debug('Using conf file "%s"' % self.path)
 
         #fake conf file
-        conf = SafeConfigParser()
+        conf = ConfigParser()
         conf.add_section('general')
-        conf.set('general', 'modules', unicode([]))
-        conf.set('general', 'updated', unicode([]))
+        conf.set('general', 'modules', str([]))
+        conf.set('general', 'updated', str([]))
         conf.add_section('rpc')
         conf.set('rpc', 'rpc_host', '0.0.0.0')
         conf.set('rpc', 'rpc_port', '80')
@@ -42,8 +42,9 @@ class RaspiotConfTests(unittest.TestCase):
         conf.add_section('debug')
         conf.set('debug', 'trace_enabled', u'False')
         conf.set('debug', 'debug_system', u'False')
-        conf.set('debug', 'debug_modules', unicode([]))
-        conf.write(open(self.FILE_NAME, 'w'))
+        conf.set('debug', 'debug_modules', str([]))
+        with open(self.FILE_NAME, 'w') as fp:
+            conf.write(fp)
         
         rc = RaspiotConf
         rc.CONF = self.FILE_NAME

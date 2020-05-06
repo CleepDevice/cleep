@@ -332,8 +332,8 @@ class Config():
             bool: True if content removed
         """
         #check params
-        if not isinstance(content, unicode):
-            raise Exception('Content parameter must be unicode')
+        if not isinstance(content, str):
+            raise Exception('Content parameter must be a string')
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False
@@ -530,10 +530,10 @@ class Config():
             raise Exception(u'Parameter "pattern" must be specified')
         if replace is None:
             raise Exception(u'Parameter "replace" must be specified')
-        if not isinstance(pattern, unicode):
-            raise Exception(u'Parameter "pattern" must be unicode')
-        if not isinstance(replace, str) and not isinstance(replace, unicode):
-            raise Exception(u'Parameter "replace" must be a string or unicode')
+        if not isinstance(pattern, str):
+            raise Exception(u'Parameter "pattern" must be a string')
+        if not isinstance(replace, str):
+            raise Exception(u'Parameter "replace" must be a string')
 
         #add new line if necessary
         if replace[len(replace)-1]!='\n':
@@ -625,8 +625,8 @@ class Config():
             bool: True if content added
         """
         #check params
-        if not isinstance(content, unicode):
-            raise Exception('Lines parameter must be unicode string')
+        if not isinstance(content, str):
+            raise Exception('Lines parameter must be a string')
         if not self.exists():
             self.logger.debug(u'No file found (%s)' % self.__get_path())
             return False

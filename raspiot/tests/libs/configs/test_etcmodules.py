@@ -13,7 +13,6 @@ import logging
 from pprint import pformat
 import io
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class EtcModulesTests(unittest.TestCase):
 
@@ -27,7 +26,9 @@ w1-gpio
 bcm4522"""
 
     def setUp(self):
-      	TestLib()
+        TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILE_NAME)
@@ -46,7 +47,7 @@ bcm4522"""
             os.remove('%s' % self.FILE_NAME)
 
     def test_generic_module(self):
-	mod = 'mymodule'
+        mod = 'mymodule'
         self.assertFalse(self.e.is_module_enabled(mod))
         self.assertTrue(self.e.enable_module(mod))
         self.assertTrue(self.e.disable_module(mod))

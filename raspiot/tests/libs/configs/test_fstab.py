@@ -14,7 +14,6 @@ from pprint import pprint
 import io
 from unittest.mock import Mock
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class FstabTests(unittest.TestCase):
 
@@ -50,7 +49,9 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
 192.168.1.53:/media/raid    /media/tangstore    nfs     soft,rw,nfsvers=3,rsize=32768,wsize=32768,timeo=600,actimeo=0,intr  0   0"""
 
     def setUp(self):
-      	TestLib()
+        TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILE_NAME)

@@ -253,19 +253,15 @@ key2=value2"""
     def test_replace_line_invalid_params(self):
         with self.assertRaises(Exception) as cm:
             self.c.replace_line(None, 'test')
-        self.assertEqual(cm.exception.message, 'Parameter "pattern" must be specified')
+        self.assertEqual(str(cm.exception), 'Parameter "pattern" must be specified')
 
         with self.assertRaises(Exception) as cm:
             self.c.replace_line('test', None)
-        self.assertEqual(cm.exception.message, 'Parameter "replace" must be specified')
-
-        with self.assertRaises(Exception) as cm:
-            self.c.replace_line(666, 'test')
-        self.assertEqual(cm.exception.message, 'Parameter "pattern" must be unicode')
+        self.assertEqual(str(cm.exception), 'Parameter "replace" must be specified')
 
         with self.assertRaises(Exception) as cm:
             self.c.replace_line(u'pattern', 666)
-        self.assertEqual(cm.exception.message, 'Parameter "replace" must be a string or unicode')
+        self.assertEqual(str(cm.exception), 'Parameter "replace" must be a string')
 
     def test_add_lines(self):
         line1 = 'key666=value666'
@@ -298,7 +294,7 @@ key2=value2"""
             self.c.add_lines(u'test')
         with self.assertRaises(Exception) as cm:
             self.c.add_lines(666)
-        self.assertEqual(cm.exception.message, 'Lines parameter must be list of string')
+        self.assertEqual(str(cm.exception), 'Lines parameter must be list of string')
 
     def test_add(self):
         line1 = u'# code to append'
@@ -315,10 +311,8 @@ key2=value2"""
 
     def test_add_invalid_params(self):
         with self.assertRaises(Exception) as cm:
-            self.c.add('lines')
-        with self.assertRaises(Exception) as cm:
             self.c.add(666)
-        self.assertEqual(cm.exception.message, 'Lines parameter must be unicode string')
+        self.assertEqual(str(cm.exception), 'Lines parameter must be a string')
 
     def test_add_file_not_found(self):
         os.remove(self.path)

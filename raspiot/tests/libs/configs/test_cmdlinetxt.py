@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelna
 class CmdlineTxtTestAllDisabled(unittest.TestCase):
 
     FILE_NAME = 'cmdline.txt'
+    BACKUP_FILENAME = 'cmdline.backup.txt'
     CONTENT = u'dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=c7cb7e34-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet fastboot noswap ro'
     #           dwc_otg.lpm_enable=0                                        rootfstype=ext4 fastboot rootwait quiet elevator=deadline fsck.repair=yes noswap ro root=PARTUUID=c7cb7e34-02
 
@@ -39,6 +40,8 @@ class CmdlineTxtTestAllDisabled(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('%s' % self.FILE_NAME):
             os.remove('%s' % self.FILE_NAME)
+        if os.path.exists('%s' % self.BACKUP_FILENAME):
+            os.remove(self.BACKUP_FILENAME)
 
     def test_is_console_enabled(self):
         self.assertFalse(self.c.is_console_enabled(), 'Console should be disabled')
@@ -75,6 +78,7 @@ class CmdlineTxtTestAllDisabled(unittest.TestCase):
 class CmdlineTxtTestAllEnabled(unittest.TestCase):
 
     FILE_NAME = 'cmdline.txt'
+    BACKUP_FILENAME = 'cmdline.backup.txt'
     CONTENT = u'dwc_otg.lpm_enable=0 console=serial0,115200 console=tty1 root=PARTUUID=c7cb7e34-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet fastboot noswap ro'
 
     def setUp(self):
@@ -95,6 +99,8 @@ class CmdlineTxtTestAllEnabled(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('%s' % self.FILE_NAME):
             os.remove('%s' % self.FILE_NAME)
+        if os.path.exists('%s' % self.BACKUP_FILENAME):
+            os.remove(self.BACKUP_FILENAME)
 
     def test_is_console_enabled(self):
         self.assertTrue(self.c.is_console_enabled(), 'Console should be disabled')

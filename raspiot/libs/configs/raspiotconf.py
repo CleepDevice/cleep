@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from raspiot.exception import InvalidParameter, MissingParameter
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 import ast
 import os
 import time
@@ -49,13 +49,13 @@ class RaspiotConf():
         Open config file
         
         Returns:
-            SafeConfigParser: SafeConfigParser instance
+            ConfigParser: ConfigParser instance
 
         Raises:
             Exception: if file doesn't exist
         """
         #init conf reader
-        self.__conf = SafeConfigParser()
+        self.__conf = ConfigParser()
         if not os.path.exists(self.CONF):
             #create empty file
             fd = self.cleep_filesystem.open(self.CONF, u'w')
@@ -65,7 +65,7 @@ class RaspiotConf():
         
         #load conf content
         fd = self.cleep_filesystem.open(self.CONF, u'r')
-        self.__conf.readfp(fd)
+        self.__conf.read_file(fd)
         self.cleep_filesystem.close(fd)
 
         return self.__conf
@@ -146,7 +146,7 @@ class RaspiotConf():
 
         #install module
         modules.append(module)
-        conf.set(u'general', u'modules', str(modules).encode('UTF-8'))
+        conf.set(u'general', u'modules', str(modules))
         self.__close(True)
 
         return True
@@ -171,7 +171,7 @@ class RaspiotConf():
 
         #uninstall module
         modules.remove(module)
-        conf.set(u'general', u'modules', str(modules).encode('UTF-8'))
+        conf.set(u'general', u'modules', str(modules))
         self.__close(True)
 
         return True
@@ -201,7 +201,7 @@ class RaspiotConf():
 
         #update module
         updated.append(module)
-        conf.set(u'general', u'updated', str(updated).encode('UTF-8'))
+        conf.set(u'general', u'updated', str(updated))
         self.__close(True)
 
         return True
@@ -255,7 +255,7 @@ class RaspiotConf():
         Enable trace logging mode
         """
         conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', str(True).encode('UTF-8'))
+        conf.set(u'debug', u'trace_enabled', str(True))
         self.__close(True)
 
     def disable_trace(self):
@@ -263,7 +263,7 @@ class RaspiotConf():
         Disable trace logging mode
         """
         conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', str(False).encode('UTF-8'))
+        conf.set(u'debug', u'trace_enabled', str(False))
         self.__close(True)
 
     def is_trace_enabled(self):
@@ -282,7 +282,7 @@ class RaspiotConf():
         Enable system debug
         """
         conf = self.__open()
-        conf.set(u'debug', u'debug_system', str(True).encode('UTF-8'))
+        conf.set(u'debug', u'debug_system', str(True))
         self.__close(True)
 
     def disable_system_debug(self):
@@ -290,7 +290,7 @@ class RaspiotConf():
         Disable system debug
         """
         conf = self.__open()
-        conf.set(u'debug', u'debug_system', str(False).encode('UTF-8'))
+        conf.set(u'debug', u'debug_system', str(False))
         self.__close(True)
 
     def is_system_debugged(self):
@@ -330,7 +330,7 @@ class RaspiotConf():
 
         #add module to debug list
         modules.append(module)
-        conf.set(u'debug', u'debug_modules', str(modules).encode('UTF-8'))
+        conf.set(u'debug', u'debug_modules', str(modules))
         self.__close(True)
 
         return True
@@ -355,7 +355,7 @@ class RaspiotConf():
 
         #remove module from debug list
         modules.remove(module)
-        conf.set(u'debug', u'debug_modules', str(modules).encode('UTF-8'))
+        conf.set(u'debug', u'debug_modules', str(modules))
         self.__close(True)
 
         return True
@@ -390,7 +390,7 @@ class RaspiotConf():
         conf = self.__open()
 
         conf.set(u'rpc', u'rpc_host', host)
-        conf.set(u'rpc', u'rpc_port', str(port).encode('UTF-8'))
+        conf.set(u'rpc', u'rpc_port', str(port))
         self.__close(True)
 
         return True

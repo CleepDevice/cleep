@@ -18,10 +18,11 @@ from unittest.mock import Mock
 class HostnameTests(unittest.TestCase):
 
     FILE_NAME = 'hostname'
+    BACKUP_FILENAME = 'hostname.backup'
     CONTENT = u"""myraspi"""
 
     def setUp(self):
-      	TestLib()
+        TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
         
         self.fs = CleepFilesystem()
@@ -40,6 +41,8 @@ class HostnameTests(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('%s' % self.FILE_NAME):
             os.remove('%s' % self.FILE_NAME)
+        if os.path.exists('%s' % self.BACKUP_FILENAME):
+            os.remove('%s' % self.BACKUP_FILENAME)
 
     def test_get_hostname(self):
         self.assertEqual(self.h.get_hostname(), 'myraspi')

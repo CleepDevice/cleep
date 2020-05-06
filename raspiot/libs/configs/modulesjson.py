@@ -64,6 +64,9 @@ class ModulesJson():
                     update (int): last update timestamp
                     list (dict): dict of available modules
                 }
+    
+        Raises:
+            Exception if modules.json does not exist
 
         """
         #check
@@ -85,17 +88,19 @@ class ModulesJson():
         Update modules.json file downloading fresh version from cleepos website
 
         Returns:
-            bool: True if modules.json is different from local one
+            bool: True if modules.json is different from local one, False if file is identical
+
+        Raises:
+            Exception if error occured
         """
         self.logger.debug('Updating "modules.json" file...')
         #download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
         download_status, raw = download.download_content(self.REMOTE_URL)
-        self.logger.info('Raw: %s' % raw)
         if raw is None:
             raise Exception('Download of modules.json failed (download status %s)' % download_status)
         remote_modules_json = json.loads(raw)
-        self.logger.debug(u'Downloaded modules.json=%s' % remote_modules_json)
+        self.logger.trace(u'Downloaded modules.json: %s' % remote_modules_json)
 
         #check remote content
         if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
@@ -108,6 +113,7 @@ class ModulesJson():
             local_modules_json = self.get_json()
 
         #compare update field
+        self.logger.debug(u'Compare update timestamp: %s>%s' % (remote_modules_json[u'update'], local_modules_json[u'update'] if local_modules_json else None))
         if local_modules_json is None or remote_modules_json[u'update']>local_modules_json[u'update']:
             #modules.json updated, save new file
             fd = self.cleep_filesystem.open(self.CONF, u'w')
@@ -126,3 +132,4 @@ class ModulesJson():
 
         #no new content
         return False
+

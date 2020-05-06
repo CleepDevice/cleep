@@ -13,7 +13,6 @@ import logging
 from pprint import pformat
 import io
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class dhcpcdConfTests_validConf(unittest.TestCase):
 
@@ -21,6 +20,8 @@ class dhcpcdConfTests_validConf(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILENAME)
@@ -154,6 +155,8 @@ class dhcpcdConfTests_profileConf(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILENAME)
@@ -230,7 +233,7 @@ fallback fallback_eth1""")
 
     def test_get_configurations(self):
         interfaces = self.d.get_configurations()
-        self.assertEqual(len(interfaces), 2)
+        self.assertEqual(len(interfaces), 3)
         self.assertTrue('eth0' in interfaces)
         self.assertEqual(interfaces['eth0']['interface'], 'eth0')
         self.assertEqual(interfaces['eth0']['ip_address'], '192.168.0.10')
@@ -253,7 +256,8 @@ fallback fallback_eth1""")
     def test_add_interface(self):
         self.assertTrue(self.d.add_static_interface('eth2', '10.30.1.255', '10.30.1.1', '10.255.255.255', '10.30.1.2'))
         interfaces = self.d.get_configurations()
-        self.assertEqual(len(interfaces), 3)
+        logging.debug('Interfaces: %s' % interfaces)
+        self.assertEqual(len(interfaces), 4)
         interface = self.d.get_configuration('eth2')
         self.assertIsNotNone(interface)
         self.assertEqual(interface['interface'], 'eth2')
@@ -269,22 +273,35 @@ fallback fallback_eth1""")
         self.assertFalse(self.d.delete_interface('eth4'))
         
     def test_delete_interface(self):
+        configurations = self.d.get_configurations()
+        logging.debug('Interfaces: %s' % list(configurations.keys()))
         self.assertTrue(self.d.add_static_interface('eth3', '10.30.1.255', '10.30.1.1', '10.255.255.255', '10.30.1.2'))
-        self.assertEqual(len(self.d.get_configurations()), 3)
+        configurations = self.d.get_configurations()
+        logging.debug('Interfaces: %s' % list(configurations.keys()))
+        self.assertEqual(len(configurations), 4)
         self.assertTrue(self.d.delete_interface('eth3'))
-        self.assertEqual(len(self.d.get_configurations()), 2)
+        configurations = self.d.get_configurations()
+        self.assertEqual(len(configurations), 3)
 
     def test_add_fallback_interface(self):
         self.assertTrue(self.d.add_fallback_interface('eth6', '12.12.12.12', '12.12.12.1', '12.255.255.255', '12.12.12.20'))
+
+        # check new config
         interfaces = self.d.get_configurations()
-        self.assertEqual(len(interfaces), 3)
-        interface = self.d.get_configuration('eth6')
+        logging.debug('Interfaces: %s' % interfaces)
+        self.assertEqual(len(interfaces), 5)
+
+        interface = self.d.get_configuration('fallback_eth6')
+        logging.debug('Interface: %s' % interface)
         self.assertIsNotNone(interface)
-        self.assertEqual(interface['interface'], 'eth6')
+        self.assertEqual(interface['interface'], 'fallback_eth6')
         self.assertEqual(interface['ip_address'], '12.12.12.12')
         self.assertEqual(interface['gateway'], '12.12.12.1')
         self.assertEqual(interface['dns_address'], '12.12.12.20')
-        self.assertTrue(interface['fallback'])
+        self.assertIsNone(interface['fallback'])
+        
+        interface = self.d.get_configuration('eth6')
+        self.assertEqual(interface['fallback'], 'fallback_eth6')
 
     def test_add_fallback_interface_already_configured(self):
         with self.assertRaises(InvalidParameter) as cm:
@@ -310,10 +327,16 @@ fallback fallback_eth1""")
             self.d.add_fallback_interface('eth1', '12.12.12.12', '12.12.12.1', '', '12.12.12.20')
 
     def test_delete_fallback_interface(self):
+        configurations = self.d.get_configurations()
+        logging.debug('Configurations: %s' % configurations)
+        logging.debug('Interfaces: %s' % list(configurations.keys()))
         self.assertTrue(self.d.add_fallback_interface('eth6', '12.12.12.12', '12.12.12.14', '12.12.12.16'))
-        self.assertEqual(len(self.d.get_configurations()), 3)
+        configurations = self.d.get_configurations()
+        logging.debug('Configurations: %s' % configurations)
+        logging.debug('Interfaces: %s' % list(configurations.keys()))
+        self.assertEqual(len(configurations), 5)
         self.assertTrue(self.d.delete_interface('eth6'))
-        self.assertEqual(len(self.d.get_configurations()), 2)
+        self.assertEqual(len(self.d.get_configurations()), 3)
 
 if __name__ == '__main__':
     #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_dhcpcdconf.py; coverage report -m -i
