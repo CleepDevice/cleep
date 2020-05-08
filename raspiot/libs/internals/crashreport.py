@@ -71,8 +71,8 @@ class CrashReport():
                 scope.set_tag('raspberrypi_model', infos[u'model'])
                 scope.set_tag('raspberrypi_revision', infos[u'revision'])
                 scope.set_tag('raspberrypi_pcbrevision', infos[u'pcbrevision'])
-            except: # pragma: no cover
-                self.logger.debug('Application is not running on a raspberry pi')
+            except Exception as e: # pragma: no cover
+                self.logger.debug('Application is not running on a raspberry pi: %s' % str(e))
         
 
     def __filter_exception(self, event, hint): # pragma: no cover

@@ -51,21 +51,21 @@ class CriticalResourcesTests(unittest.TestCase):
     def test_register_unkown_resource(self):
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test', 'a.resource', self._acquired_cb, self._need_release_cb)
-        self.assertEqual(cm.exception.message, 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
+        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
 
     def test_register_with_invalid_params(self):
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test', 'audio.playback', None, self._need_release_cb)
-        self.assertEqual(cm.exception.message, 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
+        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test', 'audio.playback', self._acquired_cb, None)
-        self.assertEqual(cm.exception.message, 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
+        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test', 'audio.playback', 'test', self._need_release_cb)
-        self.assertEqual(cm.exception.message, 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
+        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test', 'audio.playback', self._acquired_cb, 'test')
-        self.assertEqual(cm.exception.message, 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
+        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
 
     def test_resource_permanently_acquired_ok(self):
         self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, False)
@@ -78,13 +78,13 @@ class CriticalResourcesTests(unittest.TestCase):
         self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, True)
         with self.assertRaises(Exception) as cm:
             self.c.is_resource_permanently_acquired('a.resource')
-        self.assertEqual(cm.exception.message, 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
+        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
 
     def test_resource_cannot_be_acquired_permanently_by_two_modules(self):
         self.c.register_resource('test1', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
         with self.assertRaises(Exception) as cm:
             self.c.register_resource('test2', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
-        self.assertEqual(cm.exception.message, 'Resource "audio.capture" already has permanent module "test1" configured. Only one allowed', 'Should raise exception when 2 modules try to permanently acquire a resource')
+        self.assertEqual(str(cm.exception), 'Resource "audio.capture" already has permanent module "test1" configured. Only one allowed', 'Should raise exception when 2 modules try to permanently acquire a resource')
 
     def test_acquire_resource(self):
         self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, False)
@@ -132,12 +132,12 @@ class CriticalResourcesTests(unittest.TestCase):
         self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, True)
         with self.assertRaises(Exception) as cm:
             self.c.acquire_resource('test', 'a.resource')
-        self.assertEqual(cm.exception.message, 'Resource "a.resource" does not exists', 'Should raise exception while acquiring unknown resource')
+        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while acquiring unknown resource')
 
     def test_acquire_unregistered_resource(self):
         with self.assertRaises(Exception) as cm:
             self.c.acquire_resource('test', 'audio.capture')
-        self.assertEqual(cm.exception.message, 'Module "test" try to acquire resource "audio.capture" which it is not registered on', 'Should raise exception while acquiring unregistered resource')
+        self.assertEqual(str(cm.exception), 'Module "test" try to acquire resource "audio.capture" which it is not registered on', 'Should raise exception while acquiring unregistered resource')
 
     def test_release_resource_unacquired_resource(self):
         self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
@@ -147,7 +147,7 @@ class CriticalResourcesTests(unittest.TestCase):
         self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
         with self.assertRaises(Exception) as cm:
             self.c.release_resource('test1', 'audio.dummy')
-        self.assertEqual(cm.exception.message, 'Resource "audio.dummy" does not exists')
+        self.assertEqual(str(cm.exception), 'Resource "audio.dummy" does not exists')
 
     def test_release_resource_not_using_it(self):
         self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
@@ -183,7 +183,7 @@ class CriticalResourcesTests(unittest.TestCase):
 
             self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
             self.c.acquire_resource('test1', 'audio.playback')
-            crash_report.report_exception.assert_called()
+            self.assertTrue(crash_report.report_exception.called)
         finally:
             Task.start = task_start_restore
 
@@ -208,7 +208,7 @@ class Mydummyresource():
         c.PYTHON_RASPIOT_IMPORT_PATH = ''
         with self.assertRaises(Exception) as cm:
             c(False)
-        self.assertEqual(cm.exception.message, 'Invalid resources path "%s"' % c.RESOURCES_DIR)
+        self.assertEqual(str(cm.exception), 'Invalid resources path "%s"' % c.RESOURCES_DIR)
 
     def test_load_resources_invalid_resource_path(self):
         try:
@@ -223,7 +223,7 @@ class Mydummyresource():
             c.PYTHON_RASPIOT_IMPORT_PATH = 'resources'
             with self.assertRaises(Exception) as cm:
                 c(False)
-            self.assertEqual(cm.exception.message, 'Error occured trying to load resource "dummyResource"')
+            self.assertEqual(str(cm.exception), 'Error occured trying to load resource "dummyResource"')
         finally:
             if os.path.exists(self.resources_dir):
                 shutil.rmtree(self.resources_dir)
@@ -244,7 +244,7 @@ class Mydummyresource():
             c.PYTHON_RASPIOT_IMPORT_PATH = ''
             with self.assertRaises(Exception) as cm:
                 c(False)
-            self.assertEqual(cm.exception.message, 'Invalid resource "dummyResource" tryed to be loaded')
+            self.assertEqual(str(cm.exception), 'Invalid resource "dummyResource" tryed to be loaded')
         finally:
             if os.path.exists(self.resources_dir):
                 shutil.rmtree(self.resources_dir)

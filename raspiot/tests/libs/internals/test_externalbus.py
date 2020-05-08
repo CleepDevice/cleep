@@ -4,7 +4,7 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from externalbus import ExternalBus, PyreBus
+from externalbus import ExternalBus
 from raspiot.libs.tests.lib import TestLib
 from raspiot.exception import MissingParameter, InvalidParameter
 import unittest
@@ -21,17 +21,6 @@ class ExternalBusTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-
-
-
-class PyreBusTests(unittest.TestCase):
-
-    def setUp(self):
-        TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-
-    def tearDown(self):
-        pass
 
 
 if __name__ == '__main__':

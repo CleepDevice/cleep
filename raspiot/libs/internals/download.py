@@ -276,7 +276,7 @@ class Download():
                     break
 
                 # save data 
-                content += buf.decode('utf-8')
+                content += buf
 
         except:
             self.logger.exception(u'Error downloading file "%s"' % url)

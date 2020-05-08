@@ -56,7 +56,7 @@ class UninstallModuleTests(unittest.TestCase):
 
     def _init_console_mock(self, console_mock, return_code=0, killed=False, timeout=0.5, stdout='message on stdout', stderr='message on stderr'):
         def init():
-            init_args = console_mock.call_args.args
+            init_args = console_mock.call_args[0]
             logging.debug('console_mock constructor args: %s' % str(init_args))
             path, cb, end_cb = init_args
 
@@ -788,8 +788,8 @@ class InstallModuleTests(unittest.TestCase):
 
     def _init_console_mock(self, console_mock, return_code=0, killed=False, timeout=0.5, stdout='message on stdout', stderr='message on stderr'):
         def init():
-            init_args = console_mock.call_args.args
-            logging.debug('console_mock constructor args: %s' % str(init_args))
+            init_args = console_mock.call_args[0]
+            logging.debug('console_mock constructor args: %s' % list(init_args))
             path, cb, end_cb = init_args
 
             # call script terminated

@@ -61,7 +61,7 @@ class ConsoleTests(unittest.TestCase):
         e.start()
         time.sleep(1)
         e.stop() # kill() alias
-        time.sleep(1.0)
+        time.sleep(2.0)
         self.assertTrue(self.killed)
 
     def test_endless_console_no_callbacks(self):
@@ -116,10 +116,10 @@ class ConsoleTests(unittest.TestCase):
         c = Console()
         with self.assertRaises(Exception) as cm:
             res = c.command('echo tick; 1>&2 echo tock', None)
-        self.assertEqual(cm.exception.message, 'Timeout is mandatory and must be greater than 0')
+        self.assertEqual(str(cm.exception), 'Timeout is mandatory and must be greater than 0')
         with self.assertRaises(Exception) as cm:
             res = c.command('echo tick; 1>&2 echo tock', 0)
-        self.assertEqual(cm.exception.message, 'Timeout is mandatory and must be greater than 0')
+        self.assertEqual(str(cm.exception), 'Timeout is mandatory and must be greater than 0')
 
     def test_console_timeout(self):
         c = Console()

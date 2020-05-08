@@ -15,7 +15,7 @@ class TaskTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -52,8 +52,8 @@ class TaskTests(unittest.TestCase):
         self.t.wait()
         self.t.stop()
         
-        logging.debug('Args: %s' % str(task.call_args.args))
-        self.assertEqual(task.call_args.args, (args[0], args[1]))
+        logging.debug('Args: %s' % str(task.call_args[0]))
+        self.assertEqual(task.call_args[0], (args[0], args[1]))
         logging.debug('Kwargs: %s' % str(task.call_args.kwargs))
         self.assertEqual(task.call_args.kwargs, {})
 
@@ -69,10 +69,10 @@ class TaskTests(unittest.TestCase):
         self.t.wait()
         self.t.stop()
         
-        logging.debug('Args: %s' % str(task.call_args.args))
-        self.assertEqual(task.call_args.args, ())
-        logging.debug('Kwargs: %s' % str(task.call_args.kwargs))
-        self.assertEqual(task.call_args.kwargs, kwargs)
+        logging.debug('Args: %s' % str(task.call_args[0]))
+        self.assertEqual(task.call_args[0], ())
+        logging.debug('Kwargs: %s' % str(task.call_args[1]))
+        self.assertEqual(task.call_args[1], kwargs)
 
     def test_task_no_interval(self):
         task = Mock()

@@ -83,7 +83,7 @@ class EndlessConsole(Thread):
 
     def __stop(self):
         """
-        Stop command line execution (kill it)
+        Stop command line execution
         """
         self.running = False
 

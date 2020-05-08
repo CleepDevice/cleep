@@ -80,7 +80,7 @@ def raspberry_pi_infos():
     """
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    revision = p.communicate()[0].replace(u'\n', u'')
+    revision = str(p.communicate()[0]).replace(u'\n', u'')
     infos = RASPBERRY_PI_REVISIONS[revision] if revision and revision in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
     infos[u'revision'] = revision
 
@@ -175,7 +175,7 @@ def file_to_base64(path):
         Exception of all kind if something wrong occured
     """
     with io.open(path, u'rb') as file_to_convert:
-        return base64.b64encode(file_to_convert.read())
+        return base64.b64encode(file_to_convert.read()).decode('utf-8')
 
 def hr_uptime(uptime):
     """  

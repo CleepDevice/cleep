@@ -200,16 +200,22 @@ class CleepFilesystemTests(unittest.TestCase):
         self.assertTrue(self.c.rw.set_crash_report.called)
 
     def test_open_text(self):
-        fd = self.c.open(self.FILE, u'w')
-        self.assertTrue(os.path.exists(self.FILE))
-        self.assertTrue(self.c.rw.enable_write_on_root.called)
-        self.assertTrue(isinstance(fd, io.TextIOWrapper))
+        try:
+            fd = self.c.open(self.FILE, u'w')
+            self.assertTrue(os.path.exists(self.FILE))
+            self.assertTrue(self.c.rw.enable_write_on_root.called)
+            self.assertTrue(isinstance(fd, io.TextIOWrapper))
+        finally:
+            self.c.close(fd)
 
     def test_open_binary(self):
-        fd = self.c.open(self.FILE, u'wb')
-        self.assertTrue(os.path.exists(self.FILE))
-        self.assertTrue(self.c.rw.enable_write_on_root.called)
-        self.assertTrue(isinstance(fd, io.BufferedIOBase))
+        try:
+            fd = self.c.open(self.FILE, u'wb')
+            self.assertTrue(os.path.exists(self.FILE))
+            self.assertTrue(self.c.rw.enable_write_on_root.called)
+            self.assertTrue(isinstance(fd, io.BufferedIOBase))
+        finally:
+            self.c.close(fd)
 
     def test_open_exception(self):
         io_open_original = io.open
@@ -217,7 +223,7 @@ class CleepFilesystemTests(unittest.TestCase):
             io.open = Mock(side_effect=Exception('test exception'))
             with self.assertRaises(Exception) as cm:
                 self.c.open(self.FILE, u'w')
-            self.assertEqual(cm.exception.message, 'test exception')
+            self.assertEqual(str(cm.exception), 'test exception')
             time.sleep(self.c.DEBOUNCE_DURATION+0.5)
             self.assertTrue(self.c.rw.disable_write_on_root.called)
         finally:
@@ -230,13 +236,18 @@ class CleepFilesystemTests(unittest.TestCase):
         self.assertTrue(self.c.rw.disable_write_on_root.called)
 
     def test_close_exception(self):
-        fd = self.c.open(self.FILE, 'w')
-        fd.close = Mock(side_effect=Exception('test exception'))
-        with self.assertRaises(Exception) as cm:
+        try:
+            fd = self.c.open(self.FILE, 'w')
+            close_restore = fd.close
+            fd.close = Mock(side_effect=Exception('test exception'))
+            with self.assertRaises(Exception) as cm:
+                self.c.close(fd)
+            self.assertEqual(str(cm.exception), 'test exception')
+            time.sleep(self.c.DEBOUNCE_DURATION+0.5)
+            self.assertTrue(self.c.rw.disable_write_on_root.called)
+        finally:
+            fd.close = close_restore
             self.c.close(fd)
-        self.assertEqual(cm.exception.message, 'test exception')
-        time.sleep(self.c.DEBOUNCE_DURATION+0.5)
-        self.assertTrue(self.c.rw.disable_write_on_root.called)
 
     def test_write_data(self):
         self.assertTrue(self.c.write_data(self.FILE, u'write_data test'))
@@ -248,8 +259,8 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_write_data_invalid_parameters(self):
         with self.assertRaises(InvalidParameter) as cm:
-            self.c.write_data(self.FILE, 'test')
-        self.assertEqual(cm.exception.message, 'Data must be unicode')
+            self.c.write_data(self.FILE, 666)
+        self.assertEqual(str(cm.exception), 'Data must be string')
 
     def test_write_data_exception(self):
         self.c.open = Mock(side_effect=Exception('test exception'))
@@ -617,5 +628,5 @@ class CleepFilesystemTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
     unittest.main()

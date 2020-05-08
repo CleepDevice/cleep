@@ -43,7 +43,7 @@ class SunTests(unittest.TestCase):
         d = datetime.date(2014, 1, 3)
         with self.assertRaises(Exception) as cm:
             self.s.get_local_sunrise_time(date=d)
-        self.assertEqual(cm.exception.message, 'The sun never rises on this location (on the specified date)')
+        self.assertEqual(str(cm.exception), 'The sun never rises on this location (on the specified date)')
 
     def test_get_sunrise_time(self):
         sunrise = self.s.get_sunrise_time()
@@ -56,7 +56,7 @@ class SunTests(unittest.TestCase):
         d = datetime.date(2014, 1, 3)
         with self.assertRaises(Exception) as cm:
             self.s.get_sunrise_time(date=d)
-        self.assertEqual(cm.exception.message, 'The sun never rises on this location (on the specified date)')
+        self.assertEqual(str(cm.exception), 'The sun never rises on this location (on the specified date)')
 
     def test_sunset(self):
         sunset = self.s.sunset()
@@ -69,7 +69,7 @@ class SunTests(unittest.TestCase):
         d = datetime.date(2014, 1, 3)
         with self.assertRaises(Exception) as cm:
             self.s.get_local_sunset_time(date=d)
-        self.assertEqual(cm.exception.message, 'The sun never sets on this location (on the specified date)')
+        self.assertEqual(str(cm.exception), 'The sun never sets on this location (on the specified date)')
 
     def test_get_sunset_time(self):
         sunset = self.s.get_sunset_time()
@@ -82,7 +82,7 @@ class SunTests(unittest.TestCase):
         d = datetime.date(2014, 1, 3)
         with self.assertRaises(Exception) as cm:
             self.s.get_sunset_time(date=d)
-        self.assertEqual(cm.exception.message, 'The sun never sets on this location (on the specified date)')
+        self.assertEqual(str(cm.exception), 'The sun never sets on this location (on the specified date)')
 
     def test_check_corner_case(self):
         # check case 9 (minute==60)
@@ -116,7 +116,7 @@ class SunTests(unittest.TestCase):
         self.s.set_position(positions[-1][0], positions[-1][1])
         with self.assertRaises(Exception) as cm:
             self.s.sunrise()
-        self.assertEqual(cm.exception.message, 'The sun never rises on this location (on the specified date)')
+        self.assertEqual(str(cm.exception), 'The sun never rises on this location (on the specified date)')
 
 
 if __name__ == '__main__':

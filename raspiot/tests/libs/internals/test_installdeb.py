@@ -110,8 +110,8 @@ class InstallDebTests(unittest.TestCase):
     def test_install_blocking_callback(self, popen_mock):
         popen_mock.return_value.pid = 12345
         popen_mock.return_value.returncode = None
-        self.stdout_mock.write('stdout')
-        self.stderr_mock.write('stderr')
+        self.stdout_mock.write('stdout'.encode('utf-8'))
+        self.stderr_mock.write('stderr'.encode('utf-8'))
         self.stdout_mock.seek(0)
         self.stderr_mock.seek(0)
         popen_mock.return_value.stdout = self.stdout_mock
@@ -227,8 +227,8 @@ class InstallDebTests(unittest.TestCase):
     def test_dry_run_callback(self, popen_mock):
         popen_mock.return_value.pid = 12345
         popen_mock.return_value.returncode = None
-        self.stdout_mock.write('stdout')
-        self.stderr_mock.write('stderr')
+        self.stdout_mock.write('stdout'.encode('utf-8'))
+        self.stderr_mock.write('stderr'.encode('utf-8'))
         self.stdout_mock.seek(0)
         self.stderr_mock.seek(0)
         popen_mock.return_value.stdout = self.stdout_mock

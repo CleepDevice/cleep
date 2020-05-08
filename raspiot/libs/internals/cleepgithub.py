@@ -55,7 +55,7 @@ class CleepGithub():
 
             if resp.status==200:
                 # response successful, parse data to get current latest version
-                data = json.loads(resp.data.decode('utf-8'))
+                data = json.loads(resp.data)
                 self.logger.debug('Data: %s' % data)
 
                 if u'rate' in data:
@@ -200,7 +200,7 @@ class CleepGithub():
 
             if resp.status==200:
                 # response successful, parse data to get current latest version
-                data = json.loads(resp.data.decode('utf-8'))
+                data = json.loads(resp.data)
                 self.logger.debug('Data: %s' % data)
 
                 # return all releases

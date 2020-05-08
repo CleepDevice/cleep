@@ -31,7 +31,8 @@ class CleepBackupTests(unittest.TestCase):
             self.assertTrue(os.path.exists(archive))
             # check it is a zip archive
             returned_output = subprocess.check_output('file "%s"' % archive, shell=True)
-            self.assertNotEqual(returned_output.lower().find('zip archive data'), -1)
+            logging.debug('Output: %s' % returned_output)
+            self.assertNotEqual(returned_output.lower().find(b'zip archive data'), -1)
         finally:
             if archive and os.path.exists(archive):
                 os.remove(archive)

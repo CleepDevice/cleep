@@ -153,7 +153,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.p.configure(self.bootstrap)
-        self.assertTrue(cm.exception.message.startswith('Invalid modules path'))
+        self.assertTrue(str(cm.exception).startswith('Invalid modules path'))
 
     def test_load_events_invalid_classname(self):
         self._init_context(formatter_content=FORMATTER_CONTENT_INVALID_CLASSNAME)
@@ -175,18 +175,18 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         formatters = self.p.get_renderers_formatters('test.event.app1')
         logging.debug('Formatters: %s' % formatters)
         self.assertEqual(len(formatters), 1)
-        self.assertEqual(formatters.keys()[0], 'DummyProfile')
-        self.assertEqual(len(formatters[formatters.keys()[0]].keys()), 1)
-        self.assertEqual(formatters[formatters.keys()[0]].keys()[0], 'app1')
+        self.assertEqual(list(formatters.keys())[0], 'DummyProfile')
+        self.assertEqual(len(formatters[list(formatters.keys())[0]].keys()), 1)
+        self.assertEqual(list(formatters[list(formatters.keys())[0]].keys())[0], 'app1')
 
         self.p.register_renderer('app2', [DummyProfile])
         formatters = self.p.get_renderers_formatters('test.event.app1')
         logging.debug('Formatters: %s' % formatters)
         self.assertEqual(len(formatters), 1)
-        self.assertEqual(formatters.keys()[0], 'DummyProfile')
-        self.assertEqual(len(formatters[formatters.keys()[0]].keys()), 2)
-        self.assertTrue('app1' in formatters[formatters.keys()[0]].keys())
-        self.assertTrue('app2' in formatters[formatters.keys()[0]].keys())
+        self.assertEqual(list(formatters.keys())[0], 'DummyProfile')
+        self.assertEqual(len(formatters[list(formatters.keys())[0]].keys()), 2)
+        self.assertTrue('app1' in formatters[list(formatters.keys())[0]].keys())
+        self.assertTrue('app2' in formatters[list(formatters.keys())[0]].keys())
 
     def test_register_renderer_other(self):
         self._init_context()
@@ -198,12 +198,12 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         formatters = self.p.get_renderers_formatters('test.event.app1')
         logging.debug('Formatters: %s' % formatters)
         self.assertEqual(len(formatters), 1)
-        self.assertEqual(formatters[formatters.keys()[0]].keys()[0], 'app1')
+        self.assertEqual(list(formatters[list(formatters.keys())[0]].keys())[0], 'app1')
 
         formatters = self.p.get_renderers_formatters('test.event.app2')
         logging.debug('Formatters: %s' % formatters)
         self.assertEqual(len(formatters), 1)
-        self.assertEqual(formatters[formatters.keys()[0]].keys()[0], 'app2')
+        self.assertEqual(list(formatters[list(formatters.keys())[0]].keys())[0], 'app2')
 
     def test_register_renderer_unknown_event(self):
         self._init_context()
@@ -262,8 +262,8 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         profiles = self.p.get_renderers_profiles()
         logging.debug('Renderers profiles: %s' % profiles)
         self.assertEqual(len(profiles), 1)
-        self.assertEqual(profiles.keys()[0], 'app1')
-        self.assertEqual(profiles.values()[0][0], 'DummyProfile')
+        self.assertEqual(list(profiles.keys())[0], 'app1')
+        self.assertEqual(list(profiles.values())[0][0], 'DummyProfile')
 
     def test_get_renderers(self):
         self._init_context()

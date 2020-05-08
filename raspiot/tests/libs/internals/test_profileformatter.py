@@ -31,22 +31,22 @@ class ProfileFormatterTests(unittest.TestCase):
     def test_init(self):
         with self.assertRaises(InvalidParameter) as cm1:
             ProfileFormatter(DummyClass(), 666, DummyProfile())
-        self.assertEqual(cm1.exception.message, 'Invalid event_name specified')
+        self.assertEqual(str(cm1.exception), 'Invalid event_name specified')
         with self.assertRaises(InvalidParameter) as cm2:
             ProfileFormatter(DummyClass(), 'dummy.event', DummyClass())
-        self.assertEqual(cm2.exception.message, 'Invalid profile specified. Instance must inherits from RendererProfile')
+        self.assertEqual(str(cm2.exception), 'Invalid profile specified. Instance must inherits from RendererProfile')
 
     def test_format_invalid_parameters(self):
         with self.assertRaises(InvalidParameter) as cm:
             p = ProfileFormatter(DummyClass(), 'dummy.event', DummyProfile())
             p.format({})
-        self.assertEqual(cm.exception.message, 'Parameter "event_params" must be a list')
+        self.assertEqual(str(cm.exception), 'Parameter "event_params" must be a list')
 
     def test_format_no_fill_profile_implemented(self):
         with self.assertRaises(NotImplementedError) as cm:
             p = ProfileFormatter(DummyClass(), 'dummy.event', DummyProfile())
             p.format([])
-        self.assertEqual(cm.exception.message, '_fill_profile method must be implemented in "ProfileFormatter"')
+        self.assertEqual(str(cm.exception), '_fill_profile method must be implemented in "ProfileFormatter"')
 
 
 if __name__ == '__main__':

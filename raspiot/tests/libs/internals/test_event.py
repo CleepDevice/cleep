@@ -48,7 +48,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = ''
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_NAME class member declared in "Event" must be a non empty string')
+            self.assertEqual(str(cm.exception), 'EVENT_NAME class member declared in "Event" must be a non empty string')
         finally:
             Event.EVENT_NAME = ''
 
@@ -58,7 +58,7 @@ class EventTests(unittest.TestCase):
                 E.EVENT_NAME = 'dummy1'
                 E.EVENT_PARAMS = {}
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_PARAMS class member declared in "Event" must be a list')
+            self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member declared in "Event" must be a list')
         finally:
             Event.EVENT_PARAMS = []
 
@@ -68,7 +68,7 @@ class EventTests(unittest.TestCase):
                 E.EVENT_NAME = 'dummy2'
                 E.EVENT_CHARTABLE = 1
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_CHARTABLE class member declared in "Event" must be a bool')
+            self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member declared in "Event" must be a bool')
         finally:
             Event.EVENT_CHARTABLE = False
 
@@ -79,7 +79,7 @@ class EventTests(unittest.TestCase):
                 del(E.EVENT_NAME)
                 E.EVENT_PARAMS = None
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_NAME class member must be declared in "Event"')
+            self.assertEqual(str(cm.exception), 'EVENT_NAME class member must be declared in "Event"')
         finally:
             Event.EVENT_NAME = ''
 
@@ -89,7 +89,7 @@ class EventTests(unittest.TestCase):
                 E.EVENT_NAME = 'dummy3'
                 del(E.EVENT_PARAMS)
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_PARAMS class member must be declared in "Event"')
+            self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member must be declared in "Event"')
         finally:
             Event.EVENT_PARAMS = []
 
@@ -99,7 +99,7 @@ class EventTests(unittest.TestCase):
                 E.EVENT_NAME = 'dummy4'
                 del(E.EVENT_CHARTABLE)
                 E(Mock(), Mock())
-            self.assertEqual(cm.exception.message, 'EVENT_CHARTABLE class member must be declared in "Event"')
+            self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member must be declared in "Event"')
         finally:
             Event.EVENT_CHARTABLE = False
 
@@ -122,7 +122,7 @@ class EventTests(unittest.TestCase):
         self._init_context(event_params=['param'])
         with self.assertRaises(Exception) as cm:
             self.e.send({'dummy': 666}, device_id=None, to='dummy', render=False)
-        self.assertEqual(cm.exception.message, 'Invalid event parameters specified for "test.dummy": {\'dummy\': 666}')
+        self.assertEqual(str(cm.exception), 'Invalid event parameters specified for "test.dummy": {\'dummy\': 666}')
 
     def test_send_bus_push_failed(self):
         self._init_context(event_params=['param'], bus_push_result={'error':True, 'message':'test error'})

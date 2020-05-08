@@ -32,11 +32,11 @@ class ToolsTests(unittest.TestCase):
         self.assertTrue('wireless' in infos)
         self.assertTrue('audio' in infos)
 
-        self.assertTrue(isinstance(infos['date'], unicode))
-        self.assertTrue(isinstance(infos['model'], unicode))
-        self.assertTrue(isinstance(infos['pcbrevision'], unicode))
-        self.assertTrue(isinstance(infos['memory'], unicode))
-        self.assertTrue(isinstance(infos['notes'], unicode))
+        self.assertTrue(isinstance(infos['date'], str))
+        self.assertTrue(isinstance(infos['model'], str))
+        self.assertTrue(isinstance(infos['pcbrevision'], str))
+        self.assertTrue(isinstance(infos['memory'], str))
+        self.assertTrue(isinstance(infos['notes'], str))
         self.assertTrue(isinstance(infos['ethernet'], bool))
         self.assertTrue(isinstance(infos['wireless'], bool))
         self.assertTrue(isinstance(infos['audio'], bool))
@@ -75,7 +75,7 @@ class ToolsTests(unittest.TestCase):
 
     def test_hr_uptime(self):
         uptime = tools.hr_uptime(time.time())
-        self.assertTrue(isinstance(uptime, unicode))
+        self.assertTrue(isinstance(uptime, str))
         splits = uptime.split()
         self.assertEqual(len(splits), 3)
         self.assertTrue(splits[0].endswith('d'))
@@ -95,10 +95,10 @@ class ToolsTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             tools.compare_versions('1.2', '1.2.3')
-        self.assertEqual(cm.exception.message, 'Invalid version "1.2" format, only 3 digits format allowed')
+        self.assertEqual(str(cm.exception), 'Invalid version "1.2" format, only 3 digits format allowed')
         with self.assertRaises(Exception) as cm:
             tools.compare_versions('1.2.3', '1.2')
-        self.assertEqual(cm.exception.message, 'Invalid version "1.2" format, only 3 digits format allowed')
+        self.assertEqual(str(cm.exception), 'Invalid version "1.2" format, only 3 digits format allowed')
 
     def test_split_path(self):
         path = tools.full_split_path('/a/path/to/hell/')

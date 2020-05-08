@@ -12,7 +12,8 @@ import logging
 import time
 from unittest.mock import Mock, patch
 import zipfile
-import StringIO
+from io import BytesIO
+import io
 
 class InstallDebStatus():
     STATUS_IDLE = 0
@@ -56,28 +57,30 @@ class DownloadStatus():
 
 class InMemoryZip(object):
     """
-    source: https://stackoverflow.com/a/2463818
+    source: https://stackoverflow.com/a/2463818 (py2), https://stackoverflow.com/a/44946732 (py3)
     """
     def __init__(self):
-        self.in_memory_zip = StringIO.StringIO()
+        self.in_memory_zip = BytesIO()
 
     def append(self, filename_in_zip, file_contents):
-        '''Appends a file with name filename_in_zip and contents of 
-        file_contents to the in-memory zip.'''
-        zf = zipfile.ZipFile(self.in_memory_zip, "a", zipfile.ZIP_DEFLATED, False)
-        zf.writestr(filename_in_zip, file_contents)
-        for zfile in zf.filelist:
-            zfile.create_system = 0        
+        """
+        Appends a file with name filename_in_zip and contents of 
+        file_contents to the in-memory zip.
+        """
+        with zipfile.ZipFile(self.in_memory_zip, "a", zipfile.ZIP_DEFLATED, False) as zf:
+            zf.writestr(filename_in_zip, file_contents)
+            for zfile in zf.filelist:
+                zfile.create_system = 0
+
         return self
 
     def read(self):
         self.in_memory_zip.seek(0)
-        return self.in_memory_zip.read()
+        return self.in_memory_zip.getvalue()
 
     def write_to_file(self, filename):
-        f = file(filename, "w")
-        f.write(self.read())
-        f.close()
+        with open(filename, 'wb') as f:
+            f.write(self.read())
 
 
 class InstallRaspiotTests(unittest.TestCase):

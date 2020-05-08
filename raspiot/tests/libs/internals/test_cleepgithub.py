@@ -418,11 +418,11 @@ class CleepGithubTests(unittest.TestCase):
             pass
         with self.assertRaises(Exception) as cm:
             self.g.get_release_version(Dummy())
-        self.assertEqual(cm.exception.message, 'Invalid release format. Dict type awaited')
+        self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
         with self.assertRaises(Exception) as cm:
             self.g.get_release_version({})
-        self.assertEqual(cm.exception.message, 'Specified release has no version field')
+        self.assertEqual(str(cm.exception), 'Specified release has no version field')
 
     def test_release_version_raw_version(self):
         self._init_context(resp_data=json.dumps(GET_RELEASES))
@@ -448,7 +448,7 @@ class CleepGithubTests(unittest.TestCase):
             pass
         with self.assertRaises(Exception) as cm:
             self.g.get_release_changelog(Dummy())
-        self.assertEqual(cm.exception.message, 'Invalid release format. Dict type awaited')
+        self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
     def test_release_changelog_with_empty_changelog(self):
         self._init_context(resp_data=json.dumps(GET_RELEASES))
@@ -474,14 +474,14 @@ class CleepGithubTests(unittest.TestCase):
             pass
         with self.assertRaises(Exception) as cm:
             self.g.get_release_assets_infos(Dummy())
-        self.assertEqual(cm.exception.message, 'Invalid release format. Dict type awaited')
+        self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
         releases = deepcopy(GET_RELEASES)
         release = releases[0]
         del release['assets']
         with self.assertRaises(Exception) as cm:
             self.g.get_release_assets_infos(release)
-        self.assertEqual(cm.exception.message, 'Invalid release format')
+        self.assertEqual(str(cm.exception), 'Invalid release format')
 
     def test_is_release(self):
         self._init_context(resp_data=json.dumps(GET_RELEASES))
@@ -507,7 +507,7 @@ class CleepGithubTests(unittest.TestCase):
             pass
         with self.assertRaises(Exception) as cm:
             self.g.is_released(Dummy())
-        self.assertEqual(cm.exception.message, 'Invalid release format. Dict type awaited')
+        self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
     def test_api_rate(self):
         self._init_context(resp_data=json.dumps(GET_API_RATE))
@@ -524,13 +524,13 @@ class CleepGithubTests(unittest.TestCase):
         self._init_context(resp_data=json.dumps(GET_API_RATE_))
         with self.assertRaises(Exception) as cm:
             self.g.get_api_rate()
-        self.assertEqual(cm.exception.message, 'Unable to get api rate: Invalid data from github rate_limit request')
+        self.assertEqual(str(cm.exception), 'Unable to get api rate: Invalid data from github rate_limit request')
 
     def test_api_rate_invalid_response_status(self):
         self._init_context(resp_status=500)
         with self.assertRaises(Exception) as cm:
             self.g.get_api_rate()
-        self.assertEqual(cm.exception.message, 'Unable to get api rate: Invalid response (status=500)')
+        self.assertEqual(str(cm.exception), 'Unable to get api rate: Invalid response (status=500)')
 
 
 if __name__ == '__main__':

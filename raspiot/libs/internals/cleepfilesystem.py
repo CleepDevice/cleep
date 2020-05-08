@@ -60,9 +60,9 @@ class CleepFilesystem():
             'boot': self.__counter_boot,
         }
 
-    def __get_default_encoding(self):
+    def get_default_encoding(self):
         """
-        Return default encoding
+        Return default encoding (based on system)
         """
         return locale.getdefaultlocale()[1]
 
@@ -90,7 +90,7 @@ class CleepFilesystem():
         Returns:
             bool: True if RO configured on OS
         """
-        encoding = self.__get_default_encoding()
+        encoding = self.get_default_encoding()
         lines = []
         with io.open(u'/etc/fstab', u'r', encoding=encoding) as fd:
             lines = fd.readlines()
@@ -290,7 +290,7 @@ class CleepFilesystem():
 
         #use system encoding if not specified
         if not encoding:
-            encoding = self.__get_default_encoding()
+            encoding = self.get_default_encoding()
         self.logger.trace(u'Encoding: %s' % encoding)
 
         #check binary mode
@@ -358,8 +358,8 @@ class CleepFilesystem():
         Returns:
             bool: True if operation succeed
         """
-        if not isinstance(data, unicode):
-            raise InvalidParameter(u'Data must be unicode')
+        if not isinstance(data, str):
+            raise InvalidParameter(u'Data must be string')
 
         fp = None
         try:
@@ -372,7 +372,7 @@ class CleepFilesystem():
             self.logger.exception(u'Unable to write content to file "%s"' % path)
             self.__report_exception({
                 u'message': u'Unable to write content to file "%s"' % path,
-                u'encoding': encoding or self.__get_default_encoding(),
+                u'encoding': encoding or self.get_default_encoding(),
                 u'path': path
             })
             return False
@@ -400,7 +400,7 @@ class CleepFilesystem():
             self.logger.exception(u'Unable to get content of file "%s":' % path)
             self.__report_exception({
                 u'message': u'Unable to get content of file "%s"' % path,
-                u'encoding': encoding or self.__get_default_encoding(),
+                u'encoding': encoding or self.get_default_encoding(),
                 u'path': path
             })
             return None
@@ -428,7 +428,7 @@ class CleepFilesystem():
             self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))
             self.__report_exception({
                 u'message': u'Unable to parse file "%s" content as json' % path,
-                u'encoding' : encoding or self.__get_default_encoding(),
+                u'encoding' : encoding or self.get_default_encoding(),
                 u'path': path
             })
             lines = None
@@ -448,7 +448,7 @@ class CleepFilesystem():
             bool: True if operation succeed
         """
         #ensure_ascii as workaround for unicode encoding on python 2.X https://bugs.python.org/issue13769
-        json_data = unicode(json.dumps(data, indent=4, ensure_ascii=False))
+        json_data = str(json.dumps(data, indent=4, ensure_ascii=False))
 
         return self.write_data(path, json_data, encoding)
 

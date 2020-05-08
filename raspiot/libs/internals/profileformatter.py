@@ -21,7 +21,7 @@ class ProfileFormatter():
             event_name (string): event name compatible with formatter
             profile (RendererProfile): Renderer profile instance
         """
-        if not isinstance(event_name, str) and not isinstance(event_name, unicode):
+        if not isinstance(event_name, str):
             raise InvalidParameter(u'Invalid event_name specified')
         if not issubclass(profile.__class__, RendererProfile):
             raise InvalidParameter(u'Invalid profile specified. Instance must inherits from RendererProfile')

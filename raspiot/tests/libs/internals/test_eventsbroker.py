@@ -132,7 +132,7 @@ class EventsBrokerTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.e.configure(self.bootstrap)
-        self.assertTrue(cm.exception.message.startswith('Invalid modules path'))
+        self.assertTrue(str(cm.exception).startswith('Invalid modules path'))
 
     def test_load_events_invalid_classname(self):
         self._init_context(event_content=EVENT_CONTENT_INVALID_CLASSNAME)
@@ -158,7 +158,7 @@ class EventsBrokerTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.e.get_event_instance('dummy')
-        self.assertEqual(cm.exception.message, 'Event "dummy" does not exist')
+        self.assertEqual(str(cm.exception), 'Event "dummy" does not exist')
 
     def test_get_used_events(self):
         self._init_context()
@@ -211,7 +211,7 @@ class EventsBrokerTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.e.get_module_events('dummy')
-        self.assertEqual(cm.exception.message, 'Module name "dummy" is not referenced in raspiot')
+        self.assertEqual(str(cm.exception), 'Module name "dummy" is not referenced in raspiot')
 
 
 

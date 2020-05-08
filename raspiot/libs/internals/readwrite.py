@@ -67,7 +67,7 @@ class ReadWrite():
         Return opened files for writing for current program
         """
         cmd = u'/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
-        return [line.replace(u'\n','') for line in subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()]
+        return [line.decode('utf-8').replace(u'\n','') for line in subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()]
 
     def is_path_on_root(self, path):
         """

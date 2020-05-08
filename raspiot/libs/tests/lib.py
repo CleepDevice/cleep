@@ -74,11 +74,11 @@ class FileDescriptorMock():
         """
         import hashlib
         md5 = hashlib.md5()
-        md5.update(self.content)
+        md5.update(self.content.encode('utf-8'))
         sha1 = hashlib.sha1()
-        sha1.update(self.content)
+        sha1.update(self.content.encode('utf-8'))
         sha256 = hashlib.sha256()
-        sha256.update(self.content)
+        sha256.update(self.content.encode('utf-8'))
         return {
             'md5': md5.hexdigest(),
             'sha1': sha1.hexdigest(),
@@ -109,7 +109,7 @@ class FileDescriptorMock():
                 self.read_side_effect()
         out = self.content[self.__step:self.__step+self.range]
         self.__step += self.range
-        return None if len(out)==0 else out
+        return None if len(out)==0 else out.encode('utf-8')
 
     def close(self, *args, **kwargs):
         self.__step = 0
