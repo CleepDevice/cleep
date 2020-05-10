@@ -400,11 +400,13 @@ class RaspiotConf():
         Get rpc configuration
 
         Returns:
-            tuple: rpc host and port values
+            tuple: rpc host and port values::
+
                 (
                     host (string),
                     port (int)
                 )
+
         """
         conf = self.__open()
         self.__close()
@@ -436,11 +438,13 @@ class RaspiotConf():
         Get rpc security configuration
 
         Returns:
-            tuple: cert and key values
+            tuple: cert and key values::
+
                 (
                     cert,
                     key
                 )
+
         """
         conf = self.__open()
         self.__close()

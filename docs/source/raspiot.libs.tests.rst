@@ -1,22 +1,16 @@
-raspiot.libs.tests package
-==========================
+raspiot.libs.tests.lib module
+-----------------------------
 
-Submodules
-----------
+.. automodule:: raspiot.libs.tests.lib
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 raspiot.libs.tests.session module
 ---------------------------------
 
 .. automodule:: raspiot.libs.tests.session
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: raspiot.libs.tests
-    :members:
-    :undoc-members:
-    :show-inheritance:

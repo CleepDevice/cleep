@@ -12,11 +12,13 @@ import time
 class Config():
     """
     Helper class to read and write any configuration file.
-    Give you methods:
-     - to get file entries (regexp)
-     - to set entry
-     - to load and save file content
-     - to backup and restore configuration file
+
+    Gives you methods:
+        to get file entries (regexp)
+        to set entry
+        to load and save file content
+        to backup and restore configuration file
+
     It also ensures to read file content as unicode and it uses cleep filesystem to operate on readonly cleep distribution
     """
 
@@ -566,8 +568,8 @@ class Config():
         
     def add_lines(self, lines, end=True):
         """
-        Add new lines
-        Please note carriage return (\n) is added automatically at end of line if necessary.
+        Add new lines.
+        Please note carriage return is added automatically at end of line if necessary.
         This is necessary to preserve the line when file is loaded again.
 
         Args:
@@ -615,7 +617,7 @@ class Config():
     def add(self, content, end=True):
         """
         Add specified content at end of file
-        Please note carriage return (\n) is added automatically at end of specified content if necessary
+        Please note carriage return is added automatically at end of specified content if necessary
 
         Args:
             content (string): string to append

@@ -63,12 +63,14 @@ class Iwgetid(AdvancedConsole):
 
         Returns:
             dict: dictionnary of found wifi networks::
+
                 {
                     interface: {
                         network (string): connected network name
                     },
                     ...
                 }
+
         """
         self.__refresh()
 

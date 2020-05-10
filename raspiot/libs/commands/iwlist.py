@@ -170,6 +170,7 @@ class Iwlist(AdvancedConsole):
 
         Returns:
             dict: dictionnary of found wifi networks::
+
                 {
                     network: {
                         interface (string): interface scanned
@@ -179,7 +180,7 @@ class Iwlist(AdvancedConsole):
                     },
                     ...
                 }
-            bool: True if interface is not able to scan wifi
+
         """
         self.__refresh(interface)
 

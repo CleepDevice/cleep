@@ -21,12 +21,15 @@ __all__ = ['Install']
 class Install():
     """
     Install helper
-    This class helps you to install different kind of things:
-     - deb files using dpkg
-     - tar.gz using tar
-     - zip using unzip
-     - raspiot module install/uninstall/update (ok class name is not correct ;) )
-     - system packages install/uninst using apt-get command
+
+    This class helps you to install different kind of things::
+
+        deb files using dpkg
+        tar.gz using tar
+        zip using unzip
+        raspiot module install/uninstall/update (ok class name is not correct ;) )
+        system packages install/uninst using apt-get command
+
     """
 
     STATUS_IDLE = 0
@@ -410,6 +413,7 @@ class Install():
 
         Args:
             status (dict): module status::
+
                 {
                     module (string): module name
                     status (int): module process status
@@ -418,6 +422,7 @@ class Install():
                     updateprocess (bool): uninstall triggered by module update
                     process (list): process status
                 }
+
         """
         self.logger.debug('Install status: %s' % status)
         #save status
@@ -503,6 +508,7 @@ class Install():
 
         Args:
             status (dict): module status::
+
                 {
                     module (string): module name
                     status (int): module process status
@@ -510,6 +516,7 @@ class Install():
                     postscript (dict): {stderr, stdout, returncode}
                     updateprocess (bool): uninstall triggered by module update
                 }
+
         """
         #save status
         if status[u'status']==UninstallModule.STATUS_IDLE:
@@ -591,12 +598,14 @@ class Install():
 
         Args:
             status (dict): module status::
+
                 {
                     module (string): module name
                     status (int): module process status
                     uninstall (dict): {status, prescript, postscript}
                     install (dict): {status, prescript, postscript}
                 }
+
         """
         #save status
         if status[u'status']==UpdateModule.STATUS_IDLE:

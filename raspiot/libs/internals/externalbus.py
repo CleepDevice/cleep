@@ -60,6 +60,9 @@ class ExternalBusMessage():
     def __str__(self):
         """
         To string
+
+        Returns:
+            string: string representation of message
         """
         return '%s' % self.to_dict()
 
@@ -68,8 +71,15 @@ class ExternalBusMessage():
         Build dict with minimum class content.
         It's useful to get reduced dict when you send message through external bus
 
-        Return:
-            dict: minimum members on dict
+        Returns:
+            dict: minimum members on dict::
+                
+                {
+                    event (string): event name
+                    device_id (string): device identifier
+                    params (dict): event parameters (can be None)
+                }
+
         """
         out = self.to_dict()
         del out['to']
@@ -86,8 +96,19 @@ class ExternalBusMessage():
         """
         Build dict with class content
 
-        Return:
-            dict: members on a dict
+        Returns:
+            dict: members on a dict::
+
+                {
+                    event (string): event name
+                    device_id (string): device identifier
+                    params (dict): event parameters (can be None)
+                    to (string): message recipient
+                    peers_macs (list): list of peers mac addresses
+                    peer_hostname (string): peer hostname
+                    peer_ip (string): current peer ip
+                }
+
         """
         return {
             'event': self.event,
@@ -142,10 +163,13 @@ class ExternalBus():
         """
         Parse peer connection header
 
+        Warning:
+            Must be implemented
+
         Args:
             headers (dict): received headers from peer connection
 
-        Return:
+        Returns:
             dict: headers dict with parsed data as needed (json=>dict|list, '1'|'0'=>True|False, '666'=>int(666), ...)
         """
         raise NotImplementedError('_parse_headers is not implemented in "%s"' % self.__class__.__name__)
@@ -153,18 +177,27 @@ class ExternalBus():
     def run(self):
         """
         Run external bus process
+
+        Warning:
+            Must be implemented
         """
         raise NotImplementedError('run function is not implemented in "%s"' % self.__class__.__name__)
 
     def run_once(self):
         """
         Run external bus process once
+
+        Warning:
+            Must be implemented
         """
         raise NotImplementedError('run_once function is not implemented in "%s"' % self.__class__.__name__)
 
     def broadcast_event(self, event, params, device_id):
         """
         broadcast event message to all connected peers
+
+        Warning:
+            Must be implemented
 
         Args:
             event (string): event name
@@ -176,6 +209,9 @@ class ExternalBus():
     def send_event(self, event, params, device_id, peer_id):
         """
         Send event message to specified peer
+
+        Warning:
+            Must be implemented
 
         Args:
             event (string): event name
@@ -198,7 +234,7 @@ class ExternalBus():
         Args:
             peer_id (string): peer identifier
 
-        Return:
+        Returns:
             dict or None if peer not found
         """
         if peer_id in self.peers.keys():
@@ -223,7 +259,7 @@ class ExternalBus():
         Args:
             peer_id (string): peer identifier
 
-        Return:
+        Returns:
             dict or None if peer not found
         """
         if peer_id in self.peers.keys():

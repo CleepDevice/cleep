@@ -1,80 +1,51 @@
 raspiot package
 ===============
 
-Subpackages
------------
-
-.. toctree::
-
-    raspiot.events
-    raspiot.libs
-    raspiot.modules
-    raspiot.tests
-
-Submodules
-----------
-
 raspiot.bus module
 ------------------
 
 .. automodule:: raspiot.bus
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-raspiot.eventsFactory module
-----------------------------
+raspiot.common module
+---------------------
 
-.. automodule:: raspiot.eventsFactory
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: raspiot.common
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-raspiot.formattersFactory module
---------------------------------
+raspiot.core module
+-------------------
 
-.. automodule:: raspiot.formattersFactory
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: raspiot.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+raspiot.exception module
+------------------------
+
+.. automodule:: raspiot.exception
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 raspiot.inventory module
 ------------------------
 
 .. automodule:: raspiot.inventory
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-raspiot.raspiot module
-----------------------
-
-.. automodule:: raspiot.raspiot
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 raspiot.rpcserver module
 ------------------------
 
 .. automodule:: raspiot.rpcserver
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-raspiot.utils module
---------------------
-
-.. automodule:: raspiot.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: raspiot
-    :members:
-    :undoc-members:
-    :show-inheritance:

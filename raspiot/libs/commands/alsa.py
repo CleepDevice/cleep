@@ -178,6 +178,7 @@ class Alsa(AdvancedConsole):
 
         Returns:
             dict: dict of outputs::
+
                 {
                     cardname: {
                         cardname (string),
@@ -185,6 +186,7 @@ class Alsa(AdvancedConsole):
                         deviceid (id)
                     }
                 }
+
         """
         return self.__command(u'/usr/bin/aplay --list-devices')
 
@@ -194,6 +196,7 @@ class Alsa(AdvancedConsole):
 
         Returns:
             dict: dict of outputs::
+
                 {
                     cardname: {
                         cardname (string),
@@ -201,6 +204,7 @@ class Alsa(AdvancedConsole):
                         deviceid (id),
                     }
                 }
+
         """
         return self.__command(u'/usr/bin/arecord --list-devices')
 

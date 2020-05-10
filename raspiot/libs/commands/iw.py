@@ -34,7 +34,7 @@ class Iw(AdvancedConsole):
         """
         Return True if iw command is installed
 
-        Return:
+        Returns:
             bool: True is installed
         """
         return os.path.exists(u'/sbin/iw')
@@ -84,13 +84,17 @@ class Iw(AdvancedConsole):
         """
         Return all adapters with associated interface
 
-        Return:
-            dict: list of adapters and connected network
+        Returns:
+            dict: list of adapters and connected network::
+
                 {
                     adapter (string): {
                         interface (string): associated interface name
                         network (string): connected network
-                    }
+                    },
+                    ...
+                }
+
         """
         self.__refresh()
 

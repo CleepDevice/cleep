@@ -208,9 +208,17 @@ class CommonProcess(threading.Thread):
                 self.status_callback = None
 
     def get_status(self): # pragma: no cover
+        """
+        Get current status
+        Must be implemented
+        """
         raise NotImplementedError('_get_status method must be implemented')
 
     def run(self): # pragma: no cover
+        """
+        Run process
+        Must be implemented
+        """
         raise NotImplementedError('_get_status method must be implemented')
 
 
@@ -266,8 +274,9 @@ class UninstallModule(CommonProcess):
         """
         Return current status
 
-        Return:
+        Returns:
             dict: uninstall status::
+
                 {
                     status (int): see STATUS_XXX for available codes
                     module (string): module name
@@ -276,6 +285,7 @@ class UninstallModule(CommonProcess):
                     updateprocess (bool): uninstall triggered by module update
                     process (list): process status
                 }
+
         """
         return {
             u'module': self.module_name,
@@ -542,8 +552,9 @@ class InstallModule(CommonProcess):
         """
         Return current status
 
-        Return:
+        Returns:
             dict: install status::
+
                 {
                     module (string): module name
                     status (int): see STATUS_XXX for available codes
@@ -552,6 +563,7 @@ class InstallModule(CommonProcess):
                     updateprocess (bool): install triggered by module update
                     process (list): process status
                 }
+
         """
         return {
             u'module': self.module_name,
@@ -966,14 +978,16 @@ class UpdateModule(threading.Thread):
         """
         Return update status
 
-        Return:
-            dict: current status
+        Returns:
+            dict: current status::
+
                 {
                     status (int): see STATUS_XXX
                     uninstall (dict): dict as returned by uninstall module status
                     install (dict): dict as returned by install module status
                     module (string): module name
                 }
+
         """
         return {
             u'module': self.module_name,

@@ -95,6 +95,7 @@ class Ifconfig():
 
         Returns:
             dict: interfaces configurations::
+
                 {
                     interface1: {
                         interface (string)): interface name
@@ -108,6 +109,7 @@ class Ifconfig():
                     },
                     ...
                 }
+
         """
         self.__refresh()
 

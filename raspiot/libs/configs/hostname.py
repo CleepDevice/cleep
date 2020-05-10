@@ -31,7 +31,7 @@ class Hostname(Config):
         Args:
             hostname (string): hostname
 
-        Return:
+        Returns:
             bool: True if hostname saved successfully, False otherwise
         """
         if hostname is None or len(hostname)==0:

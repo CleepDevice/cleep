@@ -80,7 +80,7 @@ class Cmdline(Console):
         """
         Return root drive
 
-        Return:
+        Returns:
             string: root drive
         """
         self.__refresh()
@@ -90,7 +90,7 @@ class Cmdline(Console):
         """
         Return root partition
 
-        Return:
+        Returns:
             string: root partition
         """
         self.__refresh()

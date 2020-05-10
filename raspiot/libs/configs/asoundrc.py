@@ -56,14 +56,17 @@ ctl.!default {
 
         Returns:
             dict: dict of outputs::
+
                 {
                     config section: {
                         section (string),
                         type (string),
                         cardid (int),
                         deviceid (int)
-                    }
+                    },
+                    ...
                 }
+
         """
         #search for main sections
         results = self.find(r'(.*?)\s*{\s*(.*?)\s*}\s*', re.UNICODE | re.DOTALL)
@@ -125,12 +128,14 @@ ctl.!default {
 
         Returns:
             dict: current pcm configuration or None if pcm section not found::
+
                 {
                     section (string),
                     type (string),
                     cardid (int),
                     deviceid (int)
                 }
+
         """
         raw = self.get_raw_configuration()
 

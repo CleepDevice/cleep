@@ -54,12 +54,14 @@ class Wpacli(AdvancedConsole):
         Args:
             command (string): command to execute
 
-        Return:
+        Returns:
             tuple: command result::
+
                 (
                     bool: True if command succeed
                     string: command output
                 )
+
         """
         res = self.command(command)
         self.logger.debug('command result: %s' % res)
@@ -204,7 +206,7 @@ class Wpacli(AdvancedConsole):
         Args:
             network (string): network name
 
-        Return:
+        Returns:
             bool: True if network enabled, False if network is not configured
         """
         if len(self.configured_networks)==0 or self.__update_configured_networks:
@@ -234,7 +236,7 @@ class Wpacli(AdvancedConsole):
         Args:
             network (string): network name
 
-        Return:
+        Returns:
             bool: True if network disabled, False if network is not configured
         """
         if len(self.configured_networks)==0 or self.__update_configured_networks:
@@ -335,7 +337,7 @@ class Wpacli(AdvancedConsole):
         Args:
             network (string): network name
 
-        Return:
+        Returns:
             bool: True if network removed
         """
         if len(self.configured_networks)==0 or self.__update_configured_networks:
@@ -365,7 +367,7 @@ class Wpacli(AdvancedConsole):
         Args:
             network (string): network name
 
-        Return:
+        Returns:
             bool: True if network selected
         """
         if len(self.configured_networks)==0 or self.__update_configured_networks:
@@ -396,7 +398,7 @@ class Wpacli(AdvancedConsole):
             interface (string): interface name
             pause (float): pause before returning result. The pause helps to avoid empty networks list
 
-        Return:
+        Returns:
             bool: True if reconfigure succeed
         """
         #check params

@@ -19,18 +19,20 @@ from raspiot.libs.internals.crashreport import CrashReport
 from raspiot.libs.drivers.driver import Driver
 
 
-__all__ = [u'RaspIot', u'RaspIotRenderer', u'RaspIotModule']
+__all__ = [u'RaspIot', u'RaspIotRpcWrapper', u'RaspIotModule', u'RaspIotResources', u'RaspIotRenderer']
 
 
 class RaspIot(BusClient):
     """
     Base raspiot class
-    It implements :
-     - configuration helpers
-     - message bus access
-     - logger with log level configured
-     - custom crash report
-     - driver registration
+
+    It Implements:
+
+        * configuration helpers
+        * message bus access
+        * logger with log level configured
+        * custom crash report
+        * driver registration
     """
     CONFIG_DIR = u'/etc/raspiot/'
     MODULE_DEPS = []
@@ -569,11 +571,12 @@ class RaspIotRpcWrapper(RaspIot):
 
     def _wrap_request(self, route, request): # pragma: no cover
         """
-        Function called when web request from / in POST is called
+        Function called when web request from / in POST is called.
+
         By default this access point is not supported by Cleep but it can be wrapped here
 
-        Note:
-            Must be implemented!
+        Warning:
+            Must be implemented
 
         Args:
             request (bottle.request): web server bottle request content. See
@@ -593,8 +596,10 @@ class RaspIotRpcWrapper(RaspIot):
 class RaspIotModule(RaspIot):
     """
     Base raspiot class for module
+
     It implements:
-     - device helpers
+
+        * all device helpers
     """
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -624,7 +629,7 @@ class RaspIotModule(RaspIot):
         """
         Helper function to add device in module configuration file.
         This function auto inject new entry "devices" in configuration file.
-        This function appends new device in devices section and add unique id in uuid property.
+        It appends new device in devices section and add unique id in uuid property.
         It also appends 'name' property if not provided.
 
         Args:
@@ -857,7 +862,11 @@ class RaspIotResources(RaspIotModule):
     """
     Base raspiot class to handle critical resources such as audio capture and make sure
     loaded application using the same resource are not using it at the same time.
-    It implements a mechanism of acquire/release and an auto acquisition (or permanent).
+
+    It implements:
+
+        * a mechanism of acquire/release a resoure
+        * an auto resource acquisition (aka permanent)
     """
 
     # module resources:
@@ -911,8 +920,8 @@ class RaspIotResources(RaspIotModule):
         """
         Function called when resource is acquired.
 
-        Note:
-            Must be implemented!
+        Warning:
+            Must be implemented
 
         Args:
             resource_name (string): acquired resource name
@@ -928,8 +937,8 @@ class RaspIotResources(RaspIotModule):
         """
         Function called when resource is acquired by other module and needs to be released.
 
-        Note:
-            Must be implemented!
+        Warning:
+            Must be implemented
 
         Args:
             resource_name (string): acquired resource name
@@ -978,12 +987,11 @@ class RaspIotResources(RaspIotModule):
 class RaspIotRenderer(RaspIotModule):
     """
     Base raspiot class for renderer.
-    Don't forget to also implements methods from other base class (RaspIotModule)
 
-    Note:
-        It implements:
-            - automatic renderer registration
-            - render function to render received profile
+    It implements:
+
+        * automatic renderer registration
+        * render function to render received profile
     """
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -1056,8 +1064,8 @@ class RaspIotRenderer(RaspIotModule):
         """
         Use specified profile values to render them
 
-        Note:
-            Must be implemented!
+        Warning:
+            Must be implemented
 
         Raises:
             NotImplementedError: if not implemented

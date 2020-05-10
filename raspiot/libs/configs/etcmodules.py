@@ -33,6 +33,7 @@ class EtcModules(Config):
 
         Returns:
             list: entry informations (empty if nothing found)::
+
                 {
                     <found value for key>: {
                        group (string): full found string (usefull to replace)
@@ -41,6 +42,7 @@ class EtcModules(Config):
                     },
                     ...
                 }
+
         """
         entries = {}
 

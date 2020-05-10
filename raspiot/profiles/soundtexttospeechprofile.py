@@ -5,8 +5,9 @@ from raspiot.libs.internals.rendererprofile import RendererProfile
 
 class SoundTextToSpeechProfile(RendererProfile):
     """
-    Sound profile
-    TextToSpeech message
+    Sound profile.
+
+    TextToSpeech message.
     """
     def __init__(self):
         RendererProfile.__init__(self)

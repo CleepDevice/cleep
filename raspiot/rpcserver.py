@@ -3,14 +3,17 @@
 
 """
 Rpcserver based on long poll example from https://github.com/larsks/pubsub_example
+
 Rpcserver implements:
- - authentication (login, password)
- - HTTP and HTTPS support
- - file upload and download
- - poll requests
- - command requests
- - module configs requests
- - devices list requests
+
+    * authentication (login, password)
+    * HTTP and HTTPS support
+    * file upload and download
+    * poll requests
+    * command requests
+    * module configs requests
+    * devices list requests
+
 """
 
 import os

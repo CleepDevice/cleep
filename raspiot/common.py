@@ -64,10 +64,13 @@ class ExecutionStep(object):
 class MessageResponse(object):
     """
     Object that holds message response
+
     A response is composed of:
-     - an error flag: True if error, False otherwise
-     - a message: a message about request
-     - some data: data returned by the request
+
+        * an error flag: True if error, False otherwise
+        * a message: a message about request
+        * some data: data returned by the request
+
     """
     def __init__(self):
         self.error = False
@@ -92,18 +95,24 @@ class MessageResponse(object):
 class MessageRequest(object):
     """
     Object that holds message request
+
     A message request is composed of:
-     - in case of a command:
-       - a command name
-       - command parameters
-       - the command sender
-     - in case of an event:
-       - an event name
-       - event parameters
-       - core_event flag to say if event is a core event (and may not be pushed away from device)
-       - a device id
-       - a startup flag that indicates this event was sent during raspiot startup
-       - peer infos if message comes from external device
+
+        * in case of a command:
+
+            * a command name
+            * command parameters
+            * the command sender
+
+        * in case of an event:
+
+            * an event name
+            * event parameters
+            * core_event flag to say if event is a core event (and may not be pushed away from device)
+            * a device id
+            * a startup flag that indicates this event was sent during raspiot startup
+            * peer infos if message comes from external device
+
     """
     def __init__(self):
         """
@@ -144,7 +153,7 @@ class MessageRequest(object):
         """
         Return broadcast status
 
-        Return:
+        Returns:
             bool: True if the request is broadcast
         """
         return True if self.to is None else False
@@ -153,7 +162,7 @@ class MessageRequest(object):
         """
         Return True if event comes from external device
 
-        Return:
+        Returns:
             bool: True if event comes from external device
         """
         return True if self.peer_infos is not None else False

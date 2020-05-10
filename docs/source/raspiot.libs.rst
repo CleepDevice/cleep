@@ -1,22 +1,28 @@
 raspiot.libs package
 ====================
 
-Subpackages
------------
+raspiot.libs.commands
+---------------------
 
-.. toctree::
+.. toctree:: raspiot.libs.commands
 
-    raspiot.libs.commands
-    raspiot.libs.configs
-    raspiot.libs.drivers
-    raspiot.libs.externals
-    raspiot.libs.internals
-    raspiot.libs.tests
+raspiot.libs.configs
+--------------------
 
-Module contents
----------------
+.. toctree:: raspiot.libs.configs
 
-.. automodule:: raspiot.libs
-    :members:
-    :undoc-members:
-    :show-inheritance:
+raspiot.libs.drivers
+--------------------
+
+.. toctree:: raspiot.libs.drivers
+
+raspiot.libs.internals
+----------------------
+
+.. toctree:: raspiot.libs.internals
+
+raspiot.libs.tests
+------------------
+
+.. toctree:: raspiot.libs.tests
+

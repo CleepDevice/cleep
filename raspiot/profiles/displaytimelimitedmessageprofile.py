@@ -6,7 +6,8 @@ from raspiot.libs.internals.rendererprofile import RendererProfile
 class DisplayTimeLimitedMessageProfile(RendererProfile):
     """
     Display profile.
-    Handles single message with start and end range datetime
+
+    Handles single message with start and end range datetime.
     """
     def __init__(self):
         RendererProfile.__init__(self)

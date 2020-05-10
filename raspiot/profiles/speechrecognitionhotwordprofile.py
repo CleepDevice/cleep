@@ -5,8 +5,9 @@ from raspiot.libs.internals.rendererprofile import RendererProfile
 
 class SpeechRecognitionHotwordProfile(RendererProfile):
     """
-    Speechrecognition hotword profile
-    Handles hotword detected and released
+    Speechrecognition hotword profile.
+
+    Handles hotword detected and released.
     """
     def __init__(self):
         RendererProfile.__init__(self)

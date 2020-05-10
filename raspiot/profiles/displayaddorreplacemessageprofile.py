@@ -6,7 +6,8 @@ from raspiot.libs.internals.rendererprofile import RendererProfile
 class DisplayAddOrReplaceMessageProfile(RendererProfile):
     """
     Display profile.
-    Handles single message with message id to replace
+
+    Handles single message with message id to replace.
     """
     def __init__(self):
         RendererProfile.__init__(self)

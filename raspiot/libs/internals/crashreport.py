@@ -153,7 +153,7 @@ class CrashReport():
         Return infos from crash report instance
 
         Returns:
-            dict: crash report infos
+            dict: crash report infos::
 
                 {
                     libsversion (dict): libs version (lib: version),

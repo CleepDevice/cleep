@@ -94,7 +94,7 @@ class Udevadm(Console):
         Args:
             device (string): device name (for example mmcblk0)
 
-        Return:
+        Returns:
             int: device type (ATA=1, USB=2, SDCARD=3, MMC=4, UNKNOWN=0, see class constants)
         """
         self.__refresh(device)

@@ -28,7 +28,7 @@ class CleepWifiConf():
         """
         Return True if cleepwifi config file exists
 
-        Return:
+        Returns:
             bool: True if file exists
         """
         return os.path.exists(self.CONF)
@@ -37,14 +37,16 @@ class CleepWifiConf():
         """
         Return cleepwifi configuration
 
-        Return:
+        Returns:
             dict: configuration or None if error::
+
                 {
                     network (string)
                     password (string)
                     encryption (wep|wpa|wpa2|unsecured)
                     hidden (bool)
                 }
+
         """
         try:
             #only read content, no need to handle r/o filesystem
@@ -66,7 +68,7 @@ class CleepWifiConf():
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
 
-        Return:
+        Returns:
             bool: True if cleepwifi.conf deleted
         """
         return cleep_filesystem.rm(self.CONF)
@@ -74,12 +76,14 @@ class CleepWifiConf():
     def create_content(self, network, password, encryption, hidden):
         """
         Generate cleepwifi.conf file content to awaited format. Encrypt password if necessary (wpa, wpa2)
+
         Args:
             network (string): network name
             password (string): network password
             encryption (string): network encryption (wep|wpa|wpa2|unsecured)
             hidden (bool): connect to hidden network
-        Return:
+
+        Returns:
             string: cleepwifi.conf file content
         """
         if encryption not in (u'wpa', u'wpa2', u'wep', u'unsecured'):

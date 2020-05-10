@@ -55,7 +55,7 @@ class Event():
         Args:
             params (dict): event parameters
 
-        Return:
+        Returns:
             bool: True if params are valid, False otherwise
         """
         if len(self.EVENT_PARAMS)==0 and (params is None or len(params)==0):
