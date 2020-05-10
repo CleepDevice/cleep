@@ -19,5 +19,6 @@ debian/raspiot.substvars
 debian/raspiot/
 /modules/
 remote_*.log
-docs/cleep-docs.tar.gz
-
+docs/*docs.tar.gz
+docs/*docs.zip
+docs/*docs.xml
