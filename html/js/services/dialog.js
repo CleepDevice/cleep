@@ -36,5 +36,6 @@ var dialogService = function($mdDialog) {
     };
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.service('dialogService', ['$mdDialog', dialogService]);
+var Cleep = angular.module('Cleep');
+Cleep.service('dialogService', ['$mdDialog', dialogService]);
+

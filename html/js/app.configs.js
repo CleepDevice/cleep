@@ -6,12 +6,12 @@
  *  - fonts provider
  */
 
-var RaspIot = angular.module('RaspIot');
+var Cleep = angular.module('Cleep');
 
 /**
  * Routes configuration
  */
-RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.hashPrefix('!');
     $routeProvider
         .when('/dashboard', {
@@ -37,7 +37,7 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
 /**
  * Theme configuration
  */
-RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
+Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
         .primaryPalette('blue-grey')
@@ -66,7 +66,7 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
  * Font configuration
  * Disabled for now, ligatures are not supported by typicons
  */
-/*RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
+/*Cleep.config(['$mdIconProvider', function($mdIconProvider) {
     $mdIconProvider
         .iconSet('typicons', 'fonts/typicons.svg', 24)
 }]);*/
@@ -74,7 +74,7 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
 /**
  * MDI font configuration
  */
-RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
+Cleep.config(['$mdIconProvider', function($mdIconProvider) {
     $mdIconProvider.defaultIconSet('fonts/mdi.svg')
 }]);
 
@@ -82,7 +82,7 @@ RaspIot.config(['$mdIconProvider', function($mdIconProvider) {
 /**
  * Blockui configuration
  */
-RaspIot.config(['blockUIConfig', function(blockUIConfig) {
+Cleep.config(['blockUIConfig', function(blockUIConfig) {
     tmpl =  '<div class="block-ui-overlay"></div>';
     tmpl += '<div layout="column" layout-align="center center" class="block-ui-message-container">';
     tmpl += '  <md-card style="display: inline-block; text-align: left;" md-colors="::{backgroundColor: \'default-primary-100\'}">';
@@ -107,7 +107,7 @@ RaspIot.config(['blockUIConfig', function(blockUIConfig) {
 /**
  * Lazyload configuration
  */
-RaspIot.config(['$ocLazyLoadProvider', function($ocLazyLoadProvider) {
+Cleep.config(['$ocLazyLoadProvider', function($ocLazyLoadProvider) {
     $ocLazyLoadProvider.config({
        debug: false,
        events: false

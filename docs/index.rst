@@ -1,5 +1,5 @@
-Welcome to Gpios's documentation!
-=================================
+Welcome to Cleep's API documentation!
+=====================================
 
 .. toctree::
    :caption: Contents:

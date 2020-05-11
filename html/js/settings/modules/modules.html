@@ -36,55 +36,55 @@
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">{{moduleName | firstUpper}}</span>
-                        <span class="md-subhead module-desc">{{modulesCtl.raspiotService.modules[moduleName].description || 'No description'}}</span>
+                        <span class="md-subhead module-desc">{{modulesCtl.cleepService.modules[moduleName].description || 'No description'}}</span>
                     </md-card-title-text>
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-svg-icon="{{modulesCtl.raspiotService.modules[moduleName].icon || 'help-rhombus'}}" class="icon-xl" style="padding:4px;"></md-icon>
+                            <md-icon md-svg-icon="{{modulesCtl.cleepService.modules[moduleName].icon || 'help-rhombus'}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
                 </md-card-title>
 
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
-                    <md-progress-linear ng-if="modulesCtl.raspiotService.modules[moduleName].processing" md-mode="indeterminate"></md-progress-linear>
+                    <md-progress-linear ng-if="modulesCtl.cleepService.modules[moduleName].processing" md-mode="indeterminate"></md-progress-linear>
                 </md-card-content>
 
                 <md-card-actions layout="row" layout-align="end center">
 
                     <!-- open module + uninstall info -->
-                    <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].hasConfig" ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending || modulesCtl.raspiotService.modules[moduleName].processing" ng-href="{{'#!module/'+moduleName}}">
+                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].hasConfig" ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-href="{{'#!module/'+moduleName}}">
                         <md-icon md-svg-icon="open-in-app"></md-icon>
-                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].processing || modulesCtl.raspiotService.modules[moduleName].processing!=='uninstall'">Open</span>
-                        <span ng-if="modulesCtl.raspiotService.modules[moduleName].processing==='uninstall'">Uninstalling</span>
+                        <span ng-if="!modulesCtl.cleepService.modules[moduleName].processing || modulesCtl.cleepService.modules[moduleName].processing!=='uninstall'">Open</span>
+                        <span ng-if="modulesCtl.cleepService.modules[moduleName].processing==='uninstall'">Uninstalling</span>
                     </md-button>
 
                     <!-- update button -->
-                    <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].updatable.length>0" ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending || modulesCtl.raspiotService.modules[moduleName].processing" ng-click="modulesCtl.showUpdateDialog(modulesCtl.raspiotService.modules[moduleName])" class="md-accent">
+                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].updatable.length>0" ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-click="modulesCtl.showUpdateDialog(modulesCtl.cleepService.modules[moduleName])" class="md-accent">
                         <md-icon md-svg-icon="update"></md-icon>
-                        <span ng-if="!modulesCtl.raspiotService.modules[moduleName].processing">Update</span>
-                        <span ng-if="modulesCtl.raspiotService.modules[moduleName].processing==='update'">Updating</span>
+                        <span ng-if="!modulesCtl.cleepService.modules[moduleName].processing">Update</span>
+                        <span ng-if="modulesCtl.cleepService.modules[moduleName].processing==='update'">Updating</span>
                     </md-button>
 
                     <!-- restart -->
-                    <md-button ng-if="modulesCtl.raspiotService.modules[moduleName].pending && !modulesCtl.raspiotService.modules[moduleName].processing" ng-disabled="true">
+                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].pending && !modulesCtl.cleepService.modules[moduleName].processing" ng-disabled="true">
                         <md-icon md-svg-icon="restart"></md-icon>
                         <span>Please restart</span>
                     </md-button>
 
                     <!-- logs -->
-                    <md-button ng-if="modulesCtl.raspiotService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="modulesCtl.showLogsDialog(moduleName)">
+                    <md-button ng-if="modulesCtl.cleepService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="modulesCtl.showLogsDialog(moduleName)">
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Uninstall logs</span>
                     </md-button>
 
                     <!-- module not started-->
-                    <md-button ng-if="!modulesCtl.raspiotService.modules[moduleName].started && !modulesCtl.raspiotService.modules['system'].config.lastmodulesprocessing[moduleName]" ng-click="modulesCtl.showNotStartedDialog(modulesCtl.raspiotService.modules[moduleName])" class="md-accent">
+                    <md-button ng-if="!modulesCtl.cleepService.modules[moduleName].started && !modulesCtl.cleepService.modules['system'].config.lastmodulesprocessing[moduleName]" ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[moduleName])" class="md-accent">
                         <md-icon md-svg-icon="alert-circle"></md-icon>
                         <span>Not started</span>
                     </md-button>
 
                     <!-- uninstall module -->
-                    <md-button ng-disabled="modulesCtl.raspiotService.modules[moduleName].pending || modulesCtl.raspiotService.modules[moduleName].processing" ng-if="!modulesCtl.raspiotService.modules[moduleName].core" ng-click="modulesCtl.uninstall(moduleName)">
+                    <md-button ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-if="!modulesCtl.cleepService.modules[moduleName].core" ng-click="modulesCtl.uninstall(moduleName)">
                         <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
 

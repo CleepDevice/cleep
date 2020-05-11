@@ -2,11 +2,11 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, raspiotService, $window, toast, confirm, $mdDialog, $sce) {
+var modulesDirective = function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
-        self.raspiotService = raspiotService;
+        self.cleepService = cleepService;
         self.modules = [];
         self.search = '';
         self.moduleToUpdate = null;
@@ -38,10 +38,10 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
             confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
                     //lock button asap
-                    raspiotService.modules[module].processing = 'uninstall';
+                    cleepService.modules[module].processing = 'uninstall';
 
                     //uninstall module
-                    return raspiotService.uninstallModule(module);
+                    return cleepService.uninstallModule(module);
                 }, function() {});
         };
 
@@ -51,13 +51,13 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.forceUninstall = function(module)
         {
             //lock button
-            raspiotService.modules[module].processing = 'uninstall';
+            cleepService.modules[module].processing = 'uninstall';
 
             //close dialog
             self.closeDialog();
 
             //uninstall module
-            return raspiotService.forceUninstallModule(module);
+            return cleepService.forceUninstallModule(module);
         };
 
         /**
@@ -66,13 +66,13 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         self.update = function(module)
         {
             //lock button asap
-            raspiotService.modules[module].processing = 'update';
+            cleepService.modules[module].processing = 'update';
 
             //close dialog
             self.closeDialog();
 
             //update module
-            raspiotService.updateModule(module);
+            cleepService.updateModule(module);
         };
 
         /**
@@ -82,10 +82,10 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
         {
             //fill modules name
             var modulesName = [];
-            for( var moduleName in raspiotService.modules )
+            for( var moduleName in cleepService.modules )
             {
                 //keep only installed modules
-                if( raspiotService.modules[moduleName].installed && !raspiotService.modules[moduleName].library )
+                if( cleepService.modules[moduleName].installed && !cleepService.modules[moduleName].library )
                 {
                     modulesName.push(moduleName);
                 }
@@ -107,7 +107,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         $scope.$watchCollection(
             function() {
-                return raspiotService.modules;
+                return cleepService.modules;
             },
             function(newValue, oldValue) {
                 self.init();
@@ -164,7 +164,7 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
          */
         self.showLogsDialog = function(moduleName, ev) {
             //get last module processing
-            raspiotService.getLastModuleProcessing(moduleName)
+            cleepService.getLastModuleProcessing(moduleName)
                 .then(function(resp) {
                     //prepare dialog object
                     self.moduleLogs = { 
@@ -205,6 +205,6 @@ var modulesDirective = function($rootScope, raspiotService, $window, toast, conf
     };
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modulesDirective', ['$rootScope', 'raspiotService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', modulesDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', modulesDirective]);
 

@@ -2,11 +2,11 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
+var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
 
     var installController = ['$rootScope', '$scope','$element', function($rootScope, $scope, $element) {
         var self = this;
-        self.raspiotService = raspiotService;
+        self.cleepService = cleepService;
         self.search = '';
         self.country = null;
         self.countryAlpha = null;
@@ -29,16 +29,16 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
         self.install = function(module)
         {
             //lock button asap
-            raspiotService.installableModules[module].processing = true;
+            cleepService.installableModules[module].processing = true;
 
             //close modal
             self.closeDialog();
 
             //trigger install
-            raspiotService.installModule(module)
+            cleepService.installModule(module)
                 .catch(function(error) {
                     //toast should be already displayed, just cancel install
-                    raspiotService.installableModules[module].processing = false;
+                    cleepService.installableModules[module].processing = false;
                 });
         };
 
@@ -49,10 +49,10 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
         {
             //update list of modules name
             var modulesName = [];
-            for( moduleName in raspiotService.installableModules )
+            for( moduleName in cleepService.installableModules )
             {
                 //fix module country alpha code
-                var countryAlpha = raspiotService.installableModules[moduleName].country;
+                var countryAlpha = cleepService.installableModules[moduleName].country;
                 if( countryAlpha===null || countryAlpha===undefined )
                 {
                     countryAlpha = "";
@@ -60,8 +60,8 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
 
                 //append module name if necessary
                 if(
-                    (!raspiotService.installableModules[moduleName].installed || (raspiotService.installableModules[moduleName].installed && raspiotService.installableModules[moduleName].library)) &&
-                    (countryAlpha.length===0 || countryAlpha==raspiotService.installableModules.parameters.config.country.alpha2)
+                    (!cleepService.installableModules[moduleName].installed || (cleepService.installableModules[moduleName].installed && cleepService.installableModules[moduleName].library)) &&
+                    (countryAlpha.length===0 || countryAlpha==cleepService.installableModules.parameters.config.country.alpha2)
                 )
                 {
                     modulesName.push(moduleName);
@@ -104,7 +104,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
          */
         self.showLogsDialog = function(moduleName, ev) {
             //get last module processing
-            raspiotService.getLastModuleProcessing(moduleName)
+            cleepService.getLastModuleProcessing(moduleName)
                 .then(function(resp) {
                     //prepare dialog object
                     self.moduleLogs = {
@@ -135,7 +135,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
          */
         $scope.$watchCollection(
             function() {
-                return raspiotService.installableModules;
+                return cleepService.installableModules;
             },
             function(newValue, oldValue) {
                 if( newValue ) {
@@ -149,7 +149,7 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
     var installLink = function(scope, element, attrs, controller) {
         //get installable modules. Once loaded, watchCollection above will trigger
         //init() function of this controller
-        raspiotService.getInstallableModules();
+        cleepService.getInstallableModules();
     };
 
     return {
@@ -161,6 +161,6 @@ var installDirective = function($q, raspiotService, toast, $mdDialog, $sce) {
     };
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('installDirective', ['$q', 'raspiotService', 'toastService', '$mdDialog', '$sce', installDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('installDirective', ['$q', 'cleepService', 'toastService', '$mdDialog', '$sce', installDirective]);
 

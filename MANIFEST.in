@@ -1,6 +1,6 @@
 include *.md
-recursive-include raspiot *.py
-prune raspiot/tests
+recursive-include cleep *.py
+prune cleep/tests
 recursive-include html *.*
-include bin/raspiot
+include bin/cleep
 

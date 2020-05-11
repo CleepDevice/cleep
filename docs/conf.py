@@ -21,8 +21,8 @@ exclude_patterns = [
     'Thumbs.db',
     '.DS_Store',
     '**/*.pyc',
-    'raspiot/tests/**',
-    'raspiot/modules/**',
+    'cleep/tests/**',
+    'cleep/modules/**',
 ]
 add_module_names = False
 pygments_style = 'sphinx'

@@ -2,7 +2,7 @@
  * Page directive
  * Handle module extra pages
  */
-var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
+var pageDirective = function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
 
     var pageController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -152,7 +152,7 @@ var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParam
             var files;
 
             //load module description
-            raspiotService.getModuleDescription(module)
+            cleepService.getModuleDescription(module)
                 .then(function(desc) {
                     files = self.__getPageFilesToLoad(desc, module, page);
                     if( files===null ) {
@@ -204,6 +204,6 @@ var pageDirective = function($q, raspiotService, $compile, $timeout, $routeParam
     };
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('pageDirective', ['$q', 'raspiotService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', pageDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('pageDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', pageDirective]);
 

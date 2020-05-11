@@ -4,13 +4,13 @@
  */
 var dashboardDirective = function() {
 
-    var dashboardController = function($scope, raspiotService) {
+    var dashboardController = function($scope, cleepService) {
         var self = this;
         self.loading = true;
-        self.devices = raspiotService.devices;
+        self.devices = cleepService.devices;
 
         //only used to know when initial loading is terminated
-        raspiotService.getModuleConfig('system')
+        cleepService.getModuleConfig('system')
             .then(function() {
                 self.loading = false;
             });
@@ -20,7 +20,7 @@ var dashboardDirective = function() {
         templateUrl: 'js/dashboard/dashboard.html',
         replace: true,
         scope: true,
-        controller: ['$scope', 'raspiotService', dashboardController],
+        controller: ['$scope', 'cleepService', dashboardController],
         controllerAs: 'dashboardCtl'
     };
 };
@@ -47,7 +47,7 @@ var dashboardWidget = function($compile) {
     }
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('dashboardDirective', [dashboardDirective]);
-RaspIot.directive('dashboardwidget', ['$compile', dashboardWidget]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('dashboardDirective', [dashboardDirective]);
+Cleep.directive('dashboardwidget', ['$compile', dashboardWidget]);
 

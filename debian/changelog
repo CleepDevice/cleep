@@ -1,4 +1,4 @@
-raspiot (0.0.21) unreleased; urgency=low
+cleep (0.0.21) unreleased; urgency=low
 
   * Rename raspiot to cleep
   * Add unittests for major core files (89% coverage)
@@ -8,7 +8,7 @@ raspiot (0.0.21) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 3 may 2020 23:00:00 +0000
 
-raspiot (0.0.20) unreleased; urgency=low
+cleep (0.0.20) unreleased; urgency=low
 
   * Migrate raven lib to sentry-sdk lib (raven is deprecated)
   * Fix issue during module update
@@ -16,7 +16,7 @@ raspiot (0.0.20) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Mon, 8 oct 2019 19:00:00 +0000
 
-raspiot (0.0.19) unreleased; urgency=low
+cleep (0.0.19) unreleased; urgency=low
 
   * Update modules.json url
   * Remove obsolete files (exported in other applications)
@@ -45,14 +45,14 @@ raspiot (0.0.19) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Mon, 27 sep 2019 19:00:00 +0000
 
-raspiot (0.0.18) unreleased; urgency=low
+cleep (0.0.18) unreleased; urgency=low
 
   * Improve module install/uninstall/update process
   * Remove some gpios stuff to gpios module (gpiosPin component)
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Mon, 25 feb 2019 19:00:00 +0000
 
-raspiot (0.0.17) unreleased; urgency=low
+cleep (0.0.17) unreleased; urgency=low
 
   * Update and improve CleepOS update
   * Move network frontend component to Network module
@@ -60,7 +60,7 @@ raspiot (0.0.17) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sat, 20 oct 2018 12:00:00 +0000
 
-raspiot (0.0.16) unreleased; urgency=low
+cleep (0.0.16) unreleased; urgency=low
 
   * Wpasupplicant lib: always add country code in wpasupplicant conf files
   * InstallModule lib: fix module update
@@ -69,7 +69,7 @@ raspiot (0.0.16) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Tue, 16 oct 2018 19:00:00 +0000
 
-raspiot (0.0.15) unreleased; urgency=low
+cleep (0.0.15) unreleased; urgency=low
 
   * Fix blocking issue in module install lib
   * Improve module uninstall
@@ -81,7 +81,7 @@ raspiot (0.0.15) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 14 oct 2018 23:00:00 +0000
 
-raspiot (0.0.14) unreleased; urgency=low
+cleep (0.0.14) unreleased; urgency=low
 
   * Move specific events and formatters from core sources
   * Fix some issues during install/uninstall app process
@@ -89,7 +89,7 @@ raspiot (0.0.14) unreleased; urgency=low
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 07 oct 2018 23:00:00 +0000
 
-raspiot (0.0.13) UNRELEASED; urgency=low
+cleep (0.0.13) UNRELEASED; urgency=low
 
   * Remove completely all modules. Now they are external parts even system
   modules
@@ -99,7 +99,7 @@ raspiot (0.0.13) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Tue, 25 Sep 2018 22:30:00 +0000
 
-raspiot (0.0.12) UNRELEASED; urgency=low
+cleep (0.0.12) UNRELEASED; urgency=low
 
   * Fix bugs in network, system modules
   * Fix bugs and improve in raspiot install
@@ -109,7 +109,7 @@ raspiot (0.0.12) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Tue, 31 Jul 2018 16:40:00 +0000
 
-raspiot (0.0.11) UNRELEASED; urgency=low
+cleep (0.0.11) UNRELEASED; urgency=low
 
   * Add parameters module to handle generic device configuration (timezone,
   hostname)
@@ -131,7 +131,7 @@ raspiot (0.0.11) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Fri, 27 Jul 2018 14:30:00 +0000
 
-raspiot (0.0.10) UNRELEASED; urgency=low
+cleep (0.0.10) UNRELEASED; urgency=low
 
   * Improve renderers: add way to configure handled events
   * Add developper module
@@ -146,7 +146,7 @@ raspiot (0.0.10) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Fri, 08 Dec 2017 23:00:00 +0000
 
-raspiot (0.0.9) UNRELEASED; urgency=low
+cleep (0.0.9) UNRELEASED; urgency=low
 
   * Implement external bus for communication between all cleep devices. It
   also allows CleepDesktop to detect Cleep devices connected (This replace
@@ -163,7 +163,7 @@ raspiot (0.0.9) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Thu, 30 Oct 2017 16:00:00 +0000
 
-raspiot (0.0.8) UNRELEASED; urgency=low
+cleep (0.0.8) UNRELEASED; urgency=low
 
   * Update messageboard module to fit new ui style
   * Smart connect between service modules and provider modules: concept of
@@ -177,7 +177,7 @@ raspiot (0.0.8) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
 
-raspiot (0.0.7) UNRELEASED; urgency=low
+cleep (0.0.7) UNRELEASED; urgency=low
 
   * New push module: pushover
   * New sms modules: bulksms, freemobilesms
@@ -189,7 +189,7 @@ raspiot (0.0.7) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 23 May 2017 18:00:00 +0100
 
-raspiot (0.0.6) UNRELEASED; urgency=low
+cleep (0.0.6) UNRELEASED; urgency=low
 
   * Major improvements (device handling, inventory, rpc, core)
   * New database module
@@ -202,7 +202,7 @@ raspiot (0.0.6) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Wed, 19 Apr 2017 18:00:00 +0100
 
-raspiot (0.0.5) UNRELEASED; urgency=low
+cleep (0.0.5) UNRELEASED; urgency=low
 
   * Migration to angular material completed
   * Fix bug in bus when raspi restarts after power cut
@@ -211,14 +211,14 @@ raspiot (0.0.5) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 01 Mar 2017 12:00:00 +0100
 
-raspiot (0.0.4) UNRELEASED; urgency=low
+cleep (0.0.4) UNRELEASED; urgency=low
 
   * Fix bug in authentication in rpcserver
   * Fix bug in gpios that prevent raspiot from stopping
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 01 Mar 2017 12:00:00 +0100
 
-raspiot (0.0.3) UNRELEASED; urgency=low
+cleep (0.0.3) UNRELEASED; urgency=low
 
   * Improve HT1632C reliability
   * Migrate web ui from bootstrap to material
@@ -235,7 +235,7 @@ raspiot (0.0.3) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 27 Feb 2017 12:00:00 +0100
 
-raspiot (0.0.2) UNRELEASED; urgency=low
+cleep (0.0.2) UNRELEASED; urgency=low
 
   * New release including HT1632C, scheduler modules
   * Add auth in rpcserver module
@@ -243,7 +243,7 @@ raspiot (0.0.2) UNRELEASED; urgency=low
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 03 Dec 2016 08:33:24 +0100
 
-raspiot (0.0.1) UNRELEASED; urgency=low
+cleep (0.0.1) UNRELEASED; urgency=low
 
   * Initial release. (Closes: #XXXXXX)
 

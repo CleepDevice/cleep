@@ -63,6 +63,6 @@ var fabButtonDirective = function($rootScope) {
 
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('fabButton', ['$rootScope', fabButtonDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('fabButton', ['$rootScope', fabButtonDirective]);
 

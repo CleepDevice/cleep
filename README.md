@@ -1,4 +1,4 @@
-RaspIot: Transform your raspberry pi in IoT device
+Cleep: Transform your raspberry pi in IoT device
 ==================================================
 
 Meaning of IoT:
@@ -10,9 +10,8 @@ Installation
 ------------
 
 Download the .deb file
-Install package with command: dpkg -i raspiot.deb
+Install package with command: apt install ./cleep.deb
 
 Licence
 -------
 
-coucou

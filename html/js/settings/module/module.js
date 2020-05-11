@@ -2,7 +2,7 @@
  * Configuration directive
  * Handle all module configuration
  */
-var moduleDirective = function($q, raspiotService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
+var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
 
     var moduleController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -123,7 +123,7 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
             var files;
 
             //load module description
-            raspiotService.getModuleDescription(module)
+            cleepService.getModuleDescription(module)
                 .then(function(desc) {
                     files = self.__getConfigFilesToLoad(desc, module);
 
@@ -154,10 +154,10 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
                     $element.append(directive);
 
                     //save module urls
-                    self.moduleUrls = raspiotService.modules[module].urls;
+                    self.moduleUrls = cleepService.modules[module].urls;
 
                     //save module version
-                    self.version = raspiotService.modules[module].version;
+                    self.version = cleepService.modules[module].version;
 
                 }, function(err) {
                     self.error = true;
@@ -181,6 +181,6 @@ var moduleDirective = function($q, raspiotService, $compile, $timeout, $routePar
     };
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('moduleDirective', ['$q', 'raspiotService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', moduleDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', moduleDirective]);
 

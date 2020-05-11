@@ -2,7 +2,7 @@
 **/*.tmp
 **/*.pyc
 *.pyc
-raspiot/test.py
+cleep/test.py
 node_modules/
 docs/_build
 dist/
@@ -12,11 +12,11 @@ dist/
 build/
 debian/debhelper-build-stamp
 debian/files
-debian/raspiot.debhelper.log
-debian/raspiot.postinst.debhelper
-debian/raspiot.prerm.debhelper
-debian/raspiot.substvars
-debian/raspiot/
+debian/cleep.debhelper.log
+debian/cleep.postinst.debhelper
+debian/cleep.prerm.debhelper
+debian/cleep.substvars
+debian/cleep/
 /modules/
 remote_*.log
 docs/*docs.tar.gz

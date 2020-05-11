@@ -408,6 +408,6 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     };
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.service('rpcService', ['$http', '$q', 'toastService', '$base64', '$httpParamSerializer', '$window', rpcService]);
+var Cleep = angular.module('Cleep');
+Cleep.service('rpcService', ['$http', '$q', 'toastService', '$base64', '$httpParamSerializer', '$window', rpcService]);
 

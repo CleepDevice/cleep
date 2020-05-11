@@ -6,10 +6,10 @@ set -e
 
 case "$1" in
     remove)
-        #disable CleepOS from startup
-        /etc/raspiot/raspiothelper.sh disable
-        #stop CleepOS
-        /etc/raspiot/raspiothelper.sh stop
+        #disable Cleep from startup
+        /etc/cleep/cleephelper.sh disable
+        #stop Cleep
+        /etc/cleep/cleephelper.sh stop
         ;; 
 
     upgrade)

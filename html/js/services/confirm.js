@@ -43,6 +43,6 @@ var confirmService = function($mdDialog) {
     };
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.service('confirmService', ['$mdDialog', confirmService]);
+var Cleep = angular.module('Cleep');
+Cleep.service('confirmService', ['$mdDialog', confirmService]);
 

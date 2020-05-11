@@ -8,7 +8,7 @@
  * selected-renderers (array<string>): list of selected renderers (input and output parameter)
  * allowed-renderer-types (array <string>): list of allowed renderers
  */
-var renderersSelectorDirective = function($q, $rootScope, raspiotService) {
+var renderersSelectorDirective = function($q, $rootScope, cleepService) {
 
     var renderersSelectorController = ['$scope', function($scope) {
         var self = this;
@@ -26,17 +26,17 @@ var renderersSelectorDirective = function($q, $rootScope, raspiotService) {
             //prepare renderers list splitting type.subtype
             var renderers = [];
             var groups = [];
-            for( var group in raspiotService.renderers )
+            for( var group in cleepService.renderers )
             {
                 if( self.allowedRendererTypes.indexOf(group)>=0 )
                 {
                     groups.push(group);
-                    for( var i=0; i<raspiotService.renderers[group].length; i++ )
+                    for( var i=0; i<cleepService.renderers[group].length; i++ )
                     {
                         renderers.push({
                             group: group,
-                            label: raspiotService.renderers[group][i],
-                            value: raspiotService.renderers[group][i]
+                            label: cleepService.renderers[group][i],
+                            value: cleepService.renderers[group][i]
                         });
                     }
                 }
@@ -72,7 +72,7 @@ var renderersSelectorDirective = function($q, $rootScope, raspiotService) {
          */
         $scope.$watchCollection(
             function() {
-                return raspiotService.renderers;
+                return cleepService.renderers;
             },
             function(newValue, oldValue) {
                 self.init();
@@ -103,6 +103,6 @@ var renderersSelectorDirective = function($q, $rootScope, raspiotService) {
 
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('renderersSelector', ['$q', '$rootScope', 'raspiotService', renderersSelectorDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('renderersSelector', ['$q', '$rootScope', 'cleepService', renderersSelectorDirective]);
 

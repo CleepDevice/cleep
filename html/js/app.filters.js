@@ -2,13 +2,13 @@
  * Application filters definitions
  */
 
-var RaspIot = angular.module('RaspIot');
+var Cleep = angular.module('Cleep');
 
 /**
  * Capitalize filter
  * @source http://stackoverflow.com/a/30207330
  */
-RaspIot.filter('capitalize', function() {
+Cleep.filter('capitalize', function() {
     return function(str) {
         return (!!str) ? str.charAt(0).toUpperCase() + str.substr(1).toLowerCase() : '';
     };
@@ -17,7 +17,7 @@ RaspIot.filter('capitalize', function() {
 /**
  * Service name filter
  */
-RaspIot.filter('serviceName', function() {
+Cleep.filter('serviceName', function() {
     return function(str) {
         var tmp = str.replace('Service','');
         return (!!tmp) ? tmp.charAt(0).toUpperCase() + tmp.substr(1).toLowerCase() : '';
@@ -27,7 +27,7 @@ RaspIot.filter('serviceName', function() {
 /**
  * Device type filter
  */
-RaspIot.filter('deviceType', function($filter) {
+Cleep.filter('deviceType', function($filter) {
     return function(devices, type) {
         if( type ) {
             return $filter("filter")(devices, function(device) {
@@ -40,7 +40,7 @@ RaspIot.filter('deviceType', function($filter) {
 /**
  * Device service filter
  */
-RaspIot.filter('filterDeviceByModule', function($filter) {
+Cleep.filter('filterDeviceByModule', function($filter) {
     return function(devices, module) {
         if( module ) {
             return $filter("filter")(devices, function(device) {
@@ -53,7 +53,7 @@ RaspIot.filter('filterDeviceByModule', function($filter) {
 /**
  * Timestamp to human readable string
  */
-RaspIot.filter('hrDatetime', function($filter) {
+Cleep.filter('hrDatetime', function($filter) {
     return function(ts, shortYear) {
         if( angular.isUndefined(ts) || !ts )
         {
@@ -76,7 +76,7 @@ RaspIot.filter('hrDatetime', function($filter) {
 /**
  * Time to human readable string
  */
-RaspIot.filter('hrTime', function($filter) {
+Cleep.filter('hrTime', function($filter) {
     return function(ts, withSeconds) {
         if( angular.isUndefined(ts) || !ts )
         {
@@ -96,7 +96,7 @@ RaspIot.filter('hrTime', function($filter) {
 /**
  * Timestamp in milliseconds to human readable string
  */
-RaspIot.filter('hrMilliseconds', function($filter) {
+Cleep.filter('hrMilliseconds', function($filter) {
     return function(ts) {
         if( angular.isUndefined(ts) || !ts )
         {
@@ -112,7 +112,7 @@ RaspIot.filter('hrMilliseconds', function($filter) {
 /**
  * Temperature to string (with unit)
  */
-RaspIot.filter('temperature', function($filter) {
+Cleep.filter('temperature', function($filter) {
     return function(temperature, unit) {
         result = '';
 
@@ -137,7 +137,7 @@ RaspIot.filter('temperature', function($filter) {
 /**
  * Return graph dialog title
  */
-RaspIot.filter('graphDialogTitle', function($filter) {
+Cleep.filter('graphDialogTitle', function($filter) {
     return function(device) {
         if( angular.isUndefined(device) || device===null )
             return 'Sensor graph';
@@ -150,7 +150,7 @@ RaspIot.filter('graphDialogTitle', function($filter) {
 /**
  * Return string lowered with first char in upper case
  */
-RaspIot.filter('firstUpper', function($filter) {
+Cleep.filter('firstUpper', function($filter) {
     return function(string) {
         if( angular.isUndefined(string) || string===null )
             return '';
@@ -162,7 +162,7 @@ RaspIot.filter('firstUpper', function($filter) {
 /**
  * order specified object by member key
  */
-RaspIot.filter('orderObjByKey', function() {
+Cleep.filter('orderObjByKey', function() {
     return function(items, field, reverse) {
         var filtered = Object.keys(items).sort().reduce(function(a,v) {a[v] = items[v]; return a;}, {});
 

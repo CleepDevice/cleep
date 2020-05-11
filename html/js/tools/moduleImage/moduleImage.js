@@ -48,6 +48,6 @@ var moduleImageDirective = function($location) {
 
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('modImgSrc', ['$location', moduleImageDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('modImgSrc', ['$location', moduleImageDirective]);
 

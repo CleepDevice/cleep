@@ -43,10 +43,10 @@ for CLEEPMOD in "${CLEEPMODS[@]}"; do
     #install module
     /usr/bin/unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
     checkResult $? 0
-    cp -a /tmp/cleepmod/backend/* /usr/lib/python2.7/dist-packages/raspiot/
+    cp -a /tmp/cleepmod/backend/* /usr/lib/python2.7/dist-packages/cleep/
     checkResult $? 0
     if [ -d "/tmp/cleepmod/frontend/" ]; then
-        cp -a /tmp/cleepmod/frontend/* /opt/raspiot/html/
+        cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
         checkResult $? 0
     fi
     rm -rf /tmp/cleepmod

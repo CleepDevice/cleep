@@ -1,17 +1,17 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-export PYBUILD_NAME=raspiot
+export PYBUILD_NAME=cleep
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
 clean:
-	-rm -rf debian/raspiot
+	-rm -rf debian/cleep
 	-rm -f debian/debhelper-build-stamp
 	-rm -f debian/files
-	-rm -f debian/raspiot.debhelper.log
-	-rm -f debian/raspiot.postinst.debhelper
-	-rm -f debian/raspiot.prerm.debhelper
-	-rm -f debian/raspiot.substvars
+	-rm -f debian/cleep.debhelper.log
+	-rm -f debian/cleep.postinst.debhelper
+	-rm -f debian/cleep.prerm.debhelper
+	-rm -f debian/cleep.substvars
 

@@ -36,6 +36,6 @@ var appToolbarDirective = function(appToolbarService) {
 
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('appToolbar', ['appToolbarService', appToolbarDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('appToolbar', ['appToolbarService', appToolbarDirective]);
 

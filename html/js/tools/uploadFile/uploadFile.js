@@ -96,6 +96,6 @@ var uploadFileDirective = function(rpcService) {
     };
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('uploadFile', ['rpcService', uploadFileDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('uploadFile', ['rpcService', uploadFileDirective]);
 

@@ -63,6 +63,6 @@ var appToolbarService = function() {
 
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.service('appToolbarService', [appToolbarService]);
+var Cleep = angular.module('Cleep');
+Cleep.service('appToolbarService', [appToolbarService]);
 

@@ -3,7 +3,7 @@
  
 from setuptools import setup, find_packages
  
-import raspiot
+import cleep
 
 exclude = [
     "*tests*",
@@ -12,7 +12,7 @@ exclude = [
  
 setup(
     name = 'cleep',
-    version = raspiot.__version__,
+    version = cleep.__version__,
     packages = find_packages(exclude=exclude),
     author = 'Tanguy Bonneau',
     author_email = 'tanguy.bonneau+cleep@gmail.com',

@@ -46,13 +46,13 @@ var loadingBarDirective = function(loadingBarService) {
 
 };
 
-var RaspIot = angular.module('RaspIot');
-RaspIot.directive('loadingBarDirective', ['loadingBarService', loadingBarDirective]);
+var Cleep = angular.module('Cleep');
+Cleep.directive('loadingBarDirective', ['loadingBarService', loadingBarDirective]);
 
 /**
  * Loading bar service. Used to join $httpProvider and directive
  */
-RaspIot.service('loadingBarService', ['$timeout', function($timeout) {
+Cleep.service('loadingBarService', ['$timeout', function($timeout) {
     var self = this;
     self.started = false;
     self.status = 0;
@@ -154,7 +154,7 @@ RaspIot.service('loadingBarService', ['$timeout', function($timeout) {
 /**
  * Loading bar http interceptor
  */
-RaspIot.config(['$httpProvider', function($httpProvider) {
+Cleep.config(['$httpProvider', function($httpProvider) {
     $httpProvider.interceptors.push(['$q', '$cacheFactory', '$timeout', '$rootScope', '$log', 'loadingBarService',
         function($q, $cacheFactory, $timeout, $rootScope, $log, loadingBarService) {
 

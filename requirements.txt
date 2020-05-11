@@ -1,5 +1,5 @@
-#this file is maintained only for python usage
-#please also update scripts/preinst.sh script to install dependencies during raspiot installation
+# this file is maintained only for python usage
+# please also update scripts/preinst.sh script to install dependencies during Cleep installation
 future==0.17.1
 six==1.12.0
 gevent==1.4.0

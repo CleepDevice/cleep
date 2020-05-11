@@ -1,16 +1,16 @@
 /**
  * Main application
  */
-var RaspIot = angular.module(
-    'RaspIot',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'ngSanitize', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror', 'oc.lazyLoad', 'konami']
+var Cleep = angular.module(
+    'Cleep',
+    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'ngSanitize', 'base64', 'md.data.table', 'blockUI', 'ui.codemirror', 'oc.lazyLoad', 'konami']
 );
 
 /**
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, raspiotService, blockUI, toast) {
+var mainController = function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast) {
 
     var self = this;
     self.rebooting = false;
@@ -158,7 +158,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
             blockUI.start({message:'Loading data...', submessage:'Please wait', icon:null, spinner:true});
         }
 
-        return raspiotService.loadConfig()
+        return cleepService.loadConfig()
             .finally(function() {
                 //unblock ui
                 if( withBlockUi )
@@ -166,11 +166,11 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
                     blockUI.stop();
                 }
 
-                console.log('DEVICES', raspiotService.devices);
-                console.log('MODULES', raspiotService.modules);
-                console.log('RENDERERS', raspiotService.renderers);
-                console.log('EVENTS', raspiotService.events);
-                console.log('DRIVERS', raspiotService.drivers);
+                console.log('DEVICES', cleepService.devices);
+                console.log('MODULES', cleepService.modules);
+                console.log('RENDERERS', cleepService.renderers);
+                console.log('EVENTS', cleepService.events);
+                console.log('DRIVERS', cleepService.drivers);
             });
     };
 
@@ -192,7 +192,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
      */
     $scope.$watchCollection(
         function() {
-            return raspiotService.modules['parameters'];
+            return cleepService.modules['parameters'];
         },
         function(newValue) {
             if( !angular.isUndefined(newValue) )
@@ -204,5 +204,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, raspiot
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'raspiotService', 'blockUI', 'toastService', mainController]);
+Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', mainController]);
 

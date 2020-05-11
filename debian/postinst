@@ -6,8 +6,8 @@ set -e
 
 case "$1" in
     configure)
-        #enable raspiot at startup
-        /etc/raspiot/raspiothelper.sh enable
+        #enable Cleep at startup
+        /etc/cleep/cleephelper.sh enable
         ;; 
 
     abort-remove)

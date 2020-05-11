@@ -1,11 +1,11 @@
 {
-  "author": "Tanguy BONNEAU <tanguy.bonneau+raspiot@gmail.com>",
-  "name": "RaspIot",
-  "description": "RaspIot",
+  "author": "Tanguy BONNEAU <tanguy.bonneau+cleep@gmail.com>",
+  "name": "Cleep",
+  "description": "Cleep",
   "version": "0.0.5-52-g1804477",
   "repository": {
     "type": "git",
-    "url": "https://tangb@bitbucket.org/Tangb/raspiot.git"
+    "url": "https://tangb@bitbucket.org/Tangb/cleep.git"
   },
   "dependencies": {
   },

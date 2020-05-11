@@ -84,6 +84,6 @@ var toastService = function($mdToast) {
     };
 };
     
-var RaspIot = angular.module('RaspIot');
-RaspIot.service('toastService', ['$mdToast', toastService]);
+var Cleep = angular.module('Cleep');
+Cleep.service('toastService', ['$mdToast', toastService]);
 
