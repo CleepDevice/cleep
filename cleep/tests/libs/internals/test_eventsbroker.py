@@ -5,9 +5,9 @@ import os, io, shutil
 import sys, time
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from eventsbroker import EventsBroker
-from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.internals.profileformatter import ProfileFormatter
-from raspiot.libs.internals.rendererprofile import RendererProfile
+from cleep.libs.tests.lib import TestLib
+from cleep.libs.internals.profileformatter import ProfileFormatter
+from cleep.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
 from unittest.mock import Mock
@@ -24,21 +24,21 @@ class DummyFormatter(ProfileFormatter):
     def get_event_instance(self, event_name):
         return self.events_broker.get_event_instance(event_name)
 
-EVENT_CONTENT = u"""from raspiot.libs.internals.event import Event
+EVENT_CONTENT = u"""from cleep.libs.internals.event import Event
 class %(event_class)s(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
     def __init__(self, bus, formatters_broker):
         Event.__init__(self, bus, formatters_broker)
 """
-EVENT_CONTENT_INVALID_CLASSNAME = u"""from raspiot.libs.internals.event import Event
+EVENT_CONTENT_INVALID_CLASSNAME = u"""from cleep.libs.internals.event import Event
 class DummyEvent(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
     def __init__(self, bus, formatters_broker):
         Event.__init__(self, bus, formatters_broker)
 """
-EVENT_CONTENT_SYNTAX_ERROR = u"""from raspiot.libs.internals.event import Event
+EVENT_CONTENT_SYNTAX_ERROR = u"""from cleep.libs.internals.event import Event
 class %(event_class)s(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
@@ -104,7 +104,7 @@ class EventsBrokerTests(unittest.TestCase):
         # overwrite module paths
         # self.e.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
         self.e.MODULES_DIR = self.MODULES_DIR
-        self.e.PYTHON_RASPIOT_IMPORT_PATH = ''
+        self.e.PYTHON_CLEEP_IMPORT_PATH = ''
 
     def test_configure_with_event(self):
         self._init_context()
@@ -128,7 +128,7 @@ class EventsBrokerTests(unittest.TestCase):
 
     def test_invalid_modules_path(self):
         self.e.MODULES_DIR = 'dummy'
-        self.e.PYTHON_RASPIOT_IMPORT_PATH = ''
+        self.e.PYTHON_CLEEP_IMPORT_PATH = ''
 
         with self.assertRaises(Exception) as cm:
             self.e.configure(self.bootstrap)
@@ -211,10 +211,11 @@ class EventsBrokerTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.e.get_module_events('dummy')
-        self.assertEqual(str(cm.exception), 'Module name "dummy" is not referenced in raspiot')
+        self.assertEqual(str(cm.exception), 'Module name "dummy" is not referenced in Cleep')
 
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_eventsbroker.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_eventsbroker.py; coverage report -m -i
     unittest.main()
+

@@ -5,10 +5,10 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 import rpcserver
-from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.drivers.driver import Driver
-from raspiot.common import MessageRequest
-from raspiot.exception import NoMessageAvailable
+from cleep.libs.tests.lib import TestLib
+from cleep.libs.drivers.driver import Driver
+from cleep.common import MessageRequest
+from cleep.exception import NoMessageAvailable
 import unittest
 import logging
 from boddle import boddle
@@ -367,9 +367,8 @@ class RpcServerTests(unittest.TestCase):
             d = json.loads(rpcserver.drivers())
             logging.debug('Drivers: %s' % d)
             self.assertEqual(len(d), 2)
-            d1 = OrderedDict(d[0])
-            d2 = OrderedDict(d[1])
-            self.assertEqual(d1, a1)
+            self.assertTrue(d[0] in [a1, a2])
+            self.assertTrue(d[1] in [a1, a2])
 
     def test_drivers_one_driver_exception(self):
         self._init_context(get_drivers_gpio_exception=True)
@@ -660,7 +659,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertTrue(message in resp)
 
-        self.cleep_filesystem.read_data.assert_called_with('/var/log/raspiot.log', 'r')
+        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log', 'r')
 
     def test_authenticate(self):
         self._init_context()
@@ -682,6 +681,6 @@ class RpcServerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
     unittest.main()
 

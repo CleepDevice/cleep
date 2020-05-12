@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from profileformatter import ProfileFormatter
-from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.internals.rendererprofile import RendererProfile
-from raspiot.exception import InvalidParameter
+from cleep.libs.tests.lib import TestLib
+from cleep.libs.internals.rendererprofile import RendererProfile
+from cleep.exception import InvalidParameter
 import unittest
 import logging
 
@@ -50,6 +50,6 @@ class ProfileFormatterTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_profileformatter.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_profileformatter.py; coverage report -m -i
     unittest.main()
 

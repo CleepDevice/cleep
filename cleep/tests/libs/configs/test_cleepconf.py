@@ -4,11 +4,11 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from raspiotconf import RaspiotConf
-from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.libs.internals.download import Download
-from raspiot.exception import MissingParameter, InvalidParameter, CommandError
-from raspiot.libs.tests.lib import TestLib
+from cleepconf import CleepConf
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.libs.internals.download import Download
+from cleep.exception import MissingParameter, InvalidParameter, CommandError
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pprint
@@ -16,9 +16,9 @@ import io
 from unittest.mock import Mock
 from configparser import ConfigParser
 
-class RaspiotConfTests(unittest.TestCase):
+class CleepConfTests(unittest.TestCase):
 
-    FILE_NAME = 'raspiot.conf'
+    FILE_NAME = 'cleep.conf'
 
     def setUp(self):
         TestLib()
@@ -46,7 +46,7 @@ class RaspiotConfTests(unittest.TestCase):
         with open(self.FILE_NAME, 'w') as fp:
             conf.write(fp)
         
-        rc = RaspiotConf
+        rc = CleepConf
         rc.CONF = self.FILE_NAME
         self.rc = rc((self.fs))
 
@@ -171,5 +171,5 @@ class RaspiotConfTests(unittest.TestCase):
         self.assertIsInstance(self.rc.as_dict(), dict)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_raspiotconf.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepconf.py; coverage report -m -i
     unittest.main()

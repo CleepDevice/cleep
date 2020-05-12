@@ -276,7 +276,6 @@ class Download():
                     break
 
                 # save data 
-                self.logger.fatal('=====> %s %s' % (type(buf), type(content)))
                 content += buf.decode('utf-8')
 
         except:

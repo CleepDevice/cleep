@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import tools
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 import io
@@ -127,17 +127,17 @@ class ToolsTests(unittest.TestCase):
         self.assertEqual(len(path), 6)
 
     def test_is_core_lib(self):
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/dummy.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/internals/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/internals/task.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/drivers/driver.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/drivers/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/commands/alsa.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/commands/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/configs/config.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/configs/dummy.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/raspiot/libs/dummy/task.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/raspiot/libs/internals/task.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/dummy.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/internals/dummy.py'))
+        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/internals/task.py'))
+        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/drivers/driver.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/drivers/dummy.py'))
+        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/commands/alsa.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/commands/dummy.py'))
+        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/configs/config.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/configs/dummy.py'))
+        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/dummy/task.py'))
+        self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py'))
         self.assertFalse(tools.is_core_lib('libs/task.py'))
 
 class ToolsTestsLogLevelTrace(unittest.TestCase):
@@ -162,6 +162,6 @@ class ToolsTestsLogLevelTrace(unittest.TestCase):
             self.fail('logging.TRACE not installed')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_tools.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_tools.py; coverage report -m -i
     unittest.main()
 

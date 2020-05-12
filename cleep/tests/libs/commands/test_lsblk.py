@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from lsblk import Lsblk
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 import time
@@ -94,5 +94,5 @@ class LsblkTests(unittest.TestCase):
         self.assertLess(with_cache_duration, without_cache_duration, 'Cache seems to not be used')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_lsblk.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_lsblk.py; coverage report -m -i
     unittest.main()

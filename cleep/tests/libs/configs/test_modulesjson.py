@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from modulesjson import ModulesJson
-from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.exception import MissingParameter, InvalidParameter, CommandError
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.exception import MissingParameter, InvalidParameter, CommandError
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pprint

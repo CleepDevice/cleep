@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from hostname import Hostname
-from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.exception import MissingParameter, InvalidParameter, CommandError
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.exception import MissingParameter, InvalidParameter, CommandError
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pprint
@@ -66,5 +66,5 @@ class HostnameTests(unittest.TestCase):
         self.assertFalse(self.h.set_hostname('helloworld'))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_hostname.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_hostname.py; coverage report -m -i
     unittest.main()

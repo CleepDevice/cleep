@@ -156,10 +156,12 @@ class ReadWrite():
             bool: True if write enabled, False otherwise
         """
         if not self.__is_cleep_iso():
+            self.logger.trace(u'Not running on cleep iso')
             return False
 
         #execute command
         res = self.console.command(u'/bin/mount -o remount,rw %s' % partition, timeout=10.0)
+        self.logger.trace('Res: %s' % res)
 
         #check errors
         if res[u'error'] or res[u'killed']:

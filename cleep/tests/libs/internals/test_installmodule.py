@@ -5,10 +5,10 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from installmodule import InstallModule, UninstallModule, UpdateModule, Download, Context, PATH_FRONTEND
-import raspiot.libs.internals.download
-from raspiot.libs.internals.installdeb import InstallDeb
-from raspiot.libs.tests.lib import TestLib
-from raspiot.exception import MissingParameter, InvalidParameter
+import cleep.libs.internals.download
+from cleep.libs.internals.installdeb import InstallDeb
+from cleep.libs.tests.lib import TestLib
+from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 import time
@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch, MagicMock
 import subprocess
 import tempfile
 from threading import Timer
-from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 import shutil
 
 class UninstallModuleTests(unittest.TestCase):
@@ -48,7 +48,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.callback = Mock(side_effect=callback_side_effect)
 
         self.u = UninstallModule(module_name, module_infos, update_process, force_uninstall, self.callback, self.cleep_filesystem, self.crash_report)
-        self.u.raspiot_path = '/testinstall'
+        self.u.cleep_path = '/testinstall'
         self.c = Context()
         self.c.force_uninstall = force_uninstall
         self.c.module_log = None
@@ -206,9 +206,9 @@ class UninstallModuleTests(unittest.TestCase):
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
             '',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd])
 
@@ -228,7 +228,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rmdir.call_count, 0)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Install log file "/opt/raspiot/install/module/module.log" for module "module" was not found')
+        self.assertEqual(status['process'][1], 'Install log file "/opt/cleep/install/module/module.log" for module "module" was not found')
 
     @patch('installmodule.os')
     def test_remove_installed_files_no_log_file_force_uninstall(self, os_mock):
@@ -243,7 +243,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rmdir.call_count, 0)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Install log file "/opt/raspiot/install/module/module.log" for module "module" was not found')
+        self.assertEqual(status['process'][1], 'Install log file "/opt/cleep/install/module/module.log" for module "module" was not found')
 
     @patch('installmodule.os')
     def test_remove_installed_files_exception(self, os_mock):
@@ -272,9 +272,9 @@ class UninstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd], cleep_filesystem_rm_side_effect=[True, True, False, True, True])
 
@@ -282,7 +282,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rm.call_count, 5)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/raspiot/html/js/modules/module/desc.json" during module "module" uninstallation')
+        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/cleep/html/js/modules/module/desc.json" during module "module" uninstallation')
 
     @patch('installmodule.os')
     def test_remove_installed_files_file_doesnt_exist(self, os_mock):
@@ -293,9 +293,9 @@ class UninstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd])
 
@@ -303,8 +303,8 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rm.call_count, 3)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/raspiot/html/js/modules/module/desc.json" that does not exist during module "module" uninstallation')
-        self.assertEqual(status['process'][2], 'Unable to remove file "/opt/raspiot/html/js/modules/module/module.config.html" that does not exist during module "module" uninstallation')
+        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/cleep/html/js/modules/module/desc.json" that does not exist during module "module" uninstallation')
+        self.assertEqual(status['process'][2], 'Unable to remove file "/opt/cleep/html/js/modules/module/module.config.html" that does not exist during module "module" uninstallation')
 
     @patch('installmodule.os')
     def test_remove_installed_files_file_doesnt_exist(self, os_mock):
@@ -315,9 +315,9 @@ class UninstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd])
 
@@ -325,8 +325,8 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rm.call_count, 3)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/raspiot/html/js/modules/module/desc.json" that does not exist during module "module" uninstallation')
-        self.assertEqual(status['process'][2], 'Unable to remove file "/opt/raspiot/html/js/modules/module/module.config.html" that does not exist during module "module" uninstallation')
+        self.assertEqual(status['process'][1], 'Unable to remove file "/opt/cleep/html/js/modules/module/desc.json" that does not exist during module "module" uninstallation')
+        self.assertEqual(status['process'][2], 'Unable to remove file "/opt/cleep/html/js/modules/module/module.config.html" that does not exist during module "module" uninstallation')
 
     @patch('installmodule.Tools')
     @patch('installmodule.os')
@@ -339,9 +339,9 @@ class UninstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd])
 
@@ -350,8 +350,8 @@ class UninstallModuleTests(unittest.TestCase):
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(status['process'][1], 'Trying to remove core library file "testinstall/modules/module/module.py" during module "module" uninstallation. Drop deletion.')
-        self.assertEqual(status['process'][2], 'Trying to remove core library file "/opt/raspiot/html/js/modules/module/desc.json" during module "module" uninstallation. Drop deletion.')
-        self.assertEqual(status['process'][3], 'Trying to remove core library file "/opt/raspiot/html/js/modules/module/module.config.html" during module "module" uninstallation. Drop deletion.')
+        self.assertEqual(status['process'][2], 'Trying to remove core library file "/opt/cleep/html/js/modules/module/desc.json" during module "module" uninstallation. Drop deletion.')
+        self.assertEqual(status['process'][3], 'Trying to remove core library file "/opt/cleep/html/js/modules/module/module.config.html" during module "module" uninstallation. Drop deletion.')
 
     @patch('installmodule.os')
     def test_remove_installed_files_clearing_path_failed(self, os_mock):
@@ -362,9 +362,9 @@ class UninstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd], cleep_filesystem_rmdir_side_effect=[False, True])
 
@@ -544,12 +544,12 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/opt/raspiot/install/test/'):
-            shutil.rmtree('/opt/raspiot/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test', ignore_errors=True)
-        if os.path.exists('/opt/raspiot/html/js/modules/test'):
-            shutil.rmtree('/opt/raspiot/html/js/modules/test', igore_errors=True)
+        if os.path.exists('/opt/cleep/install/test/'):
+            shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
+        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists('/opt/cleep/html/js/modules/test'):
+            shutil.rmtree('/opt/cleep/html/js/modules/test', igore_errors=True)
 
     def callback(self, status):
         pass
@@ -570,9 +570,9 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -589,9 +589,9 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
     def test_uninstall_without_script_ok(self):
         #install
@@ -609,7 +609,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -626,7 +626,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/test.log'))
 
     def test_uninstall_ko_preuninst(self):
         #install
@@ -644,7 +644,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -662,7 +662,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
         # keep install log file if preuninst failed
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
 
     def test_uninstall_ko_postuninst(self):
         #install
@@ -680,7 +680,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -697,7 +697,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/'))
 
     def test_uninstall_ko_remove(self):
         #install
@@ -715,13 +715,13 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
 
         #remove installed file to simulate error
-        os.remove('/opt/raspiot/install/test/test.log')
+        os.remove('/opt/cleep/install/test/test.log')
 
         #uninstall module
         u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
@@ -735,7 +735,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
 
         #check uninstallation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/'))
 
 
 
@@ -766,7 +766,7 @@ class InstallModuleTests(unittest.TestCase):
         self.callback = Mock(side_effect=callback_side_effect)
 
         self.i = InstallModule(module_name, module_infos, update_process, self.callback, self.cleep_filesystem, self.crash_report)
-        self.i.raspiot_path = '/testinstall'
+        self.i.cleep_path = '/testinstall'
         self.c = Context()
         self.c.archive_path = None
         self.c.extract_path = None
@@ -938,8 +938,8 @@ class InstallModuleTests(unittest.TestCase):
         self.c.extract_path = '/tmp/123456789'
 
         self.assertTrue(self.i._backup_scripts(self.c))
-        self.cleep_filesystem.copy.assert_any_call('/tmp/123456789/scripts/preuninst.sh', '/opt/raspiot/install/module/preuninst.sh')
-        self.cleep_filesystem.copy.assert_any_call('/tmp/123456789/scripts/postuninst.sh', '/opt/raspiot/install/module/postuninst.sh')
+        self.cleep_filesystem.copy.assert_any_call('/tmp/123456789/scripts/preuninst.sh', '/opt/cleep/install/module/preuninst.sh')
+        self.cleep_filesystem.copy.assert_any_call('/tmp/123456789/scripts/postuninst.sh', '/opt/cleep/install/module/postuninst.sh')
 
     @patch('installmodule.os')
     def test_backup_scripts_no_script(self, os_mock):
@@ -1233,9 +1233,9 @@ class InstallModuleTests(unittest.TestCase):
         fd.readlines.return_value = [
             'testinstall/modules/module/module.py',
             'testinstall/modules/module/__init__.py',
-            '/opt/raspiot/html/js/modules/module/desc.json',
-            '/opt/raspiot/html/js/modules/module/module.config.js',
-            '/opt/raspiot/html/js/modules/module/module.config.html'
+            '/opt/cleep/html/js/modules/module/desc.json',
+            '/opt/cleep/html/js/modules/module/module.config.js',
+            '/opt/cleep/html/js/modules/module/module.config.html'
         ]
         self._init_context(cleep_filesystem_open_side_effect=[fd])
         self.c.install_log = '/tmp/install.log'
@@ -1543,12 +1543,12 @@ class InstallModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/opt/raspiot/install/test/'):
-            shutil.rmtree('/opt/raspiot/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test', ignore_errors=True)
-        if os.path.exists('/opt/raspiot/html/js/modules/test'):
-            shutil.rmtree('/opt/raspiot/html/js/modules/test', ignore_errors=True)
+        if os.path.exists('/opt/cleep/install/test/'):
+            shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
+        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists('/opt/cleep/html/js/modules/test'):
+            shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
 
     def callback(self, status):
         pass
@@ -1569,9 +1569,9 @@ class InstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -1592,9 +1592,9 @@ class InstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -1616,10 +1616,10 @@ class InstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -1640,10 +1640,10 @@ class InstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -1664,9 +1664,9 @@ class InstallModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test.log'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertFalse(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test.log'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertFalse(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -1993,12 +1993,12 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/preuninst.tmp')
         if os.path.exists('/tmp/postuninst.tmp'):
             os.remove('/tmp/postuninst.tmp')
-        if os.path.exists('/opt/raspiot/install/test/test.log'):
-            shutil.rmtree('/opt/raspiot/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/raspiot/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/raspiot/modules/test', ignore_errors=True)
-        if os.path.exists('/opt/raspiot/html/js/modules/test'):
-            shutil.rmtree('/opt/raspiot/html/js/modules/test', ignore_errors=True)
+        if os.path.exists('/opt/cleep/install/test/test.log'):
+            shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
+        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
+            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists('/opt/cleep/html/js/modules/test'):
+            shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
 
     def callback(self, status):
         pass
@@ -2019,9 +2019,9 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/test.log'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/preuninst.sh'))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/postuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
         #make sure cleepfilesystem free everything
         time.sleep(1.0)
@@ -2038,12 +2038,12 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
         #check update
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
-        self.assertTrue(os.path.exists('/opt/raspiot/install/test/'))
+        self.assertTrue(os.path.exists('/opt/cleep/install/test/'))
 
 
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
     unittest.main()
 

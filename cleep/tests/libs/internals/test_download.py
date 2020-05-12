@@ -7,7 +7,7 @@ import time
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import download
 from download import Download
-from raspiot.libs.tests.lib import TestLib, Urllib3RequestResponseMock, FileDescriptorMock
+from cleep.libs.tests.lib import TestLib, Urllib3RequestResponseMock, FileDescriptorMock
 import unittest
 import logging
 from unittest.mock import Mock, MagicMock
@@ -27,7 +27,7 @@ def create_files_tree(DOWNLOAD_FILE_PREFIX, CACHED_FILE_PREFIX, with_files=True)
 
 class DownloadTests(unittest.TestCase):
 
-    RESPONSE = 'hello world'
+    RESPONSE = b'h\xc3\xa9llo world'
     DUMMY_FILE = 'http://www.ovh.net/files/1Mio.dat'
 
     def setUp(self):
@@ -152,7 +152,7 @@ class DownloadTests(unittest.TestCase):
     def test_download_content(self):
         status, content = self.d.download_content('http://www.google.com')
         self.assertTrue(self.request.called)
-        self.assertEqual(content, self.RESPONSE)
+        self.assertEqual(content, 'héllo world')
         self.assertEqual(status, self.d.STATUS_DONE)
 
     def _end_callback(self, status, filepath):
@@ -550,5 +550,6 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_download.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_download.py; coverage report -m -i
     unittest.main()
+

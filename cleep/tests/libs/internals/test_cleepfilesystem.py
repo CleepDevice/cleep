@@ -5,8 +5,8 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from cleepfilesystem import CleepFilesystem
-from raspiot.libs.tests.lib import TestLib
-from raspiot.exception import InvalidParameter
+from cleep.libs.tests.lib import TestLib
+from cleep.exception import InvalidParameter
 import unittest
 import logging
 from unittest.mock import Mock
@@ -593,7 +593,7 @@ class CleepFilesystemTests(unittest.TestCase):
         try:
             self.c.mkdirs('test/sub')
             self.c.write_data('test/sub/test.txt', u'test')
-            from raspiot.libs.internals.console import Console
+            from cleep.libs.internals.console import Console
             Console.command = Mock(return_value={
                 'returncode': 1,
                 'stdout': [],
@@ -614,7 +614,7 @@ class CleepFilesystemTests(unittest.TestCase):
         try:
             self.c.mkdirs('test/sub')
             self.c.write_data('test/sub/test.txt', u'test')
-            from raspiot.libs.internals.console import Console
+            from cleep.libs.internals.console import Console
             Console.command = Mock(side_effect=Exception('test exception'))
             
             self.assertFalse(self.c.rsync('test', 'rsynced'))
@@ -630,3 +630,4 @@ class CleepFilesystemTests(unittest.TestCase):
 if __name__ == '__main__':
     #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
     unittest.main()
+

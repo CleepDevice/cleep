@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from readwrite import ReadWrite, Console, ReadWriteContext
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -29,17 +29,16 @@ class ReadWriteTests(unittest.TestCase):
             'stderr': stderr,
         }
 
-    def _conditional_command_return_value(self, command):
-        pass
-
-    def _init_context(self, console_mock, command_return_value=None, command_side_effect=None, on_raspiot=True):
+    def _init_context(self, console_mock, command_return_value=None, command_side_effect=None, on_cleep=True):
         if command_side_effect:
             console_mock.return_value.command = Mock(side_effect=command_side_effect)
         else:
             console_mock.return_value.command = Mock(return_value=command_return_value)
         self.r = ReadWrite()
-        if not on_raspiot:
-            self.r.RASPIOT_DIR = '/dummy'
+        if not on_cleep:
+            self.r.CLEEP_DIR = '/dummy'
+        else:
+            self.r.CLEEP_DIR = '/tmp' # set a file/dir that exists
         self.r.set_crash_report(self.crash_report)
 
     def test_crash_report(self):
@@ -226,31 +225,32 @@ class ReadWriteTests(unittest.TestCase):
         self.assertFalse(self.r.disable_write_on_root(context))
 
     @patch('readwrite.Console')
-    def test_enable_write_on_root_on_non_raspiot(self, console_mock):
-        self._init_context(console_mock, on_raspiot=False)
+    def test_enable_write_on_root_on_non_cleep(self, console_mock):
+        self._init_context(console_mock, on_cleep=False)
 
         self.assertFalse(self.r.enable_write_on_root())
 
     @patch('readwrite.Console')
-    def test_enable_write_on_boot_on_non_raspiot(self, console_mock):
-        self._init_context(console_mock, on_raspiot=False)
+    def test_enable_write_on_boot_on_non_cleep(self, console_mock):
+        self._init_context(console_mock, on_cleep=False)
 
         self.assertFalse(self.r.enable_write_on_boot())
 
     @patch('readwrite.Console')
-    def test_disable_write_on_root_on_non_raspiot(self, console_mock):
-        self._init_context(console_mock, on_raspiot=False)
+    def test_disable_write_on_root_on_non_cleep(self, console_mock):
+        self._init_context(console_mock, on_cleep=False)
 
         context = ReadWriteContext()
         self.assertFalse(self.r.disable_write_on_root(context))
 
     @patch('readwrite.Console')
-    def test_disable_write_on_boot_on_non_raspiot(self, console_mock):
-        self._init_context(console_mock, on_raspiot=False)
+    def test_disable_write_on_boot_on_non_cleep(self, console_mock):
+        self._init_context(console_mock, on_cleep=False)
 
         context = ReadWriteContext()
         self.assertFalse(self.r.disable_write_on_boot(context))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_readwrite.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_readwrite.py; coverage report -m -i
     unittest.main()
+

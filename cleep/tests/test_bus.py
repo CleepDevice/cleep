@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from bus import MessageBus, BusClient, deque, inspect
-from raspiot.libs.tests.lib import TestLib
-from raspiot.common import MessageRequest, MessageResponse
-from raspiot.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage
+from cleep.libs.tests.lib import TestLib
+from cleep.common import MessageRequest, MessageResponse
+from cleep.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -951,6 +951,6 @@ class BusClientTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_bus.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_bus.py; coverage report -m -i
     unittest.main()
 

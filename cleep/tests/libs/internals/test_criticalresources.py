@@ -4,9 +4,9 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from raspiot.libs.internals.task import Task
+from cleep.libs.internals.task import Task
 from criticalresources import CriticalResources
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 import time
@@ -205,7 +205,7 @@ class Mydummyresource():
     def test_load_resources_invalid_path(self):
         c = CriticalResources
         c.RESOURCES_DIR = self.resources_dir
-        c.PYTHON_RASPIOT_IMPORT_PATH = ''
+        c.PYTHON_CLEEP_IMPORT_PATH = ''
         with self.assertRaises(Exception) as cm:
             c(False)
         self.assertEqual(str(cm.exception), 'Invalid resources path "%s"' % c.RESOURCES_DIR)
@@ -220,7 +220,7 @@ class Mydummyresource():
             time.sleep(1.0)
             c = CriticalResources
             c.RESOURCES_DIR = self.resources_dir
-            c.PYTHON_RASPIOT_IMPORT_PATH = 'resources'
+            c.PYTHON_CLEEP_IMPORT_PATH = 'resources'
             with self.assertRaises(Exception) as cm:
                 c(False)
             self.assertEqual(str(cm.exception), 'Error occured trying to load resource "dummyResource"')
@@ -241,7 +241,7 @@ class Mydummyresource():
 
             c = CriticalResources
             c.RESOURCES_DIR = self.resources_dir
-            c.PYTHON_RASPIOT_IMPORT_PATH = ''
+            c.PYTHON_CLEEP_IMPORT_PATH = ''
             with self.assertRaises(Exception) as cm:
                 c(False)
             self.assertEqual(str(cm.exception), 'Invalid resource "dummyResource" tryed to be loaded')
@@ -251,5 +251,6 @@ class Mydummyresource():
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_criticalresources.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_criticalresources.py; coverage report -m -i
     unittest.main()
+

@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from asoundrc import Asoundrc
-from raspiot.libs.internals.cleepfilesystem import CleepFilesystem
-from raspiot.exception import MissingParameter, InvalidParameter, CommandError
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.exception import MissingParameter, InvalidParameter, CommandError
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pformat
@@ -94,6 +94,6 @@ ctl.!default {
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_asoundrc.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_asoundrc.py; coverage report -m -i
     unittest.main()
 

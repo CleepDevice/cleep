@@ -5,8 +5,8 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from inventory import Inventory
-from raspiot.libs.tests.lib import TestLib
-from raspiot.exception import InvalidParameter
+from cleep.libs.tests.lib import TestLib
+from cleep.exception import InvalidParameter
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -17,7 +17,7 @@ import time
 class InventoryTests(unittest.TestCase):
 
     MODULE = u"""
-from raspiot.core import RaspIotModule, RaspIotRpcWrapper, RaspIotRenderer
+from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer
 
 class %(module_name)s(%(inherit)s):
     MODULE_AUTHOR = u'Cleep'
@@ -79,7 +79,7 @@ class %(module_name)s(%(inherit)s):
     def _init_context(self, debug_enabled=False, configured_modules=[], debug_modules=[],
             mod1_deps=[], mod2_deps=[], mod3_deps=[],
             mod1_exception=False, mod2_exception=False, mod3_exception=False,
-            mod1_inherit='RaspIotModule', mod2_inherit='RaspIotModule', mod3_inherit='RaspIotModule',
+            mod1_inherit='CleepModule', mod2_inherit='CleepModule', mod3_inherit='CleepModule',
             mod1_startup_error=''):
         os.mkdir('modules')
         with io.open(os.path.join('modules', '__init__.py'), 'w') as fd:
@@ -139,8 +139,8 @@ class %(module_name)s(%(inherit)s):
             'debug_modules': debug_modules,
         }
         self.i = Inventory(self.bootstrap, self.rpcserver, debug_enabled, configured_modules, debug_config=debug_config)
-        Inventory.PYTHON_RASPIOT_IMPORT_PATH = 'modules.'
-        Inventory.PYTHON_RASPIOT_MODULES_PATH = 'tests/modules'
+        Inventory.PYTHON_CLEEP_IMPORT_PATH = 'modules.'
+        Inventory.PYTHON_CLEEP_MODULES_PATH = 'tests/modules'
 
     def test_event_received_module_install(self):
         self._init_context()
@@ -316,12 +316,12 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_raspiotrenderer_module(self, modulesjson_mock):
+    def test_load_modules_with_cleeprenderer_module(self, modulesjson_mock):
         modulesjson_mock.return_value.get_json.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='RaspIotRenderer')
+        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRenderer')
 
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -338,7 +338,7 @@ class %(module_name)s(%(inherit)s):
             'list': {'module1':{}, 'module2':{}}
         }
         modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='RaspIotRpcWrapper')
+        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -612,7 +612,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', ['module1'])
-    @patch('raspiot.core.CORE_MODULES', ['module1'])
+    @patch('cleep.core.CORE_MODULES', ['module1'])
     def test_load_modules_core_modules_exception(self, modulesjson_mock):
         modulesjson_mock.return_value.get_json.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
@@ -721,12 +721,12 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices_no_raspiotmodule(self, modulesjson_mock):
+    def test_get_devices_no_cleepmodule(self, modulesjson_mock):
         modulesjson_mock.return_value.get_json.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module2'], mod2_inherit='RaspIotRpcWrapper')
+        self._init_context(configured_modules=['module1', 'module2'], mod2_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -898,9 +898,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_installable_modules(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_installable_modules(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
@@ -929,9 +929,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_modules(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_modules(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
@@ -966,9 +966,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_modules_module_failed(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_modules_module_failed(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
@@ -986,9 +986,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_modules_no_filter(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_modules_no_filter(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
@@ -1011,9 +1011,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_modules_invalid_filter(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_modules_invalid_filter(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module2'],
@@ -1032,9 +1032,9 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.RaspiotConf')
-    def test_get_modules_with_filter(self, raspiot_conf_mock, modulesjson_mock):
-        raspiot_conf_mock.return_value.as_dict.return_value = {
+    @patch('inventory.CleepConf')
+    def test_get_modules_with_filter(self, cleep_conf_mock, modulesjson_mock):
+        cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module2'],
@@ -1184,7 +1184,7 @@ class %(module_name)s(%(inherit)s):
             'list': {'module1':{}, 'module2':{}}
         }
         modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='RaspIotRpcWrapper')
+        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1199,7 +1199,7 @@ class %(module_name)s(%(inherit)s):
             'list': {'module1':{}, 'module2':{}}
         }
         modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='RaspIotRpcWrapper', mod1_exception=True)
+        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper', mod1_exception=True)
 
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1216,6 +1216,6 @@ class %(module_name)s(%(inherit)s):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
     unittest.main()
 

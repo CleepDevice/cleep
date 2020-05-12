@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 print(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 

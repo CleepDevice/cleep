@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from iwconfig import Iwconfig
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock
@@ -58,5 +58,5 @@ class IwconfigTests(unittest.TestCase):
             self.assertTrue('network' in list(interface.keys()))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_iwconfig.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_iwconfig.py; coverage report -m -i
     unittest.main()

@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from iwgetid import Iwgetid
-from raspiot.libs.tests.lib import TestLib
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock
@@ -37,5 +37,5 @@ class IwgetidTests(unittest.TestCase):
         self.assertEqual(connections[key]['network'], 'mywifinetwork', 'Invalid returned network name')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_iwgetid.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_iwgetid.py; coverage report -m -i
     unittest.main()

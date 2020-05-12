@@ -5,10 +5,10 @@ import os, io, shutil
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 import profileformattersbroker
-from raspiot.libs.tests.lib import TestLib
-from raspiot.libs.internals.profileformatter import ProfileFormatter
-from raspiot.libs.internals.rendererprofile import RendererProfile
-from raspiot.exception import MissingParameter, InvalidParameter
+from cleep.libs.tests.lib import TestLib
+from cleep.libs.internals.profileformatter import ProfileFormatter
+from cleep.libs.internals.rendererprofile import RendererProfile
+from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 from unittest.mock import Mock
@@ -25,11 +25,11 @@ class DummyFormatter(ProfileFormatter):
     def get_event_instance(self, event_name):
         return self.events_broker.get_event_instance(event_name)
 
-DUMMY_PROFILE = u'''from raspiot.libs.internals.rendererprofile import RendererProfile
+DUMMY_PROFILE = u'''from cleep.libs.internals.rendererprofile import RendererProfile
 class DummyProfile(RendererProfile):
     pass
 '''
-FORMATTER_CONTENT = u'''from raspiot.libs.internals.profileformatter import ProfileFormatter
+FORMATTER_CONTENT = u'''from cleep.libs.internals.profileformatter import ProfileFormatter
 import sys; sys.path.append('../')
 from dummyprofile import DummyProfile
 class %(formatter_class)s(ProfileFormatter):
@@ -39,7 +39,7 @@ class %(formatter_class)s(ProfileFormatter):
     def _fill_profile(self, event_values, profile):
         return profile
 '''
-FORMATTER_CONTENT_INVALID_CLASSNAME = u'''from raspiot.libs.internals.profileformatter import ProfileFormatter
+FORMATTER_CONTENT_INVALID_CLASSNAME = u'''from cleep.libs.internals.profileformatter import ProfileFormatter
 import sys; sys.path.append('../')
 from dummyprofile import DummyProfile
 class Dummy(ProfileFormatter):
@@ -49,7 +49,7 @@ class Dummy(ProfileFormatter):
     def _fill_profile(self, event_values, profile):
         return profile
 '''
-FORMATTER_CONTENT_SYNTAX_ERROR = u'''from raspiot.libs.internals.profileformatter import ProfileFormatter
+FORMATTER_CONTENT_SYNTAX_ERROR = u'''from cleep.libs.internals.profileformatter import ProfileFormatter
 import sys; sys.path.append('../')
 from dummyprofile import DummyProfile
 class Dummy(ProfileFormatter):
@@ -124,7 +124,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         # overwrite module paths
         # self.p.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
         self.p.MODULES_DIR = self.MODULES_DIR
-        self.p.PYTHON_RASPIOT_IMPORT_PATH = ''
+        self.p.PYTHON_CLEEP_IMPORT_PATH = ''
 
     def test_configure_with_formatters(self):
         self._init_context()
@@ -149,7 +149,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
 
     def test_invalid_modules_path(self):
         self.p.MODULES_DIR = 'dummy'
-        self.p.PYTHON_RASPIOT_IMPORT_PATH = ''
+        self.p.PYTHON_CLEEP_IMPORT_PATH = ''
 
         with self.assertRaises(Exception) as cm:
             self.p.configure(self.bootstrap)
@@ -280,6 +280,6 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_profileformattersbroker.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_profileformattersbroker.py; coverage report -m -i
     unittest.main()
 

@@ -4,11 +4,11 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-from core import RaspIot, RaspIotRpcWrapper, RaspIotModule, RaspIotResources, RaspIotRenderer
-from raspiot.libs.tests.lib import TestLib
-from raspiot.exception import InvalidParameter, MissingParameter
-from raspiot.libs.drivers.driver import Driver
-from raspiot.libs.internals.rendererprofile import RendererProfile
+from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer
+from cleep.libs.tests.lib import TestLib
+from cleep.exception import InvalidParameter, MissingParameter
+from cleep.libs.drivers.driver import Driver
+from cleep.libs.internals.rendererprofile import RendererProfile
 import unittest
 import logging
 from unittest.mock import Mock, MagicMock, patch
@@ -16,7 +16,7 @@ import time
 import io
 import copy
 
-class DummyRaspiot(RaspIot):
+class DummyCleep(Cleep):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
 
@@ -27,7 +27,7 @@ class DummyRaspiot(RaspIot):
             setattr(self, 'DEFAULT_CONFIG', default_config)
         if with_config:
             setattr(self, 'MODULE_CONFIG_FILE', 'test.conf')
-        RaspIot.__init__(self, bootstrap, debug_enabled)
+        Cleep.__init__(self, bootstrap, debug_enabled)
 
         self.stop_called = False
         self.event_received_called = False
@@ -45,7 +45,7 @@ class DummyDriver(Driver):
     def __init__(self, fs, dtype, dname):
         Driver.__init__(self, fs, dtype, dname)
 
-class RaspIotTests(unittest.TestCase):
+class CleepTests(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -105,7 +105,7 @@ class RaspIotTests(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
-        self.r = DummyRaspiot(
+        self.r = DummyCleep(
             self.bootstrap,
             debug_enabled=False,
             sentry_dsn=sentry_dsn,
@@ -116,7 +116,7 @@ class RaspIotTests(unittest.TestCase):
     def test_debug_enabled(self):
         try:
             self._init_context()
-            r = DummyRaspiot(self.bootstrap, debug_enabled=True)
+            r = DummyCleep(self.bootstrap, debug_enabled=True)
             self.assertEqual(r.logger.getEffectiveLevel(), logging.DEBUG)
 
             self.assertTrue(r.is_debug_enabled())
@@ -127,7 +127,7 @@ class RaspIotTests(unittest.TestCase):
 
     def test_set_debug(self):
         self._init_context()
-        r = DummyRaspiot(self.bootstrap, debug_enabled=False)
+        r = DummyCleep(self.bootstrap, debug_enabled=False)
 
         self.assertFalse(r.is_debug_enabled())
         
@@ -226,7 +226,7 @@ class RaspIotTests(unittest.TestCase):
                 'newfield': 'newvalue',
                 'newvalue': 666,
             })
-        self.assertEqual(str(cm.exception), 'Module DummyRaspiot has no configuration file configured')
+        self.assertEqual(str(cm.exception), 'Module DummyCleep has no configuration file configured')
 
     def test_get_config_field(self):
         self._init_context(default_config=self.DEFAULT_CONFIG, current_config=self.DEFAULT_CONFIG)
@@ -285,7 +285,7 @@ class RaspIotTests(unittest.TestCase):
         self.assertEqual(infos['product'], 'CleepDevice')
         self.assertEqual(infos['productversion'], '0.0.0')
 
-    @patch('core.CORE_MODULES', ['dummyraspiot'])
+    @patch('core.CORE_MODULES', ['dummycleep'])
     def test_sentry_core_module(self):
         self._init_context()
 
@@ -295,7 +295,7 @@ class RaspIotTests(unittest.TestCase):
         cr_infos = self.crash_report.get_infos()
         self.assertEqual(infos['product'], cr_infos['product'])
         self.assertEqual(infos['productversion'], cr_infos['productversion'])
-        self.crash_report.add_module_version.assert_called_once_with('DummyRaspiot', '6.6.6')
+        self.crash_report.add_module_version.assert_called_once_with('DummyCleep', '6.6.6')
 
     def test_register_driver(self):
         self._init_context()
@@ -337,7 +337,7 @@ class RaspIotTests(unittest.TestCase):
     def test_get_module_name(self):
         self._init_context()
 
-        self.assertEqual(self.r._get_module_name(), 'dummyraspiot')
+        self.assertEqual(self.r._get_module_name(), 'dummycleep')
 
     def test_get_event(self):
         self._init_context()
@@ -355,7 +355,7 @@ class RaspIotTests(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertTrue('my_command' in commands)
 
-    @patch('core.RaspIot.send_command')
+    @patch('core.Cleep.send_command')
     def test_is_module_loaded_return_true(self, send_command_mock):
         self._init_context()
 
@@ -367,7 +367,7 @@ class RaspIotTests(unittest.TestCase):
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), True)
 
-    @patch('core.RaspIot.send_command')
+    @patch('core.Cleep.send_command')
     def test_is_module_loaded_return_false(self, send_command_mock):
         self._init_context()
 
@@ -379,8 +379,8 @@ class RaspIotTests(unittest.TestCase):
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), False)
 
-    @patch('core.CORE_MODULES', ['dummyraspiot'])
-    @patch('core.RaspIot.send_command')
+    @patch('core.CORE_MODULES', ['dummycleep'])
+    @patch('core.Cleep.send_command')
     def test_is_module_loaded_exception(self, send_command_mock):
         self._init_context()
 
@@ -408,7 +408,7 @@ class RaspIotTests(unittest.TestCase):
 
 
 
-class DummyRaspiotModule(RaspIotModule):
+class DummyCleepModule(CleepModule):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
 
@@ -419,7 +419,7 @@ class DummyRaspiotModule(RaspIotModule):
             setattr(self, 'DEFAULT_CONFIG', default_config)
         if with_config:
             setattr(self, 'MODULE_CONFIG_FILE', 'test.conf')
-        RaspIotModule.__init__(self, bootstrap, debug_enabled)
+        CleepModule.__init__(self, bootstrap, debug_enabled)
 
         self.stop_called = False
         self.event_received_called = False
@@ -433,7 +433,7 @@ class DummyRaspiotModule(RaspIotModule):
     def my_command(self, param):
         pass
 
-class RaspIotModuleTests(unittest.TestCase):
+class CleepModuleTests(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -512,7 +512,7 @@ class RaspIotModuleTests(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
-        self.r = DummyRaspiotModule(
+        self.r = DummyCleepModule(
             self.bootstrap,
             debug_enabled=False,
             sentry_dsn=sentry_dsn,
@@ -752,19 +752,19 @@ class RaspIotModuleTests(unittest.TestCase):
 
 
 
-class DummyRaspiotRpcWrapper(RaspIotRpcWrapper):
+class DummyCleepRpcWrapper(CleepRpcWrapper):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
         if sentry_dsn:
             setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
-        RaspIotRpcWrapper.__init__(self, bootstrap, debug_enabled)
+        CleepRpcWrapper.__init__(self, bootstrap, debug_enabled)
 
     def my_command(self):
         pass
 
-class RaspIotRpcWrapperTests(unittest.TestCase):
+class CleepRpcWrapperTests(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -811,7 +811,7 @@ class RaspIotRpcWrapperTests(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
-        self.r = DummyRaspiotRpcWrapper(
+        self.r = DummyCleepRpcWrapper(
             self.bootstrap,
             debug_enabled=False,
             sentry_dsn=sentry_dsn,
@@ -822,7 +822,7 @@ class RaspIotRpcWrapperTests(unittest.TestCase):
             self._init_context()
         except:
             logging.exception('Exception occured')
-            self.fail('Should create RaspIotRpcWrapper without exception')
+            self.fail('Should create CleepRpcWrapper without exception')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -837,7 +837,7 @@ class RaspIotRpcWrapperTests(unittest.TestCase):
 
 
 
-class DummyRaspiotResources(RaspIotResources):
+class DummyCleepResources(CleepResources):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
 
@@ -853,12 +853,12 @@ class DummyRaspiotResources(RaspIotResources):
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
         if sentry_dsn:
             setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
-        RaspIotResources.__init__(self, bootstrap, debug_enabled)
+        CleepResources.__init__(self, bootstrap, debug_enabled)
 
     def my_command(self):
         pass
 
-class RaspIotResourcesTests(unittest.TestCase):
+class CleepResourcesTests(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -908,23 +908,23 @@ class RaspIotResourcesTests(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
-        self.r = DummyRaspiotResources(
+        self.r = DummyCleepResources(
             self.bootstrap,
             debug_enabled=False,
             sentry_dsn=sentry_dsn,
         )
 
-    def test_raspiot_resources(self):
+    def test_cleep_resources(self):
         self._init_context()
-        r = RaspIotResources(self.bootstrap, False)
+        r = CleepResources(self.bootstrap, False)
 
         with self.assertRaises(NotImplementedError) as cm:
             r._resource_acquired('dummy')
-        self.assertEqual(str(cm.exception), 'Method "_resource_acquired" must be implemented in "RaspIotResources"')
+        self.assertEqual(str(cm.exception), 'Method "_resource_acquired" must be implemented in "CleepResources"')
 
         with self.assertRaises(NotImplementedError) as cm:
             r._resource_needs_to_be_released('dummy')
-        self.assertEqual(str(cm.exception), 'Method "_resource_needs_to_be_released" must be implemented in "RaspIotResources"')
+        self.assertEqual(str(cm.exception), 'Method "_resource_needs_to_be_released" must be implemented in "CleepResources"')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -940,14 +940,14 @@ class RaspIotResourcesTests(unittest.TestCase):
 
         self.r._need_resource('dummy')
 
-        self.critical_resources.acquire_resource.assert_called_with('DummyRaspiotResources', 'dummy')
+        self.critical_resources.acquire_resource.assert_called_with('DummyCleepResources', 'dummy')
 
     def test_release_resource(self):
         self._init_context()
 
         self.r._release_resource('dummy')
 
-        self.critical_resources.release_resource.assert_called_with('DummyRaspiotResources', 'dummy')
+        self.critical_resources.release_resource.assert_called_with('DummyCleepResources', 'dummy')
 
     def test_get_resources(self):
         self._init_context()
@@ -960,7 +960,7 @@ class RaspIotResourcesTests(unittest.TestCase):
 
 
 
-class DummyRaspiotRenderer(RaspIotRenderer):
+class DummyCleepRenderer(CleepRenderer):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
     RENDERER_PROFILES = [RendererProfile]
@@ -968,12 +968,12 @@ class DummyRaspiotRenderer(RaspIotRenderer):
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
         if sentry_dsn:
             setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
-        RaspIotRenderer.__init__(self, bootstrap, debug_enabled)
+        CleepRenderer.__init__(self, bootstrap, debug_enabled)
 
     def my_command(self):
         pass
 
-class RaspIotRendererTests(unittest.TestCase):
+class CleepRendererTests(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -1023,19 +1023,19 @@ class RaspIotRendererTests(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
-        self.r = DummyRaspiotRenderer(
+        self.r = DummyCleepRenderer(
             self.bootstrap,
             debug_enabled=False,
             sentry_dsn=sentry_dsn,
         )
 
-    def test_raspiot_renderer(self):
+    def test_cleep_renderer(self):
         self._init_context()
-        r = RaspIotRenderer(self.bootstrap, False)
+        r = CleepRenderer(self.bootstrap, False)
 
         with self.assertRaises(NotImplementedError) as cm:
             r._render('dummy')
-        self.assertEqual(str(cm.exception), 'Method "_render" must be implemented in "RaspIotRenderer"')
+        self.assertEqual(str(cm.exception), 'Method "_render" must be implemented in "CleepRenderer"')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -1061,10 +1061,10 @@ class RaspIotRendererTests(unittest.TestCase):
     def test_get_renderer_config_no_member_declared(self):
         self._init_context()
 
-        r = RaspIotRenderer(self.bootstrap, False)
+        r = CleepRenderer(self.bootstrap, False)
         with self.assertRaises(Exception) as cm:
             r._get_renderer_config()
-        self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "RaspIotRenderer"')
+        self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "CleepRenderer"')
 
     def test_render(self):
         self._init_context()
@@ -1099,7 +1099,7 @@ class RaspIotRendererTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
     unittest.main()
 
 

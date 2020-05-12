@@ -5,8 +5,8 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from externalbus import ExternalBus
-from raspiot.libs.tests.lib import TestLib
-from raspiot.exception import MissingParameter, InvalidParameter
+from cleep.libs.tests.lib import TestLib
+from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -24,6 +24,6 @@ class ExternalBusTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_externalbus.py; coverage report -m -i
+    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_externalbus.py; coverage report -m -i
     unittest.main()
 
