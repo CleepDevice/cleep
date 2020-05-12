@@ -1,18 +1,18 @@
-raspiot.resources package
+cleep.resources package
 =========================
 
-raspiot.resources.audiocaptureresource module
+cleep.resources.audiocaptureresource module
 ---------------------------------------------
 
-.. automodule:: raspiot.resources.audiocaptureresource
+.. automodule:: cleep.resources.audiocaptureresource
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.resources.audioplaybackresource module
+cleep.resources.audioplaybackresource module
 ----------------------------------------------
 
-.. automodule:: raspiot.resources.audioplaybackresource
+.. automodule:: cleep.resources.audioplaybackresource
    :members:
    :undoc-members:
    :show-inheritance:

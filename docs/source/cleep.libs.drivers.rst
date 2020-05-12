@@ -1,15 +1,15 @@
-raspiot.libs.drivers.audiodriver module
+cleep.libs.drivers.audiodriver module
 ---------------------------------------
 
-.. automodule:: raspiot.libs.drivers.audiodriver
+.. automodule:: cleep.libs.drivers.audiodriver
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.drivers.driver module
+cleep.libs.drivers.driver module
 ----------------------------------
 
-.. automodule:: raspiot.libs.drivers.driver
+.. automodule:: cleep.libs.drivers.driver
    :members:
    :undoc-members:
    :show-inheritance:

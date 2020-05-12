@@ -1,74 +1,74 @@
-raspiot.profiles package
+cleep.profiles package
 ========================
 
-raspiot.profiles.alertemailprofile module
+cleep.profiles.alertemailprofile module
 -----------------------------------------
 
-.. automodule:: raspiot.profiles.alertemailprofile
+.. automodule:: cleep.profiles.alertemailprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.alertpushprofile module
+cleep.profiles.alertpushprofile module
 ----------------------------------------
 
-.. automodule:: raspiot.profiles.alertpushprofile
+.. automodule:: cleep.profiles.alertpushprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.alertsmsprofile module
+cleep.profiles.alertsmsprofile module
 ---------------------------------------
 
-.. automodule:: raspiot.profiles.alertsmsprofile
+.. automodule:: cleep.profiles.alertsmsprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.displayaddorreplacemessageprofile module
+cleep.profiles.displayaddorreplacemessageprofile module
 ---------------------------------------------------------
 
-.. automodule:: raspiot.profiles.displayaddorreplacemessageprofile
+.. automodule:: cleep.profiles.displayaddorreplacemessageprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.displaymessageprofile module
+cleep.profiles.displaymessageprofile module
 ---------------------------------------------
 
-.. automodule:: raspiot.profiles.displaymessageprofile
+.. automodule:: cleep.profiles.displaymessageprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.displaytimelimitedmessageprofile module
+cleep.profiles.displaytimelimitedmessageprofile module
 --------------------------------------------------------
 
-.. automodule:: raspiot.profiles.displaytimelimitedmessageprofile
+.. automodule:: cleep.profiles.displaytimelimitedmessageprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.soundtexttospeechprofile module
+cleep.profiles.soundtexttospeechprofile module
 ------------------------------------------------
 
-.. automodule:: raspiot.profiles.soundtexttospeechprofile
+.. automodule:: cleep.profiles.soundtexttospeechprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.speechrecognitioncommandprofile module
+cleep.profiles.speechrecognitioncommandprofile module
 -------------------------------------------------------
 
-.. automodule:: raspiot.profiles.speechrecognitioncommandprofile
+.. automodule:: cleep.profiles.speechrecognitioncommandprofile
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.profiles.speechrecognitionhotwordprofile module
+cleep.profiles.speechrecognitionhotwordprofile module
 -------------------------------------------------------
 
-.. automodule:: raspiot.profiles.speechrecognitionhotwordprofile
+.. automodule:: cleep.profiles.speechrecognitionhotwordprofile
    :members:
    :undoc-members:
    :show-inheritance:

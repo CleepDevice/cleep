@@ -1,28 +1,28 @@
-raspiot.libs package
+cleep.libs package
 ====================
 
-raspiot.libs.commands
+cleep.libs.commands
 ---------------------
 
-.. toctree:: raspiot.libs.commands
+.. toctree:: cleep.libs.commands
 
-raspiot.libs.configs
+cleep.libs.configs
 --------------------
 
-.. toctree:: raspiot.libs.configs
+.. toctree:: cleep.libs.configs
 
-raspiot.libs.drivers
+cleep.libs.drivers
 --------------------
 
-.. toctree:: raspiot.libs.drivers
+.. toctree:: cleep.libs.drivers
 
-raspiot.libs.internals
+cleep.libs.internals
 ----------------------
 
-.. toctree:: raspiot.libs.internals
+.. toctree:: cleep.libs.internals
 
-raspiot.libs.tests
+cleep.libs.tests
 ------------------
 
-.. toctree:: raspiot.libs.tests
+.. toctree:: cleep.libs.tests
 

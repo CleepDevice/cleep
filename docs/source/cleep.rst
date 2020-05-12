@@ -1,50 +1,50 @@
-raspiot package
+cleep package
 ===============
 
-raspiot.bus module
+cleep.bus module
 ------------------
 
-.. automodule:: raspiot.bus
+.. automodule:: cleep.bus
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.common module
+cleep.common module
 ---------------------
 
-.. automodule:: raspiot.common
+.. automodule:: cleep.common
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.core module
+cleep.core module
 -------------------
 
-.. automodule:: raspiot.core
+.. automodule:: cleep.core
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.exception module
+cleep.exception module
 ------------------------
 
-.. automodule:: raspiot.exception
+.. automodule:: cleep.exception
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.inventory module
+cleep.inventory module
 ------------------------
 
-.. automodule:: raspiot.inventory
+.. automodule:: cleep.inventory
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.rpcserver module
+cleep.rpcserver module
 ------------------------
 
-.. automodule:: raspiot.rpcserver
+.. automodule:: cleep.rpcserver
    :members:
    :undoc-members:
    :show-inheritance:

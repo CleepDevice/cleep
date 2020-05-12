@@ -1,103 +1,103 @@
-raspiot.libs.commands.alsa module
+cleep.libs.commands.alsa module
 ---------------------------------
 
-.. automodule:: raspiot.libs.commands.alsa
+.. automodule:: cleep.libs.commands.alsa
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.blkid module
+cleep.libs.commands.blkid module
 ----------------------------------
 
-.. automodule:: raspiot.libs.commands.blkid
+.. automodule:: cleep.libs.commands.blkid
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.ifconfig module
+cleep.libs.commands.ifconfig module
 -------------------------------------
 
-.. automodule:: raspiot.libs.commands.ifconfig
+.. automodule:: cleep.libs.commands.ifconfig
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.ifupdown module
+cleep.libs.commands.ifupdown module
 -------------------------------------
 
-.. automodule:: raspiot.libs.commands.ifupdown
+.. automodule:: cleep.libs.commands.ifupdown
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.iw module
+cleep.libs.commands.iw module
 -------------------------------
 
-.. automodule:: raspiot.libs.commands.iw
+.. automodule:: cleep.libs.commands.iw
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.iwconfig module
+cleep.libs.commands.iwconfig module
 -------------------------------------
 
-.. automodule:: raspiot.libs.commands.iwconfig
+.. automodule:: cleep.libs.commands.iwconfig
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.iwgetid module
+cleep.libs.commands.iwgetid module
 ------------------------------------
 
-.. automodule:: raspiot.libs.commands.iwgetid
+.. automodule:: cleep.libs.commands.iwgetid
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.iwlist module
+cleep.libs.commands.iwlist module
 -----------------------------------
 
-.. automodule:: raspiot.libs.commands.iwlist
+.. automodule:: cleep.libs.commands.iwlist
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.lsblk module
+cleep.libs.commands.lsblk module
 ----------------------------------
 
-.. automodule:: raspiot.libs.commands.lsblk
+.. automodule:: cleep.libs.commands.lsblk
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.lsmod module
+cleep.libs.commands.lsmod module
 ----------------------------------
 
-.. automodule:: raspiot.libs.commands.lsmod
+.. automodule:: cleep.libs.commands.lsmod
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.modprobe module
+cleep.libs.commands.modprobe module
 -------------------------------------
 
-.. automodule:: raspiot.libs.commands.modprobe
+.. automodule:: cleep.libs.commands.modprobe
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.udevadm module
+cleep.libs.commands.udevadm module
 ------------------------------------
 
-.. automodule:: raspiot.libs.commands.udevadm
+.. automodule:: cleep.libs.commands.udevadm
    :members:
    :undoc-members:
    :show-inheritance:
 
-raspiot.libs.commands.wpacli module
+cleep.libs.commands.wpacli module
 -----------------------------------
 
-.. automodule:: raspiot.libs.commands.wpacli
+.. automodule:: cleep.libs.commands.wpacli
    :members:
    :undoc-members:
    :show-inheritance:
