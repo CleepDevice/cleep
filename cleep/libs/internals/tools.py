@@ -80,7 +80,8 @@ def raspberry_pi_infos():
     """
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    revision = str(p.communicate()[0]).replace(u'\n', u'')
+    revision = p.communicate()[0].decode('utf-8').replace(u'\n', u'')
+    logging.trace('Raspberrypi revision=%s' % revision)
     infos = RASPBERRY_PI_REVISIONS[revision] if revision and revision in RASPBERRY_PI_REVISIONS else RASPBERRY_PI_REVISIONS[u'unknown']
     infos[u'revision'] = revision
 
@@ -118,7 +119,7 @@ def install_unhandled_exception_handler(crash_report): # pragma: no cover (can t
         if issubclass(exc_type, KeyboardInterrupt):
             return
         if crash_report:
-            crash_report.crash_report(exc_type, exc_value, exc_traceback)
+            crash_report.report_exception()
         logging.error('Uncaught exception', exc_info=(exc_type, exc_value, exc_traceback))
 
     sys.excepthook = handle_exception

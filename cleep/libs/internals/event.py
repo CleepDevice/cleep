@@ -102,10 +102,6 @@ class Event():
 
             # push event to internal bus
             resp = self.bus.push(request, None)
-            self.logger.trace('Send push result: %s' % resp)
-            if resp[u'error']:
-                self.logger.error(u'Unable to render event "%s" to "%s": %s' % (self.EVENT_NAME, to, resp[u'message']))
-                return False
             return True
 
         else:

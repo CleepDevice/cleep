@@ -466,7 +466,7 @@ class Cleep(BusClient):
         """
         Start module.
         """
-        # start thread (non blocking)
+        # start bus client (non blocking thread)
         BusClient.start(self)
 
     def stop(self):
@@ -474,11 +474,11 @@ class Cleep(BusClient):
         Stop process.
         """
         BusClient.stop(self)
-        self._stop()
+        self._custom_stop()
 
-    def _stop(self): # pragma: no cover
+    def _custom_stop(self): # pragma: no cover
         """
-        Pre stop: called just before module is stopped.
+        Stop module. This function is called during module stop.
 
         Note:
             Implement this function to stop specific processes like threads during stop process
