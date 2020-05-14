@@ -35,16 +35,16 @@ class AudioDriverTests(unittest.TestCase):
                 'deviceid': 6,
             }]
         })
-        self.a._get_card_name = Mock(return_value='dummycard')
-        self.a._get_card_capabilities = Mock(return_value=(True, False))
+        self.a.get_card_name = Mock(return_value='dummycard')
+        self.a.get_card_capabilities = Mock(return_value=(True, False))
 
     def tearDown(self):
         pass
 
     def test_get_device_infos(self):
         infos = self.a.get_device_infos()
-        self.assertTrue(self.a._get_card_name.called)
-        self.assertTrue(self.a._get_card_capabilities.called)
+        self.assertTrue(self.a.get_card_name.called)
+        self.assertTrue(self.a.get_card_capabilities.called)
         self.assertTrue(self.a.alsa.get_device_infos.called)
 
         self.assertTrue('cardname' in infos)
@@ -67,7 +67,7 @@ class AudioDriverTests(unittest.TestCase):
                 'deviceid': 6,
             }]
         })
-        self.assertTrue(self.a._is_card_enabled())
+        self.assertTrue(self.a.is_card_enabled())
 
         self.a.alsa.get_selected_device = Mock(return_value={
             'name': 'dummycardxxx',
@@ -77,13 +77,13 @@ class AudioDriverTests(unittest.TestCase):
                 'deviceid': 6,
             }]
         })
-        self.assertFalse(self.a._is_card_enabled())
+        self.assertFalse(self.a.is_card_enabled())
 
     def test_get_cardid_device_id(self):
-        self.assertEqual(self.a._get_cardid_deviceid(), (0, 6))
+        self.assertEqual(self.a.get_cardid_deviceid(), (0, 6))
 
         self.a.alsa.get_device_infos = Mock(return_value=None)
-        self.assertEqual(self.a._get_cardid_deviceid(), (None, None))
+        self.assertEqual(self.a.get_cardid_deviceid(), (None, None))
 
 
 if __name__ == '__main__':
