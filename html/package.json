@@ -1,0 +1,32 @@
+{
+    "name": "cleep-frontend",
+    "version": "0.0.0",
+    "scripts": {
+        "update-libs": "npm install; node copylibs.js",
+        "clean": "rm -rf node_modules"
+    },
+    "dependencies": {
+        "@mdi/font": "^5.2.45",
+        "angular": "^1.7.9",
+        "angular-animate": "^1.7.9",
+        "angular-aria": "^1.7.9",
+        "angular-base64": "^2.0.5",
+        "angular-block-ui": "^0.2.2",
+        "angular-daterangepicker": "^0.2.3-alpha1",
+        "angular-konami": "^0.2.0",
+        "angular-material": "^1.1.22",
+        "angular-material-data-table": "^0.10.10",
+        "angular-messages": "^1.7.9",
+        "angular-route": "^1.7.9",
+        "angular-sanitize": "^1.7.9",
+        "codemirror-minified": "^5.53.2",
+        "jquery": "^3.5.1",
+        "moment": "^2.25.3",
+        "oclazyload": "^1.1.0"
+    },
+    "comments": {
+        "deprecated-dependencies": {
+            "ui-codemirror": "^0.3.1"
+        }
+    }
+}
