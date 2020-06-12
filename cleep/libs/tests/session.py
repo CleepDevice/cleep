@@ -30,17 +30,6 @@ class TestSession():
         """
         tools.install_trace_logging_level()
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        log_level = logging.getLogger().getEffectiveLevel()
-        self.__debug_enabled = True if log_level <= logging.DEBUG else False
-
-        self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
-        self.__setup_executed = False
-        self.__bus_command_handlers = {}
-        self.__event_handlers = {}
-        self.__module_class = None
-        self.__module_instance = None
-
     def __build_bootstrap_objects(self, debug):
         """
         Build bootstrap object with appropriate singleton instances
@@ -56,7 +45,7 @@ class TestSession():
         message_bus.push = self._message_bus_push_mock
 
         cleep_filesystem = CleepFilesystem()
-        #enable writings during tests
+        # enable writings during tests
         cleep_filesystem.enable_write(True, True)
 
         critical_resources = CriticalResources(debug)
@@ -90,16 +79,29 @@ class TestSession():
         self.__module_class = module_class
         self.__debug_enabled = debug_enabled
 
-        #config
+        # bootstrap object
+        self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
+        self.__bus_command_handlers = {}
+        self.__event_handlers = {}
+        self.__module_class = None
+        self.__module_instance = None
+
+        # logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        log_level = logging.getLogger().getEffectiveLevel()
+        self.__debug_enabled = True if log_level <= logging.DEBUG else False
+
+        # config
         module_class.CONFIG_DIR = '/tmp'
         
-        #instanciate
+        # instanciate
         self.__module_instance = module_class(self.bootstrap, debug_enabled)
         self.__module_instance.start()
 
-        #wait for module to be started
+        # wait for module to be started
         self.bootstrap['join_event'].wait()
 
+        self.__setup_executed = True
         return self.__module_instance
 
     def respawn_module(self):
@@ -112,11 +114,11 @@ class TestSession():
         if not self.__setup_executed:
             return None
 
-        #stop current running module instance
+        # stop current running module instance
         self.__module_instance.stop()
         self.__module_instance.join()
 
-        #start new module instance
+        # start new module instance
         return self.setup(self.__module_class, self.__debug_enabled)
 
     def clean(self):
@@ -124,18 +126,18 @@ class TestSession():
         Clean all stuff.
         Can be called during test tear down.
         """
+
         if not self.__setup_executed:
             return
 
-        #process
+        # process
         self.__module_instance.stop()
         self.__module_instance.join()
 
-        #config
+        # config
         path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
         if os.path.exists(path):
             os.remove(path)
-
 
     def mock_command(self, command, handler, fail=False, no_response=False):
         """
@@ -248,7 +250,7 @@ class TestSession():
             u'lastdeviceid': None,
         }
         event_handlers = self.__event_handlers
-        #monkey patch new event send() method
+        # monkey patch new event send() method
         def event_send_mock(self, params=None, device_id=None, to=None, render=True):
             self.logger.debug('TEST: send event "%s"' % event_name)
             event_handlers[event_name][u'sends'] += 1
