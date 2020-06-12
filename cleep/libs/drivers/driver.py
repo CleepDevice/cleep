@@ -59,7 +59,7 @@ class Driver():
             success = True
             self.cleep_filesystem.enable_write(root=True, boot=True)
             try:
-                self.install(params)
+                self._install(params)
             except Exception as e:
                 self.logger.exception(u'Error during driver installation:')
                 message = str(e)
@@ -74,7 +74,7 @@ class Driver():
         task.start()
         return task
 
-    def install(self, params): # pragma: no cover
+    def _install(self, params): # pragma: no cover
         """
         Install driver
 
@@ -106,7 +106,7 @@ class Driver():
             success = True
             self.cleep_filesystem.enable_write(root=True, boot=True)
             try:
-                self.uninstall(params)
+                self._uninstall(params)
             except Exception as e:
                 self.logger.exception(u'Error during driver installation:')
                 message = str(e)
@@ -121,7 +121,7 @@ class Driver():
         task.start()
         return task
 
-    def uninstall(self, params=None): # pragma: no cover
+    def _uninstall(self, params=None): # pragma: no cover
         """
         Uninstall driver. Don't forget to enable writings during driver installation.
 
