@@ -18,6 +18,9 @@ import tempfile
 from threading import Timer
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 import shutil
+import cleep
+
+INSTALL_DIR = cleep.__file__.replace('__init__.py', '')
 
 class UninstallModuleTests(unittest.TestCase):
 
@@ -546,8 +549,8 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/postuninst.tmp')
         if os.path.exists('/opt/cleep/install/test/'):
             shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists(os.path.join(INSTALL_DIR, 'modules/test')):
+            shutil.rmtree(os.path.join('modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', igore_errors=True)
 
@@ -1545,8 +1548,8 @@ class InstallModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/postuninst.tmp')
         if os.path.exists('/opt/cleep/install/test/'):
             shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists(os.path.join(INSTALL_DIR, 'modules/test')):
+            shutil.rmtree(os.path.join(INSTALL_DIR, 'modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
 
@@ -1995,8 +1998,8 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
             os.remove('/tmp/postuninst.tmp')
         if os.path.exists('/opt/cleep/install/test/test.log'):
             shutil.rmtree('/opt/cleep/install/test/', ignore_errors=True)
-        if os.path.exists('/usr/lib/python2.7/dist-packages/cleep/modules/test'):
-            shutil.rmtree('/usr/lib/python2.7/dist-packages/cleep/modules/test', ignore_errors=True)
+        if os.path.exists(os.path.join(INSTALL_DIR, 'modules/test')):
+            shutil.rmtree(os.path.join(INSTALL_DIR, 'modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
 
@@ -2044,6 +2047,6 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
+    #coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
     unittest.main()
 

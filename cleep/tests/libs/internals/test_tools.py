@@ -10,6 +10,7 @@ import unittest
 import logging
 import io
 import time
+import cleep
 
 class ToolsTests(unittest.TestCase):
 
@@ -127,18 +128,19 @@ class ToolsTests(unittest.TestCase):
         self.assertEqual(len(path), 6)
 
     def test_is_core_lib(self):
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/dummy.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/internals/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/internals/task.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/drivers/driver.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/drivers/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/commands/alsa.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/commands/dummy.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/configs/config.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/configs/dummy.py'))
-        self.assertFalse(tools.is_core_lib('/usr/lib/python2.7/dist-packages/cleep/libs/dummy/task.py'))
-        self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py'))
-        self.assertFalse(tools.is_core_lib('libs/task.py'))
+        base_dir = cleep.__file__.replace('__init__.py', '')
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/dummy.py')))
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/internals/dummy.py')))
+        self.assertTrue(tools.is_core_lib(os.path.join(base_dir, 'libs/internals/task.py')))
+        self.assertTrue(tools.is_core_lib(os.path.join(base_dir, 'libs/drivers/driver.py')))
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/drivers/dummy.py')))
+        self.assertTrue(tools.is_core_lib(os.path.join(base_dir, 'libs/commands/alsa.py')))
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/commands/dummy.py')))
+        self.assertTrue(tools.is_core_lib(os.path.join(base_dir, 'libs/configs/config.py')))
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/configs/dummy.py')))
+        self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/dummy/task.py')))
+        self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py')))
+        self.assertFalse(tools.is_core_lib('libs/task.py')))
 
 class ToolsTestsLogLevelTrace(unittest.TestCase):
 
