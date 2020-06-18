@@ -30,6 +30,10 @@ class TestSession():
         """
         tools.install_trace_logging_level()
 
+        self.__setup_executed = False
+        self.__module_class = None
+        self.__debug_enabled = None
+
     def __build_bootstrap_objects(self, debug):
         """
         Build bootstrap object with appropriate singleton instances
@@ -63,7 +67,7 @@ class TestSession():
             'drivers': Drivers(debug),
         }
 
-    def setup(self, module_class, debug_enabled=False):
+    def setup(self, module_class, debug_enabled=False, bootstrap={}):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
@@ -71,16 +75,15 @@ class TestSession():
         Args:
             module_class (type): module class type
             debug_enable (bool): enable debug on module
+            bootstrap (dict): overwrite default bootstrap by specified one. You dont have to specify
+                              all items, only specified ones will be replaced.
 
         Returns:
             Object: returns module_class instance
         """
-        self.__setup_executed = True
-        self.__module_class = module_class
-        self.__debug_enabled = debug_enabled
-
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
+        self.bootstrap.update(bootstrap)
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
         self.__module_class = None
@@ -131,8 +134,9 @@ class TestSession():
             return
 
         # process
-        self.__module_instance.stop()
-        self.__module_instance.join()
+        if self.__module_instance:
+            self.__module_instance.stop()
+            self.__module_instance.join()
 
         # config
         path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
