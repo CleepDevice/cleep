@@ -650,7 +650,7 @@ class BusClientTests(unittest.TestCase):
         self.bus = MessageBus(self.crash_report, debug_enabled=False)
         self.bootstrap = {
             'message_bus': self.bus,
-            'join_event': Mock(),
+            'module_join_event': Mock(),
             'crash_report': self.crash_report,
         }
 

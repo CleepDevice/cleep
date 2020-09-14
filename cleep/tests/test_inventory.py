@@ -124,7 +124,7 @@ class %(module_name)s(%(inherit)s):
 
         self.bootstrap = {
             'message_bus': self.bus,
-            'join_event': Mock(),
+            'module_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),

@@ -135,7 +135,11 @@ class MessageBus():
         
         # get request as dict
         request_dict = request.to_dict(not self.__app_configured)
-        self.logger.trace(u'Received message %s to push to "%s" module with timeout %s' % (request_dict, request.to, timeout))
+        self.logger.trace(u'Received message %s to push to "%s" module with timeout %s' % (
+            request_dict,
+            request.to,
+            timeout
+        ))
 
         # push message according to context
         if request.to in self._queues:
@@ -438,6 +442,9 @@ class BusClient(threading.Thread):
     It reads module message, read command and execute module command.
     Finally it returns command response to message originator.
     """
+
+    CORE_SYNC_TIMEOUT = 60.0
+
     def __init__(self, bootstrap):
         """
         Constructor
@@ -454,8 +461,9 @@ class BusClient(threading.Thread):
         self.crash_report = bootstrap[u'crash_report']
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
-        self.join_event = bootstrap[u'join_event']
-        self.join_event.clear()
+        self.__module_join_event = bootstrap[u'module_join_event']
+        self.__module_join_event.clear()
+        self.__core_join_event = bootstrap['core_join_event']
 
         # subscribe module to bus
         self.__bus.add_subscription(self.__module)
@@ -660,10 +668,17 @@ class BusClient(threading.Thread):
 
     def _configure(self):
         """
-        Module configuration. This method is called once at beginning of thread.
+        Module configuration. This method is called once at beginning of thread before
+        module is really started.
 
-        Note:
+        Warning:
             This function mustn't be blocking!
+        """
+        pass
+
+    def _on_start(self):
+        """
+        Module starts. This method is called once after all modules are started.
         """
         pass
 
@@ -701,12 +716,15 @@ class BusClient(threading.Thread):
                 u'module': self.__module
             })
         finally:
-            self.join_event.set()
+            self.__module_join_event.set()
 
-        # check messages
+        # module sync with others
+        self.__core_join_event.wait(self.CORE_SYNC_TIMEOUT)
+        self._on_start()
+
+        # now run infinite loop on message bus
         while self.__continue:
             try:
-
                 # custom process (do not crash bus on exception)
                 try:
                     self._custom_process()

@@ -6,7 +6,6 @@ from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.criticalresources import CriticalResources
-from cleep.exception import NoResponse
 from cleep import bus
 from cleep.libs.internals import event
 import cleep.libs.internals.tools as tools
@@ -61,7 +60,7 @@ class TestSession():
             'formatters_broker': EventsBroker(debug),
             'cleep_filesystem': MagicMock(),
             'crash_report': crash_report,
-            'join_event': Event(),
+            'module_join_event': Event(),
             'test_mode': True,
             'critical_resources': critical_resources,
             'execution_step': ExecutionStep(),
@@ -118,7 +117,7 @@ class TestSession():
         module_instance.start()
 
         # wait for module to be started
-        self.bootstrap['join_event'].wait()
+        self.bootstrap['module_join_event'].wait()
 
     def respawn_module(self):
         """

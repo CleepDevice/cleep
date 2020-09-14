@@ -65,7 +65,7 @@ class Inventory(Cleep):
         self.events_broker = bootstrap[u'events_broker']
         self.formatters_broker = bootstrap[u'formatters_broker']
         # dict to store event to synchronize module startups
-        self.__join_events = []
+        self.__module_join_events = []
         # used to store modules status (library or not) during modules loading
         self.__modules_loaded_as_dependency = {}
         # list of modules: dict(<module name>:dict(<module config>), ...)
@@ -124,7 +124,7 @@ class Inventory(Cleep):
         This function instanciate a new Event for module synchronization and pass all other attributes
         """
         bootstrap = copy.copy(self.bootstrap)
-        bootstrap[u'join_event'] = Event()
+        bootstrap[u'module_join_event'] = Event()
 
         return bootstrap
 
@@ -212,7 +212,7 @@ class Inventory(Cleep):
         self.__modules_instances[module_name] = module_class_(bootstrap, debug)
 
         # append module join event to make sure all modules are loaded
-        self.__join_events.append(bootstrap[u'join_event'])
+        self.__module_join_events.append(bootstrap[u'module_join_event'])
 
         # fix some metadata
         fixed_urls = self.__fix_urls(
@@ -419,9 +419,10 @@ class Inventory(Cleep):
 
         # wait for all modules to be completely loaded
         self.logger.info(u'Waiting for end of modules configuration...')
-        for join_event in self.__join_events:
-            join_event.wait()
+        for module_join_event in self.__module_join_events:
+            module_join_event.wait()
         self.logger.info(u'All modules are configured.')
+        self.bootstrap['core_join_event'].set()
 
         # execution step: CONFIG->RUN
         self.bootstrap[u'execution_step'].step = ExecutionStep.RUN
