@@ -81,7 +81,7 @@ class CrashReport():
         """
         if 'exc_info' in hint:
             exc_type, exc_value, tb = hint["exc_info"]
-            if type(exc_value).__name__ in (u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException'):
+            if type(exc_value).__name__ in (u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException', u'NotReady'):
                 self.logger.debug('Exception "%s" filtered' % type(exc_value).__name__)
                 return None
 

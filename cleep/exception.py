@@ -129,3 +129,13 @@ class BusError(Exception):
     def __str__(self):
         return u'%s' % self.message
 
+class NotReady(Exception):
+    """
+    NotReady is raised when the application is not ready
+    """
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
+    def __str__(self):
+        return self.message
+

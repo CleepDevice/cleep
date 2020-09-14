@@ -430,6 +430,15 @@ class Inventory(Cleep):
         self.__modules_loaded = True
         self.logger.debug('All modules are loaded')
 
+    def all_started(self):
+        """
+        Returns when Cleep is completely loaded and started
+
+        Note:
+            This method is blocking !
+        """
+        self.bootstrap['core_join_event'].wait()
+
     def unload_modules(self):
         """
         Unload all modules stopping them

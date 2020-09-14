@@ -13,7 +13,8 @@ from threading import Event
 from cleep.libs.internals.task import Task
 from queue import Queue
 from cleep.common import MessageResponse, MessageRequest
-from cleep.exception import NoMessageAvailable, InvalidParameter, MissingParameter, BusError, NoResponse, CommandError, CommandInfo, InvalidModule
+from cleep.exception import (NoMessageAvailable, InvalidParameter, MissingParameter,
+     BusError, NoResponse, CommandError, CommandInfo, InvalidModule, NotReady)
 
 __all__ = [u'MessageBus', u'BusClient']
 
@@ -55,7 +56,6 @@ class MessageBus():
         self.__purge = None
         # configured flag
         self.__app_configured = False
-        self.__deferred_broadcasted_messages = Queue()
 
     def stop(self):
         """
@@ -86,15 +86,6 @@ class MessageBus():
         /!\ This way of proceed is dangerous if clients always broadcast messages, the bus may always stay
         blocked in "app not configured" state. But in small system like cleep, it should be fine.
         """
-        # first of all unqueue deferred messages to preserve order
-        self.logger.trace('Unqueue deferred broadcast messages')
-        while not self.__deferred_broadcasted_messages.empty():
-            msg = self.__deferred_broadcasted_messages.get()
-            # msg.startup = True
-            self.logger.trace(u'Push deferred message: %s' % str(msg))
-            for q in self._queues:
-                self._queues[q].append(msg)
-
         # then set app is configured
         self.__app_configured = True
 
@@ -126,13 +117,13 @@ class MessageBus():
         # do not push request if bus is stopped
         if self.__stopped:
             raise Exception('Bus stopped')
+        if not self.__app_configured:
+            raise NotReady('Pushing messages to internal bus is possible only when application is running. '
+                'If this message appears during Cleep startup it means you try to send a message from module '
+                'constructor or _configure method, if that is the case prefer using _on_start method.')
         if not isinstance(request, MessageRequest):
             raise InvalidParameter(u'Parameter "request" must be MessageRequest instance')
 
-        # increase default timeout during startup (really useful for raspberry v1)
-        if not self.__app_configured and timeout:
-            timeout *= 4.0
-        
         # get request as dict
         request_dict = request.to_dict(not self.__app_configured)
         self.logger.trace(u'Received message %s to push to "%s" module with timeout %s' % (
@@ -159,6 +150,9 @@ class MessageBus():
             raise InvalidModule(request.to)
 
     def __push_to_recipient(self, request, request_dict, timeout):
+        """
+        Push message to specified recipient
+        """
         # Send message to specified subscribed recipient
         event = None
         if timeout:
@@ -220,7 +214,6 @@ class MessageBus():
         """
         No recipient to request, broadcast message to all subscribed modules
         Broadcast message does not reply with a response (return None)
-        If application is not configured, messages are deferred
         """
         msg = {
             u'message': request_dict,
@@ -228,12 +221,6 @@ class MessageBus():
             u'response':None
         }
         self.logger.debug(u'Broadcast message %s' % str(msg))
-
-        if not self.__app_configured:
-            # defer message if app not configured yet
-            self.logger.trace(u'Defer message: %s' % str(msg))
-            self.__deferred_broadcasted_messages.put(msg)
-            return None
 
         # append message to queues
         for q in self._queues:
