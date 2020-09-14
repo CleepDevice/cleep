@@ -7,18 +7,19 @@ This file shares some constants and classes
 
 from cleep.exception import InvalidMessage
 
-__all__ = [u'CORE_MODULES', u'CATEGORIES',
-           u'ExecutionStep', u'MessageResponse', u'MessageRequest']
+__all__ = ['CORE_MODULES', 'CATEGORIES',
+           'ExecutionStep', 'MessageResponse', 'MessageRequest']
 
 """
 CONSTANTS
 """
 CORE_MODULES = [
-    u'system',
-    u'audio',
-    u'network',
-    u'cleepbus',
-    u'parameters'
+    'system',
+    'update',
+    'audio',
+    'network',
+    'cleepbus',
+    'parameters'
 ]
 
 class CATEGORIES(object):
@@ -26,19 +27,19 @@ class CATEGORIES(object):
     Cleep application categories
     """
     #generic application
-    APPLICATION = u'APPLICATION'
+    APPLICATION = 'APPLICATION'
     #mobile application for car, bike, hiking...
-    MOBILE = u'MOBILE'
+    MOBILE = 'MOBILE'
     #application to configure and use hardware (soundcard, display...)
-    DRIVER = u'DRIVER'
+    DRIVER = 'DRIVER'
     #home automation application (shutter, light...)
-    HOMEAUTOMATION = u'HOMEAUTOMATION'
+    HOMEAUTOMATION = 'HOMEAUTOMATION'
     #media application (music player, video player...)
-    MEDIA = u'MEDIA'
+    MEDIA = 'MEDIA'
     #application based on online service (sms broker, weather provider...)
-    SERVICE = u'SERVICE'
+    SERVICE = 'SERVICE'
 
-    ALL = [u'APPLICATION', u'MOBILE', u'DRIVER', u'HOMEAUTOMATION', u'MEDIA', u'SERVICE']
+    ALL = ['APPLICATION', 'MOBILE', 'DRIVER', 'HOMEAUTOMATION', 'MEDIA', 'SERVICE']
 
     def __init__(self):
         pass
@@ -74,12 +75,12 @@ class MessageResponse(object):
     """
     def __init__(self):
         self.error = False
-        self.message = u''
+        self.message = ''
         self.data = None
         self.broadcast = False
 
     def __str__(self):
-        return u'{error:%r, message:"%s", data:%s, broadcast:%r}' % (
+        return '{error:%r, message:"%s", data:%s, broadcast:%r}' % (
             self.error,
             self.message,
             str(self.data),
@@ -90,7 +91,7 @@ class MessageResponse(object):
         """
         Return message response
         """
-        return {u'error':self.error, u'message':self.message, u'data':self.data}
+        return {'error':self.error, 'message':self.message, 'data':self.data}
 
 class MessageRequest(object):
     """
@@ -132,13 +133,13 @@ class MessageRequest(object):
         Stringify function
         """
         if self.command:
-            return u'{command:%s, params:%s, to:%s, sender:%s}' % (
+            return '{command:%s, params:%s, to:%s, sender:%s}' % (
                 self.command,
                 str(self.params),
                 self.to, self.sender
             )
         elif self.event:
-            return u'{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (
+            return '{event:%s, core_event:%s, params:%s, to:%s, device_id:%s, peer_infos:%s}' % (
                 self.event,
                 self.core_event,
                 str(self.params),
@@ -147,7 +148,7 @@ class MessageRequest(object):
                 self.peer_infos
             )
 
-        return u'Invalid message'
+        return 'Invalid message'
 
     def is_broadcast(self):
         """
@@ -180,32 +181,32 @@ class MessageRequest(object):
         if self.command:
             # command
             return {
-                u'command': self.command,
-                u'params': self.params,
-                u'to': self.to,
-                u'sender': self.sender,
-                u'broadcast': self.is_broadcast()
+                'command': self.command,
+                'params': self.params,
+                'to': self.to,
+                'sender': self.sender,
+                'broadcast': self.is_broadcast()
             }
 
         elif self.event and not self.peer_infos:
             # internal event
             return {
-                u'event': self.event,
-                u'params': self.params,
-                u'startup': startup,
-                u'device_id': self.device_id,
-                u'sender': self.sender
+                'event': self.event,
+                'params': self.params,
+                'startup': startup,
+                'device_id': self.device_id,
+                'sender': self.sender
             }
 
         elif self.event and self.peer_infos:
             # external event
             return {
-                u'event': self.event,
-                u'params': self.params,
-                u'startup': False,
-                u'device_id': None,
-                u'sender': u'PEER',
-                u'peer_infos': self.peer_infos
+                'event': self.event,
+                'params': self.params,
+                'startup': False,
+                'device_id': None,
+                'sender': 'PEER',
+                'peer_infos': self.peer_infos
             }
 
         else:

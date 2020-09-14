@@ -29,7 +29,7 @@ from gevent import monkey; monkey.patch_all()
 from gevent import queue
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
-from cleep.exception import NoMessageAvailable, CommandError, NoResponse
+from cleep.exception import NoMessageAvailable, CommandError
 from cleep.common import MessageResponse, MessageRequest
 import bottle
 from bottle import auth_basic
