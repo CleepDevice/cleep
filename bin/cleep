@@ -67,9 +67,9 @@ class ConfigException(Exception):
 
 
 def usage():
-    print(u'Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugsystem] [-t|--trace] [-s|--stdout] [-N|--noro] [-h|--help]]')
+    print(u'Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-h|--help]]')
     print(u' -d|--debug        : enable debug for specified module names (coma separated: "network,system")')
-    print(u' -D|--debugsystem  : enable debug for Cleep core')
+    print(u' -D|--debugcore    : enable debug for Cleep core')
     print(u' -t|--trace        : enable debug for everything (all modules, all libraries...)')
     print(u' -s|--stdout       : dump log in console instead of log file')
     print(u' -N|--noro         : disable completely readonly (so filesystem will always be writable)')
@@ -144,7 +144,8 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
                 message_bus (MessageBus): internal message bus
                 events_broker (EventsBroker): events broker
                 formatters_broker (ProfileFormattersBroker) : formatters broker
-                join_event (Threading.Event): module startup join event
+                module_join_event (Threading.Event): module startup join event
+                core_join_event: (Threading.Event): core startup join event
                 cleep_filesystem (CleepFilesystem): filesystem helper (handle readonly filesystem)
                 crash_report (CrashReport): crash report helper
                 log_file (string): log file path
@@ -158,7 +159,8 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
         u'events_broker': events_broker,
         u'formatters_broker': formatters_broker,
         u'message_bus': message_bus,
-        u'join_event': Event(),
+        u'module_join_event': Event(),
+        u'core_join_event': Event(),
         u'cleep_filesystem': cleep_filesystem,
         u'crash_report': crash_report,
         u'log_file': LOG_FILE,
@@ -180,14 +182,13 @@ if __name__ == u'__main__':
     
     try:
         #handle command line parameters
-        join_events = []
         trace_enabled = False
         readonly_enabled = True
         debug_modules = []
         debug_system = False
         log_stdout = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, u'hsd:DtN', [u'help', u'stdout', u'debug=', u'debugsystem', u'trace', u'noro'])
+        opts, args = getopt.getopt(argv, u'hsd:DtN', [u'help', u'stdout', u'debug=', u'debugcore', u'trace', u'noro'])
         for opt, arg in opts:
             if opt in (u'-h', u'--help'):
                 usage()
@@ -196,7 +197,7 @@ if __name__ == u'__main__':
                 log_stdout = True
             elif opt in (u'-d', u'--debug'):
                 debug_modules = arg.split(u',')
-            elif opt in (u'-D', u'--debugsystem'):
+            elif opt in (u'-D', u'--debugcore'):
                 debug_system = True
             elif opt in (u'-t', u'--trace'):
                 trace_enabled = True
