@@ -29,6 +29,7 @@ class Inventory(Cleep):
     MODULE_VERSION = u'0.0.0'
     MODULE_CORE = True
 
+    MODULES_SYNC_TIMEOUT = 60.0
     PYTHON_CLEEP_IMPORT_PATH = u'cleep.modules.'
     PYTHON_CLEEP_MODULES_PATH = u'modules'
 
@@ -437,7 +438,11 @@ class Inventory(Cleep):
         Note:
             This method is blocking !
         """
-        self.bootstrap['core_join_event'].wait()
+        if not self.bootstrap['core_join_event'].wait(self.MODULES_SYNC_TIMEOUT):
+            self.logger.fatal('Startup takes too much time. A module may be blocked. Cleep may not run properly')
+            return False
+
+        return True
 
     def unload_modules(self):
         """
