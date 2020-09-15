@@ -139,8 +139,8 @@ class ToolsTests(unittest.TestCase):
         self.assertTrue(tools.is_core_lib(os.path.join(base_dir, 'libs/configs/config.py')))
         self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/configs/dummy.py')))
         self.assertFalse(tools.is_core_lib(os.path.join(base_dir, 'libs/dummy/task.py')))
-        self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py')))
-        self.assertFalse(tools.is_core_lib('libs/task.py')))
+        self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py'))
+        self.assertFalse(tools.is_core_lib('libs/task.py'))
 
 class ToolsTestsLogLevelTrace(unittest.TestCase):
 

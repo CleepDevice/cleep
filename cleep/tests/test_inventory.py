@@ -12,6 +12,7 @@ import logging
 from unittest.mock import Mock, patch
 import io, shutil
 import time
+from threading import Event
 
 
 class InventoryTests(unittest.TestCase):
@@ -80,7 +81,7 @@ class %(module_name)s(%(inherit)s):
             mod1_deps=[], mod2_deps=[], mod3_deps=[],
             mod1_exception=False, mod2_exception=False, mod3_exception=False,
             mod1_inherit='CleepModule', mod2_inherit='CleepModule', mod3_inherit='CleepModule',
-            mod1_startup_error=''):
+            mod1_startup_error='', core_join_event=None):
         os.mkdir('modules')
         with io.open(os.path.join('modules', '__init__.py'), 'w') as fd:
             fd.write(u'')
@@ -125,6 +126,7 @@ class %(module_name)s(%(inherit)s):
         self.bootstrap = {
             'message_bus': self.bus,
             'module_join_event': Mock(),
+            'core_join_event': core_join_event if core_join_event else Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),
@@ -141,6 +143,7 @@ class %(module_name)s(%(inherit)s):
         self.i = Inventory(self.bootstrap, self.rpcserver, debug_enabled, configured_modules, debug_config=debug_config)
         Inventory.PYTHON_CLEEP_IMPORT_PATH = 'modules.'
         Inventory.PYTHON_CLEEP_MODULES_PATH = 'tests/modules'
+        Inventory.MODULES_SYNC_TIMEOUT = 2.0
 
     def test_event_received_module_install(self):
         self._init_context()
@@ -659,6 +662,20 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module4' in self.i.modules)
         self.assertEqual(self.i.modules['module1']['updatable'], '1.0.0')
         self.assertEqual(self.i.modules['module2']['updatable'], '')
+
+    def test_all_started(self):
+        core_join_event = Event()
+        core_join_event.set()
+        self._init_context(core_join_event=core_join_event)
+
+        self.assertTrue(self.i.all_started())
+
+    def test_all_started_failed(self):
+        core_join_event = Event()
+        core_join_event.clear()
+        self._init_context(core_join_event=core_join_event)
+
+        self.assertFalse(self.i.all_started())
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])

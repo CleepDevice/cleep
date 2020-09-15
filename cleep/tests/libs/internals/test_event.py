@@ -124,10 +124,6 @@ class EventTests(unittest.TestCase):
             self.e.send({'dummy': 666}, device_id=None, to='dummy', render=False)
         self.assertEqual(str(cm.exception), 'Invalid event parameters specified for "test.dummy": {\'dummy\': 666}')
 
-    def test_send_bus_push_failed(self):
-        self._init_context(event_params=['param'], bus_push_result={'error':True, 'message':'test error'})
-        self.assertFalse(self.e.send({}, device_id=None, to='dummy', render=False))
-
     def test_send_and_render_handle_render_exception(self):
         self._init_context(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.e.render = Mock(side_effect=Exception('test exception'))

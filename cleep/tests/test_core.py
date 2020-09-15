@@ -96,6 +96,7 @@ class CleepTests(unittest.TestCase):
         self.bootstrap = {
             'message_bus': MagicMock(),
             'module_join_event': Mock(),
+            'core_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),
@@ -395,6 +396,7 @@ class CleepTests(unittest.TestCase):
         self.r.start()
         time.sleep(1.0)
         self.r.stop()
+        time.sleep(1.0)
 
         self.assertTrue(self.r.stop_called)
 
@@ -503,6 +505,7 @@ class CleepModuleTests(unittest.TestCase):
         self.bootstrap = {
             'message_bus': MagicMock(),
             'module_join_event': Mock(),
+            'core_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),
@@ -802,6 +805,7 @@ class CleepRpcWrapperTests(unittest.TestCase):
         self.bootstrap = {
             'message_bus': MagicMock(),
             'module_join_event': Mock(),
+            'core_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),
@@ -898,6 +902,7 @@ class CleepResourcesTests(unittest.TestCase):
         self.bootstrap = {
             'message_bus': MagicMock(),
             'module_join_event': Mock(),
+            'core_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),
@@ -1013,6 +1018,7 @@ class CleepRendererTests(unittest.TestCase):
         self.bootstrap = {
             'message_bus': MagicMock(),
             'module_join_event': Mock(),
+            'core_join_event': Mock(),
             'drivers': self.drivers,
             'cleep_filesystem': self.cleep_filesystem,
             'execution_step': Mock(),

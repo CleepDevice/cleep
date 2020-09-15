@@ -389,13 +389,13 @@ class CleepGithubTests(unittest.TestCase):
         self.assertTrue('Authorization' in g.http_headers)
 
     def test_get_releases(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertTrue(isinstance(releases, list))
         self.assertEqual(1, len(releases))
 
     def test_get_all_releases(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         release = self.g.get_releases(self.owner, self.repo, only_latest=False, only_released=False)
         self.assertTrue(isinstance(release, list))
         self.assertNotEqual(0, len(release))
@@ -405,14 +405,14 @@ class CleepGithubTests(unittest.TestCase):
         self.assertRaises(Exception, self.g.get_releases, 'tangb', 'test')
 
     def test_release_version(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         version = self.g.get_release_version(releases[0])
         self.assertNotEqual(0, len(version.strip()))
 
     def test_release_version_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         class Dummy():
             pass
@@ -425,7 +425,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Specified release has no version field')
 
     def test_release_version_raw_version(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         releases = deepcopy(GET_RELEASES)
         release = releases[0]
@@ -435,14 +435,14 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(version, 'myversion')
 
     def test_release_changelog(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         changelog = self.g.get_release_changelog(releases[0])
         self.assertNotEqual(0, len(changelog.strip()))
 
     def test_release_changelog_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         class Dummy():
             pass
@@ -451,7 +451,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
     def test_release_changelog_with_empty_changelog(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         releases = deepcopy(GET_RELEASES)
         release = releases[0]
@@ -461,14 +461,14 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(changelog, '')
 
     def test_get_release_assets_infos(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         infos = self.g.get_release_assets_infos(releases[0])
         logging.debug(infos)
 
     def test_get_release_assets_infos_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         class Dummy():
             pass
@@ -484,7 +484,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Invalid release format')
 
     def test_is_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
         releases = self.g.get_releases(self.owner, self.repo, only_released=True)
         for release in releases:
             self.assertTrue(self.g.is_released(release))
@@ -501,7 +501,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertNotEqual(0, unreleased)
 
     def test_is_released_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES))
+        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
 
         class Dummy():
             pass
@@ -510,7 +510,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
     def test_api_rate(self):
-        self._init_context(resp_data=json.dumps(GET_API_RATE))
+        self._init_context(resp_data=json.dumps(GET_API_RATE).encode('utf8'))
         rate = self.g.get_api_rate()
         logging.debug(rate)
         self.assertTrue(u'limit' in rate)
@@ -521,7 +521,7 @@ class CleepGithubTests(unittest.TestCase):
         GET_API_RATE_ = deepcopy(GET_API_RATE)
         del GET_API_RATE_['rate']
 
-        self._init_context(resp_data=json.dumps(GET_API_RATE_))
+        self._init_context(resp_data=json.dumps(GET_API_RATE_).encode('utf8'))
         with self.assertRaises(Exception) as cm:
             self.g.get_api_rate()
         self.assertEqual(str(cm.exception), 'Unable to get api rate: Invalid data from github rate_limit request')
