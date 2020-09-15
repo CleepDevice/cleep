@@ -228,7 +228,7 @@ class Inventory(Cleep):
         self.modules[module_name].update({
             u'description': module_class_.MODULE_DESCRIPTION,
             u'author': getattr(module_class_, u'MODULE_AUTHOR', u''),
-            u'core': getattr(module_class_, u'MODULE_CORE', False),
+            u'core': module_name in CORE_MODULES,
             u'tags': getattr(module_class_, u'MODULE_TAGS', []),
             u'country': fixed_country,
             u'urls': fixed_urls,
