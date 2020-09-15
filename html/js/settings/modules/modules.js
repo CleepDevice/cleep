@@ -7,12 +7,12 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
         self.cleepService = cleepService;
-        self.modules = [];
         self.search = '';
-        self.moduleToUpdate = null;
-        self.moduleToNotStarted = null;
-        self.modulesName = [];
-        self.moduleLogs = null;
+        // self.moduleToUpdate = null;
+        // self.moduleToNotStarted = null;
+        self.updates = [];
+        self.modulesNames = [];
+        // self.moduleLogs = null;
 
         /**
          * Clear search input
@@ -78,19 +78,27 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         /**
          * Init controller
          */
-        self.init = function()
-        {
-            //fill modules name
-            var modulesName = [];
-            for( var moduleName in cleepService.modules )
-            {
-                //keep only installed modules
-                if( cleepService.modules[moduleName].installed && !cleepService.modules[moduleName].library )
-                {
-                    modulesName.push(moduleName);
-                }
-            }
-            self.modulesName = modulesName;
+        self.init = function() {
+            // load module updates
+            cleepService.getModulesUpdates()
+                .then(function(resp) {
+                    if (resp.error) {
+                        toast.error('Error getting updates');
+                        return;
+                    }
+                    self.updates = resp.data;
+                })
+                .finally(function() {
+                    // fill modules name
+                    var modulesNames = [];
+                    for( var moduleName in cleepService.modules ) {
+                        // keep only installed modules
+                        if( cleepService.modules[moduleName].installed && !cleepService.modules[moduleName].library ) {
+                            modulesNames.push(moduleName);
+                        }
+                    }
+                    self.modulesNames = modulesNames;
+                });
 
             //add fab action
             action = [{
@@ -110,7 +118,9 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
                 return cleepService.modules;
             },
             function(newValue, oldValue) {
-                self.init();
+                if (!angular.equals(newValue, {})) {
+                    self.init();
+                }
             }
         );
 

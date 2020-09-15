@@ -710,6 +710,14 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         }, 300);
     };
 
+    /**
+     * Get modules updates
+     * This function calls system module function to avoid adhesion of update service from angular app
+     */
+    self.getModulesUpdates = function(module) {
+        return rpcService.sendCommand('get_modules_updates', 'update');
+    };
+
 };
     
 var Cleep = angular.module('Cleep');

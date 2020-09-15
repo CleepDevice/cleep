@@ -29,7 +29,7 @@
 
     <!-- applications list -->
     <div layout="row" layout-wrap>
-        <div ng-if="modulesCtl.modulesName.length>0" ng-repeat="moduleName in modulesCtl.modulesName | orderBy:'toString()' | filter:modulesCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div ng-if="modulesCtl.modulesNames.length>0" ng-repeat="moduleName in modulesCtl.modulesNames | orderBy:'toString()' | filter:modulesCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
 
             <md-card class="widget-bg-color">
 
@@ -45,46 +45,54 @@
                     </md-card-title-media>
                 </md-card-title>
 
+                <!-- progress bar -->
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
-                    <md-progress-linear ng-if="modulesCtl.cleepService.modules[moduleName].processing" md-mode="indeterminate"></md-progress-linear>
+                    <md-progress-linear ng-if="modulesCtl.updates[moduleName].processing" md-mode="determinate" ng-value="modulesCtl.updates[moduleName].update.progress"></md-progress-linear>
                 </md-card-content>
 
                 <md-card-actions layout="row" layout-align="end center">
 
+                    <!-- action message -->
+                    <span ng-if="modulesCtl.updates[moduleName].processing && !modulesCtl.updates[moduleName].updatable">Uninstalling...</span>
+                    <span ng-if="modulesCtl.updates[moduleName].processing && modulesCtl.updates[moduleName].updatable">Updating...</span>
+                    <span ng-if="modulesCtl.updates[moduleName].pending">Please restart Cleep</span>
+
                     <!-- open module + uninstall info -->
-                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].hasConfig" ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-href="{{'#!module/'+moduleName}}">
+                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].hasConfig"
+                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
+                        ng-href="{{'#!module/'+moduleName}}"
+                    >
                         <md-icon md-svg-icon="open-in-app"></md-icon>
-                        <span ng-if="!modulesCtl.cleepService.modules[moduleName].processing || modulesCtl.cleepService.modules[moduleName].processing!=='uninstall'">Open</span>
-                        <span ng-if="modulesCtl.cleepService.modules[moduleName].processing==='uninstall'">Uninstalling</span>
+                        <span>Open</span>
                     </md-button>
 
                     <!-- update button -->
-                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].updatable.length>0" ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-click="modulesCtl.showUpdateDialog(modulesCtl.cleepService.modules[moduleName])" class="md-accent">
+                    <md-button
+                        ng-if="modulesCtl.updates[moduleName].updatable"
+                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
+                        ng-click="modulesCtl.showUpdateDialog(modulesCtl.updates[moduleName].update)"
+                        class="md-accent"
+                    >
                         <md-icon md-svg-icon="update"></md-icon>
-                        <span ng-if="!modulesCtl.cleepService.modules[moduleName].processing">Update</span>
-                        <span ng-if="modulesCtl.cleepService.modules[moduleName].processing==='update'">Updating</span>
-                    </md-button>
-
-                    <!-- restart -->
-                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].pending && !modulesCtl.cleepService.modules[moduleName].processing" ng-disabled="true">
-                        <md-icon md-svg-icon="restart"></md-icon>
-                        <span>Please restart</span>
-                    </md-button>
-
-                    <!-- logs -->
-                    <md-button ng-if="modulesCtl.cleepService.modules['system'].config.lastmodulesprocessing.indexOf(moduleName)>=0" ng-click="modulesCtl.showLogsDialog(moduleName)">
-                        <md-icon md-svg-icon="file-document-box-outline"></md-icon>
-                        <span>Uninstall logs</span>
+                        <span>Update</span>
                     </md-button>
 
                     <!-- module not started-->
-                    <md-button ng-if="!modulesCtl.cleepService.modules[moduleName].started && !modulesCtl.cleepService.modules['system'].config.lastmodulesprocessing[moduleName]" ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[moduleName])" class="md-accent">
+                    <md-button
+                        ng-if="!modulesCtl.cleepService.modules[moduleName].started"
+                        ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[moduleName])"
+                        class="md-accent"
+                    >
                         <md-icon md-svg-icon="alert-circle"></md-icon>
                         <span>Not started</span>
                     </md-button>
 
                     <!-- uninstall module -->
-                    <md-button ng-disabled="modulesCtl.cleepService.modules[moduleName].pending || modulesCtl.cleepService.modules[moduleName].processing" ng-if="!modulesCtl.cleepService.modules[moduleName].core" ng-click="modulesCtl.uninstall(moduleName)">
+                    <md-button
+                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
+                        ng-if="!modulesCtl.cleepService.modules[moduleName].core"
+                        ng-click="modulesCtl.uninstall(moduleName)"
+                    >
                         <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
 

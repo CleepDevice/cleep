@@ -88,37 +88,6 @@ class Inventory(Cleep):
         """
         self._load_modules()
 
-    def event_received(self, event):
-        """
-        Handle event
-
-        Args:
-            event (dict): MessageRequest as dict with event values::
-
-                {
-                    event (string): event name
-                    params (dict): event parameters
-                    device_id (string): device that emits event or None
-                    sender (string): event sender
-                    startup (bool): startup event flag
-                }
-
-        """
-        # handle module installation/uninstallation/update
-        if event[u'event'] in (u'system.module.install', u'system.module.uninstall', u'system.module.update'):
-            if event[u'params'][u'module'] in self.modules:
-                if event[u'params'][u'status']==Install.STATUS_PROCESSING:
-                    self.logger.debug(u'Update module "%s" processing status' % event[u'params'][u'module'])
-                    if event[u'event']==u'system.module.install':
-                        self.modules[event[u'params'][u'module']][u'processing'] = u'install'
-                    elif event[u'event']==u'system.module.uninstall':
-                        self.modules[event[u'params'][u'module']][u'processing'] = u'uninstall'
-                    elif event[u'event']==u'system.module.update':
-                        self.modules[event[u'params'][u'module']][u'processing'] = u'update'
-                else:
-                    self.logger.debug(u'Set module "%s" processing status to None' % event[u'params'][u'module'])
-                    self.modules[event[u'params'][u'module']][u'processing'] = None
-
     def __get_bootstrap(self):
         """
         Get bootstrap object to pass to module to load
@@ -226,22 +195,17 @@ class Inventory(Cleep):
 
         # update metadata with module values
         self.modules[module_name].update({
-            u'description': module_class_.MODULE_DESCRIPTION,
-            u'author': getattr(module_class_, u'MODULE_AUTHOR', u''),
-            u'core': module_name in CORE_MODULES,
-            u'tags': getattr(module_class_, u'MODULE_TAGS', []),
-            u'country': fixed_country,
-            u'urls': fixed_urls,
-            u'category': getattr(module_class_, u'MODULE_CATEGORY', u''),
-            u'screenshots': getattr(module_class_, u'MODULE_SCREENSHOTS', []),
-            u'deps': getattr(module_class_, u'MODULE_DEPS', []),
+            'description': module_class_.MODULE_DESCRIPTION,
+            'author': getattr(module_class_, u'MODULE_AUTHOR', u''),
+            'core': module_name in CORE_MODULES,
+            'tags': getattr(module_class_, u'MODULE_TAGS', []),
+            'country': fixed_country,
+            'urls': fixed_urls,
+            'category': getattr(module_class_, u'MODULE_CATEGORY', u''),
+            'screenshots': getattr(module_class_, u'MODULE_SCREENSHOTS', []),
+            'deps': getattr(module_class_, u'MODULE_DEPS', []),
+            'version': getattr(module_class_, 'MODULE_VERSION', '0.0.0'),
         })
-
-        # handle properly version and updatable flag
-        # self.logger.trace('Check module "%s" version: %s<->%s' % (module_name, module_class_.MODULE_VERSION, self.modules[module_name][u'version']))
-        if u'version' in self.modules[module_name] and Tools.compare_versions(module_class_.MODULE_VERSION, self.modules[module_name][u'version']):
-            self.modules[module_name][u'updatable'] = self.modules[module_name][u'version']
-        self.modules[module_name][u'version'] = module_class_.MODULE_VERSION
 
         # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
@@ -284,30 +248,16 @@ class Inventory(Cleep):
                 self.logger.debug(u'Add new module "%s" to list of available modules' % module_name)
                 self.modules[module_name] = module_data
                 
-                # add data from modules.json
-                #for key in modules_json[module_name]:
-                #    self.modules[module_name][key] = copy.deepcopy(modules_json[module_name][key])
-
                 # add/force some metadata
                 self.modules[module_name].update({
                     u'name': module_name,
                     u'installed': False,
                     u'library': False,
                     u'local': False,
-                    u'pending': False,
-                    u'processing': None,
-                    u'updatable': u'',
                     u'core': False,
                     u'screenshots': [],
                     u'deps': [],
                     u'loadedby': [],
-                })
-
-            else:
-                # update existing module, but only updatable flag
-                # current module must keep its local data
-                self.modules[module_name].update({
-                    u'updatable': module_data[u'version'] if Tools.compare_versions(self.modules[module_name][u'version'], module_data[u'version']) else u'',
                 })
 
     def _load_modules(self):
@@ -346,9 +296,6 @@ class Inventory(Cleep):
                 u'installed': False,
                 u'library': False,
                 u'local': module_name in local_modules,
-                u'pending': False,
-                u'processing': None,
-                u'updatable': u'',
                 u'core': False,
                 u'screenshots': [],
                 u'deps': [],
@@ -653,33 +600,10 @@ class Inventory(Cleep):
         conf = CleepConf(self.cleep_filesystem)
         cleep_config = conf.as_dict()
 
-        # update volatile infos
+        # apply specified filter
         filtered_modules = {}
         for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v,all_modules)}.items():
-            try:
-                # pending status
-                module[u'pending'] = False
-                if module_name in self.__modules_in_errors:
-                    # module failed to start, force eventual pending state to false
-                    module[u'pending'] = False
-                elif module_name in cleep_config[u'general'][u'modules'] and not module[u'installed']:
-                    # install pending
-                    module[u'pending'] = True
-                # Impossible case ?
-                # elif module_name not in cleep_config[u'general'][u'modules'] and module[u'installed'] and module[u'library']:
-                #     # module is installed as library
-                #     module[u'pending'] = False
-                elif module_name not in cleep_config[u'general'][u'modules'] and module[u'installed'] and not module[u'library']:
-                    # uninstall pending
-                    module[u'pending'] = True
-                elif module_name in cleep_config[u'general'][u'updated'] and module[u'installed']:
-                    # module updated, need to restart cleep
-                    module[u'pending'] = True
-
-                filtered_modules[module_name] = module
-
-            except: # pragma: no cover
-                self.logger.exception(u'Unable to get config of module "%s"' % module_name)
+            filtered_modules[module_name] = module
 
         return filtered_modules
             
