@@ -100,8 +100,8 @@ class Event():
                     # can't let render call crash the process
                     self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
 
-            # push event to internal bus
-            resp = self.bus.push(request, None)
+            # push event to internal bus (no response awaited for event)
+            self.bus.push(request, None)
             return True
 
         else:
