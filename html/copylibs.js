@@ -42,6 +42,9 @@ var files = {
     'node_modules/moment/min/moment-with-locales.min.js': 'js/libs/moment.min.js',
     // lazyload
     'node_modules/oclazyload/dist/ocLazyLoad.min.js': 'js/libs/ocLazyLoad.min.js',
+    // markdown https://github.com/Hypercubed/angular-marked
+    'node_modules/angular-marked/dist/angular-marked.min.js': 'js/libs/angular-marked.min.js',
+    'node_modules/marked/lib/marked.js': 'js/libs/marked.js',
 };
 
 for(var src in files) {
