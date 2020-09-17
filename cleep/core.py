@@ -293,7 +293,7 @@ class Cleep(BusClient):
     def _set_config_field(self, field, value):
         """
         Convenience function to update config field value
-        Unlike _update_config function, _set_config_field check parameter existance in config
+        Unlike _update_config function, _set_config_field check parameter existence in config
 
         Args:
             field (string): field name
