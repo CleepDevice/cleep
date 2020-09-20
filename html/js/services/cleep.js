@@ -386,7 +386,6 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
                     if( resp.error===false ) {
                         // save new config
                         self.modules[module].config = resp.data;
-                        // self.__setModuleIcon(module);
                         deferred.resolve(resp.data);
                     } else {
                         console.error(resp.message);
