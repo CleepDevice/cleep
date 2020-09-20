@@ -53,6 +53,9 @@ class TestSession():
         cleep_filesystem.enable_write(True, True)
 
         critical_resources = CriticalResources(debug)
+        
+        core_join_event = Event()
+        core_join_event.set()
 
         return {
             'message_bus': message_bus,
@@ -61,6 +64,7 @@ class TestSession():
             'cleep_filesystem': MagicMock(),
             'crash_report': crash_report,
             'module_join_event': Event(),
+            'core_join_event': core_join_event,
             'test_mode': True,
             'critical_resources': critical_resources,
             'execution_step': ExecutionStep(),
