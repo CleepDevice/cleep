@@ -1,5 +1,6 @@
 var fs = require('fs');
 var { exec } = require("child_process");
+const path = require('path');
 
 // unzip angularjs minified file
 /*exec('cd "node_modules/angular/"; mv "angular.min.js.gzip" "angular.min.js.gz"; gunzip "angular.min.js.gz"',
@@ -45,10 +46,30 @@ var files = {
     // markdown https://github.com/Hypercubed/angular-marked
     'node_modules/angular-marked/dist/angular-marked.min.js': 'js/libs/angular-marked.min.js',
     'node_modules/marked/lib/marked.js': 'js/libs/marked.js',
+    // badge https://github.com/jmouriz/angular-material-badge
+    'node_modules/angular-material-badge/source/angular-material-badge.js': 'js/libs/angular-material-badge.js',
+    'node_modules/angular-material-badge/source/angular-material-badge.css': 'css/angular-material-badge.css',
 };
 
-for(var src in files) {
-    fs.copyFile(src, files[src], function (err) {
-        if (err) throw err;
-    });
+for(var file in files) {
+    var src = file;
+    var dst = files[file];
+        
+    if (src.indexOf('.min') === -1) {
+        // minify file
+        var minDst = files[src].replace(path.extname(files[src]), '.min'+path.extname(files[src]));
+        console.log('minify ' + src + ' ==> ' + minDst);
+        exec('node node_modules/.bin/minify "' + src + '" > "' + minDst + '"',
+            (error, stdout, stderr) => {
+                if (error) throw error;
+            }
+        );
+    } else {
+        // copy file
+        console.log('copy ' + src + ' ==> ' + dst);
+        fs.copyFile(src, dst, function (err) {
+            if (err) throw err;
+        });
+    }
 }
+

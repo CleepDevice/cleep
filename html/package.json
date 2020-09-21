@@ -2,7 +2,7 @@
     "name": "cleep-frontend",
     "version": "0.0.0",
     "scripts": {
-        "update-libs": "npm install; node copylibs.js",
+        "update-libs": "npm run clean && npm install && node copylibs.js",
         "clean": "rm -rf node_modules"
     },
     "dependencies": {
@@ -19,10 +19,15 @@
         "angular-messages": "^1.7.9",
         "angular-route": "^1.7.9",
         "angular-sanitize": "^1.7.9",
+        "angular-material-badge": "^1.2.91",
+        "angular-marked": "^1.2.2",
         "codemirror-minified": "^5.53.2",
         "jquery": "^3.5.1",
         "moment": "^2.25.3",
         "oclazyload": "^1.1.0"
+    },
+    "devDependencies": {
+        "minify": "^5.2.0"
     },
     "comments": {
         "deprecated-dependencies": {
