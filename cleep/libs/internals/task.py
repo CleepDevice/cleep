@@ -31,6 +31,7 @@ class Task:
         self._interval = 0.0 if interval is None else interval
         self.__timer = None
         self._run_count = None
+        self.__stopped = False
 
     def __run(self):
         """
@@ -64,7 +65,8 @@ class Task:
                 self.logger.exception(u'Exception occured in task execution:')
 
         # run again task?
-        if run_again:
+        self.logger.debug('==> run_again=%s stopped=%s' % (run_again, self.__stopped))
+        if run_again and not self.__stopped:
             self.__timer = Timer(self._interval, self.__run)
             self.__timer.daemon = True
             self.__timer.start()
@@ -74,7 +76,7 @@ class Task:
         Wait for current task to be done
         """
         if self._run_count is None and not self.__timer:
-            self.logger.warning(u'No task is running')
+            self.logger.warn(u'No task is running')
             return
 
         if self._run_count is None:
@@ -97,9 +99,13 @@ class Task:
         """
         Stop the task
         """
+        # cancel timer if it is in waiting stage
         if self.__timer:
             self.__timer.cancel()
             self.__timer = None
+
+        # do not restart timer if task is running
+        self.__stopped = True
 
     def is_running(self):
         """
