@@ -3,7 +3,7 @@
  */
 var Cleep = angular.module(
     'Cleep',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'ngSanitize', 'base64', 'md.data.table', 'blockUI', 'ui.codemirror', 'oc.lazyLoad', 'konami', 'hc.marked']
+    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'ngSanitize', 'base64', 'md.data.table', 'blockUI', 'ui.codemirror', 'oc.lazyLoad', 'konami', 'hc.marked', 'ngMdBadge']
 );
 
 /**
