@@ -387,7 +387,7 @@ class MessageBus():
             InvalidParameter: if module is unknown.
         """
         module_lc = module.lower()
-        self.logger.trace(u'Remove subscription for module "%s"' % module_lc)
+        self.logger.debug(u'Remove subscription for module "%s"' % module_lc)
         if module_lc in self._queues:
             del self._queues[module_lc]
             del self.__activities[module_lc]
@@ -749,7 +749,7 @@ class BusClient(threading.Thread):
                             try:
                                 # get command reference
                                 command = getattr(self, msg[u'message'][u'command'])
-                                self.logger.debug(u'%s received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
+                                self.logger.debug(u'Module "%s" received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
 
                                 # check if command was found
                                 if command is not None:
@@ -777,7 +777,7 @@ class BusClient(threading.Thread):
                                             resp.error = True
                                             resp.message = u'%s' % str(e)
                                     else:
-                                        self.logger.error(u'Some command "%s" parameters are missing: %s' % (msg[u'message'][u'command'], msg[u'message'][u'params']))
+                                        self.logger.error(u'Some "%s" command parameters are missing: %s' % (msg[u'message'][u'command'], msg[u'message'][u'params']))
                                         resp.error = True
                                         resp.message = u'Some command parameters are missing'
 
