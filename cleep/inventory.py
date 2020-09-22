@@ -502,7 +502,7 @@ class Inventory(Cleep):
         module = copy.deepcopy(self.modules[module_name])
 
         # add module config
-        module[u'config'] = self.__modules_instances[module_name].get_module_config()
+        module[u'config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
             
         # add module events
         module[u'events'] = events[module_name] if module_name in events else []
