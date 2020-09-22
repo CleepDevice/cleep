@@ -13,6 +13,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
     self.devices = [];
     self.modules = {};
     self.installableModules = {};
+    self.modulesUpdates = {};
     self.renderers = {};
     self.events = {};
     self.drivers = {};
@@ -419,13 +420,30 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
             // installable modules not loaded, load it
             rpcService.getModules(true)
                 .then(function(modules) {
-                    self.installableModules = modules;
+                    // self.installableModules = modules;
+                    Object.assign(self.installableModules, modules);
                 }, function() {
                     deferred.reject();
                 });
         }
 
         return deferred.promise;
+    };
+
+    /**
+     * Refresh modules updates infos
+     * Use cleepService.modulesUpdates to follow changes
+     */
+    self.refreshModulesUpdates = function() {
+        rpcService.sendCommand('get_modules_updates', 'update')
+            .then(function(resp) {
+                if(!resp.error) {
+                    Object.assign(self.modulesUpdates, resp.data);
+                    if (self.modulesUpdates.actions) {
+                        console.log('pending='+self.modulesUpdates.actions.pending+' processing='+self.modulesUpdates.actions.processing);
+                    }
+                }
+            });
     };
 
     /**
@@ -674,8 +692,8 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
      */
     self.installModule = function(module) {
         return rpcService.sendCommand('install_module', 'update', {
-            'module': module
-        }, 300);
+            'module_name': module
+        });
     };
 
     /**
@@ -684,8 +702,8 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
      */
     self.uninstallModule = function(module) {
         return rpcService.sendCommand('uninstall_module', 'update', {
-            'module': module
-        }, 300);
+            'module_name': module
+        });
     };
 
     /**
@@ -696,7 +714,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         return rpcService.sendCommand('uninstall_module', 'update', {
             'module_name': module,
             'force':true
-        }, 300);
+        });
     };
 
     /**
@@ -706,7 +724,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
     self.updateModule = function(module) {
         return rpcService.sendCommand('update_module', 'update', {
             'module_name': module
-        }, 300);
+        });
     };
 
     /**
