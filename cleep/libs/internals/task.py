@@ -65,7 +65,6 @@ class Task:
                 self.logger.exception(u'Exception occured in task execution:')
 
         # run again task?
-        self.logger.debug('==> run_again=%s stopped=%s' % (run_again, self.__stopped))
         if run_again and not self.__stopped:
             self.__timer = Timer(self._interval, self.__run)
             self.__timer.daemon = True

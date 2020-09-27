@@ -74,7 +74,12 @@ class Inventory(Cleep):
         # direct access to modules instances
         self.__modules_instances = {}
         # modules that failed to starts
-        self.__modules_in_errors = []
+        # format::
+        #   {
+        #       module name (string): error (string),
+        #       ...
+        #   }
+        self.__modules_in_error = {}
         # module names that are CleepRpcWrapper instances
         self.__rpc_wrappers = []
         # modules dependencies
@@ -341,9 +346,9 @@ class Inventory(Cleep):
                     self.logger.debug(u'Store RpcWrapper instance "%s"' % module_name)
                     self.__rpc_wrappers.append(module_name)
 
-            except:
+            except Exception as e:
                 # flag modules has in error
-                self.__modules_in_errors.append(module_name)
+                self.__modules_in_error[module_name] = str(e)
 
                 # failed to load module
                 self.logger.exception(u'Unable to load module "%s" or one of its dependencies:' % module_name)
@@ -502,16 +507,16 @@ class Inventory(Cleep):
         module = copy.deepcopy(self.modules[module_name])
 
         # add module config
-        module[u'config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+        module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
             
         # add module events
-        module[u'events'] = events[module_name] if module_name in events else []
+        module['events'] = events[module_name] if module_name in events else []
     
         # started flag
-        module[u'started'] = False if module_name in self.__modules_in_errors else True
+        module['started'] = False if module_name in self.__modules_in_error.keys() else True
 
         # add library is loaded by
-        module[u'loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []
+        module['loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []
 
         return module
 
@@ -557,9 +562,9 @@ class Inventory(Cleep):
         for module_name, module in installed_modules.items():
             try:
                 # drop not launched modules
-                if module_name not in self.__modules_instances:
-                    self.logger.trace(u'Drop not started module "%s"' % module_name)
-                    continue
+                #if module_name not in self.__modules_instances:
+                #    self.logger.trace(u'Drop not started module "%s"' % module_name)
+                #    continue
                 
                 modules[module_name] = self.get_module_infos(module_name)
 
