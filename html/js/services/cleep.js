@@ -93,6 +93,22 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
     };
 
     /**
+     * Sync to object updating source with specified update data.
+     * This function keep source memory address
+     */
+    self.__syncObject = function(source, update) {
+        // add/update existing items
+        Object.assign(source, update);
+
+        // delete non existing items from update
+        for( var key of Object.keys(source) ) {
+            if( !(key in update) ) {
+                delete source[key];
+            }
+        }
+    };
+
+    /**
      * Load js files
      * Use oclazyloader to inject automatically angular stuff
      * @param jsFiles: list of js files (with full path)
@@ -420,8 +436,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
             // installable modules not loaded, load it
             rpcService.getModules(true)
                 .then(function(modules) {
-                    // self.installableModules = modules;
-                    Object.assign(self.installableModules, modules);
+                    self.__syncObject(self.installableModules, modules);
                 }, function() {
                     deferred.reject();
                 });
@@ -438,10 +453,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         rpcService.sendCommand('get_modules_updates', 'update')
             .then(function(resp) {
                 if(!resp.error) {
-                    Object.assign(self.modulesUpdates, resp.data);
-                    if (self.modulesUpdates.actions) {
-                        console.log('pending='+self.modulesUpdates.actions.pending+' processing='+self.modulesUpdates.actions.processing);
-                    }
+                    self.__syncObject(self.modulesUpdates, resp.data);
                 }
             });
     };
@@ -528,7 +540,6 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         } else {
             self.__deferredRenderers.promise
                 .then(function() {
-                    console.log('resolve renderers');
                     deferred.resolve(self.renderers);
                 }, function() {
                     deferred.reject();
@@ -725,14 +736,6 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         return rpcService.sendCommand('update_module', 'update', {
             'module_name': module
         });
-    };
-
-    /**
-     * Get modules updates
-     * This function calls system module function to avoid adhesion of update service from angular app
-     */
-    self.getModulesUpdates = function(module) {
-        return rpcService.sendCommand('get_modules_updates', 'update');
     };
 
 };

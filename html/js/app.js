@@ -10,7 +10,7 @@ var Cleep = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast) {
+var mainController = function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast, $route) {
 
     var self = this;
     self.rebooting = false;
@@ -68,13 +68,15 @@ var mainController = function($rootScope, $scope, $injector, rpcService, cleepSe
                     self.reloadConfig = false;
                     self.loadConfig(false)
                         .then(function() {
-                            //toast message
-                            if( message && message.length>0 )
-                            {
+                            // toast message
+                            if( message && message.length>0 ) {
                                 toast.success(message);
                             }
 
-                            //unblock ui
+                            // force displayed component reloading
+                            $route.reload();
+
+                            // unblock ui
                             blockUI.stop();
                     });
                 }
@@ -204,5 +206,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, cleepSe
 
 };
 
-Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', mainController]);
+Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', mainController]);
 
