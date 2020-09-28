@@ -8,39 +8,31 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         var self = this;
         self.cleepService = cleepService;
         self.search = '';
-        // self.moduleToUpdate = null;
-        // self.moduleToNotStarted = null;
         self.updates = [];
         self.modulesNames = [];
-        // self.moduleLogs = null;
+        self.moduleUpdate = {};
 
         /**
          * Clear search input
          */
-        self.clearSearch = function()
-        {
+        self.clearSearch = function() {
             self.search = '';
         };
 
         /**
          * Redirect to install module page
          */
-        self.toInstallPage = function()
-        {
+        self.gotoInstallPage = function() {
             $window.location.href = '#!install';
         };
 
         /**
          * Uninstall module
          */
-        self.uninstall = function(module)
-        {
-            confirm.open('Uninstall module?', 'Do you want to remove this module? Its config will be kept.', 'Uninstall', 'Cancel')
+        self.uninstallModule = function(module) {
+            confirm.open('Module uninstallation', 'Do you want to uninstall this module?<br/>Its config will be kept.', 'Uninstall', 'Cancel')
                 .then(function() {
-                    //lock button asap
-                    cleepService.modules[module].processing = 'uninstall';
-
-                    //uninstall module
+                    // uninstall module
                     return cleepService.uninstallModule(module);
                 }, function() {});
         };
@@ -48,61 +40,36 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         /**
          * Force module uninstall
          */
-        self.forceUninstall = function(module)
-        {
-            //lock button
-            cleepService.modules[module].processing = 'uninstall';
-
-            //close dialog
+        self.forceUninstallModule = function(module) {
+            // close dialog
             self.closeDialog();
 
-            //uninstall module
+            // uninstall module
             return cleepService.forceUninstallModule(module);
         };
 
         /**
          * Update module
          */
-        self.update = function(module)
-        {
-            //lock button asap
-            cleepService.modules[module].processing = 'update';
-
-            //close dialog
+        self.updateModule = function(module) {
+            // close dialog
             self.closeDialog();
 
-            //update module
+            // update module
             cleepService.updateModule(module);
         };
 
         /**
          * Init controller
          */
-        self.init = function() {
-            // load module updates
-            cleepService.getModulesUpdates()
-                .then(function(resp) {
-                    if (resp.error) {
-                        toast.error('Error getting updates');
-                        return;
-                    }
-                    self.updates = resp.data;
-                })
-                .finally(function() {
-                    // fill modules name
-                    var modulesNames = [];
-                    for( var moduleName in cleepService.modules ) {
-                        // keep only installed modules
-                        if( cleepService.modules[moduleName].installed && !cleepService.modules[moduleName].library ) {
-                            modulesNames.push(moduleName);
-                        }
-                    }
-                    self.modulesNames = modulesNames;
-                });
+        self.$onInit = function() {
+            // load mandatory stuff
+            cleepService.getInstallableModules();
+            cleepService.refreshModulesUpdates();
 
-            //add fab action
+            // add fab action
             action = [{
-                callback: self.toInstallPage,
+                callback: self.gotoInstallPage,
                 icon: 'plus',
                 aria: 'Install module',
                 tooltip: 'Install module'
@@ -111,15 +78,26 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         };
 
         /**
-         * Init controller as soon as modules configuration are loaded
+         * Fill modules
+         */
+        self.fillModules = function() {
+            var modulesNames = [];
+            for( var moduleName in cleepService.modules ) {
+                modulesNames.push(moduleName);
+            }
+            self.modulesNames = modulesNames;
+        };
+
+        /**
+         * Fill modules as soon as cleep configuration is loaded
          */
         $scope.$watchCollection(
             function() {
                 return cleepService.modules;
             },
             function(newValue, oldValue) {
-                if (!angular.equals(newValue, {})) {
-                    self.init();
+                if( newValue && Object.keys(newValue).length ) {
+                    self.fillModules();
                 }
             }
         );
@@ -132,13 +110,13 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         };
 
         /**
-         * Show update dialog
+         * Show module update dialog
          */
-        self.showUpdateDialog = function(module, ev) {
-            self.moduleToUpdate = module;
+        self.showModuleUpdateDialog = function(module, ev) {
+            self.moduleUpdate = module;
 
-            //trust html content
-            self.sceChangelog = $sce.trustAsHtml(self.moduleToUpdate.changelog);
+            // trust html content
+            self.sceChangelog = $sce.trustAsHtml(self.moduleUpdate.update.changelog);
 
             $mdDialog.show({
                 controller: function() { return self; },
@@ -160,7 +138,7 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'notstartedCtl',
-                templateUrl: 'js/settings/modules/notstarted.dialog.html',
+                templateUrl: 'js/settings/modules/not-started.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -170,48 +148,28 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         };
 
         /** 
-         * Show logs dialog
+         * Catch module uninstall events
          */
-        self.showLogsDialog = function(moduleName, ev) {
-            //get last module processing
-            cleepService.getLastModuleProcessing(moduleName)
-                .then(function(resp) {
-                    //prepare dialog object
-                    self.moduleLogs = { 
-                        name: moduleName,
-                        status: resp.data.status,
-                        time: resp.data.time,
-                        stdout: resp.data.stdout.join('\n'),
-                        stderr: resp.data.stderr.join('\n'),
-                        process: resp.data.process.join('\n')
-                    };  
+        $rootScope.$on('update.module.uninstall', function(event, uuid, params) {
+            // module uninstall event received, refresh modules updates infos
+            cleepService.refreshModulesUpdates();
+        });
 
-                    //display dialog
-                    $mdDialog.show({
-                        controller: function() { return self; },
-                        controllerAs: 'modulesCtl',
-                        templateUrl: 'js/settings/modules/logs.dialog.html',
-                        parent: angular.element(document.body),
-                        targetEvent: ev, 
-                        clickOutsideToClose: true,
-                        fullscreen: true
-                    })  
-                    .then(function() {}, function() {});
-                }); 
-        };
+        /** 
+         * Catch module update events
+         */
+        $rootScope.$on('update.module.update', function(event, uuid, params) {
+            // module update event received, refresh modules updates infos
+            cleepService.refreshModulesUpdates();
+        });
 
     }];
-
-    var modulesLink = function(scope, element, attrs, controller) {
-        //see watchcollection above !
-    };
 
     return {
         templateUrl: 'js/settings/modules/modules.html',
         replace: true,
         controller: modulesController,
         controllerAs: 'modulesCtl',
-        link: modulesLink
     };
 };
 

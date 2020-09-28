@@ -26,51 +26,42 @@
                 <div style="margin-bottom:15px;">
                     <span class="subheader">Author:</span> {{installCtl.moduleToInstall.author}}
                 </div>
-                <div style="margin-bottom:15px;">
-                    <span class="subheader" style="display:block; margin-bottom:5px;">External links:</span>
-                    <br>
-                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.site" ng-href="{{installCtl.moduleToInstall.urls.site}}" target="_blank">
-                        <md-icon md-svg-icon="web"></md-icon>
-                        Website
-                    </md-button>
-                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.info" ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">
-                        <md-icon md-svg-icon="information-outline"></md-icon>
-                        Infos
-                    </md-button>
-                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.bugs" ng-href="{{installCtl.moduleToInstall.urls.bugs}}" target="_blank">
-                        <md-icon md-svg-icon="bug"></md-icon>
-                        Bugs
-                    </md-button>
-                    <md-button class="md-raised" ng-if="installCtl.moduleToInstall.urls.help" ng-href="{{installCtl.moduleToInstall.urls.help}}" target="_blank">
-                        <md-icon md-svg-icon="lifebuoy"></md-icon>
-                        Help
-                    </md-button>
-                </div>
             </div>
 
             <div flex>
                 <md-list ng-if="!installCtl.moduleToInstall.local">
                     <!-- long description -->
-                    <md-subheader style="background-color:white;" class="md-subheader-inner">Description</md-subheader>
+                    <md-subheader style="background-color:white;" class="md-no-sticky">Description</md-subheader>
                     <md-list-item>
-                        <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
-                        <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</span>
+                        <div layout="column" layout-align="start stretch">
+                            <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
+                            <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</span>
+                            <span ng-if="installCtl.moduleToInstall.urls.info" style="margin-top:15px;">
+                                <a ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">More infos on this module</a>
+                                <md-icon md-svg-icon="open-in-new" class="icon-xs"></md-icon>
+                            </span>
+                        </div>
                     </md-list-item>
 
                     <!-- changelog -->
-                    <md-subheader style="background-color:white;" class="md-subheader-inner">Changelog</md-subheader>
+                    <md-subheader style="background-color:white;" class="md-no-sticky">Changelog</md-subheader>
                     <md-list-item>
                         <span ng-if="installCtl.moduleToInstall.changelog.length>0" ng-bind-html="installCtl.sceChangelog"></span>
                         <span ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</span>
                     </md-list-item>
 
                     <!-- screenshots -->
-                    <md-subheader style="background-color:white;" class="md-subheader-inner">Screenshots</md-subheader>
-                    <md-list-item>
-                        <div ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
-                            <img ng-src="{{installCtl.moduleToInstall.screenshots[1]}}" style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"/>
+                    <md-subheader
+                        style="background-color:white;"
+                        class="md-no-sticky"
+                        ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0"
+                    >
+                        Screenshots
+                    </md-subheader>
+                    <md-list-item ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
+                        <div ng-repeat="screenshot in installCtl.moduleToInstall.screenshots">
+                            <img ng-src="{{screenshot}" style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"/>
                         </div>
-                        <span ng-if="!installCtl.moduleToInstall.screenshots || installCtl.moduleToInstall.screenshots.length===0">No screenshot</span>
                     </md-list-item>
                 </md-list>
 

@@ -17,9 +17,8 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
          * @param desc: desc file content (json)
          * @param module: module name
          */
-        self.__getConfigFilesToLoad = function(desc, module)
-        {
-            //init
+        self.__getConfigFilesToLoad = function(desc, module) {
+            // init
             var url = self.modulesPath + module + '/';
             var files = {
                 'html': [],
@@ -27,25 +26,18 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
             };
             var types = ['js', 'css', 'html'];
 
-            //check desc config
-            if( !desc || !desc.config )
-            {
+            // check desc config
+            if( !desc || !desc.config ) {
                 return files;
             }
 
-            //append files by types
-            for( var j=0; j<types.length; j++ )
-            {
-                if( desc.config[types[j]] )
-                {
-                    for( var i=0; i<desc.config[types[j]].length; i++)
-                    {
-                        if( types[j]=='html' )
-                        {
+            // append files by types
+            for( var j=0; j<types.length; j++ ) {
+                if( desc.config[types[j]] ) {
+                    for( var i=0; i<desc.config[types[j]].length; i++) {
+                        if( types[j]=='html' ) {
                             files['html'].push(url + desc.config[types[j]][i]);
-                        }
-                        else
-                        {
+                        } else {
                             files['jscss'].push(url + desc.config[types[j]][i]);
                         }
                     }
@@ -59,9 +51,8 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
          * Load js and css files
          * @param files: list of js files
          */
-        self.__loadJsCssFiles = function(files)
-        {
-            //load js files using lazy loader
+        self.__loadJsCssFiles = function(files) {
+            // load js files using lazy loader
             return $ocLazyLoad.load({
                 'reconfig': false,
                 'rerun': false,
@@ -73,33 +64,30 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
          * Load html files as templates
          * @param htmlFile: list of html files
          */
-        self.__loadHtmlFiles = function(htmlFiles)
-        {
-            //init
+        self.__loadHtmlFiles = function(htmlFiles) {
+            // init
             var promises = [];
             var d = $q.defer();
 
-            //fill templates promises
-            for( var i=0; i<htmlFiles.length; i++ )
-            {
-                //load only missing templates
+            // fill templates promises
+            for( var i=0; i<htmlFiles.length; i++ ) {
+                // load only missing templates
                 var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
-                if( !$templateCache.get(templateName) )
-                {
+                if( !$templateCache.get(templateName) ) {
                     promises.push($http.get(htmlFiles[i]));
                 }
             }
 
-            //and execute them
+            // and execute them
             $q.all(promises)
                 .then(function(templates) {
-                    //check if templates available
-                    if( !templates )
+                    // check if templates available
+                    if( !templates ) {
                         return;
-    
-                    //cache templates
-                    for( var i=0; i<templates.length; i++ )
-                    {
+                    }
+
+                    // cache templates
+                    for( var i=0; i<templates.length; i++ ) {
                         var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
                         $templateCache.put(templateName, templates[i].data);
                     }
@@ -118,16 +106,16 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
          */
         self.init = function(module)
         {
-            //save module name
+            // save module name
             self.module = module;
             var files;
 
-            //load module description
+            // load module description
             cleepService.getModuleDescription(module)
                 .then(function(desc) {
                     files = self.__getConfigFilesToLoad(desc, module);
 
-                    //load html templates first
+                    // load html templates first
                     return self.__loadHtmlFiles(files.html);
 
                 }, function(err) {
@@ -136,11 +124,11 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
                     return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
-                    //load js and css files
+                    // load js and css files
                     return self.__loadJsCssFiles(files.jscss);
 
                 }, function(err) {
-                    //remove rejection warning
+                    // remove rejection warning
                     self.error = true;
                     if( err!=='STOPCHAIN' ) {
                         console.error('error loading html files:', err);
@@ -148,15 +136,15 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
                     return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
-                    //everything is loaded successfully, inject module directive
+                    // everything is loaded successfully, inject module directive
                     var template = '<div ' + module + '-config-directive=""></div>';
                     var directive = $compile(template)($scope);
                     $element.append(directive);
 
-                    //save module urls
+                    // save module urls
                     self.moduleUrls = cleepService.modules[module].urls;
 
-                    //save module version
+                    // save module version
                     self.version = cleepService.modules[module].version;
 
                 }, function(err) {

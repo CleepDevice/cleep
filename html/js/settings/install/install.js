@@ -11,7 +11,6 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         self.country = null;
         self.countryAlpha = null;
         self.moduleToInstall = null;
-        self.moduleLogs = null
         self.modulesName = [];
 
         /**
@@ -34,9 +33,9 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         };
 
         /**
-         * Init controller
+         * Fill modules list
          */
-        self.init = function() {
+        self.fillModules = function() {
             // update list of modules name
             var modulesName = [];
             for( moduleName in cleepService.installableModules ) {
@@ -87,37 +86,6 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         };
 
         /** 
-         * Show logs dialog
-         */
-        self.showLogsDialog = function(moduleName, ev) {
-            // get last module processing
-            cleepService.getLastModuleProcessing(moduleName)
-                .then(function(resp) {
-                    // prepare dialog object
-                    self.moduleLogs = {
-                        name: moduleName,
-                        status: resp.data.status,
-                        time: resp.data.time,
-                        stdout: resp.data.stdout.join('\n'),
-                        stderr: resp.data.stderr.join('\n'),
-                        process: resp.data.process.join('\n')
-                    };
-
-                    // display dialog
-                    $mdDialog.show({
-                        controller: function() { return self; },
-                        controllerAs: 'installCtl',
-                        templateUrl: 'js/settings/install/logs.dialog.html',
-                        parent: angular.element(document.body),
-                        targetEvent: ev, 
-                        clickOutsideToClose: true,
-                        fullscreen: true
-                    })  
-                    .then(function() {}, function() {});
-                });
-        };
-
-        /** 
          * Redirect to update module page
          */
         self.toUpdateModule = function() {   
@@ -125,7 +93,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         };
 
         /**
-         * Init controller as soon as modules configurations are loaded
+         * Fill modules as soon as cleep configuration is loaded
          */
         $scope.$watchCollection(
             function() {
@@ -133,7 +101,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             },
             function(newValue, oldValue) {
                 if( newValue && Object.keys(newValue).length ) {
-                    self.init();
+                    self.fillModules();
                 }
             }
         );
@@ -142,12 +110,13 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          * Catch module install events
          */
         $rootScope.$on('update.module.install', function(event, uuid, params) {
-            console.log('---> event', params);
-            self.moduleInstallStatus = params.status;
             // module install event received, refresh modules updates infos
             cleepService.refreshModulesUpdates();
         });
 
+        /**
+         * Init component
+         */
         self.$onInit = function() {
             // load mandatory data
             cleepService.getInstallableModules();

@@ -47,51 +47,75 @@
 
                 <!-- progress bar -->
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
-                    <md-progress-linear ng-if="modulesCtl.updates[moduleName].processing" md-mode="determinate" ng-value="modulesCtl.updates[moduleName].update.progress"></md-progress-linear>
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && (modulesCtl.cleepService.modulesUpdates[moduleName].processing || modulesCtl.cleepService.modulesUpdates[moduleName].pending) && modulesCtl.cleepService.modulesUpdates[moduleName].update.progress!==0"
+                        md-mode="determinate"
+                        ng-value="modulesCtl.cleepService.modulesUpdates[moduleName].update.progress">
+                    </md-progress-linear>
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && (modulesCtl.cleepService.modulesUpdates[moduleName].processing || modulesCtl.cleepService.modulesUpdates[moduleName].pending) && modulesCtl.cleepService.modulesUpdates[moduleName].update.progress===0"
+                        md-mode="indeterminate">
+                    </md-progress-linear>
                 </md-card-content>
 
                 <md-card-actions layout="row" layout-align="end center">
 
                     <!-- action message -->
-                    <span ng-if="modulesCtl.updates[moduleName].processing && !modulesCtl.updates[moduleName].updatable">Uninstalling...</span>
-                    <span ng-if="modulesCtl.updates[moduleName].processing && modulesCtl.updates[moduleName].updatable">Updating...</span>
-                    <span ng-if="modulesCtl.updates[moduleName].pending">Please restart Cleep</span>
+                    <md-button class="md-accent" ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].pending">
+                        <md-icon md-svg-icon="reload-alert"></md-icon>
+                        <span>Please restart Cleep</span>
+                    </md-button>
+                    <!-- <div>
+                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].processing && !modulesCtl.icleepService.modulesUpdates[moduleName].updatable">
+                            Uninstalling...
+                        </span>
+                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].processing && modulesCtl.cleepService.modulesUpdates[moduleName].updatable">
+                            Updating...
+                        </span>
+                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].pending">
+                            Please restart Cleep
+                        </span>
+                    </div> -->
 
-                    <!-- open module + uninstall info -->
-                    <md-button ng-if="modulesCtl.cleepService.modules[moduleName].hasConfig"
-                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
+                    <!-- open module page -->
+                    <md-button
+                        ng-if="modulesCtl.cleepService.modules[moduleName].hasConfig"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[moduleName].pending || modulesCtl.cleepService.modulesUpdates[moduleName].processing"
                         ng-href="{{'#!module/'+moduleName}}"
                     >
                         <md-icon md-svg-icon="open-in-app"></md-icon>
                         <span>Open</span>
                     </md-button>
 
+                    <!-- module not started-->
+                    <md-button
+                        ng-if="!modulesCtl.cleepService.modules[moduleName].started"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[moduleName].pending || modulesCtl.cleepService.modulesUpdates[moduleName].processing"
+                        ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[moduleName])"
+                        class="md-accent"
+                    >
+                        <md-icon md-svg-icon="alert-decagram"></md-icon>
+                        <span>Not started</span>
+                    </md-button>
+
                     <!-- update button -->
                     <md-button
-                        ng-if="modulesCtl.updates[moduleName].updatable"
-                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
-                        ng-click="modulesCtl.showUpdateDialog(modulesCtl.updates[moduleName].update)"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].updatable"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[moduleName].pending || modulesCtl.cleepService.modulesUpdates[moduleName].processing"
+                        ng-click="modulesCtl.showModuleUpdateDialog(modulesCtl.cleepService.modulesUpdates[moduleName])"
                         class="md-accent"
                     >
                         <md-icon md-svg-icon="update"></md-icon>
                         <span>Update</span>
                     </md-button>
 
-                    <!-- module not started-->
-                    <md-button
-                        ng-if="!modulesCtl.cleepService.modules[moduleName].started"
-                        ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[moduleName])"
-                        class="md-accent"
-                    >
-                        <md-icon md-svg-icon="alert-circle"></md-icon>
-                        <span>Not started</span>
-                    </md-button>
-
                     <!-- uninstall module -->
                     <md-button
-                        ng-disabled="modulesCtl.updates[moduleName].pending || modulesCtl.updates[moduleName].processing"
                         ng-if="!modulesCtl.cleepService.modules[moduleName].core"
-                        ng-click="modulesCtl.uninstall(moduleName)"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[moduleName].pending || modulesCtl.cleepService.modulesUpdates[moduleName].processing"
+                        ng-click="modulesCtl.uninstallModule(moduleName)"
                     >
                         <md-icon md-svg-icon="delete"></md-icon>
                     </md-button>
