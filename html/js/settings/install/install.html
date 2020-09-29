@@ -103,7 +103,7 @@
                     <md-button
                         class="md-accent"
                         ng-disabled="installCtl.cleepService.modulesUpdates[moduleName] && (installCtl.cleepService.modulesUpdates[moduleName].processing || installCtl.cleepService.modulesUpdates[moduleName].pending)"
-                        ng-click="installCtl.showInstallDialog(installCtl.cleepService.installableModules[moduleName])"
+                        ng-click="installCtl.showInstallDialog(installCtl.cleepService.installableModules[moduleName], $event)"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>
                         <span ng-if="!installCtl.cleepService.modulesUpdates[moduleName] && !installCtl.cleepService.modulesUpdates[moduleName].processing && !installCtl.cleepService.modulesUpdates[moduleName].pending">
