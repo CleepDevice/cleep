@@ -136,10 +136,10 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
                     return $q.reject('STOPCHAIN');
                 })
                 .then(function() {
-                    // everything is loaded successfully, inject module directive
-                    var template = '<div ' + module + '-config-directive=""></div>';
-                    var directive = $compile(template)($scope);
-                    $element.append(directive);
+                    // everything is loaded successfully, inject module component
+                    var template = '<div ' + module + '-config-component=""></div>';
+                    var component = $compile(template)($scope);
+                    $element.append(component);
 
                     // save module urls
                     self.moduleUrls = cleepService.modules[module].urls;

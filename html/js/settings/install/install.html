@@ -53,9 +53,6 @@
                         <span class="md-subhead module-desc" ng-if="!installCtl.cleepService.installableModules[moduleName].description && installCtl.cleepService.installableModules[moduleName].local">
                             Locally installed module
                         </span>
-                        <span>
-                            {{ installCtl.cleepService.modulesUpdates[moduleName] }}
-                        </span>
                     </md-card-title-text>
 
                     <!-- module icon -->
@@ -96,7 +93,7 @@
                     <md-button
                         class="md-primary"
                         ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].update.failed"
-                        ng-click="installCtl.toUpdateModule()"
+                        ng-click="installCtl.gotoUpdateModule()"
                     >
                         <md-icon md-svg-icon="file-document-box-outline"></md-icon>
                         <span>Install failed, see logs</span>

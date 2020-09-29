@@ -29,7 +29,12 @@
 
     <!-- applications list -->
     <div layout="row" layout-wrap>
-        <div ng-if="modulesCtl.modulesNames.length>0" ng-repeat="moduleName in modulesCtl.modulesNames | orderBy:'toString()' | filter:modulesCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div
+            id="mod-{{moduleName}}"
+            ng-if="modulesCtl.modulesNames.length>0"
+            ng-repeat="moduleName in modulesCtl.modulesNames | orderBy:'toString()' | filter:modulesCtl.search"
+            flex-xl="25" flex-lg="33" flex-md="50" flex="100"
+        >
 
             <md-card class="widget-bg-color">
 
@@ -62,22 +67,29 @@
 
                 <md-card-actions layout="row" layout-align="end center">
 
-                    <!-- action message -->
-                    <md-button class="md-accent" ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].pending">
+                    <!-- process messages -->
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].pending && !modulesCtl.cleepService.modulesUpdates[moduleName].update.failed"
+                    >
                         <md-icon md-svg-icon="reload-alert"></md-icon>
-                        <span>Please restart Cleep</span>
+                        <span>Success please restart</span>
                     </md-button>
-                    <!-- <div>
-                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].processing && !modulesCtl.icleepService.modulesUpdates[moduleName].updatable">
-                            Uninstalling...
-                        </span>
-                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].processing && modulesCtl.cleepService.modulesUpdates[moduleName].updatable">
-                            Updating...
-                        </span>
-                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].pending">
-                            Please restart Cleep
-                        </span>
-                    </div> -->
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].pending && modulesCtl.cleepService.modulesUpdates[moduleName].update.failed"
+                    >
+                        <md-icon md-svg-icon="file-document-outline"></md-icon>
+                        <span>Failure see logs</span>
+                    </md-button>
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].processing"
+                    >
+                        <md-icon md-svg-icon="cog"></md-icon>
+                        <span ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].updatable">Updating...</span>
+                        <span ng-if="!modulesCtl.cleepService.modulesUpdates[moduleName].updatable">Uninstalling...</span>
+                    </md-button>
 
                     <!-- open module page -->
                     <md-button
@@ -102,13 +114,13 @@
 
                     <!-- update button -->
                     <md-button
+                        class="md-accent"
                         ng-if="modulesCtl.cleepService.modulesUpdates[moduleName].updatable"
                         ng-disabled="modulesCtl.cleepService.modulesUpdates[moduleName].pending || modulesCtl.cleepService.modulesUpdates[moduleName].processing"
                         ng-click="modulesCtl.showModuleUpdateDialog(modulesCtl.cleepService.modulesUpdates[moduleName])"
                         class="md-accent"
                     >
                         <md-icon md-svg-icon="update"></md-icon>
-                        <span>Update</span>
                     </md-button>
 
                     <!-- uninstall module -->

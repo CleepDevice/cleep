@@ -88,7 +88,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         /** 
          * Redirect to update module page
          */
-        self.toUpdateModule = function() {   
+        self.gotoUpdateModule = function() {   
             $window.location.href = '#!/module/update?tab=modules';
         };
 

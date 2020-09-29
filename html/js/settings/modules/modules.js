@@ -2,7 +2,10 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var modulesDirective = function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce) {
+angular
+.module('Cleep')
+.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', '$location', '$anchorScroll',
+function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $location, $anchorScroll) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -63,6 +66,12 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
          * Init controller
          */
         self.$onInit = function() {
+            // scroll to app
+            if( $location.search().app ) {
+                $location.hash('mod-' + $location.search().app);
+                $anchorScroll();
+            }
+
             // load mandatory stuff
             cleepService.getInstallableModules();
             cleepService.refreshModulesUpdates();
@@ -171,8 +180,5 @@ var modulesDirective = function($rootScope, cleepService, $window, toast, confir
         controller: modulesController,
         controllerAs: 'modulesCtl',
     };
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', modulesDirective]);
+}]);
 
