@@ -160,24 +160,13 @@ Cleep.filter('firstUpper', function($filter) {
 });
 
 /**
- * order specified object by member key
+ * Order specified object by member key
  */
 Cleep.filter('orderObjByKey', function() {
     return function(items, field, reverse) {
+        if (!angular.isObject(items)) return items;
         var filtered = Object.keys(items).sort().reduce(function(a,v) {a[v] = items[v]; return a;}, {});
-
-        /*angular.forEach(items, function(item) {
-            item[
-            filtered.push(item);
-        });
-
-        filtered.sort(function (a, b) {
-            return (a[field] > b[field] ? 1 : -1);
-        });*/
-
-        if(reverse)
-            filtered.reverse();
-
+        if(reverse) filtered.reverse();
         return filtered;
     };
 });
