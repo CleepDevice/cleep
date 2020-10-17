@@ -31,12 +31,13 @@ class TestSession():
     Create session to be able to run tests on a Cleep module
     """
 
-    def __init__(self):
+    def __init__(self, testcase):
         """
         Constructor
         """
         tools.install_trace_logging_level()
 
+        self.testcase = testcase
         self.__setup_executed = False
         self.__module_class = None
         self.__debug_enabled = False
@@ -179,12 +180,12 @@ class TestSession():
         """
         return list(self.__bus_command_handlers.keys())
 
-    def make_mock_command(self, command, data=None, fail=False, no_response=False):
+    def make_mock_command(self, command_name, data=None, fail=False, no_response=False):
         """
         Help user to make a ready to user command object
 
         Args:
-            command (string): command name
+            command_name (string): command name
             data (any): data to return as command result
             fail (bool): set True to simulate command failure
             no_response (bool): set True to simulate command no response
@@ -193,7 +194,7 @@ class TestSession():
             dict: awaited mocked command object
         """
         return {
-            'command': command,
+            'command': command_name,
             'data': data,
             'fail': fail,
             'noresponse': no_response
@@ -206,7 +207,7 @@ class TestSession():
         Args:
             command (dict): command object as returned by make_mock_command function
         """
-        if command in list(self.__bus_command_handlers.keys()):
+        if command['command'] in list(self.__bus_command_handlers.keys()):
             self.logger.warning('Mock command "%s" already mocked' % command['command'])
             return
 
@@ -219,63 +220,84 @@ class TestSession():
             'last_to': None,
         }
 
-    def set_mock_command_succeed(self, command):
+    def set_mock_command_succeed(self, command_name):
         """
         Flag command as succeed will return specified data
-        """
-        if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command]['fail'] = False
-            self.__bus_command_handlers[command]['noresponse'] = False
 
-    def set_mock_command_fail(self, command):
+        Args:
+            command_name (string): command name
+        """
+        if command_name in self.__bus_command_handlers:
+            self.__bus_command_handlers[command_name]['fail'] = False
+            self.__bus_command_handlers[command_name]['noresponse'] = False
+
+    def set_mock_command_fail(self, command_name):
         """
         Flag command as fail will return error when called
-        """
-        if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command]['fail'] = True
-            self.__bus_command_handlers[command]['noresponse'] = False
 
-    def set_mock_command_no_response(self, command):
+        Args:
+            command_name (string): command name
+        """
+        if command_name in self.__bus_command_handlers:
+            self.__bus_command_handlers[command_name]['fail'] = True
+            self.__bus_command_handlers[command_name]['noresponse'] = False
+
+    def set_mock_command_no_response(self, command_name):
         """
         Flag command as not responding
-        """
-        if command in self.__bus_command_handlers:
-            self.__bus_command_handlers[command]['fail'] = False
-            self.__bus_command_handlers[command]['noresponse'] = True
 
-    def command_call_count(self, command):
+        Args:
+            command_name (string): command name
+        """
+        if command_name in self.__bus_command_handlers:
+            self.__bus_command_handlers[command_name]['fail'] = False
+            self.__bus_command_handlers[command_name]['noresponse'] = True
+
+    def command_called(self, command_name):
+        """
+        Return False if command not called
+
+        Args:
+            command_name (string): command name
+
+        Returns:
+            bool: True if command called, False otherwise
+        """
+        return True if self.command_call_count(command_name) else False
+
+    def command_call_count(self, command_name):
         """
         Return how many times the command handler has been called
 
         Args:
-            command (string): command name
+            command_name (string): command name
 
         Returns:
             int: number of times handler has been called
         """
-        if command in self.__bus_command_handlers:
-            return self.__bus_command_handlers[command]['calls']
+        if command_name in self.__bus_command_handlers:
+            return self.__bus_command_handlers[command_name]['calls']
 
         return 0
 
-    def command_called_with(self, command, params, to=None):
+    def command_called_with(self, command_name, params, to=None):
         """
         Return True if command is called with specified parameters
 
         Args:
-            command (string): command name
+            command_name (string): command name
             params (dict): command parameters
             to (string): command recipient. If to is specified, the value is used to check command validity
 
         Returns:
             bool: True if command called with params
         """
-        if command in self.__bus_command_handlers:
-            params_check = self.__bus_command_handlers[command]['lastparams'] == params
-            params_error = ('  Expected params: %s\n  Current params: %s' % (params, self.__bus_command_handlers[command]['lastparams'])
+        if command_name in self.__bus_command_handlers:
+            params_check = self.__bus_command_handlers[command_name]['lastparams'] == params
+            params_error = ('  Expected params: %s\n  Current params: %s' % (params, self.__bus_command_handlers[command_name]['lastparams'])
                             if not params_check else '')
-            to_check = True if to is None else self.__bus_command_handlers[command]['lastto'] == to
-            to_error = ('  Expected to: %s\n  Current to: %s' % (to, self.__bus_command_handlers[command]['lastto'])
+            to_check = True if to is None else self.__bus_command_handlers[command_name]['lastto'] == to
+            to_error = ('  Expected to: %s\n  Current to: %s' % (to, self.__bus_command_handlers[command_name]['lastto'])
                         if not to_check else '')
 
             check = params_check and to_check
@@ -285,6 +307,21 @@ class TestSession():
 
         logging.fatal('TEST: event_called_with failed: command not mocked. Please use "session.add_mock_command"')
         return False
+
+    def assert_command_called_with(self, command_name, params, to=None):
+        """
+        Same as command_called_wth but with assertion
+        """
+        # check command call
+        if command_name not in self.__bus_command_handlers:
+            self.testcase.assertTrue(False, 'Command "%s" not called' % command_name)
+
+        # check command params
+        self.testcase.assertEqual(self.__bus_command_handlers[command_name]['lastparams'], params)
+
+        # check command recipient
+        if to is not None:
+            self.testcase.assertEqual(self.__bus_command_handlers[command_name]['lastto'], to)
 
     def event_called(self, event_name):
         """
@@ -297,6 +334,12 @@ class TestSession():
             bool: True if event called
         """
         return True if self.event_call_count(event_name) > 0 else False
+
+    def assert_event_called(self, event_name):
+        """
+        Same as event_called with assertion
+        """
+        self.testcase.assertTrue(self.event_call_count(event_name) > 0)
 
     def event_call_count(self, event_name):
         """
