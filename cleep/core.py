@@ -611,7 +611,7 @@ class CleepModule(Cleep):
         # events
         self.delete_device_event = None
         try:
-            self.delete_device_event = self.events_broker.get_event_instance(u'system.device.delete')
+            self.delete_device_event = self.events_broker.get_event_instance(u'core.device.delete')
         except:
             pass
 
