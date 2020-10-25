@@ -10,9 +10,11 @@ import logging
 
 class CleepWifiConf():
     """
-    Helper class to read /boot/cleepwifi.conf
-    Config base class is not used here to avoid using cleep_filesystem
-    We don't need to use cleepfilesystem because we only read file
+    Helper class to read /boot/cleepwifi.conf.
+
+    Config base class is not used here to avoid using cleep_filesystem.
+
+    We don't need to use cleepfilesystem because we only read file.
     """
 
     CONF = u'/boot/cleepwifi.conf'

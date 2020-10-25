@@ -177,6 +177,7 @@ class Iwlist(AdvancedConsole):
                         network (string): wifi network name
                         encryption (string): encryption type (TODO)
                         signallevel (float): wifi signal level
+                        frequencies (list): list of supported frequencies
                     },
                     ...
                 }

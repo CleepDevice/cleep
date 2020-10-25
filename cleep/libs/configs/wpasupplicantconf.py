@@ -298,7 +298,23 @@ class WpaSupplicantConf(Config):
         Get all configuration files
 
         Returns:
-            dict: dict of configurations per interface. If no config for interface, interface is named "default"
+            dict: dict of configurations per interface. If there is no specific config file, interface is named "default"::
+
+            {
+                interface name (string) or 'default': {
+                    network name (string): {
+                        group (string): full search result,
+                        network (string): network name,
+                        password (string): password,
+                        hidden (bool): True if network is hidden,
+                        encryption (string): encryption type (see ENCRYPTION_TYPE_XXX),
+                        disabled (string): True if network is disabled
+                    },
+                    ...
+                },
+                ...
+            }
+
         """
         #init
         configs = {}

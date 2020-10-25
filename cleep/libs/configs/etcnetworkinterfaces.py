@@ -71,7 +71,7 @@ class EtcNetworkInterfaces(Config):
         Return interfaces configurations
 
         Returns:
-            dict: dict of configurated interfaces::
+            dict: dict of configured interfaces::
 
                 {
                     interface name (string): {
