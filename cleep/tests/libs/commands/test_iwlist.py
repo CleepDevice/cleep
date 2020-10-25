@@ -303,7 +303,7 @@ class IwlistTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_get_interfaces(self):
+    def test_get_networks(self):
         self.i.command = Mock(return_value={
             'error': False,
             'killed': False,
@@ -331,7 +331,7 @@ class IwlistTests(unittest.TestCase):
             self.assertTrue(all(x in (self.i.FREQ_2_4GHZ, self.i.FREQ_5GHZ) for x in net['frequencies']))
             self.assertGreaterEqual(len(net['frequencies']), 1)
 
-    def test_get_interfaces_failed(self):
+    def test_get_networks_failed(self):
         self.i.command = Mock(return_value={
             'error': False,
             'killed': False,
