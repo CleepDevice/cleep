@@ -131,6 +131,7 @@ class TestSession():
 
         # wait for module to be really started
         module_instance._wait_is_started()
+        logging.debug('===== module started =====')
 
     def respawn_module(self):
         """
@@ -163,9 +164,10 @@ class TestSession():
             self.__module_instance.join()
 
         # config
-        path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
-        if os.path.exists(path):
-            os.remove(path)
+        if hasattr(self.__module_instance, 'MODULE_CONFIG_FILE'):
+            path = os.path.join(self.__module_instance.CONFIG_DIR, self.__module_instance.MODULE_CONFIG_FILE)
+            if os.path.exists(path):
+                os.remove(path)
 
         if self.__module_instance:
             del self.__module_instance
