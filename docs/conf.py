@@ -25,7 +25,7 @@ exclude_patterns = [
     'cleep/modules/**',
 ]
 add_module_names = False
-pygments_style = 'sphinx'
+pygments_style = None
 html_static_path = [
     '_static'
 ]
@@ -35,10 +35,6 @@ html_css_files = [
 html_logo = '_static/cleep-logo-red.png'
 html_favicon = '_static/favicon.ico'
 todo_include_todos = True
-autodoc_default_options = { 
-    'undoc-members': True,
-    'private-members': False,
-}
 
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
