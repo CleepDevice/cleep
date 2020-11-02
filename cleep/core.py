@@ -13,7 +13,7 @@ import uuid
 from threading import Lock
 from unittest.mock import Mock
 from cleep.bus import BusClient
-from cleep.exception import InvalidParameter
+from cleep.exception import InvalidParameter, MissingParameter
 from cleep.common import ExecutionStep, CORE_MODULES
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
@@ -539,6 +539,45 @@ class Cleep(BusClient):
 
         """
         pass
+
+    def _check_parameters(self, parameters):
+        """
+        Check specified parameters
+
+        Args:
+            parameters (list): list of parameters to check::
+
+            [
+                {
+                    name (string): parameter name
+                    type (type): parameter primitive type (str, bool...)
+                    none (bool): True if parameter can be None
+                    empty (bool): True if string value can be empty
+                    value (any): parameter value
+                    validator (function): validator function. Take value in parameter and must return bool
+                },
+                ...
+            ]
+
+        Raises:
+            MissingParameter is one parameter is None
+            InvalidParameter is one parameter has invalid type or value
+        """
+        for parameter in parameters:
+            self.logger.trace('Check parameter %s' % parameter)
+            if ('none' not in parameter or ('none' in parameter and not parameter['none'])) and parameter['value'] is None:
+                raise MissingParameter('Parameter "%s" is missing' % parameter['name'])
+            if parameter['value'] is None:
+                # nothing else to check, parameter value is allowed as None
+                return
+            if not isinstance(parameter['value'], parameter['type']):
+                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
+            if 'validator' in parameter and not parameter['validator'](parameter['value']):
+                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
+            if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
+                    parameter['type'] is str and
+                    len(parameter['value']) == 0):
+                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
 
 
 
