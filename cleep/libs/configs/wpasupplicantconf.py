@@ -15,7 +15,7 @@ class WpaSupplicantConf(Config):
     Helper class to update and read /etc/wpa_supplicant/wpa_supplicant.conf file
     This class is not thread safe due to self.CONF that can modified on the fly
 
-    Infos:
+    Notes:
         https://w1.fi/cgit/hostap/plain/wpa_supplicant/wpa_supplicant.conf
     """
 
@@ -28,7 +28,13 @@ class WpaSupplicantConf(Config):
     ENCRYPTION_TYPE_WEP = u'wep'
     ENCRYPTION_TYPE_UNSECURED = u'unsecured'
     ENCRYPTION_TYPE_UNKNOWN = u'unknown'
-    ENCRYPTION_TYPES = [ENCRYPTION_TYPE_WPA, ENCRYPTION_TYPE_WPA2, ENCRYPTION_TYPE_WEP, ENCRYPTION_TYPE_UNSECURED, ENCRYPTION_TYPE_UNKNOWN]
+    ENCRYPTION_TYPES = [
+        ENCRYPTION_TYPE_WPA,
+        ENCRYPTION_TYPE_WPA2,
+        ENCRYPTION_TYPE_WEP,
+        ENCRYPTION_TYPE_UNSECURED,
+        ENCRYPTION_TYPE_UNKNOWN
+    ]
 
     COUNTRIES_ISO3166 = u'/usr/share/zoneinfo/iso3166.tab'
 
@@ -82,7 +88,7 @@ class WpaSupplicantConf(Config):
 
     def set_country(self, country):
         """
-        Configure country in wpa_supplicant conf file
+        Configure country in all wpa_supplicant conf files
 
         Args:
             country (string): country name to set
@@ -104,6 +110,7 @@ class WpaSupplicantConf(Config):
 
         #update wpa_supplicant files
         config_files = self.__get_configuration_files()
+        # workaround to handle different configuration files in the same Config instance
         old_conf = self.CONF
         for interface in config_files:
             self.CONF = config_files[interface]
@@ -113,8 +120,6 @@ class WpaSupplicantConf(Config):
                 self.logger.info(u'Country code "%s" added in "%s" file' % (country_code, self.CONF))
             else: # pragma: no cover
                 self.logger.warning(u'Unable to set country code in wpasupplicant file "%s"' % self.CONF)
-
-        #restore old conf file
         self.CONF = old_conf
 
     def encrypt_password(self, network, password):
