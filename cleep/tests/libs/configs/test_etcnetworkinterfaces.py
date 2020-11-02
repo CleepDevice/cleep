@@ -82,11 +82,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in lo)
         self.assertTrue('broadcast' in lo)
         self.assertTrue('gateway' in lo)
-        self.assertTrue('dns_nameservers' in lo)
-        self.assertTrue('dns_domain' in lo)
+        self.assertTrue('dnsnameservers' in lo)
+        self.assertTrue('dnsdomain' in lo)
         self.assertTrue('hotplug' in lo)
         self.assertTrue('auto' in lo)
-        self.assertTrue('wpa_conf' in lo)
+        self.assertTrue('wpaconf' in lo)
 
         eth0 = configs['eth0']
         self.assertTrue('interface' in eth0)
@@ -95,11 +95,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in eth0)
         self.assertTrue('broadcast' in eth0)
         self.assertTrue('gateway' in eth0)
-        self.assertTrue('dns_nameservers' in eth0)
-        self.assertTrue('dns_domain' in eth0)
+        self.assertTrue('dnsnameservers' in eth0)
+        self.assertTrue('dnsdomain' in eth0)
         self.assertTrue('hotplug' in eth0)
         self.assertTrue('auto' in eth0)
-        self.assertTrue('wpa_conf' in eth0)
+        self.assertTrue('wpaconf' in eth0)
 
         eth3 = configs['eth3']
         self.assertTrue('interface' in eth3)
@@ -108,11 +108,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in eth3)
         self.assertTrue('broadcast' in eth3)
         self.assertTrue('gateway' in eth3)
-        self.assertTrue('dns_nameservers' in eth3)
-        self.assertTrue('dns_domain' in eth3)
+        self.assertTrue('dnsnameservers' in eth3)
+        self.assertTrue('dnsdomain' in eth3)
         self.assertTrue('hotplug' in eth3)
         self.assertTrue('auto' in eth3)
-        self.assertTrue('wpa_conf' in eth3)
+        self.assertTrue('wpaconf' in eth3)
 
         eth4 = configs['eth4']
         self.assertTrue('interface' in eth4)
@@ -121,11 +121,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in eth4)
         self.assertTrue('broadcast' in eth4)
         self.assertTrue('gateway' in eth4)
-        self.assertTrue('dns_nameservers' in eth4)
-        self.assertTrue('dns_domain' in eth4)
+        self.assertTrue('dnsnameservers' in eth4)
+        self.assertTrue('dnsdomain' in eth4)
         self.assertTrue('hotplug' in eth4)
         self.assertTrue('auto' in eth4)
-        self.assertTrue('wpa_conf' in eth4)
+        self.assertTrue('wpaconf' in eth4)
 
         wlan0 = configs['wlan0']
         self.assertTrue('interface' in wlan0)
@@ -134,11 +134,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in wlan0)
         self.assertTrue('broadcast' in wlan0)
         self.assertTrue('gateway' in wlan0)
-        self.assertTrue('dns_nameservers' in wlan0)
-        self.assertTrue('dns_domain' in wlan0)
+        self.assertTrue('dnsnameservers' in wlan0)
+        self.assertTrue('dnsdomain' in wlan0)
         self.assertTrue('hotplug' in wlan0)
         self.assertTrue('auto' in wlan0)
-        self.assertTrue('wpa_conf' in wlan0)
+        self.assertTrue('wpaconf' in wlan0)
 
         wlan1 = configs['wlan1']
         self.assertTrue('interface' in wlan1)
@@ -147,11 +147,11 @@ iface wlan1 inet dhcp
         self.assertTrue('netmask' in wlan1)
         self.assertTrue('broadcast' in wlan1)
         self.assertTrue('gateway' in wlan1)
-        self.assertTrue('dns_nameservers' in wlan1)
-        self.assertTrue('dns_domain' in wlan1)
+        self.assertTrue('dnsnameservers' in wlan1)
+        self.assertTrue('dnsdomain' in wlan1)
         self.assertTrue('hotplug' in wlan1)
         self.assertTrue('auto' in wlan1)
-        self.assertTrue('wpa_conf' in wlan1)
+        self.assertTrue('wpaconf' in wlan1)
 
         #check values
         self.assertEqual(lo['interface'], 'lo')
@@ -171,8 +171,8 @@ iface wlan1 inet dhcp
         self.assertEqual(eth3['address'], '192.168.11.100')
         self.assertEqual(eth3['netmask'], '255.255.255.0')
         self.assertEqual(eth3['gateway'], '192.168.11.1')
-        self.assertEqual(eth3['dns_domain'], 'example.com')
-        self.assertEqual(eth3['dns_nameservers'], '192.168.11.1')
+        self.assertEqual(eth3['dnsdomain'], 'example.com')
+        self.assertEqual(eth3['dnsnameservers'], '192.168.11.1')
         self.assertEqual(eth3['broadcast'], '192.168.11.255')
 
         self.assertEqual(eth4['interface'], 'eth4')
@@ -184,13 +184,13 @@ iface wlan1 inet dhcp
         self.assertEqual(wlan0['mode'], self.e.MODE_MANUAL)
         self.assertEqual(wlan0['auto'], False)
         self.assertEqual(wlan0['hotplug'], True)
-        self.assertEqual(wlan0['wpa_conf'], '/etc/wpa_supplicant/wpa_supplicant.conf')
+        self.assertEqual(wlan0['wpaconf'], '/etc/wpa_supplicant/wpa_supplicant.conf')
 
         self.assertEqual(wlan1['interface'], 'wlan1')
         self.assertEqual(wlan1['mode'], self.e.MODE_DHCP)
         self.assertEqual(wlan1['auto'], False)
         self.assertEqual(wlan1['hotplug'], False)
-        self.assertEqual(wlan1['wpa_conf'], '/etc/wpa_supplicant/wpa_supplicant_wlan1.conf')
+        self.assertEqual(wlan1['wpaconf'], '/etc/wpa_supplicant/wpa_supplicant_wlan1.conf')
 
     def test_static_interface(self):
         self.assertTrue(self.e.add_static_interface(u'eth10', self.e.OPTION_NONE, u'10.10.10.10', u'255.255.255.0', u'10.10.10.1'))
@@ -346,10 +346,10 @@ iface wlan1 inet dhcp
         self.assertTrue(self.e.add_static_interface('eth999', self.e.OPTION_AUTO, '10.10.10.10', '255.255.255.0', '10.10.10.1', '1.2.3.4', '2.3.4.5', '3.4.5.6', '/etc/mywpasupplicant.conf'))
         eth999 = self.e.get_configuration('eth999')
         self.assertIsNotNone(eth999)
-        self.assertEqual(eth999['dns_nameservers'], '1.2.3.4')
-        self.assertEqual(eth999['dns_domain'], '2.3.4.5')
+        self.assertEqual(eth999['dnsnameservers'], '1.2.3.4')
+        self.assertEqual(eth999['dnsdomain'], '2.3.4.5')
         self.assertEqual(eth999['broadcast'], '3.4.5.6')
-        self.assertEqual(eth999['wpa_conf'], '/etc/mywpasupplicant.conf')
+        self.assertEqual(eth999['wpaconf'], '/etc/mywpasupplicant.conf')
 
     def test_delete_ethernet_static_interface(self):
         self.assertTrue(self.e.delete_interface('eth3'))

@@ -81,11 +81,11 @@ class EtcNetworkInterfaces(Config):
                         netmask (string): netmask address,
                         broadcast (string): broadcast address,
                         gateway (string): gateway address,
-                        dns_nameservers (string): dns nameservers address,
-                        dns_domain (string): dns domain address,
+                        dnsnameservers (string): dns nameservers address,
+                        dnsdomain (string): dns domain address,
                         hotplug (bool): True if hotplug interface,
                         auto (bool): True if auto option enabled,
-                        wpa_conf (string): wpa profile name
+                        wpaconf (string): wpa profile name
                     },
                     ...
                 }
@@ -144,13 +144,13 @@ class EtcNetworkInterfaces(Config):
                     current_entry[u'gateway'] = groups[1]
                 if group.startswith(u'dns-nameservers'):
                     #format: server1 <server2>...
-                    current_entry[u'dns_nameservers'] = groups[1]
+                    current_entry[u'dnsnameservers'] = groups[1]
                 if group.startswith(u'dns-domain'):
                     #format: server1 <server2>...
-                    current_entry[u'dns_domain'] = groups[1]
+                    current_entry[u'dnsdomain'] = groups[1]
                 if group.startswith(u'wpa-conf') or group.startswith(u'wpa-roam'):
                     #format: <wpa_supplicant.conf path>
-                    current_entry[u'wpa_conf'] = groups[1]
+                    current_entry[u'wpaconf'] = groups[1]
 
             if new_entry is not None:
                 #add new entry
@@ -161,11 +161,11 @@ class EtcNetworkInterfaces(Config):
                     u'netmask': None,
                     u'broadcast': None,
                     u'gateway': None,
-                    u'dns_nameservers': None,
-                    u'dns_domain': None,
+                    u'dnsnameservers': None,
+                    u'dnsdomain': None,
                     u'hotplug': hotplug,
                     u'auto': auto,
-                    u'wpa_conf': None
+                    u'wpaconf': None
                 }
                 entries[new_entry] = current_entry
 
@@ -249,18 +249,18 @@ class EtcNetworkInterfaces(Config):
         if interface[u'gateway'] is not None and len(interface[u'gateway'])>0:
             pattern += r'^\s*gateway\s%s\s*$|' % interface[u'gateway']
             count += 1
-        if interface[u'dns_domain'] is not None and len(interface[u'dns_domain'])>0: # pragma: no cover
-            pattern += r'^\s*dns-domain\s%s\s*$|' % interface[u'dns_domain']
+        if interface[u'dnsdomain'] is not None and len(interface[u'dnsdomain'])>0: # pragma: no cover
+            pattern += r'^\s*dns-domain\s%s\s*$|' % interface[u'dnsdomain']
             count += 1
-        if interface[u'dns_nameservers'] is not None and len(interface[u'dns_nameservers'])>0:
-            pattern += r'^\s*dns-nameservers\s%s\s*$|' % interface[u'dns_nameservers']
+        if interface[u'dnsnameservers'] is not None and len(interface[u'dnsnameservers'])>0:
+            pattern += r'^\s*dns-nameservers\s%s\s*$|' % interface[u'dnsnameservers']
             count += 1
         if interface[u'broadcast'] is not None and len(interface[u'broadcast'])>0:
             pattern += r'^\s*broadcast\s%s\s*$|' % interface[u'broadcast']
             count += 1
-        if interface[u'wpa_conf'] is not None and len(interface[u'wpa_conf'])>0:
-            pattern += r'^\s*wpa-conf\s%s\s*$|' % interface[u'wpa_conf']
-            pattern += r'^\s*wpa-roam\s%s\s*$|' % interface[u'wpa_conf']
+        if interface[u'wpaconf'] is not None and len(interface[u'wpaconf'])>0:
+            pattern += r'^\s*wpa-conf\s%s\s*$|' % interface[u'wpaconf']
+            pattern += r'^\s*wpa-roam\s%s\s*$|' % interface[u'wpaconf']
             count += 1
 
         self.logger.debug('Pattern: %s' % pattern)
