@@ -445,7 +445,7 @@ class BusClient(threading.Thread):
         # members
         self.__continue = True
         self.__bus = bootstrap[u'message_bus']
-        self.crash_report = bootstrap[u'crash_report']
+        self.__bootstrap_crash_report = bootstrap[u'crash_report']
         self.__name = self.__class__.__name__
         self.__module = self.__name.lower()
         self.__module_join_event = bootstrap[u'module_join_event']
@@ -458,6 +458,15 @@ class BusClient(threading.Thread):
 
     def stop(self):
         self.__continue = False
+
+    def __get_crash_report(self):
+        """
+        Get crash report
+
+        Returns:
+            instance (CrashReport): Crash report instance
+        """
+        return self.crash_report if self.crash_report else self.__bootstrap_crash_report
 
     def __check_params(self, function, message, sender):
         """
@@ -731,7 +740,7 @@ class BusClient(threading.Thread):
         except:
             self.__continue = False
             self.logger.exception('Exception during module "%s" configuration:' % self.__module)
-            self.crash_report.report_exception({
+            self.__get_crash_report().report_exception({
                 u'message': 'Exception during module "%s" configuration' % self.__module,
                 u'module': self.__module
             })
@@ -755,7 +764,7 @@ class BusClient(threading.Thread):
                 except Exception as e:
                     # TODO send crash report only for core modules
                     self.logger.error(u'Critical error occured in custom_process: %s' % str(e))
-                    self.crash_report.report_exception({
+                    self.__get_crash_report().report_exception({
                         u'message': u'Critical error occured in custom_process: %s' % str(e),
                         u'module': self.__module
                     })
@@ -872,14 +881,21 @@ class BusClient(threading.Thread):
                 # robustness: this case should not happen because all extraneous code is properly surrounded by try...except
                 # error occured
                 self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module)
-                self.crash_report.report_exception({
-                    u'message': u'Fatal exception occured running module "%s":' % self.__module,
-                    u'module': self.__module
+                self.__get_crash_report().report_exception({
+                    'message': u'Fatal exception occured running module',
+                    'module': self.__module
                 })
                 self.stop()
 
         # custom stop
-        self._on_stop()
+        try:
+            self._on_stop()
+        except:
+            self.logger.exception(u'Fatal exception occured stopping module "%s":' % self.__module)
+            self.__get_crash_report().report_exception({
+                'message': 'Fatal exception occured stopping module',
+                'module': self.__module,
+            })
 
         # remove subscription
         self.__bus.remove_subscription(self.__module)
