@@ -131,7 +131,7 @@ class TestSession():
 
         # wait for module to be really started
         module_instance._wait_is_started()
-        logging.debug('===== module started =====')
+        self.logger.debug('===== module started =====')
 
     def respawn_module(self):
         """
@@ -304,10 +304,10 @@ class TestSession():
 
             check = params_check and to_check
             if not check:
-                logging.fatal('TEST: command_called_with failed:\n%s%s%s' % (params_error, ('\n' if params_error else ''), to_error))
+                self.logger.fatal('TEST: command_called_with failed:\n%s%s%s' % (params_error, ('\n' if params_error else ''), to_error))
             return check
 
-        logging.fatal('TEST: event_called_with failed: command not mocked. Please use "session.add_mock_command"')
+        self.logger.fatal('TEST: event_called_with failed: command not mocked. Please use "session.add_mock_command"')
         return False
 
     def assert_command_called_with(self, command_name, params, to=None):
@@ -316,14 +316,22 @@ class TestSession():
         """
         # check command call
         if command_name not in self.__bus_command_handlers:
-            self.testcase.assertTrue(False, 'Command "%s" not called' % command_name)
+            self.testcase.assertTrue(False, 'Command "%s" was not called' % command_name)
 
         # check command params
-        self.testcase.assertEqual(self.__bus_command_handlers[command_name]['lastparams'], params)
+        self.testcase.assertDictEqual(
+            self.__bus_command_handlers[command_name]['lastparams'],
+            params,
+            'Command "%s" are differents' % command_name,
+        )
 
         # check command recipient
         if to is not None:
-            self.testcase.assertEqual(self.__bus_command_handlers[command_name]['lastto'], to)
+            self.testcase.assertEqual(
+                self.__bus_command_handlers[command_name]['lastto'],
+                to,
+                'Command "%s" recipient is different' % command_name,
+            )
 
     def event_called(self, event_name):
         """
@@ -341,7 +349,7 @@ class TestSession():
         """
         Same as event_called with assertion
         """
-        self.testcase.assertTrue(self.event_call_count(event_name) > 0)
+        self.testcase.assertTrue(self.event_call_count(event_name) > 0, 'Event "%s" was not called' % event_name)
 
     def event_call_count(self, event_name):
         """
@@ -369,8 +377,20 @@ class TestSession():
         last_params = self.get_last_event_params(event_name)
         check = True if params == last_params else False
         if not check:
-            logging.fatal('TEST: event_called_with failed:\n  Expected: %s\n  Current:  %s' % (params, last_params))
+            self.logger.fatal('TEST: event_called_with failed:\n  Expected: %s\n  Current:  %s' % (params, last_params))
         return check
+
+    def assert_event_called_with(self, event_name, params):
+        """
+        Assert event called with
+
+        Args:
+            event_name (string): event name
+            params (dict): event parameters
+        """
+        self.testcase.assertTrue(self.event_call_count(event_name) > 0, 'Event "%s" was not called' % event_name)
+        last_params = self.get_last_event_params(event_name)
+        self.testcase.assertDictEqual(params, last_params, 'Event "%s" parameters are differents' % event_name)
 
     def get_last_event_params(self, event_name):
         """
