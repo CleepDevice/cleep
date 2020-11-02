@@ -406,6 +406,37 @@ class CleepTests(unittest.TestCase):
         self.r._event_received({'device_id': None, 'event': 'event.test.dummy', 'params':{}})
         self.assertTrue(self.r.event_received_called)
 
+    def test_check_parameters(self):
+        self._init_context()
+
+        # missing
+        with self.assertRaises(MissingParameter) as cm:
+            self.r._check_parameters([{ 'name': 'param', 'value': None, 'type': str }])
+        self.assertEqual(str(cm.exception), 'Parameter "param" is missing')
+        # None allowed
+        self.r._check_parameters([{ 'name': 'param', 'value': None, 'type': str , 'none': True}])
+
+        # empty string
+        with self.assertRaises(InvalidParameter) as cm:
+            self.r._check_parameters([{ 'name': 'param', 'value': '', 'type': str }])
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+        # empty string allowed
+        self.r._check_parameters([{ 'name': 'param', 'value': '', 'type': str, 'empty': True }])
+        # empty flag for non string works
+        self.r._check_parameters([{ 'name': 'param', 'value': True, 'type': bool, 'empty': True }])
+
+        # invalid type
+        with self.assertRaises(InvalidParameter) as cm:
+            self.r._check_parameters([{ 'name': 'param', 'value': 123, 'type': str }])
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+
+        # invalid validator
+        with self.assertRaises(InvalidParameter) as cm:
+            self.r._check_parameters([{ 'name': 'param', 'value': '1.1.1', 'type': str, 'validator': lambda val: val.count('.') == 3 }])
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+        # valid validator
+        self.r._check_parameters([{ 'name': 'param', 'value': '1.1.1.1', 'type': str, 'validator': lambda val: val.count('.') == 3 }])
+
 
 
 
