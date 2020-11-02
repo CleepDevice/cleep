@@ -32,7 +32,18 @@ class Wpacli(AdvancedConsole):
     STATE_GROUP_HANDSHAKE = u'GROUP_HANDSHAKE'
     STATE_COMPLETED = u'COMPLETED'
     STATE_UNKNOWN = u'UNKNOWN'
-    STATES = [STATE_DISCONNECTED, STATE_INTERFACE_DISABLED, STATE_INACTIVE, STATE_SCANNING, STATE_AUTHENTICATING, STATE_ASSOCIATING, STATE_ASSOCIATED, STATE_4WAY_HANDSHAKE, STATE_GROUP_HANDSHAKE, STATE_COMPLETED]
+    STATES = [
+        STATE_DISCONNECTED,
+        STATE_INTERFACE_DISABLED,
+        STATE_INACTIVE,
+        STATE_SCANNING,
+        STATE_AUTHENTICATING,
+        STATE_ASSOCIATING,
+        STATE_ASSOCIATED,
+        STATE_4WAY_HANDSHAKE,
+        STATE_GROUP_HANDSHAKE,
+        STATE_COMPLETED
+    ]
 
     def __init__(self):
         """
@@ -264,7 +275,7 @@ class Wpacli(AdvancedConsole):
         Start specified interface
 
         Note:
-            https://www.freebsd.org/cgi/man.cgi?wpa_supplicant.conf(5)
+            https://www.freebsd.org/cgi/man.cgi?wpa_supplicant.conf%285%29
 
         Args:
             network (string): network name
@@ -416,17 +427,24 @@ class Wpacli(AdvancedConsole):
         
         return True
 
-    def get_status(self, interface):
+    def get_status(self, interface_name):
         """
         Return interface status
 
         Args:
-            interface (string): interface to get status
+            interface_name (string): interface name to get status on
 
         Returns:
-            tuple (string, string): network and state info
+            dict: wifi interface status::
+            
+            {
+                network (string): connected network name
+                state (string): state info (see STATE_XXX)
+                ipaddress (string): ip address
+            )
+
         """
-        results = self.find(u'%s -i %s status' % (self.wpacli, interface), r'^(ssid)=(.*)|(wpa_state)=(.*)|(ip_address)=(.*)$')
+        results = self.find('%s -i %s status' % (self.wpacli, interface_name), r'^(ssid)=(.*)|(wpa_state)=(.*)|(ip_address)=(.*)$')
         network = None
         ip_address = None
         state = self.STATE_UNKNOWN
@@ -445,6 +463,10 @@ class Wpacli(AdvancedConsole):
                 if groups[1] in self.STATES:
                     state = groups[1]
 
-        return (network, state, ip_address)
+        return {
+            'network': network,
+            'state': state,
+            'ipaddress': ip_address
+        }
 
 
