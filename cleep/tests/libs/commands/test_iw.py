@@ -9,8 +9,7 @@ from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 
-
-class IwlistTests(unittest.TestCase):
+class IwTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
