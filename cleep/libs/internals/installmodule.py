@@ -112,7 +112,7 @@ class CommonProcess(threading.Thread):
         """
         Get infos when script is terminated
 
-        Note:
+        Notes:
             see http://www.tldp.org/LDP/abs/html/exitcodes.html for return codes
 
         Args:

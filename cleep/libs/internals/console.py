@@ -265,6 +265,9 @@ class Console():
         """
         Execute specified command line with auto kill after timeout
         
+        Notes:
+            This function is blocking
+        
         Args:
             command (string): command to execute
             timeout (float): wait timeout before killing process and return command result
@@ -405,7 +408,7 @@ class AdvancedConsole(Console):
 
         # execute command
         res = self.command(command, timeout)
-        if self.get_last_return_code()!=0:
+        if res['returncode'] != 0:
             # command failed
             return []
 

@@ -10,7 +10,7 @@ class Ifconfig():
     """
     Command /sbin/ifconfig
     
-    Note:
+    Notes:
         Command ifconfig parsing is replaced by netifaces library
     """
 
