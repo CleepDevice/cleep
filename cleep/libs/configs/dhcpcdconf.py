@@ -4,15 +4,17 @@
 from cleep.exception import InvalidParameter, MissingParameter, CommandError
 from cleep.libs.configs.config import Config
 from cleep.libs.internals.console import Console
+from cleep.libs.internals.tools import netmask_to_cidr, cidr_to_netmask
 import os
 import re
+import copy
 from shutil import copy2
 
 class DhcpcdConf(Config):
     """
     Helper class to update and read /etc/dhcpcd.conf file.
 
-    Note:
+    Notes:
         see https://wiki.archlinux.org/index.php/dhcpcd
     """
 
@@ -27,50 +29,6 @@ class DhcpcdConf(Config):
             backup (bool): True if backup enabled
         """
         Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
-
-    def __netmask_to_cidr(self, netmask):
-        """ 
-        Convert netmask to cidr format
-
-        Note:
-            code from https://stackoverflow.com/a/43885814
-
-        Args:
-            netmask (string): netmask address
-
-        Returns:
-            int: cidr value
-        """
-        return sum([bin(int(x)).count('1') for x in netmask.split('.')])
-
-    def __cidr_to_netmask(self, cidr):
-        """
-        Convert cidr to netmask
-
-        Note:
-            http://www.linuxquestions.org/questions/blog/bittner-195120/cidr-to-netmask-conversion-with-python-convert-short-netmask-to-long-dotted-format-3147/
-
-        Args:
-            cidr (int): cidr value
-
-        Returns:
-            string: netmask (ie 255.255.255.0)
-        """
-        mask = ''
-        if not isinstance(cidr, int) or cidr<0 or cidr>32: # pragma: no cover
-            return None
-    
-        for t in range(4):
-            if cidr>7:
-                mask += '255.'
-            else:
-                dec = 255 - (2**(8 - cidr) - 1)
-                mask += str(dec) + '.' 
-            cidr -= 8
-            if cidr< 0:
-                cidr = 0 
-    
-        return mask[:-1]
 
     def is_installed(self):
         """
@@ -99,7 +57,7 @@ class DhcpcdConf(Config):
                         group (string): regexp group
                         interface (string): interface name
                         netmask (string): netmask
-                        fallback (bool): True if interface is fallback one
+                        fallback (string): fallback configuration name if any, None otherwise
                         ip_address (string): configured ip address
                         gateway (string): gateway ip address
                         dns_address (string): dns ip address
@@ -128,7 +86,7 @@ class DhcpcdConf(Config):
                     splits = groups[1].split('/')
                     current_entry[u'ip_address'] = splits[0]
                     try:
-                        netmask = self.__cidr_to_netmask(int(splits[1]))
+                        netmask = cidr_to_netmask(int(splits[1]))
                         current_entry[u'netmask'] = netmask
                     except: # pragma: no cover
                         current_entry[u'netmask'] = '255.255.255.0'
@@ -143,7 +101,7 @@ class DhcpcdConf(Config):
                     current_entry[u'fallback'] = groups[0]
 
             if new_entry is not None:
-                #add new entry
+                # add new entry
                 current_entry = {
                     u'group': group,
                     u'interface': new_entry,
@@ -155,26 +113,6 @@ class DhcpcdConf(Config):
                 }
                 entries[new_entry] = current_entry
 
-
-        #fill interfaces with profiles
-        to_del = []
-        for (name, entry) in entries.items():
-            if entry[u'fallback'] is not None:
-                if 'fallback' in entries:
-                    profile = entries[entry[u'fallback']]
-                    entry[u'gateway'] = profile[u'gateway']
-                    entry[u'ip_address'] = profile[u'ip_address']
-                    entry[u'netmask'] = profile[u'netmask']
-                    entry[u'dns_address'] = profile[u'dns_address']
-                    to_del.append(entry[u'fallback'])
-                else: # pragma: no cover
-                    #invalid file, specified profile does not exist
-                    pass
-
-        #remove profiles, keep only interfaces
-        for name in to_del:
-            del entries[name]
-        
         return entries
 
     def get_configuration(self, interface):
@@ -233,7 +171,7 @@ class DhcpcdConf(Config):
             raise InvalidParameter(u'Interface %s is already configured' % interface)
 
         #get CIDR value
-        cidr = self.__netmask_to_cidr(netmask)
+        cidr = netmask_to_cidr(netmask)
 
         #fix dns
         if dns_address is None:
@@ -306,7 +244,7 @@ class DhcpcdConf(Config):
         #prepare configuration content
         lines = []
         lines.append(u'\nprofile fallback_%s\n' % interface)
-        lines.append(u'static ip_address=%s/%s\n' % (ip_address, self.__netmask_to_cidr(netmask)))
+        lines.append(u'static ip_address=%s/%s\n' % (ip_address, netmask_to_cidr(netmask)))
         lines.append(u'static routers=%s\n' % gateway)
         lines.append(u'static domain_name_servers=%s\n' % dns_address)
         lines.append(u'\ninterface %s\n' % interface)
