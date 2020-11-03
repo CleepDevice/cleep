@@ -142,6 +142,20 @@ class ToolsTests(unittest.TestCase):
         self.assertTrue(tools.is_core_lib('/usr/lib/cleep/libs/internals/task.py'))
         self.assertFalse(tools.is_core_lib('libs/task.py'))
 
+    def test_netmask_to_cidr(self):
+        self.assertEqual(tools.netmask_to_cidr('255.255.255.255'), 32)
+        self.assertEqual(tools.netmask_to_cidr('255.255.255.0'), 24)
+        self.assertEqual(tools.netmask_to_cidr('255.255.0.0'), 16)
+        self.assertEqual(tools.netmask_to_cidr('255.0.0.0'), 8)
+        self.assertEqual(tools.netmask_to_cidr('0.0.0.0'), 0)
+
+    def test_cidr_to_netmask(self):
+        self.assertEqual(tools.cidr_to_netmask(32), '255.255.255.255')
+        self.assertEqual(tools.cidr_to_netmask(24), '255.255.255.0')
+        self.assertEqual(tools.cidr_to_netmask(16), '255.255.0.0')
+        self.assertEqual(tools.cidr_to_netmask(8), '255.0.0.0')
+        self.assertEqual(tools.cidr_to_netmask(0), '0.0.0.0')
+
 class ToolsTestsLogLevelTrace(unittest.TestCase):
 
     def test_install_trace_logging_level_for_custom_loggers(self):

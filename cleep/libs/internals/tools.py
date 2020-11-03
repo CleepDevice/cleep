@@ -60,7 +60,7 @@ def raspberry_pi_infos():
     """
     Returns infos about current raspberry pi board
 
-    Note:
+    Notes:
         https://elinux.org/RPi_HardwareHistory#Board_Revision_History
 
     Returns:
@@ -130,7 +130,7 @@ def dbm_to_percent(dbm):
     """
     Convert dbm signal level to percentage
 
-    Note:
+    Notes:
         Article here https://www.adriangranados.com/blog/dbm-to-percent-conversion
 
     Args:
@@ -149,7 +149,7 @@ def wpa_passphrase(ssid, password):
     Python implementation of wpa_passphrase linux utility
     It generates wpa_passphrase for wifi network connection
 
-    Note:
+    Notes:
         Copied from https://github.com/julianofischer/python-wpa-psk-rawkey-gen/blob/master/rawkey-generator.py
 
     Args:
@@ -182,7 +182,7 @@ def hr_uptime(uptime):
     """  
     Human readable uptime (in days/hours/minutes/seconds)
 
-    Note:
+    Notes:
         http://unix.stackexchange.com/a/27014
 
     Args:
@@ -202,7 +202,7 @@ def hr_bytes(n):
     """  
     Human readable bytes value
 
-    Note:
+    Notes:
         http://code.activestate.com/recipes/578019
 
     Args:
@@ -254,7 +254,7 @@ def full_split_path(path):
     """
     Split path completely /home/test/test.txt => ['/', 'home', 'test', 'test.py']
 
-    Note:
+    Notes:
         code from https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
 
     Returns:
@@ -311,4 +311,48 @@ def is_core_lib(path):
         return False
 
     return True
+
+def netmask_to_cidr(netmask):
+    """ 
+    Convert netmask to cidr format
+
+    Notes:
+        code from https://stackoverflow.com/a/43885814
+
+    Args:
+        netmask (string): netmask address
+
+    Returns:
+        int: cidr value
+    """
+    return sum([bin(int(x)).count('1') for x in netmask.split('.')])
+
+def cidr_to_netmask(cidr):
+    """
+    Convert cidr to netmask
+
+    Notes:
+        http://www.linuxquestions.org/questions/blog/bittner-195120/cidr-to-netmask-conversion-with-python-convert-short-netmask-to-long-dotted-format-3147/
+
+    Args:
+        cidr (int): cidr value
+
+    Returns:
+        string: netmask (ie 255.255.255.0)
+    """
+    mask = ''
+    if not isinstance(cidr, int) or cidr<0 or cidr>32: # pragma: no cover
+            return None
+    
+    for t in range(4):
+        if cidr > 7:
+            mask += '255.'
+        else:
+            dec = 255 - (2**(8 - cidr) - 1)
+            mask += str(dec) + '.' 
+        cidr -= 8
+        if cidr < 0:
+            cidr = 0 
+    
+    return mask[:-1]
 
