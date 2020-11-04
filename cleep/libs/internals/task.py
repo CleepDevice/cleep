@@ -3,7 +3,7 @@
     
 import os
 import logging
-from threading import Timer, Thread
+from threading import Timer
 import time
 
 __all__ = [u'Task', u'CountTask']
@@ -71,6 +71,7 @@ class Task:
         # run again task?
         if run_again and not self.__stopped:
             self.__timer = Timer(self._interval, self.__run)
+            self.__timer.name = 'task-%s' % self._task.__name__
             self.__timer.daemon = True
             self.__timer.start()
         elif self.__end_callback:
@@ -98,6 +99,7 @@ class Task:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
         self.__timer.daemon = True
+        self.__timer.name = 'task-%s' % self._task.__name__
         self.__timer.start()
   
     def stop(self):

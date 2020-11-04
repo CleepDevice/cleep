@@ -48,7 +48,7 @@ class InstallCleep(threading.Thread):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
         """
-        threading.Thread.__init__(self, daemon=True)
+        threading.Thread.__init__(self, daemon=True, name='installcleep')
 
         # logger   
         self.logger = logging.getLogger(self.__class__.__name__)

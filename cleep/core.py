@@ -99,12 +99,6 @@ class Cleep(BusClient):
             self.logger.debug(u'Initialize empty crashreport')
             self.crash_report = CrashReport(None, u'CleepDevice', u'0.0.0', {}, False, True)
 
-    def __del__(self):
-        """
-        Destructor
-        """
-        self.stop()
-
     @staticmethod
     def _file_is_empty(path):
         """

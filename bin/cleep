@@ -20,7 +20,6 @@ from cleep.libs.internals.criticalresources import CriticalResources
 from cleep.libs.internals.drivers import Drivers
 import cleep.libs.internals.tools as tools
 from cleep.common import ExecutionStep
-
 from netifaces import version as netifaces_version
 from bottle import __version__ as bottle_version
 from gevent import __version__ as gevent_version
@@ -315,7 +314,12 @@ if __name__ == u'__main__':
         logger.debug(u'Stopping modules')
     if inventory:
         inventory.unload_modules()
-    
+    if bus:
+        bus.stop()
+
+    # for thread in threading.enumerate():
+    #    logger.debug('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
+
     if logger:
         logger.info(u'Cleep stopped')
 

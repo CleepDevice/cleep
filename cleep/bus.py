@@ -439,8 +439,11 @@ class BusClient(threading.Thread):
         Args:
             bootstrap (dict): bootstrap objects
         """
-        threading.Thread.__init__(self)
-        threading.Thread.daemon = True
+        threading.Thread.__init__(
+            self,
+            daemon=True,
+            name='module-%s' % self.__class__.__name__.lower()
+        )
 
         # members
         self.__continue = True
@@ -737,13 +740,15 @@ class BusClient(threading.Thread):
         # configuration
         try:
             self._configure()
-        except:
+        except Exception:
             self.__continue = False
             self.logger.exception('Exception during module "%s" configuration:' % self.__module)
             self.__get_crash_report().report_exception({
                 u'message': 'Exception during module "%s" configuration' % self.__module,
                 u'module': self.__module
             })
+        except KeyboardInterrupt:
+            self.stop()
         finally:
             self.__module_join_event.set()
 
@@ -779,10 +784,6 @@ class BusClient(threading.Thread):
                     # release CPU
                     time.sleep(.25)
                     continue
-
-                except KeyboardInterrupt: # pragma: no cover
-                    # user stop cleep
-                    break
 
                 # create response
                 resp = MessageResponse()
@@ -835,7 +836,7 @@ class BusClient(threading.Thread):
                                     resp.error = True
                                     resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module)
 
-                            except: # pragma: no cover
+                            except Exception: # pragma: no cover
                                 # robustness: this case should not happen because bus already check it
                                 # specified command is malformed
                                 self.logger.exception(u'Command is malformed:')
@@ -876,6 +877,10 @@ class BusClient(threading.Thread):
                     # robustness: this case should not happen because bus already check it
                     # received message is malformed
                     self.logger.warning(u'Received message is malformed, message dropped')
+
+            except KeyboardInterrupt: # pragma: no cover
+                # user stop cleep
+                break
 
             except: # pragma: no cover
                 # robustness: this case should not happen because all extraneous code is properly surrounded by try...except
