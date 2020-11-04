@@ -141,10 +141,15 @@ class Ip(AdvancedConsole):
         Returns:
             bool: True if interface restarted successfully
         """
-        resp = self.command('%(command)s link set %(interface)s down && /bin/sleep 5 && %(command)s link set %(interface)s up' % {
+        resp_down = self.command('%(command)s link set %(interface)s down' % {
+            'command': self._command,
+            'interface': interface_name,
+        })
+        time.sleep(1.0)
+        resp_up = self.command('%(command)s link set %(interface)s up' % {
             'command': self._command,
             'interface': interface_name,
         })
 
-        return True if resp['returncode'] == 0 else False
+        return True if resp_down['returncode'] == 0 and resp_up['returncode'] == 0 else False
 
