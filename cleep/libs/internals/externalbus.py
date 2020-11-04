@@ -3,7 +3,6 @@ import zmq.green as zmq
 import json
 import logging
 import time
-from threading import Thread
 import uuid
 import binascii
 import os

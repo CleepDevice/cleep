@@ -6,7 +6,6 @@ import time
 import os
 import inspect
 from zipfile import ZipFile
-import threading
 import tempfile
 from cleep.libs.internals.console import EndlessConsole
 from cleep.libs.internals.download import Download
