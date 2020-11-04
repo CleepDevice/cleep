@@ -398,7 +398,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         var deferred = $q.defer();
 
         if( self.modules[module] ) {
-            rpcService.sendCommand('get_module_config', module)
+            rpcService.sendCommand('get_module_config', module, null, 30)
                 .then(function(resp) {
                     if( resp.error===false ) {
                         // save new config
