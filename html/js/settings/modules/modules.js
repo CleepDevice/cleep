@@ -80,8 +80,8 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
             action = [{
                 callback: self.gotoInstallPage,
                 icon: 'plus',
-                aria: 'Install module',
-                tooltip: 'Install module'
+                aria: 'Install app',
+                tooltip: 'Install app'
             }];
             $rootScope.$broadcast('enableFab', action);
         };
