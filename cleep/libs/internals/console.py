@@ -383,7 +383,7 @@ class Console():
         self.__callback = callback
         self.timer = Timer(delay, self.command, [command, timeout])
         self.timer.daemon = True
-        self.timer.name = 'commanddelayed-%s' % command.__name__
+        self.timer.name = 'commanddelayed'
         self.timer.start()
 
 
