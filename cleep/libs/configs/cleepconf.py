@@ -2,6 +2,7 @@
 #  -*- coding: utf-8 -*-
 
 from cleep.exception import InvalidParameter, MissingParameter
+from cleep.common import CORE_MODULES
 from configparser import ConfigParser
 import ast
 import os
@@ -317,7 +318,7 @@ class CleepConf():
 
         # check if module is installed
         modules = ast.literal_eval(conf.get(u'general', u'modules'))
-        if module not in modules:
+        if module not in modules and module not in CORE_MODULES:
             self.logger.warning(u'Trying to enable debug for not installed module "%s"' % module)
             return False
         
