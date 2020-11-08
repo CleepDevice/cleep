@@ -158,21 +158,6 @@ class ExternalBus():
         else:
             self.logger.setLevel(logging.WARN)
 
-    def _parse_headers(self, headers):
-        """
-        Parse peer connection header
-
-        Warning:
-            Must be implemented
-
-        Args:
-            headers (dict): received headers from peer connection
-
-        Returns:
-            dict: headers dict with parsed data as needed (json=>dict|list, '1'|'0'=>True|False, '666'=>int(666), ...)
-        """
-        raise NotImplementedError('_parse_headers is not implemented in "%s"' % self.__class__.__name__)
-
     def run(self):
         """
         Run external bus process

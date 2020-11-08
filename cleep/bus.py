@@ -656,13 +656,13 @@ class BusClient(threading.Thread):
 
             return self.push(request, timeout)
 
-    def _custom_process(self):
+    def _on_process(self):
         """
-        Overwrite this function to execute something during bus message polling
-        This function is called at every process tick just before message pulling from queue
+        Overwrite this function to execute code just before each message polling.
 
-        Note:
-            This function mustn't be blocking otherwise no message will be pulled from queue
+        Warning:
+            This function must be used with care! It mustn't be blocking or take too much execution
+            time otherwise no message will be pulled from queue and your app will become unresponsive.
         """
         pass
 
@@ -672,13 +672,18 @@ class BusClient(threading.Thread):
         module is really started.
 
         Warning:
-            This function mustn't be blocking!
+            This function shouldn't be blocking to not increase Cleep startup time.
+            If you need to process some long process, prefer using on_start method which is
+            intented for that.
         """
         pass
 
     def _on_start(self):
         """
         Module starts. This method is called once after all modules are started.
+
+        Notes:
+            This method is run asynchronously and is dedicated to the execution of more of less long process
         """
         pass
 
@@ -686,8 +691,9 @@ class BusClient(threading.Thread):
         """
         Module stops. This method is called once at end of main process.
 
-        It should be used to stop thread and tasks and to disconnect from
-        external services.
+        Notes:
+            It should be used to stop thread and tasks and to disconnect from
+            external services.
         """
         pass
 
@@ -755,7 +761,7 @@ class BusClient(threading.Thread):
         # module sync with others
         self.__core_join_event.wait(self.CORE_SYNC_TIMEOUT)
 
-        # run custom on_start function asynchronously to avoid dead locks if
+        # run on_start function asynchronously to avoid dead locks if
         # bus message is mutually used between 2 modules
         start_task = Task(None, self._on_start, self.logger, end_callback = self.__started_callback)
         start_task.start()
@@ -765,12 +771,11 @@ class BusClient(threading.Thread):
             try:
                 # custom process (do not crash bus on exception)
                 try:
-                    self._custom_process()
+                    self._on_process()
                 except Exception as e:
-                    # TODO send crash report only for core modules
-                    self.logger.error(u'Critical error occured in custom_process: %s' % str(e))
+                    self.logger.error(u'Critical error occured in on_process: %s' % str(e))
                     self.__get_crash_report().report_exception({
-                        u'message': u'Critical error occured in custom_process: %s' % str(e),
+                        u'message': u'Critical error occured in on_process: %s' % str(e),
                         u'module': self.__module
                     })
 
@@ -884,7 +889,6 @@ class BusClient(threading.Thread):
 
             except: # pragma: no cover
                 # robustness: this case should not happen because all extraneous code is properly surrounded by try...except
-                # error occured
                 self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module)
                 self.__get_crash_report().report_exception({
                     'message': u'Fatal exception occured running module',
