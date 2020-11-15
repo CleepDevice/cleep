@@ -6,6 +6,7 @@ from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.criticalresources import CriticalResources
+from cleep.exception import NoResponse
 from cleep import bus
 from cleep.libs.internals import event
 import cleep.libs.internals.tools as tools
@@ -209,7 +210,7 @@ class TestSession():
         Args:
             command (dict): command object as returned by make_mock_command function
         """
-        if command['command'] in list(self.__bus_command_handlers.keys()):
+        if command['command'] in self.__bus_command_handlers:
             self.logger.warning('Mock command "%s" already mocked' % command['command'])
             return
 
@@ -424,7 +425,7 @@ class TestSession():
                 }
             elif self.__bus_command_handlers[request.command]['noresponse']:
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
-                return None
+                raise NoResponse(request.to, 0, request.params)
 
             return {
                 'error': False,
