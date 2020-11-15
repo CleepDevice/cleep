@@ -86,7 +86,7 @@ class MessageRequestTests(unittest.TestCase):
 
         self.assertEqual(m.command, None)
         self.assertEqual(m.event, None)
-        self.assertEqual(m.core_event, False)
+        self.assertEqual(m.propagate, False)
         self.assertEqual(m.params, {})
         self.assertEqual(m.to, None)
         self.assertEqual(m.sender, None)
@@ -97,7 +97,7 @@ class MessageRequestTests(unittest.TestCase):
         m = MessageRequest()
         m.command = 'acommand'
         m.event = 'event.dummy.test'
-        m.core_event = True
+        m.propagate = True
         m.params = { 'int': 666, 'key': 'value' }
         m.to = 'dummy'
         m.sender = 'otherdummy'
@@ -111,7 +111,7 @@ class MessageRequestTests(unittest.TestCase):
         self.assertTrue('sender:otherdummy' in str(m))
         m.command = None
         self.assertTrue('event:event.dummy.test' in str(m))
-        self.assertTrue('core_event:True' in str(m))
+        self.assertTrue('propagate:True' in str(m))
         self.assertTrue('\'int\': 666' in str(m))
         self.assertTrue('\'key\': \'value\'' in str(m))
         self.assertTrue('to:dummy' in str(m))
@@ -141,7 +141,7 @@ class MessageRequestTests(unittest.TestCase):
         m = MessageRequest()
         m.command = 'acommand'
         m.event = 'event.dummy.test'
-        m.core_event = True
+        m.propagate = True
         m.params = { 'key': 'value', 'int': 666 }
         m.to = 'dummy'
         m.sender = 'otherdummy'
