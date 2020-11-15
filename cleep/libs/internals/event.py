@@ -17,8 +17,8 @@ class Event():
     #   * type is the type of event (monitoring, sms, email, temperature...)
     #   * and action the event action. It is usually a verb (update, change, add...)
     EVENT_NAME = ''
-    # is event a core event
-    EVENT_CORE = False
+    # is event can be propagated out of the device
+    EVENT_PROPAGATE = False
     # list of event parameters
     EVENT_PARAMS = []
     # enable chart generation for this event
@@ -102,7 +102,7 @@ class Event():
             request.to = to
             request.sender = module
             request.event = self.EVENT_NAME
-            request.core_event = self.EVENT_CORE
+            request.propagate = self.EVENT_PROPAGATE
             request.device_id = device_id
             request.params = params
 
