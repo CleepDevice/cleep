@@ -68,13 +68,15 @@ def raspberry_pi_infos():
 
             {
                 date (string): release date
-                model (string): model
+                model (string): raspberry pi model
                 pcbrevision (string): PCB revision
+                ethernet (bool): True if ethernet is natively available on board
+                wireless (bool): True if wifi is natively available on board,
+                audio (bool): True if audio is natively available on board
+                gpiopins (int): number of pins available on board
                 memory (string): memory amount
-                notes (string): extra infos about raspberry pi
-                ethernet (bool): True if natively available on board
-                wireless (bool): True if natively available on board
-                audio (bool): True if natively available on board
+                notes (string): notes on board
+                revision (string): raspberry pi revision
             }
 
     """
