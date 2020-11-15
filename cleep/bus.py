@@ -447,17 +447,18 @@ class BusClient(threading.Thread):
 
         # members
         self.__continue = True
-        self.__bus = bootstrap[u'message_bus']
-        self.__bootstrap_crash_report = bootstrap[u'crash_report']
+        self.__bus = bootstrap['message_bus']
+        self.__bootstrap_crash_report = bootstrap['crash_report']
         self.__name = self.__class__.__name__
-        self.__module = self.__name.lower()
-        self.__module_join_event = bootstrap[u'module_join_event']
+        self.__module_name = self.__name.lower()
+        self.__module_join_event = bootstrap['module_join_event']
         self.__module_join_event.clear()
         self.__core_join_event = bootstrap['core_join_event']
         self.__on_start_event = Event()
+        self.__bootstrap = bootstrap
 
         # subscribe module to bus
-        self.__bus.add_subscription(self.__module)
+        self.__bus.add_subscription(self.__module_name)
 
     def stop(self):
         self.__continue = False
@@ -538,10 +539,10 @@ class BusClient(threading.Thread):
             raise InvalidParameter(u'Request parameter must be MessageRequest instance')
         
         # fill sender
-        request.sender = self.__module
+        request.sender = self.__module_name
 
         # drop message send to the same module
-        if request.to is not None and request.to==self.__module:
+        if request.to is not None and request.to == self.__module_name:
             raise Exception(u'Unable to send message to same module')
 
         # push message
@@ -568,9 +569,6 @@ class BusClient(threading.Thread):
             params (dict): event parameters.
             device_id (string): device id that send event. If not specified event cannot be monitored.
             to (string): event recipient. If not specified, event will be broadcasted.
-
-        Returns:
-            None: event always returns None.
         """
         request = MessageRequest()
         request.to = to
@@ -578,26 +576,66 @@ class BusClient(threading.Thread):
         request.device_id = device_id
         request.params = params
 
-        return self.push(request, None)
+        self.push(request, None)
 
-    def send_external_event(self, event, params, peer_infos):
+    def send_event_from_message(self, message):
         """
-        Helper function to push to all modules an event received from external bus
+        Directly push event message to bus.
+        
+        Use this function instead of send_command to fill more data in message like peer infos.
 
         Args:
-            event (string): event name.
-            params (dict): event parameters.
-            peer_infos (dict): infos about peer that sends the event
+            message (MessageRequest): message request
 
         Returns:
             None: event always returns None.
         """
-        request = MessageRequest()
-        request.event = event
-        request.params = params
-        request.peer_infos = peer_infos
+        if not isinstance(message, MessageRequest):
+            raise Exception('Parameter "message" must be MessageRequest instance')
 
-        return self.push(request, None)
+        self.push(message, None)
+
+    def __execute_command(self, command, params=None):
+        """
+        Execute command from myself
+
+        Args:
+            command (string): command name
+            params (dict): command parameters
+
+        Returns:
+            dict: MessageResponse as dict or None if no response waited
+        """
+        resp = MessageResponse()
+        try:
+            # get command reference
+            module_function = getattr(self, command)
+            if module_function is not None:
+                (ok, args) = self.__check_params(module_function, params, self.__module_name)
+                if ok:
+                    try:
+                        resp.data = module_function(**args)
+                    except Exception as e:
+                        self.logger.exception(u'Exception during send_command in the same module:')
+                        resp.error = True
+                        resp.message = str(e)
+                else:
+                    # invalid command
+                    self.logger.error(u'Some command "%s" parameters are missing: %s' % (command, params))
+                    resp.error = True
+                    resp.message = u'Some command parameters are missing'
+
+        except AttributeError:
+            self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name))
+            resp.error = True
+            resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name)
+
+        except:
+            self.logger.exception(u'Internal error:')
+            resp.error = True
+            resp.message = u'Internal error'
+
+        return resp.to_dict()
 
     def send_command(self, command, to, params=None, timeout=3.0):
         """
@@ -612,41 +650,9 @@ class BusClient(threading.Thread):
         Returns:
             dict: MessageResponse as dict or None if no response waited
         """
-        if to==self.__module:
+        if to == self.__module_name:
             # message recipient is the module itself, bypass bus and execute directly the command
-            resp = MessageResponse()
-            try:
-                # get command reference
-                module_function = getattr(self, command)
-                if module_function is not None:
-                    (ok, args) = self.__check_params(module_function, params, self.__module)
-                    if ok:
-                        try:
-                            resp.data = module_function(**args)
-
-                        except Exception as e:
-                            self.logger.exception(u'Exception during send_command in the same module:')
-                            resp.error = True
-                            resp.message = str(e)
-
-                    else:
-                        # invalid command
-                        self.logger.error(u'Some command "%s" parameters are missing: %s' % (command, params))
-                        resp.error = True
-                        resp.message = u'Some command parameters are missing'
-            
-            except AttributeError:
-                self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module))
-                resp.error = True
-                resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module)
-
-            except:
-                self.logger.exception(u'Internal error:')
-                resp.error = True
-                resp.message = u'Internal error'
-
-            return resp.to_dict()
-                        
+            return self.__execute_command(command, params)
         else:
             # send command to another module
             request = MessageRequest()
@@ -655,6 +661,79 @@ class BusClient(threading.Thread):
             request.params = params
 
             return self.push(request, timeout)
+
+    def send_command_from_message(self, message, timeout=3.0):
+        """
+        Directly push message to bus.
+
+        Use this function instead of send_command to fill more data in message like peer infos.
+
+        Args:
+            message (MessageRequest): message request
+            timeout (float): change default timeout if you wish. Default is 3 seconds.
+
+        Returns:
+            dict: MessageResponse as dict or None if no response waited
+        """
+        if not isinstance(message, MessageRequest):
+            raise Exception('Parameter "message" must be MessageRequest instance')
+
+        if to == self.__module_name:
+            # message recipient is the module itself, bypass bus and execute directly the command
+            return self.__execute_command(command, params)
+        else:
+            return self.push(message, timeout)
+
+    """
+    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+        Helper function to push command message to specified peer through external bus.
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            peer_infos (dict): infos about peer that sends the command
+            params (dict): command parameters
+            timeout (float): timeout
+
+        Returns:
+            dict: MessageResponse as dict or None if no response
+        if not self.bootstrap['external_bus']:
+            self.logger.warning('Unable to send message to peer because there is no external bus application')
+        
+        if self.__module_name == self.bootstrap['external_bus']:
+            # directly call my function
+            return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
+        else:
+            # send command to internal message bus
+            return self.send_command(
+                'send_command_to_peer',
+                self.__bootstrap['external_bus'],
+                {
+                    'command': command,
+                    'to': to,
+                    'params': params,
+                    'peer_uuid': peer_uuid,
+                    'timeout': timeout,
+                },
+                timeout
+            )
+
+    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+        Send command to peer implementation
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            peer_infos (dict): infos about peer that sends the command
+            params (dict): command parameters.
+
+        Returns:
+            dict: MessageResponse as dict or None if no response
+
+        Warning:
+            This function must be implemented ONLY if module implements external bus functionnalities
+        pass
+    """
 
     def _on_process(self):
         """
@@ -741,17 +820,17 @@ class BusClient(threading.Thread):
             - run async start function
             - infinite loop on message bus (custom process can run on each loop)
         """
-        self.logger.trace(u'BusClient %s started' % self.__module)
+        self.logger.trace(u'BusClient %s started' % self.__module_name)
 
         # configuration
         try:
             self._configure()
         except Exception:
             self.__continue = False
-            self.logger.exception('Exception during module "%s" configuration:' % self.__module)
+            self.logger.exception('Exception during module "%s" configuration:' % self.__module_name)
             self.__get_crash_report().report_exception({
-                u'message': 'Exception during module "%s" configuration' % self.__module,
-                u'module': self.__module
+                u'message': 'Exception during module "%s" configuration' % self.__module_name,
+                u'module': self.__module_name
             })
         except KeyboardInterrupt:
             self.stop()
@@ -773,16 +852,16 @@ class BusClient(threading.Thread):
                 try:
                     self._on_process()
                 except Exception as e:
-                    self.logger.error(u'Critical error occured in on_process: %s' % str(e))
+                    self.logger.exception(u'Critical error occured in on_process: %s' % str(e))
                     self.__get_crash_report().report_exception({
                         u'message': u'Critical error occured in on_process: %s' % str(e),
-                        u'module': self.__module
+                        u'module': self.__module_name
                     })
 
                 msg = {}
                 try:
                     # get message
-                    msg = self.__bus.pull(self.__module)
+                    msg = self.__bus.pull(self.__module_name)
 
                 except NoMessageAvailable:
                     # no message available
@@ -801,7 +880,7 @@ class BusClient(threading.Thread):
                             try:
                                 # get command reference
                                 command = getattr(self, msg[u'message'][u'command'])
-                                self.logger.debug(u'Module "%s" received command "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'command'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
+                                self.logger.debug(u'Module "%s" received command "%s" from "%s" with params: %s' % (self.__module_name, msg[u'message'][u'command'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
 
                                 # check if command was found
                                 if command is not None:
@@ -825,7 +904,7 @@ class BusClient(threading.Thread):
 
                                         except Exception as e:
                                             # command failed
-                                            self.logger.exception(u'Exception running command "%s" on module "%s"' % (msg[u'message'][u'command'], self.__module))
+                                            self.logger.exception(u'Exception running command "%s" on module "%s"' % (msg[u'message'][u'command'], self.__module_name))
                                             resp.error = True
                                             resp.message = u'%s' % str(e)
                                     else:
@@ -837,9 +916,9 @@ class BusClient(threading.Thread):
                                 # specified command doesn't exists in this module
                                 if not msg[u'message'][u'broadcast']:
                                     # log message only for non broadcasted message
-                                    self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module))
+                                    self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module_name))
                                     resp.error = True
-                                    resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module)
+                                    resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (msg[u'message'][u'command'], self.__module_name)
 
                             except Exception: # pragma: no cover
                                 # robustness: this case should not happen because bus already check it
@@ -864,8 +943,8 @@ class BusClient(threading.Thread):
                             msg[u'event'].set()
                     
                     elif 'event' in msg[u'message']:
-                        self.logger.debug(u'%s received event "%s" from "%s" with params: %s' % (self.__module, msg[u'message'][u'event'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
-                        if 'sender' in msg[u'message'] and msg[u'message'][u'sender']==self.__module: # pragma: no cover
+                        self.logger.debug(u'%s received event "%s" from "%s" with params: %s' % (self.__module_name, msg[u'message'][u'event'], msg[u'message'][u'sender'], msg[u'message'][u'params']))
+                        if 'sender' in msg[u'message'] and msg[u'message'][u'sender']==self.__module_name: # pragma: no cover
                             # robustness: this cas should not happen because bus already check it
                             # drop event sent to the same module
                             self.logger.trace('Do not process event from same module')
@@ -889,10 +968,10 @@ class BusClient(threading.Thread):
 
             except: # pragma: no cover
                 # robustness: this case should not happen because all extraneous code is properly surrounded by try...except
-                self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module)
+                self.logger.exception(u'Fatal exception occured running module "%s":' % self.__module_name)
                 self.__get_crash_report().report_exception({
                     'message': u'Fatal exception occured running module',
-                    'module': self.__module
+                    'module': self.__module_name
                 })
                 self.stop()
 
@@ -900,13 +979,13 @@ class BusClient(threading.Thread):
         try:
             self._on_stop()
         except:
-            self.logger.exception(u'Fatal exception occured stopping module "%s":' % self.__module)
+            self.logger.exception(u'Fatal exception occured stopping module "%s":' % self.__module_name)
             self.__get_crash_report().report_exception({
                 'message': 'Fatal exception occured stopping module',
-                'module': self.__module,
+                'module': self.__module_name,
             })
 
         # remove subscription
-        self.__bus.remove_subscription(self.__module)
-        self.logger.trace(u'BusClient %s stopped' % self.__module)
+        self.__bus.remove_subscription(self.__module_name)
+        self.logger.trace(u'BusClient %s stopped' % self.__module_name)
 

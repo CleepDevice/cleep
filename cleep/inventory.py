@@ -95,7 +95,7 @@ class Inventory(Cleep):
 
     def __get_bootstrap(self):
         """
-        Get bootstrap object to pass to module to load
+        Get a copy of bootstrap object to pass to module to load
         This function instanciate a new Event for module synchronization and pass all other attributes
         """
         bootstrap = copy.copy(self.bootstrap)
@@ -180,6 +180,10 @@ class Inventory(Cleep):
                 else:
                     # dependency is already loaded, nothing else to do
                     self.logger.trace(u'Dependency "%s" already loaded' % dependency)
+
+        # is module external bus implementation
+        if 'CleepExternalBus' in [c.__name__ for c in module_class_.__bases__]:
+            self.bootstrap['external_bus'] = module_name
 
         # instanciate module
         self.logger.trace(u'Instanciating module "%s"' % module_name)

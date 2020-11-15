@@ -440,10 +440,10 @@ class Cleep(BusClient):
                 # filter protected or private commands
                 members.remove(member)
             elif member in (
-                    u'send_command', u'send_event', u'send_external_event',
-                    u'get_module_commands', u'get_module_commands', u'get_module_config',
-                    u'is_debug_enabled', u'set_debug', u'is_module_loaded',
-                    u'start', u'stop', u'push', u'event_received',
+                    'send_command', 'send_event', 'send_event_to_peer',
+                    'get_module_commands', 'get_module_commands', 'get_module_config',
+                    'is_debug_enabled', 'set_debug', 'is_module_loaded',
+                    'start', 'stop', 'push', 'event_received',
                 ):
                 # filter bus commands
                 members.remove(member)
@@ -549,13 +549,14 @@ class Cleep(BusClient):
                     empty (bool): True if string value can be empty
                     value (any): parameter value
                     validator (function): validator function. Take value in parameter and must return bool
+                    message (string): custom message to return instead of generic error
                 },
                 ...
             ]
 
         Raises:
-            MissingParameter is one parameter is None
-            InvalidParameter is one parameter has invalid type or value
+            MissingParameter if one parameter is None
+            InvalidParameter if one parameter has invalid type or value
         """
         for parameter in parameters:
             self.logger.trace('Check parameter %s' % parameter)
@@ -565,13 +566,19 @@ class Cleep(BusClient):
                 # nothing else to check, parameter value is allowed as None
                 return
             if not isinstance(parameter['value'], parameter['type']):
-                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
+                raise InvalidParameter(
+                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                )
             if 'validator' in parameter and not parameter['validator'](parameter['value']):
-                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
+                raise InvalidParameter(
+                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                )
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
                     parameter['type'] is str and
                     len(parameter['value']) == 0):
-                raise InvalidParameter('Parameter "%s" is invalid' % parameter['name'])
+                raise InvalidParameter(
+                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                )
 
 
 
@@ -1105,4 +1112,76 @@ class CleepRenderer(CleepModule):
         members = CleepModule.get_module_commands(self)
         members.remove('render')
         return members
+
+
+
+class CleepExternalBus(Cleep):
+    """
+    Base Cleep class for external bus implementation
+    """
+    def __init__(self, bootstrap, debug_enabled):
+        """
+        Constructor
+
+        Args:
+            bootstrap (dict): bootstrap objects.
+            debug_enabled (bool): flag to set debug level to logger.
+        """
+        #init cleep
+        Cleep.__init__(self, bootstrap, debug_enabled)
+
+    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+        """
+        Helper function to push command message to specified peer through external bus.
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            peer_infos (dict): infos about peer that sends the command
+            params (dict): command parameters
+            timeout (float): timeout
+
+        Returns:
+            dict: MessageResponse as dict or None if no response
+        """
+        if not self.bootstrap['external_bus']:
+            self.logger.warning('Unable to send message to peer because there is no external bus application')
+
+        if self.__module_name == self.bootstrap['external_bus']:
+            # directly call my function
+            return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
+        else:
+            # send command to internal message bus
+            return self.send_command(
+                'send_command_to_peer',
+                self.__bootstrap['external_bus'],
+                {
+                    'command': command,
+                    'to': to,
+                    'params': params,
+                    'peer_uuid': peer_uuid,
+                    'timeout': timeout,
+                },
+                timeout
+            )
+
+    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+        """
+        Send command to peer implementation
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            peer_infos (dict): infos about peer that sends the command
+            params (dict): command parameters.
+
+        Returns:
+            dict: MessageResponse as dict or None if no response
+
+        Warning:
+            Must be implemented
+        """
+        raise NotImplementedError(
+            '_send_command_to_peer function must be implemented in "%s"' % self.__class__.__name__
+        )
 

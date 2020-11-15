@@ -1,123 +1,10 @@
-from pyre_gevent import Pyre
-import zmq.green as zmq
-import json
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from cleep.common import MessageRequest
 import logging
-import time
 import uuid
-import binascii
-import os
-try:
-    from urlparse import urlparse
-except:
-    from urllib.parse import urlparse
-from pyre_gevent.zhelper import get_ifaddrs as zhelper_get_ifaddrs
-from pyre_gevent.zhelper import u
-import netifaces
-import netaddr
-import ipaddress
-
-
-class ExternalBusMessage():
-    """
-    Handle ExternalBus message data
-    """
-
-    def __init__(self, peer_infos=None, data={}):
-        """
-        Constructor
-
-        Args:
-            peer_infos (dict): infos about peer that sends message
-            data (dict): message content. This parameter is iterated to look for useful members
-        """
-        self.event = None
-        self.to = None
-        self.params = None
-        self.peer_macs = []
-        self.peer_hostname = None
-        self.peer_ip = None
-        self.device_id = None
-
-        #fill peer infos
-        if peer_infos and isinstance(peer_infos, dict):
-            self.peer_hostname = peer_infos[u'hostname']
-            self.peer_macs = peer_infos[u'macs']
-            self.peer_ip = peer_infos[u'ip']
-
-        #fill members from message content
-        if len(data)!=0:
-            for item in data:
-                if item==u'event':
-                    self.event = data[item]
-                elif item==u'to':
-                    self.to = data[item]
-                elif item==u'params':
-                    self.params = data[item]
-                elif item==u'device_id':
-                    self.device_id = data[item]
-
-    def __str__(self):
-        """
-        To string
-
-        Returns:
-            string: string representation of message
-        """
-        return '%s' % self.to_dict()
-
-    def to_reduced_dict(self):
-        """
-        Build dict with minimum class content.
-        It's useful to get reduced dict when you send message through external bus
-
-        Returns:
-            dict: minimum members on dict::
-                
-                {
-                    event (string): event name
-                    device_id (string): device identifier
-                    params (dict): event parameters (can be None)
-                }
-
-        """
-        out = self.to_dict()
-        del out['to']
-        del out['peer_macs']
-        del out['peer_hostname']
-        del out['peer_ip']
-        for key in out.keys():
-            if out[key] is None:
-                del out[key]
-
-        return out
-
-    def to_dict(self):
-        """
-        Build dict with class content
-
-        Returns:
-            dict: members on a dict::
-
-                {
-                    event (string): event name
-                    device_id (string): device identifier
-                    params (dict): event parameters (can be None)
-                    to (string): message recipient
-                    peers_macs (list): list of peers mac addresses
-                    peer_hostname (string): peer hostname
-                    peer_ip (string): current peer ip
-                }
-
-        """
-        return {
-            'event': self.event,
-            'device_id': self.device_id,
-            'params': self.params, 
-            'to': self.to,
-            'peer_macs': self.peer_macs,
-            'peer_hostname': self.peer_hostname,
-            'peer_ip': self.peer_ip
-        }
+from threading import Event
 
 class ExternalBus():
     """
@@ -132,6 +19,9 @@ class ExternalBus():
         - base bus functions canvas (not implementation)
         - internal logger with debug enabled or not
     """
+
+    COMMAND_RESPONSE_EVENT = 'external.command.response'
+
     def __init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report):
         """
         Constructor
@@ -143,15 +33,15 @@ class ExternalBus():
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
-        #members
+        # members
         self.debug_enabled = debug_enabled
         self.crash_report = crash_report
-        self.on_message_received = on_message_received
+        self._on_message_received = on_message_received
         self.on_peer_connected = on_peer_connected
         self.on_peer_disconnected = on_peer_disconnected
-        self.peers = {}
+        self.__command_events = {}
 
-        #logging
+        # logging
         self.logger = logging.getLogger(self.__class__.__name__)
         if self.debug_enabled:
             self.logger.setLevel(logging.DEBUG)
@@ -176,79 +66,117 @@ class ExternalBus():
         """
         raise NotImplementedError('run_once function is not implemented in "%s"' % self.__class__.__name__)
 
-    def broadcast_event(self, event, params, device_id):
+    def __ack_command_message(self, message):
         """
-        broadcast event message to all connected peers
-
-        Warning:
-            Must be implemented
+        Ack command message if it is a waiting command
 
         Args:
-            event (string): event name
-            params (dict): event parameters
-            device_id (uuid): device identifier that emits event
-        """
-        raise NotImplementedError('broadcast_event function is not implemented "%s"' % self.__class__.__name__)
-
-    def send_event(self, event, params, device_id, peer_id):
-        """
-        Send event message to specified peer
-
-        Warning:
-            Must be implemented
-
-        Args:
-            event (string): event name
-            params (dict): event parameters
-            device_id (uuid): device identifier that emits event
-            peer_id (string): message recipient
-        """
-        raise NotImplementedError('send_event function is not implemented "%s"' % self.__class__.__name__)
-
-    def get_peers(self):
-        """
-        Return connected peers
-        """
-        return self.peers
-
-    def get_peer_infos(self, peer_id):
-        """
-        Return peer infos
-
-        Args:
-            peer_id (string): peer identifier
+            message (MessageRequest): message request
 
         Returns:
-            dict or None if peer not found
+            bool: True if command message was acked, False otherwise
         """
-        if peer_id in self.peers.keys():
-            return self.peers[peer_id]
-
-        return None
-
-    def _add_peer(self, peer_id, infos):
-        """
-        Save peer infos
-
-        Args:
-            peer_id (string): peer identifier
-            infos (dict): associated peer informations
-        """
-        self.peers[peer_id] = infos
-
-    def _remove_peer(self, peer_id):
-        """
-        Remove peer
-
-        Args:
-            peer_id (string): peer identifier
-
-        Returns:
-            dict or None if peer not found
-        """
-        if peer_id in self.peers.keys():
-            del self.peers[peer_id]
+        self.logger.info('Ack_command_message: %s' % message)
+        if message.command_uuid in self.__command_events:
+            if self._command_events[message.command_uuid]['event'].is_set():
+                # timeout already occured, we can delete command event
+                self.logger.info('=====> delete command event [1]')
+                del self.__command_events[message.command_uuid]
+            else:
+                # timeout not occured, set event. It will be deleted later after event response is sent
+                self.__commands_events[message.command_uuid]['event'].set()
             return True
 
         return False
+
+    def on_message_received(self, peer_id, message):
+        """
+        On message received event
+
+        Args:
+            peer_id (string): peer identifier
+            message (MessageRequest): message request
+        """
+        if not self.__ack_command_message(message):
+            # it was not a command message response, process message
+            self._on_message_received(peer_id, message)
+
+    def send_command_response(self, request, response):
+        """
+        Send command response to peer
+
+        Args:
+            request (MessageRequest): message request
+            response (dict): MessageResponse instance as dict as returned by send_command
+        """
+        # convert response to request
+        self.logger.info('request: %s' % request.to_dict())
+        self.logger.info('response: %s' % response)
+        message = MessageRequest()
+        message.event = ExternalBus.COMMAND_RESPONSE_EVENT
+        message.params = response # store message response in event params
+        message.command_uuid = request.command_uuid
+        message.peer_infos = request.peer_infos
+
+        # and send created request
+        self.logger.info('Send command response: %s' % message)
+        self._send_message(message)
+
+    def send_message(self, message, timeout=5.0):
+        """
+        Send message (broadcast or to recipient) to outside
+
+        Args:
+            message (MessageRequest): message request instance
+        """
+        if message.is_command():
+            # it's a command, fill request with command identifier and timeout
+            message.command_uuid = str(uuid.uuid4())
+            message.timeout = timeout
+            self.__command_events[message.command_uuid] = {
+                'event': Event(),
+                'response': None
+            }
+
+            self._send_message(message)
+
+            timeout_occured = self.__command_events[message.command_uuid]['event'].wait(timeout)
+            self.__command_events[message.command_uuid]['event'].set()
+            response = self.__command_events[message.command_uuid]['response']
+            if not timeout_occured:
+                # command response received in time, clean command event
+                self.logger.info('=====> delete command event [2]')
+                del self.__command_events[message.command_uuid]
+            return response
+
+        else:
+            # it's an event
+            if message.peer_infos and message.peer_infos.peer_uuid:
+                self._send_message(message)
+            else:
+                self._broadcast_message(message)
+
+    def _broadcast_message(self, message):
+        """
+        broadcast event message to all connected peers
+
+        Args:
+            message (MessageRequest): message instance
+
+        Warning:
+            Must be implemented
+        """
+        raise NotImplementedError('broadcast_message function is not implemented "%s"' % self.__class__.__name__)
+
+    def _send_message(self, message):
+        """
+        Send event message to specified peer
+
+        Args:
+            message (MessageRequest): message instance
+
+        Warning:
+            Must be implemented
+        """
+        raise NotImplementedError('send_message function is not implemented "%s"' % self.__class__.__name__)
 
