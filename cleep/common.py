@@ -45,6 +45,10 @@ class CATEGORIES(object):
     def __init__(self):
         pass
 
+
+
+
+
 class ExecutionStep(object):
     """
     Cleep execution steps
@@ -63,31 +67,35 @@ class ExecutionStep(object):
     def __init__(self):
         self.step = self.BOOT
 
+
+
+
+
 class PeerInfos():
     """
     Stores peer informations
     """
     def __init__(self,
-                 peer_uuid=None,
-                 peer_id=None,
-                 peer_hostname=None,
-                 peer_ip=None,
-                 peer_port=80,
-                 peer_ssl=False,
-                 peer_macs=None,
+                 uuid=None,
+                 ident=None,
+                 hostname=None,
+                 ip=None,
+                 port=80,
+                 ssl=False,
+                 macs=None,
                  cleepdesktop=False
                 ):
         """
         Constructor
 
         Args:
-            peer_uuid (string): peer uuid provided by cleep
-            peer_id (string): peer id provided by external bus
-            peer_hostname (string): peer hostname
-            peer_ip (string): peer ip
-            peer_port (int): peer access port
-            peer_ssl (bool): peer has ssl enabled
-            peer_macs (list): list of macs addresses
+            uuid (string): peer uuid provided by cleep
+            ident (string): peer identifier provided by external bus
+            hostname (string): peer hostname
+            ip (string): peer ip
+            port (int): peer access port
+            ssl (bool): peer has ssl enabled
+            macs (list): list of macs addresses
             cleepdesktop (bool): is cleepdesktop peer
 
         Notes:
@@ -100,30 +108,40 @@ class PeerInfos():
             Mac addresses are mandatory because they are used to identify a peer that has been reinstalled (and
             has lost its previous uuid)
         """
-        self.peer_uuid = peer_uuid
-        self.peer_id = peer_id
-        self.peer_hostname = peer_hostname
-        self.peer_ip = peer_ip
-        self.peer_port = peer_port
-        self.peer_ssl = peer_ssl
-        self.peer_macs = peer_macs
+        self.uuid = uuid
+        self.ident = ident
+        self.hostname = hostname
+        self.ip = ip
+        self.port = port
+        self.ssl = ssl
+        self.macs = macs
         self.cleepdesktop = cleepdesktop
         self.online = False
+        self.extra = {}
 
-    def to_dict(self):
+    def to_dict(self, with_extra=False):
         """
         Return peer infos as dict
+
+        Args:
+            with_extra (bool): add extra data
 
         Returns:
             dict: peer infos
         """
-        return {
-            'peer_uuid': self.peer_uuid,
-            'peer_id': self.peer_id,
-            'peer_hostname': self.peer_hostname,
-            'peer_ip': self.peer_ip,
-            'peer_macs': self.peer_macs,
+        out = {
+            'uuid': self.uuid,
+            'ident': self.ident,
+            'hostname': self.hostname,
+            'ip': self.ip,
+            'port': self.port,
+            'ssl': self.ssl,
+            'macs': self.macs,
+            'cleepdesktop': self.cleepdesktop,
+            'online': self.online,
         }
+        with_extra and out.update({'extra': self.extra})
+        return out
 
     def __str__(self):
         """
@@ -132,7 +150,7 @@ class PeerInfos():
         Returns:
             string: peer infos as string
         """
-        infos = self.to_dict()
+        infos = self.to_dict(True)
         infos['online'] = self.online
         return '%s' % infos
 
@@ -145,11 +163,19 @@ class PeerInfos():
         """
         if not isinstance(peer_infos, dict):
             raise Exception('peer_infos must be a dict')
-        self.peer_uuid = peer_infos.get('peer_uuid', None)
-        self.peer_id = peer_infos.get('peer_id', None)
-        self.peer_hostname = peer_infos.get('peer_hostname', None)
-        self.peer_ip = peer_infos.get('peer_ip', None)
-        self.peer_macs = peer_infos.get('peer_macs', None)
+        self.uuid = peer_infos.get('uuid', None)
+        self.ident = peer_infos.get('ident', None)
+        self.hostname = peer_infos.get('hostname', None)
+        self.ip = peer_infos.get('ip', None)
+        self.port = peer_infos.get('port', None)
+        self.ssl = peer_infos.get('ssl', False)
+        self.macs = peer_infos.get('macs', None)
+        self.cleepdesktop = peer_infos.get('cleepdesktop', False)
+        self.extra = copy.deepcopy(peer_infos.get('extra', {}))
+
+
+
+
 
 class MessageResponse(object):
     """
@@ -193,6 +219,10 @@ class MessageResponse(object):
         Return message response
         """
         return {'error':self.error, 'message':self.message, 'data':self.data}
+
+
+
+
 
 class MessageRequest(object):
     """
