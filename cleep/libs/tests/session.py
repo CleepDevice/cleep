@@ -6,16 +6,17 @@ from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.criticalresources import CriticalResources
-from cleep.exception import NoResponse
+from cleep.exception import NoResponse, CommandError
 from cleep import bus
 from cleep.libs.internals import event
 import cleep.libs.internals.tools as tools
-from cleep.common import ExecutionStep
+from cleep.common import ExecutionStep, MessageResponse
 from cleep.libs.internals.drivers import Drivers
 from threading import Event
 import os
 import logging
 import types
+import traceback
 from mock import MagicMock
 
 TRACE = tools.TRACE
@@ -83,6 +84,18 @@ class TestSession():
             'log_file': '/tmp/cleep.log',
         }
 
+    def __get_test_case_name(self):
+        """
+        Return current test case name
+
+        Returns:
+            string: test case name
+        """
+        for item in traceback.extract_stack():
+            if os.path.basename(item.filename).startswith('test_'):
+                return item.name if item.name != '<module>' else '<test case name hidden by coverage>'
+        return '<test case name not found>'
+
     def setup(self, module_class, bootstrap={}):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
@@ -99,7 +112,8 @@ class TestSession():
         # logger
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__debug_enabled = True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
-
+        self.test_case_name = self.__get_test_case_name()
+        
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.bootstrap.update(bootstrap)
@@ -189,7 +203,7 @@ class TestSession():
 
         Args:
             command_name (string): command name
-            data (any): data to return as command result
+            data (any): command result
             fail (bool): set True to simulate command failure
             no_response (bool): set True to simulate command no response
 
@@ -308,7 +322,9 @@ class TestSession():
                 self.logger.fatal('TEST: command_called_with failed:\n%s%s%s' % (params_error, ('\n' if params_error else ''), to_error))
             return check
 
-        self.logger.fatal('TEST: event_called_with failed: command not mocked. Please use "session.add_mock_command"')
+        self.logger.fatal(
+            'TEST: command_called_with failed: command not mocked in "%s", please mock it using session.add_mock_command' % self.test_case_name
+        )
         return False
 
     def assert_command_called_with(self, command_name, params, to=None):
@@ -418,27 +434,30 @@ class TestSession():
 
             if self.__bus_command_handlers[request.command]['fail']:
                 self.logger.debug('TEST: command "%s" fails for tests' % request.command)
-                return {
-                    'error': True,
-                    'data': None,
-                    'message': 'TEST: command fails for tests',
-                }
+                raise CommandError('TEST: command "%s" fails for tests' % request.command)
             elif self.__bus_command_handlers[request.command]['noresponse']:
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
-                raise NoResponse(request.to, 0, request.params)
+                raise NoResponse(request.to, request.timeout, 'TEST: no response for command "%s"' % request.command)
 
-            return {
-                'error': False,
-                'data': self.__bus_command_handlers[request.command]['data'],
-                'message': '',
-            }
+            # return self.__bus_command_handlers[request.command]['data']
+            return MessageResponse(
+                error=False,
+                data=self.__bus_command_handlers[request.command]['data'],
+                message='',
+            )
 
-        self.logger.fatal('TEST: Command "%s" is not handled. Please mock it.' % request.command)
-        return {
-            'error': True,
-            'data': None,
-            'message': 'TEST: Command "%s" is not handled. Please mock it.' % request.command,
-        }
+        self.logger.fatal(
+            'TEST: Command "%s" is not handled in "%s", please mock it using session.add_mock_command.' % (
+                request.command,
+                self.test_case_name
+            )
+        )
+        raise Exception(
+            'TEST: command "%s" is not handled in "%s", please mock it using session.add_mock_command' % (
+                request.command,
+                self.test_case_name
+            )
+        )
 
     def _events_broker_get_event_instance_mock(self, event_name):
         """

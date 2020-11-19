@@ -358,7 +358,7 @@ def upload(): # pragma: no cover
         params (dict): command parameters
 
     Returns:
-        MessageResponse: command response
+        dict: message response
     """
     path = None
     try:
@@ -402,17 +402,16 @@ def upload(): # pragma: no cover
     except Exception as e:
         logger.exception(u'Exception in upload:')
         # something went wrong
-        msg = MessageResponse()
-        msg.message = str(e)
-        msg.error = True
-        resp = msg.to_dict()
+        resp = MessageResponse()
+        resp.message = str(e)
+        resp.error = True
 
         # delete uploaded file if possible
-        if path:
+        if path and os.path.exists(path):
             logger.debug(u'Delete uploaded file')
             os.remove(path)
 
-    return resp
+    return resp.to_dict()
 
 @app.route(u'/download', method=u'GET')
 @authenticate()
@@ -427,7 +426,7 @@ def download():
         params (dict): command parameters
 
     Returns:
-        MessageResponse: command response
+        dict: message response or file content
     """
     try:
         # prepare params
@@ -448,9 +447,9 @@ def download():
 
         # request full filepath from module (string format)
         resp = send_command(command, to, params)
-        logger.debug(u'Response: %s' % resp)
-        if not resp[u'error']:
-            data = resp[u'data']
+        logger.debug('Response: %s' % resp)
+        if not resp.error:
+            data = resp.data
             filename = os.path.basename(data[u'filepath'])
             root = os.path.dirname(data[u'filepath'])
             # download param is used to force download client side
@@ -463,17 +462,15 @@ def download():
 
         else:
             # error during command execution
-            raise Exception(resp[u'message'])
+            raise Exception(resp.message)
 
     except Exception as e:
         logger.exception(u'Exception in download:')
         # something went wrong
-        msg = MessageResponse()
-        msg.message = str(e)
-        msg.error = True
-        resp = msg.to_dict()
-
-    return resp
+        resp = MessageResponse()
+        resp.message = str(e)
+        resp.error = True
+        return resp.to_dict()
 
 @app.route(u'/command', method=[u'POST',u'GET'])
 @authenticate()
@@ -488,7 +485,7 @@ def command():
         params (dict): command parameters
 
     Returns:
-        MessageResponse: command response
+        dict: message response
     """
     logger.trace(u'Received command: method=%s data=[%d] json=%s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
 
@@ -549,12 +546,11 @@ def command():
     except Exception as e:
         logger.exception(u'Exception in command:')
         # something went wrong
-        msg = MessageResponse()
-        msg.message = str(e)
-        msg.error = True
-        resp = msg.to_dict()
+        resp = MessageResponse()
+        resp.message = str(e)
+        resp.error = True
 
-    return resp
+    return resp.to_dict()
 
 @app.route(u'/modules', method=u'POST')
 @authenticate()

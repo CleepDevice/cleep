@@ -106,13 +106,14 @@ class MessageBus():
             timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            dict: message response
-            None: if no response awaited (request is an event or a broadcast command or if timeout is None)
+            any: request response or None if no response awaited (request is an event or a broadcast command or if
+                 timeout is None)
 
         Raises:
             InvalidParameter: if request is not a MessageRequest instance.
             NoResponse: if no response is received from module.
             InvalidModule: if specified recipient is unknown.
+            NotReady: if trying to push message while Cleep is not ready
         """
         # do not push request if bus is stopped
         if self.__stopped:
@@ -136,7 +137,7 @@ class MessageBus():
         if request.to in self._queues:
             # recipient exists and has queue
             return self.__push_to_recipient(request, request_dict, timeout)
-        elif request.to==u'rpc':
+        elif request.to == 'rpc':
             # recipient is rpc
             return self.__push_to_rpc(request, request_dict, timeout)
         elif request.to is None:
@@ -212,7 +213,7 @@ class MessageBus():
 
     def __push_to_broadcast(self, request, request_dict, timeout):
         """
-        No recipient to request, broadcast message to all subscribed modules
+        No recipient to request, broadcast message to all subscribed modules.
         Broadcast message does not reply with a response (return None)
         """
         msg = {
@@ -339,7 +340,7 @@ class MessageBus():
         """
         loop = math.floor(timeout / 0.10)
         i = 0
-        while i<loop:
+        while i < loop:
             try:
                 msg = self._queues[module_lc].pop()
                 self.logger.trace(u'"%s" pulled with timeout %s' % (module_lc, msg))
@@ -530,7 +531,7 @@ class BusClient(threading.Thread):
             timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            dict: MessageResponse as dict or None if no response awaited (event or broadcast)
+            MessageResponse: message response instance
 
         Raises:
             InvalidParameter: if request is not a MessageRequest instance.
@@ -546,19 +547,22 @@ class BusClient(threading.Thread):
             raise Exception(u'Unable to send message to same module')
 
         # push message
-        if request.is_broadcast() or timeout is None or timeout==0.0:
-            # broadcast message or no timeout, so no response
-            self.__bus.push(request, timeout)
+        response = MessageResponse()
+        try:
+            if request.is_broadcast() or not timeout:
+                # broadcast message or no timeout, so no response
+                self.__bus.push(request, timeout)
+                response.broadcast = True
+            else:
+                # response awaited
+                response.fill_from_response(self.__bus.push(request, timeout))
 
-            # broadcast response
-            resp = MessageResponse()
-            resp.broadcast = True
-            return resp.to_dict()
+        except Exception as e:
+            self.logger.exception('Error occured while pushing message to bus')
+            response.error = True
+            response.message = str(e)
 
-        else:
-            # response awaited
-            resp = self.__bus.push(request, timeout)
-            return resp
+        return response
 
     def send_event(self, event, params=None, device_id=None, to=None):
         """
@@ -580,7 +584,7 @@ class BusClient(threading.Thread):
 
     def send_event_from_message(self, message):
         """
-        Directly push event message to bus.
+        Directly push event message request to bus.
         
         Use this function instead of send_command to fill more data in message like peer infos.
 
@@ -604,7 +608,7 @@ class BusClient(threading.Thread):
             params (dict): command parameters
 
         Returns:
-            dict: MessageResponse as dict or None if no response waited
+            MessageResponse: message response instance
         """
         resp = MessageResponse()
         try:
@@ -616,26 +620,26 @@ class BusClient(threading.Thread):
                     try:
                         resp.data = module_function(**args)
                     except Exception as e:
-                        self.logger.exception(u'Exception during send_command in the same module:')
+                        self.logger.exception('Exception during send_command in the same module:')
                         resp.error = True
                         resp.message = str(e)
                 else:
                     # invalid command
-                    self.logger.error(u'Some command "%s" parameters are missing: %s' % (command, params))
+                    self.logger.error('Some command "%s" parameters are missing: %s' % (command, params))
                     resp.error = True
-                    resp.message = u'Some command parameters are missing'
+                    resp.message = 'Some command parameters are missing'
 
         except AttributeError:
-            self.logger.exception(u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name))
+            self.logger.exception('Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name))
             resp.error = True
-            resp.message = u'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name)
+            resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name)
 
-        except:
-            self.logger.exception(u'Internal error:')
+        except Exception:
+            self.logger.exception('Internal error:')
             resp.error = True
-            resp.message = u'Internal error'
+            resp.message = 'Internal error'
 
-        return resp.to_dict()
+        return resp
 
     def send_command(self, command, to, params=None, timeout=3.0):
         """
@@ -683,57 +687,6 @@ class BusClient(threading.Thread):
             return self.__execute_command(command, params)
         else:
             return self.push(message, timeout)
-
-    """
-    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
-        Helper function to push command message to specified peer through external bus.
-
-        Args:
-            command (string): command name.
-            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
-            peer_infos (dict): infos about peer that sends the command
-            params (dict): command parameters
-            timeout (float): timeout
-
-        Returns:
-            dict: MessageResponse as dict or None if no response
-        if not self.bootstrap['external_bus']:
-            self.logger.warning('Unable to send message to peer because there is no external bus application')
-        
-        if self.__module_name == self.bootstrap['external_bus']:
-            # directly call my function
-            return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
-        else:
-            # send command to internal message bus
-            return self.send_command(
-                'send_command_to_peer',
-                self.__bootstrap['external_bus'],
-                {
-                    'command': command,
-                    'to': to,
-                    'params': params,
-                    'peer_uuid': peer_uuid,
-                    'timeout': timeout,
-                },
-                timeout
-            )
-
-    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
-        Send command to peer implementation
-
-        Args:
-            command (string): command name.
-            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
-            peer_infos (dict): infos about peer that sends the command
-            params (dict): command parameters.
-
-        Returns:
-            dict: MessageResponse as dict or None if no response
-
-        Warning:
-            This function must be implemented ONLY if module implements external bus functionnalities
-        pass
-    """
 
     def _on_process(self):
         """
@@ -935,7 +888,7 @@ class BusClient(threading.Thread):
                             resp.message = u'No command specified in message'
                                 
                         # save response into message    
-                        msg[u'response'] = resp.to_dict()
+                        msg[u'response'] = resp
 
                         # unlock event if necessary
                         if msg[u'event']:

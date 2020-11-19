@@ -220,6 +220,21 @@ class MessageResponse(object):
         """
         return {'error':self.error, 'message':self.message, 'data':self.data}
 
+    def fill_from_response(self, response):
+        """
+        Fill from other response
+
+        Args:
+            response (MessageResponse): message response instance
+        """
+        if not isinstance(response, MessageResponse):
+            raise Exception('Parameter "message" must be a MessageResponse instance')
+
+        self.error = response.error
+        self.message = response.message
+        self.data = copy.deepcopy(response.data)
+        self.broadcast = response.broadcast
+
 
 
 
@@ -389,50 +404,50 @@ class MessageRequest(object):
         else:
             raise InvalidMessage()
 
-    def fill_from_message(self, message):
+    def fill_from_request(self, request):
         """
-        Fill instance from other message
+        Fill instance from other request
 
         Args:
-            message (MessageRequest): message request instance
+            request (MessageRequest): message request instance
         """
-        if not isinstance(message, MessageRequest):
-            raise Exception('Parameter "message" must be a MessageRequest instance')
+        if not isinstance(request, MessageRequest):
+            raise Exception('Parameter "request" must be a MessageRequest instance')
 
-        self.command = message.command
-        self.event = message.event
-        self.propagate = message.propagate
-        self.params = copy.deepcopy(message.params)
-        self.to = message.to
-        self.sender = message.sender
-        self.device_id = message.device_id
+        self.command = request.command
+        self.event = request.event
+        self.propagate = request.propagate
+        self.params = copy.deepcopy(request.params)
+        self.to = request.to
+        self.sender = request.sender
+        self.device_id = request.device_id
         self.peer_infos = None
-        self.command_uuid = message.command_uuid
-        if message.peer_infos:
+        self.command_uuid = request.command_uuid
+        if request.peer_infos:
             self.peer_infos = PeerInfos()
-            self.peer_infos.fill_from_peer_infos(message.peer_infos)
+            self.peer_infos.fill_from_peer_infos(request.peer_infos)
 
-    def fill_from_dict(self, message):
+    def fill_from_dict(self, request):
         """
-        Fill instance from other message
+        Fill instance from other request
 
         Args:
-            message (dict): message request infos
+            request (dict): message request infos
         """
-        if not isinstance(message, dict):
-            raise Exception('Parameter "message" must be a dict')
+        if not isinstance(request, dict):
+            raise Exception('Parameter "request" must be a dict')
 
-        self.command = message.get('command', None)
-        self.event = message.get('event', None)
-        self.propagate = message.get('propagate', False)
-        self.params = copy.deepcopy(message.get('params', {}))
-        self.to = message.get('to', None)
-        self.sender = message.get('sender', None)
-        self.device_id = message.get('device_id', None)
-        self.command_uuid = message.get('command_uuid', None)
-        self.timeout = message.get('timeout', 5.0)
+        self.command = request.get('command', None)
+        self.event = request.get('event', None)
+        self.propagate = request.get('propagate', False)
+        self.params = copy.deepcopy(request.get('params', {}))
+        self.to = request.get('to', None)
+        self.sender = request.get('sender', None)
+        self.device_id = request.get('device_id', None)
+        self.command_uuid = request.get('command_uuid', None)
+        self.timeout = request.get('timeout', 5.0)
         self.peer_infos = None
-        if message.get('peer_infos', None):
+        if request.get('peer_infos', None):
             self.peer_infos = PeerInfos()
-            self.peer_infos.fill_from_dict(message.get('peer_infos'))
+            self.peer_infos.fill_from_dict(request.get('peer_infos'))
 

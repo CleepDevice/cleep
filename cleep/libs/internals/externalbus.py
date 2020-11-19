@@ -107,14 +107,14 @@ class ExternalBus():
 
         Args:
             request (MessageRequest): message request
-            response (dict): MessageResponse instance as dict as returned by send_command
+            response (MessageResponse): message response
         """
         # convert response to request
-        self.logger.info('request: %s' % request.to_dict())
-        self.logger.info('response: %s' % response)
+        self.logger.trace('request: %s' % request)
+        self.logger.trace('response: %s' % response)
         message = MessageRequest()
         message.event = ExternalBus.COMMAND_RESPONSE_EVENT
-        message.params = response # store message response in event params
+        message.params = response.to_dict() # store message response in event params
         message.command_uuid = request.command_uuid
         message.peer_infos = request.peer_infos
 
