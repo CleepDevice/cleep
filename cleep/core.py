@@ -567,17 +567,17 @@ class Cleep(BusClient):
                 return
             if not isinstance(parameter['value'], parameter['type']):
                 raise InvalidParameter(
-                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
                 )
             if 'validator' in parameter and not parameter['validator'](parameter['value']):
                 raise InvalidParameter(
-                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
                 )
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
                     parameter['type'] is str and
                     len(parameter['value']) == 0):
                 raise InvalidParameter(
-                    parameter['message'] if message in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
                 )
 
 
