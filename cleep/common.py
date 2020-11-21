@@ -42,9 +42,6 @@ class CATEGORIES(object):
 
     ALL = ['APPLICATION', 'MOBILE', 'DRIVER', 'HOMEAUTOMATION', 'MEDIA', 'SERVICE']
 
-    def __init__(self):
-        pass
-
 
 
 
@@ -83,7 +80,8 @@ class PeerInfos():
                  port=80,
                  ssl=False,
                  macs=None,
-                 cleepdesktop=False
+                 cleepdesktop=False,
+                 extra={},
                 ):
         """
         Constructor
@@ -97,6 +95,7 @@ class PeerInfos():
             ssl (bool): peer has ssl enabled
             macs (list): list of macs addresses
             cleepdesktop (bool): is cleepdesktop peer
+            extra (dict): extra peer informations (about hardware...)
 
         Notes:
             Uuid is mandatory because device can change identifier after each connection.
@@ -117,7 +116,7 @@ class PeerInfos():
         self.macs = macs
         self.cleepdesktop = cleepdesktop
         self.online = False
-        self.extra = {}
+        self.extra = extra
 
     def to_dict(self, with_extra=False):
         """
@@ -150,9 +149,17 @@ class PeerInfos():
         Returns:
             string: peer infos as string
         """
-        infos = self.to_dict(True)
-        infos['online'] = self.online
-        return '%s' % infos
+        return 'PeerInfos(uuid:%s, ident:%s, hostname:%s, ip:%s port:%s, ssl:%s, macs:%s, cleepdesktop:%s, online:%s)' % (
+            self.uuid,
+            self.ident,
+            self.hostname,
+            self.ip,
+            self.port,
+            self.ssl,
+            self.macs,
+            self.cleepdesktop,
+            self.online
+        )
 
     def fill_from_dict(self, peer_infos):
         """
@@ -162,7 +169,7 @@ class PeerInfos():
             peer_infos (dict): peer informations
         """
         if not isinstance(peer_infos, dict):
-            raise Exception('peer_infos must be a dict')
+            raise Exception('Parameter "peer_infos" must be a dict')
         self.uuid = peer_infos.get('uuid', None)
         self.ident = peer_infos.get('ident', None)
         self.hostname = peer_infos.get('hostname', None)
@@ -207,7 +214,7 @@ class MessageResponse(object):
         """
         Stringify
         """
-        return '{error:%r, message:"%s", data:%s, broadcast:%r}' % (
+        return 'MessageResponse(error:%r, message:"%s", data:%s, broadcast:%r)' % (
             self.error,
             self.message,
             str(self.data),
@@ -228,7 +235,7 @@ class MessageResponse(object):
             response (MessageResponse): message response instance
         """
         if not isinstance(response, MessageResponse):
-            raise Exception('Parameter "message" must be a MessageResponse instance')
+            raise Exception('Parameter "response" must be a MessageResponse instance')
 
         self.error = response.error
         self.message = response.message
@@ -275,15 +282,21 @@ class MessageRequest(object):
     Notes:
         A message cannot be a command and an event, priority to command if both are specified.
     """
-    def __init__(self):
+    def __init__(self, command=None, event=None, params={}, to=None):
         """
         Constructor
+
+        Args:
+            command (string): request command
+            event (string): request event
+            params (dict): message parameter if any
+            to (string): message recipient if any
         """
-        self.command = None
-        self.event = None
+        self.command = command
+        self.event = event
+        self.params = params
+        self.to = to
         self.propagate = False
-        self.params = {}
-        self.to = None
         self.sender = None
         self.device_id = None
         self.peer_infos = None
@@ -295,7 +308,7 @@ class MessageRequest(object):
         Stringify function
         """
         if self.command:
-            return '{command:%s, params:%s, to:%s, sender:%s, device_id:%s, peer_infos:%s, command_uuid:%s, timeout:%s}' % (
+            return 'MessageRequest(command:%s, params:%s, to:%s, sender:%s, device_id:%s, peer_infos:%s, command_uuid:%s, timeout:%s)' % (
                 self.command,
                 str(self.params),
                 self.to,
@@ -306,7 +319,7 @@ class MessageRequest(object):
                 self.timeout,
             )
         elif self.event:
-            return '{event:%s, propagate:%s, params:%s, to:%s, device_id:%s, peer_infos:%s, command_uuid:%s}' % (
+            return 'MessageRequest(event:%s, propagate:%s, params:%s, to:%s, device_id:%s, peer_infos:%s, command_uuid:%s)' % (
                 self.event,
                 self.propagate,
                 str(self.params),
@@ -316,7 +329,7 @@ class MessageRequest(object):
                 self.command_uuid,
             )
 
-        return 'Invalid message'
+        return 'MessageRequest(Invalid message)'
 
     def is_broadcast(self):
         """
@@ -376,18 +389,6 @@ class MessageRequest(object):
                 'sender': self.sender,
             }
 
-        elif self.event and self.peer_infos:
-            # external event
-            return {
-                'event': self.event,
-                'params': self.params,
-                'startup': False,
-                'device_id': None,
-                'sender': external_sender,
-                'peer_infos': self.peer_infos.to_dict(),
-                'command_uuid': self.command_uuid,
-            }
-
         elif self.command and self.peer_infos:
             # external command
             return {
@@ -399,6 +400,18 @@ class MessageRequest(object):
                 'peer_infos': self.peer_infos.to_dict(),
                 'command_uuid': self.command_uuid,
                 'timeout': self.timeout,
+            }
+
+        elif self.event and self.peer_infos:
+            # external event
+            return {
+                'event': self.event,
+                'params': self.params,
+                'startup': False,
+                'device_id': None,
+                'sender': external_sender,
+                'peer_infos': self.peer_infos.to_dict(),
+                'command_uuid': self.command_uuid,
             }
 
         else:
@@ -425,7 +438,7 @@ class MessageRequest(object):
         self.command_uuid = request.command_uuid
         if request.peer_infos:
             self.peer_infos = PeerInfos()
-            self.peer_infos.fill_from_peer_infos(request.peer_infos)
+            self.peer_infos.fill_from_dict(request.peer_infos.to_dict(True))
 
     def fill_from_dict(self, request):
         """
