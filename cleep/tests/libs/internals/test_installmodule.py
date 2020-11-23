@@ -26,7 +26,7 @@ class UninstallModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.TRACE, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.TRACE, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -513,7 +513,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {
@@ -569,7 +569,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -608,7 +608,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -643,7 +643,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -679,7 +679,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -712,9 +712,9 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(0.5)
 
         #wait until end of install
-        while i.get_status()[u'status']==i.STATUS_INSTALLING:
+        while i.get_status()['status']==i.STATUS_INSTALLING:
             time.sleep(0.5)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -732,7 +732,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(0.5)
 
         #wait until end of uninstall
-        while u.get_status()[u'status']==u.STATUS_UNINSTALLING:
+        while u.get_status()['status']==u.STATUS_UNINSTALLING:
             time.sleep(0.5)
         self.assertEqual(u.get_status()['status'], u.STATUS_ERROR_REMOVE)
 
@@ -749,7 +749,7 @@ class InstallModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -1512,7 +1512,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {
@@ -1568,7 +1568,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -1591,7 +1591,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -1615,7 +1615,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_DOWNLOAD)
+        self.assertEqual(i.get_status()['status'], i.STATUS_ERROR_DOWNLOAD)
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -1639,7 +1639,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_PREINST)
+        self.assertEqual(i.get_status()['status'], i.STATUS_ERROR_PREINST)
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -1663,7 +1663,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_POSTINST)
+        self.assertEqual(i.get_status()['status'], i.STATUS_ERROR_POSTINST)
 
         #check installation
         self.assertFalse(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
@@ -1681,7 +1681,7 @@ class UpdateModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -1962,7 +1962,7 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {
@@ -2018,7 +2018,7 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
         #wait until end of install
         while i.is_installing():
             time.sleep(0.25)
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_INSTALLED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
         #check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))

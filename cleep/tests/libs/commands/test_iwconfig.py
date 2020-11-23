@@ -42,6 +42,7 @@ class IwconfigTests(unittest.TestCase):
 
     def test_get_interfaces(self):
         self.i.command = Mock(return_value={
+            'returncode': 0,
             'error': False,
             'killed': False,
             'stdout': FAKE_OUPUT.split('\n'),

@@ -20,14 +20,14 @@ class TaskTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _init_context(self, interval=0.5, logger=None, task=None, task_args=[], task_kwargs={}, count=0):
+    def _init_context(self, interval=0.5, logger=None, task=None, task_args=[], task_kwargs={}, count=0, end_callback=None):
         logger= logger if logger is not None else logging.getLogger('TestTask')
         if count==0:
             logging.debug('Init Task')
-            self.t = Task(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs)
+            self.t = Task(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs, end_callback=end_callback)
         else:
             logging.debug('Init CountTask')
-            self.t = CountTask(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs, count=count)
+            self.t = CountTask(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs, count=count, end_callback=end_callback)
 
     def test_task(self):
         task = Mock()
@@ -110,6 +110,19 @@ class TaskTests(unittest.TestCase):
         self.assertTrue(task.called)
         self.assertEqual(task.call_count, 1)
 
+    def test_task_end_callback(self):
+        task = Mock()
+        mock_endcb = Mock()
+        self._init_context(interval=None, task=task, end_callback=mock_endcb)
+
+        self.t.start()
+        time.sleep(0.5)
+        self.t.wait()
+
+        self.assertFalse(self.t.is_running())
+
+        self.assertTrue(mock_endcb.called)
+
     def test_count_task(self):
         task = Mock()
         self._init_context(task=task, interval=0.25, count=4)
@@ -118,7 +131,18 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(task.call_count, 4)
 
+    def test_count_task_end_callback(self):
+        task = Mock()
+        mock_endcb = Mock()
+        self._init_context(task=task, interval=0.25, count=4, end_callback=mock_endcb)
+        self.t.start()
+        self.t.wait()
+
+        self.assertEqual(mock_endcb.call_count, 1)
+
+
+
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
     unittest.main()
 

@@ -37,10 +37,12 @@ class EndlessConsole(Thread):
 
         Args:
             command (string): command to execute
-            callback (function): callback when message is received (the function will be called with 2 arguments: stdout (string) and stderr (string))
-            callback_end (function): callback when process is terminated (the function will be called with 2 arguments: return code (string) and killed (bool))
+            callback (function): callback when message is received (the function will be called with 2
+                                 arguments: stdout (string) and stderr (string))
+            callback_end (function): callback when process is terminated (the function will be called
+                                     with 2 arguments: return code (string) and killed (bool))
         """
-        Thread.__init__(self, daemon=True, name='endlessconsole-%s' % callback.__name__)
+        Thread.__init__(self, daemon=True, name='endlessconsole-%s' % getattr(callback, '__name__', 'unamed'))
 
         # members
         self.command = command
@@ -69,7 +71,7 @@ class EndlessConsole(Thread):
             queue.put(line.decode('utf-8').rstrip())
         try:
             output.close()
-        except: # pragma: no cover
+        except Exception: # pragma: no cover
             pass
 
     def get_start_time(self):
@@ -97,7 +99,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
-        self.logger.debug(u'Process killed manually')
+        self.logger.debug('Process killed manually')
         self.killed = True
         self.__stop()
 
@@ -118,21 +120,21 @@ class EndlessConsole(Thread):
             stdout = self.__stdout_queue.get_nowait()
         except Empty:
             pass
-        except: # pragma: no cover
-            self.logger.exception(u'Error getting stdout queue')
+        except Exception: # pragma: no cover
+            self.logger.exception('Error getting stdout queue')
 
         try:
             stderr = self.__stderr_queue.get_nowait()
         except Empty:
             pass
-        except: # pragma: no cover
-            self.logger.exception(u'Error getting stderr queue')
+        except Exception: # pragma: no cover
+            self.logger.exception('Error getting stderr queue')
 
         if stdout is not None or stderr is not None:
             try:
                 self.callback(stdout, stderr)
-            except:
-                self.logger.exception(u'Exception occured during EndlessCommand callback:')
+            except Exception:
+                self.logger.exception('Exception occured during EndlessCommand callback:')
             return True
 
         return False
@@ -144,15 +146,23 @@ class EndlessConsole(Thread):
         # launch command
         return_code = None
         self.__start_time = time.time()
-        p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
-        pid = p.pid
-        self.logger.trace(u'PID=%d' % pid)
+        proc = subprocess.Popen(
+            self.command,
+            shell=True,
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=ON_POSIX,
+            preexec_fn=os.setsid
+        )
+        pid = proc.pid
+        self.logger.trace('PID=%d' % pid)
 
         if self.callback:
             # async stdout reading
             self.__stdout_thread = Thread(
                 target=self.__enqueue_output,
-                args=(p.stdout, self.__stdout_queue),
+                args=(proc.stdout, self.__stdout_queue),
                 daemon=True,
                 name='endlessconsole-stdout'
             )
@@ -161,7 +171,7 @@ class EndlessConsole(Thread):
             # async stderr reading
             self.__stderr_thread = Thread(
                 target=self.__enqueue_output,
-                args=(p.stderr, self.__stderr_queue),
+                args=(proc.stderr, self.__stderr_queue),
                 daemon=True,
                 name='endlessconsole-stderr'
             )
@@ -170,24 +180,24 @@ class EndlessConsole(Thread):
         # wait for end of command line
         while self.running:
             # check process status
-            p.poll()
+            proc.poll()
 
             # read outputs and trigger callback
             self.__send_stds()
 
             # check end of command
-            if p.returncode is not None:
-                return_code = p.returncode
-                self.logger.debug(u'Process is terminated with return code %s' % p.returncode)
+            if proc.returncode is not None:
+                return_code = proc.returncode
+                self.logger.debug('Process is terminated with return code %s' % proc.returncode)
                 break
-            
+
             # pause
             time.sleep(0.25)
 
         # purge queues
         self.logger.trace('Purging outputs...')
         count = 0
-        while self.__send_stds() or count<=5:
+        while self.__send_stds() or count <= 5:
             self.logger.trace(' purging...')
             count += 1
             time.sleep(0.05)
@@ -195,22 +205,22 @@ class EndlessConsole(Thread):
 
         # make sure all stds are closed
         try:
-            p.stdout.close()
-        except:
+            proc.stdout.close()
+        except Exception: # pragma: no cover
             pass
         try:
-            p.stderr.close()
-        except:
+            proc.stderr.close()
+        except Exception: # pragma: no cover
             pass
 
         # make sure process (and child processes) is really killed
-        if self.killed and pid!=1:
+        if self.killed and pid != 1:
             try:
                 if ON_POSIX:
                     os.killpg(os.getpgid(pid), signal.SIGKILL)
                 else: # pragma: no cover
-                    p.kill()
-            except: # pragma: no cover
+                    proc.kill()
+            except Exception: # pragma: no cover
                 pass
 
         # process is over
@@ -221,8 +231,8 @@ class EndlessConsole(Thread):
             self.logger.trace('Call end callback')
             try:
                 self.callback_end(return_code, self.killed)
-            except:
-                self.logger.exception(u'Exception occured during EndlessCommand end callback:')
+            except Exception:
+                self.logger.exception('Exception occured during EndlessCommand end callback:')
 
 
 class Console():
@@ -252,10 +262,10 @@ class Console():
     def __process_lines(self, lines):
         """
         Remove end of line char for given lines and convert lines to unicode
-        
+
         Args:
             lines (list): list of lines
-        
+
         Results:
             list: input list of lines with eol removed
         """
@@ -274,10 +284,10 @@ class Console():
     def command(self, command, timeout=2.0):
         """
         Execute specified command line with auto kill after timeout
-        
+
         Notes:
             This function is blocking
-        
+
         Args:
             command (string): command to execute
             timeout (float): wait timeout before killing process and return command result
@@ -296,12 +306,20 @@ class Console():
         """
         self.logger.trace('Launch command "%s"' % command)
         # check params
-        if timeout is None or timeout<=0.0:
-            raise Exception(u'Timeout is mandatory and must be greater than 0')
+        if timeout is None or timeout <= 0.0:
+            raise Exception('Timeout is mandatory and must be greater than 0')
 
         # launch command
-        p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, preexec_fn=os.setsid)
-        pid = p.pid
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=ON_POSIX,
+            preexec_fn=os.setsid
+        )
+        pid = proc.pid
 
         # wait for end of command line
         done = False
@@ -310,17 +328,17 @@ class Console():
         return_code = None
         while not done:
             # check if command has finished
-            p.poll()
-            if p.returncode is not None:
+            proc.poll()
+            if proc.returncode is not None:
                 # command terminated
-                self.logger.trace('Command terminated with returncode %s' % p.returncode)
-                return_code = p.returncode
+                self.logger.trace('Command terminated with returncode %s' % proc.returncode)
+                return_code = proc.returncode
                 self.last_return_code = return_code
                 done = True
                 break
-            
+
             # check timeout
-            if time.time()>(start + timeout):
+            if time.time() > (start + timeout):
                 # timeout is over, kill command
                 pgid = os.getpgid(pid)
                 self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
@@ -328,37 +346,37 @@ class Console():
                     if ON_POSIX:
                         os.killpg(pgid, signal.SIGKILL)
                     else: # pragma: no cover
-                        p.kill()
-                except: # pragma: no cover
+                        proc.kill()
+                except Exception: # pragma: no cover
                     pass
                 killed = True
                 break
 
             # pause
             time.sleep(0.125)
-       
+
         # prepare result
         result = {
-            u'returncode': return_code,
-            u'error': False,
-            u'killed': killed,
-            u'stdout': [],
-            u'stderr': []
+            'returncode': return_code,
+            'error': False,
+            'killed': killed,
+            'stdout': [],
+            'stderr': []
         }
         if not killed:
-            result[u'stderr'] = self.__process_lines(p.stderr.readlines())
-            result[u'error'] = True if len(result['stderr'])>0 else False
-            result[u'stdout'] = self.__process_lines(p.stdout.readlines())
+            result['stderr'] = self.__process_lines(proc.stderr.readlines())
+            result['error'] = len(result['stderr']) > 0
+            result['stdout'] = self.__process_lines(proc.stdout.readlines())
         self.logger.trace('Result: %s' % result)
 
         # make sure all stds are closed
         try:
-            p.stdout.close()
-        except:
+            proc.stdout.close()
+        except Exception: # pragma: no cover
             pass
         try:
-            p.stderr.close()
-        except:
+            proc.stderr.close()
+        except Exception: # pragma: no cover
             pass
 
         # trigger callback (used for delayed command)
@@ -375,7 +393,8 @@ class Console():
             command (string): command to execute
             delay (int): time to wait before executing command (milliseconds)
             timeout (float): timeout before killing command
-            callback (function): function called when command is over. Callback will received command result as single function parameter
+            callback (function): function called when command is over. Callback will received command
+                                 result as single function parameter
 
         Notes:
             See command function to have more details
@@ -416,8 +435,6 @@ class AdvancedConsole(Console):
                 ]
 
         """
-        results = []
-
         # execute command
         res = self.command(command, timeout)
         if res['returncode'] != 0:
@@ -425,7 +442,7 @@ class AdvancedConsole(Console):
             return []
 
         # parse command output
-        content = u'\n'.join(res[u'stdout'])
+        content = '\n'.join(res['stdout'])
         return self.find_in_string(content, pattern, options)
 
     def find_in_string(self, string, pattern, options=re.UNICODE | re.MULTILINE):
@@ -451,7 +468,7 @@ class AdvancedConsole(Console):
 
         for _, match in enumerate(matches):
             group = match.group().strip()
-            if len(group)>0 and len(match.groups())>0:
+            if len(group) > 0 and len(match.groups()) > 0:
                 results.append((group, match.groups()))
 
         return results

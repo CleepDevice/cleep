@@ -19,7 +19,7 @@ class EventTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.formatters = {
             'profile1': {
                 'module1': DummyModule()
@@ -29,7 +29,8 @@ class EventTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _init_context(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[], bus_push_result={'error':False, 'message':''}, event_chart_params=None):
+    def init_lib(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[],
+            bus_push_result={'error':False, 'message':''}, event_chart_params=None):
         self.bus = Mock()
         self.bus.push = Mock(return_value=bus_push_result)
         self.formatters_broker = Mock()
@@ -39,7 +40,8 @@ class EventTests(unittest.TestCase):
         e.EVENT_NAME = event_name
         e.EVENT_PARAMS = event_params
         e.EVENT_CHARTABLE = event_chartable
-        e.EVENT_CHART_PARAMS = event_chart_params
+        if event_chart_params:
+            e.EVENT_CHART_PARAMS = event_chart_params
         self.e = e(self.bus, self.formatters_broker)
 
     def test_invalid_event(self):
@@ -103,39 +105,56 @@ class EventTests(unittest.TestCase):
         finally:
             Event.EVENT_CHARTABLE = False
 
+    def test_set_renderable(self):
+        self.init_lib()
+
+        self.e.set_renderable('renderer1', True)
+        self.e.set_renderable('renderer2', False)
+        self.assertEqual(self.e._Event__not_renderable_for, ['renderer2'])
+
+        self.e.set_renderable('renderer2', True)
+        self.assertEqual(self.e._Event__not_renderable_for, [])
+
     def test_send(self):
-        self._init_context(event_params=['param1'])
+        self.init_lib(event_params=['param1'])
         self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=False))
         self.assertTrue(self.bus.push.called)
 
     def test_send_and_render(self):
-        self._init_context(event_params=['param1'], get_renderers_formatters=self.formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
         self.assertEqual(self.bus.push.call_count, 2)
 
     def test_send_no_param(self):
-        self._init_context(event_params=[])
+        self.init_lib(event_params=[])
         self.assertTrue(self.e.send({}, device_id=None, to='dummy', render=False))
         self.assertTrue(self.bus.push.called)
 
     def test_send_invalid_params(self):
-        self._init_context(event_params=['param'])
+        self.init_lib(event_params=['param'])
         with self.assertRaises(Exception) as cm:
             self.e.send({'dummy': 666}, device_id=None, to='dummy', render=False)
         self.assertEqual(str(cm.exception), 'Invalid event parameters specified for "test.dummy": {\'dummy\': 666}')
 
     def test_send_and_render_handle_render_exception(self):
-        self._init_context(event_params=['param1'], get_renderers_formatters=self.formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.e.render = Mock(side_effect=Exception('test exception'))
         self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
 
     def test_render(self):
-        self._init_context(event_params=['param1'], get_renderers_formatters=self.formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
         self.assertEqual(self.bus.push.call_count, 1)
 
+    def test_render_rendering_disabled(self):
+        self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
+        self.e.set_renderable('module1', False)
+
+        self.assertTrue(self.e.render({'param1': 'value1'}))
+        self.assertEqual(self.bus.push.call_count, 0)
+
     def test_render_no_formatter(self):
-        self._init_context(event_params=['param1'], get_renderers_formatters={})
+        self.init_lib(event_params=['param1'], get_renderers_formatters={})
         self.assertFalse(self.e.render({'param1': 'value1'}))
         self.assertEqual(self.bus.push.call_count, 0)
 
@@ -145,7 +164,7 @@ class EventTests(unittest.TestCase):
                 'module1': DummyModule(format_output=None)
             }
         }
-        self._init_context(event_params=['param1'], get_renderers_formatters=formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
         self.assertEqual(self.bus.push.call_count, 0)
     
@@ -158,12 +177,12 @@ class EventTests(unittest.TestCase):
                 'module1': DummyModule(format_output={'test':'dummy'})
             }
         }
-        self._init_context(event_params=['param1'], get_renderers_formatters=formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
         self.assertEqual(self.bus.push.call_count, 1)
 
     def test_render_bus_push_failed(self):
-        self._init_context(event_params=['param'], get_renderers_formatters=self.formatters, bus_push_result={'error':True, 'message':'test error'})
+        self.init_lib(event_params=['param'], get_renderers_formatters=self.formatters, bus_push_result={'error':True, 'message':'test error'})
         self.assertFalse(self.e.render({}))
 
     def test_render_can_render_event_return_false(self):
@@ -172,12 +191,12 @@ class EventTests(unittest.TestCase):
                 'module1': DummyModule(format_output=None, can_render_event_output=False)
             }
         }
-        self._init_context(event_params=['param1'], get_renderers_formatters=formatters)
+        self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
         self.assertEqual(self.bus.push.call_count, 0)
 
     def test_get_chart_values(self):
-        self._init_context(event_params=['param1'], event_chartable=True)
+        self.init_lib(event_params=['param1'], event_chartable=True)
         values = self.e.get_chart_values({'param1': 'value1'})
         self.assertTrue(isinstance(values, list))
         self.assertEqual(len(values), 1)
@@ -187,11 +206,11 @@ class EventTests(unittest.TestCase):
         self.assertEqual(values[0]['value'], 'value1')
 
     def test_get_chart_values_not_chartable(self):
-        self._init_context(event_params=['param1'], event_chartable=False)
+        self.init_lib(event_params=['param1'], event_chartable=False)
         self.assertIsNone(self.e.get_chart_values({'param1': 'value1'}))
 
     def test_get_chart_values_params_filtered(self):
-        self._init_context(event_params=['param1', 'param2', 'param3'], event_chartable=True, event_chart_params=['param1', 'param3'])
+        self.init_lib(event_params=['param1', 'param2', 'param3'], event_chartable=True, event_chart_params=['param1', 'param3'])
         values = self.e.get_chart_values({'param1': 'value1', 'param2':'value2', 'param3':'value3'})
         self.assertEqual(len(values), 2)
         values_as_dict = { value['field']:value['value'] for value in values }

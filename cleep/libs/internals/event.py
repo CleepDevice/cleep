@@ -4,7 +4,6 @@
 import logging
 import inspect
 from cleep.common import MessageRequest
-from cleep.exception import InvalidParameter
 
 class Event():
     """
@@ -39,8 +38,10 @@ class Event():
         self.__not_renderable_for = []
         if not hasattr(self, 'EVENT_NAME'):
             raise NotImplementedError('EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
-        if (not isinstance(self.EVENT_NAME, str) and not isinstance(self.EVENT_NAME, unicode)) or len(self.EVENT_NAME)==0:
-            raise NotImplementedError('EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__)
+        if not isinstance(self.EVENT_NAME, str) or len(self.EVENT_NAME) == 0:
+            raise NotImplementedError(
+                'EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__
+            )
         if not hasattr(self, 'EVENT_PARAMS'):
             raise NotImplementedError('EVENT_PARAMS class member must be declared in "%s"' % self.__class__.__name__)
         if not isinstance(self.EVENT_PARAMS, list):
@@ -60,7 +61,7 @@ class Event():
         Returns:
             bool: True if params are valid, False otherwise
         """
-        if len(self.EVENT_PARAMS)==0 and (params is None or len(params)==0):
+        if len(self.EVENT_PARAMS) == 0 and (params is None or len(params) == 0):
             return True
 
         return all(key in self.EVENT_PARAMS for key in params.keys())
@@ -71,7 +72,7 @@ class Event():
 
         Args:
             renderer_name (string): renderer name
-            renderable (bool): True to render event for specified renderer
+            renderable (bool): True to render event for specified renderer, False to disable rendering
         """
         if renderable and renderer_name in self.__not_renderable_for:
             self.__not_renderable_for.remove(renderer_name)
@@ -79,7 +80,7 @@ class Event():
             self.__not_renderable_for.append(renderer_name)
 
     def send(self, params=None, device_id=None, to=None, render=True):
-        """ 
+        """
         Push event message on bus.
 
         Args:
@@ -110,7 +111,7 @@ class Event():
             if render:
                 try:
                     self.render(params)
-                except:
+                except Exception:
                     # can't let render call crash the process
                     self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
 
@@ -118,8 +119,7 @@ class Event():
             self.bus.push(request, None)
             return True
 
-        else:
-            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+        raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
 
     def render(self, params=None):
         """
@@ -133,7 +133,7 @@ class Event():
         """
         # get formatters
         formatters = self.formatters_broker.get_renderers_formatters(self.EVENT_NAME)
-        self.logger.trace('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
+        self.logger.debug('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
 
         # handle no formatters found
         if not formatters:
@@ -143,7 +143,7 @@ class Event():
         result = True
         for profile_name in formatters:
             for renderer_name in formatters[profile_name]:
-                if renderer_name in self.__not_renderable_for(renderer_name):
+                if renderer_name in self.__not_renderable_for:
                     self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
                     continue
 
@@ -159,10 +159,14 @@ class Event():
                 request.to = renderer_name
                 request.params = {'profile': profile}
 
-                self.logger.trace('Push message to renderer %s' % request)
+                self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
                 resp = self.bus.push(request)
                 if resp['error']:
-                    self.logger.error('Unable to render profile "%s" to "%s": %s' % (profile_name, renderer_name, resp['message']))
+                    self.logger.error('Unable to render profile "%s" to "%s": %s' % (
+                        profile_name,
+                        renderer_name,
+                        resp['message']
+                    ))
                     result = False
 
         return result
@@ -170,7 +174,7 @@ class Event():
     def get_chart_values(self, params):
         """
         Returns chart values
-        
+
         Args:
             params (dict): event parameters
 
@@ -184,14 +188,12 @@ class Event():
                     },
                     ...
                 ]
-             
+
         """
         if not self.EVENT_CHARTABLE:
             return None
 
-        chart_params = self.EVENT_PARAMS
-        if hasattr(self, 'EVENT_CHART_PARAMS') and self.EVENT_CHART_PARAMS is not None:
-            chart_params = self.EVENT_CHART_PARAMS
+        chart_params = getattr(self, 'EVENT_CHART_PARAMS', None) or self.EVENT_PARAMS
 
         return [{'field': param, 'value': params.get(param, None)} for param in chart_params]
 

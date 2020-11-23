@@ -16,7 +16,7 @@ SAMPLE = """wlan0     Scan completed :
           Cell 01 - Address: 00:11:95:07:EC:7A
                     Channel:6
                     Frequency:2.437 GHz (Channel 6)
-                    Quality=70/70  Signal level=-39 dBm
+                    Quality=70/70  Signal level=39/100 Noise level=0/100
                     Encryption key:on
                     ESSID:"Network Wifi2"
                     Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 6 Mb/s
@@ -291,7 +291,100 @@ SAMPLE = """wlan0     Scan completed :
                         Pairwise Ciphers (1) : CCMP
                         Authentication Suites (1) : PSK
                     IE: Unknown: DD0B00146C0407040000000000
-                    IE: Unknown: DD1F8CFDF00000010100000100000000000000FFFFB0395676D55ABA395676D558"""
+                    IE: Unknown: DD1F8CFDF00000010100000100000000000000FFFFB0395676D55ABA395676D558
+      	  Cell 10 - Address: 88:03:55:E8:3A:D1
+                    Channel:1
+                    Frequency:2.412 GHz (Channel 1)
+		    Quality=29/70  Signal level=-81 dBm  
+                    Encryption key:off
+                    ESSID:"Unsecured network"
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 9 Mb/s
+                              18 Mb/s; 36 Mb/s; 54 Mb/s
+                    Bit Rates:6 Mb/s; 12 Mb/s; 24 Mb/s; 48 Mb/s
+                    Mode:Master
+                    Extra:tsf=000009e127b7513e
+                    Extra: Last beacon: 6290ms ago
+                    IE: Unknown: 00074B504E20466F6E
+                    IE: Unknown: 010882848B961224486C
+                    IE: Unknown: 030101
+                    IE: Unknown: 2A0104
+                    IE: Unknown: 32040C183060
+                    IE: Unknown: 2D1A6C0017FFFF0000000000000000000000000000000C0000000000
+                    IE: Unknown: 3D1601000400000000000000000000000000000000000000
+                    IE: Unknown: 3E0100
+                    IE: Unknown: DD180050F2020101000003A4000027A4000042435E0062322F00
+                    IE: Unknown: 0B0504001C127A
+                    IE: Unknown: 7F0101
+                    IE: Unknown: DD8F0050F204104A00011010440001021041000100103B0001031047001000000000000000030000880355E83ADB1021000B436F72706F726174696F6E1023000B564756373531394B5732321024000930322E30302E3133361042000A413334343030333035311054000800060050F204000110110014576972656C65737320526F757465722857464129100800020084
+                    IE: Unknown: 07064E4C20010D10
+          Cell 11 - Address: 90:5C:44:C5:B8:9D
+                    Channel:11
+                    Frequency:2.462 GHz (Channel 11)
+                    Quality=58/70  Signal level=-52 dBm  
+                    Encryption key:on
+                    ESSID:"WPAnetwork"
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 9 Mb/s
+                              18 Mb/s; 36 Mb/s; 54 Mb/s
+                    Bit Rates:6 Mb/s; 12 Mb/s; 24 Mb/s; 48 Mb/s
+                    Mode:Master
+                    Extra:tsf=000001c683317915
+                    Extra: Last beacon: 90ms ago
+                    IE: Unknown: 00124368696E6565732052657374617572616E74
+                    IE: Unknown: 010882848B961224486C
+                    IE: Unknown: 03010B
+                    IE: Unknown: 2A0104
+                    IE: Unknown: 32040C183060
+                    IE: Unknown: 0706455520010D14
+                    IE: Unknown: 2D1AAC0117FFFF000000000000000000000000000000000000000000
+                    IE: Unknown: 3D160B000700000000000000000000000000000000000000
+                    IE: WPA Version 1
+                        Group Cipher : TKIP
+                        Pairwise Ciphers (2) : TKIP CCMP
+                        Authentication Suites (1) : PSK
+                    IE: Unknown: 7F080100000000000000
+                    IE: Unknown: 0B05040031127A
+                    IE: Unknown: DD180050F2020101000003A4000027A4000042435E0062322F00
+                    IE: Unknown: 7F080100000000000000
+                    IE: Unknown: 0706455520010D10
+                    IE: Unknown: DDA70050F204104A0001101044000102103B00010310470010E6825C801DD411B2860188B76881A5BF1021001852616C696E6B20546563686E6F6C6F67792C20436F72702E1023001C52616C696E6B20576972656C6573732041636365737320506F696E74102400065254323836301042000831323334353637381054000800060050F20400011011000952616C696E6B415053100800020000103C0001011049000600372A000120
+                    IE: Unknown: DD07000C4300000000
+          Cell 12 - Address: 54:FA:3E:60:F9:B1
+                    Channel:11
+                    Frequency:2.462 GHz (Channel 11)
+                    Quality=21/70  Signal level=-89 dBm  
+                    Encryption key:on
+                    ESSID:"WEP"
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 9 Mb/s
+                              18 Mb/s; 36 Mb/s; 54 Mb/s
+                    Bit Rates:6 Mb/s; 12 Mb/s; 24 Mb/s; 48 Mb/s
+                    Mode:Master
+                    Extra:tsf=00000144750d9416
+                    Extra: Last beacon: 170ms ago
+                    IE: Unknown: 000C485A4E323439303933303637
+                    IE: Unknown: 010882848B961224486C
+                    IE: Unknown: 03010B
+                    IE: Unknown: 2A0104
+                    IE: Unknown: 32040C183060
+                    IE: Unknown: 2D1AEC0103FFFF0000000000000000000000000000000C0000000000
+                    IE: Unknown: 3D160B000100000000000000000000000000000000000000
+                    IE: Unknown: DD180050F2020101800003A4000027A4000042435E0062322F00
+                    IE: Unknown: 0B05000027127A
+                    IE: Unknown: 7F0101
+                    IE: Unknown: DD07000C4307000000
+                    IE: Unknown: 07064E4C20010D10
+                    IE: Unknown: DDA70050F204104A0001101044000102103B00010310470010BC329E001DD811B2860154FA3E60F9B71021001A43656C656E6F20436F6D6D756E69636174696F6E2C20496E632E1023001743656C656E6F20576972656C65737320415020322E344710240006434C313830301042000831323334353637381054000800060050F20400011011000C43656C656E6F4150322E3447100800024388103C0001011049000600372A000120
+          Cell 13 - Address: 54:FA:3E:60:F9:B1
+                    Channel:11
+                    Frequency:2.462 GHz (Channel 11)
+                    Quality=21/70  Signal level=-66 dBm  
+                    ESSID:"unknown"
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 9 Mb/s
+                              18 Mb/s; 36 Mb/s; 54 Mb/s
+                    Bit Rates:6 Mb/s; 12 Mb/s; 24 Mb/s; 48 Mb/s
+                    Mode:Master
+                    Extra:tsf=00000144750d9416
+                    Extra: Last beacon: 170ms ago
+                    """
 
 class IwlistTests(unittest.TestCase):
 
@@ -305,6 +398,7 @@ class IwlistTests(unittest.TestCase):
 
     def test_get_networks(self):
         self.i.command = Mock(return_value={
+            'returncode': 0,
             'error': False,
             'killed': False,
             'stderr': [],
@@ -314,6 +408,7 @@ class IwlistTests(unittest.TestCase):
 
         networks = self.i.get_networks('wlan0')
         logging.debug(pformat(networks))
+
         self.assertGreaterEqual(len(networks), 1)
         for network in networks:
             net = networks[network]
@@ -333,6 +428,7 @@ class IwlistTests(unittest.TestCase):
 
     def test_get_networks_failed(self):
         self.i.command = Mock(return_value={
+            'returncode': 1,
             'error': False,
             'killed': False,
             'stderr': [],
@@ -342,7 +438,24 @@ class IwlistTests(unittest.TestCase):
 
         networks = self.i.get_networks('wlan0')
         logging.debug(pformat(networks))
+
         self.assertEqual(len(networks), 0, 'Networks list should be empty')
+
+    def test_get_network_cache(self):
+        self.i.command = Mock(return_value={
+            'returncode': 0,
+            'error': False,
+            'killed': False,
+            'stderr': [],
+            'stdout': SAMPLE.split('\n'),
+        })
+        self.i.get_last_return_code = Mock(return_value=0)
+
+        self.i.get_networks('wlan0')
+        self.i.get_networks('wlan0')
+
+        self.assertEqual(self.i.command.call_count, 1)
+
 
     def test_has_error(self):
         self.assertTrue(isinstance(self.i.has_error(), bool))
