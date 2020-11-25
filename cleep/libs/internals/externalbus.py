@@ -145,7 +145,6 @@ class ExternalBus():
             response = self.__command_events[message.command_uuid]['response']
             if not timeout_occured:
                 # command response received in time, clean command event
-                self.logger.info('=====> delete command event [2]')
                 del self.__command_events[message.command_uuid]
             return response
 

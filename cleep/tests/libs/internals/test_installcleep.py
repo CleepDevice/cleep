@@ -67,7 +67,7 @@ class InMemoryZip(object):
         Appends a file with name filename_in_zip and contents of 
         file_contents to the in-memory zip.
         """
-        with zipfile.ZipFile(self.in_memory_zip, "a", zipfile.ZIP_DEFLATED, False) as zf:
+        with zipfile.ZipFile(self.in_memory_zip, 'a', zipfile.ZIP_DEFLATED, False) as zf:
             zf.writestr(filename_in_zip, file_contents)
             for zfile in zf.filelist:
                 zfile.create_system = 0

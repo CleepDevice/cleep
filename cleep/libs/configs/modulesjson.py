@@ -79,7 +79,7 @@ class ModulesJson():
         #check content
         if modules_json is None or u'list' not in modules_json or u'update' not in modules_json:
             self.logger.error(u'Invalid "modules.json" file content')
-            raise Exception(u'Invalid "modules.json" file content %s' % modules_json)
+            raise Exception(u'Invalid "modules.json" file content')
 
         return modules_json
 

@@ -14,7 +14,7 @@ from threading import Lock
 from unittest.mock import Mock
 from cleep.bus import BusClient
 from cleep.exception import InvalidParameter, MissingParameter
-from cleep.common import ExecutionStep, CORE_MODULES
+from cleep.common import ExecutionStep, CORE_MODULES, MessageResponse
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
 
@@ -59,6 +59,7 @@ class Cleep(BusClient):
         self.events_broker = bootstrap[u'events_broker']
         self.cleep_filesystem = bootstrap[u'cleep_filesystem']
         self.drivers = bootstrap[u'drivers']
+        self._external_bus_name = bootstrap['external_bus']
 
         # load and check configuration
         self.__config_lock = Lock()
@@ -440,10 +441,11 @@ class Cleep(BusClient):
                 # filter protected or private commands
                 members.remove(member)
             elif member in (
-                    'send_command', 'send_event', 'send_event_to_peer',
+                    'send_command', 'send_event', 'send_command_to_peer', 'send_event_to_peer',
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
                     'start', 'stop', 'push', 'event_received',
+                    'send_command_from_request', 'send_event_from_request',
                 ):
                 # filter bus commands
                 members.remove(member)
@@ -567,18 +569,84 @@ class Cleep(BusClient):
                 return
             if not isinstance(parameter['value'], parameter['type']):
                 raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
+                        parameter['name'],
+                        parameter['value'],
+                    )
                 )
             if 'validator' in parameter and not parameter['validator'](parameter['value']):
                 raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
+                        parameter['name'],
+                        parameter['value'],
+                    )
                 )
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
                     parameter['type'] is str and
                     len(parameter['value']) == 0):
                 raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid' % parameter['name']
+                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
+                        parameter['name'],
+                        parameter['value'],
+                    )
                 )
+
+    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+        """
+        Send command to specified peer through external bus.
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            peer_uuid (string): peer uuid
+            params (dict): command parameters. Default None
+            timeout (float): timeout. Default 5 seconds
+
+        Returns:
+            MessageResponse: message response instance
+        """
+        if not self._external_bus_name:
+            self.logger.warning('Unable to send message to peer because there is no external bus application installed')
+            return MessageResponse(error=True, message='No external bus application installed')
+
+        # send command to internal message bus
+        return self.send_command(
+            'send_command_to_peer',
+            self._external_bus_name,
+            {
+                'command': command,
+                'to': to,
+                'params': params,
+                'peer_uuid': peer_uuid,
+                'timeout': timeout,
+            },
+            timeout
+        )
+
+    def send_event_to_peer(self, event, peer_uuid, params=None):
+        """
+        Send event to specified peer through external bus
+
+        Args:
+            event (string): event name
+            peer_uuid (string): peer uuid
+            params (dict): event parameters. Default None
+        """
+        if not self._external_bus_name:
+            self.logger.warning('Unable to send message to peer because there is no external bus application installed')
+            return MessageResponse(error=True, message='No external bus application installed')
+
+        # send command to internal message bus
+        return self.send_command(
+            'send_event_to_peer',
+            self._external_bus_name,
+            {
+                'event': event,
+                'peer_uuid': peer_uuid,
+                'params': params,
+            },
+            3.0,
+        )
 
 
 
@@ -1132,38 +1200,20 @@ class CleepExternalBus(Cleep):
 
     def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
         """
-        Helper function to push command message to specified peer through external bus.
+        Helper function to send command message to specified peer through external bus.
 
         Args:
             command (string): command name.
             to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
-            peer_infos (dict): infos about peer that sends the command
-            params (dict): command parameters
-            timeout (float): timeout
+            peer_uuid (string): peer uuid
+            params (dict): command parameters. Default None
+            timeout (float): timeout. Default 5 seconds
 
         Returns:
-            dict: MessageResponse as dict or None if no response
+            MessageResponse: message response instance
         """
-        if not self.bootstrap['external_bus']:
-            self.logger.warning('Unable to send message to peer because there is no external bus application')
-
-        if self.__module_name == self.bootstrap['external_bus']:
-            # directly call my function
-            return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
-        else:
-            # send command to internal message bus
-            return self.send_command(
-                'send_command_to_peer',
-                self.__bootstrap['external_bus'],
-                {
-                    'command': command,
-                    'to': to,
-                    'params': params,
-                    'peer_uuid': peer_uuid,
-                    'timeout': timeout,
-                },
-                timeout
-            )
+        # overwrite super function to call directly internal function
+        return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
 
     def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
         """
@@ -1176,12 +1226,40 @@ class CleepExternalBus(Cleep):
             params (dict): command parameters.
 
         Returns:
-            dict: MessageResponse as dict or None if no response
+            MessageResponse: message response instance
 
         Warning:
             Must be implemented
         """
         raise NotImplementedError(
             '_send_command_to_peer function must be implemented in "%s"' % self.__class__.__name__
+        )
+
+    def send_event_to_peer(self, event, peer_uuid, params=None):
+        """
+        Send event to specified peer through external bus
+
+        Args:
+            event (string): event name
+            peer_uuid (string): peer uuid
+            params (dict): event parameters. Default None
+        """
+        # overwrite super function to call directly internal function
+        return self._send_event_to_peer(event, peer_uuid, params)
+
+    def _send_event_to_peer(self, event, peer_uuid, params=None):
+        """
+        Send event to specified peer through external bus implementation
+
+        Args:
+            event (string): event name
+            peer_uuid (string): peer uuid
+            params (dict): event parameters. Default None
+
+        Warning:
+            Must be implemented
+        """
+        raise NotImplementedError(
+            '_send_event_to_peer function must be implemented in "%s"' % self.__class__.__name__
         )
 

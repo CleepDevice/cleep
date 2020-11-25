@@ -18,7 +18,7 @@ from threading import Event
 class InventoryTests(unittest.TestCase):
 
     MODULE = u"""
-from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer
+from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer, CleepExternalBus
 
 class %(module_name)s(%(inherit)s):
     MODULE_AUTHOR = u'Cleep'
@@ -133,7 +133,8 @@ class %(module_name)s(%(inherit)s):
             'events_broker': self.events_broker,
             'crash_report': self.crash_report,
             'test_mode': False,
-            'formatters_broker': self.formatters_broker
+            'formatters_broker': self.formatters_broker,
+            'external_bus': 'testbusapp',
         }
 
         debug_config = {
@@ -144,70 +145,6 @@ class %(module_name)s(%(inherit)s):
         Inventory.PYTHON_CLEEP_IMPORT_PATH = 'modules.'
         Inventory.PYTHON_CLEEP_MODULES_PATH = 'tests/modules'
         Inventory.MODULES_SYNC_TIMEOUT = 2.0
-
-    def test_event_received_module_install(self):
-        self._init_context()
-        self.i.modules['module1'] = {
-            'processing': None
-        }
-
-        event = {
-            'event': 'system.module.install',
-            'params': {
-                'module': 'module1',
-                'status': 1
-            }
-        }
-        self.i.event_received(event)
-        self.assertEqual(self.i.modules['module1']['processing'], 'install')
-
-    def test_event_received_module_uninstall(self):
-        self._init_context()
-        self.i.modules['module1'] = {
-            'processing': None
-        }
-
-        event = {
-            'event': 'system.module.uninstall',
-            'params': {
-                'module': 'module1',
-                'status': 1
-            }
-        }
-        self.i.event_received(event)
-        self.assertEqual(self.i.modules['module1']['processing'], 'uninstall')
-
-    def test_event_received_module_update(self):
-        self._init_context()
-        self.i.modules['module1'] = {
-            'processing': None
-        }
-
-        event = {
-            'event': 'system.module.update',
-            'params': {
-                'module': 'module1',
-                'status': 1
-            }
-        }
-        self.i.event_received(event)
-        self.assertEqual(self.i.modules['module1']['processing'], 'update')
-
-    def test_event_received_module_processing_reset(self):
-        self._init_context()
-        self.i.modules['module1'] = {
-            'processing': 'install'
-        }
-
-        event = {
-            'event': 'system.module.update',
-            'params': {
-                'module': 'module1',
-                'status': 2
-            }
-        }
-        self.i.event_received(event)
-        self.assertEqual(self.i.modules['module1']['processing'], None)
 
     @patch('inventory.ModulesJson')
     def test_get_modules_json_exists_true(self, modulesjson_mock):
@@ -280,7 +217,6 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('tags' in self.i.modules['module1'])
         self.assertTrue(len(self.i.modules['module1']['tags']), 1)
         self.assertTrue(self.i.modules['module1']['tags'][0], 'tag')
-        self.assertTrue('processing' in self.i.modules['module1'])
         self.assertTrue('library' in self.i.modules['module1'])
         self.assertTrue('installed' in self.i.modules['module1'])
         self.assertTrue('urls' in self.i.modules['module1'])
@@ -290,18 +226,15 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('name' in self.i.modules['module1'])
         self.assertTrue('author' in self.i.modules['module1'])
         self.assertTrue('country' in self.i.modules['module1'])
-        self.assertTrue('updatable' in self.i.modules['module1'])
         self.assertTrue('version' in self.i.modules['module1'])
         self.assertEqual(self.i.modules['module1']['version'], '0.0.0')
         self.assertTrue('deps' in self.i.modules['module1'])
         self.assertTrue('local' in self.i.modules['module1'])
-        self.assertTrue('pending' in self.i.modules['module1'])
 
         # check unloaded local module content
         self.assertTrue('core' in self.i.modules['module3'])
         self.assertFalse('description' in self.i.modules['module3'])
         self.assertFalse('tags' in self.i.modules['module3'])
-        self.assertTrue('processing' in self.i.modules['module3'])
         self.assertTrue('library' in self.i.modules['module3'])
         self.assertTrue('installed' in self.i.modules['module3'])
         self.assertFalse('urls' in self.i.modules['module3'])
@@ -311,11 +244,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('name' in self.i.modules['module3'])
         self.assertFalse('author' in self.i.modules['module3'])
         self.assertFalse('country' in self.i.modules['module3'])
-        self.assertTrue('updatable' in self.i.modules['module3'])
         self.assertFalse('version' in self.i.modules['module3'])
         self.assertTrue('deps' in self.i.modules['module3'])
         self.assertTrue('local' in self.i.modules['module3'])
-        self.assertTrue('pending' in self.i.modules['module3'])
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
@@ -333,6 +264,25 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module1' in self.i.modules)
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
+
+    @patch('inventory.ModulesJson')
+    @patch('inventory.CORE_MODULES', [])
+    def test_load_modules_with_cleepexternalbus_module(self, modulesjson_mock):
+        modulesjson_mock.return_value.get_json.return_value = {
+            'list': {'module1':{}, 'module2':{}}
+        }
+        modulesjson_mock.return_value.exists.return_value = True
+        self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepExternalBus')
+
+        self.i._load_modules()
+        logging.debug('Modules: %s' % self.i.modules)
+        
+        self.assertEqual(len(self.i.modules), 3)
+        self.assertTrue('module1' in self.i.modules)
+        self.assertTrue('module2' in self.i.modules)
+        self.assertTrue('module3' in self.i.modules)
+
+        self.assertEqual(self.bootstrap['external_bus'], 'module1')
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
@@ -568,21 +518,6 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_updatable_flag(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
-            'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
-        }
-        modulesjson_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1'])
-
-        self.i._load_modules()
-        logging.debug('Modules: %s' % self.i.modules)
-
-        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')
-        self.assertEqual(self.i.modules['module1']['updatable'], '1.0.0')
-
-    @patch('inventory.ModulesJson')
-    @patch('inventory.CORE_MODULES', [])
     def test_load_modules_load_again(self, modulesjson_mock):
         modulesjson_mock.return_value.get_json.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
@@ -660,8 +595,6 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
         self.assertTrue('module4' in self.i.modules)
-        self.assertEqual(self.i.modules['module1']['updatable'], '1.0.0')
-        self.assertEqual(self.i.modules['module2']['updatable'], '')
 
     def test_all_started(self):
         core_join_event = Event()
@@ -840,7 +773,6 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('core' in infos)
         self.assertTrue('description' in infos)
         self.assertTrue('tags' in infos)
-        self.assertTrue('processing' in infos)
         self.assertTrue('library' in infos)
         self.assertTrue('installed' in infos)
         self.assertTrue('urls' in infos)
@@ -850,11 +782,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('name' in infos)
         self.assertTrue('author' in infos)
         self.assertTrue('country' in infos)
-        self.assertTrue('updatable' in infos)
         self.assertTrue('version' in infos)
         self.assertTrue('deps' in infos)
         self.assertTrue('local' in infos)
-        self.assertTrue('pending' in infos)
         # volatile data
         self.assertTrue('events' in infos)
         self.assertTrue('started' in infos)
@@ -877,7 +807,6 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('core' in infos)
         self.assertTrue('description' in infos)
         self.assertTrue('tags' in infos)
-        self.assertTrue('processing' in infos)
         self.assertTrue('library' in infos)
         self.assertTrue('installed' in infos)
         self.assertTrue('urls' in infos)
@@ -887,11 +816,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('name' in infos)
         self.assertTrue('author' in infos)
         self.assertTrue('country' in infos)
-        self.assertTrue('updatable' in infos)
         self.assertTrue('version' in infos)
         self.assertTrue('deps' in infos)
         self.assertTrue('local' in infos)
-        self.assertTrue('pending' in infos)
         # volatile data
         self.assertTrue('events' in infos)
         self.assertTrue('started' in infos)

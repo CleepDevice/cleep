@@ -89,7 +89,7 @@ class MessageBusTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.b = None
         self.mod1 = None
         self.mod2 = None
@@ -231,35 +231,6 @@ class MessageBusTests(unittest.TestCase):
             self.b._queues['myself'].pop()
         self.assertEqual(self.mod1.pulled_messages(), 0)
 
-    def test_push_to_rpc_when_app_not_configured(self):
-        self._init_context()
-        self.mod1 = DummyModule(self.b, name='rpc-123456789')
-        self.mod1.start()
-
-        self.b.add_subscription(self.mod1.name)
-        self.assertIsNone(self.b.push(self._get_message_request(to='rpc')))
-        time.sleep(0.5)
-       
-        self.assertEqual(self.mod1.pulled_messages(), 0)
-
-    def test_push_deferred_broadcasted_messages(self):
-        self._init_context()
-
-        self.b.add_subscription('dummy')
-        self.b.push(self._get_message_request())
-        self.b.push(self._get_message_request())
-        self.b.push(self._get_message_request())
-        self.b.app_configured()
-        time.sleep(0.25)
-
-        try:
-            # 3 messages should be in queue
-            self.b._queues['dummy'].pop()
-            self.b._queues['dummy'].pop()
-            self.b._queues['dummy'].pop()
-        except:
-            self.fail('Should not trigger exception')
-
     def test_push_timeout(self):
         self._init_context()
 
@@ -288,53 +259,10 @@ class MessageBusTests(unittest.TestCase):
         self.b.add_subscription(self.mod2.name)
 
         self.mod1.push(self._get_message_request(to='otherdummy'), timeout=0.0)
+        self.b.app_configured()
         time.sleep(0.5)
         
         self.assertIsNone(self.mod1.last_response())
-        self.assertEqual(self.mod2.pulled_messages(), 1)
-
-    def test_push_to_unsubscribed_module_before_app_configured_with_timeout(self):
-        self._init_context()
-
-        self.mod1 = DummyModule(self.b, name='dummy')
-        self.mod1.start()
-        self.b.add_subscription(self.mod1.name)
-        self.mod2 = DummyModule(self.b, name='otherdummy', response=self.dummy_response)
-        self.mod2.start()
-        
-        self.mod1.push(self._get_message_request(to='otherdummy'))
-        time.sleep(0.25)
-        self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
-        
-        time.sleep(0.5)
-        last_response = self.mod1.last_response()
-        logging.debug('Last response mod1: %s' % last_response)
-        #self.assertEqual(last_response['data'], self.dummy_response.data)
-        #self.assertEqual(last_response['error'], self.dummy_response.error)
-        #self.assertEqual(last_response['message'], self.dummy_response.message)
-        #logging.debug('Pulled messages mod2: %s' % self.mod2.pulled_messages())
-        #self.assertEqual(self.mod2.pulled_messages(), 1)
-
-    def test_push_to_unsubscribed_module_before_app_configured_without_timeout(self):
-        self._init_context()
-
-        self.mod1 = DummyModule(self.b, name='dummy')
-        self.mod1.start()
-        self.b.add_subscription(self.mod1.name)
-        self.mod2 = DummyModule(self.b, name='otherdummy', response=self.dummy_response)
-        self.mod2.start()
-        
-        self.mod1.push(self._get_message_request(to='otherdummy'), timeout=None)
-        time.sleep(0.5)
-        self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
-        
-        time.sleep(0.5)
-        last_response = self.mod1.last_response()
-        logging.debug('Last response mod1: %s' % last_response)
-        self.assertEqual(last_response, None)
-        logging.debug('Pulled messages mod2: %s' % self.mod2.pulled_messages())
         self.assertEqual(self.mod2.pulled_messages(), 1)
 
     def test_push_to_unsubscribed_module_before_app_configured_timeout(self):
@@ -350,16 +278,20 @@ class MessageBusTests(unittest.TestCase):
         self.mod2 = DummyModule(self.b, name='otherdummy', response=self.dummy_response)
         self.mod2.start()
         self.b.add_subscription(self.mod2.name)
+
         self.b.app_configured()
-        
         time.sleep(0.5)
+
         last_response = self.mod1.last_response()
         logging.debug('Last response mod1: %s' % last_response)
         self.assertEqual(last_response, None)
         last_exception = self.mod1.last_exception()
         logging.debug('Last exception: "%s"' % last_exception)
-        self.assertTrue(isinstance(last_exception, NoResponse))
-        self.assertTrue(str(last_exception).startswith('No response from %s (%.1f seconds)' % (self.mod2.name, self.b.STARTUP_TIMEOUT)))
+        self.assertTrue(isinstance(last_exception, Exception))
+        self.assertEqual(
+            str(last_exception),
+            'Pushing messages to internal bus is possible only when application is running. If this message appears during Cleep startup it means you try to send a message from module constructor or _configure method, if that is the case prefer using _on_start method.'
+        )
 
     def test_push_while_stopped(self):
         self._init_context()
@@ -520,20 +452,30 @@ class MessageBusTests(unittest.TestCase):
 
 
 class TestProcess1(BusClient):
-    def __init__(self, bus, custom_process=None, configure=None):
+    def __init__(self, bus, on_process=None, on_configure=None, on_stop=None, on_start=None):
         BusClient.__init__(self, bus)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__command_calls = {}
-        self.custom_process = custom_process
-        self.configure = configure
+        self.on_process = on_process
+        self.on_configure = on_configure
+        self.on_stop = on_stop
+        self.on_start = on_start
 
-    def _custom_process(self):
-        if self.custom_process:
-            self.custom_process()
+    def _on_process(self):
+        if self.on_process:
+            self.on_process()
+
+    def _on_start(self):
+        if self.on_start:
+            self.on_start()
+
+    def _on_stop(self):
+        if self.on_stop:
+            self.on_stop()
 
     def _configure(self):
-        if self.configure:
-            self.configure()
+        if self.on_configure:
+            self.on_configure()
 
     def __command_call(self, command):
         if command not in self.__command_calls:
@@ -555,7 +497,7 @@ class TestProcess1(BusClient):
 
     def command_broadcast(self, param):
         self.__command_call('command_broadcast')
-        return 'command broadcast wih param=%s' % (unicode(param))
+        return 'command broadcast wih param=%s' % param
 
     def _event_received(self, event):
         self.__command_call('event_received')
@@ -585,7 +527,7 @@ class TestProcess2(BusClient):
 
     def command_broadcast(self, param):
         self.__command_call('command_broadcast')
-        return 'command broadcast wih param=%s' % (unicode(param))
+        return 'command broadcast wih param=%s' % param
 
     def command_exception(self):
         raise Exception('Test exception')
@@ -633,7 +575,7 @@ class BusClientTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         if self.p1:
@@ -645,7 +587,7 @@ class BusClientTests(unittest.TestCase):
         if self.p3:
             self.p3.stop()
 
-    def _init_context(self, p1_custom_process=None, p1_configure=None):
+    def _init_context(self, p1_on_process=None, p1_on_configure=None, p1_on_stop=None, p1_on_start=None):
         self.crash_report = Mock()
         self.bus = MessageBus(self.crash_report, debug_enabled=False)
         self.bootstrap = {
@@ -655,7 +597,7 @@ class BusClientTests(unittest.TestCase):
             'crash_report': self.crash_report,
         }
 
-        self.p1 = TestProcess1(self.bootstrap, custom_process=p1_custom_process, configure=p1_configure)
+        self.p1 = TestProcess1(self.bootstrap, on_process=p1_on_process, on_configure=p1_on_configure, on_stop=p1_on_stop, on_start=p1_on_start)
         self.p1.start()
         self.p2 = TestProcess2(self.bootstrap)
         self.p2.start()
@@ -677,10 +619,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p2.send_command(command='command_with_params', params={'p1':'hello', 'p2':'world'}, to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
+        self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
-        self.assertEqual(resp['data'], 'command with params: hello world')
-        self.assertFalse(resp['error'])
+        self.assertEqual(resp.data, 'command with params: hello world')
+        self.assertFalse(resp.error)
 
     def test_send_command_with_invalid_command_parameters(self):
         self._init_context()
@@ -688,17 +630,19 @@ class BusClientTests(unittest.TestCase):
         resp = self.p2.send_command(command='command_with_params', params={'p1':'hello'}, to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
+        self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Some command parameters are missing')
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Some command parameters are missing')
 
     def test_send_command_to_unknown_module(self):
         self._init_context()
 
-        with self.assertRaises(InvalidModule) as cm:
-            self.p1.send_command(command='command_with_params', params={'param1':'hello'}, to='dummy')
-        self.assertEqual(str(cm.exception), 'Invalid module "dummy" (not loaded or unknown)')
+        resp = self.p1.send_command(command='command_with_params', params={'param1':'hello'}, to='dummy')
+        logging.debug('Response: %s' % resp)
+        
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Invalid module "dummy" (not loaded or unknown)')
 
     def test_send_command_invalid_command(self):
         self._init_context()
@@ -706,11 +650,11 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_unknown', params={'p1':'hello', 'p2':'world'}, to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
+        self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
-        self.assertEqual(resp['data'], None)
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Command "command_unknown" doesn\'t exist in "testprocess2" module')
+        self.assertEqual(resp.data, None)
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Command "command_unknown" doesn\'t exist in "testprocess2" module')
 
     def test_send_broadcast_command(self):
         self._init_context()
@@ -719,8 +663,8 @@ class BusClientTests(unittest.TestCase):
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         time.sleep(0.5)
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNone(resp.data)
         self.assertEqual(self.p1._get_command_calls('command_broadcast'), 1)
         self.assertEqual(self.p2._get_command_calls('command_broadcast'), 0)
 
@@ -730,9 +674,9 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNotNone(resp['data'])
-        self.assertEqual(resp['data'], 'command without params')
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNotNone(resp.data)
+        self.assertEqual(resp.data, 'command without params')
 
     def test_send_command_with_exception(self):
         self._init_context()
@@ -740,10 +684,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_exception', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Test exception')
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Test exception')
+        self.assertIsNone(resp.data)
 
     def test_send_command_to_myself_with_exception(self):
         self._init_context()
@@ -751,10 +695,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p2.send_command(command='command_exception', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Test exception')
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Test exception')
+        self.assertIsNone(resp.data)
 
     def test_send_command_to_myself_with_invalid_command_parameters(self):
         self._init_context()
@@ -762,10 +706,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_with_params', params={'p1':'hello'}, to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
+        self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Some command parameters are missing')
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Some command parameters are missing')
 
     def test_send_command_to_myself_invalid_command(self):
         self._init_context()
@@ -773,11 +717,11 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_unknown', params={'p1':'hello', 'p2':'world'}, to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
+        self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
-        self.assertEqual(resp['data'], None)
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Command "command_unknown" doesn\'t exist in "testprocess1" module')
+        self.assertEqual(resp.data, None)
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Command "command_unknown" doesn\'t exist in "testprocess1" module')
 
     @patch('inspect.signature')
     def test_send_command_to_myself_exception(self, signature_mock):
@@ -787,10 +731,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNone(resp['data'])
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Internal error')
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNone(resp.data)
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Internal error')
 
     def test_send_command_with_commanderror(self):
         self._init_context()
@@ -798,10 +742,10 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_error', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertTrue(resp['error'])
-        self.assertEqual(resp['message'], 'Command error')
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Command error')
+        self.assertIsNone(resp.data)
 
     def test_send_command_with_commandinfo(self):
         self._init_context()
@@ -809,30 +753,30 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_info', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertFalse(resp['error'])
-        self.assertEqual(resp['message'], 'Command info')
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertFalse(resp.error)
+        self.assertEqual(resp.message, 'Command info')
+        self.assertIsNone(resp.data)
 
-    def test_custom_process_called(self):
+    def test_on_process_called(self):
         class Context():
             call_count = 0
 
-        def custom_process():
+        def on_process():
             Context.call_count += 1
 
-        self._init_context(p1_custom_process=custom_process)
+        self._init_context(p1_on_process=on_process)
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertEqual(Context.call_count, 1)
 
-    def test_custom_process_exception(self):
-        def custom_process():
+    def test_on_process_exception(self):
+        def on_process():
             raise Exception('Test exception')
 
-        self._init_context(p1_custom_process=custom_process)
+        self._init_context(p1_on_process=on_process)
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
@@ -840,31 +784,39 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(self.crash_report.report_exception.called)
         self.assertEqual(self.crash_report.report_exception.call_count, 1)
 
-    def test_configure_called(self):
+    def test_on_configure_called(self):
         class Context():
             call_count = 0
 
         def configure():
             Context.call_count += 1
 
-        self._init_context(p1_configure=configure)
+        self._init_context(p1_on_configure=configure)
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertEqual(Context.call_count, 1)
 
-    def test_configure_exception(self):
+    def test_on_configure_exception(self):
         def configure():
             raise Exception('Test exception')
 
-        self._init_context(p1_configure=configure)
+        self._init_context(p1_on_configure=configure)
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertTrue(self.crash_report.report_exception.called)
         self.assertEqual(self.crash_report.report_exception.call_count, 1)
+
+    def test_get_module_name(self):
+        self._init_context()
+
+        module_name = self.p1._get_module_name()
+        logging.debug('module_name=%s' % module_name)
+
+        self.assertEqual(module_name, 'testprocess1')
 
     def test_push_invalid_parameters(self):
         self._init_context()
@@ -894,20 +846,53 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_sender', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertEqual(resp['data'], 'command_sender=testprocess1')
+        self.assertEqual(resp.data, 'command_sender=testprocess1')
 
     def test_send_command_default_params(self):
         self._init_context()
 
         resp = self.p1.send_command(command='command_default_params', params={'param1': 123}, to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
-        self.assertEqual(resp['data']['param1'], 123)
-        self.assertEqual(resp['data']['param2'], 'default')
+        self.assertEqual(resp.data['param1'], 123)
+        self.assertEqual(resp.data['param2'], 'default')
 
         resp = self.p1.send_command(command='command_default_params', params={'param1': 123, 'param2': 789}, to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
-        self.assertEqual(resp['data']['param1'], 123)
-        self.assertEqual(resp['data']['param2'], 789)
+        self.assertEqual(resp.data['param1'], 123)
+        self.assertEqual(resp.data['param2'], 789)
+
+    def test_send_command_from_request(self):
+        self._init_context()
+        req = MessageRequest(command='command_with_params', params={'p1':'hello', 'p2':'world'}, to='testprocess1')
+
+        resp = self.p2.send_command_from_request(req)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNotNone(resp)
+        self.assertEqual(resp.data, 'command with params: hello world')
+        self.assertFalse(resp.error)
+
+    def test_send_command_from_request_same_module(self):
+        self._init_context()
+        self.p1.push = Mock()
+        req = MessageRequest(command='command_with_params', params={'p1':'hello', 'p2':'world'}, to='testprocess1')
+
+        resp = self.p1.send_command_from_request(req)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNotNone(resp)
+        self.assertEqual(resp.data, 'command with params: hello world')
+        self.assertFalse(resp.error)
+        self.assertFalse(self.p1.push.called)
+
+    def test_send_command_from_request_invalid_param(self):
+        self._init_context()
+
+        with self.assertRaises(Exception) as cm:
+            self.p2.send_command_from_request({})
+        self.assertEqual(str(cm.exception), 'Parameter "request" must be MessageRequest instance')
 
     def test_send_event(self):
         self._init_context()
@@ -917,21 +902,8 @@ class BusClientTests(unittest.TestCase):
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         time.sleep(0.5)
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNone(resp['data'])
-        self.assertEqual(self.p1._get_command_calls('event_received'), 1)
-        self.assertEqual(self.p2._get_command_calls('event_received'), 0)
-
-    def test_send_external_event(self):
-        self._init_context()
-        event = 'event.dummy.test'
-
-        resp = self.p2.send_external_event(event, {'p1': 'event'}, peer_infos={'ip':'1.2.3.4'})
-        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
-        time.sleep(0.5)
-
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertIsNone(resp.data)
         self.assertEqual(self.p1._get_command_calls('event_received'), 1)
         self.assertEqual(self.p2._get_command_calls('event_received'), 0)
 
@@ -943,12 +915,95 @@ class BusClientTests(unittest.TestCase):
         event = 'event.dummy.test'
 
         resp = self.p2.send_event(event, {'p1': 'event'}, to='testprocess3')
-        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         time.sleep(0.5)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
-        self.assertTrue(isinstance(resp, dict))
-        self.assertIsNone(resp['data'])
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertFalse(resp.error) # can't handle event errors on multiple apps
+        self.assertIsNone(resp.data)
+
+    def test_send_event_from_request(self):
+        self._init_context()
+        self.p2 = TestProcess3(self.bootstrap)
+        self.p2.start()
+        time.sleep(0.5)
         
+        req = MessageRequest(event='event.dummy.test', params={'param': 'value'})
+        resp =self.p2.send_event_from_request(req)
+        time.sleep(0.5)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertFalse(resp.error)
+        self.assertIsNone(resp.data)
+
+    def test_send_event_from_request_invalid_param(self):
+        self._init_context()
+
+        with self.assertRaises(Exception) as cm:
+            self.p2.send_event_from_request({})
+        self.assertEqual(str(cm.exception), 'Parameter "request" must be MessageRequest instance')
+        
+    def test_on_stop_called(self):
+        class Context():
+            call_count = 0
+
+        def on_stop():
+            Context.call_count += 1
+
+        self._init_context(p1_on_stop=on_stop)
+
+        resp = self.p1.send_command(command='command_without_params', to='testprocess1')
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+        self.p1.stop()
+        time.sleep(1.0)
+
+        self.assertEqual(Context.call_count, 1)
+
+    def test_on_stop_called_exception(self):
+        def on_stop():
+            raise Exception('Test exception')
+
+        self._init_context(p1_on_stop=on_stop)
+
+        resp = self.p1.send_command(command='command_without_params', to='testprocess1')
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+        self.p1.stop()
+        time.sleep(1.0)
+
+        self.assertTrue(self.crash_report.report_exception.called)
+        self.assertEqual(self.crash_report.report_exception.call_count, 1)
+
+    def test_on_start_called(self):
+        class Context():
+            call_count = 0
+
+        def on_start():
+            Context.call_count += 1
+
+        self._init_context(p1_on_start=on_start)
+
+        resp = self.p1.send_command(command='command_without_params', to='testprocess1')
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+        self.p1.stop()
+        time.sleep(1.0)
+
+        self.assertEqual(Context.call_count, 1)
+
+    def test_on_start_called_exception(self):
+        def on_start():
+            raise Exception('Test exception')
+
+        self._init_context(p1_on_start=on_start)
+
+        resp = self.p1.send_command(command='command_without_params', to='testprocess1')
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+        self.p1._wait_is_started()
+        self.p1.stop()
+        time.sleep(1.0)
+
+        self.assertFalse(self.crash_report.report_exception.called)
+
 
 
 if __name__ == '__main__':

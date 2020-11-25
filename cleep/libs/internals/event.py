@@ -23,17 +23,19 @@ class Event():
     # enable chart generation for this event
     EVENT_CHARTABLE = False
 
-    def __init__(self, bus, formatters_broker):
+    def __init__(self, bus, formatters_broker, get_external_bus_name):
         """
         Construtor
 
         Args:
             bus (MessageBus): message bus instance
             formatters_broker (FormattersBroker): FormattersBroker singleton instance
+            get_external_bus_name (function): function to get external bus name
         """
         self.bus = bus
         self.formatters_broker = formatters_broker
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.__get_external_bus_name = get_external_bus_name
         # self.logger.setLevel(logging.DEBUG)
         self.__not_renderable_for = []
         if not hasattr(self, 'EVENT_NAME'):
@@ -66,6 +68,17 @@ class Event():
 
         return all(key in self.EVENT_PARAMS for key in params.keys())
 
+    def __get_event_caller(self):
+        """
+        Get module that calls the event
+
+        Returns:
+            string: name of the event caller
+        """
+        stack = inspect.stack()
+        caller = stack[1][0].f_locals['self']
+        return caller.__class__.__name__.lower()
+
     def set_renderable(self, renderer_name, renderable):
         """
         Disable event rendering for specified renderer
@@ -89,37 +102,65 @@ class Event():
             to (string): event recipient. If not specified, event will be broadcasted. (to send to ui client set 'rpc')
             render (bool): also propagate event to renderer. False to disable it
 
-        Returns:
-            bool: True if event sent successfully
+        Raises:
+            Exception if parameters are invalid
         """
-        # get event caller
-        stack = inspect.stack()
-        caller = stack[1][0].f_locals["self"]
-        module = caller.__class__.__name__.lower()
-
-        # check and prepare event
+        # check params
         if self._check_params(params):
-            request = MessageRequest()
-            request.to = to
-            request.sender = module
-            request.event = self.EVENT_NAME
-            request.propagate = self.EVENT_PROPAGATE
-            request.device_id = device_id
-            request.params = params
+            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+        
+        # get event caller
+        caller_name = self.__get_event_caller()
 
-            # render event
-            if render:
-                try:
-                    self.render(params)
-                except Exception:
-                    # can't let render call crash the process
-                    self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
+        # prepare event
+        request = MessageRequest()
+        request.to = to
+        request.sender = caller_name
+        request.event = self.EVENT_NAME
+        request.propagate = self.EVENT_PROPAGATE
+        request.device_id = device_id
+        request.params = params
 
-            # push event to internal bus (no response awaited for event)
-            self.bus.push(request, None)
-            return True
+        # render event
+        if render:
+            try:
+                self.render(params)
+            except Exception:
+                # can't let render call crash the process
+                self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
 
-        raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+        # push event to internal bus (no response awaited for event)
+        self.bus.push(request, None)
+
+    def send_to_peer(self, peer_uuid, params=None):
+        """
+        Push event to peer through external bus
+
+        Args:
+            peer_uuid (string): peer uuid
+            params (dict): event parameters
+
+        Raises:
+            Exception if parameters are invalid
+        """
+        # check params
+        if self._check_params(params):
+            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+
+        # get event caller
+        caller_name = self.__get_event_caller()
+
+        # prepare request
+        request = MessageRequest()
+        request.to = self.__get_external_bus_name()
+        request.sender = caller_name
+        request.event = self.EVENT_NAME
+        request.propagate = False
+        request.device_id = device_id
+        request.params = params
+
+        # push event to internal bus (no response awaited for event)
+        self.bus.push(request, None)
 
     def render(self, params=None):
         """

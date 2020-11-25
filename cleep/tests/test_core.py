@@ -4,7 +4,7 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer
+from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer, CleepExternalBus
 from cleep.libs.tests.lib import TestLib
 from cleep.exception import InvalidParameter, MissingParameter
 from cleep.libs.drivers.driver import Driver
@@ -32,7 +32,7 @@ class DummyCleep(Cleep):
         self.stop_called = False
         self.event_received_called = False
 
-    def _stop(self):
+    def _on_stop(self):
         self.stop_called = True
 
     def event_received(self, event):
@@ -45,7 +45,7 @@ class DummyDriver(Driver):
     def __init__(self, fs, dtype, dname):
         Driver.__init__(self, fs, dtype, dname)
 
-class CleepTests(unittest.TestCase):
+class TestsCleep(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -103,6 +103,7 @@ class CleepTests(unittest.TestCase):
             'events_broker': self.events_broker,
             'crash_report': self.crash_report,
             'test_mode': False,
+            'external_bus': 'testbusapp',
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
@@ -419,7 +420,7 @@ class CleepTests(unittest.TestCase):
         # empty string
         with self.assertRaises(InvalidParameter) as cm:
             self.r._check_parameters([{ 'name': 'param', 'value': '', 'type': str }])
-        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid (specified="")')
         # empty string allowed
         self.r._check_parameters([{ 'name': 'param', 'value': '', 'type': str, 'empty': True }])
         # empty flag for non string works
@@ -428,16 +429,45 @@ class CleepTests(unittest.TestCase):
         # invalid type
         with self.assertRaises(InvalidParameter) as cm:
             self.r._check_parameters([{ 'name': 'param', 'value': 123, 'type': str }])
-        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid (specified="123")')
 
         # invalid validator
         with self.assertRaises(InvalidParameter) as cm:
             self.r._check_parameters([{ 'name': 'param', 'value': '1.1.1', 'type': str, 'validator': lambda val: val.count('.') == 3 }])
-        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid')
+        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid (specified="1.1.1")')
         # valid validator
         self.r._check_parameters([{ 'name': 'param', 'value': '1.1.1.1', 'type': str, 'validator': lambda val: val.count('.') == 3 }])
 
+    def test_send_command_to_peer(self):
+        self._init_context()
+        self.r.send_command = Mock()
 
+        self.r.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'})
+
+        self.r.send_command.assert_called_with(
+            'send_command_to_peer',
+            'testbusapp',
+            {
+                'command': 'command',
+                'to': 'app',
+                'peer_uuid': '123-456-789',
+                'params': {'param': 'value'},
+                'timeout': 5.0
+            },
+            5.0,
+        )
+
+    def test_send_command_to_peer_no_external_bus(self):
+        self._init_context()
+        self.r._external_bus_name = None
+
+        resp = self.r.send_command_to_peer('command', 'app', '123-456-789')
+
+        self.assertDictEqual(resp.to_dict(), {
+            'error': True,
+            'message': 'No external bus application installed',
+            'data': None,
+        })
 
 
 
@@ -457,7 +487,7 @@ class DummyCleepModule(CleepModule):
         self.stop_called = False
         self.event_received_called = False
 
-    def _stop(self):
+    def _on_stop(self):
         self.stop_called = True
 
     def event_received(self, event):
@@ -466,7 +496,7 @@ class DummyCleepModule(CleepModule):
     def my_command(self, param):
         pass
 
-class CleepModuleTests(unittest.TestCase):
+class TestsCleepModule(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -543,6 +573,7 @@ class CleepModuleTests(unittest.TestCase):
             'events_broker': self.events_broker,
             'crash_report': self.crash_report,
             'test_mode': False,
+            'external_bus': 'testbusapp',
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
@@ -798,7 +829,7 @@ class DummyCleepRpcWrapper(CleepRpcWrapper):
     def my_command(self):
         pass
 
-class CleepRpcWrapperTests(unittest.TestCase):
+class TestsCleepRpcWrapper(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -843,6 +874,7 @@ class CleepRpcWrapperTests(unittest.TestCase):
             'events_broker': self.events_broker,
             'crash_report': self.crash_report,
             'test_mode': False,
+            'external_bus': 'testbusapp',
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -893,7 +925,7 @@ class DummyCleepResources(CleepResources):
     def my_command(self):
         pass
 
-class CleepResourcesTests(unittest.TestCase):
+class TestsCleepResources(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -941,6 +973,7 @@ class CleepResourcesTests(unittest.TestCase):
             'crash_report': self.crash_report,
             'test_mode': False,
             'critical_resources': self.critical_resources,
+            'external_bus': 'testbusapp',
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -1009,7 +1042,7 @@ class DummyCleepRenderer(CleepRenderer):
     def my_command(self):
         pass
 
-class CleepRendererTests(unittest.TestCase):
+class TestsCleepRenderer(unittest.TestCase):
 
     DEFAULT_CONFIG = {
         'key': 'value1',
@@ -1057,6 +1090,7 @@ class CleepRendererTests(unittest.TestCase):
             'crash_report': self.crash_report,
             'test_mode': False,
             'critical_resources': self.critical_resources,
+            'external_bus': 'testbusapp',
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -1135,8 +1169,98 @@ class CleepRendererTests(unittest.TestCase):
         self.assertFalse(self.r.render(p))
 
 
+
+class DummyCleepExternalBus(CleepExternalBus):
+    CONFIG_DIR = ''
+    MODULE_VERSION = '6.6.6'
+    RENDERER_PROFILES = [RendererProfile]
+
+    def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
+        if sentry_dsn:
+            setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
+        CleepExternalBus.__init__(self, bootstrap, debug_enabled)
+
+
+class TestsCleepExternalBus(unittest.TestCase):
+
+    DEFAULT_CONFIG = {
+        'key': 'value1',
+        'list': ['list1', 'list2'],
+        'bool': True,
+        'number': 123456,
+        'dict': {
+            'dict1': 'value1',
+        },
+    }
+
+    def setUp(self):
+        TestLib()
+        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+
+        self.r = None
+
+    def tearDown(self):
+        if self.r:
+            self.r.stop()
+
+    def _init_context(self):
+        self.crash_report = Mock()
+        self.crash_report.is_enabled.return_value = False
+        self.crash_report.get_infos.return_value = {
+            'libsversion': {},
+            'product': 'DummyCleep',
+            'productversion': '0.0.0'
+        }
+
+        self.cleep_filesystem = Mock()
+        self.events_broker = Mock()
+        self.drivers = Mock()
+
+        self.critical_resources = Mock()
+
+        self.bootstrap = {
+            'message_bus': MagicMock(),
+            'module_join_event': Mock(),
+            'core_join_event': Mock(),
+            'drivers': self.drivers,
+            'cleep_filesystem': self.cleep_filesystem,
+            'execution_step': Mock(),
+            'events_broker': self.events_broker,
+            'crash_report': self.crash_report,
+            'test_mode': False,
+            'critical_resources': self.critical_resources,
+            'external_bus': 'testbusapp',
+        }
+        sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
+
+        self.c = DummyCleepExternalBus(
+            self.bootstrap,
+            debug_enabled=False,
+            sentry_dsn=sentry_dsn,
+        )
+
+    def test_init(self):
+        self._init_context()
+
+        self.assertEqual(self.c._external_bus_name, 'testbusapp')
+
+    def test_send_command_to_peer(self):
+        self._init_context()
+        self.c._send_command_to_peer = Mock()
+
+        self.c.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'})
+
+        self.c._send_command_to_peer.assert_called_with('command', 'app', '123-456-789', {'param': 'value'}, 5.0)
+
+    def test_send_command_to_peer_not_implemented(self):
+        self._init_context()
+
+        with self.assertRaises(NotImplementedError) as cm:
+            self.c.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'})
+        self.assertEqual(str(cm.exception), '_send_command_to_peer function must be implemented in "DummyCleepExternalBus"')
+
 if __name__ == '__main__':
-    #coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
+    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
     unittest.main()
 
 

@@ -82,6 +82,7 @@ class TestSession():
             'execution_step': ExecutionStep(),
             'drivers': Drivers(debug),
             'log_file': '/tmp/cleep.log',
+            'external_bus': 'cleepbus',
         }
 
     def __get_test_case_name(self):
@@ -176,7 +177,7 @@ class TestSession():
         # process
         if self.__module_instance:
             self.__module_instance.stop()
-            self.__module_instance.join()
+            self.__module_instance.join(1.0)
 
         # config
         if hasattr(self.__module_instance, 'MODULE_CONFIG_FILE'):
