@@ -106,7 +106,7 @@ class MessageBus():
             timeout (float): time to wait for response. If not specified, function returns None.
 
         Returns:
-            any: request response or None if no response awaited (request is an event or a broadcast command or if
+            any: MessageResponse or None if no response awaited (request is an event or a broadcast command or if
                  timeout is None)
 
         Raises:
@@ -172,7 +172,7 @@ class MessageBus():
 
         if not event:
             # no timeout given, do not wait response and return None
-            return None
+            return MessageResponse()
 
         # wait for response
         self.logger.trace('Push wait for response (%s seconds)....' % str(timeout))
@@ -203,7 +203,7 @@ class MessageBus():
             if q.startswith('rpc-'):
                 self._queues[q].appendleft(msg)
 
-        return None
+        return MessageResponse()
 
     def __push_to_broadcast(self, request, request_dict, timeout):
         """
@@ -226,7 +226,7 @@ class MessageBus():
             # enqueue message
             self._queues[module_queue].appendleft(msg)
 
-        return None
+        return MessageResponse()
 
     def pull(self, module, timeout=0.5):
         """

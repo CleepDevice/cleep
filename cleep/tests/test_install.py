@@ -9,7 +9,7 @@ import time
 import logging
 import shutil
 
-logging.basicConfig(level=logging.INFO, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class InstallTests(unittest.TestCase):
     """

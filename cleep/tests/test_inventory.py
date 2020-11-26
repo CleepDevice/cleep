@@ -21,12 +21,12 @@ class InventoryTests(unittest.TestCase):
 from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer, CleepExternalBus
 
 class %(module_name)s(%(inherit)s):
-    MODULE_AUTHOR = u'Cleep'
-    MODULE_VERSION = u'0.0.0'
-    MODULE_CATEGORY = u'APPLICATION'
+    MODULE_AUTHOR = 'Cleep'
+    MODULE_VERSION = '0.0.0'
+    MODULE_CATEGORY = 'APPLICATION'
     MODULE_DEPS = %(module_deps)s
-    MODULE_DESCRIPTION = u'desc'
-    MODULE_LONGDESCRIPTION = u'long desc'
+    MODULE_DESCRIPTION = 'desc'
+    MODULE_LONGDESCRIPTION = 'long desc'
     MODULE_TAGS = ['tag']
     MODULE_COUNTRY = None
 
@@ -66,7 +66,7 @@ class %(module_name)s(%(inherit)s):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.i = None
 
     def tearDown(self):
@@ -84,25 +84,25 @@ class %(module_name)s(%(inherit)s):
             mod1_startup_error='', core_join_event=None):
         os.mkdir('modules')
         with io.open(os.path.join('modules', '__init__.py'), 'w') as fd:
-            fd.write(u'')
+            fd.write('')
         # module1
         os.mkdir(os.path.join('modules', 'module1'))
         with io.open(os.path.join('modules', 'module1', 'module1.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module1', 'module_deps': mod1_deps, 'exception':mod1_exception, 'inherit':mod1_inherit, 'startup_error':mod1_startup_error})
         with io.open(os.path.join('modules', 'module1', '__init__.py'), 'w') as fd:
-            fd.write(u'')
+            fd.write('')
         # module2
         os.mkdir(os.path.join('modules', 'module2'))
         with io.open(os.path.join('modules', 'module2', 'module2.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module2', 'module_deps': mod2_deps, 'exception':mod2_exception, 'inherit':mod2_inherit, 'startup_error':''})
         with io.open(os.path.join('modules', 'module2', '__init__.py'), 'w') as fd:
-            fd.write(u'')
+            fd.write('')
         # module3
         os.mkdir(os.path.join('modules', 'module3'))
         with io.open(os.path.join('modules', 'module3', 'module3.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module3', 'module_deps': mod3_deps, 'exception':mod3_exception, 'inherit':mod3_inherit, 'startup_error':''})
         with io.open(os.path.join('modules', 'module3', '__init__.py'), 'w') as fd:
-            fd.write(u'')
+            fd.write('')
 
         self.rpcserver = Mock()
         self.rpcserver.is_debug_enabled.return_value = True
@@ -1133,7 +1133,7 @@ class %(module_name)s(%(inherit)s):
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
 
-        self.i._rpc_wrapper('a_route', {})
+        self.i.rpc_wrapper('a_route', {})
         # can't perform some check call was a success. We add info log message on stdout
 
     @patch('inventory.ModulesJson')
@@ -1148,7 +1148,7 @@ class %(module_name)s(%(inherit)s):
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
 
-        self.i._rpc_wrapper('a_route', {})
+        self.i.rpc_wrapper('a_route', {})
         # can't perform some check call was a success. We add info log message on stdout
         # but in this test case, exception mustn't fail rpc_wrapper call
         
@@ -1160,6 +1160,6 @@ class %(module_name)s(%(inherit)s):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
     unittest.main()
 

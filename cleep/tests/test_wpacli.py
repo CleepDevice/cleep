@@ -5,7 +5,7 @@ from raspiot.libs.commands.wpacli import Wpacli
 import unittest
 import logging
 
-logging.basicConfig(level=logging.WARN, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class WpacliTests(unittest.TestCase):
 

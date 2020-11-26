@@ -89,7 +89,7 @@ class MessageBusTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.b = None
         self.mod1 = None
         self.mod2 = None
@@ -575,7 +575,7 @@ class BusClientTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.ERROR, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         if self.p1:
@@ -1007,6 +1007,6 @@ class BusClientTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_bus.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_bus.py; coverage report -m -i
     unittest.main()
 

@@ -18,32 +18,28 @@ Rpcserver implements:
 
 import os
 import logging
-import sys
-import argparse
 import json
 from contextlib import contextmanager
 import time
 import uptime
 import uuid
-from gevent import monkey; monkey.patch_all()
-from gevent import queue
-from gevent import pywsgi 
+import io
+from gevent import pywsgi
 from gevent.pywsgi import LoggingLogAdapter
-from cleep.exception import NoMessageAvailable, CommandError
+from gevent import monkey
+monkey.patch_all()
+from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest
 import bottle
-from bottle import auth_basic
 from passlib.hash import sha256_crypt
 import functools
-import re
-import io
 
-__all__ = [u'app']
+__all__ = ['app']
 
 #constants
-BASE_DIR = u'/opt/cleep/'
-HTML_DIR = os.path.join(BASE_DIR, u'html')
-AUTH_FILE = u'/etc/cleep/auth.conf'
+BASE_DIR = '/opt/cleep/'
+HTML_DIR = os.path.join(BASE_DIR, 'html')
+AUTH_FILE = '/etc/cleep/auth.conf'
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900 #15mins
 
@@ -71,22 +67,22 @@ def load_auth():
     global AUTH_FILE, auth_enabled, auth_config
 
     try:
-        with io.open(AUTH_FILE, u'r') as fp:
+        with io.open(AUTH_FILE, 'r') as fp:
             auth_config = json.load(fp)
-        logger.debug(u'auth.conf: %s' % auth_config[u'accounts'])
+        logger.debug('auth.conf: %s' % auth_config['accounts'])
 
-        if len(auth_config[u'accounts'])>0 and auth_config[u'enabled']:
+        if bool(len(auth_config['accounts'])) and auth_config['enabled']:
             auth_enabled = True
         else:
             auth_enabled = False
-        logger.debug(u'Auth enabled: %s' % auth_enabled)
+        logger.debug('Auth enabled: %s' % auth_enabled)
 
     except:
-        logger.exception(u'Unable to load auth file. Auth disabled:')
+        logger.exception('Unable to load auth file. Auth disabled:')
         crash_report.report_exception({
-            u'message': u'Unable to load auth file. Auth disabled:',
-            u'auth_enabled': auth_enabled,
-            u'auth_config': auth_config
+            'message': 'Unable to load auth file. Auth disabled:',
+            'auth_enabled': auth_enabled,
+            'auth_config': auth_config
         })
 
 def configure(bootstrap, inventory_, debug_enabled_):
@@ -101,16 +97,16 @@ def configure(bootstrap, inventory_, debug_enabled_):
     global cleep_filesystem, inventory, bus, logger, crash_report, debug_enabled
 
     # configure logger
-    logger = logging.getLogger(u'RpcServer')
+    logger = logging.getLogger('RpcServer')
     debug_enabled = debug_enabled_
     if debug_enabled_:
         logger.setLevel(logging.DEBUG)
 
     # set members
-    cleep_filesystem = bootstrap[u'cleep_filesystem']
-    bus = bootstrap[u'message_bus']
+    cleep_filesystem = bootstrap['cleep_filesystem']
+    bus = bootstrap['message_bus']
     inventory = inventory_
-    crash_report = bootstrap[u'crash_report']
+    crash_report = bootstrap['crash_report']
 
     # load auth
     load_auth()
@@ -150,7 +146,7 @@ def is_debug_enabled():
     global debug_enabled
     return debug_enabled
 
-def start(host=u'0.0.0.0', port=80, key=None, cert=None): # pragma: no cover
+def start(host='0.0.0.0', port=80, key=None, cert=None):
     """
     Start RPC server. This function is blocking.
     Start by default unsecure web server
@@ -166,7 +162,7 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None): # pragma: no cover
 
     try:
         run_https = False
-        if key is not None and len(key)>0 and cert is not None and len(cert)>0:
+        if bool(key) and bool(cert):
             # check files
             if os.path.exists(key) and os.path.exists(cert):
                 run_https = True
@@ -175,28 +171,29 @@ def start(host=u'0.0.0.0', port=80, key=None, cert=None): # pragma: no cover
 
         if run_https:
             # start HTTPS server
-            logger.debug(u'Starting HTTPS server on %s:%d' % (host, port))
+            logger.debug('Starting HTTPS server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(logger, logging.DEBUG)
             server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
             server.serve_forever()
 
         else:
             # start HTTP server
-            logger.debug(u'Starting HTTP server on %s:%d' % (host, port))
-            app.run(server=u'gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+            logger.debug('Starting HTTP server on %s:%d' % (host, port))
+            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+
 
     except KeyboardInterrupt:
         # user stops Cleep, close server properly
-        if server and not server.closed:
-            server.close()
+        pass
 
     except:
-        logger.exception(u'Fatal error starting rpcserver:')
+        logger.exception('Fatal error starting rpcserver:')
         crash_report.report_exception({
-            u'message': u'Fatal error starting rpcserver'
+            'message': 'Fatal error starting rpcserver'
         })
-        if server and not server.closed:
-            server.close()
+
+    finally:
+        server and not server.closed and server.close()
 
 def check_auth(username, password):
     """
@@ -209,36 +206,36 @@ def check_auth(username, password):
     global auth_config_loaded, auth_config, sessions, SESSION_TIMEOUT
 
     # check session
-    ip = bottle.request.environ.get(u'REMOTE_ADDR')
+    ip = bottle.request.environ.get('REMOTE_ADDR')
     logger.trace('Ip: %s' % ip)
-    session_key = u'%s-%s' % (ip, username)
-    if session_key in sessions and sessions[session_key]>=uptime.uptime():
+    session_key = '%s-%s' % (ip, username)
+    if session_key in sessions and sessions[session_key] >= uptime.uptime():
         # user still logged, update session timeout
         sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
         return True
 
     # check auth
-    if username in auth_config[u'accounts']:
+    if username in auth_config['accounts']:
         logger.trace('Check password "%s"' % password)
         try:
-            if sha256_crypt.verify(password, auth_config[u'accounts'][username]):
+            if sha256_crypt.verify(password, auth_config['accounts'][username]):
                 # auth is valid, save session
                 sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
                 return True
             else:
                 # invalid password
-                logger.warning(u'Invalid password for user "%s"' % username)
+                logger.warning('Invalid password for user "%s"' % username)
                 return False
         except:
-            logger.warning(u'Password failed for user from ip "%s"' % ip)
+            logger.warning('Password failed for user from ip "%s"' % ip)
             return False
     else:
         # username doesn't exist
-        logger.warning(u'Invalid username "%s"' % username)
+        logger.warning('Invalid username "%s"' % username)
         return False
 
 def authenticate():
-    """ 
+    """
     Authentication process
     If authentication is enabled, check credentials
     """
@@ -248,11 +245,11 @@ def authenticate():
         def wrapper(*args, **kwargs):
             if auth_enabled:
                 username, password = bottle.request.auth or (None, None)
-                logger.trace(u'username=%s password=%s' % (username, password))
+                logger.trace('username=%s password=%s' % (username, password))
                 if username is None or not check_auth(username, password):
-                    err = bottle.HTTPError(401, u'Access denied')
-                    err.add_header(u'WWW-Authenticate', u'Basic realm="private"')
-                    return err 
+                    err = bottle.HTTPError(401, 'Access denied')
+                    err.add_header('WWW-Authenticate', 'Basic realm="private"')
+                    return err
             return func(*args, **kwargs)
 
         return wrapper
@@ -276,13 +273,10 @@ def send_command(command, to, params, timeout=None):
     request = MessageRequest()
     request.command = command
     request.to = to
-    request.sender = u'rpcserver'
+    request.sender = 'rpcserver'
     request.params = params
 
-    if timeout is not None:
-        return bus.push(request, timeout)
-    else:
-        return bus.push(request)
+    return bus.push(request, timeout)
 
 def get_events():
     """
@@ -335,19 +329,19 @@ def get_drivers():
         for driver_name, driver in data.items():
             try:
                 drivers.append({
-                    u'drivername': driver_name,
-                    u'drivertype': driver_type,
-                    u'processing': driver.processing(),
-                    u'installed': driver.is_installed(),
+                    'drivername': driver_name,
+                    'drivertype': driver_type,
+                    'processing': driver.processing(),
+                    'installed': driver.is_installed(),
                 })
             except:
-                logger.exception(u'Error getting data for driver "%s"' % driver_name)
+                logger.exception('Error getting data for driver "%s"' % driver_name)
 
     return drivers
 
-@app.route(u'/upload', method=u'POST')
+@app.route('/upload', method='POST')
 @authenticate()
-def upload(): # pragma: no cover
+def upload():
     """
     Upload file (POST only)
     Parameters are embedded in POST data
@@ -360,29 +354,27 @@ def upload(): # pragma: no cover
     Returns:
         dict: message response
     """
-    path = None
+    path = ''
     try:
         # get form fields
-        command = bottle.request.forms.get(u'command')
-        logger.trace(u'command=%s' % str(command))
-        to = bottle.request.forms.get(u'to')
-        logger.trace(u'to=%s' % str(to))
-        params = bottle.request.forms.get(u'params')
+        command = bottle.request.forms.get('command')
+        logger.debug('command=%s' % str(command))
+        to = bottle.request.forms.get('to')
+        logger.debug('to=%s' % str(to))
+        params = bottle.request.forms.get('params')
         params = {} if params is None else params
-        logger.trace(u'params=%s' % str(params))
+        logger.debug('params=%s' % str(params))
 
         # check params
         if command is None or to is None:
             # not allowed, missing parameters
-            msg = MessageResponse()
-            msg.message = u'Missing parameters'
-            msg.error = True
-            resp = msg.to_dict()
+            resp = MessageResponse(message='Missing parameters', error=True)
 
         else:
             # get file
-            upload = bottle.request.files.get(u'file')
-            path = os.path.join(u'/tmp', upload.filename)
+            logger.debug('Upload %s' % bottle.request.files.get('filename'))
+            upload = bottle.request.files.get('file')
+            path = os.path.join('/tmp', upload.filename)
 
             # remove file if already exists
             if os.path.exists(path):
@@ -393,27 +385,25 @@ def upload(): # pragma: no cover
             upload.save(path)
 
             # add filepath in params
-            params[u'filepath'] = path
+            params['filepath'] = path
 
             # execute specified command
-            logger.debug(u'Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
+            logger.debug('Upload command:%s to:%s params:%s' % (str(command), str(to), str(params)))
             resp = send_command(command, to, params, 10.0)
 
     except Exception as e:
-        logger.exception(u'Exception in upload:')
+        logger.exception('Exception during file upload:')
         # something went wrong
-        resp = MessageResponse()
-        resp.message = str(e)
-        resp.error = True
+        resp = MessageResponse(error=True, message=str(e))
 
         # delete uploaded file if possible
-        if path and os.path.exists(path):
-            logger.debug(u'Delete uploaded file')
+        if os.path.exists(path):
+            logger.debug('Delete uploaded file')
             os.remove(path)
 
     return resp.to_dict()
 
-@app.route(u'/download', method=u'GET')
+@app.route('/download', method='GET')
 @authenticate()
 def download():
     """
@@ -433,15 +423,15 @@ def download():
         command = bottle.request.query.command
         to = bottle.request.query.to
         params = {}
-        logger.debug(u'Download params: command=%s to=%s params=%s' % (command, to, params))
+        logger.debug('Download params: command=%s to=%s params=%s' % (command, to, params))
 
         try:
             params = dict(bottle.request.query)
             # remove useless parameters
             if 'command' in params:
-                del params[u'command']
+                del params['command']
             if 'to' in params:
-                del params[u'to']
+                del params['to']
         except: # pragma: no cover
             params = {}
 
@@ -450,14 +440,14 @@ def download():
         logger.debug('Response: %s' % resp)
         if not resp.error:
             data = resp.data
-            filename = os.path.basename(data[u'filepath'])
-            root = os.path.dirname(data[u'filepath'])
+            filename = os.path.basename(data['filepath'])
+            root = os.path.dirname(data['filepath'])
             # download param is used to force download client side
             download = True
-            if data[u'filename']:
-                download = data[u'filename']
-            logger.info(u'Download file root=%s filename=%s download=%s' % (root, filename, download))
-            bottle.response.set_header(u'Cache-Control', u'max-age=5')
+            if data['filename']:
+                download = data['filename']
+            logger.info('Download file root=%s filename=%s download=%s' % (root, filename, download))
+            bottle.response.set_header('Cache-Control', 'max-age=5')
             return bottle.static_file(filename=filename, root=root, download=download)
 
         else:
@@ -465,14 +455,12 @@ def download():
             raise Exception(resp.message)
 
     except Exception as e:
-        logger.exception(u'Exception in download:')
+        logger.exception('Exception in download:')
         # something went wrong
-        resp = MessageResponse()
-        resp.message = str(e)
-        resp.error = True
+        resp = MessageResponse(error=True, message=str(e))
         return resp.to_dict()
 
-@app.route(u'/command', method=[u'POST',u'GET'])
+@app.route('/command', method=['POST', 'GET'])
 @authenticate()
 def command():
     """
@@ -487,7 +475,11 @@ def command():
     Returns:
         dict: message response
     """
-    logger.trace(u'Received command: method=%s data=[%d] json=%s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
+    logger.trace('Received command: method=%s data=[%d] json=%s' % (
+        str(bottle.request.method),
+        len(bottle.request.params),
+        str(bottle.request.json)
+    ))
 
     try:
         command = None
@@ -496,24 +488,24 @@ def command():
         timeout = None
 
         # prepare data to push
-        if bottle.request.method==u'GET':
+        if bottle.request.method == 'GET':
             # GET request
             command = bottle.request.query.command
             to = bottle.request.query.to
             params = bottle.request.query.params
             timeout = bottle.request.query.timeout
             logger.debug('PARAMS=%s' % params)
-            # handle params: 
-            #  - could be specified as params field with json 
+            # handle params:
+            #  - could be specified as params field with json
             #  - or not specified in which case parameters are directly specified in query string
-            if len(params)==0:
+            if len(params) == 0:
                 # no params value specified, use all query string
                 params = dict(bottle.request.query)
                 # remove useless parameters
                 if 'command' in params:
-                    del params[u'command']
+                    del params['command']
                 if 'to' in params:
-                    del params[u'to']
+                    del params['to']
             else:
                 # params specified in query string, unjsonify it
                 try:
@@ -525,18 +517,19 @@ def command():
             # POST request (need json)
             tmp_params = bottle.request.json
             if tmp_params is None:
-                raise Exception(u'Invalid payload, json required.')
+                raise Exception('Invalid payload, json required.')
             if 'to' in tmp_params:
-                to = tmp_params[u'to']
-                del tmp_params[u'to']
+                to = tmp_params['to']
+                del tmp_params['to']
             if 'command' in tmp_params:
-                command = tmp_params[u'command']
-                del tmp_params[u'command']
-            if 'timeout' in tmp_params and tmp_params[u'timeout'] is not None and type(tmp_params[u'timeout']).__name__ in (u'float', u'int'):
-                timeout = float(tmp_params[u'timeout'])
-                del tmp_params[u'timeout']
+                command = tmp_params['command']
+                del tmp_params['command']
+            if ('timeout' in tmp_params and tmp_params['timeout'] is not None and
+                    type(tmp_params['timeout']).__name__ in ('float', 'int')):
+                timeout = float(tmp_params['timeout'])
+                del tmp_params['timeout']
             if 'params' in tmp_params:
-                params = tmp_params[u'params']
+                params = tmp_params['params']
             else:
                 params = None
 
@@ -544,15 +537,13 @@ def command():
         resp = send_command(command, to, params, timeout)
 
     except Exception as e:
-        logger.exception(u'Exception in command:')
+        logger.exception('Exception in command:')
         # something went wrong
-        resp = MessageResponse()
-        resp.message = str(e)
-        resp.error = True
+        resp = MessageResponse(error=True, message=str(e))
 
     return resp.to_dict()
 
-@app.route(u'/modules', method=u'POST')
+@app.route('/modules', method='POST')
 @authenticate()
 def modules():
     """
@@ -567,18 +558,18 @@ def modules():
     installable = False
     params = bottle.request.json
     if params and 'installable' in params:
-        installable = params[u'installable']
+        installable = params['installable']
 
     if not installable:
         modules = get_modules()
-        logger.debug(u'Modules: %s' % modules)
+        logger.debug('Modules: %s' % modules)
     else:
         modules = get_modules(installable=installable)
-        logger.debug(u'Installable modules: %s' % modules)
+        logger.debug('Installable modules: %s' % modules)
 
     return json.dumps(modules)
 
-@app.route(u'/devices', method=u'POST')
+@app.route('/devices', method='POST')
 @authenticate()
 def devices():
     """
@@ -588,11 +579,11 @@ def devices():
         dict: all devices by module
     """
     devices = get_devices()
-    logger.debug(u'Devices: %s' % devices)
+    logger.debug('Devices: %s' % devices)
 
     return json.dumps(devices)
 
-@app.route(u'/renderers', method=u'POST')
+@app.route('/renderers', method='POST')
 @authenticate()
 def renderers():
     """
@@ -602,11 +593,11 @@ def renderers():
         dict: all renderers by type
     """
     renderers = get_renderers()
-    logger.debug(u'Renderers: %s' % renderers)
+    logger.debug('Renderers: %s' % renderers)
 
     return json.dumps(renderers)
 
-@app.route(u'/drivers', method=u'POST')
+@app.route('/drivers', method='POST')
 @authenticate()
 def drivers():
     """
@@ -616,11 +607,11 @@ def drivers():
         dict: all drivers by type
     """
     drivers = get_drivers()
-    logger.debug(u'Drivers: %s' % drivers)
+    logger.debug('Drivers: %s' % drivers)
 
     return json.dumps(drivers)
 
-@app.route(u'/events', method=u'POST')
+@app.route('/events', method='POST')
 @authenticate()
 def events():
     """
@@ -630,11 +621,11 @@ def events():
         list: list of used events
     """
     events = get_events()
-    logger.debug(u'Used events: %s' % events)
+    logger.debug('Used events: %s' % events)
 
     return json.dumps(events)
 
-@app.route(u'/config', method=u'POST')
+@app.route('/config', method='POST')
 @authenticate()
 def config():
     """
@@ -653,18 +644,18 @@ def config():
     """
     try:
         return json.dumps({
-            u'modules': get_modules(),
-            u'events': get_events(),
-            u'renderers': get_renderers(),
-            u'devices': get_devices(),
-            u'drivers': get_drivers(),
+            'modules': get_modules(),
+            'events': get_events(),
+            'renderers': get_renderers(),
+            'devices': get_devices(),
+            'drivers': get_drivers(),
         })
     except:
         logger.exception('Error getting config')
 
     return json.dumps({})
 
-@app.route(u'/registerpoll', method=u'POST')
+@app.route('/registerpoll', method='POST')
 @authenticate()
 def registerpoll():
     """
@@ -676,12 +667,12 @@ def registerpoll():
     # subscribe to bus
     poll_key = str(uuid.uuid4())
     if bus:
-        logger.trace(u'Subscribe to bus %s' % poll_key)
-        bus.add_subscription(u'rpc-%s' % poll_key)
+        logger.trace('Subscribe to bus %s' % poll_key)
+        bus.add_subscription('rpc-%s' % poll_key)
 
     # return response
-    bottle.response.content_type = u'application/json'
-    return json.dumps({u'pollKey': poll_key})
+    bottle.response.content_type = 'application/json'
+    return json.dumps({'pollKey': poll_key})
 
 @contextmanager
 def pollcounter():
@@ -690,7 +681,7 @@ def pollcounter():
     yield
     polling -= 1
 
-@app.route(u'/poll', method=u'POST')
+@app.route('/poll', method='POST')
 @authenticate()
 def poll():
     """
@@ -703,64 +694,64 @@ def poll():
         params = bottle.request.json
         logger.trace('Poll params: %s' % params)
         # response content type.
-        bottle.response.content_type = u'application/json'
+        bottle.response.content_type = 'application/json'
 
         # init message
-        message = {u'error':True, u'data':None, u'message':''}
+        message = {'error':True, 'data':None, 'message':''}
 
         # process poll
         if params is None:
             # rpc client no registered yet
-            logger.debug(u'polling: request must be in json')
-            message[u'message'] = u'Invalid request'
+            logger.debug('polling: request must be in json')
+            message['message'] = 'Invalid request'
             time.sleep(1.0)
 
         elif not bus:
             # bus not available yet
-            logger.debug(u'polling: bus not available')
-            message[u'message'] = u'Bus not available'
+            logger.debug('polling: bus not available')
+            message['message'] = 'Bus not available'
             time.sleep(1.0)
 
         elif not 'pollKey' in params:
             # rpc client no registered yet
-            logger.debug(u'polling: registration key must be sent to poll request')
-            message[u'message'] = u'Polling key is missing'
+            logger.debug('polling: registration key must be sent to poll request')
+            message['message'] = 'Polling key is missing'
             time.sleep(1.0)
 
-        elif not bus.is_subscribed(u'rpc-%s' % params[u'pollKey']):
+        elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
             # rpc client no registered yet
-            logger.debug(u'polling: rpc client must be registered before polling')
-            message[u'message'] = u'Client not registered'
+            logger.debug('polling: rpc client must be registered before polling')
+            message['message'] = 'Client not registered'
             time.sleep(1.0)
 
         else:
             # wait for event (blocking by default) until end of timeout
             try:
                 # wait for message
-                poll_key = u'rpc-%s' % params[u'pollKey']
+                poll_key = 'rpc-%s' % params['pollKey']
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
 
                 # prepare output
-                message[u'error'] = False
-                message[u'data'] = msg[u'message']
-                logger.debug(u'polling received %s' % message)
+                message['error'] = False
+                message['data'] = msg['message']
+                logger.debug('polling received %s' % message)
 
             except NoMessageAvailable:
-                message[u'message'] = u'No message available'
+                message['message'] = 'No message available'
                 time.sleep(1.0)
 
             except:
-                logger.exception(u'Poll exception')
+                logger.exception('Poll exception')
                 crash_report.report_exception({
-                    u'message': u'Poll exception'
+                    'message': 'Poll exception'
                 })
-                message[u'message'] = u'Internal error'
+                message['message'] = 'Internal error'
                 time.sleep(5.0)
 
     # and return it
     return json.dumps(message)
 
-@app.route(u'/<route:re:.*>', method=u'POST')
+@app.route('/<route:re:.*>', method='POST')
 # TODO add auth to external request
 # @authenticate()
 def rpc_wrapper(route):
@@ -768,32 +759,32 @@ def rpc_wrapper(route):
     Custom rpc route used to implement wrappers (ie REST=>RPC)
     This route is intended to be used with external services like alexa
     """
-    return inventory._rpc_wrapper(route, bottle.request)
+    return inventory.rpc_wrapper(route, bottle.request)
 
-@app.route(u'/<path:path>', method=u'GET')
+@app.route('/<path:path>', method='GET')
 @authenticate()
 def default(path):
     """
     Servers static files from HTML_DIR.
     """
-    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if not cache_enabled else u'max-age=3600')
+    bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate' if not cache_enabled else 'max-age=3600')
     return bottle.static_file(path, HTML_DIR)
 
-@app.route(u'/', method=u'GET')
+@app.route('/', method='GET')
 @authenticate()
 def index():
     """
     Return a default document if no path was specified.
     """
-    bottle.response.set_header(u'Cache-Control', u'no-cache, no-store, must-revalidate' if not cache_enabled else u'max-age=3600')
-    return bottle.static_file(u'index.html', HTML_DIR)
+    bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate' if not cache_enabled else 'max-age=3600')
+    return bottle.static_file('index.html', HTML_DIR)
 
-@app.route(u'/logs', method=u'GET')
+@app.route('/logs', method='GET')
 def logs(): # pragma: no cover
     """
     Serve log file
     """
-    SCRIPT = u"""<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    script = u"""<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script type="text/javascript">
     function scrollBottom() {
         setTimeout(function(){
@@ -801,10 +792,10 @@ def logs(): # pragma: no cover
         }, 500);
     }
     </script>"""
-    CONTENT = u'<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
+    content = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
 
-    lines = cleep_filesystem.read_data(u'/var/log/cleep.log', u'r')
+    lines = cleep_filesystem.read_data('/var/log/cleep.log', 'r')
     lines = '' if not lines else lines
 
-    return u'<html>\n<head>\n' + SCRIPT + u'\n</head>\n<body onload="scrollBottom()">\n' + CONTENT % u''.join(lines) + u'\n</body>\n</html>'
+    return '<html>\n<head>\n' + script + '\n</head>\n<body onload="scrollBottom()">\n' + content % ''.join(lines) + '\n</body>\n</html>'
 

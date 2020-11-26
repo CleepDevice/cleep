@@ -30,7 +30,7 @@ class EventTests(unittest.TestCase):
         pass
 
     def init_lib(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[],
-            bus_push_result={'error':False, 'message':''}, event_chart_params=None):
+            bus_push_result={'error':False, 'message':''}, event_chart_params=None, invalid_constructor_params=False):
         self.bus = Mock()
         self.bus.push = Mock(return_value=bus_push_result)
         self.formatters_broker = Mock()
@@ -42,14 +42,27 @@ class EventTests(unittest.TestCase):
         e.EVENT_CHARTABLE = event_chartable
         if event_chart_params:
             e.EVENT_CHART_PARAMS = event_chart_params
-        self.e = e(self.bus, self.formatters_broker)
+
+        if not invalid_constructor_params:
+            self.e = e({
+                'bus': self.bus,
+                'formatters_broker': self.formatters_broker,
+                'get_external_bus_name': lambda: 'externalbus'
+            })
+        else:
+            self.e = e({'bus': self.bus})
+
+    def test_invalid_constructor_params(self):
+        with self.assertRaises(Exception) as cm:
+            self.init_lib(invalid_constructor_params=True)
+        self.assertEqual(str(cm.exception), 'Invalid "test.dummy" event, please check constructor parameters')
 
     def test_invalid_event(self):
         try:
             with self.assertRaises(NotImplementedError) as cm:
                 E = Event
                 E.EVENT_NAME = ''
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_NAME class member declared in "Event" must be a non empty string')
         finally:
             Event.EVENT_NAME = ''
@@ -59,7 +72,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy1'
                 E.EVENT_PARAMS = {}
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member declared in "Event" must be a list')
         finally:
             Event.EVENT_PARAMS = []
@@ -69,7 +82,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy2'
                 E.EVENT_CHARTABLE = 1
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member declared in "Event" must be a bool')
         finally:
             Event.EVENT_CHARTABLE = False
@@ -80,7 +93,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 del(E.EVENT_NAME)
                 E.EVENT_PARAMS = None
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_NAME class member must be declared in "Event"')
         finally:
             Event.EVENT_NAME = ''
@@ -90,7 +103,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy3'
                 del(E.EVENT_PARAMS)
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member must be declared in "Event"')
         finally:
             Event.EVENT_PARAMS = []
@@ -100,7 +113,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy4'
                 del(E.EVENT_CHARTABLE)
-                E(Mock(), Mock())
+                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member must be declared in "Event"')
         finally:
             Event.EVENT_CHARTABLE = False
@@ -117,17 +130,27 @@ class EventTests(unittest.TestCase):
 
     def test_send(self):
         self.init_lib(event_params=['param1'])
-        self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=False))
+        self.assertIsNone(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=False))
         self.assertTrue(self.bus.push.called)
+        call_args = self.bus.push.call_args[0]
+        logging.debug('Call args: %s' % call_args[0])
+        self.assertDictEqual(call_args[0].to_dict(), {
+            'event': 'test.dummy',
+            'params': {'param1': 'value1'},
+            'sender': 'event',
+            'startup': False,
+            'device_id': None,
+            'to': 'dummy',
+        })
 
     def test_send_and_render(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
-        self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
+        self.assertIsNone(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
         self.assertEqual(self.bus.push.call_count, 2)
 
     def test_send_no_param(self):
         self.init_lib(event_params=[])
-        self.assertTrue(self.e.send({}, device_id=None, to='dummy', render=False))
+        self.assertIsNone(self.e.send({}, device_id=None, to='dummy', render=False))
         self.assertTrue(self.bus.push.called)
 
     def test_send_invalid_params(self):
@@ -139,7 +162,28 @@ class EventTests(unittest.TestCase):
     def test_send_and_render_handle_render_exception(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.e.render = Mock(side_effect=Exception('test exception'))
-        self.assertTrue(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
+        self.assertIsNone(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
+
+    def test_send_to_peer(self):
+        self.init_lib(event_params=['param'])
+        self.e.send_to_peer('123-456-789', {'param': 'value'}, device_id='987-654-321')
+        self.assertTrue(self.bus.push.called)
+        call_args = self.bus.push.call_args[0]
+        logging.debug('Call args: %s' % call_args[0])
+        self.assertDictEqual(call_args[0].to_dict(), {
+            'event': 'test.dummy',
+            'params': {'param': 'value'},
+            'sender': 'event',
+            'startup': False,
+            'device_id': '987-654-321',
+            'to': 'externalbus',
+        })
+
+    def test_send_to_peer_invalid_params(self):
+        self.init_lib(event_params=['param'])
+        with self.assertRaises(Exception) as cm:
+            self.e.send_to_peer('123-456-789', {'dummy': 666})
+        self.assertEqual(str(cm.exception), 'Invalid event parameters specified for "test.dummy": {\'dummy\': 666}')
 
     def test_render(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
@@ -221,7 +265,8 @@ class EventTests(unittest.TestCase):
         self.assertEqual(values_as_dict['param1'], 'value1')
         self.assertEqual(values_as_dict['param3'], 'value3')
 
+
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_event.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_event.py; coverage report -m -i
     unittest.main()
 

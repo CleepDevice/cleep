@@ -7,13 +7,13 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 import rpcserver
 from cleep.libs.tests.lib import TestLib
 from cleep.libs.drivers.driver import Driver
-from cleep.common import MessageRequest
+from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoMessageAvailable
 import unittest
 import logging
 from boddle import boddle
 from bottle import HTTPError, HTTPResponse
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch, mock_open, ANY
 import json
 import time
 from collections import OrderedDict
@@ -82,7 +82,7 @@ class RpcServerTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         if rpcserver:
@@ -238,6 +238,80 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertFalse(rpcserver.check_auth('dummy', 'test'))
 
+    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('rpcserver.app.run')
+    def test_start_http_default_conf(self, mock_apprun, mock_wsgi):
+        self._init_context()
+
+        rpcserver.start()
+
+        self.assertFalse(mock_wsgi.called)
+        mock_apprun.assert_called_with(server='gevent', host='0.0.0.0', port=80, quiet=True, debug=False, reloader=False)
+
+    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('rpcserver.app.run')
+    def test_start_http_custom_conf(self, mock_apprun, mock_wsgi):
+        self._init_context()
+
+        rpcserver.start('1.2.3.4', 8080)
+
+        self.assertFalse(mock_wsgi.called)
+        mock_apprun.assert_called_with(server='gevent', host='1.2.3.4', port=8080, quiet=True, debug=False, reloader=False)
+
+    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('rpcserver.app.run')
+    @patch('rpcserver.os.path.exists')
+    def test_start_https_default_conf(self, mock_ospathexists, mock_apprun, mock_wsgi):
+        mock_ospathexists.return_value = True
+        self._init_context()
+
+        rpcserver.start(key='mykey', cert='mycert')
+
+        mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, keyfile='mykey', certfile='mycert', log=ANY)
+        self.assertFalse(mock_apprun.called)
+
+    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('rpcserver.app.run')
+    @patch('rpcserver.os.path.exists')
+    def test_start_https_custom_conf(self, mock_ospathexists, mock_apprun, mock_wsgi):
+        mock_ospathexists.return_value = True
+        self._init_context()
+
+        rpcserver.start(host='1.2.3.4', port=8080, key='mykey', cert='mycert')
+
+        mock_wsgi.assert_called_with(('1.2.3.4', 8080), ANY, keyfile='mykey', certfile='mycert', log=ANY)
+        self.assertFalse(mock_apprun.called)
+
+    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('rpcserver.app.run')
+    @patch('rpcserver.os.path.exists')
+    def test_start_https_invalid_conf_fallback_http(self, mock_ospathexists, mock_apprun, mock_wsgi):
+        mock_ospathexists.return_value = False
+        self._init_context()
+
+        rpcserver.start(key='mykey', cert='mycert')
+
+        self.assertFalse(mock_wsgi.called)
+        mock_apprun.assert_called_with(server='gevent', host='0.0.0.0', port=80, quiet=True, debug=False, reloader=False)
+
+    @patch('rpcserver.app.run')
+    def test_start_keyboardinterrupt(self, mock_apprun):
+        mock_apprun.side_effect = KeyboardInterrupt()
+        self._init_context()
+
+        rpcserver.start()
+
+        self.assertFalse(self.crash_report.report_exception.called)
+
+    @patch('rpcserver.app.run')
+    def test_start_exception(self, mock_apprun):
+        mock_apprun.side_effect = Exception('Test exception')
+        self._init_context()
+
+        rpcserver.start()
+
+        self.crash_report.report_exception.assert_called_with({'message': 'Fatal error starting rpcserver'})
+
     def test_set_cache_control(self):
         self._init_context()
 
@@ -293,8 +367,9 @@ class RpcServerTests(unittest.TestCase):
             r = rpcserver.send_command(command='cmd', to='module', params={})
             self.assertTrue(self.bus.push.called_once)
             args = self.bus.push.call_args
+            logging.debug('Args: %s' % str(args))
             self.assertTrue(isinstance(args[0][0], MessageRequest))
-            self.assertEqual(len(args[0]), 1)
+            self.assertEqual(args[0][1], None)
 
 
     def test_events(self):
@@ -378,16 +453,111 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Drivers: %s' % d)
             self.assertEqual(len(d), 2)
 
+    @patch('rpcserver.bottle')
+    def test_upload(self, mock_bottle):
+        mock_bottle.request.forms.get = Mock(side_effect=['upload_command', 'dummymodule', None])
+        mock_fileupload = Mock(filename='myfilename')
+        mock_bottle.request.files.get = Mock(return_value=mock_fileupload)
+        original_sendcommand = rpcserver.send_command
+        rpcserver.send_command = Mock()
+        self._init_context()
+
+        try:
+            resp = rpcserver.upload()
+
+            mock_fileupload.save.assert_called_with('/tmp/myfilename')
+            rpcserver.send_command.assert_called_with('upload_command', 'dummymodule', {'filepath': '/tmp/myfilename'}, 10.0)
+        finally:
+            rpcserver.send_command = original_sendcommand
+
+    @patch('rpcserver.bottle')
+    def test_upload_with_params(self, mock_bottle):
+        mock_bottle.request.forms.get = Mock(side_effect=['upload_command', 'dummymodule', {'param': 'value'}])
+        mock_fileupload = Mock(filename='myfilename')
+        mock_bottle.request.files.get = Mock(return_value=mock_fileupload)
+        original_sendcommand = rpcserver.send_command
+        rpcserver.send_command = Mock()
+        self._init_context()
+
+        try:
+            resp = rpcserver.upload()
+
+            mock_fileupload.save.assert_called_with('/tmp/myfilename')
+            rpcserver.send_command.assert_called_with('upload_command', 'dummymodule', {'filepath': '/tmp/myfilename', 'param': 'value'}, 10.0)
+        finally:
+            rpcserver.send_command = original_sendcommand
+
     def test_upload_missing_params(self):
         self._init_context()
 
         with boddle():
             r = rpcserver.upload()
             logging.debug('Response: %s' % r)
-            self.assertEqual(r, {u'message': u'Missing parameters', u'data': None, u'error': True})
+            self.assertEqual(r, {'message': 'Missing parameters', 'data': None, 'error': True})
+
+    @patch('rpcserver.bottle')
+    @patch('rpcserver.os.path.exists')
+    @patch('rpcserver.os.remove')
+    def test_upload_file_already_exists(self, mock_osremove, mock_ospathexists, mock_bottle):
+        mock_ospathexists.return_value = True
+        mock_bottle.request.forms.get = Mock(side_effect=['upload_command', 'dummymodule', None])
+        mock_fileupload = Mock(filename='myfilename')
+        mock_bottle.request.files.get = Mock(return_value=mock_fileupload)
+        original_sendcommand = rpcserver.send_command
+        rpcserver.send_command = Mock()
+        self._init_context()
+
+        try:
+            resp = rpcserver.upload()
+
+            mock_osremove.assert_called_with('/tmp/myfilename')
+        finally:
+            rpcserver.send_command = original_sendcommand
+
+    @patch('rpcserver.bottle')
+    @patch('rpcserver.os.remove')
+    def test_upload_exception(self, mock_osremove, mock_bottle):
+        mock_bottle.request.forms.get = Mock(side_effect=Exception('Test exception'))
+        mock_fileupload = Mock(filename='myfilename')
+        mock_bottle.request.files.get = Mock(return_value=mock_fileupload)
+        original_sendcommand = rpcserver.send_command
+        rpcserver.send_command = Mock()
+        self._init_context()
+
+        try:
+            resp = rpcserver.upload()
+
+            self.assertEqual(resp['error'], True)
+            self.assertEqual(resp['message'], 'Test exception')
+            self.assertFalse(mock_osremove.called)
+        finally:
+            rpcserver.send_command = original_sendcommand
+
+    @patch('rpcserver.bottle')
+    @patch('rpcserver.os.path.exists')
+    @patch('rpcserver.os.remove')
+    def test_upload_exception_with_file_deletion(self, mock_osremove, mock_ospathexists, mock_bottle):
+        mock_ospathexists.return_value = True
+        mock_bottle.request.forms.get = Mock(side_effect=['upload_command', 'dummymodule', None])
+        mock_fileupload = Mock(filename='myfilename')
+        mock_fileupload.save.side_effect = Exception('Test exception')
+        mock_bottle.request.files.get = Mock(return_value=mock_fileupload)
+        original_sendcommand = rpcserver.send_command
+        rpcserver.send_command = Mock()
+        self._init_context()
+
+        try:
+            resp = rpcserver.upload()
+
+            self.assertEqual(resp['error'], True)
+            self.assertEqual(resp['message'], 'Test exception')
+            mock_osremove.assert_called_with('/tmp/myfilename')
+        finally:
+            rpcserver.send_command = original_sendcommand
 
     def test_download_wo_params(self):
-        self._init_context(push_return_value={'error': False, 'data': {'filepath':'/tmp/123456789', 'filename':'dummy.test'}, 'message': None})
+        message = MessageResponse(error=False, data={'filepath':'/tmp/123456789', 'filename':'dummy.test'}, message=None)
+        self._init_context(push_return_value=message)
 
         with boddle(query={'command':'cmd', 'to':'dummy'}):
             resp = rpcserver.download()
@@ -395,10 +565,11 @@ class RpcServerTests(unittest.TestCase):
             args = self.bus.push.call_args
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             logging.debug('MessageRequest: %s' % args[0][0].to_dict())
-            self.assertEqual(args[0][0].to_dict(), {u'broadcast': False, u'params': {}, u'command': u'cmd', u'sender': u'rpcserver', u'to': u'dummy'})
+            self.assertEqual(args[0][0].to_dict(), {'broadcast': False, 'params': {}, 'command': 'cmd', 'sender': 'rpcserver', 'to': 'dummy'})
 
     def test_download_w_params(self):
-        self._init_context(push_return_value={'error': False, 'data': {'filepath':'/tmp/123456789', 'filename':'dummy.test'}, 'message': None})
+        message = MessageResponse(error=False, data={'filepath':'/tmp/123456789', 'filename':'dummy.test'}, message=None)
+        self._init_context(push_return_value=message)
 
         with boddle(query={'command':'cmd', 'to':'dummy', 'params': {'dummy': 'value'}}):
             resp = rpcserver.download()
@@ -406,15 +577,15 @@ class RpcServerTests(unittest.TestCase):
             args = self.bus.push.call_args
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             logging.debug('MessageRequest: %s' % args[0][0].to_dict())
-            self.assertEqual(args[0][0].to_dict(), {u'broadcast': False, u'params': {'params': "{'dummy': 'value'}"}, u'command': u'cmd', u'sender': u'rpcserver', u'to': u'dummy'})
+            self.assertEqual(args[0][0].to_dict(), {'broadcast': False, 'params': {'params': "{'dummy': 'value'}"}, 'command': 'cmd', 'sender': 'rpcserver', 'to': 'dummy'})
 
     def test_download_failed(self):
-        self._init_context(push_return_value={'error': True, 'data': None, 'message': 'Command failed'})
+        self._init_context(push_return_value=MessageResponse(error=True, data=None, message='Command failed'))
 
         with boddle(query={'command':'cmd', 'to':'dummy', 'params': {'dummy': 'value'}}):
             resp = rpcserver.download()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Command failed', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Command failed', 'data': None, 'error': True})
 
     def test_download_exception(self):
         self._init_context(push_side_effect=Exception('Test exception'))
@@ -422,41 +593,41 @@ class RpcServerTests(unittest.TestCase):
         with boddle(query={'command':'cmd', 'to':'dummy'}):
             resp = rpcserver.download()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Test exception', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Test exception', 'data': None, 'error': True})
 
     def test_command_get(self):
-        return_value = {'error':False, 'data':{'key':'value'}, 'message':None}
+        return_value = MessageResponse(error=False, data={'key':'value'}, message=None)
         self._init_context(push_return_value=return_value)
 
         with boddle(method='GET', query={'command':'cmd', 'to':'dummy', 'params':json.dumps({'p1':'v1'}), 'timeout':3.0}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
             args = self.bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
             self.assertEqual(args[0][0].sender, 'rpcserver')
 
     def test_command_get_params_in_query(self):
-        return_value = {'error':False, 'data':{'key':'value'}, 'message':None}
+        return_value = MessageResponse(error=False, data={'key':'value'}, message=None)
         self._init_context(push_return_value=return_value)
 
         with boddle(method='GET', query={'command':'cmd', 'to':'dummy', 'p1':'v1'}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
             args = self.bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
 
     def test_command_get_failed(self):
-        return_value = {'error':True, 'data':None, 'message':'Command failed'}
+        return_value = MessageResponse(error=True, data=None, message='Command failed')
         self._init_context(push_return_value=return_value)
 
         with boddle(method='GET', query={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
 
     def test_command_get_exception(self):
         self._init_context(push_side_effect=Exception('Test exception'))
@@ -464,50 +635,50 @@ class RpcServerTests(unittest.TestCase):
         with boddle(method='GET', query={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Test exception', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Test exception', 'data': None, 'error': True})
 
     def test_command_post(self):
-        return_value = {'error':False, 'data':{'key':'value'}, 'message':None}
+        return_value = MessageResponse(error=False, data={'key':'value'}, message=None)
         self._init_context(push_return_value=return_value)
 
         with boddle(method='POST', json={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}, 'timeout':3.0}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
             args = self.bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
             self.assertEqual(args[0][0].sender, 'rpcserver')
 
     def test_command_post_no_params(self):
-        return_value = {'error':False, 'data':{'key':'value'}, 'message':None}
+        return_value = MessageResponse(error=False, data={'key':'value'}, message=None)
         self._init_context(push_return_value=return_value)
 
         with boddle(method='POST', json={'command':'cmd', 'to':'dummy'}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
             args = self.bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].sender, 'rpcserver')
 
     def test_command_post_not_json(self):
-        return_value = {'error':False, 'data':{'key':'value'}, 'message':None}
+        return_value = MessageResponse(error=False, data={'key':'value'}, message=None)
         self._init_context(push_return_value=return_value)
 
         with boddle(method='POST', query={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Invalid payload, json required.', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Invalid payload, json required.', 'data': None, 'error': True})
 
     def test_command_post_failed(self):
-        return_value = {'error':True, 'data':None, 'message':'Command failed'}
+        return_value = MessageResponse(error=True, data=None, message='Command failed')
         self._init_context(push_return_value=return_value)
 
         with boddle(method='POST', json={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, return_value)
+            self.assertEqual(resp, return_value.to_dict())
 
     def test_command_post_exception(self):
         self._init_context(push_side_effect=Exception('Test exception'))
@@ -515,7 +686,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(method='POST', json={'command':'cmd', 'to':'dummy', 'params':{'p1':'v1'}}):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Test exception', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Test exception', 'data': None, 'error': True})
 
     def test_config(self):
         self._init_context()
@@ -560,7 +731,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             resp = json.loads(rpcserver.poll())
             logging.debug('Resp: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Invalid request', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Invalid request', 'data': None, 'error': True})
 
     def test_poll_no_pollkey(self):
         self._init_context()
@@ -568,7 +739,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={}):
             resp = json.loads(rpcserver.poll())
             logging.debug('Resp: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Polling key is missing', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Polling key is missing', 'data': None, 'error': True})
 
     def test_poll_no_bus(self):
         self._init_context(no_bus=True)
@@ -576,7 +747,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={}):
             resp = json.loads(rpcserver.poll())
             logging.debug('Resp: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Bus not available', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Bus not available', 'data': None, 'error': True})
 
     def test_poll_not_registered(self):
         self._init_context(is_subscribed_return_value=False)
@@ -584,7 +755,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={'pollKey': '123-456-789'}):
             resp = json.loads(rpcserver.poll())
             logging.debug('Resp: %s' % resp)
-            self.assertEqual(resp, {u'message': u'Client not registered', u'data': None, u'error': True})
+            self.assertEqual(resp, {'message': 'Client not registered', 'data': None, 'error': True})
 
     def test_poll(self):
         pull_resp = {
@@ -627,7 +798,7 @@ class RpcServerTests(unittest.TestCase):
 
         with boddle(query={'p1':'v1', 'p2':'v2'}):
             rpcserver.rpc_wrapper('')
-            self.assertTrue(self.inventory._rpc_wrapper.called)
+            self.assertTrue(self.inventory.rpc_wrapper.called)
 
     def test_default(self):
         self._init_context()
@@ -681,6 +852,6 @@ class RpcServerTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
     unittest.main()
 

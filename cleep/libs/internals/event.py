@@ -23,19 +23,22 @@ class Event():
     # enable chart generation for this event
     EVENT_CHARTABLE = False
 
-    def __init__(self, bus, formatters_broker, get_external_bus_name):
+    def __init__(self, params):
         """
         Construtor
 
         Args:
-            bus (MessageBus): message bus instance
-            formatters_broker (FormattersBroker): FormattersBroker singleton instance
-            get_external_bus_name (function): function to get external bus name
+            params (dict): should contains event parameters
         """
-        self.bus = bus
-        self.formatters_broker = formatters_broker
+        # check params content
+        if len(set(['bus', 'formatters_broker', 'get_external_bus_name']).intersection(params.keys())) != 3:
+            raise Exception('Invalid "%s" event, please check constructor parameters' % self.EVENT_NAME)
+
+        # set members
+        self.bus = params.get('bus')
+        self.formatters_broker = params.get('formatters_broker')
+        self.__get_external_bus_name = params.get('get_external_bus_name', lambda: None)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.__get_external_bus_name = get_external_bus_name
         # self.logger.setLevel(logging.DEBUG)
         self.__not_renderable_for = []
         if not hasattr(self, 'EVENT_NAME'):
@@ -106,7 +109,7 @@ class Event():
             Exception if parameters are invalid
         """
         # check params
-        if self._check_params(params):
+        if not self._check_params(params):
             raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
         
         # get event caller
@@ -132,7 +135,7 @@ class Event():
         # push event to internal bus (no response awaited for event)
         self.bus.push(request, None)
 
-    def send_to_peer(self, peer_uuid, params=None):
+    def send_to_peer(self, peer_uuid, params=None, device_id=None):
         """
         Push event to peer through external bus
 
@@ -144,7 +147,7 @@ class Event():
             Exception if parameters are invalid
         """
         # check params
-        if self._check_params(params):
+        if not self._check_params(params):
             raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
 
         # get event caller

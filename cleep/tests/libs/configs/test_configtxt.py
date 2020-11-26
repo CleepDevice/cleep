@@ -13,7 +13,7 @@ import logging
 from pprint import pformat
 import io
 
-logging.basicConfig(level=logging.CRITICAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
 class ConfigtxtTests(unittest.TestCase):
 

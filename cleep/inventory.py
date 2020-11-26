@@ -737,7 +737,7 @@ class Inventory(Cleep):
         """
         return self.events_broker.get_used_events()
 
-    def _rpc_wrapper(self, route, request):
+    def rpc_wrapper(self, route, request):
         """
         Rpc wrapper is called by rpc server when default / POST route is called.
         Inventory get all loaded CleepRpcWrapperModule modules and push the bottle request object.
