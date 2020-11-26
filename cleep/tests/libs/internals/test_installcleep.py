@@ -87,7 +87,7 @@ class InstallCleepTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.archive_name = 'test_installcleep.zip'
         self.checksum = '1234567890'
@@ -98,10 +98,6 @@ class InstallCleepTests(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('/usr/bin/gpio'):
             os.system('/usr/bin/yes 2>/dev/null | apt-get purge wiringpi > /dev/null 2>&1')
-        if os.path.exists('/tmp/preinst.tmp'):
-            os.remove('/tmp/preinst.tmp')
-        if os.path.exists('/tmp/postinst.tmp'):
-            os.remove('/tmp/postinst.tmp')
         if os.path.exists(self.archive_name):
             os.remove(self.archive_name)
 
@@ -161,7 +157,7 @@ class InstallCleepTests(unittest.TestCase):
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
-    def test_install_without_scripts(self, download_mock, installdeb_mock):
+    def test_install(self, download_mock, installdeb_mock):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock)
         self._create_archive()
 
@@ -180,65 +176,6 @@ class InstallCleepTests(unittest.TestCase):
         self.assertEqual(status['deb']['status'], 2)
         self.assertTrue('stdout' in status['deb'])
         self.assertTrue('returncode' in status['deb'])
-        self.assertTrue('prescript' in status)
-        self.assertTrue('stdout' in status['prescript'])
-        self.assertTrue('stderr' in status['prescript'])
-        self.assertTrue('returncode' in status['prescript'])
-        self.assertEqual(status['prescript']['returncode'], None)
-        self.assertTrue('postscript' in status)
-        self.assertTrue('stdout' in status['postscript'])
-        self.assertTrue('stderr' in status['postscript'])
-        self.assertTrue('returncode' in status['postscript'])
-        self.assertEqual(status['postscript']['returncode'], None)
-
-    @patch('installcleep.InstallDeb')
-    @patch('installcleep.Download')
-    def test_install_with_scripts(self, download_mock, installdeb_mock):
-        self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock)
-        self._create_archive(u'echo "stdout message for pre"; echo "stderr message for pre" >&2; exit 0', u'echo "stdout message for post"; echo "stderr message for post" >&2; exit 0')
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['prescript']['returncode'], 0)
-        self.assertTrue('stdout message for pre' in status['prescript']['stdout'])
-        self.assertTrue('stderr message for pre' in status['prescript']['stderr'])
-        self.assertEqual(status['postscript']['returncode'], 0)
-        self.assertTrue('stdout message for post' in status['postscript']['stdout'])
-        self.assertTrue('stderr message for post' in status['postscript']['stderr'])
-
-    @patch('installcleep.InstallDeb')
-    @patch('installcleep.Download')
-    @patch('installcleep.EndlessConsole')
-    def test_install_preinst_exception(self, endlessconsole_mock, download_mock, installdeb_mock):
-        self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, endlessconsole_mock=endlessconsole_mock, endlessconsole_side_effect=Exception('Test'))
-        self._create_archive(u'echo "stdout message for pre"; exit 0', u'echo "stdout message for post"; exit 0')
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_PREINST)
-
-    @patch('installcleep.InstallDeb')
-    @patch('installcleep.Download')
-    @patch('installcleep.EndlessConsole')
-    def test_install_postinst_exception(self, endlessconsole_mock, download_mock, installdeb_mock):
-        self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, endlessconsole_mock=endlessconsole_mock, endlessconsole_side_effect=Exception('Test'))
-        self._create_archive(None, u'echo "stdout message for post"; exit 0')
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_POSTINST)
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
@@ -299,21 +236,7 @@ class InstallCleepTests(unittest.TestCase):
 
         status = i.get_status()
         logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
-        self.assertTrue(self.crash_report.report_exception.called)
-
-    @patch('installcleep.Download')
-    def test_extract_archive_failed(self, download_mock):
-        self._init_context(download_mock=download_mock)
-        self._create_archive(alter_archive=True)
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_EXTRACT)
+        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
         self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installcleep.Download')
@@ -366,34 +289,6 @@ class InstallCleepTests(unittest.TestCase):
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
-    def test_preinst_failed(self, download_mock, installdeb_mock):
-        self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock)
-        self._create_archive('exit 1')
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_PREINST)
-
-    @patch('installcleep.InstallDeb')
-    @patch('installcleep.Download')
-    def test_postinst_failed(self, download_mock, installdeb_mock):
-        self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock)
-        self._create_archive(postinst='exit 1')
-
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(self.archive_url, self.checksum_url, self.callback)
-        i.join()
-
-        status = i.get_status()
-        logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_POSTINST)
-
-    @patch('installcleep.InstallDeb')
-    @patch('installcleep.Download')
     def test_download_archive_internal_error(self, download_mock, installdeb_mock):
         # STATUS_ERROR
         download_file_return_value = (3, None)
@@ -406,7 +301,7 @@ class InstallCleepTests(unittest.TestCase):
 
         status = i.get_status()
         logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
@@ -422,7 +317,7 @@ class InstallCleepTests(unittest.TestCase):
 
         status = i.get_status()
         logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
@@ -438,7 +333,7 @@ class InstallCleepTests(unittest.TestCase):
 
         status = i.get_status()
         logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
@@ -454,14 +349,14 @@ class InstallCleepTests(unittest.TestCase):
 
         status = i.get_status()
         logging.debug('Status=%s' % status)
-        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertEqual(status['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
 
 class InstallCleepFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         from cleep.libs.internals.cleepfilesystem import CleepFilesystem
         self.fs = CleepFilesystem()
         self.fs.enable_write(True, True)
@@ -473,10 +368,6 @@ class InstallCleepFunctionalTests(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('/usr/bin/gpio'):
             os.system('/usr/bin/yes 2>/dev/null | apt-get purge wiringpi > /dev/null 2>&1')
-        if os.path.exists('/tmp/preinst.tmp'):
-            os.remove('/tmp/preinst.tmp')
-        if os.path.exists('/tmp/postinst.tmp'):
-            os.remove('/tmp/postinst.tmp')
 
     def callback(self, status):
         logging.debug('Callback status=%s' % status)
@@ -492,29 +383,6 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         self.assertEqual(i.get_status()['status'], i.STATUS_UPDATED)
         self.assertEqual(i.get_status()['progress'], 100)
         self.assertTrue(os.path.exists('/usr/bin/gpio'))
-        self.assertTrue(os.path.exists('/tmp/preinst.tmp'))
-        self.assertTrue(os.path.exists('/tmp/postinst.tmp'))
-
-    def test_install_error_postscript(self):
-        name = 'installcleep.post-ko'
-        url_cleep = self.url_cleep % name
-        url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(url_cleep, url_checksum, self.callback)
-        i.join()
-
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_POSTINST)
-
-    def test_install_error_prescript(self):
-        #install
-        name = 'installcleep.pre-ko'
-        url_cleep = self.url_cleep % name
-        url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
-        i.install(url_cleep, url_checksum, self.callback)
-        i.join()
-
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_PREINST)
 
     def test_install_error_deb(self):
         name = 'installcleep.deb-ko'
@@ -524,7 +392,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_DEB)
+        self.assertEqual(i.get_status()['status'], i.STATUS_ERROR_DEB)
 
     def test_install_ok_without_script(self):
         name = 'installcleep.noscript-ok'
@@ -534,7 +402,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_UPDATED)
+        self.assertEqual(i.get_status()['status'], i.STATUS_UPDATED)
 
     def test_install_bad_checksum(self):
         name = 'installcleep.badchecksum-ko'
@@ -544,10 +412,10 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
-        self.assertEqual(i.get_status()[u'status'], i.STATUS_ERROR_DOWNLOAD_ARCHIVE)
+        self.assertEqual(i.get_status()['status'], i.STATUS_ERROR_DOWNLOAD_PACKAGE)
 
     
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_installcleep.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_installcleep.py; coverage report -m -i
     unittest.main()
 

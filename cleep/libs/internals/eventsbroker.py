@@ -37,6 +37,7 @@ class EventsBroker():
         self.bus = None
         self.formatters_broker = None
         self.crash_report = None
+        self.bootstrap = {}
 
     def configure(self, bootstrap):
         """
@@ -46,6 +47,7 @@ class EventsBroker():
             bootstrap (dict): bootstrap objects
         """
         # set members
+        self.bootstrap = bootstrap
         self.bus = bootstrap['message_bus']
         self.formatters_broker = bootstrap['formatters_broker']
 
@@ -54,6 +56,15 @@ class EventsBroker():
 
         # load events
         self.__load_events()
+
+    def __get_external_bus_name(self):
+        """
+        Return external bus name from boostrap object
+
+        Returns:
+            string: external bus name
+        """
+        return self.bootstrap.get('external_bus', None)
 
     def __get_event_class_name(self, filename, module):
         """
@@ -171,7 +182,11 @@ class EventsBroker():
                     self.events_by_module[module] = []
                 self.events_by_module[module].append(event_name)
 
-            return self.events_by_event[event_name]['instance'](self.bus, self.formatters_broker)
+            return self.events_by_event[event_name]['instance']({
+                'bus': self.bus,
+                'formatters_broker': self.formatters_broker,
+                'get_external_bus_name': self.__get_external_bus_name
+            })
 
         raise Exception('Event "%s" does not exist' % event_name)
 

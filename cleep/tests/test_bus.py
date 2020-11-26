@@ -190,8 +190,9 @@ class MessageBusTests(unittest.TestCase):
 
         self.b.add_subscription('dummy')
         self.b.app_configured()
-        self.assertIsNone(self.b.push(self._get_message_request()))
+        resp = self.b.push(self._get_message_request())
         self.b.push(self._get_message_request())
+        self.assertTrue(isinstance(resp, MessageResponse))
 
         try:
             # 2 messages should be in queue
@@ -262,7 +263,7 @@ class MessageBusTests(unittest.TestCase):
         self.b.app_configured()
         time.sleep(0.5)
         
-        self.assertIsNone(self.mod1.last_response())
+        self.assertTrue(isinstance(self.mod1.last_response(), MessageResponse))
         self.assertEqual(self.mod2.pulled_messages(), 1)
 
     def test_push_to_unsubscribed_module_before_app_configured_timeout(self):

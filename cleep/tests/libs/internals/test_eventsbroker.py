@@ -28,22 +28,22 @@ EVENT_CONTENT = u"""from cleep.libs.internals.event import Event
 class %(event_class)s(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
-    def __init__(self, bus, formatters_broker):
-        Event.__init__(self, bus, formatters_broker)
+    def __init__(self, params):
+        Event.__init__(self, params)
 """
 EVENT_CONTENT_INVALID_CLASSNAME = u"""from cleep.libs.internals.event import Event
 class DummyEvent(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
-    def __init__(self, bus, formatters_broker):
-        Event.__init__(self, bus, formatters_broker)
+    def __init__(self, params):
+        Event.__init__(self, params)
 """
 EVENT_CONTENT_SYNTAX_ERROR = u"""from cleep.libs.internals.event import Event
 class %(event_class)s(Event):
     EVENT_NAME = u'%(event_name)s'
     EVENT_PARAMS = []
-    def __init__(self, bus, formatters_broker):
-        Event.__init__(self, bus, formatters_broker)
+    def __init__(self, params):
+        Event.__init__(self, params)
 
     def invalid(self):
         # syntax error missing surrounding string quotes
@@ -69,6 +69,7 @@ class EventsBrokerTests(unittest.TestCase):
             'message_bus': self.bus,
             'formatters_broker': self.formatters_broker,
             'crash_report': self.crash_report,
+            'external_bus': 'externalbusname',
         }
 
     def tearDown(self):
@@ -105,6 +106,12 @@ class EventsBrokerTests(unittest.TestCase):
         # self.e.MODULES_DIR = '../../tests/libs/internals/%s' % self.MODULES_DIR
         self.e.MODULES_DIR = self.MODULES_DIR
         self.e.PYTHON_CLEEP_IMPORT_PATH = ''
+
+    def test_get_external_bus_name(self):
+        self._init_context()
+        self.e.configure(self.bootstrap)
+
+        self.assertEqual(self.e._EventsBroker__get_external_bus_name(), 'externalbusname')
 
     def test_configure_with_event(self):
         self._init_context()

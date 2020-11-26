@@ -383,6 +383,7 @@ class MessageRequest(object):
             # internal event
             return {
                 'event': self.event,
+                'to': self.to,
                 'params': self.params,
                 'startup': startup,
                 'device_id': self.device_id,
