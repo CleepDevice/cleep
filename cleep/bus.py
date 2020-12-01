@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import logging
 import threading
-import uptime
 import time
 import math
 import inspect
 from collections import deque
 from threading import Event
+import uptime
 from cleep.libs.internals.task import Task
-from queue import Queue
 from cleep.common import MessageResponse, MessageRequest
-from cleep.exception import (NoMessageAvailable, InvalidParameter, MissingParameter,
-     BusError, NoResponse, CommandError, CommandInfo, InvalidModule, NotReady)
+from cleep.exception import (NoMessageAvailable, InvalidParameter, BusError, NoResponse, CommandError, CommandInfo,
+                             InvalidModule, NotReady)
 
 __all__ = ['MessageBus', 'BusClient']
 
@@ -83,8 +81,10 @@ class MessageBus():
     def app_configured(self):
         """
         Say to message bus application is configured and ready to run.
-        /!\ This way of proceed is dangerous if clients always broadcast messages, the bus may always stay
-        blocked in "app not configured" state. But in small system like cleep, it should be fine.
+
+        Warning:
+            This way of proceed is dangerous if clients always broadcast messages, the bus may always stay
+            blocked in "app not configured" state. But in small system like cleep, it should be fine.
         """
         # then set app is configured
         self.__app_configured = True
@@ -120,8 +120,8 @@ class MessageBus():
             raise Exception('Bus stopped')
         if not self.__app_configured:
             raise NotReady('Pushing messages to internal bus is possible only when application is running. '
-                'If this message appears during Cleep startup it means you try to send a message from module '
-                'constructor or _configure method, if that is the case prefer using _on_start method.')
+                           'If this message appears during Cleep startup it means you try to send a message from module '
+                           'constructor or _configure method, if that is the case prefer using _on_start method.')
         if not isinstance(request, MessageRequest):
             raise InvalidParameter('Parameter "request" must be MessageRequest instance')
 
@@ -160,13 +160,13 @@ class MessageBus():
         msg = {
             'message': request_dict,
             'event': event,
-            'response': None
+            'response': None,
+            'auto_response': True,
         }
-        self.logger.debug('Push to recipient "%s" message %s' % (request.to, str(msg)))
 
         # log module activity to avoid purge
         self.__activities[request.to] = int(uptime.uptime())
-            
+
         # append message to queue
         self._queues[request.to].appendleft(msg)
 
@@ -178,11 +178,11 @@ class MessageBus():
         self.logger.trace('Push wait for response (%s seconds)....' % str(timeout))
         if event.wait(timeout):
             # response received
-            self.logger.trace(' - resp received %s' % str(msg))
+            self.logger.debug('Response received %s' % str(msg['response']))
             return msg['response']
         else:
             # no response in time
-            self.logger.trace(' - timeout')
+            self.logger.debug('Command has timed out')
             raise NoResponse(request.to, timeout, request_dict)
 
     def __push_to_rpc(self, request, request_dict, timeout):
@@ -194,7 +194,8 @@ class MessageBus():
         msg = {
             'message': request_dict,
             'event': None,
-            'response': None
+            'response': None,
+            'auto_response': True,
         }
         self.logger.debug('Broadcast to RPC clients message %s' % str(msg))
 
@@ -213,7 +214,8 @@ class MessageBus():
         msg = {
             'message': request_dict,
             'event': None,
-            'response':None
+            'response':None,
+            'auto_response': True,
         }
         self.logger.debug('Broadcast message %s' % str(msg))
 
@@ -243,6 +245,7 @@ class MessageBus():
                     message (dict): MessageRequest as dict
                     event (Event): sync event or None if no response awaited (broadcast, event message)
                     response (MessageResponse): message response instance
+                    auto_response (bool): True to handle command response in bus. If False user must send response by himself
                 }
 
         Raises:
@@ -347,7 +350,6 @@ class MessageBus():
             del self._queues[module_lc]
             del self.__activities[module_lc]
         else:
-            # uuid does not exists
             self.logger.error('Subscriber "%s" not found' % module_lc)
             raise InvalidModule(module_lc)
 
@@ -386,6 +388,14 @@ class BusClient(threading.Thread):
     """
 
     CORE_SYNC_TIMEOUT = 60.0
+
+    # specific parameter name to get command sender specified in command parameters
+    PARAM_COMMAND_SENDER = 'command_sender'
+    # specific parameter name to get async response function specified in command parameters.
+    # Warning:
+    #   If parameter is specified, command won't be automatically acknowledged by internal bus. If you don't call
+    #   manual response function in your code, command will fall in timeout and never return a response.
+    PARAM_MANUAL_RESPONSE = 'manual_response'
 
     def __init__(self, bootstrap):
         """
@@ -428,18 +438,19 @@ class BusClient(threading.Thread):
         crash_report = getattr(self, 'crash_report', None)
         return crash_report if crash_report else self.__bootstrap_crash_report
 
-    def __check_command_params(self, function, message, sender):
+    def __check_command_parameters(self, function, message, sender, bus_message=None):
         """
         Check if message contains all necessary function parameters.
 
         Args:
-            function (function): function reference.
-            message (dict): current message content (contains all command parameters).
-            sender (string): message sender ("from" item from MessageRequest).
+            function (function): function reference
+            message (dict): current message content (contains all command parameters)
+            sender (string): message sender ("from" item from MessageRequest)
+            bus_message (dict): bus message or None if no message
 
         Returns:
             tuple: parameters check response::
-    
+
                 (
                     bool: True if parameters are valid otherwise False,
                     dict: args to pass during command call or None
@@ -462,9 +473,18 @@ class BusClient(threading.Thread):
             if param == 'self': # pragma: no cover
                 # drop self param
                 continue
-            if param == 'command_sender':
+            if param == BusClient.PARAM_COMMAND_SENDER:
                 # function needs request sender value
-                args['command_sender'] = sender
+                args[BusClient.PARAM_COMMAND_SENDER] = sender
+            elif param == BusClient.PARAM_MANUAL_RESPONSE:
+                # function will take care of the command response
+                def manual_response(response, bus_message=bus_message):
+                    # store response
+                    bus_message['response'] = response
+                    # and set event
+                    bus_message['event'].set()
+                args[BusClient.PARAM_MANUAL_RESPONSE] = manual_response if bus_message else None
+                bus_message['auto_response'] = args[BusClient.PARAM_MANUAL_RESPONSE] is None
             elif not isinstance(message, dict) or (param not in message and not params_with_default[param]):
                 # missing parameter
                 return False, None
@@ -499,7 +519,7 @@ class BusClient(threading.Thread):
         """
         if not isinstance(request, MessageRequest):
             raise InvalidParameter('Request parameter must be MessageRequest instance')
-        
+
         # fill sender
         request.sender = self.__module_name
 
@@ -546,7 +566,7 @@ class BusClient(threading.Thread):
     def send_event_from_request(self, request):
         """
         Directly push event message request to bus.
-        
+
         Use this function instead of send_command to fill more data in message like peer infos.
 
         Args:
@@ -562,7 +582,7 @@ class BusClient(threading.Thread):
 
     def __execute_command(self, command, params=None):
         """
-        Execute command from myself
+        Execute command directly from module itself
 
         Args:
             command (string): command name
@@ -576,7 +596,7 @@ class BusClient(threading.Thread):
             # get command reference
             module_function = getattr(self, command)
             if module_function is not None:
-                (ok, args) = self.__check_command_params(module_function, params, self.__module_name)
+                (ok, args) = self.__check_command_parameters(module_function, params, self.__module_name)
                 if ok:
                     try:
                         resp.data = module_function(**args)
@@ -718,7 +738,7 @@ class BusClient(threading.Thread):
         """
         Wait for module is started.
         Use it if you need to wait for module to be started.
-        
+
         Warning:
             As mentionned this function is blocking
         """
@@ -756,7 +776,7 @@ class BusClient(threading.Thread):
 
         # run on_start function asynchronously to avoid dead locks if
         # bus message is mutually used between 2 modules
-        start_task = Task(None, self._on_start, self.logger, end_callback = self.__started_callback)
+        start_task = Task(None, self._on_start, self.logger, end_callback=self.__started_callback)
         start_task.start()
 
         # now run infinite loop on message bus
@@ -774,7 +794,7 @@ class BusClient(threading.Thread):
 
                 msg = {}
                 try:
-                    # get message
+                    # get message from queue
                     msg = self.__bus.pull(self.__module_name)
 
                 except NoMessageAvailable:
@@ -785,22 +805,35 @@ class BusClient(threading.Thread):
 
                 # create response
                 resp = MessageResponse()
-       
+
                 # process message
                 if msg and 'message' in msg:
                     if 'command' in msg['message']:
                         # command received, process it
-                        if 'command' in msg['message'] and msg['message']['command'] != None and len(msg['message']['command']) > 0:
+                        if ('command' in msg['message'] and msg['message']['command'] != None and
+                                len(msg['message']['command']) > 0):
                             try:
                                 # get command reference
                                 command = getattr(self, msg['message']['command'])
-                                self.logger.debug('Module "%s" received command "%s" from "%s" with params: %s' % (self.__module_name, msg['message']['command'], msg['message']['sender'], msg['message']['params']))
+                                self.logger.debug(
+                                    'Module "%s" received command "%s" from "%s" with params: %s' % (
+                                        self.__module_name,
+                                        msg['message']['command'],
+                                        msg['message']['sender'],
+                                        msg['message']['params']
+                                    )
+                                )
 
                                 # check if command was found
                                 if command is not None:
                                     # check if message contains all command parameters
-                                    (ok, args) = self.__check_command_params(command, msg['message']['params'], msg['message']['sender'])
-                                    # self.logger.debug('Command ok=%s args=%s' % (ok, args))
+                                    (ok, args) = self.__check_command_parameters(
+                                        command,
+                                        msg['message']['params'],
+                                        msg['message']['sender'],
+                                        msg,
+                                    )
+
                                     if ok:
                                         # execute command
                                         try:
@@ -818,11 +851,21 @@ class BusClient(threading.Thread):
 
                                         except Exception as e:
                                             # command failed
-                                            self.logger.exception('Exception running command "%s" on module "%s"' % (msg['message']['command'], self.__module_name))
+                                            self.logger.exception(
+                                                'Exception running command "%s" on module "%s"' % (
+                                                    msg['message']['command'],
+                                                    self.__module_name
+                                                )
+                                            )
                                             resp.error = True
                                             resp.message = '%s' % str(e)
                                     else:
-                                        self.logger.error('Some "%s" command parameters are missing: %s' % (msg['message']['command'], msg['message']['params']))
+                                        self.logger.error(
+                                            'Some "%s" command parameters are missing: %s' % (
+                                                msg['message']['command'],
+                                                msg['message']['params']
+                                            )
+                                        )
                                         resp.error = True
                                         resp.message = 'Some command parameters are missing'
 
@@ -830,9 +873,17 @@ class BusClient(threading.Thread):
                                 # specified command doesn't exists in this module
                                 if not msg['message']['broadcast']:
                                     # log message only for non broadcasted message
-                                    self.logger.exception('Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__module_name))
+                                    self.logger.exception(
+                                        'Command "%s" doesn\'t exist in "%s" module' % (
+                                            msg['message']['command'],
+                                            self.__module_name
+                                        )
+                                    )
                                     resp.error = True
-                                    resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (msg['message']['command'], self.__module_name)
+                                    resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (
+                                        msg['message']['command'],
+                                        self.__module_name
+                                    )
 
                             except Exception: # pragma: no cover
                                 # robustness: this case should not happen because bus already check it
@@ -847,17 +898,24 @@ class BusClient(threading.Thread):
                             self.logger.error('No command specified in message %s' % msg['message'])
                             resp.error = True
                             resp.message = 'No command specified in message'
-                                
-                        # save response into message    
-                        msg['response'] = resp
 
                         # unlock event if necessary
-                        if msg['event']:
+                        if (msg['event'] and msg['auto_response']) or (msg['event'] and not msg['auto_response'] and resp.error):
+                            # save response into message
+                            msg['response'] = resp
+
                             # event available, client is waiting for response, unblock it
                             msg['event'].set()
-                    
+
                     elif 'event' in msg['message']:
-                        self.logger.debug('%s received event "%s" from "%s" with params: %s' % (self.__module_name, msg['message']['event'], msg['message']['sender'], msg['message']['params']))
+                        self.logger.debug(
+                            '%s received event "%s" from "%s" with params: %s' % (
+                                self.__module_name,
+                                msg['message']['event'],
+                                msg['message']['sender'],
+                                msg['message']['params']
+                            )
+                        )
                         if 'sender' in msg['message'] and msg['message']['sender'] == self.__module_name: # pragma: no cover
                             # robustness: this cas should not happen because bus already check it
                             # drop event sent to the same module
@@ -869,7 +927,9 @@ class BusClient(threading.Thread):
                                 self._event_received(msg['message'])
                             except:
                                 # do not crash module
-                                self.logger.exception('Exception in event_received handled by "%s" module:' % self.__class__.__name__)
+                                self.logger.exception(
+                                    'Exception in event_received handled by "%s" module:' % self.__class__.__name__
+                                )
 
                 else: # pragma: no cover
                     # robustness: this case should not happen because bus already check it

@@ -542,6 +542,12 @@ class TestProcess2(BusClient):
     def command_sender(self, command_sender):
         return 'command_sender=%s' % command_sender
 
+    def manual_response(self, manual_response, response=None, exception=None):
+        if exception:
+            raise Exception('Test exception in manual_response')
+        if response:
+            manual_response(response)
+
     def command_default_params(self, param1, param2='default'):
         return {
             'param1': param1,
@@ -841,13 +847,51 @@ class BusClientTests(unittest.TestCase):
             self.p1.push(self._get_message_request(to='testprocess1'))
         self.assertEqual(str(cm.exception), 'Unable to send message to same module')
 
-    def test_command_sender_filled(self):
+    def test_command_sender_specified(self):
         self._init_context()
 
         resp = self.p1.send_command(command='command_sender', to='testprocess2')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertEqual(resp.data, 'command_sender=testprocess1')
+
+    def test_manual_response_specified(self):
+        self._init_context()
+
+        response = MessageResponse(data='async response')
+        resp = self.p1.send_command(command='manual_response', to='testprocess2', params={'response': response}, timeout=1.0)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertFalse(resp.error)
+        self.assertEqual(resp.data, 'async response')
+
+    def test_manual_response_specified_and_invalid_response(self):
+        self._init_context()
+
+        response = 'async response'
+        resp = self.p1.send_command(command='manual_response', to='testprocess2', params={'response': response}, timeout=1.0)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Parameter "response" must be a MessageResponse instance')
+
+    def test_manual_response_specified_with_exception_during_manual_response(self):
+        self._init_context()
+
+        response = MessageResponse(data='async response')
+        resp = self.p1.send_command(command='manual_response', to='testprocess2', params={'response': response, 'exception':True}, timeout=1.0)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+
+        self.assertTrue(resp.error)
+        self.assertEqual(resp.message, 'Test exception in manual_response')
+
+    def test_manual_response_specified_timeout(self):
+        self._init_context()
+
+        resp = self.p1.send_command(command='manual_response', to='testprocess2', params={'ack': False}, timeout=1.0)
+        logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
+        self.assertTrue(resp.error)
+        self.assertTrue(resp.message.startswith('No response from testprocess2'))
 
     def test_send_command_default_params(self):
         self._init_context()
