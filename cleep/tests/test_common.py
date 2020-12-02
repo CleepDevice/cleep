@@ -154,6 +154,21 @@ class TestMessageResponse(unittest.TestCase):
             m.fill_from_response({})
         self.assertEqual(str(cm.exception), 'Parameter "response" must be a MessageResponse instance')
 
+    def test_fill_from_dict(self):
+        m = MessageResponse()
+
+        m.fill_from_dict({'error': True, 'message': 'an error message', 'data': ['some', 'data']})
+
+        self.assertEqual(m.error, True)
+        self.assertEqual(m.message, 'an error message')
+        self.assertEqual(m.data, ['some', 'data'])
+
+    def test_fill_from_dict_exception(self):
+        m = MessageResponse()
+
+        with self.assertRaises(Exception) as cm:
+            m.fill_from_dict(123)
+        self.assertEqual(str(cm.exception), 'Parameter "response" must be a dict')
 
 
 class TestMessageRequest(unittest.TestCase):
@@ -434,6 +449,6 @@ class TestMessageRequest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_common.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_common.py; coverage report -m -i
     unittest.main()
 
