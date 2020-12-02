@@ -469,6 +469,35 @@ class TestsCleep(unittest.TestCase):
             'data': None,
         })
 
+    def test_send_event_to_peer(self):
+        self._init_context()
+        self.r.send_command = Mock()
+
+        self.r.send_event_to_peer('my.event.dummy', '123-456-789', {'param': 'value'})
+
+        self.r.send_command.assert_called_with(
+            'send_event_to_peer',
+            'testbusapp',
+            {
+                'event': 'my.event.dummy',
+                'peer_uuid': '123-456-789',
+                'params': {'param': 'value'},
+            },
+            3.0,
+        )
+
+    def test_send_event_to_peer_no_external_bus(self):
+        self._init_context()
+        self.r._external_bus_name = None
+
+        resp = self.r.send_event_to_peer('my.dummy.event', '123-456-789')
+
+        self.assertDictEqual(resp.to_dict(), {
+            'error': True,
+            'message': 'No external bus application installed',
+            'data': None,
+        })
+
 
 
 class DummyCleepModule(CleepModule):
@@ -1246,11 +1275,12 @@ class TestsCleepExternalBus(unittest.TestCase):
 
     def test_send_command_to_peer(self):
         self._init_context()
+        manual_response = Mock()
         self.c._send_command_to_peer = Mock()
 
-        self.c.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'})
+        self.c.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'}, manual_response=manual_response)
 
-        self.c._send_command_to_peer.assert_called_with('command', 'app', '123-456-789', {'param': 'value'}, 5.0)
+        self.c._send_command_to_peer.assert_called_with('command', 'app', '123-456-789', {'param': 'value'}, 5.0, manual_response)
 
     def test_send_command_to_peer_not_implemented(self):
         self._init_context()
@@ -1258,6 +1288,22 @@ class TestsCleepExternalBus(unittest.TestCase):
         with self.assertRaises(NotImplementedError) as cm:
             self.c.send_command_to_peer('command', 'app', '123-456-789', {'param': 'value'})
         self.assertEqual(str(cm.exception), '_send_command_to_peer function must be implemented in "DummyCleepExternalBus"')
+
+    def test_send_event_to_peer(self):
+        self._init_context()
+        self.c._send_event_to_peer = Mock()
+
+        self.c.send_event_to_peer('my.dummy.event', '123-456-789', {'param': 'value'})
+
+        self.c._send_event_to_peer.assert_called_with('my.dummy.event', '123-456-789', {'param': 'value'})
+
+    def test_send_event_to_peer_not_implemented(self):
+        self._init_context()
+
+        with self.assertRaises(NotImplementedError) as cm:
+            self.c.send_event_to_peer('my.dummy.event', '123-456-789', {'param': 'value'})
+        self.assertEqual(str(cm.exception), '_send_event_to_peer function must be implemented in "DummyCleepExternalBus"')
+
 
 if __name__ == '__main__':
     # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i

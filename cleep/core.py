@@ -1198,7 +1198,7 @@ class CleepExternalBus(Cleep):
         #init cleep
         Cleep.__init__(self, bootstrap, debug_enabled)
 
-    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
         """
         Helper function to send command message to specified peer through external bus.
 
@@ -1208,14 +1208,13 @@ class CleepExternalBus(Cleep):
             peer_uuid (string): peer uuid
             params (dict): command parameters. Default None
             timeout (float): timeout. Default 5 seconds
-
-        Returns:
-            MessageResponse: message response instance
+            manual_response (function): manual response function to call to return command response. This parameter is automatically
+                                        filled by internal bus or is None if function is called from the module itself.
         """
         # overwrite super function to call directly internal function
-        return self._send_command_to_peer(command, to, peer_uuid, params, timeout)
+        self._send_command_to_peer(command, to, peer_uuid, params, timeout, manual_response)
 
-    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
+    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
         """
         Send command to peer implementation
 
@@ -1224,9 +1223,8 @@ class CleepExternalBus(Cleep):
             to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
             peer_infos (dict): infos about peer that sends the command
             params (dict): command parameters.
-
-        Returns:
-            MessageResponse: message response instance
+            manual_response (function): manual response function to call to return command response. This parameter is automatically
+                                        filled by internal bus or is None if function is called from the module itself.
 
         Warning:
             Must be implemented
@@ -1245,7 +1243,7 @@ class CleepExternalBus(Cleep):
             params (dict): event parameters. Default None
         """
         # overwrite super function to call directly internal function
-        return self._send_event_to_peer(event, peer_uuid, params)
+        self._send_event_to_peer(event, peer_uuid, params)
 
     def _send_event_to_peer(self, event, peer_uuid, params=None):
         """
