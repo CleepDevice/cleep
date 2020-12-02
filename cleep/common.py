@@ -242,6 +242,21 @@ class MessageResponse(object):
         self.data = copy.deepcopy(response.data)
         self.broadcast = response.broadcast
 
+    def fill_from_dict(self, response):
+        """
+        Fill from dict
+
+        Args:
+            response (dict): response as dict
+        """
+        if not isinstance(response, dict):
+            raise Exception('Parameter "response" must be a dict')
+
+        self.error = response.get('error', False)
+        self.broadcast = response.get('broadcast', False)
+        self.message = response.get('message', '')
+        self.data = response.get('data', None)
+
 
 
 

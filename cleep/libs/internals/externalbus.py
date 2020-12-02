@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cleep.common import MessageRequest
+from cleep.common import MessageRequest, MessageResponse
 import logging
 import uuid
 from threading import Event
@@ -27,9 +27,21 @@ class ExternalBus():
         Constructor
 
         Args:
-            on_message_received (callback): function called when message is received on bus
-            on_peer_connected (callback): function called when new peer connected
-            on_peer_disconnected (callback): function called when peer is disconnected
+            on_message_received (callback): function called when message is received on bus. It must returns a
+                                            MessageResponse if request is a command. Function parameters::
+                                            
+                                            peer_ident (string): peer identifier
+                                            request (MessageRequest): message request instance
+
+            on_peer_connected (callback): function called when new peer connected. Function parameters::
+
+                                            peer_ident (string): peer identifier
+                                            peer_infos (PeerInfos): peer informations
+
+            on_peer_disconnected (callback): function called when peer is disconnected. Function parameters::
+
+                                            peer_ident (string): peer identifier
+
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
@@ -39,14 +51,20 @@ class ExternalBus():
         self._on_message_received = on_message_received
         self.on_peer_connected = on_peer_connected
         self.on_peer_disconnected = on_peer_disconnected
-        self.__command_events = {}
+        # store command events ::
+        # {
+        #   command_uuid (string): {
+        #       manual_response (function): function to call to send response to command back
+        #   }
+        # }
+        self.__manual_responses = {}
 
         # logging
         self.logger = logging.getLogger(self.__class__.__name__)
         if self.debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.WARN)
+            self.logger.setLevel(logging.INFO)
 
     def run(self):
         """
@@ -55,7 +73,7 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('run function is not implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('run function must be implemented in "%s"' % self.__class__.__name__)
 
     def run_once(self):
         """
@@ -64,30 +82,30 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('run_once function is not implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('run_once function must be implemented in "%s"' % self.__class__.__name__)
 
-    def __ack_command_message(self, message):
+    def __ack_command_with_response(self, message):
         """
-        Ack command message if it is a waiting command
+        Ack command sending received response
 
         Args:
             message (MessageRequest): message request
-
-        Returns:
-            bool: True if command message was acked, False otherwise
         """
-        self.logger.info('Ack_command_message: %s' % message)
-        if message.command_uuid in self.__command_events:
-            if self._command_events[message.command_uuid]['event'].is_set():
-                # timeout already occured, we can delete command event
-                self.logger.info('=====> delete command event [1]')
-                del self.__command_events[message.command_uuid]
-            else:
-                # timeout not occured, set event. It will be deleted later after event response is sent
-                self.__commands_events[message.command_uuid]['event'].set()
-            return True
+        self.logger.debug('Send command response: %s' % message)
+        if not message.command_uuid in self.__manual_responses:
+            self.logger.warning('Command with uuid "%s" not referenced for sending response' % message.command_uuid)
+            return
 
-        return False
+        # prepare response from request
+        response = MessageResponse()
+        response.fill_from_dict(message.params)
+
+        # ack command
+        self.logger.debug('Send command response back: %s' % response)
+        self.__manual_responses[message.command_uuid]['manual_response'](response)
+
+        # clean
+        del self.__manual_responses[message.command_uuid]
 
     def on_message_received(self, peer_id, message):
         """
@@ -95,13 +113,27 @@ class ExternalBus():
 
         Args:
             peer_id (string): peer identifier
-            message (MessageRequest): message request
+            message (MessageRequest): request message
         """
-        if not self.__ack_command_message(message):
-            # it was not a command message response, process message
-            self._on_message_received(peer_id, message)
+        if message.event == ExternalBus.COMMAND_RESPONSE_EVENT:
+            # send response for received command
+            self.__ack_command_with_response(message)
+            return
 
-    def send_command_response(self, request, response):
+        # process message
+        response = self._on_message_received(peer_id, message)
+        self.logger.debug('Command response: %s' % response)
+
+        if response and message.is_command():
+            # it's a command, response awaited
+            if not message.command_uuid:
+                self.logger.warning('Unable to send command response because command uuid is missing in %s' % message)
+                return
+            if not isinstance(response, MessageResponse):
+                raise Exception('Command response must be a MessageResponse instance not "%s"' % type(response).__name__)
+            self._send_command_response_to_peer(message, response)
+        
+    def _send_command_response_to_peer(self, request, response):
         """
         Send command response to peer
 
@@ -119,38 +151,32 @@ class ExternalBus():
         message.peer_infos = request.peer_infos
 
         # and send created request
-        self.logger.info('Send command response: %s' % message)
+        self.logger.debug('Send command response to peer: %s' % message)
         self._send_message(message)
 
-    def send_message(self, message, timeout=5.0):
+    def send_message(self, message, timeout=5.0, manual_response=None):
         """
         Send message (broadcast or to recipient) to outside
 
         Args:
             message (MessageRequest): message request instance
+            timeout (float): command timeout
+            manual_response (function): function to call to send back command response
         """
         if message.is_command():
             # it's a command, fill request with command identifier and timeout
             message.command_uuid = str(uuid.uuid4())
             message.timeout = timeout
-            self.__command_events[message.command_uuid] = {
-                'event': Event(),
-                'response': None
+            self.__manual_responses[message.command_uuid] = {
+                'manual_response': manual_response,
             }
 
+            # send command now, response should be returned by event
             self._send_message(message)
-
-            timeout_occured = self.__command_events[message.command_uuid]['event'].wait(timeout)
-            self.__command_events[message.command_uuid]['event'].set()
-            response = self.__command_events[message.command_uuid]['response']
-            if not timeout_occured:
-                # command response received in time, clean command event
-                del self.__command_events[message.command_uuid]
-            return response
 
         else:
             # it's an event
-            if message.peer_infos and message.peer_infos.peer_uuid:
+            if message.peer_infos and message.peer_infos.uuid:
                 self._send_message(message)
             else:
                 self._broadcast_message(message)
