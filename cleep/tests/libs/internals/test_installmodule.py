@@ -1686,18 +1686,16 @@ class UpdateModuleTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _init_context(self, module_name='module', current_module_infos=None, new_module_infos=None, callback_side_effect=None, force_uninstall=False):
+    def _init_context(self, module_name='module', new_module_infos=None, callback_side_effect=None, force_uninstall=False):
         self.crash_report = Mock()
         self.cleep_filesystem = Mock()
 
-        if current_module_infos is None:
-            current_module_infos = self._get_module_infos('1.0.0')
         if new_module_infos is None:
             new_module_infos = self._get_module_infos('2.0.0')
 
         self.status_callback = Mock(side_effect=callback_side_effect)
 
-        self.u = UpdateModule(module_name, current_module_infos, new_module_infos, force_uninstall, self.status_callback, self.cleep_filesystem, self.crash_report)
+        self.u = UpdateModule(module_name, new_module_infos, force_uninstall, self.status_callback, self.cleep_filesystem, self.crash_report)
 
     def _init_install_mock(self, install_mock, timeout=1.5, get_status_return_value=None):
         class InstallContext():

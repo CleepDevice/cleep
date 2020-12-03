@@ -1072,16 +1072,14 @@ class UpdateModule(threading.Thread):
     STATUS_UPDATED = 2
     STATUS_ERROR = 3
 
-    def __init__(self, module_name, current_module_infos, new_module_infos, force_uninstall, status_callback,
+    def __init__(self, module_name, new_module_infos, force_uninstall, status_callback,
                  cleep_filesystem, crash_report):
         """
         Constructor
 
         Args:
             module_name (string): module name to update
-            current_module_infos (dict): current module infos
             new_module_infos (dict): new module infos
-            update_process (bool): True if module uninstall occured during update process
             force_uninstall (bool): force module uninstall even if error occured
             status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
@@ -1095,7 +1093,6 @@ class UpdateModule(threading.Thread):
 
         # members
         self.module_name = module_name
-        self.current_module_infos = current_module_infos
         self.new_module_infos = new_module_infos
         self.force_uninstall = force_uninstall
         self.status_callback = status_callback
