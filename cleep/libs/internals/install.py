@@ -30,7 +30,6 @@ class Install():
     STATUS_PROCESSING = 1
     STATUS_DONE = 2
     STATUS_ERROR = 3
-    STATUS_CANCELED = 4
 
     def __init__(self, cleep_filesystem, crash_report, status_callback, blocking=False):
         """
@@ -51,23 +50,11 @@ class Install():
         self.crash_report = crash_report
         self.blocking = blocking
         self.__console = None
-        self.__cancel = False
         self.status = self.STATUS_IDLE
         self.status_callback = status_callback
         self.stdout = []
         self.stderr = []
         self.__running = True
-        self.__can_cancel = True
-
-    def cancel(self):
-        """
-        Cancel current install
-        """
-        if self.__can_cancel:
-            self.status = self.STATUS_CANCELED
-            if self.__console:
-                self.__console.stop()
-            self.__running = False
 
     def get_status(self):
         """
@@ -100,14 +87,20 @@ class Install():
         self.stdout = []
         self.stderr = []
 
-    def __callback_end(self):
+    def __callback_end(self, return_code, killed):
         """
         End of process callback
+
+        Args:
+            return_code (int): command return code
+            killed (bool): True if command was killed
         """
-        self.logger.debug('End of command')
+        self.logger.trace('Command terminated callback')
 
         # update status if necessary
-        if self.status != self.STATUS_ERROR and self.status != self.STATUS_CANCELED:
+        if return_code != 0 or killed:
+            self.status = self.STATUS_ERROR
+        elif self.status != self.STATUS_ERROR:
             self.status = self.STATUS_DONE
 
         # send for the last time current status
@@ -120,7 +113,7 @@ class Install():
         # disable write at end of command execution
         self.cleep_filesystem.disable_write()
 
-    def __callback_quiet(self, stdout, stderr):
+    def __callback_quiet(self, stdout, stderr): # pragma: no cover
         """
         Quiet output. Does nothing
         """
@@ -135,6 +128,9 @@ class Install():
 
         # update status
         self.__reset_status(self.STATUS_PROCESSING)
+
+        # enable file system writings
+        self.cleep_filesystem.enable_write()
 
         # refresh packages
         command = '/usr/bin/aptitude update'
@@ -164,7 +160,6 @@ class Install():
         if stdout is not None:
             self.stdout.append(stdout)
         if stderr is not None:
-            self.status = self.STATUS_ERROR
             self.stderr.append(stderr)
 
         # send status to caller callback
@@ -184,7 +179,7 @@ class Install():
         if self.status == self.STATUS_PROCESSING:
             raise Exception('Installer is already processing')
 
-        # update status
+        # reset status
         self.__reset_status(self.STATUS_PROCESSING)
 
         # enable write
@@ -220,16 +215,14 @@ class Install():
         if self.status == self.STATUS_PROCESSING:
             raise Exception('Installer is already processing')
 
-        # update status
+        # reset status
         self.__reset_status(self.STATUS_PROCESSING)
 
         # enable write
         self.cleep_filesystem.enable_write()
 
         # install deb
-        action = 'remove'
-        if purge:
-            action = 'purge'
+        action = 'purge' if purge else 'remove'
         command = '/usr/bin/aptitude %s -y "%s"' % (action, package_name)
         self.logger.debug('Command: %s', command)
         self.__running = True
@@ -268,10 +261,12 @@ class Install():
         if self.status_callback:
             self.status_callback(self.get_status())
 
-    def install_deb(self, deb):
+    def install_deb(self, deb_path):
         """
         Install .deb file using dpkg
-        Cannot be canceled once launched
+
+        Args:
+            deb_path (string): path to deb package
 
         Returns:
             bool: True if install succeed (in blocking mode only)
@@ -279,15 +274,13 @@ class Install():
         if self.status == self.STATUS_PROCESSING:
             raise Exception('Installer is already processing')
 
-        # disable cancel
-        self.__can_cancel = False
-
-        # update status
+        # reset status
         self.__reset_status(self.STATUS_PROCESSING)
 
         # install deb (and its dependencies)
+        # note: filesystem writings are handled by InstallDeb lib
         installer = InstallDeb(self.cleep_filesystem, self.crash_report)
-        installer.install(deb, blocking=False, status_callback=self.__callback_deb)
+        installer.install(deb_path, blocking=False, status_callback=self.__callback_deb)
 
         # blocking mode
         if self.blocking:
@@ -311,7 +304,6 @@ class Install():
         if stdout is not None:
             self.stdout.append(stdout)
         if stderr is not None:
-            self.status = self.STATUS_ERROR
             self.stderr.append(stderr)
 
         # send status to caller callback
@@ -338,32 +330,26 @@ class Install():
         if install_path is None or len(install_path.strip()) == 0:
             raise Exception('Parameter "install_path" is missing')
         if not os.path.exists(archive):
-            raise Exception('Archive does not exist')
+            raise Exception('Archive "%s" does not exist' % archive)
 
-        # create output dir if it isn't exist
-        if not os.path.exists(install_path):
-            self.cleep_filesystem.mkdir(install_path, recursive=True)
-
-        # update status
+        # reset status
         self.__reset_status(self.STATUS_PROCESSING)
 
         # get archive decompressor according to archive extension
         command = None
-        dummy, ext = os.path.splitext(archive)
-        if ext == '.gz':
-            _, ext = os.path.splitext(dummy)
-            if ext == '.tar':
-                command = '/bin/tar xzvf "%s" -C "%s"' % (archive, install_path)
-
-        elif ext == '.zip':
+        if archive.endswith('.tar.gz'):
+            command = '/bin/tar xzf "%s" -C "%s"' % (archive, install_path)
+        elif archive.endswith('.zip'):
             command = '/usr/bin/unzip "%s" -d "%s"' % (archive, install_path)
-
-        # execute command
-        if command is None:
+        else:
             raise Exception('File format not supported. Only zip and tar.gz supported.')
 
         # enable write
         self.cleep_filesystem.enable_write()
+
+        # create output dir if it isn't exist
+        if not os.path.exists(install_path):
+            self.cleep_filesystem.mkdir(install_path, recursive=True)
 
         # execute command
         self.logger.debug('Command: %s', command)
@@ -410,24 +396,24 @@ class Install():
             self.status = self.STATUS_ERROR
 
         # save stdout/stderr at end of process
-        if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
+        if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # prescript
             if status['prescript']['returncode'] is not None:
-                self.stdout += (['Preinstall script stdout:'] + status['prescript']['stdout'] +
-                                ['Preinstall script return code: %s' % status['prescript']['returncode']])
-                self.stderr += ['Preinstall script stderr:'] + status['prescript']['stderr']
+                self.stdout += (['Pre-install script stdout:'] + status['prescript']['stdout'] +
+                                ['Pre-install script return code: %s' % status['prescript']['returncode']])
+                self.stderr += ['Pre-install script stderr:'] + status['prescript']['stderr']
             else:
-                self.stdout += ['No preinstall script']
-                self.stderr += ['No preinstall script']
+                self.stdout += ['No pre-install script']
+                self.stderr += ['No pre-install script']
 
             # postscript
             if status['postscript']['returncode'] is not None:
-                self.stdout += (['', 'Postinstall script stdout:'] + status['postscript']['stdout'] +
-                                ['Postinstall script return code: %s' % status['postscript']['returncode']])
-                self.stderr += ['', 'Postinstall script stderr:'] + status['postscript']['stderr']
+                self.stdout += (['', 'Post-install script stdout:'] + status['postscript']['stdout'] +
+                                ['Post-install script return code: %s' % status['postscript']['returncode']])
+                self.stderr += ['', 'Post-install script stderr:'] + status['postscript']['stderr']
             else:
-                self.stdout += ['', 'No postinstall script']
-                self.stderr += ['', 'No postinstall script']
+                self.stdout += ['No post-install script']
+                self.stderr += ['No post-install script']
 
         # send status
         if self.status_callback:
@@ -438,38 +424,40 @@ class Install():
             current_status['process'] = status['process']
             self.status_callback(current_status)
 
-    def install_module(self, module, module_infos):
+    def install_module(self, module_name, module_infos):
         """
         Install specified module
 
-        Warning:
-            This function does not handle filesystem because process could be async.
-            So take care to enable/disable writings before/after calling it.
-
         Args:
-            module (string): module name to install
+            module_name (string): module name to install
             modules_infos (dict): module infos reported in modules.json
 
         Returns:
             bool: True if module installed (in blocking mode only)
         """
-        # check params
-        if module is None or len(module) == 0:
-            raise MissingParameter('Parameter "module" is missing')
-        if module_infos is None or len(module_infos) == 0:
-            raise MissingParameter('Parameter "module_infos" is missing')
+        if self.status == self.STATUS_PROCESSING:
+            raise Exception('Installer is already processing')
 
-        # disable cancel
-        self.__can_cancel = False
+        # check params
+        if module_name is None or len(module_name) == 0:
+            raise MissingParameter('Parameter "module_name" is missing')
+        if not module_infos:
+            raise MissingParameter('Parameter "module_infos" is missing')
+        if not isinstance(module_infos, dict):
+            raise InvalidParameter('Parameter "module_infos" is invalid')
+
+        # reset status
+        self.__reset_status(self.STATUS_PROCESSING)
 
         # launch installation
+        # note: filesystem writings are handled by InstallDeb lib
         install = InstallModule(
-            module,
+            module_name,
             module_infos,
-            False,
-            self.__callback_install_module,
-            self.cleep_filesystem,
-            self.crash_report
+            update_process=False,
+            status_callback=self.__callback_install_module,
+            cleep_filesystem=self.cleep_filesystem,
+            crash_report=self.crash_report
         )
         install.start()
 
@@ -477,11 +465,11 @@ class Install():
         self.logger.debug('Install module blocking? %s', self.blocking)
         if self.blocking:
             # wait for end of installation
-            while install.get_status() == install.STATUS_INSTALLING:
+            while install.is_installing():
                 time.sleep(0.25)
 
             # check install status
-            return install.get_status() == install.STATUS_INSTALLED
+            return install.get_status().get('status') == InstallModule.STATUS_INSTALLED
 
         return True
 
@@ -512,24 +500,24 @@ class Install():
             self.status = self.STATUS_ERROR
 
         # save stdout/stderr at end of process
-        if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
+        if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # prescript
-            if status['prescript']['returncode']:
-                self.stdout += (['Preuninstall script stdout:'] + status['prescript']['stdout'] +
-                                ['Preuninstall script return code: %s' % status['prescript']['returncode']])
-                self.stderr += ['Preuninstall script stderr:'] + status['prescript']['stderr']
+            if status['prescript']['returncode'] is not None:
+                self.stdout += (['Pre-uninstall script stdout:'] + status['prescript']['stdout'] +
+                                ['Pre-uninstall script return code: %s' % status['prescript']['returncode']])
+                self.stderr += ['Pre-uninstall script stderr:'] + status['prescript']['stderr']
             else:
-                self.stdout += ['No preuninstall script']
-                self.stderr += ['No preuninstall script']
+                self.stdout += ['No pre-uninstall script']
+                self.stderr += ['No pre-uninstall script']
 
             # postscript
-            if status['postscript']['returncode']:
-                self.stdout += (['', 'Postuninstall script process:'] + status['postscript']['stdout'] +
-                                ['Postuninstall script return code: %s' % status['postscript']['returncode']])
-                self.stderr += ['', 'Postuninstall script stderr:'] + status['postscript']['stderr']
+            if status['postscript']['returncode'] is not None:
+                self.stdout += (['', 'Post-uninstall script stdout:'] + status['postscript']['stdout'] +
+                                ['Post-uninstall script return code: %s' % status['postscript']['returncode']])
+                self.stderr += ['', 'Post-uninstall script stderr:'] + status['postscript']['stderr']
             else:
-                self.stdout += ['No postuninstall script']
-                self.stderr += ['No postuninstall script']
+                self.stdout += ['No post-uninstall script']
+                self.stderr += ['No post-uninstall script']
 
         # send status
         if self.status_callback:
@@ -540,7 +528,7 @@ class Install():
             current_status['process'] = status['process']
             self.status_callback(current_status)
 
-    def uninstall_module(self, module, module_infos, force=False):
+    def uninstall_module(self, module_name, module_infos, force=False):
         """
         Uninstall specified module
 
@@ -549,39 +537,47 @@ class Install():
             So take care to enable/disable writings before calling it.
 
         Args:
-            module (string): module name to uninstall
+            module_name (string): module name to uninstall
             modules_infos (dict): module infos reported in modules.json
             force (bool): uninstall module and continue if error occured
 
         Returns:
             bool: True if module uninstalled (in blocking mode only)
         """
+        if self.status == self.STATUS_PROCESSING:
+            raise Exception('Installer is already processing')
+
         # check params
-        if module is None or len(module) == 0:
-            raise MissingParameter('Parameter "module" is missing')
+        if module_name is None or len(module_name) == 0:
+            raise MissingParameter('Parameter "module_name" is missing')
+        if not module_infos:
+            raise MissingParameter('Parameter "module_infos" is missing')
         if not isinstance(module_infos, dict):
-            raise InvalidParameter('Parameter "module_infos" must be a dict')
+            raise InvalidParameter('Parameter "module_infos" is invalid')
+
+        # reset status
+        self.__reset_status(self.STATUS_PROCESSING)
 
         # launch uninstallation
         uninstall = UninstallModule(
-            module,
+            module_name,
             module_infos,
-            False,
-            force,
-            self.__callback_uninstall_module,
-            self.cleep_filesystem,
-            self.crash_report
+            update_process=False,
+            force=force,
+            status_callback=self.__callback_uninstall_module,
+            cleep_filesystem=self.cleep_filesystem,
+            crash_report=self.crash_report
         )
         uninstall.start()
 
         # blocking mode
         if self.blocking:
             # wait for end of installation
-            while uninstall.get_status() == uninstall.STATUS_UNINSTALLING:
+            while uninstall.is_uninstalling():
                 time.sleep(0.25)
 
             # check uinstall status
-            return uninstall.get_status() == uninstall.STATUS_UNINSTALLED
+            return uninstall.get_status().get('status') == UninstallModule.STATUS_UNINSTALLED
 
         return True
 
@@ -612,41 +608,45 @@ class Install():
 
         # save install/uninstall status at end of process
         process = ['No process output']
-        if self.status in (self.STATUS_CANCELED, self.STATUS_DONE, self.STATUS_ERROR):
+        if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # uninstall prescript
-            if status['uninstall']['prescript']['returncode']:
-                self.stdout += (['Preuninstall script stdout:'] + status['uninstall']['prescript']['stdout'] +
-                                ['Preuninstall script return code: %s' % status['uninstall']['prescript']['returncode']])
-                self.stderr += ['Preuninstall script stderr:'] + status['uninstall']['prescript']['stderr']
+            if status['uninstall']['prescript']['returncode'] is not None:
+                self.stdout += (['Pre-uninstall script stdout:'] + status['uninstall']['prescript']['stdout'] +
+                                ['Pre-uninstall script return code: %s' % status['uninstall']['prescript']['returncode']])
+                self.stderr += ['Pre-uninstall script stderr:'] + status['uninstall']['prescript']['stderr']
             else:
-                self.stdout += ['No preuninstall script']
+                self.stdout += ['No pre-uninstall script']
+                self.stderr += ['No pre-uninstall script']
 
             # uninstall postscript
-            if status['uninstall']['postscript']['returncode']:
-                self.stdout += (['', 'Postuninstall script stdout:'] + status['uninstall']['postscript']['stdout'] +
-                                ['Postuninstall script return code: %s' % status['uninstall']['postscript']['returncode']])
-                self.stderr += ['', 'Postuninstall script stderr:'] + status['uninstall']['postscript']['stderr']
+            if status['uninstall']['postscript']['returncode'] is not None:
+                self.stdout += (['', 'Post-uninstall script stdout:'] + status['uninstall']['postscript']['stdout'] +
+                                ['Post-uninstall script return code: %s' % status['uninstall']['postscript']['returncode']])
+                self.stderr += ['', 'Post-uninstall script stderr:'] + status['uninstall']['postscript']['stderr']
             else:
-                self.stdout = ['', 'No postuninstall script']
+                self.stdout += ['No post-uninstall script']
+                self.stderr += ['No post-uninstall script']
 
             # install prescript
-            if status['install']['prescript']['returncode']:
-                self.stdout += (['', 'Preinstall script stdout:'] + status['install']['prescript']['stdout'] +
-                                ['Preinstall script return code: %s' % status['install']['prescript']['returncode']])
-                self.stderr += ['', 'Preinstall script stderr:'] + status['install']['prescript']['stderr']
+            if status['install']['prescript']['returncode'] is not None:
+                self.stdout += (['', 'Pre-install script stdout:'] + status['install']['prescript']['stdout'] +
+                                ['Pre-install script return code: %s' % status['install']['prescript']['returncode']])
+                self.stderr += ['', 'Pre-install script stderr:'] + status['install']['prescript']['stderr']
             else:
-                self.stdout = ['', 'No preinstall script']
+                self.stdout += ['No pre-install script']
+                self.stderr += ['No pre-install script']
 
             # install postscript
-            if status['install']['postscript']['returncode']:
-                self.stdout += (['', 'Postinstall script stdout:'] + status['install']['postscript']['stdout'] +
-                                ['Postinstall script return code: %s' % status['install']['postscript']['returncode']])
-                self.stderr += ['', 'Postinstall script stderr:'] + status['install']['postscript']['stderr']
+            if status['install']['postscript']['returncode'] is not None:
+                self.stdout += (['', 'Post-install script stdout:'] + status['install']['postscript']['stdout'] +
+                                ['Post-install script return code: %s' % status['install']['postscript']['returncode']])
+                self.stderr += ['', 'Post-install script stderr:'] + status['install']['postscript']['stderr']
             else:
-                self.stdout = ['', 'No postinstall script']
+                self.stdout += ['No post-install script']
+                self.stderr += ['No post-install script']
 
             # process
-            process = (['Uninstall process:'] + status['uninstall']['process'] + ['Install process'] +
+            process = (['Uninstall process:'] + status['uninstall']['process'] + ['', 'Install process:'] +
                        status['install']['process'])
 
         # send status
@@ -655,7 +655,7 @@ class Install():
             # inject more data
             current_status['module'] = status['module']
             current_status['process'] = process
-            self.logger.debug('current_status=%s', current_status)
+            self.logger.trace('current_status=%s', current_status)
             self.status_callback(current_status)
 
     def update_module(self, module_name, new_module_infos, force_uninstall=False):
@@ -675,34 +675,39 @@ class Install():
         Returns:
             bool: True if module updated (in blocking mode only)
         """
+        if self.status == self.STATUS_PROCESSING:
+            raise Exception('Installer is already processing')
+
         # check params
         if module_name is None or len(module_name) == 0:
             raise MissingParameter('Parameter "module_name" is missing')
-        if new_module_infos is None or len(new_module_infos) == 0:
+        if not new_module_infos:
             raise MissingParameter('Parameter "new_module_infos" is missing')
+        if not isinstance(new_module_infos, dict):
+            raise InvalidParameter('Parameter "new_module_infos" is invalid')
 
-        # disable cancel
-        self.__can_cancel = False
+        # reset status
+        self.__reset_status(self.STATUS_PROCESSING)
 
         # launch update
         update = UpdateModule(
             module_name,
             new_module_infos,
-            force_uninstall,
-            self.__callback_update_module,
-            self.cleep_filesystem,
-            self.crash_report
+            force_uninstall=force_uninstall,
+            status_callback=self.__callback_update_module,
+            cleep_filesystem=self.cleep_filesystem,
+            crash_report=self.crash_report
         )
         update.start()
 
         # blocking mode
         if self.blocking:
             # wait for end of update
-            while update.get_status() == update.STATUS_UPDATING:
+            while update.is_updating():
                 time.sleep(0.25)
 
             # check update status
-            return update.get_status() == update.STATUS_UPDATED
+            return update.get_status().get('status') == UpdateModule.STATUS_UPDATED
 
         return True
 
