@@ -93,21 +93,21 @@ class RpcServerTests(unittest.TestCase):
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False):
         self.crash_report = Mock()
         self.cleep_filesystem = Mock()
-        self.bus = Mock()
+        self.internal_bus = Mock()
         if push_return_value is not None:
-            self.bus.push.return_value = push_return_value
+            self.internal_bus.push.return_value = push_return_value
         if push_side_effect is not None:
-            self.bus.push.side_effect = push_side_effect
+            self.internal_bus.push.side_effect = push_side_effect
         if pull_return_value is not None:
-            self.bus.pull.return_value = pull_return_value
+            self.internal_bus.pull.return_value = pull_return_value
         if pull_side_effect is not None:
-            self.bus.pull.side_effect = pull_side_effect
+            self.internal_bus.pull.side_effect = pull_side_effect
         if is_subscribed_return_value is not None:
-            self.bus.is_subscribed.return_value = is_subscribed_return_value
+            self.internal_bus.is_subscribed.return_value = is_subscribed_return_value
         if is_subscribed_side_effect is not None:
-            self.bus.is_subscribed.side_effect = is_subscribed_side_effect
+            self.intrnal_bus.is_subscribed.side_effect = is_subscribed_side_effect
         self.bootstrap = {
-            'message_bus': None if no_bus else self.bus,
+            'internal_bus': None if no_bus else self.internal_bus,
             'cleep_filesystem': self.cleep_filesystem,
             'crash_report': self.crash_report,
         }
@@ -358,15 +358,15 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             # with timeout
             r = rpcserver.send_command(command='cmd', to='module', params={}, timeout=3.0)
-            self.assertTrue(self.bus.push.called_once)
-            args = self.bus.push.call_args
+            self.assertTrue(self.internal_bus.push.called_once)
+            args = self.internal_bus.push.call_args
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             self.assertEqual(args[0][1], 3.0)
 
             # without timeout
             r = rpcserver.send_command(command='cmd', to='module', params={})
-            self.assertTrue(self.bus.push.called_once)
-            args = self.bus.push.call_args
+            self.assertTrue(self.internal_bus.push.called_once)
+            args = self.internal_bus.push.call_args
             logging.debug('Args: %s' % str(args))
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             self.assertEqual(args[0][1], None)
@@ -562,7 +562,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(query={'command':'cmd', 'to':'dummy'}):
             resp = rpcserver.download()
             logging.debug('Response: %s' % resp)
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             logging.debug('MessageRequest: %s' % args[0][0].to_dict())
             self.assertEqual(args[0][0].to_dict(), {'broadcast': False, 'params': {}, 'command': 'cmd', 'sender': 'rpcserver', 'to': 'dummy'})
@@ -574,7 +574,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle(query={'command':'cmd', 'to':'dummy', 'params': {'dummy': 'value'}}):
             resp = rpcserver.download()
             logging.debug('Response: %s' % resp)
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             self.assertTrue(isinstance(args[0][0], MessageRequest))
             logging.debug('MessageRequest: %s' % args[0][0].to_dict())
             self.assertEqual(args[0][0].to_dict(), {'broadcast': False, 'params': {'params': "{'dummy': 'value'}"}, 'command': 'cmd', 'sender': 'rpcserver', 'to': 'dummy'})
@@ -603,7 +603,7 @@ class RpcServerTests(unittest.TestCase):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
             self.assertEqual(resp, return_value.to_dict())
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
             self.assertEqual(args[0][0].sender, 'rpcserver')
@@ -616,7 +616,7 @@ class RpcServerTests(unittest.TestCase):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
             self.assertEqual(resp, return_value.to_dict())
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
 
@@ -645,7 +645,7 @@ class RpcServerTests(unittest.TestCase):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
             self.assertEqual(resp, return_value.to_dict())
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].params, {'p1':'v1'})
             self.assertEqual(args[0][0].sender, 'rpcserver')
@@ -658,7 +658,7 @@ class RpcServerTests(unittest.TestCase):
             resp = rpcserver.command()
             logging.debug('Response: %s' % resp)
             self.assertEqual(resp, return_value.to_dict())
-            args = self.bus.push.call_args
+            args = self.internal_bus.push.call_args
             logging.debug(args[0][0])
             self.assertEqual(args[0][0].sender, 'rpcserver')
 
@@ -723,7 +723,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertTrue('pollKey' in resp)
             self.assertIsNotNone(resp['pollKey'])
-            self.assertTrue(self.bus.add_subscription.called_once)
+            self.assertTrue(self.internal_bus.add_subscription.called_once)
 
     def test_poll_invalid_request(self):
         self._init_context()

@@ -31,8 +31,8 @@ class EventTests(unittest.TestCase):
 
     def init_lib(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[],
             bus_push_result={'error':False, 'message':''}, event_chart_params=None, invalid_constructor_params=False):
-        self.bus = Mock()
-        self.bus.push = Mock(return_value=bus_push_result)
+        self.internal_bus = Mock()
+        self.internal_bus.push = Mock(return_value=bus_push_result)
         self.formatters_broker = Mock()
         self.formatters_broker.get_renderers_formatters = Mock(return_value=get_renderers_formatters)
 
@@ -45,12 +45,12 @@ class EventTests(unittest.TestCase):
 
         if not invalid_constructor_params:
             self.e = e({
-                'bus': self.bus,
+                'internal_bus': self.internal_bus,
                 'formatters_broker': self.formatters_broker,
                 'get_external_bus_name': lambda: 'externalbus'
             })
         else:
-            self.e = e({'bus': self.bus})
+            self.e = e({'internal_bus': self.internal_bus})
 
     def test_invalid_constructor_params(self):
         with self.assertRaises(Exception) as cm:
@@ -62,7 +62,7 @@ class EventTests(unittest.TestCase):
             with self.assertRaises(NotImplementedError) as cm:
                 E = Event
                 E.EVENT_NAME = ''
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_NAME class member declared in "Event" must be a non empty string')
         finally:
             Event.EVENT_NAME = ''
@@ -72,7 +72,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy1'
                 E.EVENT_PARAMS = {}
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member declared in "Event" must be a list')
         finally:
             Event.EVENT_PARAMS = []
@@ -82,7 +82,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy2'
                 E.EVENT_CHARTABLE = 1
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member declared in "Event" must be a bool')
         finally:
             Event.EVENT_CHARTABLE = False
@@ -93,7 +93,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 del(E.EVENT_NAME)
                 E.EVENT_PARAMS = None
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_NAME class member must be declared in "Event"')
         finally:
             Event.EVENT_NAME = ''
@@ -103,7 +103,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy3'
                 del(E.EVENT_PARAMS)
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_PARAMS class member must be declared in "Event"')
         finally:
             Event.EVENT_PARAMS = []
@@ -113,7 +113,7 @@ class EventTests(unittest.TestCase):
                 E = Event
                 E.EVENT_NAME = 'dummy4'
                 del(E.EVENT_CHARTABLE)
-                E({'bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
             self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member must be declared in "Event"')
         finally:
             Event.EVENT_CHARTABLE = False
@@ -131,8 +131,8 @@ class EventTests(unittest.TestCase):
     def test_send(self):
         self.init_lib(event_params=['param1'])
         self.assertIsNone(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=False))
-        self.assertTrue(self.bus.push.called)
-        call_args = self.bus.push.call_args[0]
+        self.assertTrue(self.internal_bus.push.called)
+        call_args = self.internal_bus.push.call_args[0]
         logging.debug('Call args: %s' % call_args[0])
         self.assertDictEqual(call_args[0].to_dict(), {
             'event': 'test.dummy',
@@ -146,12 +146,12 @@ class EventTests(unittest.TestCase):
     def test_send_and_render(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.assertIsNone(self.e.send({'param1': 'value1'}, device_id=None, to='dummy', render=True))
-        self.assertEqual(self.bus.push.call_count, 2)
+        self.assertEqual(self.internal_bus.push.call_count, 2)
 
     def test_send_no_param(self):
         self.init_lib(event_params=[])
         self.assertIsNone(self.e.send({}, device_id=None, to='dummy', render=False))
-        self.assertTrue(self.bus.push.called)
+        self.assertTrue(self.internal_bus.push.called)
 
     def test_send_invalid_params(self):
         self.init_lib(event_params=['param'])
@@ -167,8 +167,8 @@ class EventTests(unittest.TestCase):
     def test_send_to_peer(self):
         self.init_lib(event_params=['param'])
         self.e.send_to_peer('123-456-789', {'param': 'value'}, device_id='987-654-321')
-        self.assertTrue(self.bus.push.called)
-        call_args = self.bus.push.call_args[0]
+        self.assertTrue(self.internal_bus.push.called)
+        call_args = self.internal_bus.push.call_args[0]
         logging.debug('Call args: %s' % call_args[0])
         self.assertDictEqual(call_args[0].to_dict(), {
             'event': 'test.dummy',
@@ -188,19 +188,19 @@ class EventTests(unittest.TestCase):
     def test_render(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 1)
+        self.assertEqual(self.internal_bus.push.call_count, 1)
 
     def test_render_rendering_disabled(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters=self.formatters)
         self.e.set_renderable('module1', False)
 
         self.assertTrue(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 0)
+        self.assertEqual(self.internal_bus.push.call_count, 0)
 
     def test_render_no_formatter(self):
         self.init_lib(event_params=['param1'], get_renderers_formatters={})
         self.assertFalse(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 0)
+        self.assertEqual(self.internal_bus.push.call_count, 0)
 
     def test_render_formatter_return_none(self):
         formatters = {
@@ -210,7 +210,7 @@ class EventTests(unittest.TestCase):
         }
         self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 0)
+        self.assertEqual(self.internal_bus.push.call_count, 0)
     
     def test_render_one_formatter_return_none(self):
         formatters = {
@@ -223,7 +223,7 @@ class EventTests(unittest.TestCase):
         }
         self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 1)
+        self.assertEqual(self.internal_bus.push.call_count, 1)
 
     def test_render_bus_push_failed(self):
         self.init_lib(event_params=['param'], get_renderers_formatters=self.formatters, bus_push_result={'error':True, 'message':'test error'})
@@ -237,7 +237,7 @@ class EventTests(unittest.TestCase):
         }
         self.init_lib(event_params=['param1'], get_renderers_formatters=formatters)
         self.assertTrue(self.e.render({'param1': 'value1'}))
-        self.assertEqual(self.bus.push.call_count, 0)
+        self.assertEqual(self.internal_bus.push.call_count, 0)
 
     def test_get_chart_values(self):
         self.init_lib(event_params=['param1'], event_chartable=True)

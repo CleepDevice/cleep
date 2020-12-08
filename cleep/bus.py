@@ -80,11 +80,7 @@ class MessageBus():
 
     def app_configured(self):
         """
-        Say to message bus application is configured and ready to run.
-
-        Warning:
-            This way of proceed is dangerous if clients always broadcast messages, the bus may always stay
-            blocked in "app not configured" state. But in small system like cleep, it should be fine.
+        Set internal bus flag to say application is ready and messages can be processed
         """
         # then set app is configured
         self.__app_configured = True
@@ -412,7 +408,7 @@ class BusClient(threading.Thread):
 
         # members
         self.__continue = True
-        self.__bus = bootstrap['message_bus']
+        self.__bus = bootstrap['internal_bus']
         self.__bootstrap_crash_report = bootstrap['crash_report']
         self.__name = self.__class__.__name__
         self.__module_name = self.__name.lower()

@@ -24,7 +24,7 @@ class DummyModule(Thread):
         """
         Thread.__init__(self, daemon=True)
         self.name = name
-        self.bus = bus
+        self.internal_bus = bus
         self.running = True
         self.response = response
         self._received_messages = []
@@ -52,7 +52,7 @@ class DummyModule(Thread):
         return self._received_messages.pop()
 
     def __pull(self, timeout=0.5):
-        msg = self.bus.pull(self.name, timeout)
+        msg = self.internal_bus.pull(self.name, timeout)
         self._pulled_messages += 1
         msg['response'] = self.response.to_dict() if self.response is not None else None
         logging.debug('DummyModule pulled %s' % msg)
@@ -63,7 +63,7 @@ class DummyModule(Thread):
             if len(self._messages_to_send)>0:
                 try:
                     msg = self._messages_to_send.pop()
-                    resp = self.bus.push(msg['message'], timeout=msg['timeout'])
+                    resp = self.internal_bus.push(msg['message'], timeout=msg['timeout'])
                     logging.debug('DummyModule "%s" receive response %s' % (self.name, resp))
                     self._received_messages.append(resp)
                 except Exception as e:
@@ -589,16 +589,16 @@ class BusClientTests(unittest.TestCase):
             self.p1.stop()
         if self.p2:
             self.p2.stop()
-        if self.bus:
-            self.bus.stop()
+        if self.internal_bus:
+            self.internal_bus.stop()
         if self.p3:
             self.p3.stop()
 
     def _init_context(self, p1_on_process=None, p1_on_configure=None, p1_on_stop=None, p1_on_start=None):
         self.crash_report = Mock()
-        self.bus = MessageBus(self.crash_report, debug_enabled=False)
+        self.internal_bus = MessageBus(self.crash_report, debug_enabled=False)
         self.bootstrap = {
-            'message_bus': self.bus,
+            'internal_bus': self.internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'crash_report': self.crash_report,
@@ -611,7 +611,7 @@ class BusClientTests(unittest.TestCase):
         self.p3 = None
 
         time.sleep(0.25)
-        self.bus.app_configured()
+        self.internal_bus.app_configured()
 
     def _get_message_request(self, command='dummycommand', params={}, to=None):
         msg = MessageRequest()

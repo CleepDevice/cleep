@@ -61,12 +61,12 @@ class EventsBrokerTests(unittest.TestCase):
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.crash_report = Mock()
-        self.bus = Mock()
+        self.internal_bus = Mock()
         self.formatters_broker = Mock()
 
         self.e = EventsBroker(debug_enabled=False)
         self.bootstrap = {
-            'message_bus': self.bus,
+            'internal_bus': self.internal_bus,
             'formatters_broker': self.formatters_broker,
             'crash_report': self.crash_report,
             'external_bus': 'externalbusname',

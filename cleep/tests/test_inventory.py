@@ -120,11 +120,11 @@ class %(module_name)s(%(inherit)s):
 
         def side_effect(*args, **kwargs):
             time.sleep(3.0)
-        self.bus = Mock()
-        self.bus.pull.side_effect = side_effect
+        self.internal_bus = Mock()
+        self.internal_bus.pull.side_effect = side_effect
 
         self.bootstrap = {
-            'message_bus': self.bus,
+            'internal_bus': self.internal_bus,
             'module_join_event': Mock(),
             'core_join_event': core_join_event if core_join_event else Mock(),
             'drivers': self.drivers,

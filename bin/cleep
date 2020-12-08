@@ -124,12 +124,12 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, u'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers):
+def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers):
     """
     Return bootstrap objects.
 
     Args:
-        message_bus (MessageBus): message bus instance
+        internal_bus (MessageBus): message bus instance
         events_broker (EventsBroker): events broker instance
         formatters_broker (ProfileFormattersBroker): formatters broker instance
         cleep_filesystem (CleepFilesystem): cleep filesystem singleton instance
@@ -141,7 +141,7 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
         dict: dict of bootstrap objects::
 
             {
-                message_bus (MessageBus): internal message bus
+                internal_bus (MessageBus): internal message bus
                 events_broker (EventsBroker): events broker
                 formatters_broker (ProfileFormattersBroker) : formatters broker
                 module_join_event (Threading.Event): module startup join event
@@ -160,7 +160,7 @@ def get_bootstrap_objects(message_bus, events_broker, formatters_broker, cleep_f
     return {
         'events_broker': events_broker,
         'formatters_broker': formatters_broker,
-        'message_bus': message_bus,
+        'internal_bus': internal_bus,
         'module_join_event': Event(),
         'core_join_event': Event(),
         'cleep_filesystem': cleep_filesystem,

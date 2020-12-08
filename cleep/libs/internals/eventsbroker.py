@@ -34,7 +34,7 @@ class EventsBroker():
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
-        self.bus = None
+        self.internal_bus = None
         self.formatters_broker = None
         self.crash_report = None
         self.bootstrap = {}
@@ -48,7 +48,7 @@ class EventsBroker():
         """
         # set members
         self.bootstrap = bootstrap
-        self.bus = bootstrap['message_bus']
+        self.internal_bus = bootstrap['internal_bus']
         self.formatters_broker = bootstrap['formatters_broker']
 
         # configure crash report
@@ -183,7 +183,7 @@ class EventsBroker():
                 self.events_by_module[module].append(event_name)
 
             return self.events_by_event[event_name]['instance']({
-                'bus': self.bus,
+                'internal_bus': self.internal_bus,
                 'formatters_broker': self.formatters_broker,
                 'get_external_bus_name': self.__get_external_bus_name
             })

@@ -31,11 +31,11 @@ class Event():
             params (dict): should contains event parameters
         """
         # check params content
-        if len(set(['bus', 'formatters_broker', 'get_external_bus_name']).intersection(params.keys())) != 3:
+        if len(set(['internal_bus', 'formatters_broker', 'get_external_bus_name']).intersection(params.keys())) != 3:
             raise Exception('Invalid "%s" event, please check constructor parameters' % self.EVENT_NAME)
 
         # set members
-        self.bus = params.get('bus')
+        self.internal_bus = params.get('internal_bus')
         self.formatters_broker = params.get('formatters_broker')
         self.__get_external_bus_name = params.get('get_external_bus_name', lambda: None)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -133,7 +133,7 @@ class Event():
                 self.logger.exception('Unable to render event "%s":' % self.EVENT_NAME)
 
         # push event to internal bus (no response awaited for event)
-        self.bus.push(request, None)
+        self.internal_bus.push(request, None)
 
     def send_to_peer(self, peer_uuid, params=None, device_id=None):
         """
@@ -163,7 +163,7 @@ class Event():
         request.params = params
 
         # push event to internal bus (no response awaited for event)
-        self.bus.push(request, None)
+        self.internal_bus.push(request, None)
 
     def render(self, params=None):
         """
@@ -204,7 +204,7 @@ class Event():
                 request.params = {'profile': profile}
 
                 self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
-                resp = self.bus.push(request)
+                resp = self.internal_bus.push(request)
                 if resp['error']:
                     self.logger.error('Unable to render profile "%s" to "%s": %s' % (
                         profile_name,

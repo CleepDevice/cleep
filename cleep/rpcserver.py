@@ -104,7 +104,7 @@ def configure(bootstrap, inventory_, debug_enabled_):
 
     # set members
     cleep_filesystem = bootstrap['cleep_filesystem']
-    bus = bootstrap['message_bus']
+    bus = bootstrap['internal_bus']
     inventory = inventory_
     crash_report = bootstrap['crash_report']
 

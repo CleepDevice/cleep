@@ -94,7 +94,7 @@ class TestsCleep(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -593,7 +593,7 @@ class TestsCleepModule(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -894,7 +894,7 @@ class TestsCleepRpcWrapper(unittest.TestCase):
         self.drivers = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -992,7 +992,7 @@ class TestsCleepResources(unittest.TestCase):
         self.critical_resources = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1109,7 +1109,7 @@ class TestsCleepRenderer(unittest.TestCase):
         self.critical_resources = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1248,7 +1248,7 @@ class TestsCleepExternalBus(unittest.TestCase):
         self.critical_resources = Mock()
 
         self.bootstrap = {
-            'message_bus': MagicMock(),
+            'internal_bus': MagicMock(),
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,

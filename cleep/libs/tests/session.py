@@ -56,8 +56,8 @@ class TestSession():
         events_broker = EventsBroker(debug)
         events_broker.get_event_instance = self._events_broker_get_event_instance_mock
 
-        message_bus = bus.MessageBus(self.crash_report, debug)
-        message_bus.push = self._message_bus_push_mock
+        internal_bus = bus.MessageBus(self.crash_report, debug)
+        internal_bus.push = self._internal_bus_push_mock
 
         # enable writings during tests
         fs = CleepFilesystem()
@@ -70,7 +70,7 @@ class TestSession():
         core_join_event.set()
 
         return {
-            'message_bus': message_bus,
+            'internal_bus': internal_bus,
             'events_broker': events_broker,
             'formatters_broker': EventsBroker(debug),
             'cleep_filesystem': self.cleep_filesystem,
@@ -422,9 +422,9 @@ class TestSession():
 
         return None
 
-    def _message_bus_push_mock(self, request, timeout):
+    def _internal_bus_push_mock(self, request, timeout):
         """
-        Mocked message bus push method
+        Mocked internal bus push method
         """
         self.logger.debug('TEST: Process command %s' % request)
         if request and request.command in self.__bus_command_handlers:
@@ -466,7 +466,11 @@ class TestSession():
         """
         e_ = event.Event
         e_.EVENT_NAME = event_name
-        instance = e_(self.bootstrap['message_bus'], self.bootstrap['formatters_broker'])
+        instance = e_({
+            'internal_bus': self.bootstrap['internal_bus'],
+            'formatters_broker': self.bootstrap['formatters_broker'],
+            'get_external_bus_name': 'testexternalbus',
+        })
         self.__event_handlers[event_name] = {
             'sends': 0,
             'lastparams': None,
