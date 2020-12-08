@@ -444,7 +444,7 @@ class Cleep(BusClient):
                     'send_command', 'send_event', 'send_command_to_peer', 'send_event_to_peer',
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
-                    'start', 'stop', 'push', 'event_received',
+                    'start', 'stop', 'push', 'on_event',
                     'send_command_from_request', 'send_event_from_request',
                 ):
                 # filter bus commands
@@ -497,7 +497,7 @@ class Cleep(BusClient):
             })
             return False
 
-    def _event_received(self, event):
+    def _on_event(self, event):
         """
         Event is received on bus
 
@@ -513,9 +513,9 @@ class Cleep(BusClient):
                 }
 
         """
-        self.event_received(event)
+        self.on_event(event)
 
-    def event_received(self, event): # pragma: no cover
+    def on_event(self, event): # pragma: no cover
         """
         Event message received
 

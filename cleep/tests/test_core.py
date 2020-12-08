@@ -30,13 +30,13 @@ class DummyCleep(Cleep):
         Cleep.__init__(self, bootstrap, debug_enabled)
 
         self.stop_called = False
-        self.event_received_called = False
+        self.on_event_called = False
 
     def _on_stop(self):
         self.stop_called = True
 
-    def event_received(self, event):
-        self.event_received_called = True
+    def on_event(self, event):
+        self.on_event_called = True
 
     def my_command(self, param):
         pass
@@ -401,11 +401,11 @@ class TestsCleep(unittest.TestCase):
 
         self.assertTrue(self.r.stop_called)
 
-    def test_event_received(self):
+    def test_on_event(self):
         self._init_context()
 
-        self.r._event_received({'device_id': None, 'event': 'event.test.dummy', 'params':{}})
-        self.assertTrue(self.r.event_received_called)
+        self.r._on_event({'device_id': None, 'event': 'event.test.dummy', 'params':{}})
+        self.assertTrue(self.r.on_event_called)
 
     def test_check_parameters(self):
         self._init_context()
@@ -514,13 +514,13 @@ class DummyCleepModule(CleepModule):
         CleepModule.__init__(self, bootstrap, debug_enabled)
 
         self.stop_called = False
-        self.event_received_called = False
+        self.on_event_called = False
 
     def _on_stop(self):
         self.stop_called = True
 
-    def event_received(self, event):
-        self.event_received_called = True
+    def on_event(self, event):
+        self.on_event_called = True
 
     def my_command(self, param):
         pass

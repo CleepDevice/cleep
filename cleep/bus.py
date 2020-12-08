@@ -706,7 +706,7 @@ class BusClient(threading.Thread):
         """
         pass
 
-    def _event_received(self, event): # pragma: no cover
+    def _on_event(self, event): # pragma: no cover
         """
         Module received an event message
 
@@ -920,11 +920,11 @@ class BusClient(threading.Thread):
                         else:
                             # event received, process it
                             try:
-                                self._event_received(msg['message'])
+                                self._on_event(msg['message'])
                             except:
                                 # do not crash module
                                 self.logger.exception(
-                                    'Exception in event_received handled by "%s" module:' % self.__class__.__name__
+                                    'Exception during on_event call, handled by "%s" module:' % self.__class__.__name__
                                 )
 
                 else: # pragma: no cover

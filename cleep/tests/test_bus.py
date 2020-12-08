@@ -500,8 +500,8 @@ class TestProcess1(BusClient):
         self.__command_call('command_broadcast')
         return 'command broadcast wih param=%s' % param
 
-    def _event_received(self, event):
-        self.__command_call('event_received')
+    def _on_event(self, event):
+        self.__command_call('on_event')
         self.logger.debug('Event received: %s' % event)
 
 
@@ -554,8 +554,8 @@ class TestProcess2(BusClient):
             'param2': param2,
         }
 
-    def _event_received(self, event):
-        self.__command_call('event_received')
+    def _on_event(self, event):
+        self.__command_call('on_event')
         self.logger.debug('Event received: %s' % event)
 
 class TestProcess3(BusClient):
@@ -574,8 +574,8 @@ class TestProcess3(BusClient):
             return self.__command_calls[command]
         return 0
 
-    def _event_received(self, event):
-        self.__command_call('event_received')
+    def _on_event(self, event):
+        self.__command_call('on_event')
         raise Exception('Test exception')
 
 class BusClientTests(unittest.TestCase):
@@ -949,8 +949,8 @@ class BusClientTests(unittest.TestCase):
 
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNone(resp.data)
-        self.assertEqual(self.p1._get_command_calls('event_received'), 1)
-        self.assertEqual(self.p2._get_command_calls('event_received'), 0)
+        self.assertEqual(self.p1._get_command_calls('on_event'), 1)
+        self.assertEqual(self.p2._get_command_calls('on_event'), 0)
 
     def test_send_event_with_exception(self):
         self._init_context()
