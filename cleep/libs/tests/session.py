@@ -168,7 +168,7 @@ class TestSession():
 
     def clean(self):
         """
-        Clean all stuff.
+        Clean all session stuff.
         Can be called during test tear down.
         """
         if not self.__setup_executed:
@@ -273,7 +273,7 @@ class TestSession():
 
     def command_called(self, command_name):
         """
-        Return False if command not called
+        Return True if command called
 
         Args:
             command_name (string): command name
@@ -353,7 +353,7 @@ class TestSession():
 
     def event_called(self, event_name):
         """
-        Return True if event was called
+        Return True if event has been called
 
         Args:
             event_name (string): event name
@@ -383,7 +383,7 @@ class TestSession():
 
     def event_called_with(self, event_name, params):
         """
-        Return True if event was called with specified arguments
+        Return True if event has been called with specified arguments
 
         Args:
             event_name (string): event name
