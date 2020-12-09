@@ -411,7 +411,7 @@ class MessageRequest(object):
                 'command': self.command,
                 'params': self.params,
                 'to': self.to,
-                'sender': external_sender,
+                'sender': external_sender or self.sender,
                 'broadcast': self.is_broadcast(),
                 'peer_infos': self.peer_infos.to_dict(),
                 'command_uuid': self.command_uuid,
@@ -425,7 +425,7 @@ class MessageRequest(object):
                 'params': self.params,
                 'startup': False,
                 'device_id': None,
-                'sender': external_sender,
+                'sender': external_sender or self.sender,
                 'peer_infos': self.peer_infos.to_dict(),
                 'command_uuid': self.command_uuid,
             }
