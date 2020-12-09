@@ -262,7 +262,7 @@ class TestMessageRequest(unittest.TestCase):
         self.assertEqual(to_dict['command'], m.command)
         self.assertEqual(to_dict['params'], m.params)
         self.assertEqual(to_dict['to'], m.to)
-        self.assertEqual(to_dict['sender'], None)
+        self.assertEqual(to_dict['sender'], 'otherdummy')
         self.assertEqual(to_dict['broadcast'], False)
 
         # external event
@@ -272,7 +272,7 @@ class TestMessageRequest(unittest.TestCase):
         self.assertEqual(to_dict['params'], m.params)
         self.assertEqual(to_dict['startup'], False)
         self.assertEqual(to_dict['device_id'], None)
-        self.assertEqual(to_dict['sender'], None)
+        self.assertEqual(to_dict['sender'], 'otherdummy')
         self.assertEqual(to_dict['peer_infos'], m.peer_infos.to_dict())
 
         m.peer_infos = None
@@ -343,7 +343,7 @@ class TestMessageRequest(unittest.TestCase):
                 'ssl': False,
                 'uuid': None
             },
-            'sender': None,
+            'sender': 'asender',
             'startup': False
         })
 
@@ -403,7 +403,7 @@ class TestMessageRequest(unittest.TestCase):
                 'ssl': False,
                 'uuid': None
             },
-            'sender': None,
+            'sender': 'asender',
             'timeout': 5.0,
         })
 
