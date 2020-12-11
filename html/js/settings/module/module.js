@@ -8,6 +8,7 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
         var self = this;
         self.modulesPath = 'js/modules/';
         self.module = '';
+        self.label = '';
         self.moduleUrls = {};
         self.version = '';
         self.error = false;
@@ -141,11 +142,10 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
                     var component = $compile(template)($scope);
                     $element.append(component);
 
-                    // save module urls
+                    // save usefull infos
                     self.moduleUrls = cleepService.modules[module].urls;
-
-                    // save module version
                     self.version = cleepService.modules[module].version;
+                    self.label = cleepService.modules[module].label;
 
                 }, function(err) {
                     self.error = true;

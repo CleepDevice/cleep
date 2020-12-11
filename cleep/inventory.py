@@ -204,6 +204,7 @@ class Inventory(Cleep):
 
         # update metadata with module values
         self.modules[module_name].update({
+            'label': getattr(module_class_, 'MODULE_LABEL', module_name.capitalize()),
             'description': module_class_.MODULE_DESCRIPTION,
             'author': getattr(module_class_, 'MODULE_AUTHOR', ''),
             'core': module_name in CORE_MODULES,
