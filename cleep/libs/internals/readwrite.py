@@ -203,27 +203,27 @@ class ReadWrite():
             return False
 
         #execute command
-        res = self.console.command(u'/bin/mount -o remount,ro %s' % partition, timeout=10.0)
+        res = self.console.command('/bin/mount -o remount,ro %s' % partition, timeout=10.0)
 
         #check errors
-        if res[u'error'] or res[u'killed']:
-            self.logger.error(u'Error when turning off writing mode: %s' % res)
+        if res['error'] or res['killed']:
+            self.logger.error('Error when turning off writing mode: %s' % res)
 
             #dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error(u'%s' % u''.join(lines))
+            self.logger.error('%s' % u''.join(lines))
 
             #dump opened files to log
-            self.logger.error(u'Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
+            self.logger.error('Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
 
-            #and send crash report
-            if self.crash_report:
-                self.crash_report.manual_report(u'Error when turning off writing mode', {
-                    u'result': res,
-                    u'partition': partition,
-                    u'traceback': lines,
-                    u'context': context.to_dict(),
-                    u'files': self.__get_opened_files_for_writing(),
+            # do not crash report if filesystem is busy
+            if self.crash_report and (res['stderr'][0] if len(res['stderr']) == 1 else '').find('busy') >= 0:
+                self.crash_report.manual_report('Error when turning off writing mode', {
+                    'result': res,
+                    'partition': partition,
+                    'traceback': lines,
+                    'context': context.to_dict(),
+                    'files': self.__get_opened_files_for_writing(),
                 })
             
         #refresh status
