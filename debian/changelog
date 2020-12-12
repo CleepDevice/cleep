@@ -2,15 +2,16 @@ cleep (0.0.21) unreleased; urgency=low
 
   * Rename RaspIot to Cleep everywhere in the project
   * Clean core content (remove useless files, move some libs to module...)
-  * Add unittests for major core files (92% core coverage)
+  * Add unittests for major core files (97% core coverage)
   * Fix some minor and major issues
   * Rewrite some libs
   * Migrate to python3 (python 3.5)
   * Update python dependencies
   * Update installer to execute all scripts during .deb install
   * Update frontend libraries
+  * Improve external bus
 
- -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 3 may 2020 23:00:00 +0000
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 11 dec 2020 12:30:00 +0000
 
 cleep (0.0.20) unreleased; urgency=low
 
