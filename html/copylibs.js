@@ -21,7 +21,7 @@ var files = {
     'node_modules/angular-material/angular-material.min.js': 'js/libs/angular-material.min.js',
     'node_modules/angular-material/angular-material.min.css': 'css/angular-material.min.css',
     // konami
-    'node_modules/angular-konami/angular-konami.min.js': 'js/libs/angular-konami.min.js',
+    // FIXED BY TANG 'node_modules/angular-konami/angular-konami.min.js': 'js/libs/angular-konami.min.js',
     // daterangepicker
     'node_modules/angular-daterangepicker/js/angular-daterangepicker.min.js': 'js/libs/angular-daterangepicker.min.js',
     // blockui
