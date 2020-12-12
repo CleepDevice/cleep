@@ -398,16 +398,17 @@ class CleepFilesystem():
         Returns:
             list: file lines or None if errors
         """
+        fp = None
         try:
-            fp = self.open(path, u'r', encoding)
+            fp = self.open(path, 'r', encoding)
             return fp.readlines()
 
         except:
-            self.logger.exception(u'Unable to get content of file "%s":' % path)
+            self.logger.exception('Unable to get content of file "%s":' % path)
             self.__report_exception({
-                u'message': u'Unable to get content of file "%s"' % path,
-                u'encoding': encoding or self.get_default_encoding(),
-                u'path': path
+                'message': 'Unable to get content of file "%s"' % path,
+                'encoding': encoding or self.get_default_encoding(),
+                'path': path
             })
             return None
 
