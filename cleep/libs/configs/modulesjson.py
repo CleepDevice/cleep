@@ -13,7 +13,7 @@ class ModulesJson():
     """
 
     CONF = u'/etc/cleep/modules.json'
-    REMOTE_URL = u'https://raw.githubusercontent.com/tangb/cleep/master/modules.json'
+    REMOTE_URL =  'https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json'
 
     def __init__(self, cleep_filesystem):
         """
