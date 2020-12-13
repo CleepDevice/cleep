@@ -276,7 +276,12 @@ def send_command(command, to, params, timeout=None):
     request.sender = 'rpcserver'
     request.params = params
 
-    return bus.push(request, timeout)
+    if timeout is not None:
+        # use specified timeout
+        return bus.push(request, timeout)
+    else:
+        # use default timeout
+        return bus.push(request)
 
 def get_events():
     """
