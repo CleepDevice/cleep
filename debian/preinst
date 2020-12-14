@@ -21,7 +21,7 @@ case "$1" in
         echo "Installing pip..."
         wget --no-check-certificate "https://bootstrap.pypa.io/get-pip.py" -O /tmp/get-pip.py
         checkResult $? 0
-        python3 /tmp/get-pip.py --trusted-host pypi.python.org
+        `which python3` /tmp/get-pip.py --trusted-host pypi.python.org
         checkResult $? 0
         rm -f /tmp/get-pip.py
         echo "Done"
@@ -29,7 +29,7 @@ case "$1" in
 
         # install python dependencies
         echo "Installing python dependencies..."
-        pip3 install --no-cache-dir --trusted-host pypi.python.org "future==0.18.2" "six==1.14.0" "gevent==1.4.0" "bottle==0.12.18" "pyre-gevent==0.2.3" "netifaces==0.10.9" "uptime==3.0.1" "urllib3==1.25.9" "psutil==5.7.0" "passlib==1.7.2" "simplejson==3.17.0" "pytz==2020.1" "reverse-geocode==1.4" "timezonefinder==4.2.0" "tzlocal==2.0.0" "sentry-sdk==0.14.3"
+        `which pip3` install --no-cache-dir --trusted-host pypi.python.org "future==0.18.2" "six==1.14.0" "gevent==1.4.0" "bottle==0.12.18" "pyre-gevent==0.2.3" "netifaces==0.10.9" "uptime==3.0.1" "urllib3==1.25.9" "psutil==5.7.0" "passlib==1.7.2" "simplejson==3.17.0" "pytz==2020.1" "reverse-geocode==1.4" "timezonefinder==4.2.0" "tzlocal==2.0.0" "sentry-sdk==0.14.3"
         checkResult $? 0
         echo "Done"
         echo ""
