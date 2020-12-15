@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3.5
 # -*- coding: utf-8 -*-
 
 import os
@@ -186,7 +186,7 @@ if __name__ == u'__main__':
         trace_enabled = False
         readonly_enabled = True
         debug_modules = []
-        debug_system = False
+        debug_core = False
         log_stdout = False
         argv = sys.argv[1:]
         opts, args = getopt.getopt(argv, u'hsd:DtN', [u'help', u'stdout', u'debug=', u'debugcore', u'trace', u'noro'])
@@ -199,7 +199,7 @@ if __name__ == u'__main__':
             elif opt in (u'-d', u'--debug'):
                 debug_modules = arg.split(u',')
             elif opt in (u'-D', u'--debugcore'):
-                debug_system = True
+                debug_core = True
             elif opt in (u'-t', u'--trace'):
                 trace_enabled = True
             elif opt in (u'-N', u'--noro'):
@@ -232,11 +232,11 @@ if __name__ == u'__main__':
         #set debug level after config reading
         if config[u'debug'][u'trace_enabled']:
             trace_enabled = True
-        if config[u'debug'][u'debug_system']:
-            debug_system = True
+        if config[u'debug'][u'debug_core']:
+            debug_core = True
         if config[u'debug'][u'debug_modules'] and isinstance(config[u'debug'][u'debug_modules'], list):
             debug_modules = list(set(config[u'debug'][u'debug_modules'])|set(debug_modules))
-        if debug_system:
+        if debug_core:
             #enable debug on cleep bin if debug system is enabled
             logger.setLevel(logging.DEBUG)
 
@@ -248,7 +248,7 @@ if __name__ == u'__main__':
         elif u'developer' in config[u'general'][u'modules']:
             #disable crash report if developer module installed
             disable_crash_report = True
-        crash_report = load_crash_report(trace_enabled or debug_system, disable_crash_report)
+        crash_report = load_crash_report(trace_enabled or debug_core, disable_crash_report)
         if not crash_report.is_enabled():
             logger.info(u'Crash report disabled')
         cleep_filesystem.set_crash_report(crash_report)
@@ -263,7 +263,7 @@ if __name__ == u'__main__':
 
         #create system instances (factories, critical resources handler...)
         debug = False
-        if trace_enabled or debug_system:
+        if trace_enabled or debug_core:
             debug = True
         events_broker = EventsBroker(debug)
         formatters_broker = ProfileFormattersBroker(debug)

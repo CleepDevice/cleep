@@ -429,7 +429,7 @@ class CleepFilesystem():
         """
         lines = self.read_data(path, encoding)
         try:
-            lines = json.loads(u'\n'.join(lines), encoding)
+            lines = json.loads(u'\n'.join(lines), encoding=encoding)
 
         except:
             self.logger.exception(u'Unable to parse file "%s" content as json:' % (path))

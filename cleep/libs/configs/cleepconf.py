@@ -18,19 +18,19 @@ class CleepConf():
 
     DEFAULT_CONFIG = {
         u'general': {
-            u'modules': [],
-            u'updated': []
+            'modules': [],
+            'updated': []
         },
         u'rpc': {
-            u'rpc_host': u'0.0.0.0',
-            u'rpc_port': 80,
-            u'rpc_cert': u'',
-            u'rpc_key': u''
+            'rpc_host': u'0.0.0.0',
+            'rpc_port': 80,
+            'rpc_cert': u'',
+            'rpc_key': u''
         },
         u'debug': {
-            u'trace_enabled': False,
-            u'debug_core': False,
-            u'debug_modules': []
+            'trace_enabled': False,
+            'debug_core': False,
+            'debug_modules': []
         }
     }
 
