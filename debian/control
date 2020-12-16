@@ -5,10 +5,10 @@ Maintainer: Tanguy Bonneau <tanguy.bonneau@gmail.com>
 Build-Depends: debhelper (>=10~), dh-python, python3-all
 Standards-Version: 4.1.4
 Homepage: https://github.com/tangb/cleep
-X-Python3-Version: 3.5
+X-Python3-Version: 3.7
 
 Package: cleep
 Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3.5-dev, libffi-dev, libssl-dev, python3-scipy, python3-numpy
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3.7-dev, libffi-dev, libssl-dev, python3-scipy, python3-numpy
 Description: Build your own IoT device with a raspberry pi
 

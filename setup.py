@@ -26,6 +26,6 @@ setup(
         "License :: Free For Home Use",
         "Operating System :: POSIX :: Linux"
     ],
-    python_requires='>=3.5',
+    python_requires='~=3.7',
 )
 
