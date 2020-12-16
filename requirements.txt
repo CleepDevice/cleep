@@ -1,22 +1,20 @@
 # this file is maintained only for python usage
 # please also update scripts/preinst.sh script to install dependencies during Cleep installation
-future==0.17.1
-six==1.12.0
 gevent==1.4.0
 greenlet==0.4.15 # force compatible greenlet. To remove after gevent update
-bottle==0.12.16
+bottle==0.12.18
 pyre-gevent==0.2.3
 netifaces==0.10.9
 uptime==3.0.1
-urllib3==1.24.2
-psutil==5.6.1
-passlib==1.7.1
-simplejson==3.16.0
-sentry-sdk==0.12.3
-pytz==2019.1
-reverse-geocode==1.3
-timezonefinder==3.4.2
-tzlocal==1.5.1
+urllib3==1.25.9
+psutil==5.7.0
+passlib==1.7.2
+simplejson==3.17.0
+sentry-sdk==0.14.3
+pytz==2020.1
+reverse-geocode==1.4
+timezonefinder==4.2.0
+tzlocal==2.0.0
 mock==3.0.5
 python-dateutil==2.8.1
 
