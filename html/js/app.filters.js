@@ -171,3 +171,13 @@ Cleep.filter('orderObjByKey', function() {
     };
 });
 
+/**
+ * Add leading zero
+ *
+ */
+Cleep.filter('padzero', function($filter) {
+    return function(value, length, max) {
+        return ('0'.repeat(max || 2)+value).slice(-length || 2);
+    };
+});
+
