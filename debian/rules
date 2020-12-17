@@ -6,6 +6,9 @@ export PYBUILD_NAME=cleep
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
+execute_after_dh_fixperms:
+	chmod 644 debian/cleep/lib/systemd/system/cleep.service
+
 clean:
 	-rm -rf debian/cleep
 	-rm -f debian/debhelper-build-stamp
