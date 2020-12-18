@@ -123,6 +123,21 @@ class AudioDriver(Driver):
         """
         return self.alsa.get_device_infos(self.get_card_name())
 
+    def get_control_numid(self, control_name):
+        """
+        Return numid for specified control name. Control name has not to be exact but contains the specified string
+        to match result.
+
+        Args:
+            control_name (string): control name to search for
+
+        Returns:
+            int: control numid or None if control not found
+        """
+        found_controls = [control['numid'] for control in self.alsa.get_controls() if control['name'].lower().find(control_name)]
+
+        return found_controls[0] if len(found_controls) > 0 else None
+
     def get_card_capabilities(self): # pragma: no cover
         """
         Return card capabilities

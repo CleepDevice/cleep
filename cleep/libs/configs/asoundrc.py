@@ -7,12 +7,14 @@ import re
 
 class Asoundrc(Config):
     """
-    DEPRECATED: use EtcAsoundConf instead
     Handles .asoundrc file from connected account
 
     It handles:
      - default playback device configuration
      - default capture device configuration
+    
+    Deprecated:
+        This library is deprecated and will be removed. Please use EtcAsoundConf instead.
     """
 
     CONF = u'~/.asoundrc'

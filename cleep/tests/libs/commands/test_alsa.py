@@ -11,28 +11,99 @@ from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pformat
+from mock import patch, Mock
 
+class TestsAlsa(unittest.TestCase):
 
-class AlsaTests(unittest.TestCase):
-
-    PLAYBACK_PATTERN = (u'Mono', r'\[(\d*)%\]') #code from bcm2835 driver in audio app
+    PLAYBACK_PATTERN = ('Mono', r'\[(\d*)%\]') #code from bcm2835 driver in audio app
     WAV_TEST = '/root/cleep/medias/sounds/connected.wav'
+
+    SAMPLE_PLAYBACK_DEVICES = """**** List of PLAYBACK Hardware Devices ****
+card 0: ALSA [bcm2835 ALSA], device 0: bcm2835 ALSA [bcm2835 ALSA]
+  Subdevices: 7/7
+  Subdevice #0: subdevice #0
+  Subdevice #1: subdevice #1
+  Subdevice #2: subdevice #2
+  Subdevice #3: subdevice #3
+  Subdevice #4: subdevice #4
+  Subdevice #5: subdevice #5
+  Subdevice #6: subdevice #6
+card 0: ALSA [bcm2835 ALSA], device 1: bcm2835 IEC958/HDMI [bcm2835 IEC958/HDMI]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 0: ALSA [bcm2835 ALSA], device 2: bcm2835 IEC958/HDMI1 [bcm2835 IEC958/HDMI1]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0"""
+    SAMPLE_RECORD_DEVICES = """**** List of CAPTURE Hardware Devices ****
+card 0: IXP [ATI IXP], device 0: ATI IXP AC97 [ATI IXP AC97]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0"""
+    SAMPLE_GET_VOLUME = """Simple mixer control 'PCM',0
+  Capabilities: pvolume pvolume-joined pswitch pswitch-joined
+  Playback channels: Mono
+  Limits: Playback -10239 - 400
+  Mono: Playback -2046 [77%] [-20.46dB] [on]"""
+    SAMPLE_SET_VOLUME = """Simple mixer control 'PCM',0
+  Capabilities: pvolume pvolume-joined pswitch pswitch-joined
+  Playback channels: Mono
+  Limits: Playback -10239 - 400
+  Mono: Playback -7579 [25%] [-75.79dB] [on]"""
+    SAMPLE_GET_CONTROL = """numid=3,iface=MIXER,name='PCM Playback Route'
+    ; type=INTEGER,access=rw------,values=1,min=0,max=3,step=0
+    : values=0"""
+    SAMPLE_GET_INFOS = """Card default 'ALSA'/'bcm2835 ALSA'"""
+    SAMPLE_SCONTROLS = """Simple mixer control 'PCM',0"""
+    SAMPLE_CONTROLS = """numid=3,iface=MIXER,name='PCM Playback Route'
+numid=2,iface=MIXER,name='PCM Playback Switch'
+numid=1,iface=MIXER,name='PCM Playback Volume'
+numid=5,iface=PCM,name='IEC958 Playback Con Mask'
+numid=4,iface=PCM,name='IEC958 Playback Default'"""
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.fs = CleepFilesystem()
         self.a = Alsa(self.fs)
 
     def tearDown(self):
         pass
 
+    def make_command_result(self, return_code=0, error=False, killed=False, stdout='', stderr=''):
+        return {
+            'returncode': return_code,
+            'error': error,
+            'killed': killed,
+            'stdout': stdout.split('\n'),
+            'stderr': stderr.split('\n'),
+        }
+
+    def test_get_simple_controls(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_SCONTROLS))
+        controls = self.a.get_simple_controls()
+        logging.debug('controls: %s' % controls)
+
+        self.assertListEqual(controls, ['PCM'])
+
+    def test_get_controls(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_CONTROLS))
+        controls = self.a.get_controls()
+        logging.debug('controls: %s'% controls)
+
+        self.assertCountEqual(controls, [
+            {'numid': 1, 'iface': 'MIXER', 'name': 'PCM Playback Volume'},
+            {'numid': 2, 'iface': 'MIXER', 'name': 'PCM Playback Switch'},
+            {'numid': 3, 'iface': 'MIXER', 'name': 'PCM Playback Route'},
+            {'numid': 4, 'iface': 'PCM', 'name': 'IEC958 Playback Default'},
+            {'numid': 5, 'iface': 'PCM', 'name': 'IEC958 Playback Con Mask'},
+        ])
+
     def test_get_playback_devices(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
         devs = self.a.get_playback_devices()
         logging.debug(devs)
         self.assertNotEqual(0, len(devs.keys()))
-        raspi_jack = u'bcm2835 ALSA'
-        raspi_hdmi = u'bcm2835 IEC958/HDMI'
+        raspi_jack = 'bcm2835 ALSA'
+        raspi_hdmi = 'bcm2835 IEC958/HDMI'
 
         #get default sound card
         raspi_devices = None
@@ -50,12 +121,15 @@ class AlsaTests(unittest.TestCase):
         self.assertTrue(raspi_devices[1]['deviceid']==1, 'Audio HDMI deviceid invalid')
 
     def test_get_capture_devices(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_RECORD_DEVICES))
         devs = self.a.get_capture_devices()
         logging.debug(pformat(devs))
-        #record feature may not be available
-        #self.assertEqual(0, len(devs))
+
+        self.assertEqual(1, len(devs))
+        self.assertEqual(devs[0]['devices'][0]['name'], 'ATI IXP AC97')
 
     def test_get_volume(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_GET_VOLUME))
         volume = self.a.get_volume('PCM', self.PLAYBACK_PATTERN)
         logging.debug('Volume: %s' % volume)
         self.assertTrue(isinstance(volume, int))
@@ -79,11 +153,9 @@ class AlsaTests(unittest.TestCase):
         self.assertIsNone(volume, 'Volume should be None')
 
     def test_set_volume(self):
-        old_volume = self.a.get_volume('PCM', self.PLAYBACK_PATTERN)
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_SET_VOLUME))
         volume = self.a.set_volume('PCM', self.PLAYBACK_PATTERN, 25)
         self.assertEqual(25, volume)
-        #restore old volume
-        self.a.set_volume('PCM', self.PLAYBACK_PATTERN, old_volume)
 
     def test_set_volume_invalid_parameters(self):
         with self.assertRaises(MissingParameter) as cm:
@@ -113,6 +185,10 @@ class AlsaTests(unittest.TestCase):
         self.assertIsNone(volume, 'Volume should be None')
 
     def test_get_selected_device(self):
+        self.a.command = Mock(side_effect=[
+            self.make_command_result(stdout=self.SAMPLE_GET_INFOS),
+            self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES),
+        ])
         device = self.a.get_selected_device()
         logging.debug(device)
         self.assertTrue('name' in device)
@@ -120,6 +196,7 @@ class AlsaTests(unittest.TestCase):
         self.assertGreaterEqual(len(device['devices']), 2)
 
     def test_get_device_infos(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
         device = self.a.get_device_infos('bcm2835 ALSA')
         logging.debug(device)
         self.assertTrue('name' in device)
@@ -133,7 +210,8 @@ class AlsaTests(unittest.TestCase):
         self.assertIsNone(device, 'Function should return None')
 
     def test_amixer_control_get(self):
-        #numid 3: PCM playback route
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_GET_CONTROL))
+        # numid 3: xxx playback route
         value = self.a.amixer_control(Alsa.CGET, 3)
         logging.debug('value=%s' % value)
         self.assertTrue('iface' in value)
@@ -175,7 +253,7 @@ class AlsaTests(unittest.TestCase):
         self.assertEqual(cm.exception.message, 'Parameter "path" is missing')
         with self.assertRaises(InvalidParameter) as cm:
             self.a.play_sound('invalid/path/to/waw/file')
-        self.assertTrue(cm.exception.message.startswith(u'Sound file doesn\'t exist'))
+        self.assertTrue(cm.exception.message.startswith('Sound file doesn\'t exist'))
     
     def test_record_sound(self):
         record_path = None
@@ -231,5 +309,5 @@ class AlsaTests(unittest.TestCase):
         self.assertTrue(self.a.save(), 'Configuration not saved')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_alsa.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_alsa.py; coverage report -m -i
     unittest.main()
