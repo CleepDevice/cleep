@@ -188,6 +188,22 @@ GD      Grenada"""
             self.w.set_country('france')
         self.assertEqual(str(cm.exception), 'Invalid country code "france" specified')
 
+    def test_set_country_alpha2(self):
+        self.fs.read_data.return_value = self.COUNTRY_SAMPLE.split('\n')
+        self.w.add_lines = Mock(return_value=True)
+        self.w.replace_line = Mock(return_value=False)
+
+        self.w.set_country_alpha2('FR')
+        
+        self.w.add_lines.assert_called_with(['country=FR\n'], end=False)
+        self.w.replace_line.assert_called()
+
+    def test_set_country_alpha2_invalid_alpha2(self):
+        self.fs.read_data.return_value = []
+        with self.assertRaises(Exception) as cm:
+            self.w.set_country_alpha2('MO')
+        self.assertEqual(str(cm.exception), 'Invalid country code "MO" specified')
+
     def test_encrypt_password(self):
         self.assertEqual(self.w.encrypt_password('mynetwork', 'mypassword'), '69e49214ef4e7e23d0ece077c2faf3c73f7522ad52a26b33527fa78d9033ff35')
 

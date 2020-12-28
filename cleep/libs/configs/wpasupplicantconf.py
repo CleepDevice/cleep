@@ -164,15 +164,40 @@ class WpaSupplicantConf(Config):
         country_code = self.__country_codes[country_lower]
         self.logger.debug('Found country code "%s" for country "%s"' % (country_code, country))
 
+        self.set_country_alpha2(country_code)
+
+    def set_country_alpha2(self, alpha2):
+        """
+        Configure country in all wpa_supplicant conf files.
+
+        Note:
+            This is the preferred method compare to set_country function because alpha2 codes are normalized by
+            iso3166-1 while country label not. Using set_country could raises an exception if your specified
+            country does not exactly match the correct value.
+
+        Args:
+            alpha2 (string): country alpha2 code
+
+        Raises:
+            Exception if country code is invalid
+        """
+        # load country codes
+        if self.__country_codes is None:
+            self.__load_country_codes()
+
+        # check alpha2 existence
+        if alpha2 not in self.__country_codes.values():
+            raise Exception('Invalid country code "%s" specified' % alpha2)
+        
         # update wpa_supplicant files
         config_files = self.__get_configuration_files()
         # workaround to handle different configuration files in the same Config instance
         for interface in config_files:
             self.CONF = config_files[interface]
-            if self.replace_line('^\s*country\s*=.*$', 'country=%s' % country_code):
-                self.logger.info('Country code "%s" updated in "%s" file' % (country_code, self.CONF))
-            elif self.add_lines(['country=%s\n' % country_code], end=False):
-                self.logger.info('Country code "%s" added in "%s" file' % (country_code, self.CONF))
+            if self.replace_line('^\s*country\s*=.*$', 'country=%s' % alpha2):
+                self.logger.info('Country code "%s" updated in "%s" file' % (alpha2, self.CONF))
+            elif self.add_lines(['country=%s\n' % alpha2], end=False):
+                self.logger.info('Country code "%s" added in "%s" file' % (alpha2, self.CONF))
             else: # pragma: no cover
                 self.logger.warning('Unable to set country code in wpasupplicant file "%s"' % self.CONF)
         self.__restore_conf()
