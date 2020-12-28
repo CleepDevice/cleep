@@ -153,6 +153,11 @@ GD      Grenada"""
         self.assertFalse(self.w.has_country('wlan3'))
 
     def test_set_country_replace_line(self):
+        self.w._WpaSupplicantConf__get_configuration_files = Mock(return_value={
+            'wlan0': 'wpa_supplicant-wlan0.conf',
+            'wlan1': 'wpa_supplicant-wlan1.conf',
+            'default': 'wpa_supplicant.conf',
+        })
         self.fs.read_data.return_value = self.COUNTRY_SAMPLE.split('\n')
         self.w.add_line = Mock(return_value=True)
         self.w.replace_line = Mock(return_value=True)
@@ -160,9 +165,15 @@ GD      Grenada"""
         self.w.set_country('france')
         
         self.w.replace_line.assert_called_with('^\s*country\s*=.*$', 'country=FR')
+        self.assertEqual(self.w.replace_line.call_count, 3)
         self.assertFalse(self.w.add_line.called)
 
     def test_set_country_add_line(self):
+        self.w._WpaSupplicantConf__get_configuration_files = Mock(return_value={
+            'wlan0': 'wpa_supplicant-wlan0.conf',
+            'wlan1': 'wpa_supplicant-wlan1.conf',
+            'default': 'wpa_supplicant.conf',
+        })
         self.fs.read_data.return_value = self.COUNTRY_SAMPLE.split('\n')
         self.w.add_lines = Mock(return_value=True)
         self.w.replace_line = Mock(return_value=False)
