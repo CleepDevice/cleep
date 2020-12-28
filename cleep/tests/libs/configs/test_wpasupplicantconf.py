@@ -134,6 +134,8 @@ GD      Grenada"""
 
         self.assertTrue(self.w.has_country('wlan0'))
 
+        self.fs.read_data.assert_called_with('/etc/wpa_supplicant/wpa_supplicant-wlan0.conf')
+
     @patch('wpasupplicantconf.os.listdir')
     @patch('wpasupplicantconf.os.path.isfile')
     def test_has_country_without_country(self, mock_ospathisfile, mock_oslistdir):
@@ -151,6 +153,17 @@ GD      Grenada"""
         self.fs.read_data.return_value = self.CONTENT_WITH_COUNTRY
 
         self.assertFalse(self.w.has_country('wlan3'))
+
+    @patch('wpasupplicantconf.os.listdir')
+    @patch('wpasupplicantconf.os.path.isfile')
+    def test_has_country_no_interface_specified(self, mock_ospathisfile, mock_oslistdir):
+        mock_ospathisfile.return_value = True
+        mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
+        self.fs.read_data.return_value = self.CONTENT_WITH_COUNTRY
+
+        self.assertTrue(self.w.has_country())
+
+        self.fs.read_data.assert_called_with('/etc/wpa_supplicant/wpa_supplicant.conf')
 
     def test_set_country_replace_line(self):
         self.w._WpaSupplicantConf__get_configuration_files = Mock(return_value={

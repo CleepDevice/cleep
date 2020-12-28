@@ -96,13 +96,13 @@ class WpaSupplicantConf(Config):
 
         self.logger.trace('Found country codes: %s' % self.__country_codes)
 
-    def save_default_config(self, interface):
+    def save_default_config(self, interface=None):
         """
         Save default wpa_supplicant_<interface>.conf for specified interface. If no interface specified, default file
         wpa_supplicant.conf will be generated.
 
         Args:
-            interface (string): interface name
+            interface (string): interface name. If not specified use default wpa_supplicant.conf file.
 
         Returns:
             bool: True if config file written successfully
@@ -113,9 +113,12 @@ class WpaSupplicantConf(Config):
 
         return self.cleep_filesystem.write_data(path, WpaSupplicantConf.DEFAULT_CONTENT)
 
-    def has_config(self, interface):
+    def has_config(self, interface=None):
         """
-        Check if specified interface has config. If no interface is specified check if generic file exists
+        Check if specified interface has config
+
+        Args:
+            interface (string): interface name. If not specified check default wpa_supplicant.conf file.
 
         Returns:
             bool: True if wpa supplicant config file exists
@@ -125,17 +128,19 @@ class WpaSupplicantConf(Config):
 
         return os.path.exists(path)
 
-    def has_country(self, interface):
+    def has_country(self, interface=None):
         """
         Return True if wpa_supplication conf file contains country info
 
         Args:
-            interface (string): interface name
+            interface (string): interface name. If not specified check default wpa_supplicant.conf file.
 
         Returns:
             bool: True if country is configured
         """
         configs = self.__get_configuration_files()
+        if interface is None:
+            interface = 'default'
         if interface not in configs:
             return False
 
