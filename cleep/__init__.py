@@ -1,3 +1,3 @@
 __all__ = ['core', 'bus', 'rpcserver', 'inventory', 'common', 'exception']
-__version__ = "0.0.21"
+__version__ = "0.0.22"
 

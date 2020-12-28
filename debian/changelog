@@ -1,3 +1,10 @@
+cleep (0.0.22) unreleased; urgency=low
+
+  * Fix libs for python3.7 or new Raspberry Pi Os
+  * Add rfkill command lib
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 11 dec 2020 12:30:00 +0000
+
 cleep (0.0.21) unreleased; urgency=low
 
   * Rename RaspIot to Cleep everywhere in the project
