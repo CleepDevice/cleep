@@ -3,6 +3,7 @@
     
 import logging
 import json
+import os
 from cleep.libs.internals.console import Console
 
 class Rfkill(Console):
@@ -26,10 +27,20 @@ class Rfkill(Console):
         Console.__init__(self)
 
         # members
-        self._list_command = '/usr/sbin/rfkill --json --output DEVICE,ID,TYPE,TYPE-DESC,SOFT,HARD list all'
-        self._block_command = '/usr/sbin/rfkill %(command)s %(ident)s'
+        self._command = '/usr/sbin/rfkill'
+        self._list_command = self._command + ' --json --output DEVICE,ID,TYPE,TYPE-DESC,SOFT,HARD list all'
+        self._block_command = self._command + ' %(command)s %(ident)s'
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
+    
+    def is_installed(self):
+        """
+        Check if rfkill is installed or not in the system
+
+        Returns:
+            bool: True if rfkill command exists, False otherwise
+        """
+        return os.path.exists(self._command)
 
     def __refresh(self):
         """

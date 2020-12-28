@@ -8,7 +8,7 @@ from rfkill import Rfkill
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 OUTPUT_GENERIC = """{
    "": [
@@ -45,6 +45,18 @@ class TestsRfkill(unittest.TestCase):
             'stderr': [],
             'stdout': stdout,
         }
+
+    @patch('rfkill.os.path.exists')
+    def test_is_installed(self, mock_exists):
+        mock_exists.return_value = True
+
+        self.assertTrue(self.r.is_installed())
+
+    @patch('rfkill.os.path.exists')
+    def test_is_installed(self, mock_exists):
+        mock_exists.return_value = False
+
+        self.assertFalse(self.r.is_installed())
 
     def test_get_wifi_infos(self):
         self.r.command = Mock(return_value=self.make_command_resp(stdout=OUTPUT_GENERIC.split('\n')))
