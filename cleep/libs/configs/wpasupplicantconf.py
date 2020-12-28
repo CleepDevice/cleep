@@ -13,21 +13,23 @@ import time
 class WpaSupplicantConf(Config):
     """
     Helper class to update and read /etc/wpa_supplicant/wpa_supplicant.conf file
-    This class is not thread safe due to self.CONF that can modified on the fly
+
+    Warning:
+        This class is not thread safe due to self.CONF that can be modified on the fly
 
     Notes:
         https://w1.fi/cgit/hostap/plain/wpa_supplicant/wpa_supplicant.conf
     """
 
-    DEFAULT_CONF = u'/etc/wpa_supplicant/wpa_supplicant.conf'
+    DEFAULT_CONF = '/etc/wpa_supplicant/wpa_supplicant.conf'
     CONF = DEFAULT_CONF
-    WPASUPPLICANT_DIR = u'/etc/wpa_supplicant'
+    WPASUPPLICANT_DIR = '/etc/wpa_supplicant'
 
-    ENCRYPTION_TYPE_WPA = u'wpa'
-    ENCRYPTION_TYPE_WPA2 = u'wpa2'
-    ENCRYPTION_TYPE_WEP = u'wep'
-    ENCRYPTION_TYPE_UNSECURED = u'unsecured'
-    ENCRYPTION_TYPE_UNKNOWN = u'unknown'
+    ENCRYPTION_TYPE_WPA = 'wpa'
+    ENCRYPTION_TYPE_WPA2 = 'wpa2'
+    ENCRYPTION_TYPE_WEP = 'wep'
+    ENCRYPTION_TYPE_UNSECURED = 'unsecured'
+    ENCRYPTION_TYPE_UNKNOWN = 'unknown'
     ENCRYPTION_TYPES = [
         ENCRYPTION_TYPE_WPA,
         ENCRYPTION_TYPE_WPA2,
@@ -36,7 +38,9 @@ class WpaSupplicantConf(Config):
         ENCRYPTION_TYPE_UNKNOWN
     ]
 
-    COUNTRIES_ISO3166 = u'/usr/share/zoneinfo/iso3166.tab'
+    COUNTRIES_ISO3166 = '/usr/share/zoneinfo/iso3166.tab'
+
+    DEFAULT_CONTENT = 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\n'
 
     def __init__(self, cleep_filesystem, backup=True):
         """
@@ -46,45 +50,97 @@ class WpaSupplicantConf(Config):
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             backup (bool): backup file
         """
-        #config file may vary that's why None is specified as config filepath in constructor
+        # config file may vary that's why None is specified as config filepath in constructor
         Config.__init__(self, cleep_filesystem, None, None, backup)
 
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.cleep_filesystem = cleep_filesystem
         self.__groups = {}
         self.__country_codes = None
+
+    def __restore_conf(self):
+        """
+        Restore conf to default file
+        """
+        self.CONF = WpaSupplicantConf.DEFAULT_CONF
 
     def __load_country_codes(self):
         """
         Load country codes based on local files
         """
-        self.logger.trace(u'Opening countries file "%s"' % self.COUNTRIES_ISO3166)
+        self.logger.trace('Opening countries file "%s"' % self.COUNTRIES_ISO3166)
         if os.path.exists(self.COUNTRIES_ISO3166):
             lines = self.cleep_filesystem.read_data(self.COUNTRIES_ISO3166)
             self.logger.trace('COUNTRIES_ISO3166 contains %s lines' % len(lines))
 
             if not lines:
-                self.logger.error(u'Unable to get countries, countries file "%s" is empty')
+                self.logger.error('Unable to get countries, countries file "%s" is empty')
                 self.__country_codes = {}
                 return
 
             self.__country_codes = {}
             for line in lines:
-                if line.startswith(u'#'):
+                if line.startswith('#'):
                     continue
                 (code, country) = line.split(None, 1)
                 self.__country_codes[country.strip().lower()] = code
 
         else:
-            #no iso3166 file, set to empty dict
+            # no iso3166 file, set to empty dict
             self.logger.warning('Unable to get countries, countries file "%s" was not found' % self.COUNTRIES_ISO3166)
             self.__country_codes = {}
 
-        self.logger.trace(u'Found country codes: %s' % self.__country_codes)
+        self.logger.trace('Found country codes: %s' % self.__country_codes)
+
+    def save_default_config(self, interface):
+        """
+        Save default wpa_supplicant_<interface>.conf for specified interface. If no interface specified, default file
+        wpa_supplicant.conf will be generated.
+
+        Args:
+            interface (string): interface name
+
+        Returns:
+            bool: True if config file written successfully
+        """
+        interface_prefix = '-%s' % interface if interface else ''
+        path = os.path.join(WpaSupplicantConf.WPASUPPLICANT_DIR, 'wpa_supplicant%s.conf' % interface_prefix)
+        self.logger.info('Create default wpa_supplicant config "%s" for interface "%s"' % (path, interface))
+
+        return self.cleep_filesystem.write_data(path, WpaSupplicantConf.DEFAULT_CONTENT)
+
+    def has_config(self, interface):
+        """
+        Check if specified interface has config. If no interface is specified check if generic file exists
+
+        Returns:
+            bool: True if wpa supplicant config file exists
+        """
+        interface_prefix = '-%s' % interface if interface else ''
+        path = os.path.join(WpaSupplicantConf.WPASUPPLICANT_DIR, 'wpa_supplicant%s.conf' % interface_prefix)
+
+        return os.path.exists(path)
+
+    def has_country(self, interface):
+        """
+        Return True if wpa_supplication conf file contains country info
+
+        Args:
+            interface (string): interface name
+
+        Returns:
+            bool: True if country is configured
+        """
+        configs = self.__get_configuration_files()
+        if interface not in configs:
+            return False
+
+        content = self.cleep_filesystem.read_data(configs[interface])
+        return ''.join(content).find('country') >= 0
 
     def set_country(self, country):
         """
@@ -96,31 +152,30 @@ class WpaSupplicantConf(Config):
         Raises:
             Exception if country code is invalid
         """
-        #load country codes
+        # load country codes
         if self.__country_codes is None:
             self.__load_country_codes()
 
-        #get country code
+        # get country code
         country_lower = country.lower()
         if country_lower not in self.__country_codes:
-            self.logger.error(u'Country "%s" not found in country codes' % country_lower)
+            self.logger.error('Country "%s" not found in country codes' % country_lower)
             raise Exception('Invalid country code "%s" specified' % country)
         country_code = self.__country_codes[country_lower]
-        self.logger.debug(u'Found country code "%s" for country "%s"' % (country_code, country))
+        self.logger.debug('Found country code "%s" for country "%s"' % (country_code, country))
 
-        #update wpa_supplicant files
+        # update wpa_supplicant files
         config_files = self.__get_configuration_files()
         # workaround to handle different configuration files in the same Config instance
-        old_conf = self.CONF
         for interface in config_files:
             self.CONF = config_files[interface]
-            if self.replace_line(u'^\s*country\s*=.*$', 'country=%s' % country_code):
-                self.logger.info(u'Country code "%s" updated in "%s" file' % (country_code, self.CONF))
+            if self.replace_line('^\s*country\s*=.*$', 'country=%s' % country_code):
+                self.logger.info('Country code "%s" updated in "%s" file' % (country_code, self.CONF))
             elif self.add_lines(['country=%s\n' % country_code], end=False):
-                self.logger.info(u'Country code "%s" added in "%s" file' % (country_code, self.CONF))
+                self.logger.info('Country code "%s" added in "%s" file' % (country_code, self.CONF))
             else: # pragma: no cover
-                self.logger.warning(u'Unable to set country code in wpasupplicant file "%s"' % self.CONF)
-        self.CONF = old_conf
+                self.logger.warning('Unable to set country code in wpasupplicant file "%s"' % self.CONF)
+        self.__restore_conf()
 
     def encrypt_password(self, network, password):
         """
@@ -137,11 +192,11 @@ class WpaSupplicantConf(Config):
 
         for line in lines:
             line = line.strip()
-            if line.startswith(u'psk='):
-                return line.replace(u'psk=', '')
+            if line.startswith('psk='):
+                return line.replace('psk=', '')
 
-        self.logger.error(u'No password generated by wpa_passphrase: %s' % lines)
-        raise Exception(u'No password generated by wpa_passphrase command')
+        self.logger.error('No password generated by wpa_passphrase: %s' % lines)
+        raise Exception('No password generated by wpa_passphrase command')
 
     def wpa_passphrase(self, network, password):
         """
@@ -154,22 +209,22 @@ class WpaSupplicantConf(Config):
         Returns:
             list: wpa_passphrase output without password in clear
         """
-        if network is None or len(network)==0:
-            raise MissingParameter(u'Parameter network is missing')
-        if password is None or len(password)==0:
-            raise MissingParameter(u'Parameter password is missing')
+        if network is None or len(network) == 0:
+            raise MissingParameter('Parameter "network" is missing')
+        if password is None or len(password) == 0:
+            raise MissingParameter('Parameter "password" is missing')
         if len(password)<8 or len(password)>63:
-            raise InvalidParameter(u'Parameter password must be 8..63 string length')
+            raise InvalidParameter('Parameter "password" must be 8..63 string length')
 
         c = Console()
-        res = c.command(u'/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
-        if res[u'error'] or res[u'killed']:
-            self.logger.error(u'Error with wpa_passphrase: %s' % u''.join(res[u'stderr']))
-            raise Exception(u'Error with wpa_passphrase: unable to encrypt it')
-        if not ''.join(res[u'stdout']).startswith(u'network'):
-            self.logger.error(u'Error with wpa_passphrase: %s' % u''.join(res[u'stdout']))
-            raise Exception(u'Error with wpa_passphrase: invalid command output')
-        output = [line+u'\n' for line in res[u'stdout'] if not line.startswith(u'\t#psk=')]
+        res = c.command('/usr/bin/wpa_passphrase "%s" "%s"' % (network, password))
+        if res['error'] or res['killed']:
+            self.logger.error('Error with wpa_passphrase: %s' % ''.join(res['stderr']))
+            raise Exception('Error with wpa_passphrase: unable to encrypt it')
+        if not ''.join(res['stdout']).startswith('network'):
+            self.logger.error('Error with wpa_passphrase: %s' % ''.join(res['stdout']))
+            raise Exception('Error with wpa_passphrase: invalid command output')
+        output = [line+'\n' for line in res['stdout'] if line.find('#psk=') < 0]
 
         return output
 
@@ -193,19 +248,19 @@ class WpaSupplicantConf(Config):
             try:
                 fpath = os.path.join(self.WPASUPPLICANT_DIR, f)
                 (conf, ext) = os.path.splitext(f)
-                if os.path.isfile(fpath) and conf==u'wpa_supplicant':
-                    #default config file
-                    configs[u'default'] = fpath
+                if os.path.isfile(fpath) and conf == 'wpa_supplicant':
+                    # default config file
+                    configs['default'] = fpath
 
-                elif os.path.isfile(fpath) and ext==u'.conf' and conf.startswith(u'wpa_supplicant-'):
-                    #get interface
-                    interface = conf.split(u'-', 1)[1]
+                elif os.path.isfile(fpath) and ext == '.conf' and conf.startswith('wpa_supplicant-'):
+                    # get interface
+                    interface = conf.split('-', 1)[1]
                     configs[interface] = fpath
 
             except: # pragma: no cover
-                self.logger.exception(u'Exception occured during wpa_supplicant config file search:')
+                self.logger.exception('Exception occured during wpa_supplicant config file search:')
 
-        self.logger.debug(u'Found wpa_supplicant config files: %s' % configs)
+        self.logger.debug('Found wpa_supplicant config files: %s' % configs)
         return configs
 
     def __get_configuration(self, config, interface):
@@ -234,67 +289,69 @@ class WpaSupplicantConf(Config):
         networks = {}
         entries = []
 
-        #force specified config file
-        self.logger.debug(u'Read configuration of "%s" for interface "%s"' % (config, interface))
+        # force specified config file
+        self.logger.debug('Read configuration of "%s" for interface "%s"' % (config, interface))
         self.CONF = config
 
-        #parse network={} block:  {((?:[^{}]|(?R))*)}
-        #parse inside network block:  \s+(.*?)=(.*?)\s*\R
+        # parse network={} block:  {((?:[^{}]|(?R))*)}
+        # parse inside network block:  \s+(.*?)=(.*?)\s*\R
         results = self.find(r'network\s*=\s*\{\s*(.*?)\s*\}', re.UNICODE | re.DOTALL)
         for group, groups in results:
-            #prepare values
+            # prepare values
             ssid = None
 
-            #filter none values
+            # filter none values
             groups = list(filter(None, groups))
 
-            #create new entry
+            # create new entry
             current_entry = {
-                u'group': group, #DO NOT REMOVE IT, field is removed at end of this function
-                u'network': None,
-                u'password': None,
-                u'hidden': False,
-                u'encryption': self.ENCRYPTION_TYPE_WPA2, #default encryption to WPA2 event if not specified in wpa_supplicant.conf file
-                u'disabled': False
+                'group': group, #DO NOT REMOVE IT, field is removed at end of this function
+                'network': None,
+                'password': None,
+                'hidden': False,
+                'encryption': self.ENCRYPTION_TYPE_WPA2, # default encryption to WPA2 even if not specified in wpa_supplicant.conf file
+                'disabled': False
             }
             entries.append(current_entry)
 
-            #fill entry
+            # fill entry
             pattern = r'^\s*(\w+)=(.*?)\s*$'
             for content in groups:
                 sub_results = self.find_in_string(pattern, content, re.UNICODE | re.MULTILINE)
                 
-                #filter none values
+                # filter none values
                 for sub_group, sub_groups in sub_results:
-                    if len(sub_groups)==2:
-                        if sub_groups[0].startswith(u'ssid'):
-                            current_entry[u'network'] = sub_groups[1].replace('"','').replace('\'','')
-                        elif sub_groups[0].startswith(u'scan_ssid'):
-                            if sub_groups[1] is not None and sub_groups[1].isdigit() and sub_groups[1]=='1':
-                                current_entry[u'hidden'] = True
-                        elif sub_groups[0].startswith(u'key_mgmt'):
-                            if sub_groups[1]==u'WPA-PSK':
-                                current_entry[u'encryption'] = self.ENCRYPTION_TYPE_WPA2
-                            elif sub_groups[1]==u'NONE':
-                                current_entry[u'encryption'] = self.ENCRYPTION_TYPE_WEP
-                        elif sub_groups[0].startswith(u'psk'):
-                            current_entry[u'password'] = sub_groups[1].replace('"','').replace('\'','')
-                        elif sub_groups[0].startswith(u'wep_key0'):
-                            current_entry[u'password'] = sub_groups[1].replace('"','').replace('\'','')
-                        elif sub_groups[0].startswith(u'disabled') and sub_groups[1]=='1':
-                            current_entry[u'disabled'] = True
+                    if len(sub_groups) == 2:
+                        if sub_groups[0].startswith('ssid'):
+                            current_entry['network'] = sub_groups[1].replace('"','').replace('\'','')
+                        elif sub_groups[0].startswith('scan_ssid'):
+                            if sub_groups[1] is not None and sub_groups[1].isdigit() and sub_groups[1] == '1':
+                                current_entry['hidden'] = True
+                        elif sub_groups[0].startswith('key_mgmt'):
+                            if sub_groups[1] == 'WPA-PSK':
+                                current_entry['encryption'] = self.ENCRYPTION_TYPE_WPA2
+                            elif sub_groups[1] == 'NONE':
+                                current_entry['encryption'] = self.ENCRYPTION_TYPE_WEP
+                        elif sub_groups[0].startswith('psk'):
+                            current_entry['password'] = sub_groups[1].replace('"','').replace('\'','')
+                        elif sub_groups[0].startswith('wep_key0'):
+                            current_entry['password'] = sub_groups[1].replace('"','').replace('\'','')
+                        elif sub_groups[0].startswith('disabled') and sub_groups[1] == '1':
+                            current_entry['disabled'] = True
 
                     else: # pragma: no cover
-                        #invalid content, drop this item
+                        # invalid content, drop this item
                         continue
 
-        #clean entry
+        # clean entry
         if interface not in self.__groups:
             self.__groups[interface] = {}
         for entry in entries:
-            self.__groups[interface][entry[u'network']] = entry[u'group']
-            del entry[u'group']
-            networks[entry[u'network']] = entry
+            self.__groups[interface][entry['network']] = entry['group']
+            del entry['group']
+            networks[entry['network']] = entry
+
+        self.__restore_conf()
 
         return networks
 
@@ -308,7 +365,6 @@ class WpaSupplicantConf(Config):
             {
                 interface name (string) or 'default': {
                     network name (string): {
-                        group (string): full search result,
                         network (string): network name,
                         password (string): password,
                         hidden (bool): True if network is hidden,
@@ -321,19 +377,18 @@ class WpaSupplicantConf(Config):
             }
 
         """
-        #init
+        # init
         configs = {}
 
-        #get configuration files
+        # get configuration files
         config_files = self.__get_configuration_files()
 
-        #get configurations
-        if len(config_files)==0:
-            #no specific configuration files found, fallback to default one
-            configs[u'default'] = self.__get_configuration(self.DEFAULT_CONF, u'default')
+        # get configurations
+        if len(config_files) == 0:
+            self.logger.warning('No wpa_supplicant config file found')
 
         else:
-            #parse all configuration files
+            # parse all configuration files
             for interface in config_files:
                 configs[interface] = self.__get_configuration(config_files[interface], interface)
         
@@ -345,15 +400,25 @@ class WpaSupplicantConf(Config):
 
         Args:
             network (string): network name
-            interface (string|None): if specified try to add network in specific interface wpa_supplicant.conf file
+            interface (string): interface name. If not specified return config from default wpa_supplicant.conf file
 
         Returns:
-            dict: network config, None if network is not found
-        """
-        #get configurations
-        configurations = self.get_configurations()
+            dict: network config, None if network is not found::
 
-        #get configuration of specified interface
+                {
+                    network (string): network name,
+                    encryption (string): encryption type (see ENCRYPTION_TYPE_XXX),
+                    password (string): password,
+                    hidden (bool): True if network is hidden,
+                    disabled (string): True if network is disabled
+                }
+
+        """
+        # get configurations
+        configurations = self.get_configurations()
+        self.logger.trace('Configurations: %s' % configurations)
+
+        # get configuration of specified interface
         if interface:
             if interface not in configurations:
                 return None
@@ -363,12 +428,12 @@ class WpaSupplicantConf(Config):
                 return configurations[interface][network]
 
         else:
-            if u'default' not in configurations:
+            if 'default' not in configurations:
                 return None
-            elif network not in configurations[u'default']:
+            elif network not in configurations['default']:
                 return None
             else:
-                return configurations[u'default'][network]
+                return configurations['default'][network]
 
     def delete_network(self, network, interface=None):
         """
@@ -381,44 +446,29 @@ class WpaSupplicantConf(Config):
         Returns:
             bool: True if network deleted, False otherwise
         """
-        #check params
-        if network is None or len(network)==0:
-            raise MissingParameter(u'Network parameter is missing')
+        # check params
+        if network is None or len(network) == 0:
+            raise MissingParameter('Parameter "network" is missing')
 
-        #check if network exists
+        # check if network exists
         configuration = self.get_configuration(network, interface)
-        self.logger.debug(u'Found configuration: %s' % configuration)
+        self.logger.debug('Found configuration: %s' % configuration)
         if configuration is None:
             return False
 
-        #get configurations files
-        configurations = self.__get_configuration_files()
+        # get configurations files
+        config_files = self.__get_configuration_files()
 
-        #remove network config
+        # remove network config
         if interface:
-            self.CONF = configurations[interface]
-            return self.remove(self.__groups[interface][configuration[u'network']])
+            self.CONF = config_files[interface]
+            removed = self.remove(self.__groups[interface][configuration['network']])
         else:
-            self.CONF = configurations[u'default']
-            return self.remove(self.__groups[u'default'][configuration[u'network']])
+            self.CONF = config_files['default']
+            removed = self.remove(self.__groups['default'][configuration['network']])
 
-    def __check_wpa_supplicant_conf_existence(self, interface):
-        """
-        Check if wpa_supplicant conf file exists for specified interface.
-        If not exists, create default one
-
-        Args:
-            interface (string): interface name
-        """
-        if not interface or interface==u'default':
-            #invalid interface specified, no config file to create
-            return
-
-        path = os.path.join(self.WPASUPPLICANT_DIR, 'wpa_supplicant-%s.conf' % interface)
-        if not os.path.exists(path):
-            self.logger.info(u'Create default wpa_supplicant conf file for interface "%s" (%s)' % (interface, path))
-            self.cleep_filesystem.copy(self.DEFAULT_CONF, path)
-            time.sleep(0.25)
+        self.__restore_conf()
+        return removed
 
     def __add_network(self, config, interface=None):
         """
@@ -432,33 +482,33 @@ class WpaSupplicantConf(Config):
             bool: True if network added
         """
         content = [
-            u'\nnetwork={\n',
-            u'\tssid="%s"\n' % config[u'network']
+            '\nnetwork={\n',
+            '\tssid="%s"\n' % config['network']
         ]
 
-        #encryption
-        if config[u'encryption'] in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
-            #WPA/WPA2 security
-            content.append(u'\tkey_mgmt=WPA-PSK\n')
-            content.append(u'\tpsk=%s\n' % config[u'password'])
-        elif config[u'encryption']==self.ENCRYPTION_TYPE_WEP:
-            #WEP security
-            content.append(u'\tkey_mgmt=NONE\n')
-            content.append(u'\twep_key0=%s\n' % config[u'password'])
-            content.append(u'\twep_tx_keyidx=0\n')
+        # encryption
+        if config['encryption'] in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
+            # WPA/WPA2 security
+            content.append('\tkey_mgmt=WPA-PSK\n')
+            content.append('\tpsk=%s\n' % config['password'])
+        elif config['encryption'] == self.ENCRYPTION_TYPE_WEP:
+            # WEP security
+            content.append('\tkey_mgmt=NONE\n')
+            content.append('\twep_key0=%s\n' % config['password'])
+            content.append('\twep_tx_keyidx=0\n')
         else:
-            #unsecured network
-            content.append(u'\tkey_mgmt=NONE\n')
+            # unsecured network
+            content.append('\tkey_mgmt=NONE\n')
 
-        #hidden network
-        if config[u'hidden']:
-            content.append(u'\tscan_ssid=1\n')
+        # hidden network
+        if config['hidden']:
+            content.append('\tscan_ssid=1\n')
 
-        #disabled network
-        if config[u'disabled']:
-            content.append(u'\tdisabled=1\n')
+        # disabled network
+        if config['disabled']:
+            content.append('\tdisabled=1\n')
 
-        content.append(u'}\n')
+        content.append('}\n')
 
         self.logger.debug('Config to append %s' % content)
         return self.add_lines(content)
@@ -482,62 +532,46 @@ class WpaSupplicantConf(Config):
         Raises:
             MissingParameter, InvalidParameter
         """
-        #check params
-        if network is None or len(network)==0:
-            raise MissingParameter(u'Parameter "network" is missing')
-        if encryption is None or len(encryption)==0:
-            raise MissingParameter(u'Parameter "encryption" is missing')
+        # check params
+        if network is None or len(network) == 0:
+            raise MissingParameter('Parameter "network" is missing')
+        if encryption is None or len(encryption) == 0:
+            raise MissingParameter('Parameter "encryption" is missing')
         if encryption not in self.ENCRYPTION_TYPES:
-            raise InvalidParameter(u'Encryption "%s" does not exist (available: %s)' % (encryption, u','.join(self.ENCRYPTION_TYPES)))
-        if encryption!=self.ENCRYPTION_TYPE_UNSECURED and (password is None or len(password)==0):
-            raise MissingParameter(u'Parameter "password" is missing')
+            raise InvalidParameter('Parameter "encryption" is invalid (available: %s)' % (','.join(self.ENCRYPTION_TYPES)))
+        if encryption != self.ENCRYPTION_TYPE_UNSECURED and (password is None or len(password) == 0):
+            raise MissingParameter('Parameter "password" is missing')
 
-        #check if network doesn't already exist
+        # check if network doesn't already exist
         if self.get_configuration(network, interface) is not None:
-            raise InvalidParameter(u'Network "%s" is already configured' % network)
+            raise InvalidParameter('Network "%s" is already configured' % network)
 
-        #make sure config file exists for interface
-        self.__check_wpa_supplicant_conf_existence(interface)
+        # make sure config file exists for interface
+        if not self.has_config(interface):
+            self.save_default_config(interface)
     
-        #header
-        output = [
-            u'\nnetwork={\n',
-            u'\tssid="%s"\n' % network,
-        ]
-
-        #inject hidden param if necessary
-        if hidden:
-            output.append(u'\tscan_ssid=1\n')
-
-        #inject network type and password
-        if encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
-            #WPA/WPA2 security
-            output.append(u'\tkey_mgmt=WPA-PSK\n')
-            if encrypt_password:
-                output.append(u'\tpsk=%s\n' % self.encrypt_password(network, password))
-            else:
-                output.append(u'\tpsk=%s\n' % password)
-        elif encryption==self.ENCRYPTION_TYPE_WEP:
-            #WEP security
-            output.append(u'\tkey_mgmt=NONE\n')
-            output.append(u'\twep_key0=%s\n' % password)
-            output.append(u'\twep_tx_keyidx=0\n')
-        else:
-            #unsecured network
-            output.append(u'\tkey_mgmt=NONE\n')
-
-        #footer
-        output.append(u'}\n')
-
-        #switch configuration file
+        # switch configuration file
         configurations = self.__get_configuration_files()
         if interface:
             self.CONF = configurations[interface]
         else:
-            self.CONF = configurations[u'default']
+            self.CONF = configurations['default']
 
-        #write new network config
-        return self.add_lines(output)
+        # encrypt password if necessary
+        if encrypt_password and encryption in [self.ENCRYPTION_TYPE_WPA, self.ENCRYPTION_TYPE_WPA2]:
+            password = self.encrypt_password(network, password)
+
+        # write new network config
+        added = self.__add_network({
+            'network': network,
+            'encryption': encryption,
+            'password': password,
+            'hidden': hidden,
+            'disabled': False,
+        }, interface)
+    
+        self.__restore_conf()
+        return added
 
     def update_network_password(self, network, password, interface=None):
         """
@@ -554,38 +588,43 @@ class WpaSupplicantConf(Config):
         Raises:
             MissingParameter
         """
-        #check params
-        if network is None or len(network)==0:
-            raise MissingParameter(u'Parameter network is missing')
-        if password is None or len(password)==0:
-            raise MissingParameter(u'Parameter password is missing')
+        # check params
+        if network is None or len(network) == 0:
+            raise MissingParameter('Parameter "network" is missing')
+        if password is None or len(password) == 0:
+            raise MissingParameter('Parameter "password" is missing')
 
-        #first of all get network configuration
+        # first of all get network configuration
         config = self.get_configuration(network, interface)
         if config is None:
+            raise InvalidParameter('Network "%s" is not configured' % network)
+
+        # encrypt password if necessary
+        if config['encryption'] == self.ENCRYPTION_TYPE_UNSECURED:
+            self.logger.info('No need to update password on unsecured network')
             return False
-
-        #encrypt password if necessary
-        if config[u'encryption'] in (self.ENCRYPTION_TYPE_WPA2, self.ENCRYPTION_TYPE_WPA):
-            config[u'password'] = self.encrypt_password(network, password)
-            self.logger.debug('Encrypt password %s: %s' % (password, config[u'password']))
+        if config['encryption'] in (self.ENCRYPTION_TYPE_WPA2, self.ENCRYPTION_TYPE_WPA):
+            config['password'] = self.encrypt_password(network, password)
+            self.logger.debug('Encrypt password %s: %s' % (password, config['password']))
         else:
-            config[u'password'] = password
+            config['password'] = password
 
-        #switch configuration file
+        # switch configuration file
         configurations = self.__get_configuration_files()
         if interface:
             self.CONF = configurations[interface]
         else:
-            self.CONF = configurations[u'default']
+            self.CONF = configurations['default']
 
-        #delete existing entry
+        # delete existing entry
+        updated = False
         if self.delete_network(network, interface):
             self.logger.debug('Config deleted')
-            #and add new updated entry
-            return self.__add_network(config, interface)
+            # and add new updated entry
+            updated = self.__add_network(config, interface)
 
-        return False
+        self.__restore_conf()
+        return updated
 
     def __update_network_disabled_flag(self, network, disabled, interface=None):
         """
@@ -599,23 +638,23 @@ class WpaSupplicantConf(Config):
         Returns:
             bool: True if network flag updated
         """
-        #check params
-        if network is None or len(network)==0:
-            raise MissingParameter(u'Parameter network is missing')
-        if disabled is None: # pragma: no cover
-            raise MissingParameter(u'Parameter disabled is missing')
+        # check params
+        if network is None or len(network) == 0:
+            raise MissingParameter('Parameter "network" is missing')
+        if not isinstance(disabled, bool):
+            raise InvalidParameter('Parameter "disabled" is invalid')
 
-        #first of all get network configuration
+        # first of all get network configuration
         config = self.get_configuration(network, interface)
         if config is None:
             return False
 
-        #update disabled flag
-        config[u'disabled'] = disabled
+        # update disabled flag
+        config['disabled'] = disabled
 
-        #delete existing entry
+        # delete existing entry
         if self.delete_network(network, interface):
-            #and add new updated entry
+            # and add new updated entry
             return self.__add_network(config, interface)
 
         return False
@@ -651,3 +690,4 @@ class WpaSupplicantConf(Config):
             MissingParameter
         """
         return self.__update_network_disabled_flag(network, True, interface=interface)
+
