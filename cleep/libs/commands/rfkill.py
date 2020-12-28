@@ -135,7 +135,7 @@ class Rfkill(Console):
         Block specified device
 
         Args:
-            device_id (int): device id as returned by get_xxx_infos function
+            device_id (int): device id as returned by get_xxx_infos function. If None specified block all devices
 
         Returns:
             bool: True if command succeed
@@ -147,7 +147,7 @@ class Rfkill(Console):
         Unblock specified device
 
         Args:
-            device_id (int): device id as returned by get_xxx_infos function
+            device_id (int): device id as returned by get_xxx_infos function. If None specified, unblock all devices
 
         Returns:
             bool: True if command succeed
