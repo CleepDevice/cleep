@@ -17,19 +17,20 @@ from cleep.exception import (NoMessageAvailable, InvalidParameter, BusError, NoR
 __all__ = ['MessageBus', 'BusClient']
 
 class MessageBus():
+    """
+    Message bus. Used to send messages to subscribed clients.
+
+    A pushed message can have recipient to directly send message to specific client. In that case
+    a response is awaited. If there is no response before end of timeout, an exception is throwed.
+    A message without recipient is broadcasted to all subscribers. No response is awaited.
+
+    Only broadcasted messages can be sent before all clients have subscribed (during init phase)
+    """
 
     STARTUP_TIMEOUT = 30.0
     DEQUE_MAX_LEN = 100
     SUBSCRIPTION_LIFETIME = 600 # in seconds
 
-    """
-    Message bus
-    Used to send messages to subscribed clients
-    A pushed message can have recipient to directly send message to specific client. In that case
-    a response is awaited. If there is no response before end of timeout, an exception is throwed.
-    A message without recipient is broadcasted to all subscribers. No response is awaited.
-    Only broadcasted messages can be sent before all clients have subscribed (during init phase)
-    """
     def __init__(self, crash_report, debug_enabled):
         """
         Constructor
@@ -744,11 +745,14 @@ class BusClient(threading.Thread):
         """
         Bus reading process.
 
-        Process cycle life:
-            - configure module
-            - wait for all modules configured
-            - run async start function
-            - infinite loop on message bus (custom process can run on each loop)
+        Note:
+            Process cycle life::
+
+                - configure module
+                - wait for all modules configured
+                - run async start function
+                - infinite loop on message bus (custom process can run on each loop)
+
         """
         self.logger.trace('BusClient %s started' % self.__module_name)
 
