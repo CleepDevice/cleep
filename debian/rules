@@ -2,19 +2,24 @@
 # -*- makefile -*-
 
 export PYBUILD_NAME=cleep
+export PYBUILD_DISABLE_python3=test
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
+
 execute_after_dh_fixperms:
 	chmod 644 debian/cleep/lib/systemd/system/cleep.service
 
+override_dh_python3:
+	dh_python3 --no-guessing-deps
+
 clean:
-	-rm -rf debian/cleep
-	-rm -f debian/debhelper-build-stamp
-	-rm -f debian/files
-	-rm -f debian/cleep.debhelper.log
-	-rm -f debian/cleep.postinst.debhelper
-	-rm -f debian/cleep.prerm.debhelper
-	-rm -f debian/cleep.substvars
+	rm -rf debian/cleep
+	rm -f debian/debhelper-build-stamp
+	rm -f debian/files
+	rm -f debian/cleep.debhelper.log
+	rm -f debian/cleep.postinst.debhelper
+	rm -f debian/cleep.prerm.debhelper
+	rm -f debian/cleep.substvars
 

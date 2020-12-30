@@ -9,6 +9,10 @@ X-Python3-Version: 3.7
 
 Package: cleep
 Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, python3.7-dev, libffi-dev, libssl-dev, python3-scipy, python3-numpy
-Description: Build your own IoT device with a raspberry pi
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, libffi-dev, libssl-dev, jq, python3.7-dev, python3-scipy, python3-numpy
+Description: Build your own IoT device easily.
+ Cleep is a software that provides a way to build easily your own Iot device that fits your needs
+ .
+ It provides small embedded apps via market place to add features to your device: handle new
+ hardware installing driver, connect to online services, install new capabilities...
 

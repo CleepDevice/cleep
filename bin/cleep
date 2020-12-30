@@ -7,9 +7,9 @@ import getopt
 import logging
 from logging.config import dictConfig
 from threading import Event
+from cleep import rpcserver, bus
 from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
-from cleep import rpcserver, bus
 from cleep import inventory as cleep_inventory
 from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
