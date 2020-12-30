@@ -1,12 +1,61 @@
-#!/bin/sh
+#!/bin/bash
 
-#https://wiki.debian.org/MaintainerScripts
+# https://wiki.debian.org/MaintainerScripts
 
 set -e
 
+MODULES_JSON=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
+CLEEPMODS=( audio cleepbus network parameters system update )
+
+# Check command result
+# $1: command result (usually $?)
+# $2: awaited command result
+# $3: error message
+checkResult() {
+    if [ $1 -ne $2 ]
+    then
+        msg=$3
+        if [[ -z "$1" ]]; then
+            msg="see output log"
+        fi
+        echo -e "Error occured: $msg."
+        exit 1
+    fi
+}
+
 case "$1" in
     configure)
-        #enable Cleep at startup
+        # install mandatory Cleep apps
+		wget $MODULES_JSON -q --show-progress -O /tmp/modules.json
+		checkResult $? 0 "Unable to download $MODULES_JSON"
+		CLEEP_INSTALL_PATH=`python3 -m pip show cleep | grep Location | awk '{ print $2 }'`
+		for CLEEPMOD in "${CLEEPMODS[@]}"; do
+		    echo "- installing $CLEEPMOD module"
+		    # download and checksum module
+		    download=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.download | awk '{ gsub("\"","",$0); print $0}'`
+		    checksum=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.sha256 | awk '{ gsub("\"","",$0); print $0}'`
+		    wget $download -q --show-progress -O /tmp/cleepmod.zip
+		    echo "$checksum /tmp/cleepmod.zip" > /tmp/cleepmod.sha
+		    checkResult $? 0 "Unable to create sha file"
+		    sha256sum -c /tmp/cleepmod.sha
+		    checkResult $? 0 "Checksum does not match for current app"
+		    # install module
+		    unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
+		    checkResult $? 0 "Unzip failed"
+		    cp -a /tmp/cleepmod/backend/* "$CLEEP_INSTALL_PATH/cleep/"
+		    checkResult $? 0 "Backend copy failed"
+		    if [ -d "/tmp/cleepmod/frontend/" ]; then
+		        cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
+		        checkResult $? 0 "Frontend copy failed"
+		    fi
+		    rm -rf /tmp/cleepmod
+		    rm -f /tmp/cleepmod.zip
+		    rm -f /tmp/cleepmod.sha
+		    echo " - done"
+		done
+		rm -f /tmp/modules.json
+
+        # enable Cleep at startup
         /etc/cleep/cleephelper.sh enable
         ;; 
 
