@@ -450,7 +450,7 @@ class Install():
         self.__reset_status(self.STATUS_PROCESSING)
 
         # launch installation
-        # note: filesystem writings are handled by InstallDeb lib
+        # note: filesystem writings are handled by InstallModule lib
         install = InstallModule(
             module_name,
             module_infos,
