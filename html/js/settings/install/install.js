@@ -4,7 +4,7 @@
  */
 var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
 
-    var installController = ['$rootScope', '$scope','$element', function($rootScope, $scope, $element) {
+    var installController = ['$rootScope', '$scope','$element', '$window', function($rootScope, $scope, $element, $window) {
         var self = this;
         self.cleepService = cleepService;
         self.search = '';
@@ -89,7 +89,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          * Redirect to update module page
          */
         self.gotoUpdateModule = function() {   
-            $window.location.href = '#!/module/update?tab=modules';
+            $window.location.href = '#!/module/update?tab=logs';
         };
 
         /**

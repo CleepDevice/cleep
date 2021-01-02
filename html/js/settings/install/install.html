@@ -95,7 +95,7 @@
                         ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].update.failed"
                         ng-click="installCtl.gotoUpdateModule()"
                     >
-                        <md-icon md-svg-icon="file-document-box-outline"></md-icon>
+                        <md-icon md-svg-icon="file-document-outline"></md-icon>
                         <span>Install failed, see logs</span>
                     </md-button>
    
@@ -106,7 +106,7 @@
                         ng-click="installCtl.showInstallDialog(installCtl.cleepService.installableModules[moduleName], $event)"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>
-                        <span ng-if="!installCtl.cleepService.modulesUpdates[moduleName] && !installCtl.cleepService.modulesUpdates[moduleName].processing && !installCtl.cleepService.modulesUpdates[moduleName].pending">
+                        <span ng-if="!installCtl.cleepService.modulesUpdates[moduleName].processing && !installCtl.cleepService.modulesUpdates[moduleName].pending">
                             Install
                         </span>
                         <span ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].processing">

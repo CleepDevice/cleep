@@ -30,6 +30,13 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
         };
 
         /**
+         * Redirect to update module page
+         */
+        self.gotoUpdateModule = function() {
+            $window.location.href = '#!/module/update?tab=logs';
+        }
+
+        /**
          * Uninstall module
          */
         self.uninstallModule = function(module) {
