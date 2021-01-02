@@ -74,9 +74,7 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
             for( var i=0; i<htmlFiles.length; i++ ) {
                 // load only missing templates
                 var templateName = htmlFiles[i].substring(htmlFiles[i].lastIndexOf('/')+1);
-                if( !$templateCache.get(templateName) ) {
-                    promises.push($http.get(htmlFiles[i]));
-                }
+                promises.push($http.get(htmlFiles[i]));
             }
 
             // and execute them
