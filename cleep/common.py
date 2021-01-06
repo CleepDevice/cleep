@@ -97,7 +97,7 @@ class PeerInfos():
             cleepdesktop (bool): is cleepdesktop peer
             extra (dict): extra peer informations (about hardware...)
 
-        Notes:
+        Note:
             Uuid is mandatory because device can change identifier after each connection.
 
             Id is the identifier provided by your external bus implementation.
@@ -294,7 +294,7 @@ class MessageRequest(object):
         device_id (string): internal virtual device identifier [event only]
         peer_infos (PeerInfos): peer informations. Must be filled if message comes from outside the device
 
-    Notes:
+    Note:
         A message cannot be a command and an event, priority to command if both are specified.
     """
     def __init__(self, command=None, event=None, params={}, to=None):

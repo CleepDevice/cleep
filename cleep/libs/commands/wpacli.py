@@ -12,7 +12,7 @@ class Wpacli(AdvancedConsole):
     """
     Command /sbin/wpa_cli helper
 
-    Notes:
+    Note:
         Man page https://www.freebsd.org/cgi/man.cgi?wpa_cli
     """
 
@@ -274,7 +274,7 @@ class Wpacli(AdvancedConsole):
         """
         Start specified interface
 
-        Notes:
+        Note:
             https://www.freebsd.org/cgi/man.cgi?wpa_supplicant.conf%285%29
 
         Args:

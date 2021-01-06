@@ -692,7 +692,7 @@ class BusClient(threading.Thread):
         """
         Module starts. This method is called once after all modules are started.
 
-        Notes:
+        Note:
             This method is run asynchronously and is dedicated to the execution of more of less long process
         """
         pass
@@ -701,7 +701,7 @@ class BusClient(threading.Thread):
         """
         Module stops. This method is called once at end of main process.
 
-        Notes:
+        Note:
             It should be used to stop thread and tasks and to disconnect from
             external services.
         """

@@ -27,7 +27,7 @@ class EndlessConsole(Thread):
         c = EndlessConsole(mycmd, myclb, myendclb)
         c.join()
 
-    Notes:
+    Note:
         Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
@@ -273,8 +273,10 @@ class Console():
 
     def get_last_return_code(self):
         """
-        DEPRECATED: use returncode from command result
         Return last executed command return code
+
+        Warning:
+            DEPRECATED: use returncode value from command result instead of calling this function
 
         Returns:
             int: return code (can be None)
@@ -285,7 +287,7 @@ class Console():
         """
         Execute specified command line with auto kill after timeout
 
-        Notes:
+        Note:
             This function is blocking
 
         Args:
@@ -396,7 +398,7 @@ class Console():
             callback (function): function called when command is over. Callback will received command
                                  result as single function parameter
 
-        Notes:
+        Note:
             See command function to have more details
         """
         self.__callback = callback

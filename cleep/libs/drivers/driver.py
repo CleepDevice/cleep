@@ -11,25 +11,42 @@ class Driver():
     Base driver class
     """
 
-    #driver types
-    DRIVER_AUDIO = u'audio'
-    DRIVER_GPIO = u'gpio'
+    # Driver types
+    # Audio driver: all hat that deals with audio (sound card, microphones...)
+    DRIVER_AUDIO = 'audio'
+    # Driver video: sll stuff with video capabilities (camera...)
+    DRIVER_VIDEO = 'video'
+    # Display driver: all stuff that allows to display infos (screen, digits...)
+    DRIVER_DISPLAY = 'display'
+    # Electronic driver: all hat with electronical parts (led, sensors...)
+    DRIVER_ELECTRONIC = 'electronic'
+    # Power driver: hat with power purpose (UPS...)
+    DRIVER_POWER = 'power'
+    # Positionning driver: hat with positionning capabilities (GPS...)
+    DRIVER_POSITIONNING = 'position'
+    # Home automation driver: stuff with home automation purpose (protocol dongle, hat...)
+    DRIVER_HOMEAUTOMATION = 'homeautomation'
 
-    #PROCESSING STATUS
+    # PROCESSING STATUS
     PROCESSING_NONE = 0
     PROCESSING_INSTALLING = 1
     PROCESSING_UNINSTALLING = 2
 
-    def __init__(self, cleep_filesystem, driver_type, driver_name):
+    def __init__(self, params, driver_type, driver_name):
         """
         Constructor
 
         Args:
-            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            params (dict): driver parameters::
+
+                {
+                    cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+                }
+
             driver_type (string): driver type. Must be one of available DRIVER_XXX types
             driver_name (string): driver name.
         """
-        self.cleep_filesystem = cleep_filesystem
+        self.cleep_filesystem = params['cleep_filesystem']
         self.logger = logging.getLogger(self.__class__.__name__)
         self.type = driver_type
         self.name = driver_name
@@ -50,7 +67,7 @@ class Driver():
         if self._processing!=self.PROCESSING_NONE:
             raise CommandError(u'Driver is already installing')
 
-        #set processing flag asap
+        # set processing flag asap
         self._processing = self.PROCESSING_INSTALLING
 
         def install(callback, params):
@@ -74,15 +91,6 @@ class Driver():
         task.start()
         return task
 
-    def _install(self, params): # pragma: no cover
-        """
-        Install driver
-
-        Args:
-            params (dict): optionnal parameters
-        """
-        raise NotImplementedError(u'Function "install" must be implemented in "%s"' % self.__class__.__name__)
-
     def uninstall(self, end_callback, params=None, logger=None):
         """
         Uninstall driver
@@ -98,7 +106,7 @@ class Driver():
         if self._processing!=self.PROCESSING_NONE:
             raise CommandError(u'Driver is already uninstalling')
 
-        #set processing flag asap
+        # set processing flag asap
         self._processing = self.PROCESSING_UNINSTALLING
 
         def uninstall(callback, params):
@@ -121,9 +129,33 @@ class Driver():
         task.start()
         return task
 
+    def processing(self):
+        """
+        Return processing status
+
+        Returns:
+            int: processing status (see Driver.PROCESSING_XXX)
+        """
+        return self._processing
+
+    def _install(self, params): # pragma: no cover
+        """
+        Install driver
+
+        Warning:
+            Must be implemented
+
+        Args:
+            params (dict): optionnal parameters
+        """
+        raise NotImplementedError(u'Function "install" must be implemented in "%s"' % self.__class__.__name__)
+
     def _uninstall(self, params=None): # pragma: no cover
         """
         Uninstall driver. Don't forget to enable writings during driver installation.
+
+        Warning:
+            Must be implemented
 
         Args:
             params (dict): additionnal parameters if necessary
@@ -134,16 +166,11 @@ class Driver():
         """
         Is driver installed ?
 
+        Warning:
+            Must be implemented
+
         Returns:
-            bool: True if driver installed
+            bool: True if driver is installed
         """
         raise NotImplementedError(u'Function "is_installed" must be implemented in "%s"' % self.__class__.__name__)
         
-    def processing(self):
-        """
-        Return processing status
-
-        Returns:
-            int: processing status (see Driver.PROCESSING_XXX)
-        """
-        return self._processing

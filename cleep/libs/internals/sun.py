@@ -15,7 +15,7 @@ class Sun:
     See:
         Code copied and adapted for Cleep from https://github.com/SatAgro/suntime/blob/master/suntime/suntime.py
 
-    Notes:
+    Note:
         Approximated calculation of sunrise and sunset datetimes. Adapted from:
         https://stackoverflow.com/questions/19615350/calculate-sunrise-and-sunset-times-for-a-given-gps-coordinate-within-postgresql
     """

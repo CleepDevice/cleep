@@ -11,7 +11,7 @@ class ConfigTxt(Config):
     """
     Helper class to update and read /boot/config.txt file
 
-    Notes:
+    Note:
         * https://www.raspberrypi.org/documentation/configuration/config-txt/README.md
         * http://elinux.org/RPiconfig
         * http://raspi.tv/how-to-enable-spi-on-the-raspberry-pi

@@ -79,7 +79,7 @@ class Event():
             string: name of the event caller
         """
         stack = inspect.stack()
-        caller = stack[1][0].f_locals['self']
+        caller = stack[2][0].f_locals['self']
         return caller.__class__.__name__.lower()
 
     def set_renderable(self, renderer_name, renderable):
@@ -185,6 +185,7 @@ class Event():
 
         # render profiles
         result = True
+        self.logger.info('===> FORMATTERS: %s' % formatters)
         for profile_name in formatters:
             for renderer_name in formatters[profile_name]:
                 if renderer_name in self.__not_renderable_for:
@@ -205,11 +206,11 @@ class Event():
 
                 self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
                 resp = self.internal_bus.push(request)
-                if resp['error']:
-                    self.logger.error('Unable to render profile "%s" to "%s": %s' % (
+                if resp.error:
+                    self.logger.error('Unable to render profile "%s" for "%s": %s' % (
                         profile_name,
                         renderer_name,
-                        resp['message']
+                        resp.message,
                     ))
                     result = False
 

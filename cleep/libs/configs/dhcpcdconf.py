@@ -14,7 +14,7 @@ class DhcpcdConf(Config):
     """
     Helper class to update and read /etc/dhcpcd.conf file.
 
-    Notes:
+    Note:
         see https://wiki.archlinux.org/index.php/dhcpcd
     """
 

@@ -17,7 +17,7 @@ class WpaSupplicantConf(Config):
     Warning:
         This class is not thread safe due to self.CONF that can be modified on the fly
 
-    Notes:
+    Note:
         https://w1.fi/cgit/hostap/plain/wpa_supplicant/wpa_supplicant.conf
     """
 

@@ -563,7 +563,7 @@ class Install():
             module_name,
             module_infos,
             update_process=False,
-            force=force,
+            force_uninstall=force,
             status_callback=self.__callback_uninstall_module,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report

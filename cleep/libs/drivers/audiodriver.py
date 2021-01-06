@@ -17,19 +17,19 @@ class AudioDriver(Driver):
      - is_installed
     """
 
-    def __init__(self, cleep_filesystem, driver_name, card_name):
+    def __init__(self, params, driver_name, card_name):
         """
         Constructor
 
         Args:
-            cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            params (dict): driver parameters. See Driver class
             driver_name (string): driver name
             card_name (string): audio card name (as found by alsa) 
         """
-        Driver.__init__(self, cleep_filesystem, Driver.DRIVER_AUDIO, driver_name)
+        Driver.__init__(self, params, Driver.DRIVER_AUDIO, driver_name)
         self.card_name = card_name
         self._cleep_audio = CleepAudio(self.cleep_filesystem)
-        self.alsa = Alsa(cleep_filesystem)
+        self.alsa = Alsa(self.cleep_filesystem)
 
     def get_device_infos(self):
         """

@@ -11,7 +11,7 @@ class CmdlineTxt(Config):
     """
     Helper class to update and read /boot/cmdline.txt file
 
-    Notes:
+    Note:
         https://www.raspberrypi.org/documentation/configuration/cmdline-txt.md
     """
 

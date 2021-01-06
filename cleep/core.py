@@ -254,7 +254,7 @@ class Cleep(BusClient):
 
         return copy_
 
-    def _get_config_field(self, field):
+    def _get_config_field(self, field, default=None):
         """
         Return specified config field value
 
@@ -1152,13 +1152,13 @@ class CleepRenderer(CleepModule):
 
         # call implementation
         try:
-            self._render(profile)
+            self.on_render(profile)
             return True
         except:
             self.logger.exception('Rendering profile "%s" failed:' % profile.__class__.__name__ if profile else None)
             return False
 
-    def _render(self, profile):
+    def on_render(self, profile):
         """
         Use specified profile values to render them
 
@@ -1168,7 +1168,7 @@ class CleepRenderer(CleepModule):
         Raises:
             NotImplementedError: if not implemented
         """
-        raise NotImplementedError(u'Method "_render" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(u'Method "on_render" must be implemented in "%s"' % self.__class__.__name__)
 
     def get_module_commands(self):
         """

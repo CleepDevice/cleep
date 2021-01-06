@@ -12,11 +12,11 @@ class EtcModules(Config):
     Helper class to update and read /etc/modules file
     """
 
-    CONF = u'/etc/modules'
+    CONF = '/etc/modules'
 
-    MODULE_ONEWIRETHERM = u'w1-therm'
-    MODULE_ONEWIREGPIO = u'w1-gpio'
-    MODULE_SOUND_BCM2835 = u'snd-bcm2835'
+    MODULE_ONEWIRETHERM = 'w1-therm'
+    MODULE_ONEWIREGPIO = 'w1-gpio'
+    MODULE_SOUND_BCM2835 = 'snd-bcm2835'
 
     def __init__(self, cleep_filesystem, backup=True):
         """
@@ -25,7 +25,7 @@ class EtcModules(Config):
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        Config.__init__(self, cleep_filesystem, self.CONF, u'#', backup)
+        Config.__init__(self, cleep_filesystem, self.CONF, '#', backup)
 
     def __get_entries(self):
         """
@@ -46,12 +46,12 @@ class EtcModules(Config):
         """
         entries = {}
 
-        results = self.find(u'^(?!#)(.*?)$', re.UNICODE | re.MULTILINE)
+        results = self.find('^(?!#)(.*?)$', re.UNICODE | re.MULTILINE)
         for group, groups in results:
             #add new entry
             entry = {
-                u'group': group,
-                u'module': groups[0]
+                'group': group,
+                'module': groups[0]
             }
             entries[groups[0]] = entry
 
@@ -68,7 +68,7 @@ class EtcModules(Config):
         Returns:
             bool: True if module is enabled
         """
-        return module_name.replace(u'_', u'-') in self.__get_entries()
+        return module_name.replace('_', '-') in self.__get_entries()
 
     def __enable_module(self, module_name):
         """
@@ -84,7 +84,7 @@ class EtcModules(Config):
 
         entries = self.__get_entries()
         if module_name not in entries:
-            out = self.add_lines([u'%s' % module_name])
+            out = self.add_lines(['%s' % module_name])
 
         return out
 
@@ -102,7 +102,7 @@ class EtcModules(Config):
 
         entries = self.__get_entries()
         if module_name in entries:
-            out = self.remove_lines([u'%s' % module_name])
+            out = self.remove_lines(['%s' % module_name])
 
         return out
 

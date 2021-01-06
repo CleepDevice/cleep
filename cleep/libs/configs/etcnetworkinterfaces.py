@@ -13,7 +13,7 @@ class EtcNetworkInterfaces(Config):
     """
     Helper class to update and read /etc/network/interfaces file.
 
-    Notes:
+    Note:
         http://elinux.org/Configuring_a_Static_IP_address_on_your_Raspberry_Pi
         https://help.ubuntu.com/lts/serverguide/network-configuration.html#ip-addressing
         https://unix.stackexchange.com/a/128662

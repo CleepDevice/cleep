@@ -60,7 +60,7 @@ def raspberry_pi_infos():
     """
     Returns infos about current raspberry pi board
 
-    Notes:
+    Note:
         https://elinux.org/RPi_HardwareHistory#Board_Revision_History
 
     Returns:
@@ -132,7 +132,7 @@ def dbm_to_percent(dbm):
     """
     Convert dbm signal level to percentage
 
-    Notes:
+    Note:
         Article here https://www.adriangranados.com/blog/dbm-to-percent-conversion
 
     Args:
@@ -151,7 +151,7 @@ def wpa_passphrase(ssid, password):
     Python implementation of wpa_passphrase linux utility
     It generates wpa_passphrase for wifi network connection
 
-    Notes:
+    Note:
         Copied from https://github.com/julianofischer/python-wpa-psk-rawkey-gen/blob/master/rawkey-generator.py
 
     Args:
@@ -184,7 +184,7 @@ def hr_uptime(uptime):
     """  
     Human readable uptime (in days/hours/minutes/seconds)
 
-    Notes:
+    Note:
         http://unix.stackexchange.com/a/27014
 
     Args:
@@ -204,7 +204,7 @@ def hr_bytes(n):
     """  
     Human readable bytes value
 
-    Notes:
+    Note:
         http://code.activestate.com/recipes/578019
 
     Args:
@@ -256,7 +256,7 @@ def full_split_path(path):
     """
     Split path completely /home/test/test.txt => ['/', 'home', 'test', 'test.py']
 
-    Notes:
+    Note:
         code from https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
 
     Returns:
@@ -318,7 +318,7 @@ def netmask_to_cidr(netmask):
     """ 
     Convert netmask to cidr format
 
-    Notes:
+    Note:
         code from https://stackoverflow.com/a/43885814
 
     Args:
@@ -333,7 +333,7 @@ def cidr_to_netmask(cidr):
     """
     Convert cidr to netmask
 
-    Notes:
+    Note:
         http://www.linuxquestions.org/questions/blog/bittner-195120/cidr-to-netmask-conversion-with-python-convert-short-netmask-to-long-dotted-format-3147/
 
     Args:
