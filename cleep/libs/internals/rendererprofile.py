@@ -13,9 +13,9 @@ class RendererProfile():
         """ 
         Returns printable profile string
         """
-        #exclude private members
-        members = {k:v for k,v in self.__dict__.items() if not k.startswith(u'_') and not callable(k)}
-        return u'%s: %s' % (self.__class__.__name__, members)
+        # exclude private members
+        members = {k:v for k,v in self.__dict__.items() if not k.startswith('_') and not callable(k)}
+        return '%s: %s' % (self.__class__.__name__, members)
 
     def to_dict(self):
         """ 
@@ -24,5 +24,5 @@ class RendererProfile():
         Returns:
             dict: profile
         """
-        return {k:v for k,v in self.__dict__.items() if not k.startswith(u'_')}
+        return {k:v for k,v in self.__dict__.items() if not k.startswith('_')}
 
