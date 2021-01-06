@@ -71,6 +71,7 @@
                     <md-button
                         class="md-accent"
                         ng-if="modulesCtl.cleepService.modulesUpdates[moduleName] && modulesCtl.cleepService.modulesUpdates[moduleName].pending && !modulesCtl.cleepService.modulesUpdates[moduleName].update.failed"
+                        ng-click="modulesCtl.gotoSystemModule()"
                     >
                         <md-icon md-svg-icon="reload-alert"></md-icon>
                         <span>Success please restart</span>

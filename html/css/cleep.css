@@ -243,6 +243,10 @@ md-toast.info .md-toast-content {
     margin-bottom: 5px !important;
 }
 
+.vertical-align {
+    padding-top: 10px;
+}
+
 /********* no margin *********/
 .no-margin {
     margin: 0px 0px 0px 0px !important;

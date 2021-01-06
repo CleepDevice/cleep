@@ -37,10 +37,22 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
         }
 
         /**
+         * Redirect to system module page
+         */
+        self.gotoSystemModule = function() {
+            $window.location.href = '#!/module/system?tab=advanced';
+        }
+
+        /**
          * Uninstall module
          */
         self.uninstallModule = function(module) {
-            confirm.open('Module uninstallation', 'Do you want to uninstall this module?<br/>Its config will be kept.', 'Uninstall', 'Cancel')
+            confirm.open(
+                'App uninstallation',
+                'Do you want to uninstall ' + module + ' application?<br/>Configuration files will be kept.',
+                'Uninstall',
+                'Cancel'
+            )
                 .then(function() {
                     // uninstall module
                     return cleepService.uninstallModule(module);
