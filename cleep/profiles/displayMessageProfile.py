@@ -5,9 +5,9 @@ from cleep.libs.internals.rendererprofile import RendererProfile
 
 class DisplayMessageProfile(RendererProfile):
     """
-    Display profile.
+    Display message profile.
 
-    Handles single message
+    Handles a message
     """
     def __init__(self):
         RendererProfile.__init__(self)

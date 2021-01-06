@@ -3,11 +3,11 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class DisplayTimeLimitedMessageProfile(RendererProfile):
+class DisplayRangeMessageProfile(RendererProfile):
     """
     Display profile.
 
-    Handles single message with start and end range datetime.
+    Handles message with start and end range
     """
     def __init__(self):
         RendererProfile.__init__(self)
