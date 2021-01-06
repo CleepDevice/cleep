@@ -185,34 +185,37 @@ class Event():
 
         # render profiles
         result = True
-        self.logger.info('===> FORMATTERS: %s' % formatters)
-        for profile_name in formatters:
-            for renderer_name in formatters[profile_name]:
-                if renderer_name in self.__not_renderable_for:
-                    self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
-                    continue
+        for renderer_name, formatter in formatters.items():
+            if renderer_name in self.__not_renderable_for:
+                self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
+                continue
 
-                # format event params to profile
-                profile = formatters[profile_name][renderer_name].format(params)
-                if profile is None:
-                    self.logger.debug('Profile returns None')
-                    continue
+            # format event params to profile
+            profile = formatter.format(params)
+            if profile is None:
+                self.logger.warning(
+                    'Profile "%s" is supposed to return data after format function call' % profile.__class__.__name__
+                )
+                continue
 
-                # and post profile to renderer
-                request = MessageRequest()
-                request.command = 'render'
-                request.to = renderer_name
-                request.params = {'profile': profile}
+            # and post profile to renderer
+            request = MessageRequest()
+            request.command = 'render'
+            request.to = renderer_name
+            request.params = {
+                'profile': profile.__class__.__name__,
+                'params': profile.to_dict()
+            }
 
-                self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
-                resp = self.internal_bus.push(request)
-                if resp.error:
-                    self.logger.error('Unable to render profile "%s" for "%s": %s' % (
-                        profile_name,
-                        renderer_name,
-                        resp.message,
-                    ))
-                    result = False
+            self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
+            resp = self.internal_bus.push(request)
+            if resp.error:
+                self.logger.error('Unable to render profile "%s" for "%s": %s' % (
+                    profile.__class__.__name__,
+                    renderer_name,
+                    resp.message,
+                ))
+                result = False
 
         return result
 

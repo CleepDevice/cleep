@@ -1133,34 +1133,32 @@ class CleepRenderer(CleepModule):
             u'profiles': self.RENDERER_PROFILES
         }
 
-    def render(self, profile):
+    def render(self, profile, params):
         """
         Render profile
 
         Args:
-            profile (RendererProfile): profile to render
+            profile (string): profile name to identify processed profile
+            params (dict): profile params to render
 
         Returns:
             bool: True if post is successful.
-
-        Raises:
-            MissingParameter, InvalidParameter
         """
-        # check profile type
-        if profile.__class__.__name__ not in self.profiles_types:
-            raise InvalidParameter(u'Profile "%s" is not supported in this renderer' % profile.__class__.__name__)
-
         # call implementation
         try:
-            self.on_render(profile)
+            self.on_render(profile, params)
             return True
         except:
             self.logger.exception('Rendering profile "%s" failed:' % profile.__class__.__name__ if profile else None)
             return False
 
-    def on_render(self, profile):
+    def on_render(self, profile, params):
         """
         Use specified profile values to render them
+
+        Args:
+            profile (string): profile name to identify processed profile
+            params (dict): profile params to render
 
         Warning:
             Must be implemented
