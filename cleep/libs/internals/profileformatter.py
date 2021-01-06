@@ -12,22 +12,27 @@ class ProfileFormatter():
     Used to format profile with specified event parameters
     """
 
-    def __init__(self, events_broker, event_name, profile):
+    def __init__(self, params, event_name, profile):
         """
         Constructor
 
         Args:
-            events_broker (EventsBroker): events broker instance
+            params (dict): ProfileFormatter parameters::
+
+                {
+                    events_broker (EventsBroker): EventsBroker instance
+                }
+
             event_name (string): event name compatible with formatter
             profile (RendererProfile): Renderer profile instance
         """
         if not isinstance(event_name, str):
-            raise InvalidParameter(u'Invalid event_name specified')
+            raise InvalidParameter('Invalid event_name specified')
         if not issubclass(profile.__class__, RendererProfile):
-            raise InvalidParameter(u'Invalid profile specified. Instance must inherits from RendererProfile')
+            raise InvalidParameter('Invalid profile specified. Instance must inherits from RendererProfile')
 
         # members
-        self.events_broker = events_broker
+        self.events_broker = params['events_broker']
         self.event_name = event_name
         self.profile_name = profile.__class__.__name__
         self.profile = profile
@@ -37,15 +42,15 @@ class ProfileFormatter():
         Format event
 
         Args:
-            event_params (list): list of event parameters as received from internal bus
+            event_params (dict): list of event parameters as received from internal bus. Can be None.
 
         Returns:
             Profile instance filled with appropriate values
         """
-        if not isinstance(event_params, list):
-            raise InvalidParameter(u'Parameter "event_params" must be a list')
+        if not isinstance(event_params, dict) and not event_params is None:
+            raise InvalidParameter('Parameter "event_params" must be a dict not %s' % type(event_params))
 
-        return self._fill_profile(event_params, self.profile)
+        return self._fill_profile(event_params or {}, self.profile)
     
     def _fill_profile(self, event_params, profile):
         """
