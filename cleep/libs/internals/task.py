@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from threading import Timer
+import time
 
 __all__ = ['Task', 'CountTask']
 
@@ -39,6 +40,7 @@ class Task:
         Run the task
         """
         # execute task
+        start = time.perf_counter()
         if self._run_count is not None:
             self._run_count -= 1
 
@@ -67,7 +69,8 @@ class Task:
 
         # run again task?
         if run_again and not self.__stopped:
-            self.__timer = Timer(self._interval, self.__run)
+            adjusted_interval = self._interval - (time.perf_counter() - start)
+            self.__timer = Timer(adjusted_interval, self.__run)
             self.__timer.name = 'task-%s' % getattr(self._task, '__name__', 'unamed')
             self.__timer.daemon = True
             self.__timer.start()
