@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from threading import Timer
-import time
+from time import perf_counter
 
 __all__ = ['Task', 'CountTask']
 
@@ -34,13 +34,17 @@ class Task:
         self._run_count = None
         self.__stopped = False
         self.__end_callback = end_callback
+        self.__start_ts = 0
 
     def __run(self):
         """
         Run the task
         """
+        # accuracy
+        if self.__start_ts == 0:
+            self.__start_ts = perf_counter()
+
         # execute task
-        start = time.perf_counter()
         if self._run_count is not None:
             self._run_count -= 1
 
@@ -69,7 +73,8 @@ class Task:
 
         # run again task?
         if run_again and not self.__stopped:
-            adjusted_interval = self._interval - (time.perf_counter() - start)
+            self.__start_ts += self._interval
+            adjusted_interval = self.__start_ts - perf_counter()
             self.__timer = Timer(adjusted_interval, self.__run)
             self.__timer.name = 'task-%s' % getattr(self._task, '__name__', 'unamed')
             self.__timer.daemon = True
