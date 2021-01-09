@@ -37,6 +37,9 @@ class ProfileFormatter():
         self.profile_name = profile.__class__.__name__
         self.profile = profile
 
+        # get event instance (it also registers event usage and trigger error if specified event does not exist)
+        self.event = self.events_broker.get_event_instance(event_name)
+
     def format(self, event_params):
         """
         Format event

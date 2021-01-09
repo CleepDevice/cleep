@@ -37,10 +37,10 @@ class Event():
         # set members
         self.internal_bus = params.get('internal_bus')
         self.formatters_broker = params.get('formatters_broker')
+        self.events_broker = params.get('events_broker')
         self.__get_external_bus_name = params.get('get_external_bus_name', lambda: None)
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
-        self.__not_renderable_for = []
         if not hasattr(self, 'EVENT_NAME'):
             raise NotImplementedError('EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
         if not isinstance(self.EVENT_NAME, str) or len(self.EVENT_NAME) == 0:
@@ -81,19 +81,6 @@ class Event():
         stack = inspect.stack()
         caller = stack[2][0].f_locals['self']
         return caller.__class__.__name__.lower()
-
-    def set_renderable(self, renderer_name, renderable):
-        """
-        Disable event rendering for specified renderer
-
-        Args:
-            renderer_name (string): renderer name
-            renderable (bool): True to render event for specified renderer, False to disable rendering
-        """
-        if renderable and renderer_name in self.__not_renderable_for:
-            self.__not_renderable_for.remove(renderer_name)
-        elif not renderable and renderer_name not in self.__not_renderable_for:
-            self.__not_renderable_for.append(renderer_name)
 
     def send(self, params=None, device_id=None, to=None, render=True):
         """
@@ -186,7 +173,7 @@ class Event():
         # render profiles
         result = True
         for renderer_name, formatter in formatters.items():
-            if renderer_name in self.__not_renderable_for:
+            if not self.events_broker.is_event_renderable(self.EVENT_NAME, renderer_name):
                 self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
                 continue
 

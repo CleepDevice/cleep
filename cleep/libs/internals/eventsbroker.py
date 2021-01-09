@@ -31,6 +31,7 @@ class EventsBroker():
         # members
         self.events_by_event = {}
         self.events_by_module = {}
+        self.events_not_renderable = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
@@ -92,7 +93,7 @@ class EventsBroker():
             class_ (class): event class ready to be instanciated
         """
         self.events_by_event[class_.EVENT_NAME] = {
-            'instance': class_,
+            'class': class_,
             'used': False,
             'modules': [],
             'formatters': [],
@@ -141,7 +142,7 @@ class EventsBroker():
 
     def get_event_instance(self, event_name):
         """
-        Return event instance according to event name
+        Return new event instance according to event name
         It also register event callers for event
 
         Args:
@@ -174,7 +175,9 @@ class EventsBroker():
                 self.events_by_event[event_name]['modules'].append(module)
             if formatter:
                 self.events_by_event[event_name]['formatters'].append(formatter)
-                self.events_by_event[event_name]['profiles'].append(caller.profile.__class__.__name__)
+                profile_name = caller.profile.__class__.__name__
+                if profile_name not in self.events_by_event[event_name]['profiles']:
+                    self.events_by_event[event_name]['profiles'].append(profile_name)
 
             # update events by module dict
             if module:
@@ -182,10 +185,11 @@ class EventsBroker():
                     self.events_by_module[module] = []
                 self.events_by_module[module].append(event_name)
 
-            return self.events_by_event[event_name]['instance']({
+            return self.events_by_event[event_name]['class']({
                 'internal_bus': self.internal_bus,
                 'formatters_broker': self.formatters_broker,
-                'get_external_bus_name': self.__get_external_bus_name
+                'get_external_bus_name': self.__get_external_bus_name,
+                'events_broker': self,
             })
 
         raise Exception('Event "%s" does not exist' % event_name)
@@ -240,4 +244,39 @@ class EventsBroker():
             raise Exception('Module name "%s" is not referenced in Cleep' % module_name)
 
         return self.events_by_module[module_name]
+
+    def set_event_renderable(self, event_name, renderer_name, renderable):
+        """
+        Set event renderable or not for specified renderer
+
+        Args:
+            event_name (string): event name
+            renderer_name (string): renderer name
+            renderable (bool): True if event is renderable
+        """
+        if renderable and event_name in self.events_not_renderable and renderer_name in self.events_not_renderable[event_name]:
+            # event is now renderable for renderer, remove entry
+            self.events_not_renderable[event_name].remove(renderer_name)
+        elif not renderable and event_name not in self.events_not_renderable:
+            # event is not renderable, add entry
+            self.events_not_renderable[event_name] = [renderer_name]
+        elif not renderable and event_name in self.events_not_renderable and renderer_name not in self.events_not_renderable[event_name]:
+            # event is not renderable, append entry
+            self.events_not_renderable[event_name].append(renderer_name)
+
+    def is_event_renderable(self, event_name, renderer_name):
+        """
+        Check if specified event is renderable for specified renderer
+
+        Args:
+            event_name (string): event name
+            renderer_name (string): renderer name
+
+        Returns:
+            bool: True if event is renderable for this renderer
+        """
+        if event_name not in self.events_not_renderable:
+            return True
+
+        return False if renderer_name in self.events_not_renderable[event_name] else True
 

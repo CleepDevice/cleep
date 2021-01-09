@@ -152,10 +152,10 @@ class ProfileFormattersBroker():
                             self.logger.error('Formatter class name must have the same name than filename in "%s"' % formatter)
 
                 except AttributeError: # pragma: no cover
-                    self.logger.exception('Formatter in "%s" was not loaded: it has surely invalid name. Please refer to coding rules.' % formatter)
+                    self.logger.exception('Formatter "%s" was not loaded: it has surely invalid name. Please refer to coding rules.' % formatter)
 
                 except:
-                    self.logger.exception('Formatter in "%s" was not loaded: it has some problem from inside. Please check code.' % formatter)
+                    self.logger.exception('Formatter "%s" was not loaded: it has some problem from inside. Please check code.' % formatter)
 
         self.__dump_existing_formatters()
 
@@ -207,17 +207,17 @@ class ProfileFormattersBroker():
         for profile in module_profiles:
             for event_name, handled_profiles in self.__existing_formatters.items():
                 if profile.__name__ not in handled_profiles or len(handled_profiles) == 0:
-                    self.logger.warning(
-                        'There is no formatter registered for event "%s" and profile "%s". \
-                        Please write your own formatter and publish it with your code.' % (
-                            event_name, profile.__name__
-                        )
-                    )
+                    # no useful formatter for this profile
                     continue
 
                 # search best formatter
                 best_formatter = self.__get_best_formatter(module_name, handled_profiles[profile.__name__])
                 self.logger.trace('Best formatter for event "%s" for app "%s": %s' % (event_name, module_name, best_formatter))
+                if not best_formatter:
+                    self.logger.warning('No formatter found for event "%s" requested by "%s" app "%s" profile' % (
+                        event_name, module_name, profile.__name__,
+                    ))
+                    continue
             
                 # save formatter
                 if event_name not in self.__formatters:
