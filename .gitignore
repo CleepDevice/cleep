@@ -13,8 +13,7 @@ build/
 debian/debhelper-build-stamp
 debian/files
 debian/cleep.debhelper.log
-debian/cleep.postinst.debhelper
-debian/cleep.prerm.debhelper
+debian/cleep.*.debhelper
 debian/cleep.substvars
 debian/cleep/
 /modules/
