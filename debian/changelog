@@ -1,3 +1,13 @@
+cleep (0.0.23) unstable; urgency=low
+
+  * Fix debian installer
+  * Fix renderings
+  * Improve task lib accuracy
+  * Small improvements
+  * Clean some code
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com>  Sun, 17 jan 2021 17:30:00 +0000
+
 cleep (0.0.22) unstable; urgency=low
 
   * Fix libs for python3.7 or new Raspberry Pi Os
