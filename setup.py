@@ -23,7 +23,7 @@ setup(
     url = 'http://www.github.com/tangb/cleep',
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: Free For Home Use",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: POSIX :: Linux"
     ],
     python_requires='~=3.7',
