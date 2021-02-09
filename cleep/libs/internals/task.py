@@ -34,16 +34,12 @@ class Task:
         self._run_count = None
         self.__stopped = False
         self.__end_callback = end_callback
-        self.__start_ts = 0
+        self.__task_start_timestamp = perf_counter()
 
     def __run(self):
         """
         Run the task
         """
-        # accuracy
-        if self.__start_ts == 0:
-            self.__start_ts = perf_counter()
-
         # execute task
         if self._run_count is not None:
             self._run_count -= 1
@@ -73,8 +69,8 @@ class Task:
 
         # run again task?
         if run_again and not self.__stopped:
-            self.__start_ts += self._interval
-            adjusted_interval = self.__start_ts - perf_counter()
+            self.__task_start_timestamp += self._interval
+            adjusted_interval = self.__task_start_timestamp - perf_counter()
             self.__timer = Timer(adjusted_interval, self.__run)
             self.__timer.name = 'task-%s' % getattr(self._task, '__name__', 'unamed')
             self.__timer.daemon = True
@@ -100,6 +96,8 @@ class Task:
         """
         Start the task
         """
+        # accuracy
+        self.__task_start_timestamp = perf_counter()
         if self.__timer:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
