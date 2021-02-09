@@ -425,7 +425,7 @@ class AdvancedConsole(Console):
         Args:
             command (string): command to execute
             pattern (string): search pattern
-            options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
+            options (flag): regexp flags (see https://docs.python.org/3/library/re.html#module-contents)
             timeout (float): timeout before killing command
 
         Returns:
