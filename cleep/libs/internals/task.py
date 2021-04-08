@@ -113,6 +113,7 @@ class Task:
         if self.__timer:
             self.__timer.cancel()
             self.__timer = None
+            del self.__timer
 
         # do not restart timer if task is running
         self.__stopped = True
