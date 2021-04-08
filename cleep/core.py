@@ -46,7 +46,7 @@ class Cleep(BusClient):
             debug_enabled (bool): flag to set debug level to logger.
         """
         # init bus
-        BusClient.__init__(self, bootstrap)
+        BusClient.__init__(self, self.MODULE_NAME, bootstrap)
 
         # init logger
         self.logger = logging.getLogger(self.__class__.__name__)

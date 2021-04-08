@@ -134,15 +134,15 @@ class MessageBus():
         if request.to in self._queues:
             # recipient exists and has queue
             return self.__push_to_recipient(request, request_dict, timeout)
-        elif request.to == 'rpc':
+        if request.to == 'rpc':
             # recipient is rpc
             return self.__push_to_rpc(request, request_dict, timeout)
-        elif request.to is None:
+        if request.to is None:
             # no recipient specified, broadcast message
             return self.__push_to_broadcast(request, request_dict, timeout)
-        else:
-            # App is configured but recipient is not subscribed, raise exception
-            raise InvalidModule(request.to)
+            
+        # App is configured but recipient is not subscribed, raise exception
+        raise InvalidModule(request.to)
 
     def __push_to_recipient(self, request, request_dict, timeout):
         """
@@ -319,48 +319,48 @@ class MessageBus():
         # end of loop and no message found
         raise NoMessageAvailable()
 
-    def add_subscription(self, module):
+    def add_subscription(self, module_name):
         """
         Add new subscription.
 
         Args:
-            module (string): module name
+            module_name (string): module name
         """
-        module_lc = module.lower()
-        self.logger.trace('Add subscription for module "%s"' % module_lc)
-        self._queues[module_lc] = deque(maxlen=self.DEQUE_MAX_LEN)
-        self.__activities[module_lc] = int(uptime.uptime())
+        module_name_lc = module_name.lower()
+        self.logger.trace('Add subscription for module "%s"' % module_name_lc)
+        self._queues[module_name_lc] = deque(maxlen=self.DEQUE_MAX_LEN)
+        self.__activities[module_name_lc] = int(uptime.uptime())
 
-    def remove_subscription(self, module):
+    def remove_subscription(self, module_name):
         """
         Remove existing subscription;
 
         Args:
-            module (string): module name.
+            module_name (string): module name.
 
         Raises:
             InvalidParameter: if module is unknown.
         """
-        module_lc = module.lower()
-        self.logger.debug('Remove subscription for module "%s"' % module_lc)
-        if module_lc in self._queues:
-            del self._queues[module_lc]
-            del self.__activities[module_lc]
+        module_name_lc = module_name.lower()
+        self.logger.debug('Remove subscription for module "%s"' % module_name_lc)
+        if module_name_lc in self._queues:
+            del self._queues[module_name_lc]
+            del self.__activities[module_name_lc]
         else:
-            self.logger.error('Subscriber "%s" not found' % module_lc)
-            raise InvalidModule(module_lc)
+            self.logger.error('Subscriber "%s" not found' % module_name_lc)
+            raise InvalidModule(module_name_lc)
 
-    def is_subscribed(self, module):
+    def is_subscribed(self, module_name):
         """
         Check if module is subscribed.
 
         Args:
-            module (string): module name.
+            module_name (string): module name.
 
         Returns:
             bool: True if module is subscribed.
         """
-        return module.lower() in self._queues
+        return module_name.lower() in self._queues
 
     def purge_subscriptions(self):
         """
@@ -394,25 +394,25 @@ class BusClient(threading.Thread):
     #   manual response function in your code, command will fall in timeout and never return a response.
     PARAM_MANUAL_RESPONSE = 'manual_response'
 
-    def __init__(self, bootstrap):
+    def __init__(self, module_name, bootstrap):
         """
         Constructor
 
         Args:
+            module_name (string): module name
             bootstrap (dict): bootstrap objects
         """
         threading.Thread.__init__(
             self,
             daemon=True,
-            name='module-%s' % self.__class__.__name__.lower()
+            name='module-%s' % module_name.lower()
         )
 
         # members
         self.__continue = True
         self.__bus = bootstrap['internal_bus']
         self.__bootstrap_crash_report = bootstrap['crash_report']
-        self.__name = self.__class__.__name__
-        self.__module_name = self.__name.lower()
+        self.__module_name = module_name.lower()
         self.__module_join_event = bootstrap['module_join_event']
         self.__module_join_event.clear()
         self.__core_join_event = bootstrap['core_join_event']
@@ -928,7 +928,7 @@ class BusClient(threading.Thread):
                             except:
                                 # do not crash module
                                 self.logger.exception(
-                                    'Exception during on_event call, handled by "%s" module:' % self.__class__.__name__
+                                    'Exception during on_event call, handled by "%s" module:' % self.__module_name
                                 )
 
                 else: # pragma: no cover

@@ -6,7 +6,10 @@ import logging
 import importlib
 import inspect
 import copy
-from threading import Event
+from threading import Event, Timer
+import sys
+from types import ModuleType, FunctionType
+from gc import get_referents
 from cleep.core import Cleep, CleepModule, CleepRenderer, CleepRpcWrapper
 from cleep.libs.configs.modulesjson import ModulesJson
 from cleep.exception import CommandError, MissingParameter, InvalidParameter
@@ -14,6 +17,7 @@ from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.install import Install
 import cleep.libs.internals.tools as Tools
 from cleep.common import CORE_MODULES, ExecutionStep
+from cleep.libs.internals.task import Task
 
 __all__ = ['Inventory']
 
@@ -28,6 +32,7 @@ class Inventory(Cleep):
     MODULE_AUTHOR = 'Cleep'
     MODULE_VERSION = '0.0.0'
     MODULE_CORE = True
+    MODULE_NAME = 'inventory'
 
     MODULES_SYNC_TIMEOUT = 60.0
     PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
@@ -93,6 +98,11 @@ class Inventory(Cleep):
         """
         self._load_modules()
 
+        if os.getenv(MEMORY_MONITORING):
+            self.logger.info('Starting memory monitoring task')
+            self.__memory_monitoring_task = Task(21600, self.__memory_monitoring, self.logger)
+            self.__memory_monitoring_task.start()
+
     def __get_bootstrap(self):
         """
         Get a copy of bootstrap object to pass to module to load
@@ -147,10 +157,15 @@ class Inventory(Cleep):
         self.modules[module_name]['installed'] = True
 
         # import module file and get module class
-        module_path = '%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, module_name)
-        self.logger.trace('Importing module "%s"' % module_path)
+        module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
         module_ = importlib.import_module(module_path)
-        module_class_ = getattr(module_, module_name.capitalize())
+        app_filename = getattr(module_, 'app_filename', module_name)
+        del module_
+        class_path = '%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, app_filename)
+        self.logger.trace('Importing module "%s"' % class_path)
+        module_ = importlib.import_module(class_path)
+        module_class_ = getattr(module_, app_filename.capitalize())
+        setattr(module_class_, 'MODULE_NAME', module_name)
                     
         # enable or not debug
         debug = False
@@ -286,18 +301,23 @@ class Inventory(Cleep):
 
         # append manually installed modules (surely module in development)
         local_modules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.PYTHON_CLEEP_MODULES_PATH))
-        self.logger.trace('Local modules path: %s' % local_modules_path)
+        self.logger.debug('Local modules path: %s' % local_modules_path)
         if not os.path.exists(local_modules_path): # pragma: no cover
             raise CommandError('Invalid modules path')
         for f in os.listdir(local_modules_path):
             fpath = os.path.join(local_modules_path, f)
             module_name = os.path.split(fpath)[-1]
-            module_py = os.path.join(fpath, '%s.py' % module_name)
+            if module_name.startswith('__'):
+                continue
+            module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
+            module_ = importlib.import_module(module_path)
+            app_filename = getattr(module_, 'app_filename', module_name)
+            module_py = os.path.join(fpath, '%s.py' % app_filename)
             if os.path.isdir(fpath) and os.path.exists(module_py) and module_name not in self.modules:
                 self.logger.debug('Found module "%s" installed manually' % module_name)
                 local_modules.append(module_name)
                 self.modules[module_name] = {}
-        self.logger.trace('Local modules: %s' % local_modules)
+        self.logger.debug('Local modules: %s' % local_modules)
 
         # add default metadata
         for module_name in self.modules:
@@ -755,4 +775,44 @@ class Inventory(Cleep):
         Return drivers
         """
         return self.bootstrap['drivers'].get_all_drivers()
+
+    def __get_object_size(self, obj):
+        """
+        Return memory size of specified object instance. Useful to track monitor module instance size
+
+        Args:
+            obj (object): object instance
+
+        Returns:
+            int: memory size of instance
+
+        Notes:
+            Code from https://stackoverflow.com/a/30316760
+        """
+        BLACKLIST = type, ModuleType, FunctionType
+
+        if isinstance(obj, BLACKLIST):
+            return 0
+
+        seen_ids = set()
+        size = 0
+        objects = [obj]
+        while objects:
+            need_referents = []
+            for obj in objects:
+                if not isinstance(obj, BLACKLIST) and id(obj) not in seen_ids:
+                    seen_ids.add(id(obj))
+                    size += sys.getsizeof(obj)
+                    need_referents.append(obj)
+            objects = get_referents(*need_referents)
+
+        return size
+
+    def __memory_monitoring(self):
+        """
+        Memory monitoring task
+        """
+        self.logger.info('========== MEMORY STATUS ==========')
+        for module_name, module_instance in self.__modules_instances.items():
+            self.logger.info(' - %s: %d' % (module_name, self.__get_object_size(module_instance)))
 
