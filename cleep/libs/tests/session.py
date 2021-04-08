@@ -41,10 +41,10 @@ class TestSession():
 
         self.testcase = testcase
         self.__setup_executed = False
-        self.__module_class = None
         self.__debug_enabled = False
         self.crash_report = None
         self.cleep_filesystem = None
+        self.__module_class = None
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -120,8 +120,8 @@ class TestSession():
         self.bootstrap.update(bootstrap)
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
-        self.__module_class = None
         self.__module_instance = None
+        self.__module_class = module_class # used for respawn
 
         # config
         module_class.CONFIG_DIR = '/tmp'
@@ -139,7 +139,7 @@ class TestSession():
         Args:
             module_instance (instance): module instance returned by setup function
         """
-        # start instace
+        # start instance
         module_instance.start()
 
         # wait for module to be configured
@@ -149,9 +149,12 @@ class TestSession():
         module_instance._wait_is_started()
         self.logger.debug('===== module started =====')
 
-    def respawn_module(self):
+    def respawn_module(self, start=True):
         """
         Respawn module instance (simulate module start)
+
+        Args:
+            start (bool): start module
 
         Returns:
             Object: returns module_class instance or None if setup not executed before
@@ -163,8 +166,14 @@ class TestSession():
         self.__module_instance.stop()
         self.__module_instance.join()
 
-        # start new module instance
-        return self.setup(self.__module_class, self.__debug_enabled)
+        # create new module instance
+        module_instance = self.setup(self.__module_class, self.bootstrap)
+
+        # start instance
+        if start:
+            self.start_module(module_instance)
+
+        return module_instance
 
     def clean(self):
         """
