@@ -159,7 +159,7 @@ class Inventory(Cleep):
         # import module file and get module class
         module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
         module_ = importlib.import_module(module_path)
-        app_filename = getattr(module_, 'app_filename', module_name)
+        app_filename = getattr(module_, 'APP_FILENAME', module_name)
         del module_
         class_path = '%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, app_filename)
         self.logger.trace('Importing module "%s"' % class_path)
@@ -311,7 +311,7 @@ class Inventory(Cleep):
                 continue
             module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
             module_ = importlib.import_module(module_path)
-            app_filename = getattr(module_, 'app_filename', module_name)
+            app_filename = getattr(module_, 'APP_FILENAME', module_name)
             module_py = os.path.join(fpath, '%s.py' % app_filename)
             if os.path.isdir(fpath) and os.path.exists(module_py) and module_name not in self.modules:
                 self.logger.debug('Found module "%s" installed manually' % module_name)
