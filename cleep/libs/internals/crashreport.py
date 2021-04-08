@@ -2,22 +2,21 @@
 # -*- coding: utf-8 -*
 
 import logging
-import sys
+import platform
+import copy
 from sentry_sdk import init as SentryInit
 from sentry_sdk import push_scope as SentryPushScope
 from sentry_sdk import capture_message as SentryCaptureMessage
 from sentry_sdk import capture_exception as SentryCaptureException
 from sentry_sdk import configure_scope
-import platform
-import traceback
-import copy
+import cleep.libs.internals.tools as Tools
 
 class CrashReport():
     """
     Crash report class
     """
 
-    def __init__(self, token, product, product_version, libs_version={}, debug=False, disabled_by_core=False):
+    def __init__(self, token, product, product_version, libs_version=None, debug=False, disabled_by_core=False):
         """
         Constructor
 
@@ -29,26 +28,27 @@ class CrashReport():
             debug (bool): debug flag
             disabled_by_core (bool): used by core to force crash report deactivation
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARN)
 
-        #members
+        # members
         self.__disabled_by_core = disabled_by_core
         self.__enabled = False
         self.__token = token
-        self.__libs_version = libs_version
+        self.__libs_version = libs_version or {}
         self.__product = product
         self.__product_version = product_version
 
-        #disable crash report if necessary
+        # disable crash report if necessary
         if self.__disabled_by_core or not token:
+            self.logger.debug('Crash report forced to be disabled')
             self.disable()
 
-        #create and configure raven client
+        # create and configure raven client
         SentryInit(
             dsn=self.__token,
             release=product_version,
@@ -57,7 +57,7 @@ class CrashReport():
             default_integrations=False
         )
 
-        #fill current scope
+        # fill current scope
         with configure_scope() as scope:
             scope.set_tag('platform', platform.platform())
             scope.set_tag('product', product)
@@ -65,23 +65,27 @@ class CrashReport():
             for key, value in libs_version.items():
                 scope.set_tag(key, value)
             try:
-                #append more metadata for raspberry
-                import cleep.libs.internals.tools as Tools
+                # append more metadata for raspberry
                 infos = Tools.raspberry_pi_infos()
                 scope.set_tag('raspberrypi_model', infos[u'model'])
                 scope.set_tag('raspberrypi_revision', infos[u'revision'])
                 scope.set_tag('raspberrypi_pcbrevision', infos[u'pcbrevision'])
-            except Exception as e: # pragma: no cover
-                self.logger.debug('Application is not running on a raspberry pi: %s' % str(e))
-        
+            except Exception as error: # pragma: no cover
+                self.logger.debug('Application is not running on a raspberry pi: %s' % str(error))
 
     def __filter_exception(self, event, hint): # pragma: no cover
         """
         Callback used to filter sent exceptions
         """
         if 'exc_info' in hint:
-            exc_type, exc_value, tb = hint["exc_info"]
-            if type(exc_value).__name__ in (u'KeyboardInterrupt', u'zmq.error.ZMQError', u'AssertionError', u'ForcedException', u'NotReady'):
+            _, exc_value, _ = hint['exc_info']
+            if type(exc_value).__name__ in (
+                    'KeyboardInterrupt',
+                    'zmq.error.ZMQError',
+                    'AssertionError',
+                    'ForcedException',
+                    'NotReady'
+                ):
                 self.logger.debug('Exception "%s" filtered' % type(exc_value).__name__)
                 return None
 
@@ -137,12 +141,14 @@ class CrashReport():
                 self.__set_extra(scope, extra)
                 SentryCaptureMessage(message)
 
-    def __set_extra(self, scope, more_extra={}):
+    @staticmethod
+    def __set_extra(scope, more_extra=None):
         """
         Set extra data to specified Sentry scope (typically )
 
         Args:
             scope: Sentry scope
+            more_extra (dict): more extra data to add to scope
         """
         if isinstance(more_extra, dict) and more_extra:
             for key, value in more_extra.items():
