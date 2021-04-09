@@ -125,6 +125,8 @@ class TestSession():
 
         # config
         module_class.CONFIG_DIR = '/tmp'
+        if not hasattr(module_class, 'MODULE_NAME'):
+            setattr(module_class, 'MODULE_NAME', 'moduletest')
         
         # instanciate
         self.__module_instance = module_class(self.bootstrap, self.__debug_enabled)
