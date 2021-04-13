@@ -1231,24 +1231,24 @@ class CleepExternalBus(Cleep):
             '_send_command_to_peer function must be implemented in "%s"' % self.__class__.__name__
         )
 
-    def send_event_to_peer(self, event, peer_uuid, params=None):
+    def send_event_to_peer(self, event_name, peer_uuid, params=None):
         """
         Send event to specified peer through external bus
 
         Args:
-            event (string): event name
+            event_name (string): event name
             peer_uuid (string): peer uuid
             params (dict): event parameters. Default None
         """
         # overwrite super function to call directly internal function
-        self._send_event_to_peer(event, peer_uuid, params)
+        self._send_event_to_peer(event_name, peer_uuid, params)
 
-    def _send_event_to_peer(self, event, peer_uuid, params=None):
+    def _send_event_to_peer(self, event_name, peer_uuid, params=None):
         """
         Send event to specified peer through external bus implementation
 
         Args:
-            event (string): event name
+            event_name (string): event name
             peer_uuid (string): peer uuid
             params (dict): event parameters. Default None
 
