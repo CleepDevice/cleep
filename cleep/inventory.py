@@ -98,7 +98,7 @@ class Inventory(Cleep):
         """
         self._load_modules()
 
-        if os.getenv(MEMORY_MONITORING):
+        if os.getenv('MEMORY_MONITORING'):
             self.logger.info('Starting memory monitoring task')
             self.__memory_monitoring_task = Task(21600, self.__memory_monitoring, self.logger)
             self.__memory_monitoring_task.start()
