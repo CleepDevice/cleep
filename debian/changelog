@@ -1,3 +1,16 @@
+cleep (0.0.24) unstable; urgency=low
+
+  * Add way to monitor cleep memory usage using MEMORY_MONITORING env var
+  * Add way to change app main file using APP_FILENAME global package var
+  * Fix test session lib when using respawn function
+  * Bump python libs
+  * Fix task lib accuracy
+  * Add missing python3-distutils package
+  * Add mockdatetime test lib
+  * Fix typos
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Sat, 17 apr 2021 11:30:00 +0200
+
 cleep (0.0.23) unstable; urgency=low
 
   * Fix debian installer
