@@ -325,8 +325,8 @@ class Alsa(AdvancedConsole):
         # check parameters
         if command is None:
             raise MissingParameter('Parameter "command" is missing')
-        if command not in (self.CSET, self.CGET):
-            raise InvalidParameter('Parameter "command" must be Alsa.CGET or Alsa.CSET')
+        if command not in (Alsa.CSET, Alsa.CGET):
+            raise InvalidParameter('Parameter "command" must be Alsa.CGET or Alsa.CSET (specified="%s")' % command)
         if not isinstance(numid, int):
             raise InvalidParameter('Parameter "numid" must be a string')
         if command == self.CSET and value is None:
