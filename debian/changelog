@@ -1,6 +1,7 @@
 cleep (0.0.25) unstable; urgency=low
 
   * frontend: fix padzero angular filter
+  * frontend: fix open button for module that has no config
   * backend: fix missing propagate field in MessageRequest
 
 cleep (0.0.24) unstable; urgency=low

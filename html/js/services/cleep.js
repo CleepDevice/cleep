@@ -211,14 +211,11 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
                 }
 
                 // module "has config" flag
-                self.modules[module].hasConfig = false;
-                if( resp.data.config ) {
-                    self.modules[module].hasConfig = true;
-                }
+                self.modules[module].hasConfig = Object.keys(resp.data.config).length!==0;
 
                 // load module global objects (components, widgets and services)
                 files = self.__getModuleGlobalFiles(module, resp.data);
-                if( files.js.length==0 && files.html.length==0 ) {
+                if( files.js.length===0 && files.html.length===0 ) {
                     // no file to lazyload, stop chain here
                     return $q.reject('stop-chain');
                 };
