@@ -334,7 +334,7 @@ class MessageRequest(object):
                 self.timeout,
             )
         elif self.event:
-            return 'MessageRequest(event:%s, propagate:%s, params:%s, to:%s, device_id:%s, peer_infos:%s, command_uuid:%s)' % (
+            return 'MessageRequest(event:%s, propagate:%s, params:%s, to:%s, device_id:%s, peer_infos:%s, command_uuid:%s, propagate:%s)' % (
                 self.event,
                 self.propagate,
                 str(self.params),
@@ -342,6 +342,7 @@ class MessageRequest(object):
                 self.device_id,
                 self.peer_infos.to_dict() if self.peer_infos else None,
                 self.command_uuid,
+                self.propagate,
             )
 
         return 'MessageRequest(Invalid message)'
@@ -403,6 +404,7 @@ class MessageRequest(object):
                 'startup': startup,
                 'device_id': self.device_id,
                 'sender': self.sender,
+                'propagate': self.propagate,
             }
 
         elif self.command and self.peer_infos:
