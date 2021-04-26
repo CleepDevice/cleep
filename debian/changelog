@@ -1,3 +1,8 @@
+cleep (0.0.25) unstable; urgency=low
+
+  * frontend: fix padzero angular filter
+  * backend: fix missing propagate field in MessageRequest
+
 cleep (0.0.24) unstable; urgency=low
 
   * Add way to monitor cleep memory usage using MEMORY_MONITORING env var
