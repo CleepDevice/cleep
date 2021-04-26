@@ -89,6 +89,7 @@ var pageDirective = function($q, cleepService, $compile, $timeout, $routeParams,
         {
             //load js files using lazy loader
             return $ocLazyLoad.load({
+                'cache': false,
                 'reconfig': false,
                 'rerun': false,
                 'files': files

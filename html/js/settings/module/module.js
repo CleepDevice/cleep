@@ -55,6 +55,7 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
         self.__loadJsCssFiles = function(files) {
             // load js files using lazy loader
             return $ocLazyLoad.load({
+                'cache': false,
                 'reconfig': false,
                 'rerun': false,
                 'files': files

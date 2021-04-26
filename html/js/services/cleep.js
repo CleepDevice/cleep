@@ -4,7 +4,11 @@
  *  - installed modules: module and module helpers (reload config, get config...)
  *  - devices: all devices and devices helpers (reload devices)
  */
-var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
+angular
+.module('Cleep')
+.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache',
+function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
+
     var self = this;
     self.__deferredModules = $q.defer();
     self.__deferredEvents = $q.defer();
@@ -117,6 +121,7 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
     self.__loadJsFiles = function(jsFiles) {
         // load js files using lazy loader
         return $ocLazyLoad.load({
+            'cache': false,
             'reconfig': true,
             'rerun': true,
             'files': jsFiles
@@ -130,7 +135,9 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
      * @return promise
      */
     self.__loadCssFiles = function(cssFiles) {
-        return $ocLazyLoad.load(cssFiles);
+        return $ocLazyLoad.load(cssFiles, {
+            cache: false
+        });
     };
 
     /**
@@ -154,8 +161,9 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         $q.all(promises)
             .then(function(templates) {
                 // check if templates available
-                if( !templates ) 
+                if( !templates ) {
                     return $q.resolve();
+                }
 
                 // cache templates
                 for( var i=0; i<templates.length; i++ ) {
@@ -735,8 +743,5 @@ var cleepService = function($injector, $q, toast, rpcService, $http, $ocLazyLoad
         });
     };
 
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', cleepService]);
+}]);
 

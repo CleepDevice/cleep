@@ -10,7 +10,9 @@ var Cleep = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast, $route) {
+Cleep
+.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route',
+function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast, $route) {
 
     var self = this;
     self.rebooting = false;
@@ -204,7 +206,5 @@ var mainController = function($rootScope, $scope, $injector, rpcService, cleepSe
         }
     );
 
-};
-
-Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', mainController]);
+}]);
 

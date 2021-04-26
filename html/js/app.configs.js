@@ -7,6 +7,7 @@
  */
 
 var Cleep = angular.module('Cleep');
+var currentTimestamp = Date.now();
 
 /**
  * Routes configuration
@@ -33,6 +34,34 @@ Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $l
             redirectTo: '/dashboard'
         });
 }]);
+
+/**
+ * Http interceptor to resolve cache problems
+ */
+Cleep
+.config(function ($templateRequestProvider) {
+    $templateRequestProvider.httpOptions({ _isTemplate: true });
+})
+.factory('noCacheInterceptor', function($templateCache) {
+    return {
+        'request': function(config) {
+            if (config._isTemplate) {
+                return config;
+            }
+            if (config.url.indexOf('.html')!==-1 ||
+                config.url.indexOf('.json')!==-1 ||
+                config.url.indexOf('.svg')!==-1 ||
+                config.url.indexOf('.css')!==-1
+            ) {
+                config.url = config.url + '?t=' + currentTimestamp;
+            }
+            return config;
+        }
+    };
+})
+.config(function($httpProvider) {
+    $httpProvider.interceptors.push('noCacheInterceptor');
+});
 
 /**
  * Theme configuration
