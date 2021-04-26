@@ -177,7 +177,7 @@ Cleep.filter('orderObjByKey', function() {
  */
 Cleep.filter('padzero', function($filter) {
     return function(value, length, max) {
-        return ('0'.repeat(max || 2)+value).slice(-length || 2);
+        return ('0'.repeat(max || 2)+value).slice(-length || -2);
     };
 });
 
