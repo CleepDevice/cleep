@@ -266,3 +266,8 @@ md-toast.info .md-toast-content {
     line-height: 1em;
 }
 
+/********** module ***********/
+.module-padding {
+    padding: 16px;
+}
+
