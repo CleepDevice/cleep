@@ -26,47 +26,39 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
     /**
      * Handle polling
      */
-    self.polling = function()
-    {
+    self.polling = function() {
          rpcService.poll()
             .then(function(response) {
                 message = '';
 
-                if( self.rebooting || self.restarting )
-                {
-                    //toast message
-                    if( self.rebooting )
-                    {
+                if( self.rebooting || self.restarting ) {
+                    // toast message
+                    if( self.rebooting ) {
                         message = 'Device has rebooted';
-                    }
-                    else if( self.restarting )
-                    {
+                    } else if( self.restarting ) {
                         message = 'Application has restarted';
                     }
                     
-                    //system has started
+                    // system has started
                     self.rebooting = false;
                     self.restarting = false;
 
-                    //reload application config
+                    // reload application config
                     self.reloadConfig = true;
-                }
-                else if( self.notConnected )
-                {
-                    //unblock ui
+                } else if( self.notConnected ) {
+                    // unblock ui
                     blockUI.stop();
                     self.notConnected = false;
 
-                    //toast message
+                    // toast message
                     message = 'Connection with device restored';
 
-                    //reload application config
+                    // reload application config
                     self.reloadConfig = true;
                 }
 
-                //reload application config after restart/reboot/connection loss
-                if( self.reloadConfig )
-                {
+                // reload application config after restart/reboot/connection loss
+                if( self.reloadConfig ) {
                     self.reloadConfig = false;
                     self.loadConfig(false)
                         .then(function() {
@@ -83,61 +75,47 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
                     });
                 }
 
-                if( response && response.data && !response.error )
-                {
-                    if( response.data.event.startsWith('system.system.') )
-                    {
-                        //handle system events
-                        if( response.data.event=='system.system.reboot' )
-                        {
-                            self.rebooting = true;
-                            blockUI.start({message:'System is rebooting...', submessage:'Please wait, it might take some time.', spinner:true, icon:null});
-                        }
-                        else if( response.data.event=='system.system.restart' )
-                        {
-                            self.restarting = true;
-                            blockUI.start({message:'Application is restarting...', submessage:'Please wait few seconds.', spinner:true, icon:null});
-                        }
-                        else if( response.data.event=='system.system.halt' )
-                        {
-                            blockUI.start({message:'System is halting.', submessage:'Your device will disconnect in few seconds.', spinner:true, icon:null});
-                        }
-                    }
-                    else
-                    {
-                        //broadcast received message
+                if( response && response.data && !response.error ) {
+                    // handle system events
+                    if( response.data.event=='system.device.reboot' ) {
+                        self.rebooting = true;
+                        blockUI.start({message:'Device is rebooting...', submessage:'Please wait, it might take some time.', spinner:true, icon:null});
+                    } else if( response.data.event=='system.cleep.restart' ) {
+                        self.restarting = true;
+                        blockUI.start({message:'Cleep is restarting...', submessage:'Please wait few seconds.', spinner:true, icon:null});
+                    } else if( response.data.event=='system.device.poweroff' ) {
+                        blockUI.start({message:'Device is powering off.', submessage:'Device will disconnect in few seconds.', spinner:true, icon:null});
+                    } else {
+                        // broadcast received message
                         $rootScope.$broadcast(response.data.event, response.data.device_id, response.data.params);
                     }
                 }
 
-                //reset next polling timeout
+                // reset next polling timeout
                 self.nextPollingTimeout = 1;
 
-                //relaunch polling right now
+                // relaunch polling right now
                 window.setTimeout(self.polling, 0);
             }, 
             function(err) {
                 if( !self.rebooting && !self.restarting )
                 {
-                    //error occured, differ next polling
+                    // error occured, differ next polling
                     /*self.nextPollingTimeout *= 2;
                     if( self.nextPollingTimeout>300 )
                     {
-                        //do not exceed polling timeout over 5 minutes
+                        // do not exceed polling timeout over 5 minutes
                         self.nextPollingTimeout /= 2;
                     }*/
                     self.nextPollingTimeout = 2;
 
-                    //handle connection loss
-                    if( err=='Connection problem' && !self.notConnected )
-                    {
+                    // handle connection loss
+                    if( err=='Connection problem' && !self.notConnected ) {
                         blockUI.start({message:'Connection lost with the device.', submessage:null, spinner:false, icon:'close-network'});
                         self.notConnected = true;
                     }
-                }
-                else
-                {
-                    //during reboot try every seconds
+                } else {
+                    // during reboot try every seconds
                     self.nextPollingTimeout = 1;
                 }
                 window.setTimeout(self.polling, self.nextPollingTimeout*1000);
@@ -149,24 +127,20 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
      * @param withBlockUi (bool): enable or not block ui with message "loading data..."
      * @return promise
      */
-    self.loadConfig = function(withBlockUi)
-    {
-        if( withBlockUi===undefined || withBlockUi===null )
-        {
+    self.loadConfig = function(withBlockUi) {
+        if( withBlockUi===undefined || withBlockUi===null ) {
             withBlockUi = true;
         }
 
-        //block ui
-        if( withBlockUi )
-        {
+        // block ui
+        if( withBlockUi ) {
             blockUI.start({message:'Loading data...', submessage:'Please wait', icon:null, spinner:true});
         }
 
         return cleepService.loadConfig()
             .finally(function() {
                 //unblock ui
-                if( withBlockUi )
-                {
+                if( withBlockUi ) {
                     blockUI.stop();
                 }
 
@@ -181,12 +155,11 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
     /**
      * Init main controller
      */
-    self.init = function()
-    {
-        //launch polling
+    self.init = function() {
+        // launch polling
         window.setTimeout(self.polling, 0);
 
-        //load config (modules, devices, renderers...)
+        // load config (modules, devices, renderers...)
         self.loadConfig();
     };
     self.init();
@@ -199,8 +172,7 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
             return cleepService.modules['parameters'];
         },
         function(newValue) {
-            if( !angular.isUndefined(newValue) )
-            {
+            if( !angular.isUndefined(newValue) ) {
                 self.hostname = newValue.config.hostname;
             }
         }
