@@ -4,6 +4,7 @@ cleep (0.0.25) unstable; urgency=low
   * Frontend: fix open button for module that has no config
   * Frontend: disable cache for apps
   * Frontend: fix reboot/poweroff/restart functions
+  * Frontend: fix reboot/poweroff/restart messages
   * Backend: fix missing propagate field in MessageRequest
   * Backend: fix modules.json url
 
