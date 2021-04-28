@@ -675,19 +675,25 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
     };
 
     /**
-     * Reboot system
+     * Reboot device
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.reboot = function() {
-        return rpcService.sendCommand('reboot_system', 'system');
+        if( delay===null || delay===undefined ) {
+            delay = 0;
+        }
+        return rpcService.sendCommand('reboot_device', 'system', {'delay': delay});
     };
 
     /**
-     * Halt system
+     * Poweroff device
      * This function calls system module function to avoid adhesion of system service from angular app
      */
-    self.halt = function() {
-        return rpcService.sendCommand('halt_system', 'system');
+    self.poweroff = function() {
+        if( delay===null || delay===undefined ) {
+            delay = 0;
+        }
+        return rpcService.sendCommand('poweroff_device', 'system', {'delay': delay});
     };
 
     /**
@@ -696,10 +702,9 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
      */
     self.restart = function(delay) {
         if( delay===null || delay===undefined ) {
-            // apply default delay of 3 seconds
-            delay = 3;
+            delay = 0;
         }
-        return rpcService.sendCommand('restart', 'system', { 'delay': delay });
+        return rpcService.sendCommand('restart_cleep', 'system', {'delay': delay});
     };
 
     /**
