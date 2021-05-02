@@ -11,7 +11,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         self.country = null;
         self.countryAlpha = null;
         self.moduleToInstall = null;
-        self.modulesName = [];
+        self.modulesNames = [];
 
         /**
          * Clear search input
@@ -36,24 +36,27 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          * Fill modules list
          */
         self.fillModules = function() {
-            // update list of modules name
-            var modulesName = [];
-            for( moduleName in cleepService.installableModules ) {
-                // fix module country alpha code
-                var countryAlpha = cleepService.installableModules[moduleName].country;
-                if( countryAlpha===null || countryAlpha===undefined ) {
-                    countryAlpha = '';
-                }
+            cleepService.getModuleConfig('parameters')
+            .then((parametersConfig) => {
+                // update list of modules names
+                var modulesNames = [];
+                for( moduleName in cleepService.installableModules ) {
+                    // fix module country alpha code
+                    var countryAlpha = cleepService.installableModules[moduleName].country;
+                    if( countryAlpha===null || countryAlpha===undefined ) {
+                        countryAlpha = '';
+                    }
 
-                // append module name if necessary
-                if(
-                    (!cleepService.installableModules[moduleName].installed || (cleepService.installableModules[moduleName].installed && cleepService.installableModules[moduleName].library)) &&
-                    (countryAlpha.length===0 || countryAlpha==cleepService.installableModules.parameters.config.country.alpha2)
-                ) {
-                    modulesName.push(moduleName);
+                    // append module name if necessary
+                    if(
+                        (!cleepService.installableModules[moduleName].installed || (cleepService.installableModules[moduleName].installed && cleepService.installableModules[moduleName].library)) &&
+                        (countryAlpha.length===0 || countryAlpha.toUpperCase()==parametersConfig.country.alpha2)
+                    ) {
+                        modulesNames.push(moduleName);
+                    }
                 }
-            }
-            self.modulesName = modulesName;
+                self.modulesNames = modulesNames;
+            });
         };
 
         /** 
@@ -95,7 +98,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         /**
          * Fill modules as soon as cleep configuration is loaded
          */
-        $scope.$watchCollection(
+        $scope.$watch(
             function() {
                 return cleepService.installableModules;
             },
@@ -103,7 +106,8 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
                 if( newValue && Object.keys(newValue).length ) {
                     self.fillModules();
                 }
-            }
+            },
+            true
         );
 
         /**

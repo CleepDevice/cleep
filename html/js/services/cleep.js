@@ -6,8 +6,8 @@
  */
 angular
 .module('Cleep')
-.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache',
-function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
+.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', '$rootScope',
+function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $rootScope) {
 
     var self = this;
     self.__deferredModules = $q.defer();
@@ -747,6 +747,19 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache) {
             'module_name': module
         });
     };
+
+    /**
+     * Catch apps updated event
+     */
+    $rootScope.$on('core.apps.updated', function(event, uuid, params) {
+		// refresh list of installable apps
+        rpcService.getModules(true)
+            .then(function(modules) {
+                self.__syncObject(self.installableModules, modules);
+            }, function() {
+                deferred.reject();
+            });
+    });
 
 }]);
 

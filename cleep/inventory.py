@@ -92,6 +92,9 @@ class Inventory(Cleep):
         # current module loading tree
         self.__module_loading_tree = []
 
+        # events
+        self.apps_updated_event = self._get_event('core.apps.updated')
+
     def _configure(self):
         """
         Configure module
@@ -284,6 +287,9 @@ class Inventory(Cleep):
                     'deps': [],
                     'loadedby': [],
                 })
+
+        # trigger modules update event
+        self.apps_updated_event.send()
 
     def _load_modules(self):
         """

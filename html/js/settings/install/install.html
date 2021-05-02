@@ -30,12 +30,12 @@
     <!-- applications list -->
     <div layout="row" layout-wrap>
 
-        <div ng-if="installCtl.modulesName.length===0" style="text-align:center; width:100%; padding-top:30px;">
+        <div ng-if="installCtl.modulesNames.length===0" style="text-align:center; width:100%; padding-top:30px;">
             <md-icon md-svg-icon="trophy-variant"></md-icon>
             <span>You are a Cleep master, you installed all available applications</span>
         </div>
 
-        <div ng-if="installCtl.modulesName.length>0" ng-repeat="moduleName in installCtl.modulesName | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div ng-if="installCtl.modulesNames.length>0" ng-repeat="moduleName in installCtl.modulesNames | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
 
