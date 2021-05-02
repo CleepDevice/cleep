@@ -12,7 +12,7 @@ class ModulesJson():
     Helper class to update and read values from /etc/cleep/modules.json file
     """
 
-    CONF = u'/etc/cleep/modules.json'
+    CONF = '/etc/cleep/modules.json'
     REMOTE_URL =  'https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json'
 
     def __init__(self, cleep_filesystem):
@@ -22,14 +22,13 @@ class ModulesJson():
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
         """
-        #members
+        # members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
 
-        #use local REMOTE_CONF if provided
-        #if u'CLEEPOS_REMOTE_CONF' in os.environ:
-        #    REMOTE_CONF = os.environ[u'CLEEPOS_REMOTE_CONF']
+        # use local REMOTE_CONF if provided
+        # if 'CLEEPOS_REMOTE_CONF' in os.environ:
+        #     REMOTE_CONF = os.environ['CLEEPOS_REMOTE_CONF']
 
     def exists(self):
         """
@@ -49,8 +48,8 @@ class ModulesJson():
             dict: default (and empty) modules.json content
         """
         return {
-            u'update': int(time.time()),
-            u'list': {}
+            'update': int(time.time()),
+            'list': {}
         }
 
     def get_json(self):
@@ -69,17 +68,17 @@ class ModulesJson():
             Exception if modules.json does not exist or is invalid
 
         """
-        #check
+        # check
         if not os.path.exists(self.CONF):
-            raise Exception(u'File "modules.json" doesn\'t exist. Please update it first.')
+            raise Exception('File "modules.json" doesn\'t exist. Please update it first.')
             
-        #read content
+        # read content
         modules_json = self.cleep_filesystem.read_json(self.CONF)
 
-        #check content
-        if modules_json is None or u'list' not in modules_json or u'update' not in modules_json:
-            self.logger.error(u'Invalid "modules.json" file content')
-            raise Exception(u'Invalid "modules.json" file content')
+        # check content
+        if modules_json is None or 'list' not in modules_json or 'update' not in modules_json:
+            self.logger.error('Invalid "modules.json" file content')
+            raise Exception('Invalid "modules.json" file content')
 
         return modules_json
 
@@ -94,42 +93,39 @@ class ModulesJson():
             Exception if error occured
         """
         self.logger.debug('Updating "modules.json" file...')
-        #download file (blocking because file is small)
+        # download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
         download_status, raw = download.download_content(self.REMOTE_URL)
         if raw is None:
             raise Exception('Download of modules.json failed (download status %s)' % download_status)
         remote_modules_json = json.loads(raw)
-        self.logger.trace(u'Downloaded modules.json: %s' % remote_modules_json)
+        self.logger.trace('Downloaded modules.json: %s' % remote_modules_json)
 
-        #check remote content
-        if u'list' not in remote_modules_json or u'update' not in remote_modules_json:
-            self.logger.error(u'Remote "modules.json" file has invalid format')
-            raise Exception(u'Remote "modules.json" file has invalid format')
+        # check remote content
+        if 'list' not in remote_modules_json or 'update' not in remote_modules_json:
+            self.logger.error('Remote "modules.json" file has invalid format')
+            raise Exception('Remote "modules.json" file has invalid format')
         
-        #get local
+        # get local
         local_modules_json = None
         if os.path.exists(self.CONF):
             local_modules_json = self.get_json()
 
-        #compare update field
-        self.logger.debug(u'Compare update timestamp: %s>%s' % (remote_modules_json[u'update'], local_modules_json[u'update'] if local_modules_json else None))
-        if local_modules_json is None or remote_modules_json[u'update']>local_modules_json[u'update']:
-            #modules.json updated, save new file
-            fd = self.cleep_filesystem.open(self.CONF, u'w')
+        # compare update field
+        self.logger.debug('Compare update timestamp: %s>%s' % (remote_modules_json['update'], local_modules_json['update'] if local_modules_json else None))
+        if local_modules_json is None or remote_modules_json['update']>local_modules_json['update']:
+            # modules.json updated, save new file
+            fd = self.cleep_filesystem.open(self.CONF, 'w')
             fd.write(raw)
             self.cleep_filesystem.close(fd)
-            self.logger.info(u'File "modules.json" updated successfully')
+            self.logger.info('File "modules.json" updated successfully')
         
-            #make sure file is written
+            # make sure file is written
             time.sleep(0.25)
 
             return True
 
-        else:
-            #no update from remote modules.json file
-            self.logger.info(u'No difference between local and remote modules.json. File not updated.')
-
-        #no new content
+        # no update from remote modules.json file
+        self.logger.info('No difference between local and remote modules.json. File not updated.')
         return False
 
