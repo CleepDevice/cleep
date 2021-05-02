@@ -717,9 +717,9 @@ class CleepModule(Cleep):
             })
 
         # events
-        self.delete_device_event = None
+        self.deleted_device_event = None
         try:
-            self.delete_device_event = self.events_broker.get_event_instance(u'core.device.delete')
+            self.deleted_device_event = self.events_broker.get_event_instance('core.device.deleted')
         except:
             pass
 
@@ -783,8 +783,8 @@ class CleepModule(Cleep):
         conf_result = self._set_config_field(u'devices', devices)
 
         # send device deleted event
-        if conf_result and self.delete_device_event:
-            self.delete_device_event.send(device_id=device_uuid)
+        if conf_result and self.deleted_device_event:
+            self.deleted_device_event.send(device_id=device_uuid)
 
         return conf_result
 

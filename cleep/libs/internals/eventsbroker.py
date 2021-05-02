@@ -18,8 +18,10 @@ class EventsBroker():
     It is also used to check event content before posting them and make sure it is compatible with core.
     """
 
-    PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
+    PYTHON_CLEEP_APPS_IMPORT_PATH = 'cleep.modules.'
+    PYTHON_CLEEP_CORE_EVENTS_IMPORT_PATH = 'cleep.events.'
     MODULES_DIR = '../../modules'
+    CORE_EVENTS_DIR = '../../events'
 
     def __init__(self, debug_enabled):
         """
@@ -81,6 +83,7 @@ class EventsBroker():
         """
         Load existing events
         """
+        self.__load_events_from_core()
         self.__load_events_from_modules_dir()
 
         self.logger.debug('Found %d events: %s' % (len(self.events_by_event), self.events_by_event.keys()))
@@ -99,6 +102,46 @@ class EventsBroker():
             'formatters': [],
             'profiles': [],
         }
+
+    def __load_events_from_core(self):
+        """
+        Load existing events from core
+        Create an event instance (singleton) for each ones
+        """
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.CORE_EVENTS_DIR))
+        self.logger.info('Loading events from core dir "%s"' % path)
+        if not os.path.exists(path):
+            self.crash_report.report_exception({
+                'message': 'Invalid core events path',
+                'path': path
+            })
+            raise Exception('Invalid core events path "%s"' % path)
+
+        for root, _, filenames in os.walk(path):
+            for filename in filenames:
+                self.logger.trace('Analyzing file "%s"' % filename)
+                try:
+                    fullpath = os.path.join(root, filename)
+                    (event, ext) = os.path.splitext(filename)
+                    parts = full_split_path(fullpath)
+                    if filename.lower().find('event')>=0 and ext=='.py':
+                        self.logger.trace('Loading "%s"' % '%s%s' % (self.PYTHON_CLEEP_CORE_EVENTS_IMPORT_PATH, event))
+                        mod_ = importlib.import_module('%s%s' % (self.PYTHON_CLEEP_CORE_EVENTS_IMPORT_PATH, event))
+                        event_class_name = self.__get_event_class_name(event, mod_)
+                        self.logger.trace('Found event class name: %s' % event_class_name)
+                        if event_class_name:
+                            class_ = getattr(mod_, event_class_name)
+                            self.__save_event(class_)
+                        else:
+                            self.logger.error('Event class must have the same name than the filename')
+
+                except AttributeError: # pragma: no cover
+                    self.logger.exception('Event "%s" has surely invalid name, please refer to coding rules:' % event)
+                    continue
+
+                except:
+                    self.logger.exception('Event "%s" wasn\'t imported successfully. Please check event source code.' % event)
+                    continue
 
     def __load_events_from_modules_dir(self):
         """
@@ -122,8 +165,8 @@ class EventsBroker():
                     (event, ext) = os.path.splitext(filename)
                     parts = full_split_path(fullpath)
                     if filename.lower().find('event')>=0 and ext=='.py':
-                        self.logger.debug('Loading "%s"' % '%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, parts[-2], event))
-                        mod_ = importlib.import_module('%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, parts[-2], event))
+                        self.logger.debug('Loading "%s"' % '%s%s.%s' % (self.PYTHON_CLEEP_APPS_IMPORT_PATH, parts[-2], event))
+                        mod_ = importlib.import_module('%s%s.%s' % (self.PYTHON_CLEEP_APPS_IMPORT_PATH, parts[-2], event))
                         event_class_name = self.__get_event_class_name(event, mod_)
                         self.logger.trace('Found event class name: %s' % event_class_name)
                         if event_class_name:
