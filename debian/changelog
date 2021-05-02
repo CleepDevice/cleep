@@ -5,8 +5,10 @@ cleep (0.0.25) unstable; urgency=low
   * Frontend: disable cache for apps
   * Frontend: fix reboot/poweroff/restart functions
   * Frontend: fix reboot/poweroff/restart messages
+  * Frontend: fix new apps not loaded after modules.json update
   * Backend: fix missing propagate field in MessageRequest
   * Backend: fix modules.json url
+  * Backed: handle core events (instead of handling them in system app)
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Wed, 28 apr 2021 20:00:00 +0200
 
