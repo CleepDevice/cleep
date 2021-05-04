@@ -24,7 +24,8 @@
         "codemirror-minified": "^5.53.2",
         "jquery": "^3.5.1",
         "moment": "^2.25.3",
-        "oclazyload": "^1.1.0"
+        "oclazyload": "^1.1.0",
+        "angularjs-gauge": "^2.2.0"
     },
     "devDependencies": {
         "minify": "^5.2.0"

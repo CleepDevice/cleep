@@ -7,6 +7,7 @@ cleep (0.0.25) unstable; urgency=low
   * Frontend: fix reboot/poweroff/restart messages
   * Frontend: fix new apps not loaded after modules.json update
   * Frontend: fix app search (market+installed)
+  * Frontend: display app quality and confidence
   * Backend: fix missing propagate field in MessageRequest
   * Backend: fix modules.json url
   * Backend: handle core events (instead of handling them in system app)

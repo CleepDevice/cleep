@@ -49,6 +49,8 @@ var files = {
     // badge https://github.com/jmouriz/angular-material-badge
     'node_modules/angular-material-badge/source/angular-material-badge.js': 'js/libs/angular-material-badge.js',
     'node_modules/angular-material-badge/source/angular-material-badge.css': 'css/angular-material-badge.css',
+    // angularjs-gauge
+    'node_modules/angularjs-gauge/dist/angularjs-gauge.min.js': 'js/libs/angularjs-gauge.min.js',
 };
 
 for(var file in files) {

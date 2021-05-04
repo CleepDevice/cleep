@@ -12,6 +12,14 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         self.countryAlpha = null;
         self.moduleToInstall = null;
         self.displayedModules = [];
+        self.gaugeThreshold = {
+            '0': { color: '#000000' },
+            '5': { color: '#d32f2f' },
+            '6': { color: '#f57c00' },
+            '7': { color: '#fbc02d' },
+            '8': { color: '#0288d1' },
+            '9': { color: '#689f38' },
+       };
 
         /**
          * Clear search input
