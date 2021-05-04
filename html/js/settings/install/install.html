@@ -102,7 +102,8 @@
                     <!-- install button -->
                     <md-button
                         class="md-accent"
-                        ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending)"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && !installCtl.cleepService.modulesUpdates[module.name].pending"
+                        ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing"
                         ng-click="installCtl.showInstallDialog(module, $event)"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>
@@ -112,9 +113,14 @@
                         <span ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing">
                             Installing...
                         </span>
-                        <span ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending">
-                            Installed, please restart
-                        </span>
+                    </md-button>
+                    <md-button
+                        class="md-accent"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending"
+                        ng-click="installCtl.gotoSystemModule()"
+                    >
+                        <md-icon md-svg-icon="plus-circle"></md-icon>
+                        Installed, please restart
                     </md-button>
 
                 </md-card-actions>
