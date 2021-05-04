@@ -65,7 +65,7 @@ class Driver():
             Task: install task instance
         """
         if self._processing!=self.PROCESSING_NONE:
-            raise CommandError(u'Driver is already installing')
+            raise CommandError('Driver is already installing')
 
         # set processing flag asap
         self._processing = self.PROCESSING_INSTALLING
@@ -78,7 +78,7 @@ class Driver():
             try:
                 self._install(params)
             except Exception as e:
-                self.logger.exception(u'Error during driver installation:')
+                self.logger.exception('Error during driver installation:')
                 message = str(e)
                 success = False
             finally:
@@ -86,7 +86,7 @@ class Driver():
                 self._processing = self.PROCESSING_NONE
             callback(self.type, self.name, success, message)
 
-        self.logger.trace(u'Launch driver install task')
+        self.logger.trace('Launch driver install task')
         task = Task(None, install, logger if logger else self.logger, [end_callback, params])
         task.start()
         return task
@@ -104,7 +104,7 @@ class Driver():
             Task: install task instance
         """
         if self._processing!=self.PROCESSING_NONE:
-            raise CommandError(u'Driver is already uninstalling')
+            raise CommandError('Driver is already uninstalling')
 
         # set processing flag asap
         self._processing = self.PROCESSING_UNINSTALLING
@@ -116,7 +116,7 @@ class Driver():
             try:
                 self._uninstall(params)
             except Exception as e:
-                self.logger.exception(u'Error during driver installation:')
+                self.logger.exception('Error during driver installation:')
                 message = str(e)
                 success = False
             finally:
@@ -124,7 +124,7 @@ class Driver():
                 self._processing = self.PROCESSING_NONE
             callback(self.type, self.name, success, message)
 
-        self.logger.trace(u'Launch driver uninstall task')
+        self.logger.trace('Launch driver uninstall task')
         task = Task(None, uninstall, logger if logger else self.logger, [end_callback, params])
         task.start()
         return task
@@ -148,7 +148,7 @@ class Driver():
         Args:
             params (dict): optionnal parameters
         """
-        raise NotImplementedError(u'Function "install" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "install" must be implemented in "%s"' % self.__class__.__name__)
 
     def _uninstall(self, params=None): # pragma: no cover
         """
@@ -160,7 +160,7 @@ class Driver():
         Args:
             params (dict): additionnal parameters if necessary
         """
-        raise NotImplementedError(u'Function "uninstall" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "uninstall" must be implemented in "%s"' % self.__class__.__name__)
 
     def is_installed(self): # pragma: no cover
         """
@@ -172,5 +172,17 @@ class Driver():
         Returns:
             bool: True if driver is installed
         """
-        raise NotImplementedError(u'Function "is_installed" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "is_installed" must be implemented in "%s"' % self.__class__.__name__)
+
+    def require_reboot(self): # pragma: no cover
+        """
+        Require device reboot after install/uninstall
+
+        Warning:
+            Must be implemented
+
+        Returns:
+            bool: True if driver install/uninstall requires to reboot device
+        """
+        raise NotImplementedError('Function "require_reboot" must be implemented in "%s"' % self.__class__.__name__)
         
