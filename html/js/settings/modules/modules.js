@@ -10,16 +10,16 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
         self.cleepService = cleepService;
-        self.search = '';
+        self.search = {'$': ''};
         self.updates = [];
-        self.modulesNames = [];
+        self.displayedModules = [];
         self.moduleUpdate = {};
 
         /**
          * Clear search input
          */
         self.clearSearch = function() {
-            self.search = '';
+            self.search['$'] = '';
         };
 
         /**
@@ -109,11 +109,11 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
          * Fill modules
          */
         self.fillModules = function() {
-            var modulesNames = [];
-            for( var moduleName in cleepService.modules ) {
-                modulesNames.push(moduleName);
+            var modules = [];
+            for( var [moduleName, module] of Object.entries(cleepService.modules) ) {
+                modules.push(module);
             }
-            self.modulesNames = modulesNames;
+            self.displayedModules = modules;
         };
 
         /**

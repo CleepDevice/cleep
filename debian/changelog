@@ -6,9 +6,11 @@ cleep (0.0.25) unstable; urgency=low
   * Frontend: fix reboot/poweroff/restart functions
   * Frontend: fix reboot/poweroff/restart messages
   * Frontend: fix new apps not loaded after modules.json update
+  * Frontend: fix app search (market+installed)
   * Backend: fix missing propagate field in MessageRequest
   * Backend: fix modules.json url
-  * Backed: handle core events (instead of handling them in system app)
+  * Backend: handle core events (instead of handling them in system app)
+  * Backend: fix issue market not reloaded after modules.json is updated
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Wed, 28 apr 2021 20:00:00 +0200
 

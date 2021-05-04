@@ -17,7 +17,7 @@
         <div layout="row" layout-align="end center">
             <md-input-container class="md-icon-float md-block no-error-spacer">
                 <md-icon md-svg-icon="magnify"></md-icon>
-                <input ng-model="installCtl.search" type="text" aria-label="Search">
+                <input ng-model="installCtl.search['$']" ng-model-options="{debounce: 400}" type="text" aria-label="Search">
             </md-input-container>
             <div>
                 <md-button class="md-icon-button" ng-click="installCtl.clearSearch()" aria-label="Clear search">
@@ -30,27 +30,27 @@
     <!-- applications list -->
     <div layout="row" layout-wrap>
 
-        <div ng-if="installCtl.modulesNames.length===0" style="text-align:center; width:100%; padding-top:30px;">
+        <div ng-if="!installCtl.displayedModules.length" style="text-align:center; width:100%; padding-top:30px;">
             <md-icon md-svg-icon="trophy-variant"></md-icon>
             <span>You are a Cleep master, you installed all available applications</span>
         </div>
 
-        <div ng-if="installCtl.modulesNames.length>0" ng-repeat="moduleName in installCtl.modulesNames | orderBy:'toString()' | filter:installCtl.search" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
+        <div ng-if="installCtl.displayedModules.length" ng-repeat="module in installCtl.displayedModules | filter: installCtl.search | orderBy: 'name'" flex-xl="25" flex-lg="33" flex-md="50" flex="100">
             <md-card class="widget-bg-color">
                 <md-card-title>
 
                     <!-- module description -->
                     <md-card-title-text>
                         <span class="md-headline">
-                            {{moduleName | firstUpper}}
+                            {{module.label | firstUpper}}
                         </span>
-                        <span class="md-subhead module-desc" ng-if="installCtl.cleepService.installableModules[moduleName].description">
-                            {{installCtl.cleepService.installableModules[moduleName].description}}
+                        <span class="md-subhead module-desc" ng-if="module.description">
+                            {{module.description}}
                         </span>
-                        <span class="md-subhead module-desc" ng-if="!installCtl.cleepService.installableModules[moduleName].description && !installCtl.cleepService.installableModules[moduleName].local">
+                        <span class="md-subhead module-desc" ng-if="!module.description && !module.local">
                             No description provided
                         </span>
-                        <span class="md-subhead module-desc" ng-if="!installCtl.cleepService.installableModules[moduleName].description && installCtl.cleepService.installableModules[moduleName].local">
+                        <span class="md-subhead module-desc" ng-if="!module.description && module.local">
                             Locally installed module
                         </span>
                     </md-card-title-text>
@@ -58,7 +58,7 @@
                     <!-- module icon -->
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <md-icon md-svg-icon="{{installCtl.cleepService.installableModules[moduleName].icon || 'help-rhombus'}}" class="icon-xl" style="padding:4px;"></md-icon>
+                            <md-icon md-svg-icon="{{module.icon || 'help-rhombus'}}" class="icon-xl" style="padding:4px;"></md-icon>
                         </div>
                     </md-card-title-media>
 
@@ -68,13 +68,13 @@
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
                     <md-progress-linear
                         class="md-accent"
-                        ng-if="installCtl.cleepService.modulesUpdates[moduleName] && (installCtl.cleepService.modulesUpdates[moduleName].processing || installCtl.cleepService.modulesUpdates[moduleName].pending) && installCtl.cleepService.modulesUpdates[moduleName].update.progress!==0"
-                        ng-value="installCtl.cleepService.modulesUpdates[moduleName].update.progress"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending) && installCtl.cleepService.modulesUpdates[module.name].update.progress!==0"
+                        ng-value="installCtl.cleepService.modulesUpdates[module.name].update.progress"
                         md-mode="determinate">
                     </md-progress-linear>
                     <md-progress-linear
                         class="md-accent"
-                        ng-if="installCtl.cleepService.modulesUpdates[moduleName] && (installCtl.cleepService.modulesUpdates[moduleName].processing || installCtl.cleepService.modulesUpdates[moduleName].pending) && installCtl.cleepService.modulesUpdates[moduleName].update.progress===0"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending) && installCtl.cleepService.modulesUpdates[module.name].update.progress===0"
                         md-mode="indeterminate">
                     </md-progress-linear>
                 </md-card-content>
@@ -82,8 +82,8 @@
                 <md-card-actions layout="row" layout-align="end center">
 
                     <!-- country flag -->
-                    <div ng-if="installCtl.cleepService.installableModules[moduleName].country">
-                        <img src="images/flagsBlank.gif" class="flag flag-{{installCtl.cleepService.installableModules[moduleName].country}}"/>
+                    <div ng-if="module.country">
+                        <img src="images/flagsBlank.gif" class="flag flag-{{module.country}}"/>
                         <md-tooltip md-direction="top">Module using localized services</md-tooltip>
                     </div>
 
@@ -92,7 +92,7 @@
                     <!-- logs button -->
                     <md-button
                         class="md-primary"
-                        ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].update.failed"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].update.failed"
                         ng-click="installCtl.gotoUpdateModule()"
                     >
                         <md-icon md-svg-icon="file-document-outline"></md-icon>
@@ -102,17 +102,17 @@
                     <!-- install button -->
                     <md-button
                         class="md-accent"
-                        ng-disabled="installCtl.cleepService.modulesUpdates[moduleName] && (installCtl.cleepService.modulesUpdates[moduleName].processing || installCtl.cleepService.modulesUpdates[moduleName].pending)"
-                        ng-click="installCtl.showInstallDialog(installCtl.cleepService.installableModules[moduleName], $event)"
+                        ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending)"
+                        ng-click="installCtl.showInstallDialog(module, $event)"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>
-                        <span ng-if="!installCtl.cleepService.modulesUpdates[moduleName].processing && !installCtl.cleepService.modulesUpdates[moduleName].pending">
+                        <span ng-if="!installCtl.cleepService.modulesUpdates[module.name].processing && !installCtl.cleepService.modulesUpdates[module.name].pending">
                             Install
                         </span>
-                        <span ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].processing">
+                        <span ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing">
                             Installing...
                         </span>
-                        <span ng-if="installCtl.cleepService.modulesUpdates[moduleName] && installCtl.cleepService.modulesUpdates[moduleName].pending">
+                        <span ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending">
                             Installed, please restart
                         </span>
                     </md-button>

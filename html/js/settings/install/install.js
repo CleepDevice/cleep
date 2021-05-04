@@ -7,17 +7,17 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
     var installController = ['$rootScope', '$scope','$element', '$window', function($rootScope, $scope, $element, $window) {
         var self = this;
         self.cleepService = cleepService;
-        self.search = '';
+        self.search = {'$': ''};
         self.country = null;
         self.countryAlpha = null;
         self.moduleToInstall = null;
-        self.modulesNames = [];
+        self.displayedModules = [];
 
         /**
          * Clear search input
          */
         self.clearSearch = function() {
-            self.search = '';
+            self.search['$'] = '';
         };
 
         /**
@@ -39,23 +39,21 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             cleepService.getModuleConfig('parameters')
             .then((parametersConfig) => {
                 // update list of modules names
-                var modulesNames = [];
-                for( moduleName in cleepService.installableModules ) {
+                var modules = [];
+                for( var [moduleName, module] of Object.entries(cleepService.installableModules) ) {
                     // fix module country alpha code
-                    var countryAlpha = cleepService.installableModules[moduleName].country;
+                    var countryAlpha = module.country;
                     if( countryAlpha===null || countryAlpha===undefined ) {
                         countryAlpha = '';
                     }
 
-                    // append module name if necessary
-                    if(
-                        (!cleepService.installableModules[moduleName].installed || (cleepService.installableModules[moduleName].installed && cleepService.installableModules[moduleName].library)) &&
-                        (countryAlpha.length===0 || countryAlpha.toUpperCase()==parametersConfig.country.alpha2)
-                    ) {
-                        modulesNames.push(moduleName);
+                    // append module if necessary
+                    if ((!module.installed || (module.installed && module.library)) &&
+                        (countryAlpha.length===0 || countryAlpha.toUpperCase()==parametersConfig.country.alpha2) ) {
+                        modules.push(module);
                     }
                 }
-                self.modulesNames = modulesNames;
+                self.displayedModules = modules;
             });
         };
 

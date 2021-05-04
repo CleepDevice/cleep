@@ -46,7 +46,7 @@
                     <!-- changelog -->
                     <md-subheader style="background-color:white;" class="md-no-sticky">Changelog</md-subheader>
                     <md-list-item>
-                        <span ng-if="installCtl.moduleToInstall.changelog.length>0" ng-bind-html="installCtl.sceChangelog"></span>
+                        <span ng-if="installCtl.moduleToInstall.changelog.length>0" marked="installCtl.moduleToInstall.changelog"></span>
                         <span ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</span>
                     </md-list-item>
 
