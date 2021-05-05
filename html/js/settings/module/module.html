@@ -13,27 +13,49 @@
         <div>
             <h1 class="md-title">
                 {{moduleCtl.label | firstUpper}}
-                <small ng-if="moduleCtl.version">(v{{moduleCtl.version}})</small>
             </h1>
         </div>
         <div flex></div>
         <div>
-            <md-button class="md-raised md-primary" ng-if="moduleCtl.moduleUrls.site" ng-href="{{moduleCtl.moduleUrls.site}}" target="_blank">
-                <md-icon md-svg-icon="web"></md-icon>
-                Website
-            </md-button>
-            <md-button class="md-raised md-primary" ng-if="moduleCtl.moduleUrls.info" ng-href="{{moduleCtl.moduleUrls.info}}" target="_blank">
-                <md-icon md-svg-icon="information-outline"></md-icon>
-                Infos
-            </md-button>
-            <md-button class="md-raised md-primary" ng-if="moduleCtl.moduleUrls.bugs" ng-href="{{moduleCtl.moduleUrls.bugs}}" target="_blank">
-                <md-icon md-svg-icon="bug"></md-icon>
-                Bugs
-            </md-button>
-            <md-button class="md-raised md-primary" ng-if="moduleCtl.moduleUrls.help" ng-href="{{moduleCtl.moduleUrls.help}}" target="_blank">
-                <md-icon md-svg-icon="lifebuoy"></md-icon>
-                Help
-            </md-button>
+            <md-menu>
+                <md-button aria-label="App infos" ng-click="moduleCtl.openAppInfos($mdMenu, $event)" class="md-raised md-primary">
+                    <md-icon md-svg-icon="information-outline"></md-icon>
+                    App infos
+                </md-button>
+                <md-menu-content>
+                    <md-menu-item>
+                        <md-button disabled="disabled">
+                            <md-icon md-svg-icon="alpha-v-circle-outline"></md-icon>
+                            {{moduleCtl.label | firstUpper}} v{{moduleCtl.version}}
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-divider></md-menu-divider>
+                    <md-menu-item ng-if="moduleCtl.moduleUrls.site">
+                        <md-button ng-href="{{moduleCtl.moduleUrls.site}}" target="_blank">
+                            <md-icon md-svg-icon="web"></md-icon>
+                            Website
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-if="moduleCtl.moduleUrls.info">
+                        <md-button  ng-href="{{moduleCtl.moduleUrls.info}}" target="_blank">
+                            <md-icon md-svg-icon="information-outline"></md-icon>
+                            Infos
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-if="moduleCtl.moduleUrls.bugs">
+                        <md-button ng-href="{{moduleCtl.moduleUrls.bugs}}" target="_blank">
+                            <md-icon md-svg-icon="bug"></md-icon>
+                            Bugs
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-if="moduleCtl.moduleUrls.help">
+                        <md-button ng-href="{{moduleCtl.moduleUrls.help}}" target="_blank">
+                            <md-icon md-svg-icon="lifebuoy"></md-icon>
+                            Help
+                        </md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
         </div>
         <div class="toolbar-spacer"></div>
     </div>

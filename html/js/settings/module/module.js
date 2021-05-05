@@ -102,6 +102,13 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
         };
 
         /**
+         * Open app infos menu
+         */
+        self.openAppInfos = function($mdMenu, ev) {
+            $mdMenu.open(ev);
+        };
+
+        /**
          * Init controller
          */
         self.init = function(module)
