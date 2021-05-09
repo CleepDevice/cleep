@@ -66,16 +66,31 @@
 
                 <!-- install progress bar -->
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
+                    <!-- intializing installation -->
                     <md-progress-linear
                         class="md-accent"
-                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending) && installCtl.cleepService.modulesUpdates[module.name].update.progress!==0"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing && installCtl.cleepService.modulesUpdates[module.name].update.progress===0"
+                        md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- installation in progress -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing && installCtl.cleepService.modulesUpdates[module.name].update.progress>0 && installCtl.cleepService.modulesUpdates[module.name].update.progress<100"
                         ng-value="installCtl.cleepService.modulesUpdates[module.name].update.progress"
                         md-mode="determinate">
                     </md-progress-linear>
+                    <!-- finalizing installation -->
                     <md-progress-linear
                         class="md-accent"
-                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && (installCtl.cleepService.modulesUpdates[module.name].processing || installCtl.cleepService.modulesUpdates[module.name].pending) && installCtl.cleepService.modulesUpdates[module.name].update.progress===0"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing && installCtl.cleepService.modulesUpdates[module.name].update.progress===100"
                         md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- installation terminated -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending && installCtl.cleepService.modulesUpdates[module.name].update.progress===100"
+                        ng-value="100"
+                        md-mode="determinate">
                     </md-progress-linear>
                 </md-card-content>
 

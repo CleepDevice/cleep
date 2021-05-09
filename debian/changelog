@@ -1,6 +1,8 @@
 cleep (0.0.26) unstable; urgency=low
 
   * Frontend: add update label, handle markdown in update dialog
+  * Frontend: fix app install button
+  * Frontend: fix install and uninstall progress bar
   * Installer: copy modules.json in cleep dir to be able to start without
   network
 
