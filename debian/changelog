@@ -1,3 +1,11 @@
+cleep (0.0.26) unstable; urgency=low
+
+  * Frontend: add update label, handle markdown in update dialog
+  * Installer: copy modules.json in cleep dir to be able to start without
+  network
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Wed, 09 may 2021 11:00:00 +0200
+
 cleep (0.0.25) unstable; urgency=low
 
   * Frontend: fix padzero angular filter
