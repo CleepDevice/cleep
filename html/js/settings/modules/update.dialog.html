@@ -19,7 +19,7 @@
 
                 <md-subheader style="background-color:white;" class="md-subheader-inner">What's new</md-subheader>
                 <md-list-item>
-                    <span ng-if="updateCtl.moduleUpdate.update.changelog.length>0" ng-bind-html="updateCtl.sceChangelog"></span>
+                    <span ng-if="updateCtl.moduleUpdate.update.changelog.length>0" marked="updateCtl.moduleUpdate.update.changelog"></span>
                     <span ng-if="updateCtl.moduleUpdate.update.changelog.length===0">No changelog</span>
                     </span>
                 </md-list-item>

@@ -4,8 +4,8 @@
  */
 angular
 .module('Cleep')
-.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$sce', '$location', '$anchorScroll',
-function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $location, $anchorScroll) {
+.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$location', '$anchorScroll',
+function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location, $anchorScroll) {
 
     var modulesController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -142,9 +142,6 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $sce, $lo
          */
         self.showModuleUpdateDialog = function(module, ev) {
             self.moduleUpdate = module;
-
-            // trust html content
-            self.sceChangelog = $sce.trustAsHtml(self.moduleUpdate.update.changelog);
 
             $mdDialog.show({
                 controller: function() { return self; },
