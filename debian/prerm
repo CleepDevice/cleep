@@ -6,14 +6,14 @@ set -e
 
 case "$1" in
     remove)
-        #disable Cleep from startup
+        # disable Cleep from startup
         /etc/cleep/cleephelper.sh disable
-        #stop Cleep
+        # stop Cleep
         /etc/cleep/cleephelper.sh stop
         ;; 
 
     upgrade)
-        #after upgrade let cleep restart by itself
+        # after upgrade let cleep restart by itself
         ;;
         
     failed-upgrade)
