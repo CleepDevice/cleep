@@ -37,13 +37,6 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
         }
 
         /**
-         * Redirect to system module page
-         */
-        self.gotoSystemModule = function() {
-            $window.location.href = '#!/module/system?tab=advanced';
-        }
-
-        /**
          * Uninstall module
          */
         self.uninstallModule = function(module) {

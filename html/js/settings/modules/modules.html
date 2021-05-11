@@ -89,8 +89,8 @@
                     <!-- process messages -->
                     <md-button
                         class="md-accent"
+                        disabled="disabled"
                         ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && !modulesCtl.cleepService.modulesUpdates[module.name].update.failed"
-                        ng-click="modulesCtl.gotoSystemModule()"
                     >
                         <md-icon md-svg-icon="reload-alert"></md-icon>
                         <span>Success please restart</span>

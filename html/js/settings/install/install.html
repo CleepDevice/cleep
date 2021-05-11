@@ -130,9 +130,9 @@
                         </span>
                     </md-button>
                     <md-button
+                        disabled="disabled"
                         class="md-accent"
                         ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending"
-                        ng-click="installCtl.gotoSystemModule()"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>
                         Installed, please restart

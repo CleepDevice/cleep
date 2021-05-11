@@ -101,13 +101,6 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             $window.location.href = '#!/module/update?tab=logs';
         };
 
-      	/** 
-         * Redirect to system module page
-         */
-        self.gotoSystemModule = function() {
-            $window.location.href = '#!/module/system?tab=advanced';
-        }
-
         /**
          * Fill modules as soon as cleep configuration is loaded
          */
