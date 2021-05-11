@@ -56,16 +56,31 @@
 
                 <!-- progress bar -->
                 <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
+                    <!-- initializing app process -->
                     <md-progress-linear
                         class="md-accent"
-                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && (modulesCtl.cleepService.modulesUpdates[module.name].processing || modulesCtl.cleepService.modulesUpdates[module.name].pending) && modulesCtl.cleepService.modulesUpdates[module.name].update.progress!==0"
-                        md-mode="determinate"
-                        ng-value="modulesCtl.cleepService.modulesUpdates[module.name].update.progress">
-                    </md-progress-linear>
-                    <md-progress-linear
-                        class="md-accent"
-                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && (modulesCtl.cleepService.modulesUpdates[module.name].processing || modulesCtl.cleepService.modulesUpdates[module.name].pending) && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===0"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===0"
                         md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- app process in progress -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress>0 && modulesCtl.cleepService.modulesUpdates[module.name].update.progress<100"
+                        ng-value="modulesCtl.cleepService.modulesUpdates[module.name].update.progress"
+                        md-mode="determinate">
+                    </md-progress-linear>
+                    <!-- finalizing app process -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===100"
+                        md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- app process terminated -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===100"
+                        ng-value="100"
+                        md-mode="determinate">
                     </md-progress-linear>
                 </md-card-content>
 
