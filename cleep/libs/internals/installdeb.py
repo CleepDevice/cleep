@@ -128,7 +128,7 @@ class InstallDeb():
             self.logger.debug('Process status: %s' % self.get_status())
             self.status_callback(self.get_status())
 
-    def dry_run(self, deb, status_callback=None, watchdog_timeout=60):
+    def dry_run(self, deb, status_callback=None, timeout=60):
         """
         Try to install deb archive executing dpkg with --dry-run option
         This method is blocking
@@ -137,7 +137,7 @@ class InstallDeb():
         Args:
             deb (string): deb package path
             status_callback (function): status callback. If not specified use get_status function
-            watchdog_timeout (number): kill command after specified timeout. 0 to disable it
+            timeout (number): kill command after specified timeout. 0 to disable it. Default 60s
 
         Returns:
             bool: True if install simulation succeed, False otherwise
@@ -154,14 +154,14 @@ class InstallDeb():
 
         # loop
         error = False
-        watchdog_end_time = int(time.time()) + (watchdog_timeout or self.WATCHDOG_TIMEOUT)
+        watchdog_end_time = int(time.time()) + (timeout or self.WATCHDOG_TIMEOUT)
         while self.running:
             # watchdog
             if int(time.time())>watchdog_end_time:
                 self.logger.error('Timeout (%s seconds) during debian package dry-run' % self.WATCHDOG_TIMEOUT)
                 self.crash_report.manual_report('Debian "%s" dry-run install failed because of timeout (%s seconds)' % (
                     deb,
-                    (watchdog_timeout or self.WATCHDOG_TIMEOUT),
+                    (timeout or self.WATCHDOG_TIMEOUT),
                 ), self.get_status())
                 error = True
                 self._console.kill()
@@ -173,7 +173,7 @@ class InstallDeb():
         # handle result
         return not error and self.status==self.STATUS_DONE
 
-    def install(self, deb, blocking=False, status_callback=None, watchdog_timeout=60):
+    def install(self, deb, blocking=False, status_callback=None, timeout=60):
         """
         Install specified .deb file
         Please note in non blocking mode you must allow by yourself filesystem writing
@@ -182,7 +182,7 @@ class InstallDeb():
             deb (string): deb package path
             blocking (bool): if True this function is blocking (default is False)
             status_callback (function): status callback. Must be specified if blocking is False
-            watchdog_timeout (number): kill command after specified timeout. 0 to disable it
+            timeout (number): kill command after specified timeout. 0 to disable it. Default 60s
 
         Returns:
             bool: True if install succeed, False otherwise. None is returned if blocking mode is disabled
@@ -216,7 +216,7 @@ class InstallDeb():
         if blocking:
             # loop
             error = False
-            watchdog_end_time = int(time.time()) + (watchdog_timeout or self.WATCHDOG_TIMEOUT)
+            watchdog_end_time = int(time.time()) + (timeout or self.WATCHDOG_TIMEOUT)
             self.logger.trace('Watchdog_end_time=%s' % watchdog_end_time)
             while self.running:
                 # watchdog
@@ -224,7 +224,7 @@ class InstallDeb():
                     self.logger.error('Timeout (%s seconds) during debian package install' % self.WATCHDOG_TIMEOUT)
                     self.crash_report.manual_report('Debian "%s" install failed because of watchdog timeout (%s seconds)' % (
                         deb,
-                        (watchdog_timeout or self.WATCHDOG_TIMEOUT)
+                        (timeout or self.WATCHDOG_TIMEOUT)
                     ), self.get_status())
                     error = True
                     self._console.kill()

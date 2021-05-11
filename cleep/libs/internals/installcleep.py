@@ -201,7 +201,7 @@ class InstallCleep(threading.Thread):
             installer = InstallDeb(self.cleep_filesystem, self.crash_report)
 
             # dry run install
-            if not installer.dry_run(package_path):
+            if not installer.dry_run(package_path, timeout=0):
                 # dry run failed, report error and quit install
                 self.logger.error('Install dry-run failed: %s' % installer.get_status())
                 self.crash_report.manual_report('Dry-run cleep install failed', installer.get_status())
@@ -209,7 +209,7 @@ class InstallCleep(threading.Thread):
 
             # install deb
             self.logger.debug('Waiting for end of debian package install...')
-            installer.install(package_path, blocking=True)
+            installer.install(package_path, blocking=True, timeout=0)
             self.logger.debug('Deb package install terminated with status: %s' % installer.get_status())
 
             # check deb install result
