@@ -60,7 +60,7 @@ case "$1" in
 
         # fix version in index.html to clear cache
         CLEEP_VERSION=`python3 -m pip show cleep | grep Version | awk '{ print $2 }'`
-        grep -rl "?cleepversion" /opt/cleep/html | xargs sed -i 's/?cleepversion/?v'"$VERSION"'/g'
+        grep -rl "?cleepversion" /opt/cleep/html | xargs sed -i 's/?cleepversion/?v'"$CLEEP_VERSION"'/g'
 
         # enable Cleep at startup
         /etc/cleep/cleephelper.sh enable
