@@ -23,12 +23,12 @@ class InstallDeb():
     STATUS_KILLED = 4
     STATUS_TIMEOUT = 5
 
-    WATCHDOG_TIMEOUT = 60 # seconds
+    WATCHDOG_TIMEOUT = 3600 # seconds
 
     def __init__(self, cleep_filesystem, crash_report):
         """
         Constructor
-        
+
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
@@ -37,7 +37,7 @@ class InstallDeb():
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
         self.running = True
@@ -46,12 +46,13 @@ class InstallDeb():
         self.return_code = None
         self._console = None
         self.blocking = False
+        self.status_callback = None
 
     def stop(self):
         """
         Stop installation
         """
-        self.logger.trace(u'Stop installation')
+        self.logger.trace('Stop installation')
         self.running = False
         self.status = self.STATUS_KILLED
         if not self.blocking and self._console:
@@ -62,9 +63,9 @@ class InstallDeb():
         Return current status
         """
         return {
-            u'status': self.status,
-            u'stdout': self.stdout,
-            u'returncode': self.return_code
+            'status': self.status,
+            'stdout': self.stdout,
+            'returncode': self.return_code
         }
 
     def is_terminated(self):
@@ -80,7 +81,7 @@ class InstallDeb():
         """
         End of process callback
         """
-        self.logger.debug(u'End of command with returncode=%s and killed=%s' % (return_code, killed))
+        self.logger.debug('End of command with returncode=%s and killed=%s' % (return_code, killed))
 
         # update return code
         self.return_code = return_code
@@ -109,13 +110,13 @@ class InstallDeb():
             stdout (list): console stdout
             stderr (list): console stderr
         """
-        self.logger.debug(u'Callback command stdout: %s' % stdout)
-        self.logger.debug(u'Callback command stderr: %s' % stderr)
+        self.logger.debug('Callback command stdout: %s' % stdout)
+        self.logger.debug('Callback command stderr: %s' % stderr)
         # append current stdout/stderr
         if stdout is not None:
             # end of command ends with broken pipe on yes execution, this is normal. Drop this unimportant message
             # https://stackoverflow.com/questions/20573282/hudson-yes-standard-output-broken-pipe
-            if stdout.find(u'yes')==-1 and stdout.lower().find(u'broken pipe')==-1:
+            if stdout.find('yes')==-1 and stdout.lower().find('broken pipe')==-1:
                 self.stdout.append(stdout)
 
         if stderr is not None:
@@ -127,7 +128,7 @@ class InstallDeb():
             self.logger.debug('Process status: %s' % self.get_status())
             self.status_callback(self.get_status())
 
-    def dry_run(self, deb, status_callback=None):
+    def dry_run(self, deb, status_callback=None, watchdog_timeout=60):
         """
         Try to install deb archive executing dpkg with --dry-run option
         This method is blocking
@@ -136,6 +137,7 @@ class InstallDeb():
         Args:
             deb (string): deb package path
             status_callback (function): status callback. If not specified use get_status function
+            watchdog_timeout (number): kill command after specified timeout. 0 to disable it
 
         Returns:
             bool: True if install simulation succeed, False otherwise
@@ -145,30 +147,33 @@ class InstallDeb():
         self.running = True
 
         # try install deb
-        command = u'/usr/bin/yes | /usr/bin/dpkg --dry-run -i "%s"' % (deb)
-        self.logger.debug(u'Command: %s' % command)
+        command = '/usr/bin/yes | /usr/bin/dpkg --dry-run -i "%s"' % (deb)
+        self.logger.debug('Command: %s' % command)
         self._console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
         self._console.start()
 
         # loop
         error = False
-        watchdog_end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
+        watchdog_end_time = int(time.time()) + (watchdog_timeout or self.WATCHDOG_TIMEOUT)
         while self.running:
             # watchdog
             if int(time.time())>watchdog_end_time:
-                self.logger.error(u'Timeout (%s seconds) during debian dry-run install' % self.WATCHDOG_TIMEOUT)
-                self.crash_report.manual_report(u'Debian "%s" dry-run install failed because of timeout (%s seconds)' % (deb, self.WATCHDOG_TIMEOUT), self.get_status())
+                self.logger.error('Timeout (%s seconds) during debian package dry-run' % self.WATCHDOG_TIMEOUT)
+                self.crash_report.manual_report('Debian "%s" dry-run install failed because of timeout (%s seconds)' % (
+                    deb,
+                    (watchdog_timeout or self.WATCHDOG_TIMEOUT),
+                ), self.get_status())
                 error = True
                 self._console.kill()
                 self.running = False
                 self.status = self.STATUS_TIMEOUT
 
             time.sleep(0.25)
-            
-        # handle result
-        return True if not error and self.status==self.STATUS_DONE else False
 
-    def install(self, deb, blocking=False, status_callback=None):
+        # handle result
+        return not error and self.status==self.STATUS_DONE
+
+    def install(self, deb, blocking=False, status_callback=None, watchdog_timeout=60):
         """
         Install specified .deb file
         Please note in non blocking mode you must allow by yourself filesystem writing
@@ -177,17 +182,18 @@ class InstallDeb():
             deb (string): deb package path
             blocking (bool): if True this function is blocking (default is False)
             status_callback (function): status callback. Must be specified if blocking is False
+            watchdog_timeout (number): kill command after specified timeout. 0 to disable it
 
         Returns:
             bool: True if install succeed, False otherwise. None is returned if blocking mode is disabled
         """
         # check parameters
         if deb is None or len(deb)==0:
-            raise MissingParameter(u'Parameter "deb" is missing')
+            raise MissingParameter('Parameter "deb" is missing')
         if blocking is False and status_callback is None:
-            raise MissingParameter(u'Parameter "status_callback" is mandatary if blocking mode enabled')
+            raise MissingParameter('Parameter "status_callback" is mandatary if blocking mode enabled')
         if not os.path.exists(deb):
-            raise InvalidParameter(u'Deb archive "%s" does not exist' % deb)
+            raise InvalidParameter('Deb archive "%s" does not exist' % deb)
 
         # update status
         self.status_callback = status_callback
@@ -200,8 +206,8 @@ class InstallDeb():
             self.cleep_filesystem.enable_write()
 
         # install deb
-        command = u'/usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb)
-        self.logger.debug(u'Command: %s' % command)
+        command = '/usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb)
+        self.logger.debug('Command: %s' % command)
         self._console = EndlessConsole(command, self.__callback_deb, self.__callback_end)
         self._console.start()
 
@@ -210,27 +216,29 @@ class InstallDeb():
         if blocking:
             # loop
             error = False
-            watchdog_end_time = int(time.time()) + self.WATCHDOG_TIMEOUT
-            self.logger.trace(u'Watchdog_end_time=%s' % watchdog_end_time)
+            watchdog_end_time = int(time.time()) + (watchdog_timeout or self.WATCHDOG_TIMEOUT)
+            self.logger.trace('Watchdog_end_time=%s' % watchdog_end_time)
             while self.running:
                 # watchdog
                 if int(time.time())>watchdog_end_time:
-                    self.logger.error(u'Timeout (%s seconds) during debian dry-run install' % self.WATCHDOG_TIMEOUT)
-                    self.crash_report.manual_report(u'Debian "%s" install failed because of watchdog timeout (%s seconds)' % (deb, self.WATCHDOG_TIMEOUT), self.get_status())
+                    self.logger.error('Timeout (%s seconds) during debian package install' % self.WATCHDOG_TIMEOUT)
+                    self.crash_report.manual_report('Debian "%s" install failed because of watchdog timeout (%s seconds)' % (
+                        deb,
+                        (watchdog_timeout or self.WATCHDOG_TIMEOUT)
+                    ), self.get_status())
                     error = True
                     self._console.kill()
                     self.running = False
                     self.status = self.STATUS_TIMEOUT
 
                 time.sleep(0.25)
-            
+
             # disable write at end of command execution
             self.cleep_filesystem.disable_write()
 
             # handle result
-            return True if not error and self.status==self.STATUS_DONE else False
+            return not error and self.status==self.STATUS_DONE
 
-        else:
-            # useless result
-            return None
+        # useless result
+        return None
 
