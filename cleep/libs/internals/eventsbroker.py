@@ -132,6 +132,7 @@ class EventsBroker():
                         if event_class_name:
                             class_ = getattr(mod_, event_class_name)
                             self.__save_event(class_)
+                            self.logger.debug('Core event "%s" registered' % event_class_name)
                         else:
                             self.logger.error('Event class must have the same name than the filename')
 
@@ -172,6 +173,7 @@ class EventsBroker():
                         if event_class_name:
                             class_ = getattr(mod_, event_class_name)
                             self.__save_event(class_)
+                            self.logger.debug('Module event "%s" registered' % event_class_name)
                         else:
                             self.logger.error('Event class must have the same name than the filename')
 
