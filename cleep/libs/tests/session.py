@@ -211,7 +211,7 @@ class TestSession():
 
     def make_mock_command(self, command_name, data=None, fail=False, no_response=False):
         """
-        Help user to make a ready to user command object
+        Help user to make a ready to use command object
 
         Args:
             command_name (string): command name
@@ -409,17 +409,21 @@ class TestSession():
             self.logger.fatal('TEST: event_called_with failed:\n  Expected: %s\n  Current:  %s' % (params, last_params))
         return check
 
-    def assert_event_called_with(self, event_name, params):
+    def assert_event_called_with(self, event_name, params, device_id=None):
         """
         Assert event called with
 
         Args:
             event_name (string): event name
             params (dict): event parameters
+            device_id (string): device id
         """
         self.testcase.assertTrue(self.event_call_count(event_name) > 0, 'Event "%s" was not called' % event_name)
         last_params = self.get_last_event_params(event_name)
         self.testcase.assertDictEqual(params, last_params, 'Event "%s" parameters are differents' % event_name)
+        if device_id is not None:
+            last_deviceid = self.get_last_event_device_id(event_name)
+            self.testcase.assertEqual(device_id, last_deviceid)
 
     def get_last_event_params(self, event_name):
         """
@@ -433,6 +437,18 @@ class TestSession():
 
         return None
 
+    def get_last_event_device_id(self, event_name):
+        """
+        Returns event device_id of last call
+
+        Returns:
+            string: last event call device_id
+        """
+        if event_name in self.__event_handlers:
+            return self.__event_handlers[event_name]['lastdeviceid']
+
+        return None
+
     def _internal_bus_push_mock(self, request, timeout):
         """
         Mocked internal bus push method
@@ -442,6 +458,7 @@ class TestSession():
             self.logger.debug('TEST: push command "%s"' % request.command)
             self.__bus_command_handlers[request.command]['calls'] += 1
             self.__bus_command_handlers[request.command]['lastparams'] = request.params
+            self.__bus_command_handlers[request.command]['lastdeviceid'] = request.device_id
             self.__bus_command_handlers[request.command]['lastto'] = request.to
 
             if self.__bus_command_handlers[request.command]['fail']:
