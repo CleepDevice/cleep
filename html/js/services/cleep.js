@@ -124,6 +124,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             'cache': false,
             'reconfig': true,
             'rerun': true,
+            'serie': true,
             'files': jsFiles
         });
     };
