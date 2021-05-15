@@ -1,5 +1,12 @@
 cleep (0.0.26) unstable; urgency=low
 
+  * Frontend: fix app loading issue disabling parallel js libs loading
+  * Backend: improve tests session
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 15 may 2021 20:00:00 +0200
+
+cleep (0.0.26) unstable; urgency=low
+
   * Frontend: add update label, handle markdown in update dialog
   * Frontend: fix app install button
   * Frontend: fix install and uninstall progress bar
