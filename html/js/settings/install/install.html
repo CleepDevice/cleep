@@ -42,7 +42,7 @@
                     <!-- module description -->
                     <md-card-title-text>
                         <span class="md-headline">
-                            {{module.label | firstUpper}}
+                            {{(module.label || module.name) | firstUpper}}
                         </span>
                         <span class="md-subhead module-desc" ng-if="module.description">
                             {{module.description}}

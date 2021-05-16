@@ -41,7 +41,7 @@
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">
-                            {{module.label | firstUpper}}
+                            {{(module.label || module.name) | firstUpper}}
                         </span>
                         <span class="md-subhead module-desc">
                             {{module.description || 'No description'}}
