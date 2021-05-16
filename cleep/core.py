@@ -86,7 +86,7 @@ class Cleep(BusClient):
 
         elif self._get_module_name() in CORE_MODULES or self._get_module_name() == u'inventory':
             # set default crash report for core module
-            self.logger.debug(u'Crash report enabled for core module')
+            self.logger.debug('Default crash report used for mandatory apps')
             self.crash_report = bootstrap[u'crash_report']
 
             # add core module version to libs version
