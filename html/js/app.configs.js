@@ -63,6 +63,17 @@ Cleep
     $httpProvider.interceptors.push('noCacheInterceptor');
 });
 
+Cleep
+.factory('$exceptionHandler', ['$log', '$injector', function($log, $injector) {
+    return function myExceptionHandler(exception, cause) {
+        $log.error(exception, cause);
+        var toastService = $injector.get('toastService');
+        if (toastService) {
+            toastService.error('Error loading application', 10000);
+        }
+    };
+}]);
+
 /**
  * Theme configuration
  */
