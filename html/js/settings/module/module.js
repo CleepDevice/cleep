@@ -2,7 +2,10 @@
  * Configuration directive
  * Handle all module configuration
  */
-var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
+angular
+.module('Cleep')
+.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http',
+function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
 
     var moduleController = ['$scope','$element', function($scope, $element) {
         var self = this;
@@ -133,7 +136,6 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
                 .then(function() {
                     // load js and css files
                     return self.__loadJsCssFiles(files.jscss);
-
                 }, function(err) {
                     // remove rejection warning
                     self.error = true;
@@ -173,8 +175,4 @@ var moduleDirective = function($q, cleepService, $compile, $timeout, $routeParam
         controllerAs: 'moduleCtl',
         link: moduleLink
     };
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', moduleDirective]);
-
+}]);

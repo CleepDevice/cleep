@@ -1,4 +1,7 @@
-var toastService = function($mdToast) {
+angular
+.module('Cleep')
+.service('toastService', ['$mdToast',
+function($mdToast) {
     var self = this;
 
     /**
@@ -82,8 +85,4 @@ var toastService = function($mdToast) {
     self.close = function() {
         self.hide();
     };
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('toastService', ['$mdToast', toastService]);
-
+}]);
