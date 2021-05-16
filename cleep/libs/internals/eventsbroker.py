@@ -109,7 +109,7 @@ class EventsBroker():
         Create an event instance (singleton) for each ones
         """
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.CORE_EVENTS_DIR))
-        self.logger.info('Loading events from core dir "%s"' % path)
+        self.logger.debug('Loading events from core dir "%s"' % path)
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 'message': 'Invalid core events path',
@@ -150,7 +150,7 @@ class EventsBroker():
         Create an event instance (singleton) for each ones.
         """
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.MODULES_DIR))
-        self.logger.trace('Loading events from modules dir "%s"' % path)
+        self.logger.debug('Loading events from modules dir "%s"' % path)
         if not os.path.exists(path):
             self.crash_report.report_exception({
                 'message': 'Invalid modules path',
