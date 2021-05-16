@@ -200,6 +200,31 @@ class TestSession():
             del self.__module_instance
             self.__module_instance = None
 
+    def setup_event(self, event):
+        """
+        Return ready to use event
+
+        Args:
+            event (Class): event class to instanciate
+
+        Returns:
+            Event: event instance
+        """
+        # logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.__debug_enabled = True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
+        self.test_case_name = self.__get_test_case_name()
+
+        # bootstrap object
+        self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
+
+        return event({
+            'internal_bus': self.bootstrap['internal_bus'],
+            'formatters_broker': self.bootstrap['formatters_broker'],
+            'external_bus_name': self.bootstrap['external_bus'],
+            'get_external_bus_name': lambda: self.bootstrap['external_bus'],
+        })
+
     def get_handled_commands(self):
         """
         Return list of handled commands
