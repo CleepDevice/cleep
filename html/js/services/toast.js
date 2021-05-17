@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('toastService', ['$mdToast',
-function($mdToast) {
+.service('toastService', ['$mdToast', '$mdDialog',
+function($mdToast, $mdDialog) {
     var self = this;
 
     /**
@@ -10,7 +10,7 @@ function($mdToast) {
      * @param duration: message duration
      */
     self.error = function(message, duration) {
-        self.__toast(message, 6000, 'error');
+        self.__toast(message, duration || 6000, 'error');
     };
 
     /**
@@ -19,7 +19,7 @@ function($mdToast) {
      * @param duration: message duration
      */
     self.warning = function(message, duration) {
-        self.__toast(message, 3000, 'warning');
+        self.__toast(message, duration || 3000, 'warning');
     };
 
     /**
@@ -28,7 +28,7 @@ function($mdToast) {
      * @param duration: message duration
      */
     self.success = function(message, duration) {
-        self.__toast(message, 3000, 'success');
+        self.__toast(message, duration || 3000, 'success');
     };
 
     /**
@@ -37,7 +37,17 @@ function($mdToast) {
      * @param duration: message duration
      */
     self.info = function(message, duration) {
-        self.__toast(message, 3000, 'info');
+        self.__toast(message, duration || 3000, 'info');
+    };
+
+    /**
+     * Fatal message. Add link to open stack
+     * @param message: message to display
+     * @param cause: error cause
+     * @param stack: exception stack trace
+     */
+    self.fatal = function(message, cause, stack, duration) {
+        self.__toast(message, duration || 15000, 'fatal');
     };
 
     /**
@@ -86,3 +96,4 @@ function($mdToast) {
         self.hide();
     };
 }]);
+

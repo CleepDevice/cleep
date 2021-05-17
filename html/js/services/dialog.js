@@ -2,7 +2,9 @@
  * Dialog service
  * Used to open a material dialog
  */
-var dialogService = function($mdDialog) {
+angular
+.module('Cleep')
+.service('dialogService', ['$mdDialog', function($mdDialog) {
     var self = this;
 
     self.dialogController = ['$scope', '$mdDialog', function($scope, $mdDialog) {
@@ -23,9 +25,8 @@ var dialogService = function($mdDialog) {
      * @param templateUrl: dialog content url (string)
      */
     self.open = function(options, controllerAs, templateUrl) {
-        //extend specified controller with dialog function helpers
+        // extend specified controller with dialog function helpers
         var controller = angular.extend(self.dialogController, options || {});
-        console.log(self.dialogController);
         return $mdDialog.show({
             controller: controller,
             controllerAs: controllerAs,
@@ -34,8 +35,4 @@ var dialogService = function($mdDialog) {
             clickOutsideToClose: false,
         });
     };
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('dialogService', ['$mdDialog', dialogService]);
-
+}]);

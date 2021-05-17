@@ -54,6 +54,11 @@ md-toast.info .md-toast-content {
     color: #FFFFFF;
 }
 
+md-toast.fatal .md-toast-content {
+    background: #000000;
+    color: #FFFFFF;
+}
+
 /* slide panel */
 .slide-panel {
     height: 300px;;
