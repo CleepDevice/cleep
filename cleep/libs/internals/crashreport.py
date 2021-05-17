@@ -16,6 +16,14 @@ class CrashReport():
     Crash report class
     """
 
+    DEFAULT_FILTERS = [
+        'KeyboardInterrupt',
+        'zmq.error.ZMQError',
+        'AssertionError',
+        'ForcedException',
+        'NotReady'
+    ]
+
     def __init__(self, token, product, product_version, libs_version=None, debug=False, disabled_by_core=False):
         """
         Constructor
@@ -42,6 +50,7 @@ class CrashReport():
         self.__libs_version = libs_version or {}
         self.__product = product
         self.__product_version = product_version
+        self.__filters = self.DEFAULT_FILTERS
 
         # disable crash report if necessary
         if self.__disabled_by_core or not token:
@@ -79,17 +88,20 @@ class CrashReport():
         """
         if 'exc_info' in hint:
             _, exc_value, _ = hint['exc_info']
-            if type(exc_value).__name__ in (
-                    'KeyboardInterrupt',
-                    'zmq.error.ZMQError',
-                    'AssertionError',
-                    'ForcedException',
-                    'NotReady'
-                ):
+            if type(exc_value).__name__ in self.__filters:
                 self.logger.debug('Exception "%s" filtered' % type(exc_value).__name__)
                 return None
 
         return event
+
+    def filter_exception(self, exception_name):
+        """
+        Disable crash reporter for specified exception
+
+        Args:
+            exception_name (string): exception name
+        """
+        self.__filters.append(exception_name)
 
     def is_enabled(self):
         """

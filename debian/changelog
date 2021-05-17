@@ -4,6 +4,8 @@ cleep (0.0.27) unstable; urgency=low
   * Frontend: improve frontend exception handling
   * Frontend: fix small issue displaying app label
   * Backend: improve tests session
+  * Backend: improve check_parameters function in core
+  * Backend: add way to filter custom exception in crash report lib
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 15 may 2021 20:00:00 +0200
 
