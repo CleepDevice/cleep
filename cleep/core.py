@@ -552,6 +552,15 @@ class Cleep(BusClient):
                     value (any): parameter value
                     validator (function): validator function. Take value in parameter and must return bool
                     message (string): custom message to return instead of generic error
+                    validators (list): list of validators::
+
+                        [
+                            {
+                                validator (function): parameter validator
+                                message (string): message to raise if validator fails
+                            },
+                            ...
+                        ]
                 },
                 ...
             ]
@@ -562,34 +571,48 @@ class Cleep(BusClient):
         """
         for parameter in parameters:
             self.logger.trace('Check parameter %s' % parameter)
+            # none
             if ('none' not in parameter or ('none' in parameter and not parameter['none'])) and parameter['value'] is None:
                 raise MissingParameter('Parameter "%s" is missing' % parameter['name'])
             if parameter['value'] is None:
                 # nothing else to check, parameter value is allowed as None
                 return
+
+            # type
             if not isinstance(parameter['value'], parameter['type']):
                 raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
+                    'Parameter "%s" must be of type "%s"' % (
                         parameter['name'],
-                        parameter['value'],
+                        parameter['type'].__name__,
                     )
                 )
-            if 'validator' in parameter and not parameter['validator'](parameter['value']):
-                raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
-                        parameter['name'],
-                        parameter['value'],
-                    )
-                )
+
+            # empty
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
                     parameter['type'] is str and
                     len(parameter['value']) == 0):
                 raise InvalidParameter(
-                    parameter['message'] if 'message' in parameter else 'Parameter "%s" is invalid (specified="%s")' % (
+                    'Parameter "%s" is invalid (specified="%s")' % (
                         parameter['name'],
                         parameter['value'],
                     )
                 )
+
+            # validators
+            validators = parameter.get('validators', [])
+            if 'validator' in parameter:
+                validators.append({
+                    'validator': parameter['validator'],
+                    'message': parameter.get('message', None),
+                })
+            for validator in validators:
+                if 'validator' in validator and not validator['validator'](parameter['value']):
+                    raise InvalidParameter(
+                        validator['message'] if validator.get('message') else 'Parameter "%s" is invalid (specified="%s")' % (
+                            parameter['name'],
+                            parameter['value'],
+                        )
+                    )
 
     def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0):
         """
