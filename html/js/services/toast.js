@@ -47,7 +47,7 @@ function($mdToast, $mdDialog) {
      * @param stack: exception stack trace
      */
     self.fatal = function(message, cause, stack, duration) {
-        self.__toast(message, duration || 15000, 'fatal');
+        self.__toast(message, duration || 10000, 'fatal');
     };
 
     /**
