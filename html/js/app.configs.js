@@ -66,10 +66,17 @@ Cleep
 Cleep
 .factory('$exceptionHandler', ['$log', '$injector', function($log, $injector) {
     return function myExceptionHandler(exception, cause) {
+        // classic log in console
         $log.error(exception, cause);
+
+        if (typeof(exception) === 'string' && exception.startsWith('Possibly')) {
+            // should be already handled by a service
+            return;
+        }
         var toastService = $injector.get('toastService');
-        if (toastService) {
-            toastService.error('Error loading application', 10000);
+        var locationService = $injector.get('$location');
+        if (toastService && locationService && locationService.url().startsWith('/module/')) {
+            toastService.fatal('Error loading '+ locationService.url().split('/').pop() +' application');
         }
     };
 }]);
