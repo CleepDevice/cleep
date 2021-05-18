@@ -23,7 +23,7 @@
                 <br/>
                 <span>If no update is available uninstall it and try to install it again.</span>
                 <br/>
-                <span>If uninstall always failed, force uninstall clicking on available button in uninstall logs dialog</span>
+                <span>If uninstall always failed, force uninstall clicking on "Force uninstall" button below</span>
                 <br/></br>
                 <span>If you enable crash report in system module ("Advanced" tab), the error is already reported.</span>
                 <br/>
@@ -34,6 +34,10 @@
     </md-dialog-content>
 
     <md-dialog-actions>
+        <md-button ng-click="notstartedCtl.forceUninstallModule(notstartedCtl.moduleNotStarted.name)" class="md-accent">
+            <md-icon md-svg-icon="close-circle"></md-icon>
+            Force uninstall
+        </md-button>
         <md-button ng-click="notstartedCtl.closeDialog()">
             <md-icon md-svg-icon="close-circle"></md-icon>
             Close
