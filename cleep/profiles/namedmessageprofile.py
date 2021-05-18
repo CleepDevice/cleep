@@ -3,16 +3,16 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class DisplaySingleMessageProfile(RendererProfile):
+class NamedMessageProfile(RendererProfile):
     """
-    Display profile
+    Named message profile
 
-    Handles single message with message id to replace.
+    This message has an unique name that allows renderers to update the previous message
     """
     def __init__(self):
         RendererProfile.__init__(self)
         # message to display
         self.message = None
         # unique message id to allow message identification
-        self.uid = None
+        self.name = None
 

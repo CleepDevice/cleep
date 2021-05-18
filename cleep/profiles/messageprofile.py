@@ -3,11 +3,11 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class DisplayMessageProfile(RendererProfile):
+class MessageProfile(RendererProfile):
     """
-    Display message profile.
+    Message profile.
 
-    Handles a message
+    Handle simple message
     """
     def __init__(self):
         RendererProfile.__init__(self)

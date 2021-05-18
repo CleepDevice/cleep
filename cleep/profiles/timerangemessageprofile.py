@@ -3,11 +3,11 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class DisplayRangeMessageProfile(RendererProfile):
+class TimeRangeMessageProfile(RendererProfile):
     """
-    Display profile.
+    Message with time range profile
 
-    Handles message with start and end range
+    Handles message with start and end time range
     """
     def __init__(self):
         RendererProfile.__init__(self)

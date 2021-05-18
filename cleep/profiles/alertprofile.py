@@ -3,14 +3,16 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class AlertEmailProfile(RendererProfile):
+class AlertProfile(RendererProfile):
     """
-    Default email profile
+    Alert profile.
+
+    Used to trigger an alert for renderer that support it
     """
     def __init__(self):
         RendererProfile.__init__(self)
         self.subject = None
         self.message = None
-        self.recipients = []
         self.attachment = None
+        self.timestamp = None
 
