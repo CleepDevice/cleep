@@ -18,6 +18,7 @@ import logging
 import types
 import traceback
 from mock import MagicMock
+import re
 
 TRACE = tools.TRACE
 
@@ -27,6 +28,19 @@ class AnyArg(object):
     """
     def __eq__(a, b):
         return True
+
+class PatternArg(object):
+    """
+    Used to perform a regexp param comparison during assert_called_with
+    """
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def __eq__(self, b):
+        return True if re.match(self.pattern, b) else False
+
+    def __str__(self):
+        return 'ContainArg(%s)' % self.pattern
 
 class TestSession():
     """
