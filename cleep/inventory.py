@@ -180,15 +180,16 @@ class Inventory(Cleep):
         self.logger.trace('Module "%s" dependencies: %s' % (module_name, module_class_.MODULE_DEPS))
         if module_class_.MODULE_DEPS:
             for dependency in module_class_.MODULE_DEPS:
-                # self.logger.trace('Processing "%s" module dependency "%s"' % (module_name, dependency))
+                self.logger.trace('Processing "%s" module dependency "%s"' % (module_name, dependency))
                 # update dependencies list
                 if dependency not in self.__dependencies:
                     self.__dependencies[dependency] = []
                 self.__dependencies[dependency].append(module_name)
+                self.logger.trace('Dependencies list: %s' % self.__dependencies)
                 
-                #if dependency not in self.__modules_loaded_as_dependency:
                 if dependency not in self.__modules_instances:
                     # load dependency
+                    self.logger.trace('Load dependency "%s"' % dependency)
                     self.__load_module(dependency, local_modules, True)
                     self.__module_loading_tree.pop()
 
