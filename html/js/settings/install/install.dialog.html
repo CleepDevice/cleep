@@ -75,9 +75,9 @@
                     <md-list-item>
                         <div layout="column" layout-align="start stretch">
                             <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
-                            <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see module links below.</span>
+                            <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see application links below.</span>
                             <span ng-if="installCtl.moduleToInstall.urls.info" style="margin-top:15px;">
-                                <a ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">More infos on this module</a>
+                                <a ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">More infos on this application</a>
                                 <md-icon md-svg-icon="open-in-new" class="icon-xs"></md-icon>
                             </span>
                         </div>
@@ -110,7 +110,7 @@
 
                 <md-list ng-if="installCtl.moduleToInstall.local">
                     <md-list-item>
-                        <p>This module has no info because it is installed locally (surely for your developments)</p>
+                        <p>This application has no info because it is installed locally (surely for your developments)</p>
                     </md-list-item>
                 </md-list>
             </div>
