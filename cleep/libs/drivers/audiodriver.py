@@ -17,19 +17,31 @@ class AudioDriver(Driver):
      - is_installed
     """
 
-    def __init__(self, params, driver_name, card_name):
+    def __init__(self, driver_name, card_name):
         """
         Constructor
 
         Args:
-            params (dict): driver parameters. See Driver class
             driver_name (string): driver name
             card_name (string): audio card name (as found by alsa) 
         """
-        Driver.__init__(self, params, Driver.DRIVER_AUDIO, driver_name)
+        Driver.__init__(self, Driver.DRIVER_AUDIO, driver_name)
         self.card_name = card_name
+
+    def _on_registered(self):
+        """
+        Driver registered
+        """
         self._cleep_audio = CleepAudio(self.cleep_filesystem)
         self.alsa = Alsa(self.cleep_filesystem)
+
+        self._on_audio_registered()
+
+    def _on_audio_registered(self):
+        """
+        Audio driver registered
+        """
+        raise NotImplementedError('Function "_on_audio_registered" must be implemented in "%s"' % self.__class__.__name__)
 
     def get_device_infos(self):
         """

@@ -346,7 +346,12 @@ class Cleep(BusClient):
         if not isinstance(driver, Driver):
             raise InvalidParameter(u'Driver must be instance of base Driver class')
 
+        # set members and register driver
+        driver.set_members({
+            'cleep_filesystem': self.cleep_filesystem,
+        })
         self.drivers.register(driver)
+        driver._on_registered()
 
     def _get_drivers(self, driver_type):
         """

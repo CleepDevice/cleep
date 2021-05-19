@@ -32,25 +32,42 @@ class Driver():
     PROCESSING_INSTALLING = 1
     PROCESSING_UNINSTALLING = 2
 
-    def __init__(self, params, driver_type, driver_name):
+    def __init__(self, driver_type, driver_name):
         """
         Constructor
 
         Args:
-            params (dict): driver parameters::
+            driver_type (string): driver type. Must be one of available DRIVER_XXX types
+            driver_name (string): driver name.
+        """
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.type = driver_type
+        self.name = driver_name
+        self._processing = self.PROCESSING_NONE
+
+    def _on_registered(self):
+        """
+        Driver registered
+        All core members are available in driver instance
+        """
+        raise NotImplementedError('Function "_on_registered" must be implemented in "%s"' % self.__class__.__name__)
+
+    def set_members(self, members):
+        """
+        Set members.
+
+        Note:
+            This function is called by Cleep during driver registration process
+
+        Args:
+            members (dict): driver members::
 
                 {
                     cleep_filesystem (CleepFilesystem): CleepFilesystem instance
                 }
 
-            driver_type (string): driver type. Must be one of available DRIVER_XXX types
-            driver_name (string): driver name.
         """
-        self.cleep_filesystem = params['cleep_filesystem']
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.type = driver_type
-        self.name = driver_name
-        self._processing = self.PROCESSING_NONE
+        self.cleep_filesystem = members['cleep_filesystem']
 
     def install(self, end_callback, params=None, logger=None):
         """

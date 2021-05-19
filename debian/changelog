@@ -7,6 +7,7 @@ cleep (0.0.27) unstable; urgency=low
   * Backend: improve check_parameters function in core
   * Backend: add way to filter custom exception in crash report lib
   * Backend: clean profiles
+  * Backend: simplify driver instanciation
   * Tests: add PatternArg to help testing
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 15 may 2021 20:00:00 +0200
