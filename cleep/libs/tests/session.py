@@ -378,9 +378,26 @@ class TestSession():
         )
         return False
 
+    def assert_command_called(self, command_name, to=None):
+        """
+        Assert command was called
+        Like command_called_with but with assertion
+        """
+        # check command call
+        if command_name not in self.__bus_command_handlers:
+            self.testcase.assertTrue(False, 'Command "%s" was not called' % command_name)
+
+        # check command recipient
+        if to is not None:
+            self.testcase.assertEqual(
+                self.__bus_command_handlers[command_name]['lastto'],
+                to,
+                'Command "%s" recipient is different' % command_name,
+            )
+
     def assert_command_called_with(self, command_name, params, to=None):
         """
-        Same as command_called_wth but with assertion
+        Same as command_called_with but with assertion
         """
         # check command call
         if command_name not in self.__bus_command_handlers:
