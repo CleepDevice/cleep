@@ -9,13 +9,16 @@ import logging
 import sys
 import subprocess
 import platform
+import re
 from passlib.utils import pbkdf2
 from cleep.libs.internals import __all__ as internals_libs
 from cleep.libs.drivers import __all__ as drivers_libs
 from cleep.libs.configs import __all__ as configs_libs
 from cleep.libs.commands import __all__ as commands_libs
 
-#from https://elinux.org/RPi_HardwareHistory
+COMPAT_PATTERN = r'(.*?)([>|=|<]+)(\d+\.\d+\.\d+),*'
+
+# from https://elinux.org/RPi_HardwareHistory
 RASPBERRY_PI_REVISIONS = {
     'unknown': {
         'date': '?',
@@ -612,6 +615,7 @@ def hr_bytes(num):
 def compare_versions(old_version, new_version, strict=True):
     """
     Compare specified version and return True if new version is strictly greater than old one
+    Version must contains 3 digits otherwise comparison will be rejected
 
     Args:
         old_version (string): old version
@@ -623,11 +627,11 @@ def compare_versions(old_version, new_version, strict=True):
     """
     # check versions
     old_vers = tuple(map(int, (old_version.split('.'))))
-    if len(old_vers)!=3:
+    if len(old_vers) != 3:
         raise Exception('Invalid version "%s" format, only 3 digits format allowed' % old_version)
 
     new_vers = tuple(map(int, (new_version.split('.'))))
-    if len(new_vers)!=3:
+    if len(new_vers) != 3:
         raise Exception('Invalid version "%s" format, only 3 digits format allowed' % new_version)
 
     # compare version
@@ -635,6 +639,48 @@ def compare_versions(old_version, new_version, strict=True):
         return True
 
     return False
+
+def compare_compat_string(compat_str, current_versions):
+    """
+    Compare compat string checking if specified compat string is in version range for all modules
+
+    Args:
+        compat_str (string): compat string to compare. It looks like <module><operator><version>,...
+        current_versions (dict): dict of current modules versions::
+
+            {
+                module name (string): module version (string)
+                ...
+            }
+
+    Returns:
+        bool: True if compat string is compatible with specified current versions
+    """
+    compats = re.findall(COMPAT_PATTERN, compat_str)
+    if len(compats) == 0:
+        # no compat to check
+        return True
+
+    for compat in compats:
+        (module, operator, version) = compat
+
+        if module not in current_versions:
+            # nothing to compare, consider this is an error
+            return False
+
+        comp = True
+        if operator in ('>', '>='):
+            comp = compare_versions(version, current_versions[module], operator == '>')
+        elif operator in ('<', '<='):
+            comp = compare_versions(current_versions[module], version, operator == '<')
+        elif operator == '=':
+            comp = version == current_versions[module]
+
+        if not comp:
+            return False
+
+    # all versions match compat string
+    return True
 
 def full_split_path(path):
     """
@@ -655,9 +701,8 @@ def full_split_path(path):
         if parts[1] == path: # sentinel for relative paths
             allparts.insert(0, parts[1])
             break
-        else:
-            path = parts[0]
-            allparts.insert(0, parts[1])
+        path = parts[0]
+        allparts.insert(0, parts[1])
 
     return list(filter(lambda p: len(p)>0, allparts))
 
