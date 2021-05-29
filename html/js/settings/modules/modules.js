@@ -104,6 +104,9 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
         self.fillModules = function() {
             var modules = [];
             for( var [moduleName, module] of Object.entries(cleepService.modules) ) {
+                if (module.library) {
+                    continue;
+                }
                 modules.push(module);
             }
             self.displayedModules = modules;

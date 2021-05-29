@@ -55,6 +55,7 @@ class Install():
         self.stdout = []
         self.stderr = []
         self.__running = True
+        self.extra = None
 
     def get_status(self):
         """
@@ -422,15 +423,17 @@ class Install():
             current_status['module'] = status['module']
             current_status['updateprocess'] = status['updateprocess']
             current_status['process'] = status['process']
+            current_status['extra'] = self.extra
             self.status_callback(current_status)
 
-    def install_module(self, module_name, module_infos):
+    def install_module(self, module_name, module_infos, extra={}):
         """
         Install specified module
 
         Args:
             module_name (string): module name to install
             modules_infos (dict): module infos reported in modules.json
+            extra (dict): extra data to install process
 
         Returns:
             bool: True if module installed (in blocking mode only)
@@ -445,6 +448,11 @@ class Install():
             raise MissingParameter('Parameter "module_infos" is missing')
         if not isinstance(module_infos, dict):
             raise InvalidParameter('Parameter "module_infos" is invalid')
+        if not isinstance(extra, dict):
+            raise InvalidParameter('Parameter "extra" is invalid')
+
+        # save extra
+        self.extra = extra
 
         # reset status
         self.__reset_status(self.STATUS_PROCESSING)
