@@ -337,6 +337,9 @@ class Cleep(BusClient):
         """
         Register driver
 
+        Args:
+            driver (Driver): driver instance
+
         Raises:
             InvalidParameter: if driver has invalid base class
         """

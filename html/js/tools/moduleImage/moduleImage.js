@@ -7,18 +7,19 @@
  * @param mod-img-src: image path relative to module path
  *  }
  */
-var moduleImageDirective = function($location) {
+angular
+.module('Cleep')
+.directive('modImgSrc', ['$location', function($location) {
 
     var moduleImageLink = function(scope, element, attrs, controller) {
-        //members
+        // members
         var modulesPath = 'js/modules/';
 
         /**
          * Get current module name analysing current location
          * @return current loaded module name
          */
-        function getModuleName()
-        {
+        function getModuleName() {
             return $location.path().replace('/module/', '');
         }
 
@@ -26,14 +27,15 @@ var moduleImageDirective = function($location) {
          * Watch for changes on image source and update src attribute
          */
         attrs.$observe('modImgSrc', function(src) {
-            //build full image path
+            // build full image path
             var url = modulesPath + getModuleName();
-            if( src[0]==='/' )
+            if( src[0]==='/' ) {
                 url += src;
-            else
+            } else {
                 url += '/' + src;
+            }
 
-            //update img src
+            // update img src
             element.attr('src', url);
         });
     };
@@ -46,8 +48,5 @@ var moduleImageDirective = function($location) {
         link: moduleImageLink
     };
 
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.directive('modImgSrc', ['$location', moduleImageDirective]);
+}]);
 
