@@ -203,7 +203,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var files = null;
 
         // do not load data of modules with pending status
-        if( self.modules[module].pending ) {
+        if (self.modulesUpdates[module] && self.modulesUpdates[module].pending) {
             return;
         }
 
