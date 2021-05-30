@@ -108,7 +108,7 @@
                     <md-button
                         class="md-primary"
                         ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].update.failed"
-                        ng-click="installCtl.gotoUpdateModule()"
+                        ng-click="installCtl.gotoUpdateLogs()"
                     >
                         <md-icon md-svg-icon="file-document-outline"></md-icon>
                         <span>Install failed, see logs</span>
@@ -117,8 +117,16 @@
                     <!-- install button -->
                     <md-button
                         class="md-accent"
+                        ng-if="!installCtl.cleepService.installableModules[module.name].compatible"
+                        ng-click="installCtl.showIncompatibleDialog(module)"
+                    >
+                        <md-icon md-svg-icon="car-brake-alert"></md-icon>
+                        <span>Incompatible</span>
+                    </md-button>
+                    <md-button
+                        class="md-accent"
                         ng-if="!installCtl.cleepService.modulesUpdates[module.name] || (installCtl.cleepService.modulesUpdates[module.name] && !installCtl.cleepService.modulesUpdates[module.name].pending)"
-                        ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing || !installCtl.cleepService.installableModules[module.name].compatible"
                         ng-click="installCtl.showInstallDialog(module, $event)"
                     >
                         <md-icon md-svg-icon="plus-circle"></md-icon>

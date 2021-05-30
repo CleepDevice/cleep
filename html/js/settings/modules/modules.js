@@ -14,6 +14,7 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
         self.updates = [];
         self.displayedModules = [];
         self.moduleUpdate = {};
+        self.moduleNotStarted = null;
 
         /**
          * Clear search input

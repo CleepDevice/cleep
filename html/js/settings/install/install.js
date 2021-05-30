@@ -19,7 +19,8 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             '7': { color: '#fbc02d' },
             '8': { color: '#0288d1' },
             '9': { color: '#689f38' },
-       };
+        };
+        self.moduleIncompatible = null;
 
         /**
          * Clear search input
@@ -65,14 +66,31 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             });
         };
 
-        /** 
+        /**
+         * Show incompatible dialog
+         */
+        self.showIncompatibleDialog = function(module, ev) {
+            self.moduleIncompatible = module;
+            $mdDialog.show({
+                controller: function() { return self; },
+                controllerAs: 'incompatibleCtl',
+                templateUrl: 'js/settings/install/incompatible.dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                fullscreen: true
+            })
+            .then(function() {}, function() {});
+        };
+
+        /**
          * Close update dialog
          */
         self.closeDialog = function() {
             $mdDialog.hide();
-        };  
+        };
 
-        /** 
+        /**
          * Show install dialog
          */
         self.showInstallDialog = function(module, ev) {
@@ -94,11 +112,19 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             .then(function() {}, function() {});
         };
 
+        /**
+         * Redirect to update module logs page
+         */
+        self.gotoUpdateLogs = function() {
+            $window.location.href = '#!/module/update?tab=logs';
+        };
+
         /** 
          * Redirect to update module page
          */
-        self.gotoUpdateModule = function() {   
-            $window.location.href = '#!/module/update?tab=logs';
+        self.gotoUpdateCleep = function() {
+            self.closeDialog();
+            $window.location.href = '#!/module/update?tab=cleep';
         };
 
         /**

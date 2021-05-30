@@ -18,6 +18,7 @@ from cleep.libs.internals.install import Install
 import cleep.libs.internals.tools as Tools
 from cleep.common import CORE_MODULES, ExecutionStep
 from cleep.libs.internals.task import Task
+from cleep import __version__ as CLEEP_VERSION
 
 __all__ = ['Inventory']
 
@@ -134,7 +135,7 @@ class Inventory(Cleep):
         Args:
             module_name (string): module name
             local_modules (list): list of locally installed modules
-            is_dependency (bool): True if module to load is a dependency
+            is_dependency (bool): True if module to load is a dependency (default: False)
         """
         if is_dependency:
             self.logger.debug('Loading dependency "%s"' % module_name)
@@ -190,7 +191,7 @@ class Inventory(Cleep):
                 if dependency not in self.__modules_instances:
                     # load dependency
                     self.logger.trace('Load dependency "%s"' % dependency)
-                    self.__load_module(dependency, local_modules, True)
+                    self.__load_module(dependency, local_modules, is_dependency=True)
                     self.__module_loading_tree.pop()
 
                     # flag module is loaded as dependency and not module
@@ -327,8 +328,8 @@ class Inventory(Cleep):
         self.logger.debug('Local modules: %s' % local_modules)
 
         # add default metadata
-        for module_name in self.modules:
-            self.modules[module_name].update({
+        for module_name, module in self.modules.items():
+            module.update({
                 'name': module_name,
                 'installed': False,
                 'library': False,
@@ -337,6 +338,8 @@ class Inventory(Cleep):
                 'screenshots': [],
                 'deps': [],
                 'loadedby': [],
+                'compat': module.get('compat', ''),
+                'compatible': Tools.compare_compat_string(module.get('compat', ''), CLEEP_VERSION),
             })
 
         # execution step: BOOT->INIT
@@ -627,16 +630,12 @@ class Inventory(Cleep):
         # check params
         if module_filter is not None and not callable(module_filter):
             raise InvalidParameter('Parameter "module_filter" must be callable')
+
         # fix module_filter
         if module_filter is None:
             module_filter = lambda mod_name, mod_data, all_mods: True
         
-        # init
         all_modules = copy.deepcopy(self.modules)
-        conf = CleepConf(self.cleep_filesystem)
-        cleep_config = conf.as_dict()
-
-        # apply specified filter
         filtered_modules = {}
         for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v,all_modules)}.items():
             filtered_modules[module_name] = module
