@@ -12,7 +12,7 @@ import unittest
 import logging
 from pprint import pprint
 import io
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 import json
 import time
 
@@ -83,6 +83,43 @@ class ModulesJsonTests(unittest.TestCase):
         os_path_exists_mock.return_value = False
         self.assertFalse(self.mj.exists())
 
+    @patch('modulesjson.urllib.request')
+    @patch('modulesjson.CLEEP_VERSION', '0.0.666')
+    def test_get_remote_url_return_version_url(self, urllib_request_mock):
+        geturl_mock = MagicMock()
+        geturl_mock.getcode.return_value = 200
+        urllib_request_mock.urlopen.return_value = geturl_mock
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+        )
+    
+        url = self.mj._ModulesJson__get_remote_url()
+        self.assertEqual(url, self.mj.REMOTE_URL_VERSION % {'version': '0.0.666'})
+
+    @patch('modulesjson.urllib.request')
+    @patch('modulesjson.CLEEP_VERSION', '0.0.666')
+    def test_get_remote_url_return_latest_url(self, urllib_request_mock):
+        geturl_mock = MagicMock()
+        geturl_mock.getcode.return_value = 404
+        urllib_request_mock.urlopen.return_value = geturl_mock
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+        )
+    
+        url = self.mj._ModulesJson__get_remote_url()
+        self.assertEqual(url, self.mj.REMOTE_URL_LATEST)
+
+    @patch('modulesjson.urllib.request')
+    @patch('modulesjson.CLEEP_VERSION', '0.0.666')
+    def test_get_remote_url_exception_should_return_latest_url(self, urllib_request_mock):
+        urllib_request_mock.urlopen.side_effect = Exception('Test exception')
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+        )
+    
+        url = self.mj._ModulesJson__get_remote_url()
+        self.assertEqual(url, self.mj.REMOTE_URL_LATEST)
+
     @patch('modulesjson.Download')
     @patch('os.path.exists')
     def test_update_with_no_file(self, os_path_exists_mock, download_mock):
@@ -146,5 +183,6 @@ class ModulesJsonTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_modulesjson.py; coverage report -m -i
+    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_modulesjson.py; coverage report -m -i
     unittest.main()
+

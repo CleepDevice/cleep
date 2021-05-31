@@ -5,6 +5,8 @@ import logging
 import os
 import json
 import time
+import urllib.request
+from cleep import __version__ as CLEEP_VERSION
 from cleep.libs.internals.download import Download
 
 class ModulesJson():
@@ -13,7 +15,8 @@ class ModulesJson():
     """
 
     CONF = '/etc/cleep/modules.json'
-    REMOTE_URL =  'https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json'
+    REMOTE_URL_VERSION = 'https://raw.githubusercontent.com/tangb/cleep-apps/v%(version)s/modules.json'
+    REMOTE_URL_LATEST =  'https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json'
 
     def __init__(self, cleep_filesystem):
         """
@@ -82,6 +85,25 @@ class ModulesJson():
 
         return modules_json
 
+    def __get_remote_url(self):
+        """
+        Get remote url choosing between latest of versionned one according to availability
+
+        Returns:
+            string: remote url
+        """
+        # check versionned first. If available it means current installed Cleep version is not the latest
+        # and should be upgraded. Returned modules verions will be fixed forever for this version.
+        try:
+            url = self.REMOTE_URL_VERSION % {'version': CLEEP_VERSION}
+            if urllib.request.urlopen(url).getcode() == 200:
+                return url
+        except:
+            # do no fail
+            pass
+
+        return self.REMOTE_URL_LATEST
+
     def update(self):
         """
         Update modules.json file downloading fresh version from cleepos website
@@ -93,9 +115,10 @@ class ModulesJson():
             Exception if error occured
         """
         self.logger.debug('Updating "modules.json" file...')
+
         # download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
-        download_status, raw = download.download_content(self.REMOTE_URL)
+        download_status, raw = download.download_content(self.__get_remote_url())
         if raw is None:
             raise Exception('Download of modules.json failed (download status %s)' % download_status)
         remote_modules_json = json.loads(raw)
