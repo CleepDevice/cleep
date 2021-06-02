@@ -13,7 +13,7 @@ cleep (0.0.27) unstable; urgency=low
   * Implement compat string
   * ModulesJson libs get versionned app list or latest one
 
- -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 15 may 2021 20:00:00 +0200
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 2 jun 2021 19:00:00 +0200
 
 cleep (0.0.26) unstable; urgency=low
 
