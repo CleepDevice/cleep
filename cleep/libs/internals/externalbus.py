@@ -91,7 +91,7 @@ class ExternalBus():
         Args:
             message (MessageRequest): message request
         """
-        self.logger.debug('Send command response: %s' % message)
+        self.logger.debug('Send internal command response: %s' % str(message))
         if not message.command_uuid in self.__manual_responses:
             self.logger.warning('Command with uuid "%s" not referenced for sending response' % message.command_uuid)
             return
@@ -101,8 +101,11 @@ class ExternalBus():
         response.fill_from_dict(message.params)
 
         # ack command
-        self.logger.debug('Send command response back: %s' % response)
-        self.__manual_responses[message.command_uuid]['manual_response'](response)
+        self.logger.debug('Send internal command response back: %s' % str(response))
+        if self.__manual_responses[message.command_uuid]['manual_response']:
+            self.__manual_responses[message.command_uuid]['manual_response'](response)
+        else: # pragma: no cover - implementation warn, no need to test it
+            self.logger.warning('No manual response specified for external command. Internal command will terminate after timeout.')
 
         # clean
         del self.__manual_responses[message.command_uuid]
