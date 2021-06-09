@@ -89,6 +89,14 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
                     } else {
                         // broadcast received message
                         $rootScope.$broadcast(response.data.event, response.data.device_id, response.data.params);
+
+                        // sync devices if possible
+                        for (var device of cleepService.devices) {
+                            if (device.uuid === response.data.device_id) {
+                                Object.assign(device, response.data.params);
+                                break;
+                            }
+                        }
                     }
                 }
 
