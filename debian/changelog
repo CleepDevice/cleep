@@ -1,3 +1,11 @@
+cleep (0.0.28) unstable; urgency=low
+
+  * Frontend: auto sync devices content on event. App doesn't have to do it by
+  their own
+  * Install: improve python dependency installation (use same file reference)
+
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 9 jun 2021 19:00:00 +0200
+
 cleep (0.0.27) unstable; urgency=low
 
   * Frontend: fix app loading issue disabling parallel js libs loading
