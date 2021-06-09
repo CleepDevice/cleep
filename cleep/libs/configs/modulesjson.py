@@ -99,7 +99,7 @@ class ModulesJson():
             if urllib.request.urlopen(url).getcode() == 200:
                 return url
         except:
-            # do no fail
+            # do not fail
             pass
 
         return self.REMOTE_URL_LATEST
