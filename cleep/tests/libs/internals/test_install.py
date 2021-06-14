@@ -533,6 +533,7 @@ class InstallTests(unittest.TestCase):
             'stderr': stderr,
             'process': process,
             'updateprocess': False,
+            'extra': None,
         })
 
     def test_callback_install_module_no_output(self):
@@ -568,6 +569,7 @@ class InstallTests(unittest.TestCase):
             'stderr': stderr,
             'process': process,
             'updateprocess': False,
+            'extra': None,
         })
 
     def test_callback_install_module_idle(self):
@@ -677,6 +679,27 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(mock_installmodule.return_value.start.called)
         self.assertFalse(self.cleep_filesystem.enable_write.called)
 
+    def test_install_module_blocking_with_package(self):
+        self.init_lib(blocking=True)
+        mock_installmodule.return_value.is_installing.side_effect = [True, False]
+        mock_installmodule.return_value.get_status.return_value = {'status': INSTALLMODULE_STATUS_INSTALLED}
+        t = Timer(0.4, self.end_callback)
+        t.start()
+
+        self.assertTrue(self.i.install_module('dummy', {'infos': 'data'}, extra={'package': 'archive.zip'}))
+
+        mock_installmodule.assert_called_with(
+            'dummy',
+            {'infos': 'data'},
+            update_process=False,
+            status_callback=ANY,
+            cleep_filesystem=self.cleep_filesystem,
+            crash_report=self.crash_report
+        )
+        self.assertTrue(mock_installmodule.return_value.start.called)
+        self.assertFalse(self.cleep_filesystem.enable_write.called)
+        mock_installmodule.return_value.set_package.assert_called_with('archive.zip')
+
     def test_install_module_blocking_failed(self):
         self.init_lib(blocking=True)
         mock_installmodule.return_value.is_installing.side_effect = [True, False]
@@ -716,6 +739,10 @@ class InstallTests(unittest.TestCase):
         with self.assertRaises(InvalidParameter) as cm:
             self.i.install_module('dummy', 123)
         self.assertEqual(str(cm.exception), 'Parameter "module_infos" is invalid')
+
+        with self.assertRaises(InvalidParameter) as cm:
+            self.i.install_module('dummy', {'data': 'data'}, None)
+        self.assertEqual(str(cm.exception), 'Parameter "extra" is invalid')
 
     def test_callback_uninstall_module_done(self):
         self.init_lib()
@@ -875,7 +902,7 @@ class InstallTests(unittest.TestCase):
             'dummy',
             {'infos': 'data'},
             update_process=False,
-            force=False,
+            force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report
@@ -896,7 +923,7 @@ class InstallTests(unittest.TestCase):
             'dummy',
             {'infos': 'data'},
             update_process=False,
-            force=False,
+            force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report
@@ -1253,6 +1280,6 @@ class InstallTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_install.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_install.py; coverage report -m -i
     unittest.main()
 

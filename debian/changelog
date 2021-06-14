@@ -4,6 +4,7 @@ cleep (0.0.28) unstable; urgency=low
   their own
   * Install: improve python dependency installation (use same file reference)
   * Libs: replace urllib3 use by requests
+  * Libs: handle local package installation
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Sun, 9 jun 2021 19:00:00 +0200
 

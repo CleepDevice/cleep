@@ -5,14 +5,18 @@ import logging
 import time
 import os
 from cleep.libs.internals.console import EndlessConsole
-from cleep.libs.internals.installmodule import InstallModule, UninstallModule, UpdateModule
+from cleep.libs.internals.installmodule import (
+    InstallModule,
+    UninstallModule,
+    UpdateModule,
+)
 from cleep.libs.internals.installdeb import InstallDeb
 from cleep.exception import MissingParameter, InvalidParameter
 
-__all__ = ['Install']
+__all__ = ["Install"]
 
 
-class Install():
+class Install:
     """
     Install helper
 
@@ -71,11 +75,7 @@ class Install():
                 }
 
         """
-        return {
-            'status': self.status,
-            'stdout': self.stdout,
-            'stderr': self.stderr
-        }
+        return {"status": self.status, "stdout": self.stdout, "stderr": self.stderr}
 
     def __reset_status(self, status):
         """
@@ -96,7 +96,7 @@ class Install():
             return_code (int): command return code
             killed (bool): True if command was killed
         """
-        self.logger.trace('Command terminated callback')
+        self.logger.trace("Command terminated callback")
 
         # update status if necessary
         if return_code != 0 or killed:
@@ -114,7 +114,7 @@ class Install():
         # disable write at end of command execution
         self.cleep_filesystem.disable_write()
 
-    def __callback_quiet(self, stdout, stderr): # pragma: no cover
+    def __callback_quiet(self, stdout, stderr):  # pragma: no cover
         """
         Quiet output. Does nothing
         """
@@ -125,7 +125,7 @@ class Install():
         Refresh sytem packages list
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # update status
         self.__reset_status(self.STATUS_PROCESSING)
@@ -134,9 +134,11 @@ class Install():
         self.cleep_filesystem.enable_write()
 
         # refresh packages
-        command = '/usr/bin/aptitude update'
-        self.logger.debug('Command: %s', command)
-        self.__console = EndlessConsole(command, self.__callback_quiet, self.__callback_end)
+        command = "/usr/bin/aptitude update"
+        self.logger.debug("Command: %s", command)
+        self.__console = EndlessConsole(
+            command, self.__callback_quiet, self.__callback_end
+        )
         self.__console.start()
 
         # blocking mode
@@ -178,7 +180,7 @@ class Install():
             bool: True if install succeed (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # reset status
         self.__reset_status(self.STATUS_PROCESSING)
@@ -188,9 +190,11 @@ class Install():
 
         # install deb
         command = '/usr/bin/aptitude install -y "%s"' % package_name
-        self.logger.debug('Command: %s', command)
+        self.logger.debug("Command: %s", command)
         self.__running = True
-        self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
+        self.__console = EndlessConsole(
+            command, self.__callback_package, self.__callback_end
+        )
         self.__console.start()
 
         # blocking mode
@@ -214,7 +218,7 @@ class Install():
             bool: True if install succeed (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # reset status
         self.__reset_status(self.STATUS_PROCESSING)
@@ -223,11 +227,13 @@ class Install():
         self.cleep_filesystem.enable_write()
 
         # install deb
-        action = 'purge' if purge else 'remove'
+        action = "purge" if purge else "remove"
         command = '/usr/bin/aptitude %s -y "%s"' % (action, package_name)
-        self.logger.debug('Command: %s', command)
+        self.logger.debug("Command: %s", command)
         self.__running = True
-        self.__console = EndlessConsole(command, self.__callback_package, self.__callback_end)
+        self.__console = EndlessConsole(
+            command, self.__callback_package, self.__callback_end
+        )
         self.__console.start()
 
         # blocking mode
@@ -247,15 +253,15 @@ class Install():
             status (dict): status dict like returned by InstallDeb get_status function
         """
         # update output
-        self.stdout = status['stdout']
-        self.stderr = status['stderr']
+        self.stdout = status["stdout"]
+        self.stderr = status["stderr"]
 
         # update status
-        if status['status'] == InstallDeb.STATUS_RUNNING:
+        if status["status"] == InstallDeb.STATUS_RUNNING:
             self.status = self.STATUS_PROCESSING
-        elif status['status'] in (InstallDeb.STATUS_ERROR, InstallDeb.STATUS_KILLED):
+        elif status["status"] in (InstallDeb.STATUS_ERROR, InstallDeb.STATUS_KILLED):
             self.status = self.STATUS_ERROR
-        elif status['status'] == InstallDeb.STATUS_DONE:
+        elif status["status"] == InstallDeb.STATUS_DONE:
             self.status = self.STATUS_DONE
 
         # send status to caller callback
@@ -273,7 +279,7 @@ class Install():
             bool: True if install succeed (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # reset status
         self.__reset_status(self.STATUS_PROCESSING)
@@ -323,7 +329,7 @@ class Install():
             bool: True if install succeed (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # check params
         if archive is None or len(archive.strip()) == 0:
@@ -338,12 +344,12 @@ class Install():
 
         # get archive decompressor according to archive extension
         command = None
-        if archive.endswith('.tar.gz'):
+        if archive.endswith(".tar.gz"):
             command = '/bin/tar xzf "%s" -C "%s"' % (archive, install_path)
-        elif archive.endswith('.zip'):
+        elif archive.endswith(".zip"):
             command = '/usr/bin/unzip "%s" -d "%s"' % (archive, install_path)
         else:
-            raise Exception('File format not supported. Only zip and tar.gz supported.')
+            raise Exception("File format not supported. Only zip and tar.gz supported.")
 
         # enable write
         self.cleep_filesystem.enable_write()
@@ -353,9 +359,11 @@ class Install():
             self.cleep_filesystem.mkdir(install_path, recursive=True)
 
         # execute command
-        self.logger.debug('Command: %s', command)
+        self.logger.debug("Command: %s", command)
         self.__running = True
-        self.__console = EndlessConsole(command, self.__callback_archive, self.__callback_end)
+        self.__console = EndlessConsole(
+            command, self.__callback_archive, self.__callback_end
+        )
         self.__console.start()
 
         # blocking mode
@@ -385,13 +393,13 @@ class Install():
                 }
 
         """
-        self.logger.debug('Install status: %s', status)
+        self.logger.debug("Install status: %s", status)
         # save status
-        if status['status'] == InstallModule.STATUS_IDLE:
+        if status["status"] == InstallModule.STATUS_IDLE:
             self.status = self.STATUS_IDLE
-        elif status['status'] == InstallModule.STATUS_INSTALLING:
+        elif status["status"] == InstallModule.STATUS_INSTALLING:
             self.status = self.STATUS_PROCESSING
-        elif status['status'] == InstallModule.STATUS_INSTALLED:
+        elif status["status"] == InstallModule.STATUS_INSTALLED:
             self.status = self.STATUS_DONE
         else:
             self.status = self.STATUS_ERROR
@@ -399,31 +407,47 @@ class Install():
         # save stdout/stderr at end of process
         if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # prescript
-            if status['prescript']['returncode'] is not None:
-                self.stdout += (['Pre-install script stdout:'] + status['prescript']['stdout'] +
-                                ['Pre-install script return code: %s' % status['prescript']['returncode']])
-                self.stderr += ['Pre-install script stderr:'] + status['prescript']['stderr']
+            if status["prescript"]["returncode"] is not None:
+                self.stdout += (
+                    ["Pre-install script stdout:"]
+                    + status["prescript"]["stdout"]
+                    + [
+                        "Pre-install script return code: %s"
+                        % status["prescript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["Pre-install script stderr:"] + status["prescript"][
+                    "stderr"
+                ]
             else:
-                self.stdout += ['No pre-install script']
-                self.stderr += ['No pre-install script']
+                self.stdout += ["No pre-install script"]
+                self.stderr += ["No pre-install script"]
 
             # postscript
-            if status['postscript']['returncode'] is not None:
-                self.stdout += (['', 'Post-install script stdout:'] + status['postscript']['stdout'] +
-                                ['Post-install script return code: %s' % status['postscript']['returncode']])
-                self.stderr += ['', 'Post-install script stderr:'] + status['postscript']['stderr']
+            if status["postscript"]["returncode"] is not None:
+                self.stdout += (
+                    ["", "Post-install script stdout:"]
+                    + status["postscript"]["stdout"]
+                    + [
+                        "Post-install script return code: %s"
+                        % status["postscript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["", "Post-install script stderr:"] + status[
+                    "postscript"
+                ]["stderr"]
             else:
-                self.stdout += ['No post-install script']
-                self.stderr += ['No post-install script']
+                self.stdout += ["No post-install script"]
+                self.stderr += ["No post-install script"]
 
         # send status
         if self.status_callback:
             current_status = self.get_status()
             # inject more data
-            current_status['module'] = status['module']
-            current_status['updateprocess'] = status['updateprocess']
-            current_status['process'] = status['process']
-            current_status['extra'] = self.extra
+            current_status["module"] = status["module"]
+            current_status["updateprocess"] = status["updateprocess"]
+            current_status["process"] = status["process"]
+            current_status["extra"] = self.extra
             self.status_callback(current_status)
 
     def install_module(self, module_name, module_infos, extra={}):
@@ -439,7 +463,7 @@ class Install():
             bool: True if module installed (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # check params
         if module_name is None or len(module_name) == 0:
@@ -465,19 +489,21 @@ class Install():
             update_process=False,
             status_callback=self.__callback_install_module,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
         )
+        if extra and extra.get("package"):
+            install.set_package(extra.get("package"))
         install.start()
 
         # blocking mode
-        self.logger.debug('Install module blocking? %s', self.blocking)
+        self.logger.debug("Install module blocking? %s", self.blocking)
         if self.blocking:
             # wait for end of installation
             while install.is_installing():
                 time.sleep(0.25)
 
             # check install status
-            return install.get_status().get('status') == InstallModule.STATUS_INSTALLED
+            return install.get_status().get("status") == InstallModule.STATUS_INSTALLED
 
         return True
 
@@ -498,11 +524,11 @@ class Install():
 
         """
         # save status
-        if status['status'] == UninstallModule.STATUS_IDLE:
+        if status["status"] == UninstallModule.STATUS_IDLE:
             self.status = self.STATUS_IDLE
-        elif status['status'] == UninstallModule.STATUS_UNINSTALLING:
+        elif status["status"] == UninstallModule.STATUS_UNINSTALLING:
             self.status = self.STATUS_PROCESSING
-        elif status['status'] == UninstallModule.STATUS_UNINSTALLED:
+        elif status["status"] == UninstallModule.STATUS_UNINSTALLED:
             self.status = self.STATUS_DONE
         else:
             self.status = self.STATUS_ERROR
@@ -510,30 +536,46 @@ class Install():
         # save stdout/stderr at end of process
         if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # prescript
-            if status['prescript']['returncode'] is not None:
-                self.stdout += (['Pre-uninstall script stdout:'] + status['prescript']['stdout'] +
-                                ['Pre-uninstall script return code: %s' % status['prescript']['returncode']])
-                self.stderr += ['Pre-uninstall script stderr:'] + status['prescript']['stderr']
+            if status["prescript"]["returncode"] is not None:
+                self.stdout += (
+                    ["Pre-uninstall script stdout:"]
+                    + status["prescript"]["stdout"]
+                    + [
+                        "Pre-uninstall script return code: %s"
+                        % status["prescript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["Pre-uninstall script stderr:"] + status["prescript"][
+                    "stderr"
+                ]
             else:
-                self.stdout += ['No pre-uninstall script']
-                self.stderr += ['No pre-uninstall script']
+                self.stdout += ["No pre-uninstall script"]
+                self.stderr += ["No pre-uninstall script"]
 
             # postscript
-            if status['postscript']['returncode'] is not None:
-                self.stdout += (['', 'Post-uninstall script stdout:'] + status['postscript']['stdout'] +
-                                ['Post-uninstall script return code: %s' % status['postscript']['returncode']])
-                self.stderr += ['', 'Post-uninstall script stderr:'] + status['postscript']['stderr']
+            if status["postscript"]["returncode"] is not None:
+                self.stdout += (
+                    ["", "Post-uninstall script stdout:"]
+                    + status["postscript"]["stdout"]
+                    + [
+                        "Post-uninstall script return code: %s"
+                        % status["postscript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["", "Post-uninstall script stderr:"] + status[
+                    "postscript"
+                ]["stderr"]
             else:
-                self.stdout += ['No post-uninstall script']
-                self.stderr += ['No post-uninstall script']
+                self.stdout += ["No post-uninstall script"]
+                self.stderr += ["No post-uninstall script"]
 
         # send status
         if self.status_callback:
             current_status = self.get_status()
             # inject more data
-            current_status['module'] = status['module']
-            current_status['updateprocess'] = status['updateprocess']
-            current_status['process'] = status['process']
+            current_status["module"] = status["module"]
+            current_status["updateprocess"] = status["updateprocess"]
+            current_status["process"] = status["process"]
             self.status_callback(current_status)
 
     def uninstall_module(self, module_name, module_infos, force=False):
@@ -553,7 +595,7 @@ class Install():
             bool: True if module uninstalled (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # check params
         if module_name is None or len(module_name) == 0:
@@ -574,7 +616,7 @@ class Install():
             force_uninstall=force,
             status_callback=self.__callback_uninstall_module,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
         )
         uninstall.start()
 
@@ -585,7 +627,10 @@ class Install():
                 time.sleep(0.25)
 
             # check uinstall status
-            return uninstall.get_status().get('status') == UninstallModule.STATUS_UNINSTALLED
+            return (
+                uninstall.get_status().get("status")
+                == UninstallModule.STATUS_UNINSTALLED
+            )
 
         return True
 
@@ -605,65 +650,101 @@ class Install():
 
         """
         # save status
-        if status['status'] == UpdateModule.STATUS_IDLE:
+        if status["status"] == UpdateModule.STATUS_IDLE:
             self.status = self.STATUS_IDLE
-        elif status['status'] == UpdateModule.STATUS_UPDATING:
+        elif status["status"] == UpdateModule.STATUS_UPDATING:
             self.status = self.STATUS_PROCESSING
-        elif status['status'] == UpdateModule.STATUS_UPDATED:
+        elif status["status"] == UpdateModule.STATUS_UPDATED:
             self.status = self.STATUS_DONE
         else:
             self.status = self.STATUS_ERROR
 
         # save install/uninstall status at end of process
-        process = ['No process output']
+        process = ["No process output"]
         if self.status in (self.STATUS_DONE, self.STATUS_ERROR):
             # uninstall prescript
-            if status['uninstall']['prescript']['returncode'] is not None:
-                self.stdout += (['Pre-uninstall script stdout:'] + status['uninstall']['prescript']['stdout'] +
-                                ['Pre-uninstall script return code: %s' % status['uninstall']['prescript']['returncode']])
-                self.stderr += ['Pre-uninstall script stderr:'] + status['uninstall']['prescript']['stderr']
+            if status["uninstall"]["prescript"]["returncode"] is not None:
+                self.stdout += (
+                    ["Pre-uninstall script stdout:"]
+                    + status["uninstall"]["prescript"]["stdout"]
+                    + [
+                        "Pre-uninstall script return code: %s"
+                        % status["uninstall"]["prescript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["Pre-uninstall script stderr:"] + status["uninstall"][
+                    "prescript"
+                ]["stderr"]
             else:
-                self.stdout += ['No pre-uninstall script']
-                self.stderr += ['No pre-uninstall script']
+                self.stdout += ["No pre-uninstall script"]
+                self.stderr += ["No pre-uninstall script"]
 
             # uninstall postscript
-            if status['uninstall']['postscript']['returncode'] is not None:
-                self.stdout += (['', 'Post-uninstall script stdout:'] + status['uninstall']['postscript']['stdout'] +
-                                ['Post-uninstall script return code: %s' % status['uninstall']['postscript']['returncode']])
-                self.stderr += ['', 'Post-uninstall script stderr:'] + status['uninstall']['postscript']['stderr']
+            if status["uninstall"]["postscript"]["returncode"] is not None:
+                self.stdout += (
+                    ["", "Post-uninstall script stdout:"]
+                    + status["uninstall"]["postscript"]["stdout"]
+                    + [
+                        "Post-uninstall script return code: %s"
+                        % status["uninstall"]["postscript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["", "Post-uninstall script stderr:"] + status[
+                    "uninstall"
+                ]["postscript"]["stderr"]
             else:
-                self.stdout += ['No post-uninstall script']
-                self.stderr += ['No post-uninstall script']
+                self.stdout += ["No post-uninstall script"]
+                self.stderr += ["No post-uninstall script"]
 
             # install prescript
-            if status['install']['prescript']['returncode'] is not None:
-                self.stdout += (['', 'Pre-install script stdout:'] + status['install']['prescript']['stdout'] +
-                                ['Pre-install script return code: %s' % status['install']['prescript']['returncode']])
-                self.stderr += ['', 'Pre-install script stderr:'] + status['install']['prescript']['stderr']
+            if status["install"]["prescript"]["returncode"] is not None:
+                self.stdout += (
+                    ["", "Pre-install script stdout:"]
+                    + status["install"]["prescript"]["stdout"]
+                    + [
+                        "Pre-install script return code: %s"
+                        % status["install"]["prescript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["", "Pre-install script stderr:"] + status["install"][
+                    "prescript"
+                ]["stderr"]
             else:
-                self.stdout += ['No pre-install script']
-                self.stderr += ['No pre-install script']
+                self.stdout += ["No pre-install script"]
+                self.stderr += ["No pre-install script"]
 
             # install postscript
-            if status['install']['postscript']['returncode'] is not None:
-                self.stdout += (['', 'Post-install script stdout:'] + status['install']['postscript']['stdout'] +
-                                ['Post-install script return code: %s' % status['install']['postscript']['returncode']])
-                self.stderr += ['', 'Post-install script stderr:'] + status['install']['postscript']['stderr']
+            if status["install"]["postscript"]["returncode"] is not None:
+                self.stdout += (
+                    ["", "Post-install script stdout:"]
+                    + status["install"]["postscript"]["stdout"]
+                    + [
+                        "Post-install script return code: %s"
+                        % status["install"]["postscript"]["returncode"]
+                    ]
+                )
+                self.stderr += ["", "Post-install script stderr:"] + status["install"][
+                    "postscript"
+                ]["stderr"]
             else:
-                self.stdout += ['No post-install script']
-                self.stderr += ['No post-install script']
+                self.stdout += ["No post-install script"]
+                self.stderr += ["No post-install script"]
 
             # process
-            process = (['Uninstall process:'] + status['uninstall']['process'] + ['', 'Install process:'] +
-                       status['install']['process'])
+            process = (
+                ["Uninstall process:"]
+                + status["uninstall"]["process"]
+                + ["", "Install process:"]
+                + status["install"]["process"]
+            )
 
         # send status
         if self.status_callback:
             current_status = self.get_status()
             # inject more data
-            current_status['module'] = status['module']
-            current_status['process'] = process
-            self.logger.trace('current_status=%s', current_status)
+            current_status["module"] = status["module"]
+            current_status["process"] = process
+            self.logger.trace("current_status=%s", current_status)
             self.status_callback(current_status)
 
     def update_module(self, module_name, new_module_infos, force_uninstall=False):
@@ -684,7 +765,7 @@ class Install():
             bool: True if module updated (in blocking mode only)
         """
         if self.status == self.STATUS_PROCESSING:
-            raise Exception('Installer is already processing')
+            raise Exception("Installer is already processing")
 
         # check params
         if module_name is None or len(module_name) == 0:
@@ -704,7 +785,7 @@ class Install():
             force_uninstall=force_uninstall,
             status_callback=self.__callback_update_module,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
         )
         update.start()
 
@@ -715,7 +796,6 @@ class Install():
                 time.sleep(0.25)
 
             # check update status
-            return update.get_status().get('status') == UpdateModule.STATUS_UPDATED
+            return update.get_status().get("status") == UpdateModule.STATUS_UPDATED
 
         return True
-

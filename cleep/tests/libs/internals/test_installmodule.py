@@ -1291,6 +1291,32 @@ class InstallModuleTests(unittest.TestCase):
         self.assertTrue(self.cleep_filesystem.disable_write.called)
         self.assertFalse(self.crash_report.report_exception.called)
 
+    def test_run_with_package(self):
+        self._init_context()
+        self.i._download_archive = Mock()
+        def dummy_extract(*args, **kwargs):
+            logging.debug('args: %s' % args)
+            args[0].extract_path = '/tmp/dummy/'
+            args[0].archive_path = '/tmp/dummy.zip'
+            return True
+        self.i._extract_archive = dummy_extract
+        self.i._run_script = Mock(side_effect=[True, True])
+        self.i._backup_scripts = Mock(return_value=True)
+        self.i._copy_module_files = Mock(return_value=True)
+
+        self.i.set_package('archive.zip')
+        self.i.run()
+        while self.i.is_installing():
+            time.sleep(0.25)
+        status = self.i.get_status()
+        logging.debug('Status: %s' % status)
+        self.assertFalse(self.i._download_archive.called)
+        self.assertEqual(status['status'], InstallModule.STATUS_INSTALLED)
+        self.assertTrue(self.callback.called)
+        self.assertTrue(self.cleep_filesystem.enable_write.called)
+        self.assertTrue(self.cleep_filesystem.disable_write.called)
+        self.assertFalse(self.crash_report.report_exception.called)
+
     def test_run_cancel(self):
         self._init_context()
         self.i._download_archive = Mock(return_value=True)
@@ -2045,6 +2071,6 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
+    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
     unittest.main()
 
