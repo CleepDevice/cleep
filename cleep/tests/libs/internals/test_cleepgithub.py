@@ -11,6 +11,7 @@ import logging
 import json
 from unittest.mock import Mock
 from copy import deepcopy
+import responses
 
 GET_API_RATE = {
   "resources": {
@@ -48,328 +49,322 @@ GET_API_RATE = {
 }
 
 GET_RELEASES = [
-{u'assets': [{u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.sha256',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2019-02-25T21:21:59Z',
-               u'download_count': 419,
-               u'id': 11238731,
-               u'label': u'',
-               u'name': u'cleep_0.0.18.sha256',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDExMjM4NzMx',
-               u'size': 83,
-               u'state': u'uploaded',
-               u'updated_at': u'2019-02-25T21:21:59Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/11238731'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.zip',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2019-02-25T20:04:58Z',
-               u'download_count': 14,
-               u'id': 11237840,
-               u'label': u'',
-               u'name': u'cleep_0.0.18.zip',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDExMjM3ODQw',
-               u'size': 727221751,
-               u'state': u'uploaded',
-               u'updated_at': u'2019-02-25T21:21:58Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/11237840'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.sha256',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2019-02-25T13:28:37Z',
-               u'download_count': 58,
-               u'id': 11231657,
-               u'label': None,
-               u'name': u'cleep_0.0.18.sha256',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDExMjMxNjU3',
-               u'size': 85,
-               u'state': u'uploaded',
-               u'updated_at': u'2019-02-25T13:28:38Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/11231657'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.zip',
-               u'content_type': u'application/x-zip-compressed',
-               u'created_at': u'2019-02-25T13:28:37Z',
-               u'download_count': 59,
-               u'id': 11231658,
-               u'label': None,
-               u'name': u'cleep_0.0.18.zip',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDExMjMxNjU4',
-               u'size': 3769652,
-               u'state': u'uploaded',
-               u'updated_at': u'2019-02-25T13:30:47Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/11231658'}],
-  u'assets_url': u'https://api.github.com/repos/tangb/cleep/releases/15754939/assets',
-  u'author': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-              u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-              u'followers_url': u'https://api.github.com/users/tangb/followers',
-              u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-              u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-              u'gravatar_id': u'',
-              u'html_url': u'https://github.com/tangb',
-              u'id': 2676511,
-              u'login': u'tangb',
-              u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-              u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-              u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-              u'repos_url': u'https://api.github.com/users/tangb/repos',
-              u'site_admin': False,
-              u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-              u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-              u'type': u'User',
-              u'url': u'https://api.github.com/users/tangb'},
-  u'body': u'* Improve module install/uninstall/update process\r\n* Remove some gpios stuff to gpios module (gpiosPin component)',
-  u'created_at': u'2018-10-09T10:33:55Z',
-  u'draft': False,
-  u'html_url': u'https://github.com/tangb/cleep/releases/tag/v0.0.18',
-  u'id': 15754939,
-  u'name': u'0.0.18',
-  u'node_id': u'MDc6UmVsZWFzZTE1NzU0OTM5',
-  u'prerelease': False,
-  u'published_at': u'2019-02-25T13:30:49Z',
-  u'tag_name': u'v0.0.18',
-  u'tarball_url': u'https://api.github.com/repos/tangb/cleep/tarball/v0.0.18',
-  u'target_commitish': u'master',
-  u'upload_url': u'https://uploads.github.com/repos/tangb/cleep/releases/15754939/assets{?name,label}',
-  u'url': u'https://api.github.com/repos/tangb/cleep/releases/15754939',
-  u'zipball_url': u'https://api.github.com/repos/tangb/cleep/zipball/v0.0.18'},
-{u'assets': [{u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.sha256',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2018-09-27T05:35:54Z',
-               u'download_count': 0,
-               u'id': 8863737,
-               u'label': u'',
-               u'name': u'cleep_0.0.13.sha256',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDg4NjM3Mzc=',
-               u'size': 83,
-               u'state': u'uploaded',
-               u'updated_at': u'2018-09-27T05:35:55Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/8863737'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.zip',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2018-09-26T20:13:38Z',
-               u'download_count': 0,
-               u'id': 8856998,
-               u'label': u'',
-               u'name': u'cleep_0.0.13.zip',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDg4NTY5OTg=',
-               u'size': 732660023,
-               u'state': u'uploaded',
-               u'updated_at': u'2018-09-26T21:37:27Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/8856998'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.sha256',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2018-09-25T22:12:08Z',
-               u'download_count': 1,
-               u'id': 8841647,
-               u'label': u'',
-               u'name': u'cleep_0.0.13.sha256',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDg4NDE2NDc=',
-               u'size': 85,
-               u'state': u'uploaded',
-               u'updated_at': u'2018-09-25T22:12:08Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/8841647'},
-              {u'browser_download_url': u'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.zip',
-               u'content_type': u'application/octet-stream',
-               u'created_at': u'2018-09-25T22:11:37Z',
-               u'download_count': 1,
-               u'id': 8841630,
-               u'label': u'',
-               u'name': u'cleep_0.0.13.zip',
-               u'node_id': u'MDEyOlJlbGVhc2VBc3NldDg4NDE2MzA=',
-               u'size': 3864670,
-               u'state': u'uploaded',
-               u'updated_at': u'2018-09-25T22:12:07Z',
-               u'uploader': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-                             u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-                             u'followers_url': u'https://api.github.com/users/tangb/followers',
-                             u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-                             u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-                             u'gravatar_id': u'',
-                             u'html_url': u'https://github.com/tangb',
-                             u'id': 2676511,
-                             u'login': u'tangb',
-                             u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-                             u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-                             u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-                             u'repos_url': u'https://api.github.com/users/tangb/repos',
-                             u'site_admin': False,
-                             u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-                             u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-                             u'type': u'User',
-                             u'url': u'https://api.github.com/users/tangb'},
-               u'url': u'https://api.github.com/repos/tangb/cleep/releases/assets/8841630'}],
-  u'assets_url': u'https://api.github.com/repos/tangb/cleep/releases/13092235/assets',
-  u'author': {u'avatar_url': u'https://avatars1.githubusercontent.com/u/2676511?v=4',
-              u'events_url': u'https://api.github.com/users/tangb/events{/privacy}',
-              u'followers_url': u'https://api.github.com/users/tangb/followers',
-              u'following_url': u'https://api.github.com/users/tangb/following{/other_user}',
-              u'gists_url': u'https://api.github.com/users/tangb/gists{/gist_id}',
-              u'gravatar_id': u'',
-              u'html_url': u'https://github.com/tangb',
-              u'id': 2676511,
-              u'login': u'tangb',
-              u'node_id': u'MDQ6VXNlcjI2NzY1MTE=',
-              u'organizations_url': u'https://api.github.com/users/tangb/orgs',
-              u'received_events_url': u'https://api.github.com/users/tangb/received_events',
-              u'repos_url': u'https://api.github.com/users/tangb/repos',
-              u'site_admin': False,
-              u'starred_url': u'https://api.github.com/users/tangb/starred{/owner}{/repo}',
-              u'subscriptions_url': u'https://api.github.com/users/tangb/subscriptions',
-              u'type': u'User',
-              u'url': u'https://api.github.com/users/tangb'},
-  u'body': u'* Remove completely all modules. Now they are external parts even system modules\r\n* Remove all formatters and keep only profiles\r\n* Fix some bugs and improve cleepos\r\n* Modules are only loaded by inventory now\r\n',
-  u'created_at': u'2018-08-06T17:20:27Z',
-  u'draft': False,
-  u'html_url': u'https://github.com/tangb/cleep/releases/tag/v0.0.13',
-  u'id': 13092235,
-  u'name': u'0.0.13',
-  u'node_id': u'MDc6UmVsZWFzZTEzMDkyMjM1',
-  u'prerelease': True,
-  u'published_at': u'2018-09-26T12:05:53Z',
-  u'tag_name': u'v0.0.13',
-  u'tarball_url': u'https://api.github.com/repos/tangb/cleep/tarball/v0.0.13',
-  u'target_commitish': u'master',
-  u'upload_url': u'https://uploads.github.com/repos/tangb/cleep/releases/13092235/assets{?name,label}',
-  u'url': u'https://api.github.com/repos/tangb/cleep/releases/13092235',
-  u'zipball_url': u'https://api.github.com/repos/tangb/cleep/zipball/v0.0.13'},
+{'assets': [{'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.sha256',
+               'content_type': 'application/octet-stream',
+               'created_at': '2019-02-25T21:21:59Z',
+               'download_count': 419,
+               'id': 11238731,
+               'label': '',
+               'name': 'cleep_0.0.18.sha256',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDExMjM4NzMx',
+               'size': 83,
+               'state': 'uploaded',
+               'updated_at': '2019-02-25T21:21:59Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/11238731'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.zip',
+               'content_type': 'application/octet-stream',
+               'created_at': '2019-02-25T20:04:58Z',
+               'download_count': 14,
+               'id': 11237840,
+               'label': '',
+               'name': 'cleep_0.0.18.zip',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDExMjM3ODQw',
+               'size': 727221751,
+               'state': 'uploaded',
+               'updated_at': '2019-02-25T21:21:58Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/11237840'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.sha256',
+               'content_type': 'application/octet-stream',
+               'created_at': '2019-02-25T13:28:37Z',
+               'download_count': 58,
+               'id': 11231657,
+               'label': None,
+               'name': 'cleep_0.0.18.sha256',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDExMjMxNjU3',
+               'size': 85,
+               'state': 'uploaded',
+               'updated_at': '2019-02-25T13:28:38Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/11231657'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.18/cleep_0.0.18.zip',
+               'content_type': 'application/x-zip-compressed',
+               'created_at': '2019-02-25T13:28:37Z',
+               'download_count': 59,
+               'id': 11231658,
+               'label': None,
+               'name': 'cleep_0.0.18.zip',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDExMjMxNjU4',
+               'size': 3769652,
+               'state': 'uploaded',
+               'updated_at': '2019-02-25T13:30:47Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/11231658'}],
+  'assets_url': 'https://api.github.com/repos/tangb/cleep/releases/15754939/assets',
+  'author': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+              'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+              'followers_url': 'https://api.github.com/users/tangb/followers',
+              'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+              'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+              'gravatar_id': '',
+              'html_url': 'https://github.com/tangb',
+              'id': 2676511,
+              'login': 'tangb',
+              'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+              'organizations_url': 'https://api.github.com/users/tangb/orgs',
+              'received_events_url': 'https://api.github.com/users/tangb/received_events',
+              'repos_url': 'https://api.github.com/users/tangb/repos',
+              'site_admin': False,
+              'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+              'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+              'type': 'User',
+              'url': 'https://api.github.com/users/tangb'},
+  'body': '* Improve module install/uninstall/update process\r\n* Remove some gpios stuff to gpios module (gpiosPin component)',
+  'created_at': '2018-10-09T10:33:55Z',
+  'draft': False,
+  'html_url': 'https://github.com/tangb/cleep/releases/tag/v0.0.18',
+  'id': 15754939,
+  'name': '0.0.18',
+  'node_id': 'MDc6UmVsZWFzZTE1NzU0OTM5',
+  'prerelease': False,
+  'published_at': '2019-02-25T13:30:49Z',
+  'tag_name': 'v0.0.18',
+  'tarball_url': 'https://api.github.com/repos/tangb/cleep/tarball/v0.0.18',
+  'target_commitish': 'master',
+  'upload_url': 'https://uploads.github.com/repos/tangb/cleep/releases/15754939/assets{?name,label}',
+  'url': 'https://api.github.com/repos/tangb/cleep/releases/15754939',
+  'zipball_url': 'https://api.github.com/repos/tangb/cleep/zipball/v0.0.18'},
+{'assets': [{'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.sha256',
+               'content_type': 'application/octet-stream',
+               'created_at': '2018-09-27T05:35:54Z',
+               'download_count': 0,
+               'id': 8863737,
+               'label': '',
+               'name': 'cleep_0.0.13.sha256',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDg4NjM3Mzc=',
+               'size': 83,
+               'state': 'uploaded',
+               'updated_at': '2018-09-27T05:35:55Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/8863737'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.zip',
+               'content_type': 'application/octet-stream',
+               'created_at': '2018-09-26T20:13:38Z',
+               'download_count': 0,
+               'id': 8856998,
+               'label': '',
+               'name': 'cleep_0.0.13.zip',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDg4NTY5OTg=',
+               'size': 732660023,
+               'state': 'uploaded',
+               'updated_at': '2018-09-26T21:37:27Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/8856998'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.sha256',
+               'content_type': 'application/octet-stream',
+               'created_at': '2018-09-25T22:12:08Z',
+               'download_count': 1,
+               'id': 8841647,
+               'label': '',
+               'name': 'cleep_0.0.13.sha256',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDg4NDE2NDc=',
+               'size': 85,
+               'state': 'uploaded',
+               'updated_at': '2018-09-25T22:12:08Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/8841647'},
+              {'browser_download_url': 'https://github.com/tangb/cleep/releases/download/v0.0.13/cleep_0.0.13.zip',
+               'content_type': 'application/octet-stream',
+               'created_at': '2018-09-25T22:11:37Z',
+               'download_count': 1,
+               'id': 8841630,
+               'label': '',
+               'name': 'cleep_0.0.13.zip',
+               'node_id': 'MDEyOlJlbGVhc2VBc3NldDg4NDE2MzA=',
+               'size': 3864670,
+               'state': 'uploaded',
+               'updated_at': '2018-09-25T22:12:07Z',
+               'uploader': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+                             'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+                             'followers_url': 'https://api.github.com/users/tangb/followers',
+                             'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+                             'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+                             'gravatar_id': '',
+                             'html_url': 'https://github.com/tangb',
+                             'id': 2676511,
+                             'login': 'tangb',
+                             'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+                             'organizations_url': 'https://api.github.com/users/tangb/orgs',
+                             'received_events_url': 'https://api.github.com/users/tangb/received_events',
+                             'repos_url': 'https://api.github.com/users/tangb/repos',
+                             'site_admin': False,
+                             'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+                             'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+                             'type': 'User',
+                             'url': 'https://api.github.com/users/tangb'},
+               'url': 'https://api.github.com/repos/tangb/cleep/releases/assets/8841630'}],
+  'assets_url': 'https://api.github.com/repos/tangb/cleep/releases/13092235/assets',
+  'author': {'avatar_url': 'https://avatars1.githubusercontent.com/u/2676511?v=4',
+              'events_url': 'https://api.github.com/users/tangb/events{/privacy}',
+              'followers_url': 'https://api.github.com/users/tangb/followers',
+              'following_url': 'https://api.github.com/users/tangb/following{/other_user}',
+              'gists_url': 'https://api.github.com/users/tangb/gists{/gist_id}',
+              'gravatar_id': '',
+              'html_url': 'https://github.com/tangb',
+              'id': 2676511,
+              'login': 'tangb',
+              'node_id': 'MDQ6VXNlcjI2NzY1MTE=',
+              'organizations_url': 'https://api.github.com/users/tangb/orgs',
+              'received_events_url': 'https://api.github.com/users/tangb/received_events',
+              'repos_url': 'https://api.github.com/users/tangb/repos',
+              'site_admin': False,
+              'starred_url': 'https://api.github.com/users/tangb/starred{/owner}{/repo}',
+              'subscriptions_url': 'https://api.github.com/users/tangb/subscriptions',
+              'type': 'User',
+              'url': 'https://api.github.com/users/tangb'},
+  'body': '* Remove completely all modules. Now they are external parts even system modules\r\n* Remove all formatters and keep only profiles\r\n* Fix some bugs and improve cleepos\r\n* Modules are only loaded by inventory now\r\n',
+  'created_at': '2018-08-06T17:20:27Z',
+  'draft': False,
+  'html_url': 'https://github.com/tangb/cleep/releases/tag/v0.0.13',
+  'id': 13092235,
+  'name': '0.0.13',
+  'node_id': 'MDc6UmVsZWFzZTEzMDkyMjM1',
+  'prerelease': True,
+  'published_at': '2018-09-26T12:05:53Z',
+  'tag_name': 'v0.0.13',
+  'tarball_url': 'https://api.github.com/repos/tangb/cleep/tarball/v0.0.13',
+  'target_commitish': 'master',
+  'upload_url': 'https://uploads.github.com/repos/tangb/cleep/releases/13092235/assets{?name,label}',
+  'url': 'https://api.github.com/repos/tangb/cleep/releases/13092235',
+  'zipball_url': 'https://api.github.com/repos/tangb/cleep/zipball/v0.0.13'},
 ]
 
-
-class MockedResponse():
-    def __init__(self, data={}, status=200, headers={}):
-        self.status = status
-        self.data = data
-        self.headers = headers
 
 class CleepGithubTests(unittest.TestCase):
 
     def setUp(self):
+        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.owner = 'dummy'
         self.repo = 'dummy'
@@ -377,9 +372,15 @@ class CleepGithubTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _init_context(self, resp_data={}, resp_status=200, resp_headers={}):
+    def _init_context(self, url, resp_data={}, resp_status=200, resp_headers={}):
         self.g = CleepGithub()
-        self.g.http.urlopen = Mock(return_value=MockedResponse(resp_data, resp_status, resp_headers))
+        responses.add(
+            responses.GET,
+            url,
+            body=json.dumps(resp_data).encode('utf8'),
+            headers=resp_headers,
+            status=resp_status,
+        )
 
     def test_auth_string(self):
         g = CleepGithub()
@@ -388,31 +389,37 @@ class CleepGithubTests(unittest.TestCase):
         g = CleepGithub(auth_string='Bearer myjwt')
         self.assertTrue('Authorization' in g.http_headers)
 
+    @responses.activate
     def test_get_releases(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertTrue(isinstance(releases, list))
         self.assertEqual(1, len(releases))
 
+    @responses.activate
     def test_get_all_releases(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
-        release = self.g.get_releases(self.owner, self.repo, only_latest=False, only_released=False)
-        self.assertTrue(isinstance(release, list))
-        self.assertNotEqual(0, len(release))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
+        releases = self.g.get_releases(self.owner, self.repo, only_latest=False, only_released=False)
+        logging.debug('Releases: %s' % releases)
+        self.assertTrue(isinstance(releases, list))
+        self.assertEqual(len(releases), 2)
 
+    @responses.activate
     def test_unknown_repo(self):
-        self._init_context(resp_status=404)
+        self._init_context(url=CleepGithub.GITHUB_URL % ('tangb', 'test'), resp_status=404)
         self.assertRaises(Exception, self.g.get_releases, 'tangb', 'test')
 
+    @responses.activate
     def test_release_version(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         version = self.g.get_release_version(releases[0])
-        self.assertNotEqual(0, len(version.strip()))
+        logging.debug('Version: %s' % version)
+        self.assertEqual(version, '0.0.18')
 
     def test_release_version_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
 
         class Dummy():
             pass
@@ -424,8 +431,9 @@ class CleepGithubTests(unittest.TestCase):
             self.g.get_release_version({})
         self.assertEqual(str(cm.exception), 'Specified release has no version field')
 
+    @responses.activate
     def test_release_version_raw_version(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
 
         releases = deepcopy(GET_RELEASES)
         release = releases[0]
@@ -434,15 +442,16 @@ class CleepGithubTests(unittest.TestCase):
         version = self.g.get_release_version(release)
         self.assertEqual(version, 'myversion')
 
+    @responses.activate
     def test_release_changelog(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         changelog = self.g.get_release_changelog(releases[0])
         self.assertNotEqual(0, len(changelog.strip()))
 
     def test_release_changelog_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
 
         class Dummy():
             pass
@@ -451,7 +460,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
     def test_release_changelog_with_empty_changelog(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
 
         releases = deepcopy(GET_RELEASES)
         release = releases[0]
@@ -460,15 +469,16 @@ class CleepGithubTests(unittest.TestCase):
         changelog = self.g.get_release_changelog(release)
         self.assertEqual(changelog, '')
 
+    @responses.activate
     def test_get_release_assets_infos(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
         releases = self.g.get_releases(self.owner, self.repo, only_latest=True, only_released=False)
         self.assertEqual(1, len(releases))
         infos = self.g.get_release_assets_infos(releases[0])
         logging.debug(infos)
 
     def test_get_release_assets_infos_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url='', resp_data=GET_RELEASES)
 
         class Dummy():
             pass
@@ -483,8 +493,9 @@ class CleepGithubTests(unittest.TestCase):
             self.g.get_release_assets_infos(release)
         self.assertEqual(str(cm.exception), 'Invalid release format')
 
+    @responses.activate
     def test_is_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
         releases = self.g.get_releases(self.owner, self.repo, only_released=True)
         for release in releases:
             self.assertTrue(self.g.is_released(release))
@@ -501,7 +512,7 @@ class CleepGithubTests(unittest.TestCase):
         self.assertNotEqual(0, unreleased)
 
     def test_is_released_with_invalid_release(self):
-        self._init_context(resp_data=json.dumps(GET_RELEASES).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_URL % (self.owner, self.repo), resp_data=GET_RELEASES)
 
         class Dummy():
             pass
@@ -509,31 +520,34 @@ class CleepGithubTests(unittest.TestCase):
             self.g.is_released(Dummy())
         self.assertEqual(str(cm.exception), 'Invalid release format. Dict type awaited')
 
+    @responses.activate
     def test_api_rate(self):
-        self._init_context(resp_data=json.dumps(GET_API_RATE).encode('utf8'))
+        self._init_context(url=CleepGithub.GITHUB_RATE, resp_data=GET_API_RATE)
         rate = self.g.get_api_rate()
         logging.debug(rate)
-        self.assertTrue(u'limit' in rate)
-        self.assertTrue(u'remaining' in rate)
-        self.assertTrue(u'reset' in rate)
+        self.assertTrue('limit' in rate)
+        self.assertTrue('remaining' in rate)
+        self.assertTrue('reset' in rate)
 
+    @responses.activate
     def test_api_rate_invalid_data_received(self):
         GET_API_RATE_ = deepcopy(GET_API_RATE)
         del GET_API_RATE_['rate']
+        self._init_context(url=CleepGithub.GITHUB_RATE, resp_data=GET_API_RATE_)
 
-        self._init_context(resp_data=json.dumps(GET_API_RATE_).encode('utf8'))
         with self.assertRaises(Exception) as cm:
             self.g.get_api_rate()
         self.assertEqual(str(cm.exception), 'Unable to get api rate: Invalid data from github rate_limit request')
 
+    @responses.activate
     def test_api_rate_invalid_response_status(self):
-        self._init_context(resp_status=500)
+        self._init_context(url=CleepGithub.GITHUB_RATE, resp_status=500)
         with self.assertRaises(Exception) as cm:
             self.g.get_api_rate()
         self.assertEqual(str(cm.exception), 'Unable to get api rate: Invalid response (status=500)')
 
 
 if __name__ == '__main__':
-     #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepgithub.py; coverage report -m -i
+     # coverage run --omit="*/lib/python*/*","*test_*" --concurrency=thread test_cleepgithub.py; coverage report -m -i
      unittest.main()
 

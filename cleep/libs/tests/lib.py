@@ -9,45 +9,6 @@ from unittest.mock import Mock
 TRACE = tools.TRACE
 KEY_FUNCTIONAL_TEST = 'UNITTEST_FUNC'
 
-class Urllib3RequestResponseMock():
-    """
-    Urllib3RequestResponseMock is used to simulate output of urllib3.request function and force some output values or side effects
-    """
-    def __init__(self, status=200, raw='', read_side_effect=None, getheader_side_effect=None):
-        """
-        Constructor
-
-        Args:
-            status (int): http response status
-            raw (string): raw content to return to request call
-            read_side_effect (function|exception): function to call as read function side effect or exception to raise
-            getheader_side_effect (function|exception): function to call as getheader function side effect or exception to raise
-        """
-        self.status = status
-        self.raw = raw
-        self.__step = 0
-        self.range = 4
-        self.read_side_effect = read_side_effect
-        self.getheader_side_effect = getheader_side_effect
-
-    def read(self, *args, **kwargs):
-        if self.read_side_effect:
-            if isinstance(self.read_side_effect, Exception):
-                # pylint: disable=E0702
-                raise self.read_side_effect
-            else:
-                self.read_side_effect()
-        out = self.raw[self.__step:self.__step+self.range]
-        self.__step += self.range
-        return None if len(out)==0 else out
-
-    def getheader(self, *args, **kwargs):
-        if self.getheader_side_effect:
-            if isinstance(self.getheader_side_effect, Exception):
-                # pylint: disable=E0702
-                raise self.getheader_side_effect
-            else:
-                return self.getheader_side_effect()
 
 class FileDescriptorMock():
     """

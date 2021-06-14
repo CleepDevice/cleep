@@ -3,20 +3,20 @@
 
 import logging
 import time
-import urllib3
-urllib3.disable_warnings()
+import requests
 import json
 import re
 import os
 
-class CleepGithub():
+
+class CleepGithub:
     """
     Github release helper
     This class get releases from specified project and return content as dict
     """
 
-    GITHUB_URL = u'https://api.github.com/repos/%s/%s/releases'
-    GITHUB_RATE = u'https://api.github.com/rate_limit'
+    GITHUB_URL = "https://api.github.com/repos/%s/%s/releases"
+    GITHUB_RATE = "https://api.github.com/rate_limit"
 
     def __init__(self, auth_string=None):
         """
@@ -29,11 +29,12 @@ class CleepGithub():
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # members
-        self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
-        self.http = urllib3.PoolManager(num_pools=1)
-        self.version_pattern = r'\d+\.\d+\.\d+'
+        self.http_headers = {
+            "user-agent": "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0"
+        }
+        self.version_pattern = r"\d+\.\d+\.\d+"
         if auth_string:
-            self.http_headers[u'Authorization'] = auth_string
+            self.http_headers["Authorization"] = auth_string
 
     def get_api_rate(self):
         """
@@ -48,26 +49,27 @@ class CleepGithub():
                     remaining (int): number of requests processed
                     reset (int): timestamp when rate is resetted to limit
                 }
+
         """
         try:
-            resp = self.http.urlopen('GET', self.GITHUB_RATE, headers=self.http_headers)
-            self.logger.trace('GET "%s": %s' % (self.GITHUB_RATE, resp.data))
+            resp = requests.get(self.GITHUB_RATE, headers=self.http_headers)
+            self.logger.trace('GET "%s": %s' % (self.GITHUB_RATE, resp.text))
 
-            if resp.status==200:
+            if resp.status_code == 200:
                 # response successful, parse data to get current latest version
-                data = json.loads(resp.data.decode('utf-8'))
-                self.logger.debug('Data: %s' % data)
+                data = resp.json()
+                self.logger.debug("Data: %s" % data)
 
-                if u'rate' in data:
-                    return data[u'rate']
+                if "rate" in data:
+                    return data["rate"]
                 else:
-                    raise Exception(u'Invalid data from github rate_limit request')
+                    raise Exception("Invalid data from github rate_limit request")
             else:
-                raise Exception(u'Invalid response (status=%d)' % resp.status)
+                raise Exception("Invalid response (status=%d)" % resp.status_code)
 
-        except Exception as e:
-            self.logger.exception('Unable to get api rate:')
-            raise Exception('Unable to get api rate: %s' % str(e))
+        except Exception as error:
+            self.logger.exception("Unable to get api rate:")
+            raise Exception("Unable to get api rate: %s" % str(error))
 
     def get_release_version(self, release):
         """
@@ -83,16 +85,16 @@ class CleepGithub():
             Exception if version field not found or input release is invalid
         """
         if not isinstance(release, dict):
-            raise Exception('Invalid release format. Dict type awaited')
+            raise Exception("Invalid release format. Dict type awaited")
 
-        if u'tag_name' in release.keys():
-            version = re.search(self.version_pattern, release[u'tag_name'])
+        if "tag_name" in release.keys():
+            version = re.search(self.version_pattern, release["tag_name"])
             if version:
                 return version.group()
-            return release[u'tag_name']
+            return release["tag_name"]
 
         else:
-            raise Exception('Specified release has no version field')
+            raise Exception("Specified release has no version field")
 
     def get_release_changelog(self, release):
         """
@@ -108,13 +110,13 @@ class CleepGithub():
             Exception if version field not found or input release is invalid
         """
         if not isinstance(release, dict):
-            raise Exception('Invalid release format. Dict type awaited')
+            raise Exception("Invalid release format. Dict type awaited")
 
-        if u'body' in release.keys():
-            return release[u'body']
+        if "body" in release.keys():
+            return release["body"]
         else:
             # no body tag found, return empty string
-            return u''
+            return ""
 
     def is_released(self, release):
         """
@@ -130,14 +132,14 @@ class CleepGithub():
             Exception if input release is invalid
         """
         if not isinstance(release, dict):
-            raise Exception('Invalid release format. Dict type awaited')
+            raise Exception("Invalid release format. Dict type awaited")
 
         prerelease = True
-        if u'prerelease' in release.keys():
-            prerelease = release[u'prerelease']
+        if "prerelease" in release.keys():
+            prerelease = release["prerelease"]
         draft = True
-        if u'draft' in release.keys():
-            draft = release[u'draft']
+        if "draft" in release.keys():
+            draft = release["draft"]
 
         return not prerelease and not draft
 
@@ -164,18 +166,20 @@ class CleepGithub():
             Exception if input release is invalid
         """
         if not isinstance(release, dict):
-            raise Exception(u'Invalid release format. Dict type awaited')
-        if u'assets' not in release.keys():
-            raise Exception(u'Invalid release format')
+            raise Exception("Invalid release format. Dict type awaited")
+        if "assets" not in release.keys():
+            raise Exception("Invalid release format")
 
         out = []
-        for asset in release[u'assets']:
-            if u'browser_download_url' and u'size' and u'name' in asset.keys():
-                out.append({
-                    u'name': asset[u'name'],
-                    u'url': asset[u'browser_download_url'],
-                    u'size': asset[u'size']
-                })
+        for asset in release["assets"]:
+            if "browser_download_url" and "size" and "name" in asset.keys():
+                out.append(
+                    {
+                        "name": asset["name"],
+                        "url": asset["browser_download_url"],
+                        "size": asset["size"],
+                    }
+                )
 
         return out
 
@@ -195,23 +199,26 @@ class CleepGithub():
         """
         try:
             url = self.GITHUB_URL % (owner, repository)
-            resp = self.http.urlopen('GET', url, headers=self.http_headers)
+            resp = requests.get(url, headers=self.http_headers)
             self.logger.trace('GET "%s"' % url)
 
-            if resp.status==200:
+            if resp.status_code == 200:
                 # response successful, parse data to get current latest version
-                data = json.loads(resp.data.decode('utf-8'))
-                self.logger.debug('Data: %s' % data)
+                data = resp.json()
+                self.logger.debug("Data: %s" % data)
 
                 # return all releases
                 return data
 
             else:
-                raise Exception('Invalid response (status=%d): %s' % (resp.status, resp.data))
+                raise Exception(
+                    "Invalid response (status=%d): %s"
+                    % (resp.status_code, resp.text.encode("utf8"))
+                )
 
         except Exception as e:
-            self.logger.exception('Unable to get releases:')
-            raise Exception('Unable to get releases: %s' % str(e))
+            self.logger.exception("Unable to get releases:")
+            raise Exception("Unable to get releases: %s" % str(e))
 
     def __get_released_releases(self, owner, repository):
         """
@@ -221,7 +228,11 @@ class CleepGithub():
             owner (string): name of owner
             repository (string): name of repository
         """
-        return [release for release in self.__get_all_releases(owner, repository) if self.is_released(release)]
+        return [
+            release
+            for release in self.__get_all_releases(owner, repository)
+            if self.is_released(release)
+        ]
 
     def get_releases(self, owner, repository, only_latest=False, only_released=True):
         """
@@ -247,4 +258,3 @@ class CleepGithub():
             return releases[0:1]
 
         return releases
-
