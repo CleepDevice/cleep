@@ -1,6 +1,6 @@
 cleep (0.0.28) unstable; urgency=low
 
-  * Frontend: auto sync devices content on event. App doesn't have to do it by
+  * Frontend: auto sync devices content on event. Apps don't have to do it by
   their own
   * Install: improve python dependency installation (use same file reference)
   * Libs: replace urllib3 use by requests
