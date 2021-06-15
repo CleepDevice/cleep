@@ -15,10 +15,12 @@ class MockedScope():
         self.set_tag_calls = 0
         self.set_extra_calls = 0
         self.called = False
+        self.tags = {}
     def __call__(self, *args, **kwargs):
         self.called = True
     def set_tag(self, *args, **kwargs):
         self.set_tag_calls += 1
+        self.tags[args[0]] = args[1]
     def set_extra(self, *args, **kwargs):
         self.set_extra_calls += 1
 
@@ -30,14 +32,16 @@ class CrashReportTests(unittest.TestCase):
 
         self.sentry_configure_scope = Mock()
         self.sentry_configure_scope.return_value.__enter__ = Mock()
-        self.sentry_configure_scope.return_value.__enter__.return_value = MockedScope()
+        self.configure_scope = MockedScope()
+        self.sentry_configure_scope.return_value.__enter__.return_value = self.configure_scope
         self.sentry_configure_scope.return_value.__exit__ = Mock()
         #self.sentry_configure_scope.set_tag = Mock()
         crashreport.configure_scope = self.sentry_configure_scope
 
         self.sentry_push_scope = Mock()
         self.sentry_push_scope.return_value.__enter__ = Mock()
-        self.sentry_push_scope.return_value.__enter__.return_value = MockedScope()
+        self.push_scope = MockedScope()
+        self.sentry_push_scope.return_value.__enter__.return_value = self.push_scope
         self.sentry_push_scope.return_value.__exit__ = Mock()
         crashreport.SentryPushScope = self.sentry_push_scope
 
@@ -100,9 +104,31 @@ class CrashReportTests(unittest.TestCase):
         self.assertTrue(self.sentry_push_scope.called)
         self.assertGreater(self.sentry_push_scope.return_value.__enter__.return_value.set_extra_calls, 0)
 
+    def test_filter_exception(self):
+        self.c.enable()
+        self.c.filter_exception('MyException')
+        self.assertTrue('MyException' in self.c._CrashReport__filters)
 
+    def test_get_infos(self):
+        self.c.enable()
+        infos = self.c.get_infos()
+        logging.debug('Infos: %s' % infos)
+        self.assertDictEqual(infos, {
+            'libsversion': {
+                'mylib': 'mylibversion'
+            },
+            'product': 'myproduct',
+            'productversion': 'myversion'
+        })
+
+    def test_add_module_version(self):
+        self.c.enable()
+        self.c.add_module_version('Mymodule', '1.1.1')
+        logging.debug('Tags: %s' % self.configure_scope.tags)
+        self.assertTrue('Mymodule' in self.configure_scope.tags)
+        self.assertEqual(self.configure_scope.tags['Mymodule'], '1.1.1')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_crashreport.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_crashreport.py; coverage report -m -i
     unittest.main()
 
