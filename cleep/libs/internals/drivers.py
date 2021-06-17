@@ -6,7 +6,8 @@ import logging
 from cleep.libs.drivers.driver import Driver
 from cleep.exception import InvalidParameter, MissingParameter
 
-class Drivers():
+
+class Drivers:
     """
     Drivers handler
     """
@@ -22,11 +23,11 @@ class Drivers():
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
 
-        #members
-        #compute dict of driver types
+        # members
+        # compute dict of driver types
         self.drivers = {}
         for member in dir(Driver):
-            if member.startswith(u'DRIVER_'):
+            if member.startswith("DRIVER_"):
                 self.drivers[getattr(Driver, member)] = {}
 
     def register(self, driver):
@@ -41,13 +42,17 @@ class Drivers():
             MissingParameter: if a parameter is missing
         """
         if driver is None:
-            raise MissingParameter(u'Parameter "driver" is missing')
-        if driver.name is None or len(driver.name)==0:
-            raise InvalidParameter(u'Driver name is missing')
+            raise MissingParameter('Parameter "driver" is missing')
+        if driver.name is None or len(driver.name) == 0:
+            raise InvalidParameter("Driver name is missing")
         if driver.type not in self.drivers:
-            raise InvalidParameter(u'Driver must be one of existing driver type (found "%s")' % driver.type)
+            raise InvalidParameter(
+                'Driver must be one of existing driver type (found "%s")' % driver.type
+            )
 
-        self.logger.info(u'%s driver "%s" registered' % (driver.type.capitalize(), driver.name))
+        self.logger.info(
+            '%s driver "%s" registered' % (driver.type.capitalize(), driver.name)
+        )
         self.drivers[driver.type][driver.name] = driver
 
     def get_all_drivers(self):
@@ -69,10 +74,12 @@ class Drivers():
         Returns:
             dict: drivers configuration
         """
-        if driver_type is None or len(driver_type)==0:
-            raise MissingParameter(u'Parameter "driver_type" is missing')
+        if driver_type is None or len(driver_type) == 0:
+            raise MissingParameter('Parameter "driver_type" is missing')
         if driver_type not in self.drivers:
-            raise InvalidParameter(u'Driver must be one of existing driver type (found "%s")' % driver_type)
+            raise InvalidParameter(
+                'Driver must be one of existing driver type (found "%s")' % driver_type
+            )
 
         return self.drivers[driver_type]
 
@@ -91,12 +98,17 @@ class Drivers():
             InvalidParameter: if one of function parameter is invalid
             MissingParameter: if one of function parameter is missing
         """
-        if driver_type is None or len(driver_type)==0:
-            raise MissingParameter(u'Parameter "driver_type" is missing')
+        if driver_type is None or len(driver_type) == 0:
+            raise MissingParameter('Parameter "driver_type" is missing')
         if driver_type not in self.drivers:
-            raise InvalidParameter(u'Driver must be one of existing driver type (found "%s")' % driver_type)
-        if driver_name is None or len(driver_name)==0:
-            raise MissingParameter(u'Parameter "driver_name" is missing')
+            raise InvalidParameter(
+                'Driver must be one of existing driver type (found "%s")' % driver_type
+            )
+        if driver_name is None or len(driver_name) == 0:
+            raise MissingParameter('Parameter "driver_name" is missing')
 
-        return self.drivers[driver_type][driver_name] if driver_name in self.drivers[driver_type] else None
-
+        return (
+            self.drivers[driver_type][driver_name]
+            if driver_name in self.drivers[driver_type]
+            else None
+        )

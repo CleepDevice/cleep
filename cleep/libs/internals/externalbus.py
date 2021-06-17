@@ -6,7 +6,8 @@ import logging
 import uuid
 from threading import Event
 
-class ExternalBus():
+
+class ExternalBus:
     """
     ExternalBus base class
 
@@ -20,16 +21,23 @@ class ExternalBus():
         - internal logger with debug enabled or not
     """
 
-    COMMAND_RESPONSE_EVENT = 'external.command.response'
+    COMMAND_RESPONSE_EVENT = "external.command.response"
 
-    def __init__(self, on_message_received, on_peer_connected, on_peer_disconnected, debug_enabled, crash_report):
+    def __init__(
+        self,
+        on_message_received,
+        on_peer_connected,
+        on_peer_disconnected,
+        debug_enabled,
+        crash_report,
+    ):
         """
         Constructor
 
         Args:
             on_message_received (callback): function called when message is received on bus. It must returns a
                                             MessageResponse if request is a command. Function parameters::
-                                            
+
                                             peer_ident (string): peer identifier
                                             request (MessageRequest): message request instance
 
@@ -73,7 +81,9 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('run function must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(
+            'run function must be implemented in "%s"' % self.__class__.__name__
+        )
 
     def run_once(self):
         """
@@ -82,7 +92,9 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('run_once function must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(
+            'run_once function must be implemented in "%s"' % self.__class__.__name__
+        )
 
     def __ack_command_with_response(self, message):
         """
@@ -91,9 +103,12 @@ class ExternalBus():
         Args:
             message (MessageRequest): message request
         """
-        self.logger.debug('Send internal command response: %s' % str(message))
+        self.logger.debug("Send internal command response: %s" % str(message))
         if not message.command_uuid in self.__manual_responses:
-            self.logger.warning('Command with uuid "%s" not referenced for sending response' % message.command_uuid)
+            self.logger.warning(
+                'Command with uuid "%s" not referenced for sending response'
+                % message.command_uuid
+            )
             return
 
         # prepare response from request
@@ -101,11 +116,13 @@ class ExternalBus():
         response.fill_from_dict(message.params)
 
         # ack command
-        self.logger.debug('Send internal command response back: %s' % str(response))
-        if self.__manual_responses[message.command_uuid]['manual_response']:
-            self.__manual_responses[message.command_uuid]['manual_response'](response)
-        else: # pragma: no cover - implementation warn, no need to test it
-            self.logger.warning('No manual response specified for external command. Internal command will terminate after timeout.')
+        self.logger.debug("Send internal command response back: %s" % str(response))
+        if self.__manual_responses[message.command_uuid]["manual_response"]:
+            self.__manual_responses[message.command_uuid]["manual_response"](response)
+        else:  # pragma: no cover - implementation warn, no need to test it
+            self.logger.warning(
+                "No manual response specified for external command. Internal command will terminate after timeout."
+            )
 
         # clean
         del self.__manual_responses[message.command_uuid]
@@ -123,19 +140,25 @@ class ExternalBus():
             self.__ack_command_with_response(message)
             return
 
-        # process message
+        # process message
         response = self._on_message_received(peer_id, message)
-        self.logger.debug('Command response: %s' % response)
+        self.logger.debug("Command response: %s" % response)
 
         if response and message.is_command():
             # it's a command, response awaited
             if not message.command_uuid:
-                self.logger.warning('Unable to send command response because command uuid is missing in %s' % message)
+                self.logger.warning(
+                    "Unable to send command response because command uuid is missing in %s"
+                    % message
+                )
                 return
             if not isinstance(response, MessageResponse):
-                raise Exception('Command response must be a MessageResponse instance not "%s"' % type(response).__name__)
+                raise Exception(
+                    'Command response must be a MessageResponse instance not "%s"'
+                    % type(response).__name__
+                )
             self._send_command_response_to_peer(message, response)
-        
+
     def _send_command_response_to_peer(self, request, response):
         """
         Send command response to peer
@@ -145,16 +168,16 @@ class ExternalBus():
             response (MessageResponse): message response
         """
         # convert response to request
-        self.logger.trace('request: %s' % request)
-        self.logger.trace('response: %s' % response)
+        self.logger.trace("request: %s" % request)
+        self.logger.trace("response: %s" % response)
         message = MessageRequest()
         message.event = ExternalBus.COMMAND_RESPONSE_EVENT
-        message.params = response.to_dict() # store message response in event params
+        message.params = response.to_dict()  # store message response in event params
         message.command_uuid = request.command_uuid
         message.peer_infos = request.peer_infos
 
         # and send created request
-        self.logger.debug('Send command response to peer: %s' % message)
+        self.logger.debug("Send command response to peer: %s" % message)
         self._send_message(message)
 
     def send_message(self, message, timeout=5.0, manual_response=None):
@@ -171,7 +194,7 @@ class ExternalBus():
             message.command_uuid = str(uuid.uuid4())
             message.timeout = timeout
             self.__manual_responses[message.command_uuid] = {
-                'manual_response': manual_response,
+                "manual_response": manual_response,
             }
 
             # send command now, response should be returned by event
@@ -194,7 +217,10 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('broadcast_message function is not implemented "%s"' % self.__class__.__name__)
+        raise NotImplementedError(
+            'broadcast_message function is not implemented "%s"'
+            % self.__class__.__name__
+        )
 
     def _send_message(self, message):
         """
@@ -206,5 +232,6 @@ class ExternalBus():
         Warning:
             Must be implemented
         """
-        raise NotImplementedError('send_message function is not implemented "%s"' % self.__class__.__name__)
-
+        raise NotImplementedError(
+            'send_message function is not implemented "%s"' % self.__class__.__name__
+        )

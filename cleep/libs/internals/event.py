@@ -5,7 +5,8 @@ import logging
 import inspect
 from cleep.common import MessageRequest
 
-class Event():
+
+class Event:
     """
     Base event class
     """
@@ -15,7 +16,7 @@ class Event():
     #   * appname is the name of application which sends event
     #   * type is the type of event (monitoring, sms, email, temperature...)
     #   * and action the event action. It is usually a verb (update, change, add...)
-    EVENT_NAME = ''
+    EVENT_NAME = ""
     # is event can be propagated out of the device
     EVENT_PROPAGATE = False
     # list of event parameters
@@ -31,30 +32,56 @@ class Event():
             params (dict): should contains event parameters
         """
         # check params content
-        if len(set(['internal_bus', 'formatters_broker', 'get_external_bus_name']).intersection(params.keys())) != 3:
-            raise Exception('Invalid "%s" event, please check constructor parameters' % self.EVENT_NAME)
+        if (
+            len(
+                set(
+                    ["internal_bus", "formatters_broker", "get_external_bus_name"]
+                ).intersection(params.keys())
+            )
+            != 3
+        ):
+            raise Exception(
+                'Invalid "%s" event, please check constructor parameters'
+                % self.EVENT_NAME
+            )
 
         # set members
-        self.internal_bus = params.get('internal_bus')
-        self.formatters_broker = params.get('formatters_broker')
-        self.events_broker = params.get('events_broker')
-        self.__get_external_bus_name = params.get('get_external_bus_name', lambda: None)
+        self.internal_bus = params.get("internal_bus")
+        self.formatters_broker = params.get("formatters_broker")
+        self.events_broker = params.get("events_broker")
+        self.__get_external_bus_name = params.get("get_external_bus_name", lambda: None)
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
-        if not hasattr(self, 'EVENT_NAME'):
-            raise NotImplementedError('EVENT_NAME class member must be declared in "%s"' % self.__class__.__name__)
+        if not hasattr(self, "EVENT_NAME"):
+            raise NotImplementedError(
+                'EVENT_NAME class member must be declared in "%s"'
+                % self.__class__.__name__
+            )
         if not isinstance(self.EVENT_NAME, str) or len(self.EVENT_NAME) == 0:
             raise NotImplementedError(
-                'EVENT_NAME class member declared in "%s" must be a non empty string' % self.__class__.__name__
+                'EVENT_NAME class member declared in "%s" must be a non empty string'
+                % self.__class__.__name__
             )
-        if not hasattr(self, 'EVENT_PARAMS'):
-            raise NotImplementedError('EVENT_PARAMS class member must be declared in "%s"' % self.__class__.__name__)
+        if not hasattr(self, "EVENT_PARAMS"):
+            raise NotImplementedError(
+                'EVENT_PARAMS class member must be declared in "%s"'
+                % self.__class__.__name__
+            )
         if not isinstance(self.EVENT_PARAMS, list):
-            raise NotImplementedError('EVENT_PARAMS class member declared in "%s" must be a list' % self.__class__.__name__)
-        if not hasattr(self, 'EVENT_CHARTABLE'):
-            raise NotImplementedError('EVENT_CHARTABLE class member must be declared in "%s"' % self.__class__.__name__)
+            raise NotImplementedError(
+                'EVENT_PARAMS class member declared in "%s" must be a list'
+                % self.__class__.__name__
+            )
+        if not hasattr(self, "EVENT_CHARTABLE"):
+            raise NotImplementedError(
+                'EVENT_CHARTABLE class member must be declared in "%s"'
+                % self.__class__.__name__
+            )
         if not isinstance(self.EVENT_CHARTABLE, bool):
-            raise NotImplementedError('EVENT_CHARTABLE class member declared in "%s" must be a bool' % self.__class__.__name__)
+            raise NotImplementedError(
+                'EVENT_CHARTABLE class member declared in "%s" must be a bool'
+                % self.__class__.__name__
+            )
 
     def _check_params(self, params):
         """
@@ -79,7 +106,7 @@ class Event():
             string: name of the event caller
         """
         stack = inspect.stack()
-        caller = stack[2][0].f_locals['self']
+        caller = stack[2][0].f_locals["self"]
         return caller.__class__.__name__.lower()
 
     def send(self, params=None, device_id=None, to=None, render=True):
@@ -97,8 +124,11 @@ class Event():
         """
         # check params
         if not self._check_params(params):
-            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
-        
+            raise Exception(
+                'Invalid event parameters specified for "%s": %s'
+                % (self.EVENT_NAME, params)
+            )
+
         # get event caller
         caller_name = self.__get_event_caller()
 
@@ -135,7 +165,10 @@ class Event():
         """
         # check params
         if not self._check_params(params):
-            raise Exception('Invalid event parameters specified for "%s": %s' % (self.EVENT_NAME, params))
+            raise Exception(
+                'Invalid event parameters specified for "%s": %s'
+                % (self.EVENT_NAME, params)
+            )
 
         # get event caller
         caller_name = self.__get_event_caller()
@@ -164,7 +197,9 @@ class Event():
         """
         # get formatters
         formatters = self.formatters_broker.get_renderers_formatters(self.EVENT_NAME)
-        self.logger.debug('Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters))
+        self.logger.debug(
+            'Found formatters for event "%s": %s' % (self.EVENT_NAME, formatters)
+        )
 
         # handle no formatters found
         if not formatters:
@@ -173,35 +208,49 @@ class Event():
         # render profiles
         result = True
         for renderer_name, formatter in formatters.items():
-            if not self.events_broker.is_event_renderable(self.EVENT_NAME, renderer_name):
-                self.logger.debug('Event "%s" rendering disabled for "%s" renderer' % (self.EVENT_NAME, renderer_name))
+            self.logger.debug(
+                "renderer_name=%s formatter=%s" % (renderer_name, formatter)
+            )
+            if not self.events_broker.is_event_renderable(
+                self.EVENT_NAME, renderer_name
+            ):
+                self.logger.debug(
+                    'Event "%s" rendering disabled for "%s" renderer'
+                    % (self.EVENT_NAME, renderer_name)
+                )
                 continue
 
             # format event params to profile
             profile = formatter.format(params)
             if profile is None:
                 self.logger.warning(
-                    'Profile "%s" is supposed to return data after format function call' % profile.__class__.__name__
+                    'Profile "%s" is supposed to return data after format function call'
+                    % formatter.__class__.__name__
                 )
                 continue
 
             # and post profile to renderer
             request = MessageRequest()
-            request.command = 'render'
+            request.command = "render"
             request.to = renderer_name
             request.params = {
-                'profile': profile.__class__.__name__,
-                'params': profile.to_dict()
+                "profile": profile.__class__.__name__,
+                "params": profile.to_dict(),
             }
 
-            self.logger.debug('Push message to renderer "%s": %s' % (renderer_name, request))
+            self.logger.debug(
+                'Push message to renderer "%s": %s' % (renderer_name, request)
+            )
             resp = self.internal_bus.push(request)
             if resp.error:
-                self.logger.error('Unable to render profile "%s" for "%s": %s' % (
-                    profile.__class__.__name__,
-                    renderer_name,
-                    resp.message,
-                ))
+                self.logger.error(
+                    'Unable to render profile "%s" for "%s": %s'
+                    % (
+                        profile.__class__.__name__,
+                        renderer_name,
+                        resp.message,
+                    )
+                )
                 result = False
 
         return result
@@ -228,7 +277,8 @@ class Event():
         if not self.EVENT_CHARTABLE:
             return None
 
-        chart_params = getattr(self, 'EVENT_CHART_PARAMS', None) or self.EVENT_PARAMS
+        chart_params = getattr(self, "EVENT_CHART_PARAMS", None) or self.EVENT_PARAMS
 
-        return [{'field': param, 'value': params.get(param, None)} for param in chart_params]
-
+        return [
+            {"field": param, "value": params.get(param, None)} for param in chart_params
+        ]

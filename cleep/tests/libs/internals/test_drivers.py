@@ -13,7 +13,7 @@ from unittest.mock import Mock
 
 
 class DummyDriver():
-    def __init__(self, driver_name='dummy', driver_type='gpio'):
+    def __init__(self, driver_name='dummy', driver_type='electronic'):
         self.name = driver_name
         self.type = driver_type
 
@@ -39,8 +39,10 @@ class DriversTests(unittest.TestCase):
             d.logger.setLevel(logging.FATAL)
 
     def test_register(self):
-        # no exception raised
-        self.d.register(DummyDriver())
+        try:
+            self.d.register(DummyDriver())
+        except:
+            self.fail('Should not raise exception')
 
     def test_register_invalid_parameters(self):
         with self.assertRaises(MissingParameter) as cm:
@@ -61,15 +63,15 @@ class DriversTests(unittest.TestCase):
         drivers = self.d.get_all_drivers()
 
         self.assertTrue(isinstance(drivers, dict))
-        self.assertTrue('gpio' in drivers)
+        self.assertTrue('electronic' in drivers)
         self.assertTrue('audio' in drivers)
         #TODO add another driver types
-        self.assertEqual(len(drivers['gpio']), 1)
+        self.assertEqual(len(drivers['electronic']), 1)
         self.assertEqual(len(drivers['audio']), 0)
 
     def test_get_drivers(self):
         self.d.register(DummyDriver())
-        drivers = self.d.get_drivers('gpio')
+        drivers = self.d.get_drivers('electronic')
         self.assertEqual(len(drivers), 1)
         drivers = self.d.get_drivers('audio')
         self.assertEqual(len(drivers), 0)
@@ -108,14 +110,14 @@ class DriversTests(unittest.TestCase):
             self.d.get_driver('test', 'test')
         self.assertEqual(cm.exception.message, 'Driver must be one of existing driver type (found "test")')
         with self.assertRaises(MissingParameter) as cm:
-            self.d.get_driver('gpio', None)
+            self.d.get_driver('electronic', None)
         self.assertEqual(cm.exception.message, 'Parameter "driver_name" is missing')
         with self.assertRaises(MissingParameter) as cm:
-            self.d.get_driver('gpio', '')
+            self.d.get_driver('electronic', '')
         self.assertEqual(cm.exception.message, 'Parameter "driver_name" is missing')
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_drivers.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_drivers.py; coverage report -m -i
     unittest.main()
 
