@@ -38,8 +38,8 @@ class CleepFilesystemTestsReadonly(unittest.TestCase):
     # tmpfs /tmp tmpfs nodev,nosuid 0 0"""
 
     def setUp(self):
-        TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        TestLib()
         io = Mock()
 
     def tearDown(self):
@@ -63,7 +63,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.c = CleepFilesystem()
         self.c.DEBOUNCE_DURATION = 0.5
@@ -201,6 +201,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_open_text(self):
         try:
+            self.c.is_readonly_fs = True
             fd = self.c.open(self.FILE, u'w')
             self.assertTrue(os.path.exists(self.FILE))
             self.assertTrue(self.c.rw.enable_write_on_root.called)
@@ -210,6 +211,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_open_binary(self):
         try:
+            self.c.is_readonly_fs = True
             fd = self.c.open(self.FILE, u'wb')
             self.assertTrue(os.path.exists(self.FILE))
             self.assertTrue(self.c.rw.enable_write_on_root.called)
@@ -220,16 +222,18 @@ class CleepFilesystemTests(unittest.TestCase):
     def test_open_exception(self):
         io_open_original = io.open
         try:
-            io.open = Mock(side_effect=Exception('test exception'))
+            self.c.is_readonly_fs = True
+            io.open = Mock(side_effect=Exception('Test exception'))
             with self.assertRaises(Exception) as cm:
                 self.c.open(self.FILE, u'w')
-            self.assertEqual(str(cm.exception), 'test exception')
+            self.assertEqual(str(cm.exception), 'Test exception')
             time.sleep(self.c.DEBOUNCE_DURATION+0.5)
             self.assertTrue(self.c.rw.disable_write_on_root.called)
         finally:
             io.open = io_open_original
 
     def test_close(self):
+        self.c.is_readonly_fs = True
         fd = self.c.open(self.FILE, 'w')
         self.c.close(fd)
         time.sleep(self.c.DEBOUNCE_DURATION+0.5)
@@ -237,12 +241,13 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_close_exception(self):
         try:
+            self.c.is_readonly_fs = True
             fd = self.c.open(self.FILE, 'w')
             close_restore = fd.close
-            fd.close = Mock(side_effect=Exception('test exception'))
+            fd.close = Mock(side_effect=Exception('Test exception'))
             with self.assertRaises(Exception) as cm:
                 self.c.close(fd)
-            self.assertEqual(str(cm.exception), 'test exception')
+            self.assertEqual(str(cm.exception), 'Test exception')
             time.sleep(self.c.DEBOUNCE_DURATION+0.5)
             self.assertTrue(self.c.rw.disable_write_on_root.called)
         finally:
@@ -250,6 +255,7 @@ class CleepFilesystemTests(unittest.TestCase):
             self.c.close(fd)
 
     def test_write_data(self):
+        self.c.is_readonly_fs = True
         self.assertTrue(self.c.write_data(self.FILE, u'write_data test'))
         with io.open(self.FILE, 'r') as fd:
             content = fd.read()
@@ -263,7 +269,7 @@ class CleepFilesystemTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Data must be string')
 
     def test_write_data_exception(self):
-        self.c.open = Mock(side_effect=Exception('test exception'))
+        self.c.open = Mock(side_effect=Exception('Test exception'))
         self.c.set_crash_report(Mock())
 
         self.assertFalse(self.c.write_data(self.FILE, u'test'))
@@ -277,13 +283,11 @@ class CleepFilesystemTests(unittest.TestCase):
         lines = self.c.read_data(self.FILE)
         self.assertTrue(isinstance(lines, list))
 
-    def test_read_data_exception(self):
+    def test_read_data_with_non_existing_file(self):
         self.c.set_crash_report(Mock())
 
-        #file does not exist
-        with self.assertRaises(Exception) as cm:
-            self.c.read_data(self.FILE)
-
+        # file does not exist
+        self.assertIsNone(self.c.read_data(self.FILE))
         self.assertTrue(self.c.crash_report.report_exception.called)
 
     def test_read_json(self):
@@ -298,7 +302,7 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'{"test": "read_json"}')
         json_loads_original = json.loads
-        json.loads = Mock(side_effect=Exception('test exception'))
+        json.loads = Mock(side_effect=Exception('Test exception'))
 
         try:
             self.assertIsNone(self.c.read_json(self.FILE))
@@ -307,6 +311,7 @@ class CleepFilesystemTests(unittest.TestCase):
         self.assertTrue(self.c.crash_report.report_exception.called)
 
     def test_write_json(self):
+        self.c.is_readonly_fs = True
         self.assertTrue(self.c.write_json(self.FILE, {'test':'write_json'}))
         time.sleep(self.c.DEBOUNCE_DURATION+0.5)
         self.assertTrue(self.c.rw.disable_write_on_root.called)
@@ -328,7 +333,8 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'{"test": "read_json"}')
         shutil_move_original = shutil.move
-        shutil.move = Mock(side_effect=Exception('test exception'))
+        shutil.move = Mock(side_effect=Exception('Test exception'))
+        self.c.is_readonly_fs = True
 
         try:
             self.assertFalse(self.c.rename(self.FILE, 'renamed.tmp'))
@@ -353,7 +359,8 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'{"test": "read_json"}')
         shutil_copy2_original = shutil.copy2
-        shutil.copy2 = Mock(side_effect=Exception('test exception'))
+        shutil.copy2 = Mock(side_effect=Exception('Test exception'))
+        self.c.is_readonly_fs = True
 
         try:
             self.assertFalse(self.c.copy(self.FILE, 'copied.tmp'))
@@ -387,13 +394,14 @@ class CleepFilesystemTests(unittest.TestCase):
     def test_copy_dir_exception(self):
         dir_util_copy_tree_original = dir_util.copy_tree
         try:
+            self.c.is_readonly_fs = True
             self.c.set_crash_report(Mock())
             os.mkdir('test')
             with io.open('test/%s' % self.FILE, 'w') as fd:
                 fd.write(u'test')
             self.assertTrue(os.path.exists('test'))
             self.assertTrue(os.path.exists('test/%s' % self.FILE))
-            dir_util.copy_tree = Mock(side_effect=Exception('test exception'))
+            dir_util.copy_tree = Mock(side_effect=Exception('Test exception'))
 
             self.assertFalse(self.c.copy_dir('test', 'copied_test'))
             self.assertFalse(os.path.exists('copied_test'))
@@ -440,9 +448,10 @@ class CleepFilesystemTests(unittest.TestCase):
     def test_ln_exception(self):
         self.c.set_crash_report(Mock())
         os_symlink_original = os.symlink
-        os.symlink = Mock(side_effect=Exception('test exception'))
+        os.symlink = Mock(side_effect=Exception('Test exception'))
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'test')
+        self.c.is_readonly_fs = True
 
         try:
             self.assertFalse(self.c.ln(self.FILE, 'test.lnk'))
@@ -465,7 +474,8 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'test')
         os_remove_original = os.remove
-        os.remove = Mock(side_effect=Exception('test exception'))
+        os.remove = Mock(side_effect=Exception('Test exception'))
+        self.c.is_readonly_fs = True
 
         try:
             self.assertFalse(self.c.rm(self.FILE))
@@ -502,7 +512,8 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'test')
         shutil_rmtree_original = shutil.rmtree
-        shutil.rmtree = Mock(side_effect=Exception('test exception'))
+        shutil.rmtree = Mock(side_effect=Exception('Test exception'))
+        self.c.is_readonly_fs = True
 
         try:
             os.mkdir('test')
@@ -524,9 +535,11 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_mkdir(self):
         try:
+            self.c.is_readonly_fs = True
             self.assertTrue(self.c.mkdir('test'))
             self.assertTrue(os.path.exists('test'))
             self.assertTrue(os.path.isdir('test'))
+            self.assertTrue(self.c.rw.disable_on_root_called)
         finally:
             if os.path.exists('test'):
                 shutil.rmtree('test')
@@ -557,7 +570,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_mkdir_exception(self):
         os_mkdir_original = os.mkdir
-        os.mkdir = Mock(side_effect=Exception('test exception'))
+        os.mkdir = Mock(side_effect=Exception('Test exception'))
         try:
             self.assertFalse(self.c.mkdir('test'))
             self.assertFalse(os.path.exists('test'))
@@ -568,7 +581,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def test_mkdir_exception_recursive(self):
         os_makedirs_original = os.makedirs
-        os.makedirs = Mock(side_effect=Exception('test exception'))
+        os.makedirs = Mock(side_effect=Exception('Test exception'))
         try:
             self.assertFalse(self.c.mkdirs('test'))
             self.assertFalse(os.path.exists('test'))
@@ -579,10 +592,12 @@ class CleepFilesystemTests(unittest.TestCase):
     
     def test_rsync(self):
         try:
+            self.c.is_readonly_fs = True
             self.c.mkdirs('test/sub')
             self.c.write_data('test/sub/test.txt', u'test')
             self.assertTrue(self.c.rsync('test', 'rsynced'))
             self.assertTrue(os.path.exists('rsynced/test/sub/test.txt'))
+            self.assertTrue(self.c.rw.disable_on_root_called)
         finally:
             if os.path.exists('test'):
                 shutil.rmtree('test')
@@ -615,7 +630,7 @@ class CleepFilesystemTests(unittest.TestCase):
             self.c.mkdirs('test/sub')
             self.c.write_data('test/sub/test.txt', u'test')
             from cleep.libs.internals.console import Console
-            Console.command = Mock(side_effect=Exception('test exception'))
+            Console.command = Mock(side_effect=Exception('Test exception'))
             
             self.assertFalse(self.c.rsync('test', 'rsynced'))
             self.assertFalse(os.path.exists('rsynced/test/sub/test.txt'))
@@ -628,6 +643,6 @@ class CleepFilesystemTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
     unittest.main()
 
