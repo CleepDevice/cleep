@@ -4,9 +4,10 @@
 from cleep.exception import InvalidParameter
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-__all__ = ['ProfileFormatter']
+__all__ = ["ProfileFormatter"]
 
-class ProfileFormatter():
+
+class ProfileFormatter:
     """
     Base ProfileFormatter class
     Used to format profile with specified event parameters
@@ -27,12 +28,14 @@ class ProfileFormatter():
             profile (RendererProfile): Renderer profile instance
         """
         if not isinstance(event_name, str):
-            raise InvalidParameter('Invalid event_name specified')
+            raise InvalidParameter("Invalid event_name specified")
         if not issubclass(profile.__class__, RendererProfile):
-            raise InvalidParameter('Invalid profile specified. Instance must inherits from RendererProfile')
+            raise InvalidParameter(
+                "Invalid profile specified. Instance must inherits from RendererProfile"
+            )
 
         # members
-        self.events_broker = params['events_broker']
+        self.events_broker = params["events_broker"]
         self.event_name = event_name
         self.profile_name = profile.__class__.__name__
         self.profile = profile
@@ -50,15 +53,18 @@ class ProfileFormatter():
         Returns:
             Profile instance filled with appropriate values
         """
-        if not isinstance(event_params, dict) and not event_params is None:
-            raise InvalidParameter('Parameter "event_params" must be a dict not %s' % type(event_params))
+        if not isinstance(event_params, dict) or not event_params:
+            raise InvalidParameter(
+                'Parameter "event_params" must be a dict not %s and not empty'
+                % event_params.__class__.__name__
+            )
 
         return self._fill_profile(event_params or {}, self.profile)
-    
+
     def _fill_profile(self, event_params, profile):
         """
         Fll profile with event data
-  
+
         Args:
            event_params (dict): event parameters
            profile (Profile): profile instance
@@ -66,5 +72,6 @@ class ProfileFormatter():
         Returns:
             Profile instance filled with appropriate values
         """
-        raise NotImplementedError('_fill_profile method must be implemented in "%s"' % self.__class__.__name__)
-
+        raise NotImplementedError(
+            '_fill_profile method must be implemented in "%s"' % self.__class__.__name__
+        )

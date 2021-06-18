@@ -4,7 +4,8 @@
 from threading import Timer
 from time import perf_counter
 
-__all__ = ['Task', 'CountTask']
+__all__ = ["Task", "CountTask"]
+
 
 class Task:
     """
@@ -13,7 +14,16 @@ class Task:
     If interval is specified task is executed periodically.
     If interval is None or 0 task is executed immediately and only once
     """
-    def __init__(self, interval, task, logger, task_args=None, task_kwargs=None, end_callback=None):
+
+    def __init__(
+        self,
+        interval,
+        task,
+        logger,
+        task_args=None,
+        task_kwargs=None,
+        end_callback=None,
+    ):
         """
         Create new task
 
@@ -65,14 +75,14 @@ class Task:
         except Exception:
             # exception occured
             if self.logger:
-                self.logger.exception('Exception occured in task execution:')
+                self.logger.exception("Exception occured in task execution:")
 
         # run again task?
         if run_again and not self.__stopped:
             self.__task_start_timestamp += self._interval
             adjusted_interval = self.__task_start_timestamp - perf_counter()
             self.__timer = Timer(adjusted_interval, self.__run)
-            self.__timer.name = 'task-%s' % getattr(self._task, '__name__', 'unamed')
+            self.__timer.name = "task-%s" % getattr(self._task, "__name__", "unamed")
             self.__timer.daemon = True
             self.__timer.start()
         elif self.__end_callback:
@@ -81,16 +91,23 @@ class Task:
     def wait(self):
         """
         Wait for current task to be done
+        If task loops indefinitely, this function will return after current loop has terminated
+        If task is a count task, this function will wait until end of all loops
         """
         if self._run_count is None and not self.__timer:
-            self.logger.warning('No task is running')
+            self.logger.warning("No task is running")
             return
 
         if self._run_count is None:
+            while (
+                not self.__timer or not self.__timer.is_alive()
+            ):  # pragma: no cover - sync
+                time.sleep(0.1)
             self.__timer.join()
         else:
             while self._run_count > 0:
-                self.__timer.join()
+                if self.__timer and self.__timer.is_alive():
+                    self.__timer.join()
 
     def start(self):
         """
@@ -102,7 +119,7 @@ class Task:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
         self.__timer.daemon = True
-        self.__timer.name = 'task-%s' % getattr(self._task, '__name__', 'unamed')
+        self.__timer.name = "task-%s" % getattr(self._task, "__name__", "unamed")
         self.__timer.start()
 
     def stop(self):
@@ -132,7 +149,16 @@ class CountTask(Task):
     Run task X times
     """
 
-    def __init__(self, interval, task, logger, count, task_args=None, task_kwargs=None, end_callback=None):
+    def __init__(
+        self,
+        interval,
+        task,
+        logger,
+        count,
+        task_args=None,
+        task_kwargs=None,
+        end_callback=None,
+    ):
         """
         Constructor
 
@@ -145,6 +171,7 @@ class CountTask(Task):
             task_kwargs (dict): dict of task parameters
             end_callback (function): call this function as soon as task is terminated
         """
-        Task.__init__(self, interval, task, logger, task_args, task_kwargs, end_callback)
+        Task.__init__(
+            self, interval, task, logger, task_args, task_kwargs, end_callback
+        )
         self._run_count = count
-

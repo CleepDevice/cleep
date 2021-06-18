@@ -311,6 +311,6 @@ class InstallDebFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_installdeb.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_installdeb.py; coverage report -m -i
     unittest.main()
 

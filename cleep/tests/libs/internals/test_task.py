@@ -14,14 +14,14 @@ import time
 class TaskTests(unittest.TestCase):
 
     def setUp(self):
-        TestLib()
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        TestLib()
 
     def tearDown(self):
         pass
 
-    def _init_context(self, interval=0.5, logger=None, task=None, task_args=[], task_kwargs={}, count=0, end_callback=None):
-        logger= logger if logger is not None else logging.getLogger('TestTask')
+    def _init_context(self, interval=0.5, logger=None, task=None, task_args=None, task_kwargs=None, count=0, end_callback=None):
+        logger = logger if logger is not None else logging.getLogger('TestTask')
         if count==0:
             logging.debug('Init Task')
             self.t = Task(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs, end_callback=end_callback)
@@ -30,18 +30,24 @@ class TaskTests(unittest.TestCase):
             self.t = CountTask(interval=interval, task=task, logger=logger, task_args=task_args, task_kwargs=task_kwargs, count=count, end_callback=end_callback)
 
     def test_task(self):
-        task = Mock()
+        def delay():
+            time.sleep(0.5)
+        task = Mock(side_effect=delay)
         self._init_context(task=task)
 
         self.t.start()
+        time.sleep(0.25)
         self.t.wait()
+        time.sleep(0.25)
         self.t.wait()
+        time.sleep(0.25)
         self.t.wait()
+        time.sleep(0.25)
         self.assertTrue(self.t.is_running())
         self.t.stop()
 
         self.assertTrue(task.called)
-        self.assertEqual(task.call_count, 3)
+        self.assertEqual(task.call_count, 4)
 
     def test_task_list_parameters(self):
         task = Mock()
@@ -52,10 +58,8 @@ class TaskTests(unittest.TestCase):
         self.t.wait()
         self.t.stop()
         
-        logging.debug('Args: %s' % str(task.call_args[0]))
+        logging.debug('args: %s' % str(task.call_args))
         self.assertEqual(task.call_args[0], (args[0], args[1]))
-        logging.debug('Kwargs: %s' % str(task.call_args.kwargs))
-        self.assertEqual(task.call_args.kwargs, {})
 
     def test_task_dict_parameters(self):
         task = Mock()
@@ -79,7 +83,6 @@ class TaskTests(unittest.TestCase):
         self._init_context(interval=None, task=task)
 
         self.t.start()
-        time.sleep(0.5)
         self.t.wait()
 
         self.assertFalse(self.t.is_running())
@@ -98,7 +101,7 @@ class TaskTests(unittest.TestCase):
 
         self.assertFalse(self.t.is_running())
         self.assertTrue(task.called)
-        self.assertEqual(task.call_count, 2)
+        self.assertEqual(task.call_count, 3)
 
     def test_task_exception(self):
         task = Mock(side_effect=Exception('Test'))
@@ -139,10 +142,11 @@ class TaskTests(unittest.TestCase):
         self.t.wait()
 
         self.assertEqual(mock_endcb.call_count, 1)
+        self.assertEqual(task.call_count, 4)
 
 
 
 if __name__ == '__main__':
-    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
     unittest.main()
 

@@ -7,10 +7,12 @@ import os
 import traceback
 import subprocess
 
-class ReadWriteContext():
-    """ 
+
+class ReadWriteContext:
+    """
     Object to hold some data about current context
     """
+
     def __init__(self):
         self.is_readonly_fs = None
         self.src = None
@@ -21,15 +23,16 @@ class ReadWriteContext():
 
     def to_dict(self):
         return {
-            u'isreadonlyfs': self.is_readonly_fs,
-            u'src': self.src,
-            u'dst': self.dst,
-            u'action': self.action,
-            u'boot': self.boot,
-            u'root': self.root
+            u"isreadonlyfs": self.is_readonly_fs,
+            u"src": self.src,
+            u"dst": self.dst,
+            u"action": self.action,
+            u"boot": self.boot,
+            u"root": self.root,
         }
 
-class ReadWrite():
+
+class ReadWrite:
     """
     Read/write library allows user to toggle read/write mode on cleep protected iso
     """
@@ -38,10 +41,10 @@ class ReadWrite():
     STATUS_READ = 1
     STATUS_UNKNOWN = 2
 
-    PARTITION_ROOT = u'/'
-    PARTITION_BOOT = u'/boot'
+    PARTITION_ROOT = u"/"
+    PARTITION_BOOT = u"/boot"
 
-    CLEEP_DIR = u'/tmp/cleep'
+    CLEEP_DIR = u"/tmp/cleep"
 
     def __init__(self):
         """
@@ -49,7 +52,7 @@ class ReadWrite():
         """
         self.console = Console()
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.status = {}
         self.crash_report = None
 
@@ -67,7 +70,12 @@ class ReadWrite():
         Return opened files for writing for current program
         """
         cmd = u'/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
-        return [line.decode('utf-8').replace(u'\n','') for line in subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()]
+        return [
+            line.decode("utf-8").replace(u"\n", "")
+            for line in subprocess.Popen(
+                cmd, shell=True, stdout=subprocess.PIPE
+            ).stdout.readlines()
+        ]
 
     def is_path_on_root(self, path):
         """
@@ -80,7 +88,11 @@ class ReadWrite():
             bool: True if path on root partition
         """
         path = os.path.abspath(os.path.expanduser(path))
-        return path and path.find(self.PARTITION_BOOT)==-1 and path.startswith(self.PARTITION_ROOT)
+        return (
+            path
+            and path.find(self.PARTITION_BOOT) == -1
+            and path.startswith(self.PARTITION_ROOT)
+        )
 
     def __refresh(self, partition):
         """
@@ -89,28 +101,32 @@ class ReadWrite():
         Args:
             partition (string): partition to work on
         """
-        partition_mod = partition.replace(u'/', u'\/')
-        command = r'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod
+        partition_mod = partition.replace(u"/", u"\/")
+        command = (
+            r'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod
+        )
         res = self.console.command(command)
-        #self.logger.debug('Command "%s" result: %s' % (command, res))
+        # self.logger.debug('Command "%s" result: %s' % (command, res))
 
-        #check errors
-        if res[u'error'] or res[u'killed'] or len(res[u'stdout'])==0:
-            self.logger.error('Error when getting rw/ro flag: %s' % res)
+        # check errors
+        if res[u"error"] or res[u"killed"] or len(res[u"stdout"]) == 0:
+            self.logger.error("Error when getting rw/ro flag: %s" % res)
             self.status[partition] = self.STATUS_UNKNOWN
             return
 
-        #parse result
-        line = res[u'stdout'][0].strip()
-        if line==u'rw':
+        # parse result
+        line = res[u"stdout"][0].strip()
+        if line == u"rw":
             self.status[partition] = self.STATUS_WRITE
             self.logger.trace(u'Partition "%s" is in WRITE mode' % partition)
-        elif line==u'ro':
+        elif line == u"ro":
             self.status[partition] = self.STATUS_READ
             self.logger.trace(u'Partition "%s" is in READ mode' % partition)
         else:
             self.status[partition] = self.STATUS_UNKNOWN
-            self.logger.error(u'Unable to get partition "%s" status: %s' % (partition, res[u'stdout']))
+            self.logger.error(
+                u'Unable to get partition "%s" status: %s' % (partition, res[u"stdout"])
+            )
 
     def __is_cleep_iso(self):
         """
@@ -141,8 +157,8 @@ class ReadWrite():
         self.__refresh(self.PARTITION_ROOT)
 
         return {
-            'boot': self.status[self.PARTITION_BOOT],
-            'root': self.status[self.PARTITION_ROOT],
+            "boot": self.status[self.PARTITION_BOOT],
+            "root": self.status[self.PARTITION_ROOT],
         }
 
     def __enable_write(self, partition):
@@ -156,34 +172,42 @@ class ReadWrite():
             bool: True if write enabled, False otherwise
         """
         if not self.__is_cleep_iso():
-            self.logger.trace(u'Not running on cleep iso')
+            self.logger.trace(u"Not running on cleep iso")
             return False
 
-        #execute command
-        res = self.console.command(u'/bin/mount -o remount,rw %s' % partition, timeout=10.0)
-        self.logger.trace('Res: %s' % res)
+        # execute command
+        res = self.console.command(
+            u"/bin/mount -o remount,rw %s" % partition, timeout=10.0
+        )
+        self.logger.trace("Res: %s" % res)
 
-        #check errors
-        if res[u'error'] or res[u'killed']:
-            self.logger.error(u'Error when turning on writing mode: %s' % res)
+        # check errors
+        if res[u"error"] or res[u"killed"]:
+            self.logger.error(u"Error when turning on writing mode: %s" % res)
 
-            #dump current stack trace to log
+            # dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error(u'%s' % u''.join(lines))
+            self.logger.error(u"%s" % u"".join(lines))
 
-            #dump opened files to log
-            self.logger.error(u'Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
+            # dump opened files to log
+            self.logger.error(
+                u"Opened files in RW by PID[%s]: %s"
+                % (os.getpid(), u"".join(self.__get_opened_files_for_writing()))
+            )
 
-            #and send crash report
+            # and send crash report
             if self.crash_report:
-                self.crash_report.manual_report(u'Error when turning on writing mode', {
-                    u'result': res,
-                    u'partition': partition,
-                    u'traceback': lines,
-                    u'files': self.__get_opened_files_for_writing(),
-                })
-            
-        #refresh status
+                self.crash_report.manual_report(
+                    u"Error when turning on writing mode",
+                    {
+                        u"result": res,
+                        u"partition": partition,
+                        u"traceback": lines,
+                        u"files": self.__get_opened_files_for_writing(),
+                    },
+                )
+
+        # refresh status
         self.__refresh(partition)
 
         return self.status[partition] is self.STATUS_WRITE
@@ -202,31 +226,44 @@ class ReadWrite():
         if not self.__is_cleep_iso():
             return False
 
-        #execute command
-        res = self.console.command('/bin/mount -o remount,ro %s' % partition, timeout=10.0)
+        # execute command
+        res = self.console.command(
+            "/bin/mount -o remount,ro %s" % partition, timeout=10.0
+        )
 
-        #check errors
-        if res['error'] or res['killed']:
-            self.logger.error('Error when turning off writing mode: %s' % res)
+        # check errors
+        if res["error"] or res["killed"]:
+            self.logger.error("Error when turning off writing mode: %s" % res)
 
-            #dump current stack trace to log
+            # dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error('%s' % u''.join(lines))
+            self.logger.error("%s" % u"".join(lines))
 
-            #dump opened files to log
-            self.logger.error('Opened files in RW by PID[%s]: %s' % (os.getpid(), u''.join(self.__get_opened_files_for_writing())))
+            # dump opened files to log
+            opened_files = self.__get_opened_files_for_writing()
+            self.logger.error(
+                "Opened files in RW by PID[%s]: %s"
+                % (os.getpid(), u"".join(opened_files))
+            )
 
             # do not crash report if filesystem is busy
-            if self.crash_report and (res['stderr'][0] if len(res['stderr']) == 1 else '').find('busy') >= 0:
-                self.crash_report.manual_report('Error when turning off writing mode', {
-                    'result': res,
-                    'partition': partition,
-                    'traceback': lines,
-                    'context': context.to_dict(),
-                    'files': self.__get_opened_files_for_writing(),
-                })
-            
-        #refresh status
+            if (
+                self.crash_report
+                and (res["stderr"][0] if len(res["stderr"]) == 1 else "").find("busy")
+                == -1
+            ):
+                self.crash_report.manual_report(
+                    "Error when turning off writing mode",
+                    {
+                        "result": res,
+                        "partition": partition,
+                        "traceback": lines,
+                        "context": context.to_dict(),
+                        "files": opened_files,
+                    },
+                )
+
+        # refresh status
         self.__refresh(partition)
 
         return self.status[partition] is self.STATUS_READ
@@ -272,4 +309,3 @@ class ReadWrite():
             bool: True if write disabled, False otherwise
         """
         return self.__disable_write(self.PARTITION_ROOT, context)
-

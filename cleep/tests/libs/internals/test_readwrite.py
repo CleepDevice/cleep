@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from readwrite import ReadWrite, Console, ReadWriteContext
 from cleep.libs.tests.lib import TestLib
+from cleep.libs.tests.session import AnyArg
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -161,6 +162,30 @@ class ReadWriteTests(unittest.TestCase):
         context = ReadWriteContext()
         self.assertFalse(self.r.disable_write_on_boot(context))
 
+        self.crash_report.manual_report.assert_called_with(
+            'Error when turning off writing mode',
+            {
+                'result': AnyArg(),
+                'partition': '/boot',
+                'traceback': AnyArg(),
+                'context': AnyArg(),
+                'files': [],
+            }
+        )
+
+    @patch('readwrite.Console')
+    def test_disable_write_no_crash_report(self, console_mock):
+        command_side_effect = [
+            self._get_console_command_return_value(error=True, stderr=['busy']),
+            self._get_console_command_return_value(),
+        ]
+        self._init_context(console_mock, command_side_effect=command_side_effect)
+
+        context = ReadWriteContext()
+        self.assertFalse(self.r.disable_write_on_boot(context))
+
+        self.assertFalse(self.crash_report.called)
+
     @patch('readwrite.Console')
     def test_enable_write_on_root(self, console_mock):
         command_side_effect = [
@@ -250,7 +275,8 @@ class ReadWriteTests(unittest.TestCase):
         context = ReadWriteContext()
         self.assertFalse(self.r.disable_write_on_boot(context))
 
+
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_readwrite.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_readwrite.py; coverage report -m -i
     unittest.main()
 
