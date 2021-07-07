@@ -5,20 +5,21 @@ import logging
 import os
 import importlib
 import inspect
-from cleep.exception import MissingParameter, InvalidParameter, CommandError
+from cleep.exception import MissingParameter, InvalidParameter
 from cleep.common import CORE_MODULES
 from cleep.libs.internals.tools import full_split_path
 
-__all__ = ['ProfileFormattersBroker']
+__all__ = ["ProfileFormattersBroker"]
 
-class ProfileFormattersBroker():
+
+class ProfileFormattersBroker:
     """
     ProfileFormatters broker is in charge of centralizing all formatters
     It also ensures formatters use exiting events
     """
 
-    PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
-    MODULES_DIR = '../../modules'
+    PYTHON_CLEEP_IMPORT_PATH = "cleep.modules."
+    MODULES_DIR = "../../modules"
 
     def __init__(self, debug_enabled):
         """
@@ -33,7 +34,7 @@ class ProfileFormattersBroker():
             self.logger.setLevel(logging.DEBUG)
         self.events_broker = None
         # list of renderer module names with format::
-        # 
+        #
         #   [
         #       'renderer_module_name1',
         #       'renderer_module_name2',
@@ -63,7 +64,20 @@ class ProfileFormattersBroker():
         #
         # Existing formatters contains list of all found formatters in current installation...
         self.__existing_formatters = {}
-        # ...while formatters contains list of formatters used by application (so registered)
+        # List of formatters by events
+        #
+        #   {
+        #       event1: {
+        #           module1: formatter1
+        #           ...
+        #       },
+        #       event2: {
+        #           module1: formatter2,
+        #           module2: formatter3
+        #       },
+        #       ...
+        #   }
+        #
         self.__formatters = {}
         # Mapping list of referenced renderer module profiles with format::
         #
@@ -90,10 +104,10 @@ class ProfileFormattersBroker():
             bootstrap (dict): bootstrap objects
         """
         # set members
-        self.events_broker = bootstrap['events_broker']
+        self.events_broker = bootstrap["events_broker"]
 
         # configure crash report
-        self.crash_report = bootstrap['crash_report']
+        self.crash_report = bootstrap["crash_report"]
 
         # load formatters
         self.__load_formatters()
@@ -106,7 +120,9 @@ class ProfileFormattersBroker():
             filename (string): filename (without extension)
             module (module): python module
         """
-        return next((item for item in dir(module) if item.lower()==filename.lower()), None)
+        return next(
+            (item for item in dir(module) if item.lower() == filename.lower()), None
+        )
 
     def __load_formatters(self):
         """
@@ -117,13 +133,12 @@ class ProfileFormattersBroker():
         """
         path = os.path.join(os.path.dirname(__file__), self.MODULES_DIR)
         if not os.path.exists(path):
-            self.crash_report.report_exception({
-                'message': 'Invalid module path',
-                'path': path
-            })
-            raise Exception('Invalid modules path')
+            self.crash_report.report_exception(
+                {"message": "Invalid module path", "path": path}
+            )
+            raise Exception("Invalid modules path")
 
-        self.logger.debug('Loading formatters:')
+        self.logger.debug("Loading formatters:")
         for root, _, filenames in os.walk(path):
             for filename in filenames:
                 try:
@@ -131,54 +146,95 @@ class ProfileFormattersBroker():
                     (formatter, ext) = os.path.splitext(filename)
                     parts = full_split_path(fullpath)
                     module_name = parts[-2]
-                    if ext=='.py' and formatter.lower().endswith('formatter'):
+                    if ext == ".py" and formatter.lower().endswith("formatter"):
                         self.logger.debug(' Found "%s.%s"' % (module_name, formatter))
-                        mod_ = importlib.import_module('%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, formatter))
-                        formatter_class_name = self.__get_formatter_class_name(formatter, mod_)
+                        mod_ = importlib.import_module(
+                            "%s%s.%s"
+                            % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, formatter)
+                        )
+                        formatter_class_name = self.__get_formatter_class_name(
+                            formatter, mod_
+                        )
                         if formatter_class_name:
                             formatter_class_ = getattr(mod_, formatter_class_name)
-                            formatter_instance_ = formatter_class_({
-                                'events_broker': self.events_broker
-                            })
+                            formatter_instance_ = formatter_class_(
+                                {"events_broker": self.events_broker}
+                            )
 
                             # save reference on module where formatter was found
-                            if formatter_instance_.event_name not in self.__existing_formatters:
-                                self.__existing_formatters[formatter_instance_.event_name] = {}
-                            if formatter_instance_.profile_name not in self.__existing_formatters[formatter_instance_.event_name]:
-                                self.__existing_formatters[formatter_instance_.event_name][formatter_instance_.profile_name] = {}
-                            self.__existing_formatters[formatter_instance_.event_name][formatter_instance_.profile_name][module_name] = formatter_instance_
-                            self.logger.debug(' Set formatter "%s" for event "%s" for module "%s"' % (formatter_class_name, formatter_instance_.event_name, module_name))
+                            if (
+                                formatter_instance_.event_name
+                                not in self.__existing_formatters
+                            ):
+                                self.__existing_formatters[
+                                    formatter_instance_.event_name
+                                ] = {}
+                            if (
+                                formatter_instance_.profile_name
+                                not in self.__existing_formatters[
+                                    formatter_instance_.event_name
+                                ]
+                            ):
+                                self.__existing_formatters[
+                                    formatter_instance_.event_name
+                                ][formatter_instance_.profile_name] = {}
+                            self.__existing_formatters[formatter_instance_.event_name][
+                                formatter_instance_.profile_name
+                            ][module_name] = formatter_instance_
+                            self.logger.debug(
+                                ' Set formatter "%s" from module "%s" for event "%s" and profile "%s"'
+                                % (
+                                    formatter_class_name,
+                                    module_name,
+                                    formatter_instance_.event_name,
+                                    formatter_instance_.profile_name,
+                                )
+                            )
                         else:
-                            self.logger.error('Formatter class name must have the same name than filename in "%s"' % formatter)
+                            self.logger.error(
+                                'Formatter class name must have the same name than filename in "%s"'
+                                % formatter
+                            )
 
-                except AttributeError: # pragma: no cover
-                    self.logger.exception('Formatter "%s" was not loaded: it has surely invalid name. Please refer to coding rules.' % formatter)
+                except AttributeError:  # pragma: no cover
+                    self.logger.exception(
+                        'Formatter "%s" was not loaded: it has surely invalid name. Please refer to coding rules.'
+                        % formatter
+                    )
 
                 except:
-                    self.logger.exception('Formatter "%s" was not loaded: it has some problem from inside. Please check code.' % formatter)
+                    self.logger.exception(
+                        'Formatter "%s" was not loaded: it has some problem from inside. Please check code.'
+                        % formatter
+                    )
 
         self.__dump_existing_formatters()
 
-    def __dump_existing_formatters(self): #pragma: no cover
+    def __dump_existing_formatters(self):  # pragma: no cover
         """
         Dump existing formatters. Debug purpose only
         """
         if self.logger.getEffectiveLevel() <= logging.DEBUG:
-            self.logger.trace('Existing formatters :')
+            self.logger.trace("Existing formatters :")
             for event in self.__existing_formatters:
-                self.logger.trace('\t%s {' % event)
+                self.logger.trace("\t%s {" % event)
                 for profile in self.__existing_formatters[event]:
-                    self.logger.trace('\t\t%s {' % profile)
+                    self.logger.trace("\t\t%s {" % profile)
                     for renderer in self.__existing_formatters[event][profile]:
-                        self.logger.trace('\t\t\t%s: %s' % (
-                            renderer,
-                            self.__existing_formatters[event][profile][renderer].__class__.__name__
-                        ))
-                    self.logger.trace('\t\t}')
-                self.logger.trace('\t}')
+                        self.logger.trace(
+                            "\t\t\t%s: %s"
+                            % (
+                                renderer,
+                                self.__existing_formatters[event][profile][
+                                    renderer
+                                ].__class__.__name__,
+                            )
+                        )
+                    self.logger.trace("\t\t}")
+                self.logger.trace("\t}")
 
     def register_renderer(self, module_name, module_profiles):
-        """ 
+        """
         Register new renderer
 
         Args:
@@ -194,37 +250,57 @@ class ProfileFormattersBroker():
         if not isinstance(module_profiles, list):
             raise InvalidParameter('Parameter "module_profiles" must be a list')
         if len(module_profiles) == 0:
-            raise InvalidParameter('Parameter "module_profiles" must contains at least one profile')
-        self.logger.debug('Register new renderer "%s" with profiles: %s' % (module_name, [profile.__name__ for profile in module_profiles]))
+            raise InvalidParameter(
+                'Parameter "module_profiles" must contains at least one profile'
+            )
+        self.logger.debug(
+            'Register new renderer "%s" with profiles: %s'
+            % (module_name, [profile.__name__ for profile in module_profiles])
+        )
 
         # update renderers list
         self.__renderers.append(module_name)
 
         # update renderers profiles names list (not instance!)
-        self.__renderers_profiles[module_name] = [profile.__name__ for profile in module_profiles]
+        self.__renderers_profiles[module_name] = [
+            profile.__name__ for profile in module_profiles
+        ]
 
         # update renderer profiles list
         for profile in module_profiles:
             for event_name, handled_profiles in self.__existing_formatters.items():
-                if profile.__name__ not in handled_profiles or len(handled_profiles) == 0:
-                    # no useful formatter for this profile
+                if (
+                    profile.__name__ not in handled_profiles
+                    or len(handled_profiles) == 0
+                ):
+                    # not useful formatter for this profile
                     continue
 
                 # search best formatter
-                best_formatter = self.__get_best_formatter(module_name, handled_profiles[profile.__name__])
-                self.logger.trace('Best formatter for event "%s" for app "%s": %s' % (event_name, module_name, best_formatter))
+                best_formatter = self.__get_best_formatter(
+                    module_name, handled_profiles[profile.__name__]
+                )
+                self.logger.trace(
+                    'Best formatter for event "%s" for app "%s": %s'
+                    % (event_name, module_name, best_formatter)
+                )
                 if not best_formatter:
-                    self.logger.warning('No formatter found for event "%s" requested by "%s" app "%s" profile' % (
-                        event_name, module_name, profile.__name__,
-                    ))
+                    self.logger.warning(
+                        'No formatter found for event "%s" requested by "%s" app "%s" profile'
+                        % (
+                            event_name,
+                            module_name,
+                            profile.__name__,
+                        )
+                    )
                     continue
-            
+
                 # save formatter
                 if event_name not in self.__formatters:
                     self.__formatters[event_name] = {}
                 self.__formatters[event_name][module_name] = best_formatter
-                
-        self.logger.debug('List of formatters: %s' % self.__formatters)
+
+        self.logger.debug("List of formatters: %s" % self.__formatters)
 
     def __get_best_formatter(self, module_name, formatters):
         """
@@ -235,36 +311,51 @@ class ProfileFormattersBroker():
             formatters (dict): list of formatters for event and profile
         """
         best = {
-            'formatter': None,
-            'fromcore': False,
-            'fromapp': False,
+            "formatter": None,
+            "fromcore": False,
+            "fromapp": False,
         }
+        self.logger.debug('Best in formatters: %s' % formatters)
         for app_name, formatter in formatters.items():
-            if best['formatter'] is None:
+            if best["formatter"] is None:
                 # first loop
-                best.update({
-                    'formatter': formatter,
-                    'fromcore': app_name in CORE_MODULES,
-                    'fromapp': app_name == module_name,
-                })
+                best.update(
+                    {
+                        "formatter": formatter,
+                        "fromcore": app_name in CORE_MODULES,
+                        "fromapp": app_name == module_name,
+                    }
+                )
             elif app_name == module_name:
                 # force using formatter provided by application
-                self.logger.trace('Found better formatter from app "%s" itself' % module_name)
-                best.update({
-                    'formatter': formatter,
-                    'fromcore': app_name in CORE_MODULES,
-                    'fromapp': app_name == module_name,
-                })
-            elif not best['fromapp'] and not best['fromcore'] and app_name in CORE_MODULES:
+                self.logger.trace(
+                    'Found better formatter from app "%s" itself' % module_name
+                )
+                best.update(
+                    {
+                        "formatter": formatter,
+                        "fromcore": app_name in CORE_MODULES,
+                        "fromapp": app_name == module_name,
+                    }
+                )
+            elif (
+                not best["fromapp"]
+                and not best["fromcore"]
+                and app_name in CORE_MODULES
+            ):
                 # force using formatter provided by core modules
-                self.logger.trace('Found better formatter from with core app "%s"' % app_name)
-                best.update({
-                    'formatter': formatter,
-                    'fromcore': app_name in CORE_MODULES,
-                    'fromapp': app_name == module_name,
-                })
+                self.logger.trace(
+                    'Found better formatter from core app "%s"' % app_name
+                )
+                best.update(
+                    {
+                        "formatter": formatter,
+                        "fromcore": app_name in CORE_MODULES,
+                        "fromapp": app_name == module_name,
+                    }
+                )
 
-        return best['formatter']
+        return best["formatter"]
 
     def get_renderers_profiles(self):
         """
@@ -272,7 +363,7 @@ class ProfileFormattersBroker():
 
         Returns:
             dict: dict of profile handled by renderers::
-    
+
                 {
                     module_name (string): [
                         profile_name (string),
@@ -287,7 +378,7 @@ class ProfileFormattersBroker():
     def get_renderers(self):
         """
         Returns list of renderers (aka module)
-        
+
         Returns:
             list: list of renderers::
 
@@ -307,26 +398,13 @@ class ProfileFormattersBroker():
             event_name (string): event name to search formatters for
 
         Returns:
-            dict: Formatter instances for specified event for each modules that implement it or None if no formatter for this event::
-            
+            dict: Formatter instances for specified event for each modules that implements it or empty dict if no formatter for this event::
+
                 {
-                    profile_name (string): {
-                        module_name (string): formatter instance (ProfileFormatter),
-                        ...
-                    },
+                    module name (string): formatter instance (ProfileFormatter)
                     ...
                 }
 
         """
-        return self.__formatters.get(event_name, None)
-
-    def _get_existing_formatters(self):
-        """
-        Return list of existing formatters (all found during application startup)
-        This function is only useful for debug and test purposes
-
-        Returns:
-            dict: dict of formatters (see __existing_formatters member description)
-        """
-        return self.__existing_formatters
+        return self.__formatters.get(event_name, {})
 
