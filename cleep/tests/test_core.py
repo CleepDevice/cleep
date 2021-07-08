@@ -19,6 +19,7 @@ import copy
 class DummyCleep(Cleep):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleep'
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None, default_config=None, with_config=True):
         if sentry_dsn:
@@ -42,8 +43,12 @@ class DummyCleep(Cleep):
         pass
 
 class DummyDriver(Driver):
-    def __init__(self, fs, dtype, dname):
-        Driver.__init__(self, fs, dtype, dname)
+    def __init__(self, dtype, dname):
+        Driver.__init__(self, dtype, dname)
+        self.is_registered = False
+
+    def _on_registered(self):
+        self.is_registered = True
 
 class TestsCleep(unittest.TestCase):
 
@@ -301,11 +306,15 @@ class TestsCleep(unittest.TestCase):
 
     def test_register_driver(self):
         self._init_context()
-        d = DummyDriver(self.cleep_filesystem, Driver.DRIVER_AUDIO, 'dummydriver')
+        d = DummyDriver(Driver.DRIVER_AUDIO, 'dummydriver')
+        d.configure({
+            'cleep_filesystem': self.cleep_filesystem
+        })
 
         self.r._register_driver(d)
 
         self.drivers.register.assert_called_once_with(d)
+        self.assertTrue(d.is_registered)
 
     def test_register_driver_invalid_parameters(self):
         self._init_context()
@@ -429,7 +438,7 @@ class TestsCleep(unittest.TestCase):
         # invalid type
         with self.assertRaises(InvalidParameter) as cm:
             self.r._check_parameters([{ 'name': 'param', 'value': 123, 'type': str }])
-        self.assertEqual(str(cm.exception), 'Parameter "param" is invalid (specified="123")')
+        self.assertEqual(str(cm.exception), 'Parameter "param" must be of type "str"')
 
         # invalid validator
         with self.assertRaises(InvalidParameter) as cm:
@@ -503,6 +512,7 @@ class TestsCleep(unittest.TestCase):
 class DummyCleepModule(CleepModule):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleepmodule'
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None, default_config=None, with_config=True):
         if sentry_dsn:
@@ -849,6 +859,7 @@ class TestsCleepModule(unittest.TestCase):
 class DummyCleepRpcWrapper(CleepRpcWrapper):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleeprpcwrapper'
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
         if sentry_dsn:
@@ -936,6 +947,7 @@ class TestsCleepRpcWrapper(unittest.TestCase):
 class DummyCleepResources(CleepResources):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleepresources'
 
     MODULE_RESOURCES = {
         'audio.playback': {
@@ -1014,7 +1026,9 @@ class TestsCleepResources(unittest.TestCase):
 
     def test_cleep_resources(self):
         self._init_context()
-        r = CleepResources(self.bootstrap, False)
+        _r = CleepResources
+        _r.MODULE_NAME = 'cleepresources'
+        r = _r(self.bootstrap, False)
 
         with self.assertRaises(NotImplementedError) as cm:
             r._resource_acquired('dummy')
@@ -1061,12 +1075,17 @@ class TestsCleepResources(unittest.TestCase):
 class DummyCleepRenderer(CleepRenderer):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleeprenderer'
     RENDERER_PROFILES = [RendererProfile]
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
         if sentry_dsn:
             setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
         CleepRenderer.__init__(self, bootstrap, debug_enabled)
+        self.has_rendered = False
+
+    def on_render(self, profile, params):
+        self.has_rendered = True
 
     def my_command(self):
         pass
@@ -1131,11 +1150,13 @@ class TestsCleepRenderer(unittest.TestCase):
 
     def test_cleep_renderer(self):
         self._init_context()
-        r = CleepRenderer(self.bootstrap, False)
+        _r = CleepRenderer
+        _r.MODULE_NAME = 'cleeprenderer'
+        r = _r(self.bootstrap, False)
 
         with self.assertRaises(NotImplementedError) as cm:
-            r._render('dummy')
-        self.assertEqual(str(cm.exception), 'Method "_render" must be implemented in "CleepRenderer"')
+            r.render('dummy', {})
+        self.assertEqual(str(cm.exception), 'Method "on_render" must be implemented in "CleepRenderer"')
 
     def test_get_module_commands(self):
         self._init_context()
@@ -1161,7 +1182,9 @@ class TestsCleepRenderer(unittest.TestCase):
     def test_get_renderer_config_no_member_declared(self):
         self._init_context()
 
-        r = CleepRenderer(self.bootstrap, False)
+        _r = CleepRenderer
+        _r.MODULE_NAME = 'cleeprenderer'
+        r = _r(self.bootstrap, False)
         with self.assertRaises(Exception) as cm:
             r._get_renderer_config()
         self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "CleepRenderer"')
@@ -1169,39 +1192,25 @@ class TestsCleepRenderer(unittest.TestCase):
     def test_render(self):
         self._init_context()
         p = RendererProfile()
-        class Context():
-            called = False
-        def custom_render(p):
-            Context.called = True
-        self.r._render = custom_render
         self.r._get_renderer_config()
 
-        self.assertTrue(self.r.render(p))
-        self.assertTrue(Context.called)
-
-    def test_render_invalid_profile(self):
-        self._init_context()
-        p = RendererProfile()
-
-        with self.assertRaises(InvalidParameter) as cm:
-            self.r.render(p)
-        self.assertEqual(str(cm.exception), 'Profile "RendererProfile" is not supported in this renderer')
+        self.assertTrue(self.r.render(p, {}))
+        self.assertTrue(self.r.has_rendered)
 
     def test_render_exception(self):
         self._init_context()
         p = RendererProfile()
-        def custom_render(p):
-            raise Exception('Test exception')
-        self.r._render = custom_render
+        self.r.on_render = Mock(side_effect=Exception('Test exception'))
         self.r._get_renderer_config()
 
-        self.assertFalse(self.r.render(p))
+        self.assertFalse(self.r.render(p, {}))
 
 
 
 class DummyCleepExternalBus(CleepExternalBus):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
+    MODULE_NAME = 'dummycleepexternalbus'
     RENDERER_PROFILES = [RendererProfile]
 
     def __init__(self, bootstrap, debug_enabled=False, sentry_dsn=None):
@@ -1306,7 +1315,7 @@ class TestsCleepExternalBus(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
     unittest.main()
 
 

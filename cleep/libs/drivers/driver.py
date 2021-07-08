@@ -47,27 +47,26 @@ class Driver():
 
     def _on_registered(self):
         """
-        Driver registered
-        All core members are available in driver instance
+        Function triggered when driver is registered and configured
         """
         raise NotImplementedError('Function "_on_registered" must be implemented in "%s"' % self.__class__.__name__)
 
-    def set_members(self, members):
+    def configure(self, params):
         """
-        Set members.
+        Configure
 
         Note:
             This function is called by Cleep during driver registration process
 
         Args:
-            members (dict): driver members::
+            params (dict): driver parameters::
 
                 {
                     cleep_filesystem (CleepFilesystem): CleepFilesystem instance
                 }
 
         """
-        self.cleep_filesystem = members['cleep_filesystem']
+        self.cleep_filesystem = params['cleep_filesystem']
 
     def install(self, end_callback, params=None, logger=None):
         """

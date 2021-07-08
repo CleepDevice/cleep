@@ -234,8 +234,8 @@ class Event:
             request.command = "render"
             request.to = renderer_name
             request.params = {
-                "profile": profile.__class__.__name__,
-                "params": profile.to_dict(),
+                "profile_name": profile.__class__.__name__,
+                "profile_values": profile.to_dict(),
             }
 
             self.logger.debug(
