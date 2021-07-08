@@ -62,5 +62,5 @@ class BlkidTests(unittest.TestCase):
         self.assertEqual(self.b.get_device('mountpoint'), None)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_blkid.py; coveverage report -m -i
+    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_blkid.py; coveverage report -m -i
     unittest.main()

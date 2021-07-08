@@ -320,6 +320,6 @@ key2=value2"""
         
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_config.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_config.py; coverage report -m -i
     unittest.main()
 

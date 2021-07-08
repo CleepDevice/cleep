@@ -341,6 +341,6 @@ fallback fallback_eth1""")
         self.assertEqual(len(self.d.get_configurations()), 3)
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_dhcpcdconf.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_dhcpcdconf.py; coverage report -m -i
     unittest.main()
 

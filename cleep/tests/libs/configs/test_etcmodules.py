@@ -88,5 +88,5 @@ bcm4522"""
         self.assertTrue(self.e.is_embedded_sound_enabled())
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_etcmodules.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_etcmodules.py; coverage report -m -i
     unittest.main()

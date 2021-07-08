@@ -425,5 +425,5 @@ iface eth3 inet static
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_etcnetworkinterfaces.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_etcnetworkinterfaces.py; coverage report -m -i
     unittest.main()

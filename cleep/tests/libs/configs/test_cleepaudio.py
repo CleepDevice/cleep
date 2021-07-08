@@ -63,6 +63,6 @@ class CleepAudioTest(unittest.TestCase):
         self.assertFalse(self.c.is_module_blacklisted('mymodule'), 'mymodule should be unblacklisted')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_cleepaudio.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepaudio.py; coverage report -m -i
     unittest.main()
 

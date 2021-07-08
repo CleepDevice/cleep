@@ -87,6 +87,6 @@ class AudioDriverTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_audiodriver.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_audiodriver.py; coverage report -m -i
     unittest.main()
 

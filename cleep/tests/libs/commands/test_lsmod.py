@@ -40,5 +40,5 @@ class LsmodTests(unittest.TestCase):
         self.assertLess(with_cache_duration, without_cache_duration, 'Cache seems to not be used')
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_lsmod.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_lsmod.py; coverage report -m -i
     unittest.main()
