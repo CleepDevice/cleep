@@ -453,8 +453,8 @@ class MessageBusTests(unittest.TestCase):
 
 
 class TestProcess1(BusClient):
-    def __init__(self, bus, on_process=None, on_configure=None, on_stop=None, on_start=None):
-        BusClient.__init__(self, bus)
+    def __init__(self, bootstrap, on_process=None, on_configure=None, on_stop=None, on_start=None):
+        BusClient.__init__(self, 'testprocess1', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__command_calls = {}
         self.on_process = on_process
@@ -506,8 +506,8 @@ class TestProcess1(BusClient):
 
 
 class TestProcess2(BusClient):
-    def __init__(self, bus):
-        BusClient.__init__(self, bus)
+    def __init__(self, bootstrap):
+        BusClient.__init__(self, 'testprocess2', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__command_calls = {}
 
@@ -559,8 +559,8 @@ class TestProcess2(BusClient):
         self.logger.debug('Event received: %s' % event)
 
 class TestProcess3(BusClient):
-    def __init__(self, bus):
-        BusClient.__init__(self, bus)
+    def __init__(self, bootstrap):
+        BusClient.__init__(self, 'testprocess3', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__command_calls = {}
 
