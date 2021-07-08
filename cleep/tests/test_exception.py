@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 print(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError
+from exception import CommandError, CommandInfo, NoResponse, NoMessageAvailable, ResourceNotAvailable, InvalidParameter, MissingParameter, InvalidMessage, InvalidModule, Unauthorized, BusError, NotReady
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -75,8 +75,13 @@ class ExceptionTests(unittest.TestCase):
         self.assertNotEqual(e.message, 0)
         self.assertEqual('%s' % e, 'message')
 
+    def test_notready(self):
+        e = NotReady('message')
+        self.assertNotEqual(e.message, 0)
+        self.assertEqual('%s' % e, 'message')
+
 
 if __name__ == '__main__':
-    # coverage run --omit="*/lib/python2.7/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
     unittest.main()
 

@@ -309,6 +309,7 @@ class TestMessageRequest(unittest.TestCase):
             'sender': 'asender',
             'startup': False,
             'to': 'dummy',
+            'propagate': False,
         })
 
     def test_fill_from_dict_external_event(self):
