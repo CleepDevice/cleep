@@ -77,6 +77,6 @@ class ExceptionTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
+    # coverage run --omit="*/lib/python2.7/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
     unittest.main()
 

@@ -1160,6 +1160,6 @@ class %(module_name)s(%(inherit)s):
 
 
 if __name__ == '__main__':
-    # coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
     unittest.main()
 

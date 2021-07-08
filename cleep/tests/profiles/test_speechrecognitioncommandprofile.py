@@ -22,6 +22,6 @@ class SpeechRecognitionCommandProfileTests(unittest.TestCase):
             self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python*/*","*test_*.py" --concurrency=thread test_speechrecognitioncommandprofile.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_speechrecognitioncommandprofile.py; coverage report -m -i
     unittest.main()
 

@@ -22,5 +22,5 @@ class SoundTextToSpeechProfileTests(unittest.TestCase):
             self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    #coverage run --omit="/usr/local/lib/python2.7/*","*test_*.py" --concurrency=thread test_soundtexttospeechprofile.py; coverage report -m -i
+    # coverage run --omit="*/lib/python2.7/*","*test_*.py" --concurrency=thread test_soundtexttospeechprofile.py; coverage report -m -i
     unittest.main()
