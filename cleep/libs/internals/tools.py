@@ -3,6 +3,7 @@
 
 import binascii
 import base64
+import copy
 import io
 import os
 import logging
@@ -469,7 +470,7 @@ def raspberry_pi_infos():
     )
     infos["revision"] = revision
 
-    return infos
+    return copy.deepcopy(infos)
 
 
 TRACE = logging.DEBUG - 5

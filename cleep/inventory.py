@@ -338,8 +338,6 @@ class Inventory(Cleep):
                 'screenshots': [],
                 'deps': [],
                 'loadedby': [],
-                'compat': module.get('compat', ''),
-                'compatible': Tools.compare_compat_string(module.get('compat', ''), CLEEP_VERSION),
             })
 
         # execution step: BOOT->INIT
@@ -391,6 +389,15 @@ class Inventory(Cleep):
             finally:
                 # clear module loading tree (replace it with clear() available in python3)
                 del self.__module_loading_tree[:]
+
+        # compute compat string
+        modules_versions = {module_name: module['version'] for module_name, module in self.modules.items()}
+        modules_versions['cleep'] = CLEEP_VERSION
+        for module_name, module in self.modules.items():
+            module.update({
+                'compat': module.get('compat', ''),
+                'compatible': Tools.compare_compat_string(module.get('compat', ''), modules_versions),
+            })
 
         # execution step: INIT->CONFIG
         self.bootstrap['execution_step'].step = ExecutionStep.CONFIG
