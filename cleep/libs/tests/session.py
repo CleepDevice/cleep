@@ -19,6 +19,7 @@ import types
 import traceback
 from mock import MagicMock
 import re
+import warnings
 
 TRACE = tools.TRACE
 
@@ -124,6 +125,8 @@ class TestSession():
         Returns:
             Object: returns module_class instance
         """
+        warnings.simplefilter("ignore", ResourceWarning)
+
         # logger
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__debug_enabled = True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
@@ -202,7 +205,7 @@ class TestSession():
         # process
         if self.__module_instance:
             self.__module_instance.stop()
-            self.__module_instance.join(1.0)
+            self.__module_instance.join(2.0)
 
         # config
         if hasattr(self.__module_instance, 'MODULE_CONFIG_FILE'):
