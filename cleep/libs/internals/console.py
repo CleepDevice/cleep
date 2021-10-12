@@ -4,7 +4,7 @@
 import sys
 import subprocess
 import time
-from threading import Timer, Thread
+from threading import Timer, Thread, Event, Lock
 try: # pragma: no cover
     from Queue import Queue, Empty
 except ImportError: # pragma: no cover
@@ -50,7 +50,7 @@ class EndlessConsole(Thread):
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.logger.setLevel(logging.DEBUG)
-        self.running = True
+        self.stopped = Event()
         self.killed = False
         self.__start_time = 0
         self.__stdout_queue = Queue()
@@ -66,7 +66,7 @@ class EndlessConsole(Thread):
 
     def __enqueue_output(self, output, queue):
         for line in iter(output.readline, b''):
-            if not self.running:
+            if self.stopped.is_set():
                 break
             queue.put(line.decode('utf-8').rstrip())
         try:
@@ -87,7 +87,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
-        self.running = False
+        self.stopped.set()
 
     def stop(self):
         """
@@ -178,7 +178,7 @@ class EndlessConsole(Thread):
             self.__stderr_thread.start()
 
         # wait for end of command line
-        while self.running:
+        while not self.stopped.is_set():
             # check process status
             proc.poll()
 
@@ -224,7 +224,7 @@ class EndlessConsole(Thread):
                 pass
 
         # process is over
-        self.running = False
+        self.stopped.set()
 
         # stop callback
         if self.callback_end:
