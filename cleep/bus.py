@@ -937,7 +937,7 @@ class BusClient(threading.Thread):
                     self.logger.warning('Received message is malformed, message dropped')
 
             except KeyboardInterrupt: # pragma: no cover
-                # user stop cleep
+                # user stops cleep
                 break
 
             except: # pragma: no cover

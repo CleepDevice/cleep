@@ -41,7 +41,7 @@ class NoResponse(Exception):
         self.value = value
         self.timeout = timeout
         self.to = to
-        self.message = 'No response from %s (%.1f seconds) for request: %s' % (self.to, self.timeout, self.value)
+        self.message = 'No response from %s (%.1f seconds) for request: %s' % (self.to, self.timeout or 0.0, self.value)
     def __str__(self):
         return self.message
 
