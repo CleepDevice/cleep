@@ -179,6 +179,13 @@ class CommonProcess(threading.Thread):
             return True
         if self._post_script_status["returncode"] == 0:
             return True
+
+        self.logger.error(
+            "Script '%s' output: stdout=%s stderr=%s",
+            path,
+            self._pre_script_status["stdout"],
+            self._pre_script_status["stderr"],
+        )
         return False
 
     def _log_process_status(
