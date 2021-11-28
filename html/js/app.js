@@ -12,8 +12,8 @@ var Cleep = angular.module(
  * It holds some generic stuff like polling request, loaded services...
  */
 Cleep
-.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route',
-function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast, $route) {
+.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', '$mdDialog',
+function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast, $route, $mdDialog) {
 
     var self = this;
     self.rebooting = false;
@@ -50,6 +50,7 @@ function($rootScope, $scope, $injector, rpcService, cleepService, blockUI, toast
                     // unblock ui
                     blockUI.stop();
                     self.notConnected = false;
+                    $mdDialog.cancel();
 
                     // toast message
                     message = 'Connection with device restored';
