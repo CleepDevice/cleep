@@ -31,10 +31,10 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
         return rpcService.getConfig()
             .then(function(resp) {
-                // save response as config to use it in next promise step
                 config = resp;
-
-                // set and load modules
+                return self.refreshModulesUpdates();
+            })
+            .then(function() {
                 return self._setModules(config.modules);
             })  
             .then(function() {
@@ -456,7 +456,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * Use cleepService.modulesUpdates to follow changes
      */
     self.refreshModulesUpdates = function() {
-        rpcService.sendCommand('get_modules_updates', 'update')
+        return rpcService.sendCommand('get_modules_updates', 'update')
             .then(function(resp) {
                 if(!resp.error) {
                     self.__syncObject(self.modulesUpdates, resp.data);

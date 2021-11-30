@@ -6,6 +6,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Deps: remove parameters dependencies from core
   * Core: fix installable app version that was always 0.0.0
   * Core: fix typo in install app dialog
+  * Core: fix UI app loading issue after app installation
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
