@@ -338,7 +338,7 @@ class Inventory(Cleep):
                 'screenshots': [],
                 'deps': [],
                 'loadedby': [],
-                'version': '0.0.0',
+                'version': module.get('version', '0.0.0'),
             })
 
         # execution step: BOOT->INIT

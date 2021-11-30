@@ -4,6 +4,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * UI: close dialog after device has restarted
   * Lib: log script errors during module installation
   * Deps: remove parameters dependencies from core
+  * Core: fix installable app version that was always 0.0.0
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
