@@ -27,20 +27,22 @@ class CATEGORIES(object):
     """
     Cleep application categories
     """
-    #generic application
+    # generic application
     APPLICATION = 'APPLICATION'
-    #mobile application for car, bike, hiking...
+    # mobile application for car, bike, hiking...
     MOBILE = 'MOBILE'
-    #application to configure and use hardware (soundcard, display...)
+    # application to configure and use hardware (soundcard, display...)
     DRIVER = 'DRIVER'
-    #home automation application (shutter, light...)
+    # home automation application (shutter, light...)
     HOMEAUTOMATION = 'HOMEAUTOMATION'
-    #media application (music player, video player...)
+    # media application (music player, video player...)
     MEDIA = 'MEDIA'
-    #application based on online service (sms broker, weather provider...)
+    # application based on online service (sms broker, weather provider...)
     SERVICE = 'SERVICE'
+    # fun application like christmas tree, halloween stuff...
+    HOBBY = 'HOBBY'
 
-    ALL = ['APPLICATION', 'MOBILE', 'DRIVER', 'HOMEAUTOMATION', 'MEDIA', 'SERVICE']
+    ALL = ['APPLICATION', 'MOBILE', 'DRIVER', 'HOMEAUTOMATION', 'MEDIA', 'SERVICE', 'HOBBY']
 
 
 
