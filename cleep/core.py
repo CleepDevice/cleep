@@ -491,16 +491,16 @@ class Cleep(BusClient):
         """
         try:
             resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
-            if resp['error']:
-                self.logger.error('Unable to request inventory')
+            if resp.error:
+                self.logger.error(f'Unable to request inventory: {resp.message}')
                 return False
 
-            return resp['data']
+            return resp.data
 
         except:
-            self.logger.exception('Unable to know if module is loaded or not:')
+            self.logger.exception('Unable to know if module is loaded:')
             self.crash_report.report_exception({
-                'message': 'Unable to know if module is loaded or not:',
+                'message': 'Unable to know if module is loaded',
                 'module': module
             })
             return False
@@ -728,8 +728,14 @@ class CleepModule(Cleep):
 
     It implements:
 
-        * all device helpers
+        * device helpers
+        * default directories (storage, tmp)
+
     """
+
+    MODULE_STORAGE_PATH = None
+    MODULE_TMP_PATH = None
+
     def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
@@ -740,6 +746,10 @@ class CleepModule(Cleep):
         """
         # init cleep 
         Cleep.__init__(self, bootstrap, debug_enabled)
+
+        # define module paths
+        self.__set_path('MODULE_STORAGE_PATH', os.path.join('/opt/cleep/modules', self.__class__.__name__))
+        self.__set_path('MODULE_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
 
         # add devices section if missing
         if self._has_config_file() and not self._has_config_field('devices'):
@@ -753,6 +763,19 @@ class CleepModule(Cleep):
             self.deleted_device_event = self.events_broker.get_event_instance('core.device.deleted')
         except:
             pass
+
+    def __set_path(self, variable_name, path):
+        """
+        Create directories if not exists
+
+        Args:
+            variable_name (string): variable name
+            path (string): path
+        """
+        if not os.path.exists(path):
+            self.cleep_filesystem.mkdirs(path)
+        setattr(self.__class__, variable_name, path)
+        self.__dict__[variable_name] = path
 
     def _add_device(self, data):
         """

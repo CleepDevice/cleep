@@ -1,12 +1,14 @@
 cleep (0.0.29) UNRELEASED; urgency=low
 
-  * Lib: Fix issue checking modules compatibility string
-  * UI: close dialog after device has restarted
-  * Lib: log script errors during module installation
-  * Deps: remove parameters dependencies from core
-  * Core: fix installable app version that was always 0.0.0
-  * Core: fix typo in install app dialog
-  * Core: fix UI app loading issue after app installation
+  * Added UI: close dialog after device has restarted
+  * Added lib: log script errors during module installation
+  * Added deps: remove parameters app dependencies from core
+  * Added core: set MODULE_STORAGE_PATH and MODULE_TMP_PATH vars in CleepModule
+  * Fixed lib: fix issue checking modules compatibility string
+  * Fixed core: fix installable app version that was always 0.0.0
+  * Fixed core: fix typo in install app dialog
+  * Fixed core: fix UI app loading issue after app installation
+  * Fixed core: fix issue with is_module_loaded (invalid response format)
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
