@@ -4,7 +4,10 @@
  *  - to register client to rpc server 
  *  - and to handle connection loss (display an overlay with message)
  */
-var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $window) {
+angular
+.module('Cleep')
+.service('rpcService', ['$http', '$q', 'toastService', '$base64', '$httpParamSerializer', '$window',
+function($http, $q, toast, $base64, $httpParamSerializer, $window) {
     var self = this;
     self.uriCommand = window.location.protocol + '//' + window.location.host + '/command';
     self.uriUpload = window.location.protocol + '//' + window.location.host + '/upload';
@@ -32,35 +35,26 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
         var d = $q.defer();
         var data = {};
 
-        //prepare data
+        // prepare data
         data.command = command;
-        if( params!==undefined && params!==null )
-        {
+        if (params!==undefined && params!==null) {
             data.params = params;
-        }
-        else
-        {
-            //no params
+        } else {
+            // no params
             data.params = {};
         }
 
-        if( to!==undefined && to!==null )
-        {
-            //push command
+        if (to!==undefined && to!==null) {
+            // push command
             data.to = to;
-        }
-        else
-        {
-            //broadcast command
+        } else {
+            // broadcast command
             data.to = null;
         }
 
-        if( angular.isUndefined(timeout) )
-        {
+        if (angular.isUndefined(timeout)) {
             data.timeout = null;
-        }
-        else
-        {
+        } else {
             data.timeout = timeout;
         }
 
@@ -71,17 +65,13 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType:'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
-            {
+            if (resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject(resp.data.message);
-            }
-            else
-            {
-                //display message if provided
-                if( resp.data.message )
-                {
+            } else {
+                // display message if provided
+                if (resp.data.message) {
                     toast.success(resp.data.message);
                 }
                 d.resolve(resp.data);
@@ -110,14 +100,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
-            {
+            if (resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -140,14 +127,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
-            {
+            if (resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -170,14 +154,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
-            {
+            if (resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -200,14 +181,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp.data.error )
-            {
+            if (resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 deferred.reject('request failed');
-            }
-            else
-            {
+            } else {
                 deferred.resolve(resp.data);
             }
         }, function(err) {
@@ -230,14 +208,11 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            if( resp && resp.data && resp.data.error )
-            {
+            if (resp && resp.data && resp.data.error) {
                 console.error('Request failed: '+resp.data.message);
                 toast.error(resp.data.message);
                 d.reject('request failed');
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -256,48 +231,39 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param data: more data to embed during upload
      * @return promise: success returns command data, failure returns error message
      */
-    self.upload = function(command, to, file, data)
-    {
-        //check input file
-        if( !file )
-        {
+    self.upload = function(command, to, file, data) {
+        if (!file) {
             return;
         }
 
-        //prepare data
+        // prepare data
         var formData = new FormData();
         formData.append('file', file);
         formData.append('filename', file.name);
         formData.append('to', to);
         formData.append('command', command);
-        if( angular.isObject(data) )
-        {
-            //append extra parameters
+        if (angular.isObject(data)) {
+            // append extra parameters
             angular.forEach(data, function(value, key) {
                 formData.append(key, value);
             });
         }
 
-        //flag to reset upload directive
+        // flag to reset upload directive
         self._uploading = true;
 
-        //post data
+        // post data
         var deferred = $q.defer();
         $http.post(self.uriUpload, formData, {
             transformRequest: angular.identity,
             headers: {'Content-Type': undefined}
         }).then(function(resp) {
-            if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false )
-            {
+            if (resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false) {
                 deferred.resolve(resp.data);
-            }
-            else if( resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===true )
-            {
+            } else if (resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===true) {
                 deferred.reject(resp.data.message);
                 toast.error('Upload failed: ' + resp.data.message);
-            }
-            else
-            {
+            } else {
                 deferred.reject('Unknown error');
                 toast.error('Upload failed: unknown error');
             }
@@ -305,7 +271,6 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             deferred.reject(err);
         })
         .finally(function() {
-            //reset
             self._uploading = false;
         });
 
@@ -320,8 +285,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
      * @param params: parameters to command (typically a filename)
      */
     self.download = function(command, to, params) {
-        if( angular.isUndefined(params) )
-        {
+        if (angular.isUndefined(params)) {
             params = {};
         }
         params = angular.extend(params, {'to':to, 'command':command});
@@ -332,16 +296,12 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     /**
      * Poll
      */
-    self.poll = function()
-    {
-        if( self.pollKey===null )
-        {
-            //not registered yet to server, get poll key
+    self.poll = function() {
+        if (self.pollKey===null) {
+            // not registered yet to server, get poll key
             return self.__registerPoll();
-        }
-        else
-        {
-            //already registered
+        } else {
+            // already registered
             return self.__poll();
         }
     };
@@ -349,8 +309,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     /**
      * Poll
      */
-    self.__poll = function()
-    {
+    self.__poll = function() {
         var d = $q.defer();
 
         $http({
@@ -363,18 +322,14 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             }
         })
         .then(function(resp) {
-            if( resp && resp.data.error!==undefined && resp.data.error===true )
-            {
-                //error occured
-                if( resp.data.message==='Client not registered' )
-                {
-                    //reset poll key
+            if (resp && resp.data.error!==undefined && resp.data.error===true) {
+                // error occured
+                if (resp.data.message==='Client not registered') {
+                    // reset poll key
                     self.pollKey = null;
                 }
                 d.reject(resp.message);
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(resp) {
@@ -387,8 +342,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
     /**
      * Register polling
      */
-    self.__registerPoll = function()
-    {
+    self.__registerPoll = function() {
         var d = $q.defer();
 
         $http({
@@ -397,7 +351,7 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
             responseType: 'json'
         })
         .then(function(resp) {
-            //save registration
+            // save registration
             self.pollKey = resp.data.pollKey;
             d.resolve('registered');
         }, function(resp) {
@@ -406,8 +360,5 @@ var rpcService = function($http, $q, toast, $base64, $httpParamSerializer, $wind
 
         return d.promise;
     };
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('rpcService', ['$http', '$q', 'toastService', '$base64', '$httpParamSerializer', '$window', rpcService]);
+}]);
 
