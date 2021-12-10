@@ -1006,6 +1006,30 @@ class CleepModule(Cleep):
         members.remove('get_module_devices')
         return members
 
+    def send_command_advanced(self, command, to, params=None, timeout=3.0, raise_exc=False):
+        """
+        Send command as default send_command function but handle errors logging them and return data
+        It also can throw exception if requested
+
+        Args:
+            command (string): command name.
+            to (string): command recipient. If None the command is broadcasted but you'll get no reponse in return.
+            params (dict): command parameters.
+            timeout (float): change default timeout if you wish. Default is 3 seconds.
+            raise_exc (boolean): if True raise exception
+
+        Returns:
+            any: return data command result. Return None if error occured
+        """
+        resp = self.send_command(command, to, params, timeout)
+        if resp.error:
+            self.logger.error('Error occured executing command {command} to {to}: {resp.message}')
+            if raise_exc:
+                raise Exception(resp.data)
+            return None
+
+        return resp.data
+
 
 
 
