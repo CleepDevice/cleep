@@ -76,7 +76,7 @@ Cleep
         var toastService = $injector.get('toastService');
         var locationService = $injector.get('$location');
         if (toastService && locationService && locationService.url().startsWith('/module/')) {
-            toastService.fatal('Error loading '+ locationService.url().split('/').pop() +' application');
+            toastService.fatal('Failed to load '+ locationService.url().split('/').pop() +' application');
         }
     };
 }]);
