@@ -468,12 +468,11 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * Set devices
      * Prepare dashboard widgets and init device using associated module
      */
-    self._setDevices = function(devices)
-    {
+    self._setDevices = function(devices) {
         var newDevices = [];
-        for( var module in devices ) {
+        for (var module in devices) {
             // add specific ui stuff
-            for( var uuid in devices[module] ) {
+            for (var uuid in devices[module]) {
                 // add widget infos
                 devices[module][uuid].__widget = {
                     mdcolors: '{background:"default-primary-300"}'
@@ -486,19 +485,29 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             }
 
             // store device
-            for( var uuid in devices[module] ) {
+            for (var uuid in devices[module]) {
                 newDevices.push(devices[module][uuid]);
             }
         }
 
-        // clear existing devices
-        for( var i=self.devices.length-1; i>=0; i--) {
-            self.devices.splice(i, 1);
-        }
+        self.syncVar(self.devices, newDevices);
+    };
 
-        // save new devices
-        for( var i=0; i<newDevices.length; i++ ) {
-            self.devices.push(newDevices[i]);
+    /**
+     * Synchronize non primitive variable content preserving variable reference
+     * It should be used only for object or array but it works for number, string... too
+     */
+    self.syncVar = function(variable, newContent) {
+        if (Array.isArray(variable)) {
+            variable.splice(0, variable.length);
+            Object.assign(variable, newContent);
+        } else if (typeof variable === 'object') {
+            for (let prop in variable) {
+                delete variable[prop];
+            }
+            Object.assign(variable, newContent);
+        } else {
+            variable = newContent;
         }
     };
 
@@ -518,6 +527,13 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             });
         
         return deferred.promise;
+    };
+
+    /**
+     * Return module devices
+     */
+    self.getModuleDevices = function(module) {
+        return self.devices.filter(device => device.module === module);
     };
 
     /**
