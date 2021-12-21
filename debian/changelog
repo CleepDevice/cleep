@@ -10,6 +10,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed core: fix typo in install app dialog
   * Fixed core: fix UI app loading issue after app installation
   * Fixed core: fix issue with is_module_loaded (invalid response format)
+  * Fixed tests: fix issue checking command parameters
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 

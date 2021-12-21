@@ -407,11 +407,23 @@ class TestSession():
             self.testcase.assertTrue(False, 'Command "%s" was not called' % command_name)
 
         # check command params
-        self.testcase.assertDictEqual(
-            self.__bus_command_handlers[command_name]['lastparams'],
-            params,
-            'Command "%s" are differents' % command_name,
-        )
+        if type(params) is not type(self.__bus_command_handlers[command_name]['lastparams']):
+            self.testcase.fail('Command "%s" parameters differs: %s is not %s' % (
+                command_name,
+                type(params).__name__,
+                type(self.__bus_command_handlers[command_name]['lastparams']).__name__,
+            ))
+        elif isinstance(params, dict):
+            self.testcase.assertDictEqual(
+                self.__bus_command_handlers[command_name]['lastparams'],
+                params,
+                'Command "%s" parameters are differents' % command_name,
+            )
+        elif params is None:
+            self.testcase.assertIsNone(
+                self.__bus_command_handlers[command_name]['lastparams'],
+                'Command "%s" parameters are not None' % command_name,
+            )
 
         # check command recipient
         if to is not None:
