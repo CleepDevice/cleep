@@ -5,6 +5,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added deps: remove parameters app dependencies from core
   * Added core: set MODULE_STORAGE_PATH and MODULE_TMP_PATH vars in CleepModule
   * Added core: add send_command_advanced helper to handle quickly commands
+  * Added core: add alarm prodfile
   * Fixed lib: fix issue checking modules compatibility string
   * Fixed core: fix installable app version that was always 0.0.0
   * Fixed core: fix typo in install app dialog
