@@ -57,9 +57,11 @@ class Alsa(AdvancedConsole):
                 {
                     card id (int): {
                         name (string): card name
+                        desc (string): card description
                         devices (dict): {
                             deviceid (int): {
                                 name (string): device name
+                                desc (string): device description
                                 cardid (int): card id
                                 deviceid (int): device id
                             },
@@ -70,12 +72,12 @@ class Alsa(AdvancedConsole):
                 }
 
         """
-        results = self.find(command, r'^(?:card (\d)):.*\[(.*)\].*(?:device (\d)).*\[(.*)\].*$')
+        results = self.find(command, r'^(?:card (\d)): (.*) \[(.*)\].*(?:device (\d)): (.*).\[(.*)\].*$')
         entries = {}
         for _, groups in results:
             self.logger.trace('groups (%d): %s' % (len(groups), groups))
 
-            if len(groups) != 4: # pragma: no cover
+            if len(groups) != 6: # pragma: no cover
                 continue
 
             # card id
@@ -88,26 +90,28 @@ class Alsa(AdvancedConsole):
             # device id
             device_id = 0
             try:
-                device_id = int(groups[2])
+                device_id = int(groups[3])
             except Exception: # pragma: no cover
                 self.logger.exception('Invalid device id:')
 
-            # names (prefer using 2nd names if not empty)
-            if len(groups[3].strip()) > 0:
-                name = groups[3].strip()
-            else: # pragma: no cover
-                name = groups[1].strip()
+            # names (prefer using 2nd name in [] if not empty)
+            card_name = groups[1].strip()
+            card_desc = groups[2].strip()
+            device_name = groups[4].strip() if len(groups[4].strip()) > 0 else card_name
+            device_desc = groups[5].strip() if len(groups[5].strip()) > 0 else card_name
 
             # store entry
             if card_id not in entries:
                 entries[card_id] = {
-                    'name': name,
+                    'name': card_name,
+                    'desc': card_desc,
                     'devices': {}
                 }
             entries[card_id]['devices'][device_id] = {
                 'deviceid': device_id,
                 'cardid': card_id,
-                'name': name
+                'name': device_name,
+                'desc': device_desc,
             }
 
         return entries
@@ -124,9 +128,10 @@ class Alsa(AdvancedConsole):
                     devices (list): list of devices
                         [
                             {
-                                cardid (string),
-                                deviceid (string),
-                                name (string)
+                                cardid (string): card id
+                                deviceid (string): device id
+                                name (string): device name
+                                desc (string): device description
                             },
                             ...
                         ]
@@ -139,17 +144,23 @@ class Alsa(AdvancedConsole):
         if resp['error'] or resp['killed']:
             return None # pragma: no cover
         try:
-            selected_device_name = resp['stdout'][0].split('/')[1].replace('\'','')
+            stdout = resp['stdout'][0].replace('Card default ', '')
+            parts = stdout.split('/')
+            self.logger.debug('amixer info output and splits: %s - %s', resp['stdout'], parts)
+            return self.get_device_infos(parts[0].replace('\'', ''), parts[1].replace('\'', ''))
+
         except Exception: # pragma: no cover
             self.logger.exception('Error parsing amixer command result:')
-            selected_device_name = None
 
-        # get selected device info
-        return self.get_device_infos(selected_device_name)
+        return None
 
-    def get_device_infos(self, card_name):
+    def get_device_infos(self, device_name, device_desc=None):
         """
         Get device infos
+
+        Args:
+            device_name (string): device name to retrieve infos from
+            device_desc (string): device description. If specified use device description to find a match
 
         Returns:
             dict: selected device info or None if nothing found::
@@ -159,18 +170,34 @@ class Alsa(AdvancedConsole):
                     devices (list): list of devices
                         [
                             {
-                                cardid (string): card id,
-                                deviceid (string): device id,
-                                name (string): device name,
+                                cardid (string): card id
+                                deviceid (string): device id
+                                name (string): device name
+                                desc (string): device description
                             },
                             ...
                         ]
                 }
 
         """
-        for _, device in self.get_playback_devices().items():
-            if device['name'] == card_name:
-                return device
+        if not device_name:
+            self.logger.warning('No device name specified, unable to get device infos')
+            return None
+
+        playback_devices = self.get_playback_devices()
+        name_pattern = re.compile(device_name, re.IGNORECASE)
+        desc_pattern = re.compile(device_desc, re.IGNORECASE) if device_desc else None
+
+        for _, card in playback_devices.items():
+            if name_pattern.match(card['name']):
+                return card
+            if desc_pattern and desc_pattern.match(card['desc']):
+                return card
+            for _, device in card['devices'].items():
+                if name_pattern.match(device['name']):
+                    return card
+                if desc_pattern and desc_pattern.match(device['desc']):
+                    return card
 
         return None
 
@@ -192,6 +219,19 @@ class Alsa(AdvancedConsole):
     def get_controls(self):
         """
         Get device controls
+
+        Returns:
+            list: list of controls for current card::
+
+                [
+                    {
+                        numid (int): control identifier
+                        iface (string): control iface
+                        name (string): control name
+                    },
+                    ...
+                ]
+
         """
         results = self.find('/usr/bin/amixer controls', r"^numid=(\d+),iface=(.*?),name='(.*)'$")
         controls = []
@@ -215,11 +255,20 @@ class Alsa(AdvancedConsole):
             dict: dict of outputs::
 
                 {
-                    cardname: {
-                        cardname (string),
-                        cardid (int),
-                        deviceid (id)
-                    }
+                    card id (int): {
+                        name (string): card name
+                        desc (string): card description
+                        devices (dict): {
+                            deviceid (int): {
+                                name (string): device name
+                                desc (string): device description
+                                cardid (int): card id
+                                deviceid (int): device id
+                            },
+                            ...
+                        }
+                    },
+                    ...
                 }
 
         """
@@ -233,11 +282,20 @@ class Alsa(AdvancedConsole):
             dict: dict of outputs::
 
                 {
-                    cardname: {
-                        cardname (string),
-                        cardid (int),
-                        deviceid (id),
-                    }
+                    card id (int): {
+                        name (string): card name
+                        desc (string): card description
+                        devices (dict): {
+                            deviceid (int): {
+                                name (string): device name
+                                desc (string): device description
+                                cardid (int): card id
+                                deviceid (int): device id
+                            },
+                            ...
+                        }
+                    },
+                    ...
                 }
 
         """

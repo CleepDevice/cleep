@@ -31,7 +31,21 @@ card 0: ALSA [bcm2835 ALSA], device 0: bcm2835 ALSA [bcm2835 ALSA]
 card 0: ALSA [bcm2835 ALSA], device 1: bcm2835 IEC958/HDMI [bcm2835 IEC958/HDMI]
   Subdevices: 1/1
   Subdevice #0: subdevice #0
-card 0: ALSA [bcm2835 ALSA], device 2: bcm2835 IEC958/HDMI1 [bcm2835 IEC958/HDMI1]
+card 0: ALSA [bcm2835 ALSA], device 2: bcm2835 IEC958/HDMI.1 [bcm2835 IEC958/HDMI1]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0"""
+    SAMPLE_PLAYBACK_DEVICES_NEW = """**** List of PLAYBACK Hardware Devices ****
+card 0: Headphones [bcm2835 Headphones], device 0: bcm2835 Headphones [bcm2835 Headphones]
+  Subdevices: 8/8
+  Subdevice #0: subdevice #0
+  Subdevice #1: subdevice #1
+  Subdevice #2: subdevice #2
+  Subdevice #3: subdevice #3
+  Subdevice #4: subdevice #4
+  Subdevice #5: subdevice #5
+  Subdevice #6: subdevice #6
+  Subdevice #7: subdevice #7
+card 1: UACDemoV10 [UACDemoV1.0], device 0: USB Audio [USB Audio]
   Subdevices: 1/1
   Subdevice #0: subdevice #0"""
     SAMPLE_RECORD_DEVICES = """**** List of CAPTURE Hardware Devices ****
@@ -109,9 +123,11 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
         raspi_devices = None
         for _, dev in devs.items():
             logging.debug(pformat(dev))
-            if dev['name']==raspi_jack:
+            if dev['desc']==raspi_jack:
                 raspi_devices = dev['devices']
                 break
+
+        logging.debug('raspi_devices: %s', raspi_devices)
         self.assertIsNotNone(raspi_devices, 'Default audio device not found')
         self.assertTrue(raspi_devices[0]['name']==raspi_jack, 'Audio jack not found')
         self.assertTrue(raspi_devices[0]['cardid']==0, 'Audio jack cardid invalid')
@@ -195,9 +211,51 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
         self.assertTrue('devices' in device)
         self.assertGreaterEqual(len(device['devices']), 2)
 
-    def test_get_device_infos(self):
+    def test_get_selected_device_nothing_found(self):
+        self.a.command = Mock(side_effect=[
+            self.make_command_result(stdout=self.SAMPLE_GET_INFOS),
+            self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES_NEW),
+        ])
+        device = self.a.get_selected_device()
+        logging.debug(device)
+        self.assertIsNone(device)
+
+    def test_get_selected_device_exception(self):
+        self.a.command = Mock(side_effect=[
+            self.make_command_result(stdout=self.SAMPLE_GET_INFOS),
+            Exception('Test exception'),
+        ])
+        device = self.a.get_selected_device()
+        logging.debug(device)
+        self.assertIsNone(device)
+
+    def test_get_device_infos_found_by_card_name(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
+        device = self.a.get_device_infos('ALSA')
+        logging.debug(device)
+        self.assertTrue('name' in device)
+        self.assertTrue('devices' in device)
+        self.assertGreaterEqual(len(device['devices']), 2)
+
+    def test_get_device_infos_found_by_card_description(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
+        device = self.a.get_device_infos('dummy', 'bcm2835 ALSA')
+        logging.debug(device)
+        self.assertTrue('name' in device)
+        self.assertTrue('devices' in device)
+        self.assertGreaterEqual(len(device['devices']), 2)
+
+    def test_get_device_infos_found_by_device_name(self):
         self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
         device = self.a.get_device_infos('bcm2835 ALSA')
+        logging.debug(device)
+        self.assertTrue('name' in device)
+        self.assertTrue('devices' in device)
+        self.assertGreaterEqual(len(device['devices']), 2)
+
+    def test_get_device_infos_found_by_device_description(self):
+        self.a.command = Mock(return_value=self.make_command_result(stdout=self.SAMPLE_PLAYBACK_DEVICES))
+        device = self.a.get_device_infos('dummy', 'bcm2835 IEC958/HDMI1')
         logging.debug(device)
         self.assertTrue('name' in device)
         self.assertTrue('devices' in device)
@@ -227,10 +285,10 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
         self.assertEqual(cm.exception.message, 'Parameter "command" is missing')
         with self.assertRaises(InvalidParameter) as cm:
             self.a.amixer_control(4, 3)
-        self.assertEqual(cm.exception.message, 'Parameter "command" must be Alsa.CGET or Alsa.CSET')
+        self.assertEqual(cm.exception.message, 'Parameter "command" must be Alsa.CGET or Alsa.CSET (specified="4")')
         with self.assertRaises(InvalidParameter) as cm:
             self.a.amixer_control('TEST', 3)
-        self.assertEqual(cm.exception.message, 'Parameter "command" must be Alsa.CGET or Alsa.CSET')
+        self.assertEqual(cm.exception.message, 'Parameter "command" must be Alsa.CGET or Alsa.CSET (specified="TEST")')
         with self.assertRaises(InvalidParameter) as cm:
             self.a.amixer_control(Alsa.CGET, 'TEST')
         self.assertEqual(cm.exception.message, 'Parameter "numid" must be a string')

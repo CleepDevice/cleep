@@ -17,16 +17,16 @@ class AudioDriver(Driver):
      - is_installed
     """
 
-    def __init__(self, driver_name, card_name):
+    def __init__(self, driver_name):
         """
         Constructor
 
         Args:
             driver_name (string): driver name
-            card_name (string): audio card name (as found by alsa) 
         """
         Driver.__init__(self, Driver.DRIVER_AUDIO, driver_name)
-        self.card_name = card_name
+
+        self.__card_name = None
 
     def _on_registered(self):
         """
@@ -37,11 +37,70 @@ class AudioDriver(Driver):
 
         self._on_audio_registered()
 
-    def _on_audio_registered(self):
+        self.__card_name = self.__get_card_name()
+        self.logger.debug('Found card_name=%s' , self.__card_name)
+
+    def _on_audio_registered(self): # pragma: no cover
         """
         Audio driver registered
         """
         raise NotImplementedError('Function "_on_audio_registered" must be implemented in "%s"' % self.__class__.__name__)
+
+    def __get_card_name(self):
+        """
+        Request for associated driver card name
+
+        Returns:
+            string: driver card name
+        """
+        devices = self.alsa.get_playback_devices()
+        devices_names = []
+        for _, card in devices.items():
+            data = {
+                'card_name': card['name'],
+                'card_desc': card['desc'],
+                'device_name': None,
+                'device_desc': None,
+            }
+            for _, device in card['devices'].items():
+                data['device_name'] = device['name']
+                data['device_desc'] = device['desc']
+                devices_names.append(data)
+
+        return self._get_card_name(devices_names)
+
+    def _get_card_name(self, devices_names): # pragma: no cover
+        """
+        Get card name to be able to identify the card associated to the driver.
+        You must return a string found in one of devices_names strings.
+
+        Args:
+            devices_names (list): list of devices names installed on device::
+
+                [
+                    {
+                        card_name (string): card name
+                        card_desc (string): card description
+                        device_name (string): device name
+                        device_desc (string): device description
+                    },
+                    ...
+                ]
+
+        Returns:
+            string: card name used to identify the card associated to the driver
+
+        """
+        raise NotImplementedError('Function "_get_card_name" must be implemented in "%s"' % self.__class__.__name__)
+
+    def get_card_name(self):
+        """
+        Return card name
+
+        Returns:
+            string: card name
+        """
+        return self.__card_name
 
     def get_device_infos(self):
         """
@@ -59,46 +118,44 @@ class AudioDriver(Driver):
                 }
 
         """
-        card_name = self.get_card_name()
+        if not self.__card_name:
+            raise Exception('No hardware found for driver "%s"' % self.__class__.__name__)
+
         alsa_infos = self.get_alsa_infos()
-        self.logger.debug(u'alsa infos=%s' % alsa_infos)
+        self.logger.debug('alsa_infos=%s' % alsa_infos)
         card_infos = {
-            u'cardid': None,
-            u'deviceid': None
+            'cardid': None,
+            'deviceid': None
         }
-        if alsa_infos and u'devices' in alsa_infos and len(alsa_infos[u'devices'])>0:
-            card_infos[u'cardid'] = alsa_infos[u'devices'][0][u'cardid']
-            card_infos[u'deviceid'] = alsa_infos[u'devices'][0][u'deviceid']
+        if alsa_infos and 'devices' in alsa_infos and len(alsa_infos['devices'])>0:
+            card_infos['cardid'] = alsa_infos['devices'][0]['cardid']
+            card_infos['deviceid'] = alsa_infos['devices'][0]['deviceid']
         capabilities = self.get_card_capabilities()
+
         return {
-            u'cardname': card_name,
-            u'cardid': card_infos[u'cardid'],
-            u'deviceid': card_infos[u'deviceid'],
-            u'playback': capabilities[0],
-            u'capture': capabilities[1],
+            'cardname': self.__card_name,
+            'cardid': card_infos['cardid'],
+            'deviceid': card_infos['deviceid'],
+            'playback': capabilities[0],
+            'capture': capabilities[1],
         }
 
-    def is_card_enabled(self, card_name=None):
+    def is_card_enabled(self):
         """ 
         Is specified card enabled ?
-
-        Args:
-            card_name (string): card name to check. If None specified, driver card name is used
 
         Returns:
             bool: True if enable
         """
         selected_device = self.alsa.get_selected_device()
-        self.logger.trace(u'Selected device: %s' % selected_device)
+        self.logger.debug('card name=%s selected device=%s', self.__card_name, selected_device)
 
-        if card_name is None:
-            card_name = self.get_card_name()
-        self.logger.trace(u'Card name=%s' % card_name)
+        is_enabled = selected_device and selected_device['name'] == self.__card_name
 
-        if selected_device and selected_device[u'name']==card_name:
-            return True
-                
-        return False
+        if is_enabled:
+            self._set_volumes_controls()
+
+        return is_enabled
 
     def get_cardid_deviceid(self):
         """
@@ -114,10 +171,8 @@ class AudioDriver(Driver):
 
         """
         infos = self.get_alsa_infos()
-        if infos and u'devices' in infos and len(infos[u'devices'])>0:
-            return (infos[u'devices'][0][u'cardid'], infos[u'devices'][0][u'deviceid'])
-
-        return (None, None)
+        self.logger.debug('alsa infos: %s', infos)
+        return (infos['devices'][0]['cardid'], infos['devices'][0]['deviceid']) if infos else (None, None)
 
     def get_alsa_infos(self):
         """
@@ -127,18 +182,27 @@ class AudioDriver(Driver):
             dict: alsa infos or None if card not found::
 
                 {
-                    cardname (string): card name
-                    cardid (int): alsa card id
-                    deviceid (int): alsa device id
+                    name (string): card name
+                    desc (string): card description
+                    devices (list): list of devices
+                        [
+                            {
+                                cardid (string): card id
+                                deviceid (string): device id
+                                name (string): device name
+                                desc (string): device description
+                            },
+                            ...
+                        ]
                 }
 
         """
-        return self.alsa.get_device_infos(self.get_card_name())
+        return self.alsa.get_device_infos(self.__card_name)
 
     def get_control_numid(self, control_name):
         """
         Return numid for specified control name. Control name has not to be exact but contains the specified string
-        to match result.
+        to match result. Search is not case sensitive.
 
         Args:
             control_name (string): control name to search for
@@ -146,7 +210,8 @@ class AudioDriver(Driver):
         Returns:
             int: control numid or None if control not found
         """
-        found_controls = [control['numid'] for control in self.alsa.get_controls() if control['name'].lower().find(control_name)]
+        found_controls = [control['numid'] for control in self.alsa.get_controls() if control['name'].lower().find(control_name.lower()) >= 0]
+        self.logger.debug('Found controls: %s', found_controls)
 
         return found_controls[0] if len(found_controls) > 0 else None
 
@@ -165,19 +230,7 @@ class AudioDriver(Driver):
                     bool: capture capability
                 )
         """
-        raise NotImplementedError(u'Function "get_card_capabilities" must be implemented in "%s"' % self.__class__.__name__)
-
-    def get_card_name(self): # pragma: no cover
-        """
-        Return card name as returned by alsa
-
-        Warning:
-            This function must be implemented in audio driver
-
-        Returns:
-            string: card name
-        """
-        raise NotImplementedError(u'Function "get_card_name" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "get_card_capabilities" must be implemented in "%s"' % self.__class__.__name__)
 
     def enable(self, params=None): # pragma: no cover
         """ 
@@ -189,7 +242,7 @@ class AudioDriver(Driver):
         Args:
             params (dict): additionnal parameters if necessary
         """
-        raise NotImplementedError(u'Function "enable" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "enable" must be implemented in "%s"' % self.__class__.__name__)
 
     def disable(self, params=None): # pragma: no cover
         """ 
@@ -201,7 +254,16 @@ class AudioDriver(Driver):
         Args:
             params (dict): additionnal parameters if necessary
         """
-        raise NotImplementedError(u'Function "disable" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "disable" must be implemented in "%s"' % self.__class__.__name__)
+
+    def _set_volumes_controls(self): # pragma: no cover
+        """
+        Set controls to configure volumes
+
+        Warning:
+            This function must be implemented in audio driver
+        """
+        raise NotImplementedError('Function "_set_volumes_controls" must be implemented in "%s"' % self.__class__.__name__)
 
     def get_volumes(self): # pragma: no cover
         """ 
@@ -219,7 +281,7 @@ class AudioDriver(Driver):
                 }
 
         """
-        raise NotImplementedError(u'Function "get_volumes" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "get_volumes" must be implemented in "%s"' % self.__class__.__name__)
 
     def set_volumes(self, playback=None, capture=None): # pragma: no cover
         """ 
@@ -232,5 +294,5 @@ class AudioDriver(Driver):
             playback (float): playback volume (None to disable update)
             capture (float): capture volume (None to disable update)
         """
-        raise NotImplementedError(u'Function "set_volumes" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError('Function "set_volumes" must be implemented in "%s"' % self.__class__.__name__)
 
