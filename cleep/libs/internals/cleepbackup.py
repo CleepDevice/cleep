@@ -14,8 +14,8 @@ class CleepBackup:
 
     It uses rsync to backup files locally
     """
-    CLEEP_PATH = u'/etc/cleep/'
-    BACKUP_PATH = u'/etc/cleep.bak/'
+    CLEEP_PATH = '/etc/cleep/'
+    BACKUP_PATH = '/etc/cleep.bak/'
 
     def __init__(self, cleep_filesystem, crash_report):
         """

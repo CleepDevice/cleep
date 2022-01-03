@@ -795,9 +795,10 @@ class CleepFilesystem():
         return self.mkdir(path, True)
 
 
-    def rsync(self, src, dst, options='-ah --delete'):
+    def rsync(self, src, dst, options='-ah --delete --exclude=".*"'):
         """
-        Copy source to destination using rsync
+        Copy source to destination using rsync.
+        Default options: delete suppressed files and exclude hidden files
 
         Args:
             src (string): source

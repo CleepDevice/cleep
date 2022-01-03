@@ -5,7 +5,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added deps: remove parameters app dependencies from core
   * Added core: set MODULE_STORAGE_PATH and MODULE_TMP_PATH vars in CleepModule
   * Added core: add send_command_advanced helper to handle quickly commands
-  * Added core: add alarm prodfile
+  * Added core: add alarm profile
   * Fixed lib: fix issue checking modules compatibility string
   * Fixed core: fix installable app version that was always 0.0.0
   * Fixed core: fix typo in install app dialog
@@ -14,6 +14,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed tests: fix issue checking command parameters
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
+  * Changed: cleepfilesystem rsync function do not sync hidden files by default
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
