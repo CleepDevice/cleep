@@ -15,6 +15,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
   * Changed: cleepfilesystem rsync function do not sync hidden files by default
+  * Changed: update frontend js libraries
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
