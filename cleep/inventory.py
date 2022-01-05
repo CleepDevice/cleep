@@ -383,9 +383,8 @@ class Inventory(Cleep):
             except Exception as e:
                 # flag modules has in error
                 self.__modules_in_error[module_name] = str(e)
-
-                # failed to load module
                 self.logger.exception('Unable to load module "%s" or one of its dependencies:' % module_name)
+                # TODO report error if not locally installed module
 
             finally:
                 # clear module loading tree (replace it with clear() available in python3)
@@ -419,6 +418,12 @@ class Inventory(Cleep):
             module_join_event.wait()
         self.logger.info('All modules are configured.')
         self.bootstrap['core_join_event'].set()
+
+        # check if modules are properly configured and started
+        for module_name, module_ in self.__modules_instances.items():
+            if not module_.is_alive():
+                self.__modules_in_error[module_name] = 'Module "%s" configuration failed' % module_name
+                # TODO report error if not locally installed module
 
         # execution step: CONFIG->RUN
         self.bootstrap['execution_step'].step = ExecutionStep.RUN
@@ -556,7 +561,7 @@ class Inventory(Cleep):
         module['events'] = events[module_name] if module_name in events else []
     
         # started flag
-        module['started'] = False if module_name in self.__modules_in_error.keys() else True
+        module['started'] = not module_name in self.__modules_in_error.keys()
 
         # add library is loaded by
         module['loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []

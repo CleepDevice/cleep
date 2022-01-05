@@ -17,6 +17,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Changed: cleepfilesystem rsync function do not sync hidden files by default
   * Changed: update frontend js libraries
   * Changed: redirect to apps list if trying to load invalid app
+  * Changed: handle apps that encountered problems during configuration step
 
  -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
 
