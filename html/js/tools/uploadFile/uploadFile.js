@@ -4,9 +4,10 @@
  * Directive code adapted from http://codepen.io/juniper/pen/LGEOVb
  *
  * Directive example:
- * <div upload-file selected-file="" label="<button label>">
+ * <div upload-file selected-file="" label="<button label>" placeholder="<input placeholder>">
  * @param selected-file: data-binded value to watch for changes
  * @param label: text displayed on upload button
+ * @param placeholder: text displayed on input. If not specified input is hidden
  *
  * How to use:
  * Inject directive in your template.
@@ -28,43 +29,39 @@
  *     });
  *
  */
-var uploadFileDirective = function(rpcService) {
+angular
+.module('Cleep')
+.directive('uploadFile', ['rpcService',
+function(rpcService) {
 
     var uploadFileLink = function(scope, element, attrs, controller) {
         var input = $(element[0].querySelector('#fileInput'));
         var button = $(element[0].querySelector('#uploadButton'));
         var textInput = $(element[0].querySelector('#textInput'));
 
-        //add label
-        if( angular.isUndefined(scope.label) || scope.label===null )
-        {
+        // params
+        if (angular.isUndefined(scope.label) || scope.label===null) {
             scope.label = 'Select file';
         }
 
-        //bind file input event to input and button
-        if (input.length && button.length && textInput.length)
-        {
+        // bind file input event to input and button
+        if (input.length && button.length && textInput.length) {
             button.click(function (e) {
                 input.click();
             });
-
             textInput.click(function (e) {
                 input.click();
             });
         }
 
-        //define event
+        // define event
         input.on('change', function (e) {
-            if( rpcService._uploading===false )
-            {
+            if (rpcService._uploading===false) {
                 var files = e.target.files;
-                if( files[0] )
-                {
+                if (files[0]) {
                     scope.filename = files[0].name;
                     scope.selectedFile = files[0];
-                }
-                else
-                {
+                } else {
                     scope.filename = null;
                     scope.selectedFile = null;
                 }
@@ -72,7 +69,7 @@ var uploadFileDirective = function(rpcService) {
             }
         });
 
-        //handle end of upload to reset directive content
+        // handle end of upload to reset directive content
         scope.$watch(function() {
             return rpcService._uploading;
         }, function(newVal, oldVal) {
@@ -90,12 +87,9 @@ var uploadFileDirective = function(rpcService) {
         templateUrl: 'js/tools/uploadFile/uploadFile.html',
         scope: {
             selectedFile: '=',
-            label: '@'
+            label: '@',
+            placeholder: '@',
         },
         link: uploadFileLink
     };
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.directive('uploadFile', ['rpcService', uploadFileDirective]);
-
+}]);

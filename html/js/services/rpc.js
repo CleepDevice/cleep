@@ -257,7 +257,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
         var deferred = $q.defer();
         $http.post(self.uriUpload, formData, {
             transformRequest: angular.identity,
-            headers: {'Content-Type': undefined}
+            headers: {'Content-Type': undefined }
         }).then(function(resp) {
             if (resp && resp.data && typeof(resp.data.error)!=='undefined' && resp.data.error===false) {
                 deferred.resolve(resp.data);
@@ -269,6 +269,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
                 toast.error('Upload failed: unknown error');
             }
         }, function(err) {
+            toast.error('Upload failed: network error');
             deferred.reject(err);
         })
         .finally(function() {
