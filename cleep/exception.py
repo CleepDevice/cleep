@@ -5,9 +5,9 @@
 Cleep exceptions
 """
 
-__all__ = [u'CommandError', u'CommandInfo', u'NoResponse', u'NoMessageAvailable', u'ResourceNotAvailable',
-           u'InvalidParameter', u'MissingParameter', u'InvalidMessage', u'InvalidModule', u'Unauthorized',
-           u'BusError']
+__all__ = ['CommandError', 'CommandInfo', 'NoResponse', 'NoMessageAvailable', 'ResourceNotAvailable',
+           'InvalidParameter', 'MissingParameter', 'InvalidMessage', 'InvalidModule', 'Unauthorized',
+           'BusError']
 
 class CommandError(Exception):
     """
@@ -18,7 +18,7 @@ class CommandError(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class CommandInfo(Exception):
     """
@@ -29,7 +29,7 @@ class CommandInfo(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class NoResponse(Exception):
     """
@@ -52,7 +52,7 @@ class NoMessageAvailable(Exception):
     """
     def __init__(self):
         Exception.__init__(self)
-        self.message = u'No message available'
+        self.message = 'No message available'
     def __str__(self):
         return self.message
 
@@ -64,7 +64,7 @@ class ResourceNotAvailable(Exception):
     def __init__(self, resource):
         Exception.__init__(self)
         self.resource = resource
-        self.message = u'Resource %s not available' % self.resource
+        self.message = 'Resource %s not available' % self.resource
     def __str__(self):
         return self.message
 
@@ -76,7 +76,7 @@ class InvalidParameter(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class MissingParameter(Exception):
     """
@@ -86,7 +86,7 @@ class MissingParameter(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class InvalidMessage(Exception):
     """
@@ -94,18 +94,18 @@ class InvalidMessage(Exception):
     """
     def __init__(self):
         Exception.__init__(self)
-        self.message = u'Invalid message'
+        self.message = 'Invalid message'
     def __str__(self):
         return self.message
 
 class InvalidModule(Exception):
     """
-    InvalidModule is raised when an unknown module is requested
+    InvalidModule is raised when an unknown application is requested
     """
     def __init__(self, module):
         Exception.__init__(self)
         self.module = module
-        self.message = u'Invalid module "%s" (not loaded or unknown)' % self.module
+        self.message = 'Invalid application "%s" (not loaded or unknown)' % self.module
     def __str__(self):
         return self.message
 
@@ -117,7 +117,7 @@ class Unauthorized(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class BusError(Exception):
     """
@@ -127,7 +127,7 @@ class BusError(Exception):
         Exception.__init__(self)
         self.message = message
     def __str__(self):
-        return u'%s' % self.message
+        return '%s' % self.message
 
 class NotReady(Exception):
     """

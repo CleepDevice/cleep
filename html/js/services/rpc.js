@@ -21,6 +21,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
     self.uriConfig = window.location.protocol + '//' + window.location.host + '/config';
     self.pollKey = null;
     self._uploading = false;
+    self.invalidApplicationRegexp = /Invalid application ".*" \(not loaded or unknown\)/g;
 
     /**
      * send command
@@ -65,11 +66,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType:'json'
         })
         .then(function(resp) {
-            if (resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject(resp.data.message);
-            } else {
+            if (!self._handleRespErrors(resp, d)) {
                 // display message if provided
                 if (resp.data.message) {
                     toast.success(resp.data.message);
@@ -100,11 +97,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType: 'json'
         })
         .then(function(resp) {
-            if (resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject('request failed');
-            } else {
+            if (!self._handleRespErrors(resp, d)) {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -127,11 +120,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType: 'json'
         })
         .then(function(resp) {
-            if (resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject('request failed');
-            } else {
+            if (!self._handleRespErrors(resp, d)) {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -154,11 +143,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType: 'json'
         })
         .then(function(resp) {
-            if (resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject('request failed');
-            } else {
+            if (!self._handleRespErrors(resp, d)) {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -181,12 +166,8 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType: 'json'
         })
         .then(function(resp) {
-            if (resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                deferred.reject('request failed');
-            } else {
-                deferred.resolve(resp.data);
+            if (!self._handleRespErrors(resp, d)) {
+                d.resolve(resp.data);
             }
         }, function(err) {
             console.error('Request failed: '+err);
@@ -208,19 +189,39 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             responseType: 'json'
         })
         .then(function(resp) {
-            if (resp && resp.data && resp.data.error) {
-                console.error('Request failed: '+resp.data.message);
-                toast.error(resp.data.message);
-                d.reject('request failed');
-            } else {
+            if (!self._handleRespErrors(resp, d)) {
                 d.resolve(resp.data);
             }
         }, function(err) {
-            console.error('Request failed: '+err);
+            console.error('Request failed: ' + err);
             d.reject('request failed');
         });
 
         return d.promise;
+    };
+
+    /**
+     * Handle response errors
+     * @param resp: request response (cleep RPC format)
+     * @param promise: specify a promise to reject it
+     * @return boolean: true if error was handled, false otherwise
+     */
+    self._handleRespErrors = function(resp, defer) {
+        if (resp && resp.data && resp.data.error) {
+            if (resp.data.message.match(self.invalidApplicationRegexp)) {
+                // specific case with invalid app loaded, redirect to apps list
+                $window.location.href = '#!/modules';
+            }
+
+            console.error('Request failed: ' + resp.data.message);
+            toast.error(resp.data.message || 'No error message');
+            if (defer) {
+                defer.reject('request failed');
+            }
+            return true;
+        }
+
+        return false;
     };
 
     /**
