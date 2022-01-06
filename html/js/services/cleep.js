@@ -119,7 +119,6 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @return promise
      */
     self.__loadJsFiles = function(jsFiles) {
-        // load js files using lazy loader
         return $ocLazyLoad.load({
             'cache': false,
             'reconfig': true,

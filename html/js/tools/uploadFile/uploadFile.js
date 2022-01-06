@@ -4,10 +4,11 @@
  * Directive code adapted from http://codepen.io/juniper/pen/LGEOVb
  *
  * Directive example:
- * <div upload-file selected-file="" label="<button label>" placeholder="<input placeholder>">
+ * <div upload-file selected-file="" label="<button label>" placeholder="<input placeholder>" icon="<mdi icon name>">
  * @param selected-file: data-binded value to watch for changes
- * @param label: text displayed on upload button
+ * @param label: text displayed on upload button (default "Select file")
  * @param placeholder: text displayed on input. If not specified input is hidden
+ * @param icon: mdi icon name (default "upload")
  *
  * How to use:
  * Inject directive in your template.
@@ -42,6 +43,9 @@ function(rpcService) {
         // params
         if (angular.isUndefined(scope.label) || scope.label===null) {
             scope.label = 'Select file';
+        }
+        if (angular.isUndefined(scope.icon) || scope.icon===null) {
+            scope.icon = 'upload';
         }
 
         // bind file input event to input and button
@@ -89,6 +93,7 @@ function(rpcService) {
             selectedFile: '=',
             label: '@',
             placeholder: '@',
+            icon: '@',
         },
         link: uploadFileLink
     };
