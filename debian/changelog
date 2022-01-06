@@ -12,6 +12,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed core: fix UI app loading issue after app installation
   * Fixed core: fix issue with is_module_loaded (invalid response format)
   * Fixed tests: fix issue checking command parameters
+  * Fixed UI: disable aria warnings
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
   * Changed: cleepfilesystem rsync function do not sync hidden files by default

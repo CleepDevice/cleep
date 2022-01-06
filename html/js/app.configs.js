@@ -12,7 +12,8 @@ var currentTimestamp = Date.now();
 /**
  * Routes configuration
  */
-Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+Cleep
+.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.hashPrefix('!');
     $routeProvider
         .when('/dashboard', {
@@ -34,6 +35,14 @@ Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $l
             redirectTo: '/dashboard'
         });
 }]);
+
+/**
+ * Disable aria warnings
+ */
+Cleep
+.config(function($mdAriaProvider) {
+    $mdAriaProvider.disableWarnings();
+});
 
 /**
  * Http interceptor to resolve cache problems
