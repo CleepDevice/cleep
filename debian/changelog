@@ -11,6 +11,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed core: fix typo in install app dialog
   * Fixed core: fix UI app loading issue after app installation
   * Fixed core: fix issue with is_module_loaded (invalid response format)
+  * Fixed core: fix issue in bus when command has no parameters
   * Fixed tests: fix issue checking command parameters
   * Fixed UI: disable aria warnings
   * Changed: alsa lib handle device description to help selecting the device

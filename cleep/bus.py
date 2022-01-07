@@ -482,12 +482,12 @@ class BusClient(threading.Thread):
                     bus_message['event'].set()
                 args[BusClient.PARAM_MANUAL_RESPONSE] = manual_response if bus_message else None
                 bus_message['auto_response'] = args[BusClient.PARAM_MANUAL_RESPONSE] is None
-            elif not isinstance(message, dict) or (param not in message and not params_with_default[param]):
+            elif (isinstance(message, dict) and param not in message) and param not in params_with_default.keys():
                 # missing parameter
                 return False, None
             else:
                 # update function arguments list
-                if param in message:
+                if isinstance(message, dict) and param in message:
                     args[param] = message[param]
 
         return True, args
