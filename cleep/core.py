@@ -1023,7 +1023,7 @@ class CleepModule(Cleep):
         """
         resp = self.send_command(command, to, params, timeout)
         if resp.error:
-            self.logger.error('Error occured executing command {command} to {to}: {resp.message}')
+            self.logger.error(f'Error occured executing command {command} to {to}: {resp.message}')
             if raise_exc:
                 raise Exception(resp.data)
             return None
