@@ -1168,6 +1168,12 @@ class CleepRenderer(CleepModule):
 
         * automatic renderer registration
         * render function to render received profile
+
+    A renderer application must declare members:
+        * RENDERER_TYPE (RENDERERS): see RENDERERS values in common
+        * RENDERER_PROFILES (list): list of profiles handled by application (see list of available renderers in core/profiles dir)
+    And declare mathods:
+        * on_render: implement this function to handle render event using profile parameters
     """
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -1232,7 +1238,7 @@ class CleepRenderer(CleepModule):
             self.logger.exception('Rendering profile "%s" failed (%s):' % (profile_name, profile_values))
             return False
 
-    def on_render(self, profile_name, profile_values):
+    def on_render(self, profile_name, profile_values): # pragma: no cover
         """
         Use specified profile values to render them
 
