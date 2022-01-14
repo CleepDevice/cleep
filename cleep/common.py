@@ -48,6 +48,20 @@ class CATEGORIES(object):
 
 
 
+class RENDERERS(object):
+    """
+    Cleep renderer application types
+    """
+    # audio renderer
+    AUDIO = 'audio'
+    # display renderer
+    DISPLAY = 'display'
+
+    ALL = ['audio', 'display']
+
+
+
+
 class ExecutionStep(object):
     """
     Cleep execution steps
