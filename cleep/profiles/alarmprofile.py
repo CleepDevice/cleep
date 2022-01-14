@@ -20,6 +20,7 @@ class AlarmProfile(RendererProfile):
         RendererProfile.__init__(self)
         self.hour = None
         self.minute = None
-        self.duration = None
+        self.timeout = None
+        self.volume = None
         self.status = self.STATUS_UNKNOWN
 
