@@ -4,7 +4,9 @@
 
 set -e
 
-MODULES_JSON=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
+CLEEP_VERSION=`python3 -m pip show cleep | grep Version | awk '{ print $2 }'`
+MODULES_JSON_LATEST=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
+MODULES_JSON_VERSION=https://raw.githubusercontent.com/tangb/cleep-apps/v$CLEEP_VERSION/modules.json
 CLEEPMODS=( audio cleepbus network parameters system update )
 
 # Check command result
@@ -26,8 +28,11 @@ checkResult() {
 case "$1" in
     configure)
         # download modules.json from Cleep repository
-        wget $MODULES_JSON -q --show-progress -O /tmp/modules.json
-        checkResult $? 0 "Unable to download $MODULES_JSON"
+        echo "Download modules.json from:"
+        echo " 1 - $MODULES_JSON_VERSION"
+        echo " 2 - $MODULES_JSON_LATEST"
+        wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
+        checkResult $? 0 "Unable to download modules.json file"
         # copy modules.json to cleep repository to Cleep be able to start without network
         cp -a /tmp/modules.json /etc/cleep/modules.json
         # install mandatory Cleep apps
@@ -59,7 +64,6 @@ case "$1" in
         rm -f /tmp/modules.json
 
         # fix version in index.html to clear cache
-        CLEEP_VERSION=`python3 -m pip show cleep | grep Version | awk '{ print $2 }'`
         grep -rl "?cleepversion" /opt/cleep/html | xargs sed -i 's/?cleepversion/?v'"$CLEEP_VERSION"'/g'
 
         # enable Cleep at startup

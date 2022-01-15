@@ -14,6 +14,8 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed core: fix issue in bus when command has no parameters
   * Fixed tests: fix issue checking command parameters
   * Fixed UI: disable aria warnings
+  * Fixed install: download versionned modules.json first to avoid installing
+  incompatible apps
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
   * Changed: cleepfilesystem rsync function do not sync hidden files by default
@@ -22,7 +24,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Changed: handle apps that encountered problems during configuration step
   * Changed: improve frontend upload widget
 
- -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 16 sep 2021 08:00:00 +0200
+ -- tanguy bonneau <tanguy.bonneau@gmail.com> Thu, 15 jan 2022 19:00:00 +0200
 
 cleep (0.0.28) unstable; urgency=low
 
