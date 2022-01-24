@@ -45,7 +45,7 @@ case "$1" in
             wget $download -q --show-progress -O /tmp/cleepmod.zip
             echo "$checksum /tmp/cleepmod.zip" > /tmp/cleepmod.sha
             checkResult $? 0 "Unable to create sha file"
-            sha256sum -c /tmp/cleepmod.sha
+            sha256sum --quiet -c /tmp/cleepmod.sha
             checkResult $? 0 "Checksum does not match for current app"
             # install module
             unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
@@ -55,6 +55,12 @@ case "$1" in
             if [ -d "/tmp/cleepmod/frontend/" ]; then
                 cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
                 checkResult $? 0 "Frontend copy failed"
+            fi
+            if [ -f "/tmp/cleepmod/scripts/postinst.sh" ]; then
+                echo " - running postinst.sh script"
+                chmod +x /tmp/cleepmod/scripts/postinst.sh
+                /tmp/cleepmod/scripts/postinst.sh
+                checkResult $? 0 "Postinst.sh script failed"
             fi
             rm -rf /tmp/cleepmod
             rm -f /tmp/cleepmod.zip

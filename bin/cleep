@@ -23,10 +23,9 @@ from cleep.common import ExecutionStep
 from netifaces import version as netifaces_version
 from bottle import __version__ as bottle_version
 from gevent import __version__ as gevent_version
-from urllib3 import __version__ as urllib3_version
-from psutil import __version__ as psutil_version
 from passlib import __version__ as passlib_version
-from pyre_gevent import __version__ as pyregevent_version
+from greenlet import __version__ as greenlet_version
+from requests import __version__ as requests_version
 
 LOG_FILE = '/var/log/cleep.log'
 LOG_SETTINGS = { 
@@ -81,14 +80,14 @@ def load_config(cleep_filesystem):
     @return loaded config
     @raise ConfigException when error occured
     """
-    #load config
+    # load config
     conf = CleepConf(cleep_filesystem)
     logger.info('Loading application configuration file "%s"' % conf.CONF)
     conf.check()
     config = conf.as_dict()
     logger.debug('Application config: %s' % config)
 
-    #clear updated modules list
+    # clear updated modules list
     conf.clear_updated_modules()
 
     return config
@@ -104,16 +103,15 @@ def load_crash_report(debug, disabled):
         CrashReport: crash report instance
     """
     libs_version = {
-        'netifaces': netifaces_version,
         'bottle': bottle_version,
         'gevent': gevent_version,
-        'urllib3': urllib3_version,
-        'psutil': psutil_version,
+        'greenlet': greenlet_version,
+        'netifaces': netifaces_version,
         'passlib': passlib_version,
-        'pyregevent': pyregevent_version
+        'requests': requests_version,
     }
 
-    #get sentry token
+    # get sentry token
     sentry_dsn = None
     if 'SENTRY_DSN' in os.environ:
         sentry_dsn = os.environ['SENTRY_DSN']
@@ -182,7 +180,7 @@ if __name__ == '__main__':
     crash_report = None
     
     try:
-        #handle command line parameters
+        # handle command line parameters
         trace_enabled = False
         readonly_enabled = True
         debug_modules = []
@@ -205,12 +203,12 @@ if __name__ == '__main__':
             elif opt in ('-N', '--noro'):
                 readonly_enabled = False
         
-        #configure main logger
+        # configure main logger
         if not log_stdout:
-            #log to file
+            # log to file
             LOG_SETTINGS['root']['handlers'] = ['file']
         else:
-            #log to stdout
+            # log to stdout
             LOG_SETTINGS['root']['handlers'] = ['console']
         if trace_enabled:
             LOG_SETTINGS['root']['level'] = logging.TRACE
@@ -218,7 +216,7 @@ if __name__ == '__main__':
         logger = logging.getLogger('Cleep')
         logger.info('========== Cleep v%s started ==========' % VERSION)
 
-        #create cleep filesystem singleton (will be saved in bootstrap context)
+        # create cleep filesystem singleton (will be saved in bootstrap context)
         cleep_filesystem = CleepFilesystem()
         if cleep_filesystem.is_readonly_fs:
             logger.info('Cleep is running on read-only feature enabled filesystem')
@@ -226,10 +224,10 @@ if __name__ == '__main__':
             logger.info('Filesystem readonly protection is disabled completely by application!')
             cleep_filesystem.enable_write()
 
-        #load and check config file
+        # load and check config file
         config = load_config(cleep_filesystem)
 
-        #set debug level after config reading
+        # set debug level after config reading
         if config['debug']['trace_enabled']:
             trace_enabled = True
         if config['debug']['debug_core']:
@@ -237,16 +235,16 @@ if __name__ == '__main__':
         if config['debug']['debug_modules'] and isinstance(config['debug']['debug_modules'], list):
             debug_modules = list(set(config['debug']['debug_modules'])|set(debug_modules))
         if debug_core:
-            #enable debug on cleep bin if debug system is enabled
+            # enable debug on cleep bin if debug system is enabled
             logger.setLevel(logging.DEBUG)
 
-        #create crash report singleton (will be part of bootstrap objects)
+        # create crash report singleton (will be part of bootstrap objects)
         disable_crash_report = False
         if log_stdout:
-            #disable crash report if stdout enabled. It means user is in dev mode
+            # disable crash report if stdout enabled. It means user is in dev mode
             disable_crash_report = True
         elif 'developer' in config['general']['modules']:
-            #disable crash report if developer module installed
+            # disable crash report if developer module installed
             disable_crash_report = True
         crash_report = load_crash_report(trace_enabled or debug_core, disable_crash_report)
         if not crash_report.is_enabled():
@@ -254,14 +252,14 @@ if __name__ == '__main__':
         cleep_filesystem.set_crash_report(crash_report)
         tools.install_unhandled_exception_handler(crash_report)
 
-        #create message bus (will be part of bootstrap objects)
+        # create message bus (will be part of bootstrap objects)
         logger.debug('Initializing message bus')
         debug = False
         if trace_enabled or debug_modules.count('bus')==1:
             debug = True
         bus = bus.MessageBus(crash_report, debug)
 
-        #create system instances (factories, critical resources handler...)
+        # create system instances (factories, critical resources handler...)
         debug = False
         if trace_enabled or debug_core:
             debug = True
@@ -270,14 +268,14 @@ if __name__ == '__main__':
         critical_resources = CriticalResources(debug)
         drivers = Drivers(debug)
 
-        #build bootstrap objects collection
+        # build bootstrap objects collection
         bootstrap = get_bootstrap_objects(bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers)
 
-        #configure brokers
+        # configure brokers
         events_broker.configure(bootstrap)
         formatters_broker.configure(bootstrap)
 
-        #create inventory
+        # create inventory
         logger.debug('Initializing inventory')
         debug = False
         if trace_enabled or debug_modules.count('inventory')==1:
@@ -293,12 +291,12 @@ if __name__ == '__main__':
             }
         )
         inventory.start()
-        #wait for inventory starts all modules
+        # wait for inventory starts all modules
         inventory.all_started()
         logger.info('Inventory is ready and all applications are loaded')
         logger.info('External bus is handled by "%s" application' % bootstrap['external_bus'])
 
-        #unlock bus and launch webserver (blocking)
+        # unlock bus and launch webserver (blocking)
         logger.info('Cleep running...')
         bus.app_configured()
         debug = False
@@ -308,11 +306,11 @@ if __name__ == '__main__':
         rpcserver.start(config['rpc']['rpc_host'], config['rpc']['rpc_port'], config['rpc']['rpc_key'], config['rpc']['rpc_cert'])
 
     except getopt.GetoptError:
-        #display usage
+        # display usage
         usage()
 
     except SystemExit:
-        #drop
+        # drop
         pass
  
     except:
@@ -321,7 +319,7 @@ if __name__ == '__main__':
         else:
             logging.exception('Exception on main:')
 
-    #clean all stuff
+    # clean all stuff
     if logger:
         logger.debug('Stopping modules')
     if inventory:
@@ -329,6 +327,7 @@ if __name__ == '__main__':
     if bus:
         bus.stop()
 
+    # DEBUG PURPOSE
     # for thread in threading.enumerate():
     #    logger.debug('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
 

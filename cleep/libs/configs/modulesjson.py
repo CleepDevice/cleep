@@ -5,7 +5,7 @@ import logging
 import os
 import json
 import time
-import urllib.request
+import requests
 from cleep import __version__ as CLEEP_VERSION
 from cleep.libs.internals.download import Download
 
@@ -96,7 +96,8 @@ class ModulesJson():
         # and should be upgraded. Returned modules verions will be fixed forever for this version.
         try:
             url = self.REMOTE_URL_VERSION % {'version': CLEEP_VERSION}
-            if urllib.request.urlopen(url).getcode() == 200:
+            resp = requests.get(url)
+            if resp.status_code == 200:
                 return url
         except:
             # do not fail

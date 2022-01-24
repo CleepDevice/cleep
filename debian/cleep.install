@@ -6,5 +6,3 @@ scripts/cleep.service lib/systemd/system/
 scripts/cleep etc/init.d/
 scripts/cleephelper.sh etc/cleep/
 tmp/cleep.conf etc/default/
-medias/sounds/* opt/cleep/sounds/
-requirements.txt etc/cleep
