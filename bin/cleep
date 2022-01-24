@@ -70,6 +70,7 @@ def usage():
     print(' -D|--debugcore    : enable debug for Cleep core')
     print(' -t|--trace        : enable debug for everything (all modules, all libraries...)')
     print(' -s|--stdout       : dump log in console instead of log file')
+    print(' -f|--fatal        : launch app in fatal mode which stops Cleep if any app failed to load')
     print(' -N|--noro         : disable completely readonly (so filesystem will always be writable)')
     print(' -h|--help         : this help')
 
@@ -174,9 +175,11 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
 
 
 if __name__ == '__main__':
+    exit_code = 0
     tools.install_trace_logging_level()
     logger = None
     inventory = None
+    internal_bus = None
     crash_report = None
     
     try:
@@ -186,8 +189,9 @@ if __name__ == '__main__':
         debug_modules = []
         debug_core = False
         log_stdout = False
+        fatal_mode = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtN', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro'])
+        opts, args = getopt.getopt(argv, 'hsd:DtNf', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'fatal'])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -202,6 +206,8 @@ if __name__ == '__main__':
                 trace_enabled = True
             elif opt in ('-N', '--noro'):
                 readonly_enabled = False
+            elif opt in ('-f', '--fatal'):
+                fatal_mode = True
         
         # configure main logger
         if not log_stdout:
@@ -252,12 +258,12 @@ if __name__ == '__main__':
         cleep_filesystem.set_crash_report(crash_report)
         tools.install_unhandled_exception_handler(crash_report)
 
-        # create message bus (will be part of bootstrap objects)
-        logger.debug('Initializing message bus')
+        # create internal message bus (will be part of bootstrap objects)
+        logger.debug('Initializing internal message bus')
         debug = False
         if trace_enabled or debug_modules.count('bus')==1:
             debug = True
-        bus = bus.MessageBus(crash_report, debug)
+        internal_bus = bus.MessageBus(crash_report, debug)
 
         # create system instances (factories, critical resources handler...)
         debug = False
@@ -269,7 +275,15 @@ if __name__ == '__main__':
         drivers = Drivers(debug)
 
         # build bootstrap objects collection
-        bootstrap = get_bootstrap_objects(bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers)
+        bootstrap = get_bootstrap_objects(
+            internal_bus,
+            events_broker,
+            formatters_broker,
+            cleep_filesystem,
+            crash_report,
+            critical_resources,
+            drivers
+        )
 
         # configure brokers
         events_broker.configure(bootstrap)
@@ -287,45 +301,46 @@ if __name__ == '__main__':
             config['general']['modules'],
             {
                 'trace_enabled': trace_enabled,
-                'debug_modules': debug_modules
+                'debug_modules': debug_modules,
             }
         )
         inventory.start()
         # wait for inventory starts all modules
-        inventory.all_started()
+        startup_succeed = inventory.wait_for_apps_started()
+        if fatal_mode and not startup_succeed:
+            raise Exception('Cleep fails to start without errors. Stop here')
         logger.info('Inventory is ready and all applications are loaded')
         logger.info('External bus is handled by "%s" application' % bootstrap['external_bus'])
 
         # unlock bus and launch webserver (blocking)
         logger.info('Cleep running...')
-        bus.app_configured()
+        internal_bus.app_configured()
         debug = False
         if trace_enabled or debug_modules.count('rpc')==1:
             debug = True
         rpcserver.configure(bootstrap, inventory, debug)
         rpcserver.start(config['rpc']['rpc_host'], config['rpc']['rpc_port'], config['rpc']['rpc_key'], config['rpc']['rpc_cert'])
 
-    except getopt.GetoptError:
-        # display usage
+    except getopt.GetoptError as error:
+        exit_code = 128
+        print("Command line error: %s\n" % error)
         usage()
 
     except SystemExit:
-        # drop
         pass
  
     except:
+        exit_code = 1
         if logger:
-            logger.exception('Exception on main:')
+            logger.exception('Exception during startup:')
         else:
-            logging.exception('Exception on main:')
+            logging.exception('Exception during startup:')
 
     # clean all stuff
     if logger:
         logger.debug('Stopping modules')
-    if inventory:
-        inventory.unload_modules()
-    if bus:
-        bus.stop()
+    if internal_bus:
+        internal_bus.stop()
 
     # DEBUG PURPOSE
     # for thread in threading.enumerate():
@@ -333,4 +348,6 @@ if __name__ == '__main__':
 
     if logger:
         logger.info('Cleep stopped')
+
+    sys.exit(exit_code)
 

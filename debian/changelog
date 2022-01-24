@@ -6,6 +6,8 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added core: set MODULE_STORAGE_PATH and MODULE_TMP_PATH vars in CleepModule
   * Added core: add send_command_advanced helper to handle quickly commands
   * Added core: add alarm profile
+  * Added bin: add new fatal option to stop on any startup error
+  * Added bin: return different exit code
   * Fixed lib: fix issue checking modules compatibility string
   * Fixed core: fix installable app version that was always 0.0.0
   * Fixed core: fix typo in install app dialog
@@ -15,6 +17,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed tests: fix issue checking command parameters
   * Fixed UI: disable aria warnings
   * Fixed install: download versionned modules.json first to avoid installing incompatible apps
+  * Fixed core: fix dependencies. Install mandatory apps dependencies with core
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
   * Changed: cleepfilesystem rsync function do not sync hidden files by default
