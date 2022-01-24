@@ -244,7 +244,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('name' in self.i.modules['module3'])
         self.assertFalse('author' in self.i.modules['module3'])
         self.assertFalse('country' in self.i.modules['module3'])
-        self.assertFalse('version' in self.i.modules['module3'])
+        self.assertTrue('version' in self.i.modules['module3'])
         self.assertTrue('deps' in self.i.modules['module3'])
         self.assertTrue('local' in self.i.modules['module3'])
 
@@ -596,19 +596,19 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module3' in self.i.modules)
         self.assertTrue('module4' in self.i.modules)
 
-    def test_all_started(self):
+    def test_wait_for_apps_started(self):
         core_join_event = Event()
         core_join_event.set()
         self._init_context(core_join_event=core_join_event)
 
-        self.assertTrue(self.i.all_started())
+        self.assertTrue(self.i.wait_for_apps_started())
 
-    def test_all_started_failed(self):
+    def test_wait_for_apps_started_failed(self):
         core_join_event = Event()
         core_join_event.clear()
         self._init_context(core_join_event=core_join_event)
 
-        self.assertFalse(self.i.all_started())
+        self.assertFalse(self.i.wait_for_apps_started())
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
@@ -755,7 +755,7 @@ class %(module_name)s(%(inherit)s):
 
         with self.assertRaises(InvalidParameter) as cm:
             self.i.get_module_devices('dummy')
-        self.assertEqual(cm.exception.message, 'Module "dummy" doesn\'t exist')
+        self.assertEqual(cm.exception.message, 'Application "dummy" doesn\'t exist')
 
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
@@ -1023,7 +1023,7 @@ class %(module_name)s(%(inherit)s):
         commands = self.i.get_module_commands('module1')
         logging.debug('Commands: %s' % commands)
 
-        self.assertEqual(len(commands), 1)
+        self.assertEqual(len(commands), 2)
         self.assertTrue('dummy' in commands)
 
     @patch('inventory.ModulesJson')
@@ -1157,6 +1157,19 @@ class %(module_name)s(%(inherit)s):
 
         self.i.get_drivers()
         self.drivers.get_all_drivers.assert_called_with()
+
+    def test_get_apps_health(self):
+        self._init_context()
+        self.i._get_modules = Mock(return_value={'dummy1': {}, 'dummy2': {}, 'dummy3': {}})
+        self.i._Inventory__is_module_started = Mock(side_effect=[True, False, True])
+
+        result = self.i.get_apps_health()
+
+        self.assertDictEqual(result, {
+            'dummy1': True,
+            'dummy2': False,
+            'dummy3': True,
+        })
 
 
 if __name__ == '__main__':

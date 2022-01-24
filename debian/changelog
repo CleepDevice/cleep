@@ -6,6 +6,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added core: set MODULE_STORAGE_PATH and MODULE_TMP_PATH vars in CleepModule
   * Added core: add send_command_advanced helper to handle quickly commands
   * Added core: add alarm profile
+  * Added core: add health route to rpcserver
   * Added bin: add new fatal option to stop on any startup error
   * Added bin: return different exit code
   * Fixed lib: fix issue checking modules compatibility string

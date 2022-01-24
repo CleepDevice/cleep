@@ -29,7 +29,7 @@ from gevent.pywsgi import LoggingLogAdapter
 from gevent import monkey
 monkey.patch_all()
 from cleep.exception import NoMessageAvailable
-from cleep.common import MessageResponse, MessageRequest
+from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
 import bottle
 from passlib.hash import sha256_crypt
 import functools
@@ -803,4 +803,41 @@ def logs(): # pragma: no cover
     lines = '' if not lines else lines
 
     return '<html>\n<head>\n' + script + '\n</head>\n<body onload="scrollBottom()">\n' + content % ''.join(lines) + '\n</body>\n</html>'
+
+@app.route('/health', method='GET')
+def health(): # pragma: no cover
+    """
+    Return health status
+
+    Returns:
+        dict: cleep health::
+
+        {
+            details (dict): health status per app (True if started)
+            core_ok (bool): True if all core apps are healthy
+            apps_ok (bool): True if all user apps are healthy
+        }
+
+    """
+    status_code = 200
+    core_ok = True
+    apps_ok = True
+    health = inventory.get_apps_health()
+    for module_name, started in health.items():
+        if not started:
+            status_code = 503
+            if module_name in CORE_MODULES:
+                core_ok = False
+            else:
+                apps_ok = False
+
+    data = {
+        'started': health,
+        'core_ok': core_ok,
+        'apps_ok': apps_ok,
+    }
+    bottle.response.content_type = 'application/json'
+    bottle.response.status = status_code
+    return json.dumps(data)
+    
 

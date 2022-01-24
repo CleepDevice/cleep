@@ -569,12 +569,28 @@ class Inventory(Cleep):
         module['events'] = events[module_name] if module_name in events else []
     
         # started flag
-        module['started'] = not module_name in self.__modules_in_error.keys()
+        module['started'] = self.__is_module_started(module_name)
 
         # add library is loaded by
         module['loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []
 
         return module
+
+    def __is_module_started(self, module_name):
+        """
+        Check if module is started and running
+
+        Returns:
+            bool: True if module is ok
+        """
+        # check if error occured during loading
+        started = not module_name in self.__modules_in_error.keys()
+        if not started:
+            return False
+
+        # also check if thread is running
+        return self.__modules_instances[module_name].is_alive() if started and module_name in self.__modules_instances else False
+
 
     def get_installable_modules(self):
         """
@@ -843,3 +859,16 @@ class Inventory(Cleep):
         for module_name, module_instance in self.__modules_instances.items():
             self.logger.info(' - %s: %d' % (module_name, self.__get_object_size(module_instance)))
 
+    def get_apps_health(self):
+        """
+        Return list of not started applications
+
+        Returns:
+            list: list of not started application names
+        """
+        health = {}
+        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        for module_name in installed_modules:
+            health[module_name] = self.__is_module_started(module_name)
+
+        return health
