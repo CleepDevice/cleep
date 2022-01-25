@@ -18,7 +18,8 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Fixed tests: fix issue checking command parameters
   * Fixed UI: disable aria warnings
   * Fixed install: download versionned modules.json first to avoid installing incompatible apps
-  * Fixed core: fix dependencies. Install mandatory apps dependencies with core
+  * Fixed package: fix dependencies. Install mandatory apps dependencies with core
+  * Fixed package: fix missing lsof system command
   * Changed: alsa lib handle device description to help selecting the device
   * Changed: improve audiodriver lib
   * Changed: cleepfilesystem rsync function do not sync hidden files by default
