@@ -7,7 +7,7 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added core: add send_command_advanced helper to handle quickly commands
   * Added core: add alarm profile
   * Added core: add health route to rpcserver
-  * Added bin: add new fatal option to stop on any startup error
+  * Added bin: add new dryrun option to stop on any startup error or after timeout
   * Added bin: return different exit code
   * Fixed lib: fix issue checking modules compatibility string
   * Fixed core: fix installable app version that was always 0.0.0

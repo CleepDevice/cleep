@@ -1,12 +1,13 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 
+
 import os
 import sys
 import getopt
 import logging
 from logging.config import dictConfig
-from threading import Event
+from threading import Event, Timer, enumerate
 from cleep import rpcserver, bus
 from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
@@ -56,6 +57,7 @@ LOG_SETTINGS = {
         }   
     },  
 }
+DRY_RUN_TIMEOUT = 6.0
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -65,12 +67,12 @@ class ConfigException(Exception):
 
 
 def usage():
-    print('Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-h|--help]]')
+    print('Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-r|--dryrun] [-h|--help]]')
     print(' -d|--debug        : enable debug for specified module names (coma separated: "network,system")')
     print(' -D|--debugcore    : enable debug for Cleep core')
     print(' -t|--trace        : enable debug for everything (all modules, all libraries...)')
     print(' -s|--stdout       : dump log in console instead of log file')
-    print(' -f|--fatal        : launch app in fatal mode which stops Cleep if any app failed to load')
+    print(' -r|--dryrun       : dry run makes Cleep starts and stops returning exit code that reflects app loading status')
     print(' -N|--noro         : disable completely readonly (so filesystem will always be writable)')
     print(' -h|--help         : this help')
 
@@ -172,6 +174,13 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         'external_bus': None,
     }
 
+def dry_run_stop_server(server):
+    """
+    Stop RPC server in dry run
+    """
+    global logger
+    (logger or logging).info('Stop forced by dry-run')
+    server.stop()
 
 
 if __name__ == '__main__':
@@ -181,17 +190,17 @@ if __name__ == '__main__':
     inventory = None
     internal_bus = None
     crash_report = None
+    debug_core = False
     
     try:
         # handle command line parameters
         trace_enabled = False
         readonly_enabled = True
         debug_modules = []
-        debug_core = False
         log_stdout = False
-        fatal_mode = False
+        dry_run = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtNf', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'fatal'])
+        opts, args = getopt.getopt(argv, 'hsd:DtNr', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun'])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -206,8 +215,8 @@ if __name__ == '__main__':
                 trace_enabled = True
             elif opt in ('-N', '--noro'):
                 readonly_enabled = False
-            elif opt in ('-f', '--fatal'):
-                fatal_mode = True
+            elif opt in ('-r', '--dryrun'):
+                dry_run = True
         
         # configure main logger
         if not log_stdout:
@@ -305,10 +314,11 @@ if __name__ == '__main__':
             }
         )
         inventory.start()
+
         # wait for inventory starts all modules
         startup_succeed = inventory.wait_for_apps_started()
-        if fatal_mode and not startup_succeed:
-            raise Exception('Cleep fails to start without errors. Stop here')
+        if dry_run and not startup_succeed:
+            raise Exception('Cleep starts with errors. Stop here')
         logger.info('Inventory is ready and all applications are loaded')
         logger.info('External bus is handled by "%s" application' % bootstrap['external_bus'])
 
@@ -318,8 +328,17 @@ if __name__ == '__main__':
         debug = False
         if trace_enabled or debug_modules.count('rpc')==1:
             debug = True
-        rpcserver.configure(bootstrap, inventory, debug)
-        rpcserver.start(config['rpc']['rpc_host'], config['rpc']['rpc_port'], config['rpc']['rpc_key'], config['rpc']['rpc_cert'])
+        rpcserver.configure({
+            'host': config['rpc']['rpc_host'],
+            'port': config['rpc']['rpc_port'],
+            'ssl_key': config['rpc']['rpc_key'],
+            'ssl_cert': config['rpc']['rpc_cert'],
+        }, bootstrap, inventory, debug)
+
+        if dry_run:
+            timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server])
+            timer.start()
+        rpcserver.start()
 
     except getopt.GetoptError as error:
         exit_code = 128
@@ -331,23 +350,23 @@ if __name__ == '__main__':
  
     except:
         exit_code = 1
-        if logger:
-            logger.exception('Exception during startup:')
-        else:
-            logging.exception('Exception during startup:')
+        (logger or logging).exception('Exception during startup:')
 
     # clean all stuff
-    if logger:
-        logger.debug('Stopping modules')
+    (logger or logging).debug('Stopping Cleep core')
+    if inventory:
+        inventory.unload_modules()
+        inventory.stop()
     if internal_bus:
         internal_bus.stop()
 
-    # DEBUG PURPOSE
-    # for thread in threading.enumerate():
-    #    logger.debug('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
+    if debug_core:
+        (logger or logging).info('='*10 + 'THREADS' + '='*10)
+        for thread in enumerate():
+            logger.info('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
+        (logger or logging).info('='*20)
 
-    if logger:
-        logger.info('Cleep stopped')
+    (logger or logging).info('Cleep stopped')
 
     sys.exit(exit_code)
 

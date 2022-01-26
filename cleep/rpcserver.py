@@ -85,22 +85,35 @@ def load_auth():
             'auth_config': auth_config
         })
 
-def configure(bootstrap, inventory_, debug_enabled_):
+def configure(server_config, bootstrap, inventory_, debug_enabled_):
     """
     Configure rpcserver
 
     Args:
+        server_config (dict): server configuration::
+
+            {
+                host (str): server host
+                port (int): server port
+                ssl_key (str): server SSL key
+                ssl_cert (str): server SSL certificate
+            }
+
         bootstrap (dict): bootstrap objects
         inventory_ (Inventory): Inventory instance
         debug_enabled_ (bool): debug status
     """
-    global cleep_filesystem, inventory, bus, logger, crash_report, debug_enabled
+    global cleep_filesystem, inventory, bus, logger, crash_report, debug_enabled, server, app
 
     # configure logger
     logger = logging.getLogger('RpcServer')
     debug_enabled = debug_enabled_
     if debug_enabled_:
         logger.setLevel(logging.DEBUG)
+    logger_requests = logging.getLogger('RpcRequests')
+    logger_requests.setLevel(logging.WARNING)
+    if debug_enabled_:
+        logger_requests.setLevel(logging.DEBUG)
 
     # set members
     cleep_filesystem = bootstrap['cleep_filesystem']
@@ -110,6 +123,21 @@ def configure(bootstrap, inventory_, debug_enabled_):
 
     # load auth
     load_auth()
+
+    # create server
+    ssl_key = server_config.get('ssl_key')
+    ssl_cert = server_config.get('ssl_cert')
+    if ssl_key and ssl_cert:
+        if not os.path.exists(ssl_key) or not os.path.exists(ssl_cert):
+            logger.error('Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.', ssl_key, ssl_cert)
+            ssl_key = None
+            ssl_cert = None
+    server = pywsgi.WSGIServer(
+        (server_config.get('host', '0.0.0.0'), server_config.get('port', 80)),
+        app,
+        log=logger_requests,
+        error_log=logger,
+    )
 
 def set_cache_control(cache_enabled_):
     """
@@ -146,45 +174,22 @@ def is_debug_enabled():
     global debug_enabled
     return debug_enabled
 
-def start(host='0.0.0.0', port=80, key=None, cert=None):
+def start():
     """
     Start RPC server. This function is blocking.
-    Start by default unsecure web server
-    You can configure SSL server specifying key and cert parameters
-
-    Args:
-        host (string): host (default computer is accessible on localt network)
-        port (int): port to listen to (by default is standart HTTP port 80)
-        key (string): SSL key file
-        cert (string): SSL certificate file
     """
-    global server, app, crash_report
+    global server, crash_report, app
 
     try:
-        run_https = False
-        if bool(key) and bool(cert):
-            # check files
-            if os.path.exists(key) and os.path.exists(cert):
-                run_https = True
-            else:
-                logger.error('Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.' % (key, cert))
-
-        if run_https:
-            # start HTTPS server
-            logger.debug('Starting HTTPS server on %s:%d' % (host, port))
-            server_logger = LoggingLogAdapter(logger, logging.DEBUG)
-            server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
-            server.serve_forever()
-
-        else:
-            # start HTTP server
-            logger.debug('Starting HTTP server on %s:%d' % (host, port))
-            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
-
+        logger.debug('Starting RPC server')
+        server.serve_forever()
 
     except KeyboardInterrupt:
         # user stops Cleep, close server properly
         pass
+
+    except OSError:
+        logger.fatal('Cleep instance is already running')
 
     except:
         logger.exception('Fatal error starting rpcserver:')
@@ -193,7 +198,9 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         })
 
     finally:
-        server and not server.closed and server.close()
+        if server:
+            server.close()
+            server.stop()
 
 def check_auth(username, password):
     """
