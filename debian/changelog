@@ -1,5 +1,4 @@
 cleep (0.0.29) UNRELEASED; urgency=low
-
   * Added UI: close dialog after device has restarted
   * Added lib: log script errors during module installation
   * Added deps: remove parameters app dependencies from core
@@ -9,12 +8,15 @@ cleep (0.0.29) UNRELEASED; urgency=low
   * Added core: add health route to rpcserver
   * Added bin: add new dryrun option to stop on any startup error or after timeout
   * Added bin: return different exit code
+  * Added lib: add way to change execution path in console lib
   * Fixed lib: fix issue checking modules compatibility string
   * Fixed core: fix installable app version that was always 0.0.0
   * Fixed core: fix typo in install app dialog
   * Fixed core: fix UI app loading issue after app installation
   * Fixed core: fix issue with is_module_loaded (invalid response format)
   * Fixed core: fix issue in bus when command has no parameters
+  * Fixed lib: set scripts exec path in installmodule lib
+  * Fixed lib: fix error log when script exec failed
   * Fixed tests: fix issue checking command parameters
   * Fixed UI: disable aria warnings
   * Fixed install: download versionned modules.json first to avoid installing incompatible apps

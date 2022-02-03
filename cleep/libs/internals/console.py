@@ -31,7 +31,7 @@ class EndlessConsole(Thread):
         Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
-    def __init__(self, command, callback, callback_end=None):
+    def __init__(self, command, callback, callback_end=None, exec_dir=None):
         """
         Constructor
 
@@ -41,6 +41,7 @@ class EndlessConsole(Thread):
                                  arguments: stdout (string) and stderr (string))
             callback_end (function): callback when process is terminated (the function will be called
                                      with 2 arguments: return code (string) and killed (bool))
+            exec_dir (string): change execution directory if specified (default None)
         """
         Thread.__init__(self, daemon=True, name='endlessconsole-%s' % getattr(callback, '__name__', 'unamed'))
 
@@ -49,6 +50,7 @@ class EndlessConsole(Thread):
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.exec_dir = exec_dir
         # self.logger.setLevel(logging.DEBUG)
         self.stopped = Event()
         self.killed = False
@@ -153,7 +155,8 @@ class EndlessConsole(Thread):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=ON_POSIX,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid,
+            cwd=self.exec_dir,
         )
         pid = proc.pid
         self.logger.trace('PID=%d' % pid)
@@ -283,7 +286,7 @@ class Console():
         """
         return self.last_return_code
 
-    def command(self, command, timeout=2.0):
+    def command(self, command, timeout=2.0, exec_dir=None):
         """
         Execute specified command line with auto kill after timeout
 
@@ -292,7 +295,8 @@ class Console():
 
         Args:
             command (string): command to execute
-            timeout (float): wait timeout before killing process and return command result
+            timeout (float): wait timeout before killing process and return command result (default 2s)
+            exec_dir (string): change execution directory if specified (default None)
 
         Returns:
             dict: result of command::
@@ -319,7 +323,8 @@ class Console():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=ON_POSIX,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid,
+            cwd=exec_dir,
         )
         pid = proc.pid
 

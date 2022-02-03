@@ -147,26 +147,28 @@ class CommonProcess(threading.Thread):
         # script execution terminated
         self._script_running = False
 
-    def _execute_script(self, path):
+    def _execute_script(self, script_path):
         """
         Execute specified script
 
         Args:
-            path (string): script path
+            script_path (string): script path
 
         Return
         """
         # init
-        os.chmod(path, stat.S_IEXEC)
+        os.chmod(script_path, stat.S_IEXEC)
+        exec_dir = os.path.dirname(script_path)
 
         # exec
         self._script_running = True
-        self.logger.debug("Executing %s script" % path)
+        self.logger.debug("Executing %s script" % script_path)
         console = EndlessConsole(
-            path, self._script_callback, self._script_terminated_callback
+            script_path,
+            self._script_callback,
+            self._script_terminated_callback,
+            exec_dir,
         )
-
-        # launch script execution
         console.start()
 
         # monitor end of script execution
@@ -181,10 +183,10 @@ class CommonProcess(threading.Thread):
             return True
 
         self.logger.error(
-            "Script '%s' output: stdout=%s stderr=%s",
-            path,
-            self._pre_script_status["stdout"],
-            self._pre_script_status["stderr"],
+            "Script '%s' execution failed: stdout=%s stderr=%s",
+            script_path,
+            self._pre_script_status["stdout"] if self._pre_script_execution else self._post_script_status["stdout"],
+            self._pre_script_status["stderr"] if self._pre_script_execution else self._post_script_status["stderr"],
         )
         return False
 
