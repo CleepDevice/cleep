@@ -142,7 +142,7 @@ class MessageBusTests(unittest.TestCase):
 
         with self.assertRaises(InvalidModule) as cm:
             self.b.remove_subscription('otherdummy')
-        self.assertEqual(str(cm.exception), 'Invalid module "otherdummy" (not loaded or unknown)')
+        self.assertEqual(str(cm.exception), 'Invalid application "otherdummy" (not loaded or unknown)')
 
         self.b.SUBSCRIPTION_LIFETIME = 0
         self.b.add_subscription('dummy')
@@ -330,7 +330,7 @@ class MessageBusTests(unittest.TestCase):
 
         with self.assertRaises(InvalidModule) as cm:
             self.b.push(self._get_message_request(to='otherdummy'))
-        self.assertEqual(str(cm.exception), 'Invalid module "otherdummy" (not loaded or unknown)')
+        self.assertEqual(str(cm.exception), 'Invalid application "otherdummy" (not loaded or unknown)')
 
     def test_stop_broadcasted_messages(self):
         self._init_context()
@@ -640,7 +640,7 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
         self.assertTrue(resp.error)
-        self.assertEqual(resp.message, 'Some command parameters are missing')
+        self.assertEqual(resp.message, 'command_with_params() missing 1 required positional argument: \'p2\'')
 
     def test_send_command_to_unknown_module(self):
         self._init_context()
@@ -649,7 +649,7 @@ class BusClientTests(unittest.TestCase):
         logging.debug('Response: %s' % resp)
         
         self.assertTrue(resp.error)
-        self.assertEqual(resp.message, 'Invalid module "dummy" (not loaded or unknown)')
+        self.assertEqual(resp.message, 'Invalid application "dummy" (not loaded or unknown)')
 
     def test_send_command_invalid_command(self):
         self._init_context()
@@ -716,7 +716,7 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
         self.assertTrue(resp.error)
-        self.assertEqual(resp.message, 'Some command parameters are missing')
+        self.assertEqual(resp.message, 'command_with_params() missing 1 required positional argument: \'p2\'')
 
     def test_send_command_to_myself_invalid_command(self):
         self._init_context()
