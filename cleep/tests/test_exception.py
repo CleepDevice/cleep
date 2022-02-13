@@ -63,7 +63,7 @@ class ExceptionTests(unittest.TestCase):
     def test_invalidmodule(self):
         e = InvalidModule('dummy')
         self.assertNotEqual(e.message, 0)
-        self.assertEqual('%s' % e, 'Invalid module "dummy" (not loaded or unknown)')
+        self.assertEqual('%s' % e, 'Invalid application "dummy" (not loaded or unknown)')
 
     def test_unauthorized(self):
         e = Unauthorized('message')
