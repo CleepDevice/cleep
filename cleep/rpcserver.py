@@ -528,7 +528,7 @@ def command():
         else:
             # POST request (need json)
             tmp_params = bottle.request.json
-            if tmp_params is None:
+            if tmp_params is None or not isinstance(tmp_params, dict):
                 raise Exception('Invalid payload, json required.')
             if 'to' in tmp_params:
                 to = tmp_params['to']
@@ -549,7 +549,11 @@ def command():
         resp = send_command(command, to, params, timeout)
 
     except Exception as e:
-        logger.exception('Exception in command:')
+        logger.exception('Exception in command: %s', {
+            'method': bottle.request.method,
+            'json': bottle.request.json,
+            'type_json': type(bottle.request.json),
+        })
         # something went wrong
         resp = MessageResponse(error=True, message=str(e))
 
