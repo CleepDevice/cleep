@@ -5,7 +5,6 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from alsa import Alsa
-from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib
 import unittest
@@ -75,8 +74,8 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s %(levelname)s : %(message)s')
-        self.fs = CleepFilesystem()
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s : %(message)s')
+        self.fs = Mock()
         self.a = Alsa(self.fs)
 
     def tearDown(self):
@@ -302,8 +301,14 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
             self.a.amixer_control(Alsa.CSET, 3, ['ced'])
         self.assertEqual(cm.exception.message, 'Parameter "value" is invalid. Int or str awaited')
 
-    def test_play_sound(self):
+    @patch('alsa.os.path.exists')
+    def test_play_sound(self, exists_mock):
+        exists_mock.return_value = True
+        self.a.command = Mock()
+        self.a.get_last_return_code = Mock(return_value=0)
+
         self.assertTrue(self.a.play_sound(self.WAV_TEST), 'Unable to play valid sound file')
+        self.a.command.assert_called_with('/usr/bin/aplay "%s"' % self.WAV_TEST, timeout=5.0)
 
     def test_play_sound_invalid_params(self):
         with self.assertRaises(MissingParameter) as cm:
@@ -363,8 +368,25 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
             self.a.record_sound(Alsa.CHANNELS_STEREO, Alsa.RATE_44K, 5, 1.0)
         self.assertEqual(cm.exception.message, 'Parameter "format" is invalid. Please check supported value.')
 
-    def test_save(self):
+    def test_save_success(self):
+        self.a.command = Mock()
+        self.a.get_last_return_code = Mock(return_value=0)
+
         self.assertTrue(self.a.save(), 'Configuration not saved')
+
+        self.a.command.assert_called_with('/usr/sbin/alsactl store')
+        self.a.cleep_filesystem.enable_write.assert_called()
+        self.a.cleep_filesystem.disable_write.assert_called()
+
+    def test_save_failure(self):
+        self.a.command = Mock()
+        self.a.get_last_return_code = Mock(return_value=1)
+
+        self.assertFalse(self.a.save(), 'Configuration not saved')
+
+        self.a.command.assert_called_with('/usr/sbin/alsactl store')
+        self.a.cleep_filesystem.enable_write.assert_called()
+        self.a.cleep_filesystem.disable_write.assert_called()
 
 if __name__ == '__main__':
     # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_alsa.py; coverage report -m -i
