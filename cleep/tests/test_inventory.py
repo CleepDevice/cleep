@@ -610,6 +610,17 @@ class %(module_name)s(%(inherit)s):
 
         self.assertFalse(self.i.wait_for_apps_started())
 
+    def test_wait_for_apps_started_but_crashed(self):
+        core_join_event = Event()
+        core_join_event.set()
+        self._init_context(core_join_event=core_join_event)
+        self.i._Inventory__modules_in_error = {
+            'module1': {},
+            'module2': {}
+        }
+
+        self.assertFalse(self.i.wait_for_apps_started())
+
     @patch('inventory.ModulesJson')
     @patch('inventory.CORE_MODULES', [])
     def test_unload_modules(self, modulesjson_mock):
@@ -1023,7 +1034,7 @@ class %(module_name)s(%(inherit)s):
         commands = self.i.get_module_commands('module1')
         logging.debug('Commands: %s' % commands)
 
-        self.assertEqual(len(commands), 2)
+        self.assertEqual(len(commands), 1)
         self.assertTrue('dummy' in commands)
 
     @patch('inventory.ModulesJson')

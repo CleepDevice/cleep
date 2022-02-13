@@ -102,7 +102,7 @@ class Inventory(Cleep):
         """
         self._load_modules()
 
-        if os.getenv('MEMORY_MONITORING'):
+        if os.getenv('MEMORY_MONITORING'): # pragma: no cover
             self.logger.info('Starting memory monitoring task')
             self.__memory_monitoring_task = Task(21600, self.__memory_monitoring, self.logger)
             self.__memory_monitoring_task.start()
@@ -819,9 +819,9 @@ class Inventory(Cleep):
         """
         return self.bootstrap['drivers'].get_all_drivers()
 
-    def __get_object_size(self, obj):
+    def __get_object_size(self, obj): # pragma: no cover
         """
-        Return memory size of specified object instance. Useful to track monitor module instance size
+        Return memory size of specified object instance. Useful to monitor module instance size
 
         Args:
             obj (object): object instance
@@ -851,7 +851,7 @@ class Inventory(Cleep):
 
         return size
 
-    def __memory_monitoring(self):
+    def __memory_monitoring(self): # pragma: no cover
         """
         Memory monitoring task
         """
