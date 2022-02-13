@@ -26,7 +26,10 @@ class DriverTests(unittest.TestCase):
         self.fs.disable_write = Mock()
         #Task.start = Mock()
 
-        self.d = Driver(self.fs, 'dummy', 'dummyname')
+        self.d = Driver('dummy', 'dummyname')
+        self.d.configure({
+            'cleep_filesystem': self.fs,
+        })
         self.end_called = False
         self.end_result = None
 

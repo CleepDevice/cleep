@@ -45,7 +45,7 @@ class Driver():
         self.name = driver_name
         self._processing = self.PROCESSING_NONE
 
-    def _on_registered(self):
+    def _on_registered(self): # pragma: no cover
         """
         Function triggered when driver is registered and configured
         """
