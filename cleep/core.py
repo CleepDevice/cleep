@@ -453,7 +453,7 @@ class Cleep(BusClient):
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
                     'start', 'stop', 'push', 'on_event',
-                    'send_command_from_request', 'send_event_from_request',
+                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced'
                 ):
                 # filter bus commands
                 members.remove(member)

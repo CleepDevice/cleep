@@ -9,6 +9,7 @@ from cleep.libs.tests.lib import TestLib
 from cleep.exception import InvalidParameter, MissingParameter
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.rendererprofile import RendererProfile
+from cleep.common import MessageResponse
 import unittest
 import logging
 from unittest.mock import Mock, MagicMock, patch
@@ -64,7 +65,7 @@ class TestsCleep(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.config_file = None
         self.r = None
@@ -369,24 +370,14 @@ class TestsCleep(unittest.TestCase):
     @patch('core.Cleep.send_command')
     def test_is_module_loaded_return_true(self, send_command_mock):
         self._init_context()
-
-        send_command_mock.return_value = {
-            'error': False,
-            'data': True,
-            'message': ''
-        }
+        send_command_mock.return_value = MessageResponse(error=False, data=True, message='')
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), True)
 
     @patch('core.Cleep.send_command')
     def test_is_module_loaded_return_false(self, send_command_mock):
         self._init_context()
-
-        send_command_mock.return_value = {
-            'error': True,
-            'data': True,
-            'message': ''
-        }
+        send_command_mock.return_value = MessageResponse(error=True, data=True, message='')
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), False)
 
@@ -980,7 +971,7 @@ class TestsCleepResources(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.r = None
 
