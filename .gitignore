@@ -7,7 +7,7 @@ node_modules/
 docs/_build
 dist/
 **/*.swp
-.*
+**/.coverage*
 !/.gitignore
 build/
 debian/debhelper-build-stamp
@@ -21,3 +21,6 @@ remote_*.log
 docs/*docs.tar.gz
 docs/*docs.zip
 docs/*docs.xml
+.vscode
+.pybuild
+debian/.debhelper

@@ -421,10 +421,11 @@ class Inventory(Cleep):
         self.bootstrap['core_join_event'].set()
 
         # check if modules are properly configured and started
-        for module_name, module_ in self.__modules_instances.items():
-            if not module_.is_alive():
-                self.__modules_in_error[module_name] = 'Application "%s" configuration failed' % module_name
-                # TODO report error if not locally installed module
+        # OBSOLETE seems to be obsolete code !
+        #for module_name, module_ in self.__modules_instances.items():
+        #    if not module_.is_alive():
+        #        self.__modules_in_error[module_name] = 'Application "%s" configuration failed' % module_name
+        #        # TODO report error if not locally installed module
 
         # execution step: CONFIG->RUN
         self.bootstrap['execution_step'].step = ExecutionStep.RUN
@@ -525,16 +526,12 @@ class Inventory(Cleep):
                 }
 
         """
-        # init
         devices = {}
-
-        # get all devices
         for module_name in self.__modules_instances:
             try:
                 if isinstance(self.__modules_instances[module_name], CleepModule):
                     devices[module_name] = self.__modules_instances[module_name].get_module_devices()
-            
-            except:
+            except Exception:
                 self.logger.exception('Unable to get devices of application "%s"' % module_name)
 
         return devices
@@ -575,6 +572,30 @@ class Inventory(Cleep):
         module['loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []
 
         return module
+
+    def get_modules_configs(self):
+        """
+        Return modules configs only
+
+        Returns:
+            dict: modules configurations::
+
+            {
+                module name (string): module configuration (dict)
+                ...
+            }
+
+        """
+        configs = {}
+
+        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        for module_name, module in installed_modules.items():
+            try:
+                configs[module_name] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+            except:
+                logger.exception('Unable to get module "%s" config' % module_name)
+
+        return configs
 
     def __is_module_started(self, module_name):
         """
