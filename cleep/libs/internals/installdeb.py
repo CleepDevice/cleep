@@ -14,7 +14,7 @@ from cleep.exception import MissingParameter, InvalidParameter
 
 class InstallDeb:
     """
-    Install .deb package using dpkg
+    Install .deb package using apt-get
     Due to quantity of messages, stderr is mixed within stdout to keep message order
     """
 
@@ -134,7 +134,7 @@ class InstallDeb:
 
     def dry_run(self, deb, status_callback=None, timeout=60):
         """
-        Try to install deb archive executing dpkg with --dry-run option
+        Try to install deb archive executing apt-get with --dry-run option
         This method is blocking
         Process result can be found calling get_status()
 
@@ -151,7 +151,7 @@ class InstallDeb:
         self.running = True
 
         # try install deb
-        command = '/usr/bin/yes | /usr/bin/dpkg --dry-run -i "%s"' % (deb)
+        command = f'/usr/bin/yes | /usr/bin/apt-get install --dry-run --yes "{deb}"'
         self.logger.debug("Command: %s" % command)
         self._console = EndlessConsole(
             command, self.__callback_deb, self.__callback_end
@@ -221,7 +221,7 @@ class InstallDeb:
             self.cleep_filesystem.enable_write()
 
         # install deb
-        command = '/usr/bin/yes | /usr/bin/dpkg -i "%s"' % (deb)
+        command = f'/usr/bin/yes | /usr/bin/apt-get install --yes "{deb}"'
         self.logger.debug("Command: %s" % command)
         self._console = EndlessConsole(
             command, self.__callback_deb, self.__callback_end
