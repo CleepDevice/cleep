@@ -340,7 +340,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile=None, certfile=None)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_default_config(self, mock_wsgi):
@@ -348,7 +348,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure({}, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, error_log=ANY, log=ANY, keyfile=None, certfile=None)
+        mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, error_log=ANY, log=ANY)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_valid_ssl(self, mock_wsgi):
@@ -381,7 +381,7 @@ class RpcServerTests(unittest.TestCase):
             mock_path_exists.return_value = False
             rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
 
-            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile=None, certfile=None)
+            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
     def test_configure_debug_enabled(self):
         self._init_context(debug_enabled=True)

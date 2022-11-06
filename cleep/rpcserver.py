@@ -87,6 +87,49 @@ def load_auth():
         )
 
 
+def get_ssl_options(server_config):
+    """
+    Return ssl options if any to pass to http server
+
+    Args:
+        server_config (dict): server configuration::
+
+            {
+                host (str): server host
+                port (int): server port
+                ssl_key (str): server SSL key
+                ssl_cert (str): server SSL certificate
+            }
+
+    Returns:
+        dict: ssl options::
+
+            {
+                keyfile (str): key filepath
+                certfile (str): certificate filepath
+            }
+
+    """
+    ssl_key = server_config.get("ssl_key")
+    ssl_cert = server_config.get("ssl_cert")
+
+    if not ssl_key and not ssl_cert:
+        return {}
+
+    if ssl_key and ssl_cert and (not os.path.exists(ssl_key) or not os.path.exists(ssl_cert)):
+        logger.error(
+            "Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.",
+            ssl_key,
+            ssl_cert,
+        )
+        return {}
+
+    return {
+        "keyfile": ssl_key,
+        "certfile": ssl_cert,
+    }
+
+
 def configure(server_config, bootstrap, inventory_, debug_enabled_):
     """
     Configure rpcserver
@@ -127,23 +170,13 @@ def configure(server_config, bootstrap, inventory_, debug_enabled_):
     load_auth()
 
     # create server
-    ssl_key = server_config.get("ssl_key")
-    ssl_cert = server_config.get("ssl_cert")
-    if ssl_key and ssl_cert and (not os.path.exists(ssl_key) or not os.path.exists(ssl_cert)):
-        logger.error(
-            "Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.",
-            ssl_key,
-            ssl_cert,
-        )
-        ssl_key = None
-        ssl_cert = None
+    ssl_options = get_ssl_options(server_config)
     server = pywsgi.WSGIServer(
         (server_config.get("host", "0.0.0.0"), server_config.get("port", 80)),
         app,
         log=logger_requests,
         error_log=logger,
-        keyfile=ssl_key,
-        certfile=ssl_cert,
+        **ssl_options
     )
 
 
