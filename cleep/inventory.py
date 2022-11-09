@@ -593,7 +593,7 @@ class Inventory(Cleep):
             try:
                 configs[module_name] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
             except:
-                logger.exception('Unable to get module "%s" config' % module_name)
+                self.logger.exception('Unable to get module "%s" config' % module_name)
 
         return configs
 

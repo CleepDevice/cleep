@@ -1,6 +1,7 @@
 cleep (0.0.30) UNRELEASED; urgency=low
   * Fixed core: #1383 Cleep install fails due to missing dependency
   * Changed core: Handle application asset and bin paths
+  * Fixed core: fix typo issue in inventory
     
 cleep (0.0.29) UNRELEASED; urgency=low
   * Added UI: close dialog after device has restarted
