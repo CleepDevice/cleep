@@ -10,6 +10,9 @@ from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
 from unittest.mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 
 class DummyDriver():
@@ -22,7 +25,7 @@ class DriversTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.crash_report = Mock()
         self.fs = Mock()
 
@@ -39,10 +42,11 @@ class DriversTests(unittest.TestCase):
             d.logger.setLevel(logging.FATAL)
 
     def test_register(self):
-        try:
-            self.d.register(DummyDriver())
-        except:
-            self.fail('Should not raise exception')
+        driver = DummyDriver()
+        self.d.register(driver)
+        logging.debug('Drivers %s' % self.d.drivers)
+
+        self.assertEqual(len(self.d.drivers[driver.type]), 1)
 
     def test_register_invalid_parameters(self):
         with self.assertRaises(MissingParameter) as cm:
@@ -58,6 +62,24 @@ class DriversTests(unittest.TestCase):
             self.d.register(DummyDriver(driver_type='test'))
         self.assertEqual(cm.exception.message, 'Driver must be one of existing driver type (found "test")')
 
+    def test_unregister(self):
+        driver = DummyDriver()
+        self.d.register(driver)
+        self.assertEqual(len(self.d.drivers[driver.type]), 1)
+
+        self.d.unregister(driver)
+        self.assertEqual(len(self.d.drivers[driver.type]), 0)
+
+    def test_unregister_invalid_params(self):
+        with self.assertRaises(InvalidParameter) as cm:
+            self.d.unregister(None)
+        self.assertEqual(cm.exception.message, 'Parameter "driver" is invalid')
+
+        with self.assertRaises(InvalidParameter) as cm:
+            self.d.unregister(DummyDriver())
+        self.assertEqual(cm.exception.message, 'Driver not found')
+
+
     def test_get_all_drivers(self):
         self.d.register(DummyDriver())
         drivers = self.d.get_all_drivers()
@@ -69,12 +91,40 @@ class DriversTests(unittest.TestCase):
         self.assertEqual(len(drivers['electronic']), 1)
         self.assertEqual(len(drivers['audio']), 0)
 
+    def test_get_all_drivers_swallow_copy(self):
+        driver1 = DummyDriver('driver1')
+        driver2 = DummyDriver('driver2')
+        self.d.register(driver1)
+        self.d.register(driver2)
+
+        drivers = self.d.get_all_drivers()
+        before_len = len(drivers)
+
+        del self.d.drivers[driver1.type][driver1.name]
+        after_len = len(drivers)
+
+        self.assertEqual(before_len, after_len)
+
     def test_get_drivers(self):
         self.d.register(DummyDriver())
         drivers = self.d.get_drivers('electronic')
         self.assertEqual(len(drivers), 1)
         drivers = self.d.get_drivers('audio')
         self.assertEqual(len(drivers), 0)
+
+    def test_get_drivers_swallow_copy(self):
+        driver1 = DummyDriver('driver1')
+        driver2 = DummyDriver('driver2')
+        self.d.register(driver1)
+        self.d.register(driver2)
+
+        drivers = self.d.get_drivers('electronic')
+        before_len = len(drivers)
+
+        del self.d.drivers[driver1.type][driver1.name]
+        after_len = len(drivers)
+
+        self.assertEqual(before_len, after_len)
 
     def test_get_drivers_invalid_parameters(self):
         with self.assertRaises(MissingParameter) as cm:

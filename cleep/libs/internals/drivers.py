@@ -3,6 +3,7 @@
 
 import time
 import logging
+import copy
 from cleep.libs.drivers.driver import Driver
 from cleep.exception import InvalidParameter, MissingParameter
 
@@ -55,6 +56,22 @@ class Drivers:
         )
         self.drivers[driver.type][driver.name] = driver
 
+    def unregister(self, driver):
+        """
+        Unregister specified driver
+
+        Args:
+            driver (Driver): driver instance
+        """
+        if driver is None:
+            raise InvalidParameter('Parameter "driver" is invalid')
+        found_driver = self.get_driver(driver.type, driver.name)
+        if not found_driver:
+            raise InvalidParameter('Driver not found')
+
+        self.logger.info(f'Unregister driver "{driver.name}"')
+        del self.drivers[driver.type][driver.name]
+
     def get_all_drivers(self):
         """
         Return all drivers
@@ -62,7 +79,7 @@ class Drivers:
         Returns:
             dict: map of drivers
         """
-        return self.drivers
+        return copy.copy(self.drivers)
 
     def get_drivers(self, driver_type):
         """
@@ -81,7 +98,7 @@ class Drivers:
                 'Driver must be one of existing driver type (found "%s")' % driver_type
             )
 
-        return self.drivers[driver_type]
+        return copy.copy(self.drivers[driver_type])
 
     def get_driver(self, driver_type, driver_name):
         """
