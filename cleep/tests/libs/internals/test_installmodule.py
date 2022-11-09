@@ -19,14 +19,17 @@ from threading import Timer
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 import shutil
 import cleep
+from cleep.libs.tests.common import get_log_level
 
 INSTALL_DIR = cleep.__file__.replace('__init__.py', '')
+
+LOG_LEVEL = get_log_level()
 
 class UninstallModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -51,7 +54,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.callback = Mock(side_effect=callback_side_effect)
 
         self.u = UninstallModule(module_name, module_infos, update_process, force_uninstall, self.callback, self.cleep_filesystem, self.crash_report)
-        self.u.cleep_path = '/testinstall'
+        self.u.cleep_path = '/python-cleep-path'
         self.c = Context()
         self.c.force_uninstall = force_uninstall
         self.c.module_log = None
@@ -206,8 +209,8 @@ class UninstallModuleTests(unittest.TestCase):
         os_mock.path.exists.return_value = True
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
@@ -273,8 +276,8 @@ class UninstallModuleTests(unittest.TestCase):
         os_mock.path.exists.return_value = True
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -294,8 +297,8 @@ class UninstallModuleTests(unittest.TestCase):
         os_mock.path.exists.side_effect = [True, True, True, False, True, False, True, True]
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -316,8 +319,8 @@ class UninstallModuleTests(unittest.TestCase):
         os_mock.path.exists.side_effect = [True, True, True, False, True, False, True, True]
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -340,8 +343,8 @@ class UninstallModuleTests(unittest.TestCase):
         tools_mock.is_core_lib.side_effect = [True, False, True, False, True]
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -352,7 +355,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertEqual(self.cleep_filesystem.rm.call_count, 2)
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Trying to remove core library file "testinstall/modules/module/module.py" during module "module" uninstallation. Drop deletion.')
+        self.assertEqual(status['process'][1], 'Trying to remove core library file "python-cleep-path/modules/module/module.py" during module "module" uninstallation. Drop deletion.')
         self.assertEqual(status['process'][2], 'Trying to remove core library file "/opt/cleep/html/js/modules/module/desc.json" during module "module" uninstallation. Drop deletion.')
         self.assertEqual(status['process'][3], 'Trying to remove core library file "/opt/cleep/html/js/modules/module/module.config.html" during module "module" uninstallation. Drop deletion.')
 
@@ -363,8 +366,8 @@ class UninstallModuleTests(unittest.TestCase):
         os_mock.path.exists.return_value = True
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -374,7 +377,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertTrue(self.u._remove_installed_files(self.c))
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(status['process'][1], 'Unable to remove directory "testinstall/modules/module" during module "module" uninstallation')
+        self.assertEqual(status['process'][1], 'Unable to remove directory "python-cleep-path/modules/module" during module "module" uninstallation')
 
     @patch('installmodule.os')
     def test_run(self, os_mock):
@@ -513,7 +516,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {
@@ -749,7 +752,7 @@ class InstallModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -769,7 +772,7 @@ class InstallModuleTests(unittest.TestCase):
         self.callback = Mock(side_effect=callback_side_effect)
 
         self.i = InstallModule(module_name, module_infos, update_process, self.callback, self.cleep_filesystem, self.crash_report)
-        self.i.cleep_path = '/testinstall'
+        self.i.cleep_path = '/python-cleep-path'
         self.c = Context()
         self.c.archive_path = None
         self.c.extract_path = None
@@ -1091,7 +1094,9 @@ class InstallModuleTests(unittest.TestCase):
         os_mock.path.exists.side_effect = [True, True, False, False]
         os_mock.walk.return_value = [
             ('backend/modules/module', [], ['module.py', '__init__.py']),
-            ('frontend/js/modules/module', [], ['desc.json', 'module.config.js', 'module.config.html'])
+            ('frontend/js/modules/module', [], ['desc.json', 'module.config.js', 'module.config.html']),
+            ('asset', [], ['image.png', 'sound.wav']),
+            ('bin', [], ['binary']),
         ]
         tools_mock.is_core_lib.return_value = False
 
@@ -1102,16 +1107,27 @@ class InstallModuleTests(unittest.TestCase):
 
         self.assertTrue(self.i._copy_module_files(self.c))
         logging.debug('cleep_fs calls: %s' % self.cleep_filesystem.mock_calls)
-        self.assertEqual(self.cleep_filesystem.copy.call_count, 5) # 5 files in walk return value
+        self.assertEqual(self.cleep_filesystem.copy.call_count, 8) # 5 files in walk return value
+
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/module.py', '/python-cleep-path/modules/module/module.py')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/__init__.py', '/python-cleep-path/modules/module/__init__.py')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/desc.json', '/opt/cleep/html/js/modules/module/desc.json')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/module.config.js', '/opt/cleep/html/js/modules/module/module.config.js')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/module.config.html', '/opt/cleep/html/js/modules/module/module.config.html')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/asset/image.png', '/var/opt/cleep/modules/asset/module/image.png')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/asset/sound.wav', '/var/opt/cleep/modules/asset/module/sound.wav')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/bin/binary', '/var/opt/cleep/modules/bin/module/binary')
 
     @patch('installmodule.os')
     @patch('installmodule.Tools')
     def test_copy_module_files_overwrite_existing_files(self, tools_mock, os_mock):
         os_mock.path.join = os.path.join
-        os_mock.path.exists.side_effect = [True, True, True, True]
+        os_mock.path.exists.side_effect = [True, True, True, True, True, True, True, True]
         os_mock.walk.return_value = [
             ('backend/modules/module', [], ['module.py', '__init__.py']),
-            ('frontend/js/modules/module', [], ['desc.json', 'module.config.js', 'module.config.html'])
+            ('frontend/js/modules/module', [], ['desc.json', 'module.config.js', 'module.config.html']),
+            ('asset', [], ['image.png', 'sound.wav']),
+            ('bin', [], ['binary']),
         ]
         tools_mock.is_core_lib.return_value = False
 
@@ -1122,7 +1138,7 @@ class InstallModuleTests(unittest.TestCase):
 
         self.assertTrue(self.i._copy_module_files(self.c))
         logging.debug('cleep_fs calls: %s' % self.cleep_filesystem.mock_calls)
-        self.assertEqual(self.cleep_filesystem.copy.call_count, 5)
+        self.assertEqual(self.cleep_filesystem.copy.call_count, 8)
 
     @patch('installmodule.os')
     @patch('installmodule.Tools')
@@ -1163,8 +1179,9 @@ class InstallModuleTests(unittest.TestCase):
         self.assertFalse(self.i._copy_module_files(self.c))
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(len(status['process']), 1)
-        self.assertTrue(status['process'][0].startswith('Error copying file'))
+        self.assertEqual(len(status['process']), 2)
+        self.assertTrue(status['process'][0].startswith('Error copying backend file'))
+        self.assertTrue(status['process'][1].startswith('Exception occured during module'))
         self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installmodule.os')
@@ -1186,8 +1203,57 @@ class InstallModuleTests(unittest.TestCase):
         self.assertFalse(self.i._copy_module_files(self.c))
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
-        self.assertEqual(len(status['process']), 1)
-        self.assertTrue(status['process'][0].startswith('Error copying file'))
+        self.assertEqual(len(status['process']), 2)
+        self.assertTrue(status['process'][0].startswith('Error copying frontend file'))
+        self.assertTrue(status['process'][1].startswith('Exception occured during module'))
+        self.assertTrue(self.crash_report.report_exception.called)
+
+    @patch('installmodule.os')
+    @patch('installmodule.Tools')
+    def test_copy_module_files_asset_file_copy_failed(self, tools_mock, os_mock):
+        os_mock.path.join = os.path.join
+        os_mock.path.exists.side_effect = [True, True, False, False]
+        os_mock.walk.return_value = [
+            ('backend/modules/module', [], ['module.py', '__init__.py']),
+            ('asset', [], ['image.png', 'sound.wav']),
+        ]
+        tools_mock.is_core_lib.return_value = False
+
+        self._init_context(cleep_filesystem_copy_side_effect=[True, True, False])
+        self.c.archive_path = '/tmp/dummy/zip'
+        self.c.extract_path = '/tmp/123456789'
+        self.c.install_log_fd = MagicMock()
+
+        self.assertFalse(self.i._copy_module_files(self.c))
+        status = self.i.get_status()
+        logging.debug('Status: %s' % status)
+        self.assertEqual(len(status['process']), 2)
+        self.assertTrue(status['process'][0].startswith('Error copying asset file'))
+        self.assertTrue(status['process'][1].startswith('Exception occured during module'))
+        self.assertTrue(self.crash_report.report_exception.called)
+
+    @patch('installmodule.os')
+    @patch('installmodule.Tools')
+    def test_copy_module_files_bin_file_copy_failed(self, tools_mock, os_mock):
+        os_mock.path.join = os.path.join
+        os_mock.path.exists.side_effect = [True, True, False, False]
+        os_mock.walk.return_value = [
+            ('backend/modules/module', [], ['module.py', '__init__.py']),
+            ('bin', [], ['binary']),
+        ]
+        tools_mock.is_core_lib.return_value = False
+
+        self._init_context(cleep_filesystem_copy_side_effect=[True, True, False])
+        self.c.archive_path = '/tmp/dummy/zip'
+        self.c.extract_path = '/tmp/123456789'
+        self.c.install_log_fd = MagicMock()
+
+        self.assertFalse(self.i._copy_module_files(self.c))
+        status = self.i.get_status()
+        logging.debug('Status: %s' % status)
+        self.assertEqual(len(status['process']), 2)
+        self.assertTrue(status['process'][0].startswith('Error copying bin file'))
+        self.assertTrue(status['process'][1].startswith('Exception occured during module'))
         self.assertTrue(self.crash_report.report_exception.called)
 
     @patch('installmodule.os')
@@ -1234,8 +1300,8 @@ class InstallModuleTests(unittest.TestCase):
     def test_rollback_install(self, os_mock):
         fd = Mock()
         fd.readlines.return_value = [
-            'testinstall/modules/module/module.py',
-            'testinstall/modules/module/__init__.py',
+            'python-cleep-path/modules/module/module.py',
+            'python-cleep-path/modules/module/__init__.py',
             '/opt/cleep/html/js/modules/module/desc.json',
             '/opt/cleep/html/js/modules/module/module.config.js',
             '/opt/cleep/html/js/modules/module/module.config.html'
@@ -1538,7 +1604,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {
@@ -1707,7 +1773,7 @@ class UpdateModuleTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -1986,7 +2052,7 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.url_archive = 'https://github.com/tangb/cleep/raw/master/cleepos/tests/resources/installmodule/%s.zip'
         self.module_infos = {

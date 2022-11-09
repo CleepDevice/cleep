@@ -1,3 +1,7 @@
+cleep (0.0.30) UNRELEASED; urgency=low
+  * Fixed core: #1383 Cleep install fails due to missing dependency
+  * Changed core: Handle application asset and bin paths
+    
 cleep (0.0.29) UNRELEASED; urgency=low
   * Added UI: close dialog after device has restarted
   * Added lib: log script errors during module installation

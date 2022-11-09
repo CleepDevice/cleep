@@ -23,8 +23,12 @@ __all__ = ["UninstallModule", "InstallModule", "UpdateModule"]
 PATH_FRONTEND = "/opt/cleep/html"
 PATH_SCRIPTS = "/opt/cleep/scripts"
 PATH_INSTALL = "/opt/cleep/install"
-FRONTEND_DIR = "frontend/"
-BACKEND_DIR = "backend/"
+PATH_APP_ASSET = "/var/opt/cleep/modules/asset"
+PATH_APP_BIN = "/var/opt/cleep/modules/bin"
+ARCHIVE_FRONTEND_DIR = "frontend/"
+ARCHIVE_BACKEND_DIR = "backend/"
+ARCHIVE_ASSET_DIR = "asset/"
+ARCHIVE_BIN_DIR = "bin/"
 SCRIPTS_DIR = "scripts/"
 TESTS_DIR = "tests/"
 
@@ -826,7 +830,7 @@ class InstallModule(CommonProcess):
 
     def _run_script(self, context, script):
         """
-        Execute preinst.sh script
+        Execute specified script
 
         Args:
             context (Context): install context
@@ -888,74 +892,22 @@ class InstallModule(CommonProcess):
             # process them according to their directory
             for archive_file in archive_files:
                 self.logger.trace('Processing archive file "%s"' % archive_file)
-                if archive_file.startswith(BACKEND_DIR):
-                    # copy python files
-                    src_path = os.path.join(context.extract_path, archive_file)
-                    dst_path = os.path.join(self.cleep_path, archive_file).replace(
-                        BACKEND_DIR, ""
-                    )
-                    self.logger.trace("Backend src=%s dst=%s" % (src_path, dst_path))
-
-                    # check file overwritings
-                    if os.path.exists(dst_path):
-                        if Tools.is_core_lib(dst_path):
-                            # system lib, just drop file install with warning
-                            self._log_process_status(
-                                context,
-                                logging.WARNING,
-                                'File "%s" is a core lib and shouldn\'t be exists in module "%s" package. File is dropped.'
-                                % (dst_path, self.module_name),
-                            )
-                            continue
-
-                        # warning about file overwriting
-                        self._log_process_status(
-                            context,
-                            logging.WARNING,
-                            'Module "%s" installation overwrites existing file "%s"'
-                            % (self.module_name, dst_path),
-                        )
-
-                    self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
-                    if not self.cleep_filesystem.copy(src_path, dst_path):
-                        self._log_process_status(
-                            context,
-                            logging.ERROR,
-                            'Error copying file "%s" to "%s" during module "%s" installation'
-                            % (src_path, dst_path, self.module_name),
-                            force_crash_report=True,
-                        )
-                        return False
-
-                    # keep track of copied file for uninstall
-                    context.install_log_fd.write("%s\n" % dst_path)
-                    context.install_log_fd.flush()
-
-                elif archive_file.startswith(FRONTEND_DIR):
-                    # copy ui files
-                    src_path = os.path.join(context.extract_path, archive_file)
-                    dst_path = os.path.join(PATH_FRONTEND, archive_file).replace(
-                        FRONTEND_DIR, ""
-                    )
-                    self.logger.trace("Frontend src=%s dst=%s" % (src_path, dst_path))
-                    self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
-                    if not self.cleep_filesystem.copy(src_path, dst_path):
-                        self._log_process_status(
-                            context,
-                            logging.ERROR,
-                            'Error copying file "%s" to "%s" during module "%s" installation'
-                            % (src_path, dst_path, self.module_name),
-                            force_crash_report=True,
-                        )
-                        return False
-
-                    # keep track of copied file for uninstall
-                    context.install_log_fd.write("%s\n" % dst_path)
-                    context.install_log_fd.flush()
-
+                copied_filepath = False
+                if archive_file.startswith(ARCHIVE_BACKEND_DIR):
+                    copied_filepath = self.__copy_backend_file(context, archive_file)
+                elif archive_file.startswith(ARCHIVE_FRONTEND_DIR):
+                    copied_filepath = self.__copy_frontend_file(context, archive_file)
+                elif archive_file.startswith(ARCHIVE_ASSET_DIR):
+                    copied_filepath = self.__copy_asset_file(context, archive_file)
+                elif archive_file.startswith(ARCHIVE_BIN_DIR):
+                    copied_filepath = self.__copy_bin_file(context, archive_file)
                 else:
-                    # drop file
                     self.logger.debug("Drop unhandled archive file: %s" % archive_file)
+
+                # keep track of copied file for later uninstall
+                if copied_filepath:
+                    context.install_log_fd.write(f"{copied_filepath}\n")
+                    context.install_log_fd.flush()
 
             return True
 
@@ -966,6 +918,136 @@ class InstallModule(CommonProcess):
                 'Exception occured during module "%s" files copy' % self.module_name,
             )
             return False
+
+    def __copy_asset_file(self, context, archive_file):
+        """
+        Copy asset file
+
+        Args:
+            context (Context): install context
+            archive_file (str): archive file
+
+        Returns:
+            str: copied filepath, None otherwise
+        """
+        src_path = os.path.join(context.extract_path, archive_file)
+        dst_path = os.path.join(PATH_APP_ASSET, self.module_name, archive_file.replace(ARCHIVE_ASSET_DIR, ""))
+        self.logger.trace(f"Copy asset src={src_path} dst={dst_path}")
+
+        # copy file
+        self.cleep_filesystem.mkdirs(os.path.dirname(dst_path))
+        if not self.cleep_filesystem.copy(src_path, dst_path):
+            self._log_process_status(
+                context,
+                logging.ERROR,
+                f'Error copying asset file "{src_path}" to "{dst_path}" during module "{self.module_name}" installation',
+                force_crash_report=True,
+            )
+            raise Exception('NotCopiedFile')
+
+        return dst_path
+
+    def __copy_bin_file(self, context, archive_file):
+        """
+        Copy asset file
+
+        Args:
+            context (Context): install context
+            archive_file (str): archive file
+
+        Returns:
+            str: copied filepath, None otherwise
+        """
+        src_path = os.path.join(context.extract_path, archive_file)
+        dst_path = os.path.join(PATH_APP_BIN, self.module_name, archive_file.replace(ARCHIVE_BIN_DIR, ""))
+        self.logger.trace(f"Copy bin src={src_path} dst={dst_path}")
+
+        # copy file
+        self.cleep_filesystem.mkdirs(os.path.dirname(dst_path))
+        if not self.cleep_filesystem.copy(src_path, dst_path):
+            self._log_process_status(
+                context,
+                logging.ERROR,
+                f'Error copying bin file "{src_path}" to "{dst_path}" during module "{self.module_name}" installation',
+                force_crash_report=True,
+            )
+            raise Exception('NotCopiedFile')
+
+        return dst_path
+
+    def __copy_frontend_file(self, context, archive_file):
+        """
+        Copy frontend file
+
+        Args:
+            context (Context): install context
+            archive_file (str): archive file
+
+        Returns:
+            str: copied filepath, None otherwise
+        """
+        src_path = os.path.join(context.extract_path, archive_file)
+        dst_path = os.path.join(PATH_FRONTEND, archive_file).replace(ARCHIVE_FRONTEND_DIR, "")
+        self.logger.trace(f"Copy frontend src={src_path} dst={dst_path}")
+
+        # copy file
+        self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
+        if not self.cleep_filesystem.copy(src_path, dst_path):
+            self._log_process_status(
+                context,
+                logging.ERROR,
+                f'Error copying frontend file "{src_path}" to "{dst_path}" during module "{self.module_name}" installation',
+                force_crash_report=True,
+            )
+            raise Exception('NotCopiedFile')
+
+        return dst_path
+
+    def __copy_backend_file(self, context, archive_file):
+        """
+        Copy backend file
+
+        Args:
+            context (Context): install context
+            archive_file (str): archive file
+
+        Returns:
+            str: copied filepath, None otherwise
+        """
+        src_path = os.path.join(context.extract_path, archive_file)
+        dst_path = os.path.join(self.cleep_path, archive_file).replace(ARCHIVE_BACKEND_DIR, "")
+        self.logger.trace(f"Copy backend src={src_path} dst={dst_path}")
+
+        # check file overwritings
+        if os.path.exists(dst_path):
+            if Tools.is_core_lib(dst_path):
+                # system lib, just drop file install with warning
+                self._log_process_status(
+                    context,
+                    logging.WARNING,
+                    f'File "{dst_path}" is a core lib and shouldn\'t be exists in module "{self.module_name}" package. File is dropped.'
+                )
+                return
+
+            # warning about file overwriting
+            self._log_process_status(
+                context,
+                logging.WARNING,
+                f'Application "{self.module_name}" installation overwrites existing file "{dst_path}"'
+            )
+
+        # copy file
+        self.cleep_filesystem.mkdir(os.path.dirname(dst_path))
+        if not self.cleep_filesystem.copy(src_path, dst_path):
+            self._log_process_status(
+                context,
+                logging.ERROR,
+                f'Error copying backend file "{src_path}" to "{dst_path}" during module "{self.module_name}" installation',
+                force_crash_report=True,
+            )
+            raise Exception('NotCopiedFile')
+
+        return dst_path
 
     def _rollback_install(self, context):
         """

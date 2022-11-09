@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer, CleepExternalBus
 from cleep.libs.tests.lib import TestLib
+from cleep.libs.tests.common import get_log_level
 from cleep.exception import InvalidParameter, MissingParameter
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.rendererprofile import RendererProfile
@@ -16,6 +17,8 @@ from unittest.mock import Mock, MagicMock, patch
 import time
 import io
 import copy
+
+LOG_LEVEL = get_log_level()
 
 class DummyCleep(Cleep):
     CONFIG_DIR = ''
@@ -65,7 +68,7 @@ class TestsCleep(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.config_file = None
         self.r = None
@@ -76,7 +79,7 @@ class TestsCleep(unittest.TestCase):
         if self.config_file and os.path.exists(self.config_file):
             os.remove(self.config_file)
 
-    def _init_context(self, with_sentry=False, default_config=None, current_config=None, with_config=True, read_json_side_effect=None, write_json_side_effect=None):
+    def _init_context(self, with_sentry=False, default_config=None, current_config=None, with_config=True, read_json_side_effect=None, write_json_side_effect=None, create_cleep=True):
         self.crash_report = Mock()
         self.crash_report.is_enabled.return_value = False
         self.crash_report.get_infos.return_value = {
@@ -113,6 +116,8 @@ class TestsCleep(unittest.TestCase):
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
+        if not create_cleep:
+            return
         self.r = DummyCleep(
             self.bootstrap,
             debug_enabled=False,
@@ -123,10 +128,11 @@ class TestsCleep(unittest.TestCase):
 
     def test_debug_enabled(self):
         try:
-            self._init_context()
-            r = DummyCleep(self.bootstrap, debug_enabled=True)
-            self.assertEqual(r.logger.getEffectiveLevel(), logging.DEBUG)
+            self._init_context(create_cleep=False)
 
+            r = DummyCleep(self.bootstrap, debug_enabled=True)
+
+            self.assertEqual(r.logger.getEffectiveLevel(), logging.DEBUG)
             self.assertTrue(r.is_debug_enabled())
 
         finally:
@@ -134,15 +140,19 @@ class TestsCleep(unittest.TestCase):
             r.logger.setLevel(logging.FATAL)
 
     def test_set_debug(self):
-        self._init_context()
-        r = DummyCleep(self.bootstrap, debug_enabled=False)
+        try:
+            self._init_context()
+            r = DummyCleep(self.bootstrap, debug_enabled=False)
 
-        self.assertFalse(r.is_debug_enabled())
+            self.assertFalse(r.is_debug_enabled())
         
-        r.set_debug(True)
-        self.assertTrue(r.is_debug_enabled())
-        r.set_debug(False)
-        self.assertFalse(r.is_debug_enabled())
+            r.set_debug(True)
+            self.assertTrue(r.is_debug_enabled())
+            r.set_debug(False)
+            self.assertFalse(r.is_debug_enabled())
+
+        finally:
+            r.logger.setLevel(LOG_LEVEL)
 
     def test_module_without_config(self):
         self._init_context(with_config=False)
@@ -553,7 +563,7 @@ class TestsCleepModule(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.config_file = None
         self.r = None
@@ -614,6 +624,19 @@ class TestsCleepModule(unittest.TestCase):
             default_config=copy.deepcopy(default_config),
             with_config=with_config
         )
+
+    def test_default_app_paths(self):
+        self._init_context()
+
+        logging.debug(self.r.APP_STORAGE_PATH)
+        logging.debug(self.r.APP_TMP_PATH)
+        logging.debug(self.r.APP_ASSET_PATH)
+        logging.debug(self.r.APP_BIN_PATH)
+
+        self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/DummyCleepModule")
+        self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/DummyCleepModule")
+        self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/DummyCleepModule")
+        self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/DummyCleepModule")
 
     def test_devices_section_exists(self):
         self._init_context()
@@ -874,7 +897,7 @@ class TestsCleepRpcWrapper(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.r = None
 
@@ -971,7 +994,7 @@ class TestsCleepResources(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.r = None
 
@@ -1095,7 +1118,7 @@ class TestsCleepRenderer(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.r = None
 
@@ -1224,7 +1247,7 @@ class TestsCleepExternalBus(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.r = None
 

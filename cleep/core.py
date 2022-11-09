@@ -724,17 +724,23 @@ class CleepRpcWrapper(Cleep):
 
 class CleepModule(Cleep):
     """
-    Base cleep class for module
+    Base cleep class for application
 
     It implements:
 
         * device helpers
-        * default directories (storage, tmp)
+        * default directories (storage, tmp, asset, bin)
 
     """
 
-    MODULE_STORAGE_PATH = None
-    MODULE_TMP_PATH = None
+    # Storage path to save app files (database, music, ...)
+    APP_STORAGE_PATH = None
+    # Temporary path to save temp data
+    APP_TMP_PATH = None
+    # Asset path where app assets are stored during installation
+    APP_ASSET_PATH = None
+    # Binary path where binaries are stored during installation
+    APP_BIN_PATH = None
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -747,9 +753,11 @@ class CleepModule(Cleep):
         # init cleep 
         Cleep.__init__(self, bootstrap, debug_enabled)
 
-        # define module paths
-        self.__set_path('MODULE_STORAGE_PATH', os.path.join('/opt/cleep/modules', self.__class__.__name__))
-        self.__set_path('MODULE_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
+        # define app paths
+        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', self.__class__.__name__))
+        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
+        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', self.__class__.__name__))
+        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', self.__class__.__name__))
 
         # add devices section if missing
         if self._has_config_file() and not self._has_config_field('devices'):
