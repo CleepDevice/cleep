@@ -3,6 +3,7 @@ cleep (0.0.30) UNRELEASED; urgency=low
   * Changed core: Handle application asset and bin paths
   * Fixed core: fix typo issue in inventory
   * Changed drivers: add unregister function
+  * Changed core: handle custom modules.json source
     
 cleep (0.0.29) UNRELEASED; urgency=low
   * Added UI: close dialog after device has restarted

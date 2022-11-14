@@ -9,38 +9,81 @@ import requests
 from cleep import __version__ as CLEEP_VERSION
 from cleep.libs.internals.download import Download
 
-class ModulesJson():
+
+class ModulesJson:
     """
-    Helper class to update and read values from /etc/cleep/modules.json file
+    Helper class to update and read values from modules.json file
     """
 
-    CONF = '/etc/cleep/modules.json'
-    REMOTE_URL_VERSION = 'https://raw.githubusercontent.com/tangb/cleep-apps/v%(version)s/modules.json'
-    REMOTE_URL_LATEST =  'https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json'
+    DEFAULT_MODULES_JSON = {
+        "filepath": "/etc/cleep/modules.json",
+        "remote_url_version": "https://raw.githubusercontent.com/tangb/cleep-apps/v%(version)s/modules.json",
+        "remote_url_latest": "https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json",
+    }
 
-    def __init__(self, cleep_filesystem):
+    def __init__(self, cleep_filesystem, custom_file=None):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            custom_file (dict): info for custom modules.json file::
+
+                {
+                    filepath (str): place to store custom file,
+                    remote_url_version (str): url to find custom file for specific version. String must contains %(version) to replace it with current Cleep version,
+                    remote_url_latest (str): url to find latest custom file,
+                }
+
         """
         # members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.modulesjson = self.__build_modules_json(custom_file)
 
         # use local REMOTE_CONF if provided
         # if 'CLEEPOS_REMOTE_CONF' in os.environ:
         #     REMOTE_CONF = os.environ['CLEEPOS_REMOTE_CONF']
 
+    def __build_modules_json(self, custom_file):
+        """
+        Build valid modulesjson object
+
+        Args:
+            custom_file (dict): info for custom modules.json file (see constructor)
+
+        Returns:
+            dict: modulesjson content in the same format as custom_file (see constructor)
+        """
+        filepath = None
+        remote_url_version = None
+        remote_url_latest = None
+        try:
+            filepath = custom_file and custom_file.get("filepath") or None
+            remote_url_version = custom_file and custom_file.get("remote_url_version") or None
+            remote_url_latest = custom_file and custom_file.get("remote_url_latest") or None
+        except:
+            # invalid format
+            pass
+
+        if any(v is None for v in [filepath, remote_url_version, remote_url_latest]):
+            return self.DEFAULT_MODULES_JSON
+
+        return {
+            "filepath": filepath,
+            "remote_url_version": remote_url_version,
+            "remote_url_latest": remote_url_latest,
+        }
+
+    
     def exists(self):
         """
         Return True if modules.json exists locally
-    
+
         Returns:
             bool: True if modules.json exists
         """
-        return os.path.exists(self.CONF)
+        return os.path.exists(self.modulesjson["filepath"])
 
     def get_empty(self):
         """
@@ -50,10 +93,7 @@ class ModulesJson():
         Returns:
             dict: default (and empty) modules.json content
         """
-        return {
-            'update': int(time.time()),
-            'list': {}
-        }
+        return {"update": int(time.time()), "list": {}}
 
     def get_json(self):
         """
@@ -66,22 +106,29 @@ class ModulesJson():
                     update (int): last update timestamp
                     list (dict): dict of available modules
                 }
-    
+
         Raises:
             Exception if modules.json does not exist or is invalid
 
         """
         # check
-        if not os.path.exists(self.CONF):
-            raise Exception('File "modules.json" doesn\'t exist. Please update it first.')
-            
+        if not os.path.exists(self.modulesjson["filepath"]):
+            raise Exception(
+                'File "%s" doesn\'t exist. Please update it first.'
+                % self.modulesjson["filepath"]
+            )
+
         # read content
-        modules_json = self.cleep_filesystem.read_json(self.CONF)
+        modules_json = self.cleep_filesystem.read_json(self.modulesjson["filepath"])
 
         # check content
-        if modules_json is None or 'list' not in modules_json or 'update' not in modules_json:
-            self.logger.error('Invalid "modules.json" file content')
-            raise Exception('Invalid "modules.json" file content')
+        if (
+            modules_json is None
+            or "list" not in modules_json
+            or "update" not in modules_json
+        ):
+            self.logger.error('Invalid "%s" file content', self.modulesjson["filepath"])
+            raise Exception('Invalid "%s" file content' % self.modulesjson["filepath"])
 
         return modules_json
 
@@ -95,7 +142,7 @@ class ModulesJson():
         # check versionned first. If available it means current installed Cleep version is not the latest
         # and should be upgraded. Returned modules verions will be fixed forever for this version.
         try:
-            url = self.REMOTE_URL_VERSION % {'version': CLEEP_VERSION}
+            url = self.modulesjson["remote_url_version"] % {"version": CLEEP_VERSION}
             resp = requests.get(url)
             if resp.status_code == 200:
                 return url
@@ -103,11 +150,11 @@ class ModulesJson():
             # do not fail
             pass
 
-        return self.REMOTE_URL_LATEST
+        return self.modulesjson["remote_url_latest"]
 
     def update(self):
         """
-        Update modules.json file downloading fresh version from cleepos website
+        Update modules.json file downloading fresh version from remote url
 
         Returns:
             bool: True if modules.json is different from local one, False if file is identical
@@ -115,41 +162,62 @@ class ModulesJson():
         Raises:
             Exception if error occured
         """
-        self.logger.debug('Updating "modules.json" file...')
+        self.logger.debug('Updating "%s" file...', self.modulesjson["filepath"])
 
         # download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
         download_status, raw = download.download_content(self.__get_remote_url())
         if raw is None:
-            raise Exception('Download of modules.json failed (download status %s)' % download_status)
+            raise Exception(
+                'Download of "%s" failed (download status %s)'
+                % (self.modulesjson["filepath"], download_status)
+            )
         remote_modules_json = json.loads(raw)
-        self.logger.trace('Downloaded modules.json: %s' % remote_modules_json)
+        self.logger.trace(
+            'Downloaded "%s": %s' % (self.modulesjson["filepath"], remote_modules_json)
+        )
 
         # check remote content
-        if 'list' not in remote_modules_json or 'update' not in remote_modules_json:
-            self.logger.error('Remote "modules.json" file has invalid format')
-            raise Exception('Remote "modules.json" file has invalid format')
-        
+        if "list" not in remote_modules_json or "update" not in remote_modules_json:
+            self.logger.error(
+                'Remote "%s" file has invalid format', self.modulesjson["filepath"]
+            )
+            raise Exception(
+                f"Remote \"{self.modulesjson['filepath']}\" file has invalid format"
+            )
+
         # get local
         local_modules_json = None
-        if os.path.exists(self.CONF):
+        if os.path.exists(self.modulesjson["filepath"]):
             local_modules_json = self.get_json()
 
         # compare update field
-        self.logger.debug('Compare update timestamp: %s>%s' % (remote_modules_json['update'], local_modules_json['update'] if local_modules_json else None))
-        if local_modules_json is None or remote_modules_json['update']>local_modules_json['update']:
+        self.logger.debug(
+            "Compare update timestamp: %s>%s"
+            % (
+                remote_modules_json["update"],
+                local_modules_json["update"] if local_modules_json else None,
+            )
+        )
+        if (
+            local_modules_json is None
+            or remote_modules_json["update"] > local_modules_json["update"]
+        ):
             # modules.json updated, save new file
-            fd = self.cleep_filesystem.open(self.CONF, 'w')
+            fd = self.cleep_filesystem.open(self.modulesjson["filepath"], "w")
             fd.write(raw)
             self.cleep_filesystem.close(fd)
-            self.logger.info('File "modules.json" updated successfully')
-        
+            self.logger.info(
+                'File "%s" updated successfully', self.modulesjson["filepath"]
+            )
+
             # make sure file is written
             time.sleep(0.25)
 
             return True
 
         # no update from remote modules.json file
-        self.logger.info('No difference between local and remote modules.json. File not updated.')
+        self.logger.info(
+            "No difference between local and remote {self.modulesjson['filepath']}. File not updated."
+        )
         return False
-

@@ -15,18 +15,27 @@ import io
 from unittest.mock import Mock, patch, MagicMock
 import json
 import time
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
+CUSTOM_MODULES_JSON = {
+    "filepath": "/opt/cleep/custom.json",
+    "remote_url_version": "https://www.cleep.com/custom_version.json",
+    "remote_url_latest": "https://www.cleep.com/custom.json",
+}
 
 class ModulesJsonTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
 
     def _init_context(self, download_mock=None, download_content_return_value=None, download_content_side_effect=None,
-        read_json_return_value=None):
+        read_json_return_value=None, custom_file=None):
         default_json = json.dumps({'update': int(time.time()), 'list': {}})
 
         if download_mock:
@@ -42,7 +51,19 @@ class ModulesJsonTests(unittest.TestCase):
             read_json_return_value = default_json
         self.cleep_filesystem.read_json.return_value = read_json_return_value
 
-        self.mj = ModulesJson(self.cleep_filesystem)
+        self.mj = ModulesJson(self.cleep_filesystem, custom_file)
+
+    def test_constructor_valid_custom_file(self):
+        self._init_context(custom_file=CUSTOM_MODULES_JSON)
+
+        self.assertDictEqual(self.mj.modulesjson, CUSTOM_MODULES_JSON)
+
+    def test_constructor_invalid_custom_file(self):
+        self._init_context(custom_file='dummy.json')
+        logging.debug('modulesjson: %s', self.mj.modulesjson)
+        logging.debug('default modulesjson: %s', ModulesJson.DEFAULT_MODULES_JSON)
+
+        self.assertDictEqual(self.mj.modulesjson, ModulesJson.DEFAULT_MODULES_JSON)
 
     def test_get_empty(self):
         self._init_context()
@@ -60,22 +81,44 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.get_json()
-        self.assertEqual(str(cm.exception), 'File "modules.json" doesn\'t exist. Please update it first.')
+        self.assertEqual(str(cm.exception), 'File "/etc/cleep/modules.json" doesn\'t exist. Please update it first.')
 
     @patch('os.path.exists')
     def test_get_json_exception_invalid_content(self, os_path_exists_mock):
         os_path_exists_mock.return_value = True
         self._init_context(
-            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+            read_json_return_value={'update': (int(time.time())-1000), 'dummy':{}}
         )
 
         with self.assertRaises(Exception) as cm:
             self.mj.get_json()
-        self.assertEqual(str(cm.exception), 'Invalid "modules.json" file content')
+        self.assertEqual(str(cm.exception), 'Invalid "/etc/cleep/modules.json" file content')
+
+    @patch('os.path.exists')
+    def test_get_json_custom_file(self, os_path_exists_mock):
+        os_path_exists_mock.return_value = True
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
+            custom_file=CUSTOM_MODULES_JSON
+        )
+
+        self.mj.get_json()
+
+        self.cleep_filesystem.read_json.assert_called_with(CUSTOM_MODULES_JSON['filepath'])
 
     @patch('os.path.exists')
     def test_exists(self, os_path_exists_mock):
         self._init_context()
+
+        os_path_exists_mock.return_value = True
+        self.assertTrue(self.mj.exists())
+
+        os_path_exists_mock.return_value = False
+        self.assertFalse(self.mj.exists())
+
+    @patch('os.path.exists')
+    def test_exists_custom_file(self, os_path_exists_mock):
+        self._init_context(custom_file=CUSTOM_MODULES_JSON)
 
         os_path_exists_mock.return_value = True
         self.assertTrue(self.mj.exists())
@@ -90,11 +133,11 @@ class ModulesJsonTests(unittest.TestCase):
         geturl_mock.status_code = 200
         requests_mock.get.return_value = geturl_mock
         self._init_context(
-            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}}
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.REMOTE_URL_VERSION % {'version': '0.0.666'})
+        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_version"] % {'version': '0.0.666'})
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
@@ -103,22 +146,50 @@ class ModulesJsonTests(unittest.TestCase):
         geturl_mock.status_code = 404
         requests_mock.get.return_value = geturl_mock
         self._init_context(
-            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}}
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.REMOTE_URL_LATEST)
+        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_latest"])
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
     def test_get_remote_url_exception_should_return_latest_url(self, requests_mock):
         requests_mock.urlopen.side_effect = Exception('Test exception')
         self._init_context(
-            read_json_return_value={'update': (int(time.time())-1000), 'modules':{}}
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}}
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.REMOTE_URL_LATEST)
+        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_latest"])
+
+    @patch('modulesjson.requests')
+    @patch('modulesjson.CLEEP_VERSION', '0.0.666')
+    def test_get_remote_url_custom_file(self, requests_mock):
+        geturl_mock = MagicMock()
+        geturl_mock.status_code = 200
+        requests_mock.get.return_value = geturl_mock
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
+            custom_file=CUSTOM_MODULES_JSON
+        )
+    
+        url = self.mj._ModulesJson__get_remote_url()
+
+        requests_mock.get.assert_called_with(CUSTOM_MODULES_JSON['remote_url_version'])
+
+    @patch('modulesjson.requests')
+    @patch('modulesjson.CLEEP_VERSION', '0.0.666')
+    def test_get_remote_url_custom_file_should_return_latest_url(self, requests_mock):
+        requests_mock.urlopen.side_effect = Exception('Test exception')
+        self._init_context(
+            read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
+            custom_file=CUSTOM_MODULES_JSON
+        )
+    
+        url = self.mj._ModulesJson__get_remote_url()
+
+        self.assertEqual(url, CUSTOM_MODULES_JSON['remote_url_latest'])
 
     @patch('modulesjson.Download')
     @patch('os.path.exists')
@@ -175,12 +246,12 @@ class ModulesJsonTests(unittest.TestCase):
         requests_mock.get.return_value = geturl_mock
         self._init_context(
             download_mock,
-            download_content_return_value=(0, json.dumps({'update': (int(time.time())-500), 'modules':{}})),
+            download_content_return_value=(0, json.dumps({'update': (int(time.time())-500), 'dummy':{}})),
         )
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Remote "modules.json" file has invalid format')
+        self.assertEqual(str(cm.exception), 'Remote "/etc/cleep/modules.json" file has invalid format')
 
     @patch('modulesjson.Download')
     @patch('modulesjson.requests')
@@ -195,7 +266,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Download of modules.json failed (download status 3)')
+        self.assertEqual(str(cm.exception), 'Download of "/etc/cleep/modules.json" failed (download status 3)')
 
 
 if __name__ == '__main__':
