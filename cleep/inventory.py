@@ -11,7 +11,7 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 from cleep.core import Cleep, CleepModule, CleepRenderer, CleepRpcWrapper
-from cleep.libs.configs.modulesjson import ModulesJson
+from cleep.libs.configs.appssources import AppsSources
 from cleep.exception import CommandError, MissingParameter, InvalidParameter
 from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.install import Install
@@ -240,26 +240,22 @@ class Inventory(Cleep):
         # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
-    def _get_modules_json(self):
+    def _get_market(self):
         """
-        Get content of modules.json file
+        Get content of market
 
         Returns:
-            dict: modules.json content
+            dict: market content::
+
+            {
+                update (int): last update timestamp
+                list (dict): list of applications
+            }
+
         """
-        modules_json = ModulesJson(self.cleep_filesystem)
-
-        if not modules_json.exists():
-            # modules.json doesn't exists, download it
-            self.logger.info('No modules.json still loaded from CleepOS website. Download it now')
-            if modules_json.update():
-                self.logger.info('File modules.json downloaded successfully')
-
-            else:
-                self.logger.error('Failed to update modules.json. No application (except installed ones) will be available')
-                return modules_json.get_empty()
-
-        return modules_json.get_json()
+        apps_sources = AppsSources(self.cleep_filesystem)
+        market = apps_sources.get_apps()
+        return market
 
     def reload_modules(self):
         """
@@ -267,7 +263,7 @@ class Inventory(Cleep):
         """
         self.logger.info('Reloading modules')
         # get list of all available modules (from remote list)
-        modules_json_content = self._get_modules_json()
+        modules_json_content = self._get_market()
         modules_json = modules_json_content['list']
         self.logger.trace('modules.json: %s' % modules_json)
 
@@ -303,7 +299,7 @@ class Inventory(Cleep):
         local_modules = []
                 
         # get list of all available modules (from remote list)
-        modules_json_content = self._get_modules_json()
+        modules_json_content = self._get_market()
         self.modules = modules_json_content['list']
         self.logger.trace('Modules.json: %s' % self.modules)
 
@@ -457,7 +453,7 @@ class Inventory(Cleep):
         """
         Unload all modules stopping them
         """
-        # stop all running modules
+        # stop all running modules and unimport them
         for module_name in self.__modules_instances:
             self.__modules_instances[module_name].stop()
 
@@ -588,12 +584,12 @@ class Inventory(Cleep):
         """
         configs = {}
 
-        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
-        for module_name, module in installed_modules.items():
+        installed_apps = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        for app_name, app in installed_apps.items():
             try:
-                configs[module_name] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+                configs[app_name] = self.__modules_instances[app_name].get_module_config() if app_name in self.__modules_instances else {}
             except:
-                self.logger.exception('Unable to get module "%s" config' % module_name)
+                self.logger.exception('Unable to get app "%s" config' % app_name)
 
         return configs
 

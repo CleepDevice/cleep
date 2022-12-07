@@ -19,10 +19,15 @@ from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
-CUSTOM_MODULES_JSON = {
+CUSTOM_SOURCE = {
     "filepath": "/opt/cleep/custom.json",
     "remote_url_version": "https://www.cleep.com/custom_version.json",
     "remote_url_latest": "https://www.cleep.com/custom.json",
+}
+DEFAULT_SOURCE = {
+    "filepath": "/etc/cleep/test.json",
+    "remote_url_version": "https://www.cleep.com/cleep.%(version)s.json",
+    "remote_url_latest": "https://www.cleep.com/cleep.latest.json",
 }
 
 class ModulesJsonTests(unittest.TestCase):
@@ -35,7 +40,7 @@ class ModulesJsonTests(unittest.TestCase):
         pass
 
     def _init_context(self, download_mock=None, download_content_return_value=None, download_content_side_effect=None,
-        read_json_return_value=None, custom_file=None):
+        read_json_return_value=None, custom_source=DEFAULT_SOURCE):
         default_json = json.dumps({'update': int(time.time()), 'list': {}})
 
         if download_mock:
@@ -51,19 +56,20 @@ class ModulesJsonTests(unittest.TestCase):
             read_json_return_value = default_json
         self.cleep_filesystem.read_json.return_value = read_json_return_value
 
-        self.mj = ModulesJson(self.cleep_filesystem, custom_file)
+        self.mj = ModulesJson(self.cleep_filesystem, custom_source)
 
-    def test_constructor_valid_custom_file(self):
-        self._init_context(custom_file=CUSTOM_MODULES_JSON)
+    def test_constructor_valid_custom_source(self):
+        self._init_context(custom_source=CUSTOM_SOURCE)
 
-        self.assertDictEqual(self.mj.modulesjson, CUSTOM_MODULES_JSON)
+        self.assertDictEqual(self.mj.source, CUSTOM_SOURCE)
 
-    def test_constructor_invalid_custom_file(self):
-        self._init_context(custom_file='dummy.json')
-        logging.debug('modulesjson: %s', self.mj.modulesjson)
-        logging.debug('default modulesjson: %s', ModulesJson.DEFAULT_MODULES_JSON)
+    def test_get_source_filepath(self):
+        self._init_context()
 
-        self.assertDictEqual(self.mj.modulesjson, ModulesJson.DEFAULT_MODULES_JSON)
+        filepath = self.mj.get_source_filepath()
+        logging.debug('Filepath: %s', filepath)
+
+        self.assertEqual(filepath, DEFAULT_SOURCE["filepath"])
 
     def test_get_empty(self):
         self._init_context()
@@ -75,36 +81,36 @@ class ModulesJsonTests(unittest.TestCase):
         self.assertTrue(isinstance(empty['list'], dict))
 
     @patch('os.path.exists')
-    def test_get_json_exception_no_file(self, os_path_exists_mock):
+    def test_get_content_exception_no_file(self, os_path_exists_mock):
         os_path_exists_mock.return_value = False
         self._init_context()
 
         with self.assertRaises(Exception) as cm:
-            self.mj.get_json()
-        self.assertEqual(str(cm.exception), 'File "/etc/cleep/modules.json" doesn\'t exist. Please update it first.')
+            self.mj.get_content()
+        self.assertEqual(str(cm.exception), 'File "/etc/cleep/test.json" doesn\'t exist. Please update it first.')
 
     @patch('os.path.exists')
-    def test_get_json_exception_invalid_content(self, os_path_exists_mock):
+    def test_get_content_exception_invalid_content(self, os_path_exists_mock):
         os_path_exists_mock.return_value = True
         self._init_context(
             read_json_return_value={'update': (int(time.time())-1000), 'dummy':{}}
         )
 
         with self.assertRaises(Exception) as cm:
-            self.mj.get_json()
-        self.assertEqual(str(cm.exception), 'Invalid "/etc/cleep/modules.json" file content')
+            self.mj.get_content()
+        self.assertEqual(str(cm.exception), 'Invalid "/etc/cleep/test.json" file content')
 
     @patch('os.path.exists')
-    def test_get_json_custom_file(self, os_path_exists_mock):
+    def test_get_content_custom_source(self, os_path_exists_mock):
         os_path_exists_mock.return_value = True
         self._init_context(
             read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
-            custom_file=CUSTOM_MODULES_JSON
+            custom_source=CUSTOM_SOURCE
         )
 
-        self.mj.get_json()
+        self.mj.get_content()
 
-        self.cleep_filesystem.read_json.assert_called_with(CUSTOM_MODULES_JSON['filepath'])
+        self.cleep_filesystem.read_json.assert_called_with(CUSTOM_SOURCE['filepath'], 'utf8')
 
     @patch('os.path.exists')
     def test_exists(self, os_path_exists_mock):
@@ -117,8 +123,8 @@ class ModulesJsonTests(unittest.TestCase):
         self.assertFalse(self.mj.exists())
 
     @patch('os.path.exists')
-    def test_exists_custom_file(self, os_path_exists_mock):
-        self._init_context(custom_file=CUSTOM_MODULES_JSON)
+    def test_exists_custom_source(self, os_path_exists_mock):
+        self._init_context(custom_source=CUSTOM_SOURCE)
 
         os_path_exists_mock.return_value = True
         self.assertTrue(self.mj.exists())
@@ -137,7 +143,7 @@ class ModulesJsonTests(unittest.TestCase):
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_version"] % {'version': '0.0.666'})
+        self.assertEqual(url, DEFAULT_SOURCE["remote_url_version"] % {'version': '0.0.666'})
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
@@ -150,7 +156,7 @@ class ModulesJsonTests(unittest.TestCase):
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_latest"])
+        self.assertEqual(url, DEFAULT_SOURCE["remote_url_latest"])
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
@@ -161,35 +167,35 @@ class ModulesJsonTests(unittest.TestCase):
         )
     
         url = self.mj._ModulesJson__get_remote_url()
-        self.assertEqual(url, self.mj.DEFAULT_MODULES_JSON["remote_url_latest"])
+        self.assertEqual(url, DEFAULT_SOURCE["remote_url_latest"])
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
-    def test_get_remote_url_custom_file(self, requests_mock):
+    def test_get_remote_url_custom_source(self, requests_mock):
         geturl_mock = MagicMock()
         geturl_mock.status_code = 200
         requests_mock.get.return_value = geturl_mock
         self._init_context(
             read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
-            custom_file=CUSTOM_MODULES_JSON
+            custom_source=CUSTOM_SOURCE
         )
     
         url = self.mj._ModulesJson__get_remote_url()
 
-        requests_mock.get.assert_called_with(CUSTOM_MODULES_JSON['remote_url_version'])
+        requests_mock.get.assert_called_with(CUSTOM_SOURCE['remote_url_version'])
 
     @patch('modulesjson.requests')
     @patch('modulesjson.CLEEP_VERSION', '0.0.666')
-    def test_get_remote_url_custom_file_should_return_latest_url(self, requests_mock):
+    def test_get_remote_url_custom_source_should_return_latest_url(self, requests_mock):
         requests_mock.urlopen.side_effect = Exception('Test exception')
         self._init_context(
             read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
-            custom_file=CUSTOM_MODULES_JSON
+            custom_source=CUSTOM_SOURCE
         )
     
         url = self.mj._ModulesJson__get_remote_url()
 
-        self.assertEqual(url, CUSTOM_MODULES_JSON['remote_url_latest'])
+        self.assertEqual(url, CUSTOM_SOURCE['remote_url_latest'])
 
     @patch('modulesjson.Download')
     @patch('os.path.exists')
@@ -251,7 +257,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Remote "/etc/cleep/modules.json" file has invalid format')
+        self.assertEqual(str(cm.exception), 'Remote "/etc/cleep/test.json" file has invalid format')
 
     @patch('modulesjson.Download')
     @patch('modulesjson.requests')
@@ -266,7 +272,38 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Download of "/etc/cleep/modules.json" failed (download status 3)')
+        self.assertEqual(str(cm.exception), 'Download of "/etc/cleep/test.json" failed (download status 3)')
+
+    def test_update_invalid_source_str_instead_of_dict(self):
+        custom_source = "dummy.json"
+        self._init_context(custom_source=custom_source)
+
+        with self.assertRaises(Exception) as cm:
+            self.mj.update()
+        self.assertEqual(str(cm.exception), 'Source is invalid: %s' % custom_source)
+
+    def test_update_invalid_source_missing_key(self):
+        custom_source = {
+            "filepath": "something",
+            "remote_url_latest": "https://something",
+        }
+        self._init_context(custom_source=custom_source)
+
+        with self.assertRaises(Exception) as cm:
+            self.mj.update()
+        self.assertEqual(str(cm.exception), 'Source is invalid: %s' % custom_source)
+
+    def test_update_invalid_source_no_version_pattern(self):
+        custom_source = {
+            "filepath": "something",
+            "remote_url_latest": "https://something",
+            "remote_url_version": "https://something",
+        }
+        self._init_context(custom_source=custom_source)
+
+        with self.assertRaises(Exception) as cm:
+            self.mj.update()
+        self.assertEqual(str(cm.exception), 'Source is invalid: %s' % custom_source)
 
 
 if __name__ == '__main__':

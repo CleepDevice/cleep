@@ -13,6 +13,9 @@ from unittest.mock import Mock, patch
 import io, shutil
 import time
 from threading import Event
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 
 class InventoryTests(unittest.TestCase):
@@ -31,6 +34,12 @@ class %(module_name)s(%(inherit)s):
     MODULE_COUNTRY = None
 
     RENDERER_PROFILES = []
+
+    MODULE_CONFIG_FILE = '%(module_name)s.json'
+    DEFAULT_CONFIG = {
+        'name': '%(module_name)s',
+        'prop': 666,
+    }
 
     def __init__(self, bootstrap, debug_enabled):
         %(inherit)s.__init__(self, bootstrap, debug_enabled)
@@ -62,20 +71,27 @@ class %(module_name)s(%(inherit)s):
         return {
             '123-456-789': {}
         }
+
+    def get_module_config(self):
+        if self.exception:
+            raise Exception('Test exception')
+        return self.DEFAULT_CONFIG
     """
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.i = None
 
     def tearDown(self):
         if self.i:
             self.i.unload_modules()
+            del self.i
+        #del sys.modules['modules']
+        for to_unload in [mod for mod in sys.modules if mod.startswith('modules')]:
+            del sys.modules[to_unload]
         if os.path.exists('modules'):
             shutil.rmtree('modules')
-        for to_unload in [mod for mod in sys.modules if mod.startswith('modules.module')]:
-            del sys.modules[to_unload]
 
     def _init_context(self, debug_enabled=False, configured_modules=[], debug_modules=[],
             mod1_deps=[], mod2_deps=[], mod3_deps=[],
@@ -146,59 +162,28 @@ class %(module_name)s(%(inherit)s):
         Inventory.PYTHON_CLEEP_MODULES_PATH = 'tests/modules'
         Inventory.MODULES_SYNC_TIMEOUT = 2.0
 
-    @patch('inventory.ModulesJson')
-    def test_get_modules_json_exists_true(self, modulesjson_mock):
+    @patch('inventory.AppsSources')
+    def test_get_market(self, appssources_mock):
         json_content = {
             'update': 0,
             'list': ['module1', 'module2']
         }
-        modulesjson_mock.return_value.get_json.return_value = json_content
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.get_apps.return_value = json_content
+        appssources_mock.return_value.exists.return_value = True
         self._init_context()
         
-        j = self.i._get_modules_json()
-        logging.debug('ModulesJson: %s' % j)
+        j = self.i._get_market()
+        logging.debug('AppSources: %s' % j)
+
         self.assertEqual(j, json_content)
 
-    @patch('inventory.ModulesJson')
-    def test_get_modules_json_exists_false(self, modulesjson_mock):
-        json_content = {
-            'update': 0,
-            'list': ['module1', 'module2']
-        }
-        modulesjson_mock.return_value.get_json.return_value = json_content
-        modulesjson_mock.return_value.exists.return_value = False
-        self._init_context()
-        
-        j = self.i._get_modules_json()
-        logging.debug('ModulesJson: %s' % j)
-        self.assertTrue(modulesjson_mock.return_value.update.called)
-        self.assertEqual(j, json_content)
-
-    @patch('inventory.ModulesJson')
-    def test_get_modules_json_exists_false_update_failed(self, modulesjson_mock):
-        json_content = {
-            'update': 123,
-            'list': []
-        }
-        modulesjson_mock.return_value.get_empty.return_value = json_content
-        modulesjson_mock.return_value.exists.return_value = False
-        modulesjson_mock.return_value.update.return_value = False
-        self._init_context()
-        
-        j = self.i._get_modules_json()
-        logging.debug('ModulesJson: %s' % j)
-        self.assertTrue(modulesjson_mock.return_value.update.called)
-        self.assertFalse(modulesjson_mock.return_value.get_json.called)
-        self.assertEqual(j, json_content)
-
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'])
 
         # we use _configure instead of "self.i._load_modules()" just to cover this function
@@ -248,13 +233,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('deps' in self.i.modules['module3'])
         self.assertTrue('local' in self.i.modules['module3'])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cleeprenderer_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_cleeprenderer_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRenderer')
 
         self.i._load_modules()
@@ -265,13 +250,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cleepexternalbus_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_cleepexternalbus_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepExternalBus')
 
         self.i._load_modules()
@@ -284,13 +269,13 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(self.bootstrap['external_bus'], 'module1')
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_rpcwrapper_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_rpcwrapper_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -301,13 +286,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_unknown_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_unknown_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'dummy'])
 
         self.i._load_modules()
@@ -317,13 +302,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_deps(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_deps(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -335,13 +320,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_unknown_dep(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_unknown_dep(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'], mod1_deps=['dummy'])
 
         self.i._load_modules()
@@ -351,13 +336,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_circular_deps(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_circular_deps(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], mod2_deps=['module1'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -369,13 +354,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_dep_already_loaded(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_with_dep_already_loaded(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module3'], mod2_deps=['module3'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -388,14 +373,14 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_local_module(self, modulesjson_mock):
+    def test_load_modules_with_local_module(self, appssources_mock):
         # module3 is installed locally
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -408,14 +393,14 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_local_module_as_dep(self, modulesjson_mock):
+    def test_load_modules_with_local_module_as_dep(self, appssources_mock):
         # module3 is installed locally
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module3'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -428,14 +413,14 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cascading_deps(self, modulesjson_mock):
+    def test_load_modules_with_cascading_deps(self, appssources_mock):
         # deps tree : module1 --> module2 --> module3
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -445,14 +430,14 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cascading_deps_final_circular(self, modulesjson_mock):
+    def test_load_modules_with_cascading_deps_final_circular(self, appssources_mock):
         # deps tree : module1 --> module2 --> module3 --> module1
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], mod3_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -462,15 +447,15 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps(self, modulesjson_mock):
+    def test_load_modules_with_tree_deps(self, appssources_mock):
         # deps tree : module1 --> module2
         #                     --> module3
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -480,15 +465,15 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps_circular_first_leaf(self, modulesjson_mock):
+    def test_load_modules_with_tree_deps_circular_first_leaf(self, appssources_mock):
         # deps tree : module1 --> module2 --> module1
         #                     --> module3 
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], mod2_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -498,15 +483,15 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps_circular_other_leaf(self, modulesjson_mock):
+    def test_load_modules_with_tree_deps_circular_other_leaf(self, appssources_mock):
         # deps tree : module1 --> module2
         #                     --> module3 --> module1
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], mod3_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -516,13 +501,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_load_again(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_load_again(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -531,13 +516,13 @@ class %(module_name)s(%(inherit)s):
             self.i._load_modules()
         self.assertEqual(str(cm.exception), 'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', ['module1'])
-    def test_load_modules_core_modules(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_core_modules(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module2'])
 
         self.i._load_modules()
@@ -548,14 +533,14 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', ['module1'])
     @patch('cleep.core.CORE_MODULES', ['module1'])
-    def test_load_modules_core_modules_exception(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_load_modules_core_modules_exception(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module2'], mod1_startup_error='raise Exception("Startup exception")')
 
         self.i._load_modules()
@@ -567,10 +552,10 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module3'))
         self.assertTrue(self.crash_report.report_exception.called)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_reload_modules(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.side_effect = [
+    def test_reload_modules(self, appssources_mock):
+        appssources_mock.return_value.get_apps.side_effect = [
             {
                 'update': 1587168000,
                 'list': {'module1':{'version':'0.0.0'}, 'module2':{'version':'0.0.0'}}
@@ -580,7 +565,7 @@ class %(module_name)s(%(inherit)s):
                 'list': {'module1':{'version': '1.0.0'}, 'module2':{'version':'0.0.0'}, 'module4': {}}
             },
         ]
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -621,13 +606,13 @@ class %(module_name)s(%(inherit)s):
 
         self.assertFalse(self.i.wait_for_apps_started())
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_unload_modules(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_unload_modules(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -639,13 +624,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_devices(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -660,13 +645,13 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(devices['module1'], {'123-456-789': {}})
         self.assertEqual(devices['module2'], {'123-456-789': {}})
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices_exception(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_devices_exception(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod2_exception=True)
 
         self.i._load_modules()
@@ -680,13 +665,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices_no_cleepmodule(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_devices_no_cleepmodule(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod2_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -700,13 +685,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_device(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_device(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -717,13 +702,13 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(module, 'module1')
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_device_unknown_device(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_device_unknown_device(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -734,13 +719,13 @@ class %(module_name)s(%(inherit)s):
 
         self.assertIsNone(module)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_devices(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_devices(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -752,13 +737,13 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(devices), 1)
         self.assertTrue('123-456-789' in devices)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_devices_unknown_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_devices_unknown_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -768,13 +753,13 @@ class %(module_name)s(%(inherit)s):
             self.i.get_module_devices('dummy')
         self.assertEqual(cm.exception.message, 'Application "dummy" doesn\'t exist')
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_infos(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
 
@@ -802,13 +787,13 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertTrue('module1' in infos['loadedby'])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos_local_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_infos_local_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
@@ -836,35 +821,65 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertEqual(len(infos['loadedby']), 0)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos_unknown_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_infos_unknown_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
         infos = self.i.get_module_infos('module4')
-        logging.debug('Infos: %s' % infos)
+        logging.debug('Infos: %s', infos)
 
         self.assertEqual(infos, {})
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
+    @patch('inventory.CORE_MODULES', [])
+    def test_get_modules_configs(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
+            'list': {'module1':{}, 'module2': {}}
+        }
+        appssources_mock.return_value.exists.return_value = True
+        self._init_context(configured_modules=['module1', 'module3'])
+        self.i._load_modules()
+        
+        configs = self.i.get_modules_configs()
+        logging.debug('Configs: %s', configs)
+
+        self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}, 'module3': {'name': 'Module3', 'prop': 666}})
+
+    @patch('inventory.AppsSources')
+    @patch('inventory.CORE_MODULES', [])
+    def test_get_modules_configs_with_error(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
+            'list': {'module1':{}, 'module2': {}}
+        }
+        appssources_mock.return_value.exists.return_value = True
+        self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
+        self.i._load_modules()
+        
+        configs = self.i.get_modules_configs()
+        logging.debug('Configs: %s', configs)
+
+        self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}})
+
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_installable_modules(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_installable_modules(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
 
@@ -882,20 +897,20 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('started' in modules['module2'])
         self.assertFalse('started' in modules['module4'])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_modules(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_modules(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
 
@@ -919,40 +934,40 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(modules['module2']['started'])
         self.assertTrue(modules['module3']['started'])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_modules_module_failed(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_modules_module_failed(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'], mod1_startup_error='raise Exception("Startup exception")')
         self.i._load_modules()
 
         modules = self.i.get_modules()
         logging.debug('Modules: %s' % modules)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_modules_no_filter(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_modules_no_filter(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module1'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3', 'module4'])
         self.i._load_modules()
 
@@ -964,20 +979,20 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_modules_invalid_filter(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_modules_invalid_filter(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module2'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
@@ -985,20 +1000,20 @@ class %(module_name)s(%(inherit)s):
             self.i._get_modules('dummy')
         self.assertEqual(cm.exception.message, 'Parameter "module_filter" must be callable')
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     @patch('inventory.CleepConf')
-    def test_get_modules_with_filter(self, cleep_conf_mock, modulesjson_mock):
+    def test_get_modules_with_filter(self, cleep_conf_mock, appssources_mock):
         cleep_conf_mock.return_value.as_dict.return_value = {
             'general': {
                 'modules': ['module1', 'module2'],
                 'updated': ['module2'],
             }
         }
-        modulesjson_mock.return_value.get_json.return_value = {
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module4': {}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
     
@@ -1020,13 +1035,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_commands(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_commands(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1037,13 +1052,13 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(commands), 1)
         self.assertTrue('dummy' in commands)
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_commands_unknown_module(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_module_commands_unknown_module(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1053,13 +1068,13 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(commands, [])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_debug(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_modules_debug(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], debug_modules=['module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1077,13 +1092,13 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(debugs['module1']['debug'])
         self.assertTrue(debugs['module3']['debug'])
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_debug_exception(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_get_modules_debug_exception(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1132,13 +1147,13 @@ class %(module_name)s(%(inherit)s):
         self.i.get_used_events()
         self.events_broker.get_used_events.assert_called_with()
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_rpc_wrapper(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_rpc_wrapper(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -1147,13 +1162,13 @@ class %(module_name)s(%(inherit)s):
         self.i.rpc_wrapper('a_route', {})
         # can't perform some check call was a success. We add info log message on stdout
 
-    @patch('inventory.ModulesJson')
+    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_rpc_wrapper_exception(self, modulesjson_mock):
-        modulesjson_mock.return_value.get_json.return_value = {
+    def test_rpc_wrapper_exception(self, appssources_mock):
+        appssources_mock.return_value.get_apps.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
-        modulesjson_mock.return_value.exists.return_value = True
+        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper', mod1_exception=True)
 
         self.i._load_modules()
