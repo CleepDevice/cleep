@@ -253,7 +253,7 @@ class AppsSourcesTests(unittest.TestCase):
         self.assertEqual(cm.exception.message, 'Parameter "source_filepath" must not refer to a Cleep source')
 
     @patch('os.path.exists')
-    def test_get_apps_without_update(self, os_path_exists_mock):
+    def test_get_market_without_update(self, os_path_exists_mock):
         self._init_context(os_path_exists_mock)
         sources = deepcopy(DEFAULT_SOURCES)
         sources.append(CUSTOM_SOURCE)
@@ -264,14 +264,14 @@ class AppsSourcesTests(unittest.TestCase):
         self.l.apps = deepcopy(APPS1)
         self.l.update = Mock()
         
-        apps = self.l.get_apps()
+        apps = self.l.get_market()
         logging.debug('apps: %s', apps)
 
         self.assertDictEqual(apps, APPS1)
         self.l.update.assert_not_called()
 
     @patch('os.path.exists')
-    def test_get_apps_with_update(self, os_path_exists_mock):
+    def test_get_market_with_update(self, os_path_exists_mock):
         self._init_context(os_path_exists_mock)
         sources = deepcopy(DEFAULT_SOURCES)
         sources.append(CUSTOM_SOURCE)
@@ -281,16 +281,16 @@ class AppsSourcesTests(unittest.TestCase):
         self.cleep_filesystem.write_json.return_value = True
         self.l.apps = deepcopy(APPS1)
         self.l.apps["update"] = 0
-        self.l.update_apps = Mock()
+        self.l.update_market = Mock()
         
-        apps = self.l.get_apps()
+        apps = self.l.get_market()
         logging.debug('apps: %s', apps)
 
-        self.l.update_apps.assert_called_with(force_update=False)
+        self.l.update_market.assert_called_with(force_update=False)
 
     @patch('os.path.exists')
     @patch('appssources.ModulesJson')
-    def test_update_apps_has_updates(self, modules_json_mock, os_path_exists_mock):
+    def test_update_market_has_updates(self, modules_json_mock, os_path_exists_mock):
         modulesjson_mock = Mock()
         modules_json_mock.return_value = modulesjson_mock
         modulesjson_mock.exists.return_value = True
@@ -298,7 +298,7 @@ class AppsSourcesTests(unittest.TestCase):
         modulesjson_mock.update.return_value = True
         self._init_context(os_path_exists_mock)
 
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
 
         self.assertTrue(has_updates)
@@ -306,7 +306,7 @@ class AppsSourcesTests(unittest.TestCase):
 
     @patch('os.path.exists')
     @patch('appssources.ModulesJson')
-    def test_update_apps_has_no_updates(self, modules_json_mock, os_path_exists_mock):
+    def test_update_market_has_no_updates(self, modules_json_mock, os_path_exists_mock):
         modulesjson_mock = Mock()
         modules_json_mock.return_value = modulesjson_mock
         modulesjson_mock.exists.return_value = True
@@ -314,9 +314,9 @@ class AppsSourcesTests(unittest.TestCase):
         modulesjson_mock.update.side_effect = [True, True, False, False]
         self._init_context(os_path_exists_mock)
 
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
 
         self.assertFalse(has_updates)
@@ -324,7 +324,7 @@ class AppsSourcesTests(unittest.TestCase):
 
     @patch('os.path.exists')
     @patch('appssources.ModulesJson')
-    def test_update_apps_available_updates(self, modules_json_mock, os_path_exists_mock):
+    def test_update_market_available_updates(self, modules_json_mock, os_path_exists_mock):
         modulesjson_mock = Mock()
         modules_json_mock.return_value = modulesjson_mock
         modulesjson_mock.exists.return_value = True
@@ -332,9 +332,9 @@ class AppsSourcesTests(unittest.TestCase):
         modulesjson_mock.update.side_effect = [True, True, True, False]
         self._init_context(os_path_exists_mock)
 
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
 
         self.assertTrue(has_updates)
@@ -343,7 +343,7 @@ class AppsSourcesTests(unittest.TestCase):
 
     @patch('os.path.exists')
     @patch('appssources.ModulesJson')
-    def test_update_apps_do_not_force_update(self, modules_json_mock, os_path_exists_mock):
+    def test_update_market_do_not_force_update(self, modules_json_mock, os_path_exists_mock):
         modulesjson_mock = Mock()
         modules_json_mock.return_value = modulesjson_mock
         modulesjson_mock.exists.return_value = True
@@ -351,16 +351,16 @@ class AppsSourcesTests(unittest.TestCase):
         modulesjson_mock.update.return_value = True
         self._init_context(os_path_exists_mock)
 
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
         logging.debug("Has updates: %s", has_updates)
-        has_updates = self.l.update_apps(force_update=False)
+        has_updates = self.l.update_market(force_update=False)
         logging.debug("Has updates: %s", has_updates)
 
         self.assertEqual(modulesjson_mock.update.call_count, 2)
 
     @patch('os.path.exists')
     @patch('appssources.ModulesJson')
-    def test_update_apps_update_failure(self, modules_json_mock, os_path_exists_mock):
+    def test_update_market_update_failure(self, modules_json_mock, os_path_exists_mock):
         modulesjson_mock = Mock()
         modules_json_mock.return_value = modulesjson_mock
         modulesjson_mock.exists.return_value = True
@@ -369,7 +369,7 @@ class AppsSourcesTests(unittest.TestCase):
         modulesjson_mock.get_empty.return_value = APPS_EMPTY
         self._init_context(os_path_exists_mock)
 
-        has_updates = self.l.update_apps()
+        has_updates = self.l.update_market()
 
         self.assertEqual(modulesjson_mock.update.call_count, 2)
 

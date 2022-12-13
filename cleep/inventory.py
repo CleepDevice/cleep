@@ -254,7 +254,7 @@ class Inventory(Cleep):
 
         """
         apps_sources = AppsSources(self.cleep_filesystem)
-        market = apps_sources.get_apps()
+        market = apps_sources.get_market()
         return market
 
     def reload_modules(self):

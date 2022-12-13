@@ -168,7 +168,7 @@ class %(module_name)s(%(inherit)s):
             'update': 0,
             'list': ['module1', 'module2']
         }
-        appssources_mock.return_value.get_apps.return_value = json_content
+        appssources_mock.return_value.get_market.return_value = json_content
         appssources_mock.return_value.exists.return_value = True
         self._init_context()
         
@@ -180,7 +180,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -236,7 +236,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_cleeprenderer_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -253,7 +253,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_cleepexternalbus_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -272,7 +272,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_rpcwrapper_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -289,7 +289,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -305,7 +305,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_deps(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -323,7 +323,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_unknown_dep(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -339,7 +339,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_circular_deps(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -357,7 +357,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_dep_already_loaded(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -377,7 +377,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_local_module(self, appssources_mock):
         # module3 is installed locally
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -397,7 +397,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_local_module_as_dep(self, appssources_mock):
         # module3 is installed locally
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -417,7 +417,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_cascading_deps(self, appssources_mock):
         # deps tree : module1 --> module2 --> module3
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -434,7 +434,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_with_cascading_deps_final_circular(self, appssources_mock):
         # deps tree : module1 --> module2 --> module3 --> module1
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -452,7 +452,7 @@ class %(module_name)s(%(inherit)s):
     def test_load_modules_with_tree_deps(self, appssources_mock):
         # deps tree : module1 --> module2
         #                     --> module3
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -470,7 +470,7 @@ class %(module_name)s(%(inherit)s):
     def test_load_modules_with_tree_deps_circular_first_leaf(self, appssources_mock):
         # deps tree : module1 --> module2 --> module1
         #                     --> module3 
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -488,7 +488,7 @@ class %(module_name)s(%(inherit)s):
     def test_load_modules_with_tree_deps_circular_other_leaf(self, appssources_mock):
         # deps tree : module1 --> module2
         #                     --> module3 --> module1
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -504,7 +504,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_load_modules_load_again(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -519,7 +519,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', ['module1'])
     def test_load_modules_core_modules(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -537,7 +537,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.CORE_MODULES', ['module1'])
     @patch('cleep.core.CORE_MODULES', ['module1'])
     def test_load_modules_core_modules_exception(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -555,7 +555,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_reload_modules(self, appssources_mock):
-        appssources_mock.return_value.get_apps.side_effect = [
+        appssources_mock.return_value.get_market.side_effect = [
             {
                 'update': 1587168000,
                 'list': {'module1':{'version':'0.0.0'}, 'module2':{'version':'0.0.0'}}
@@ -609,7 +609,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_unload_modules(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -627,7 +627,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_devices(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -648,7 +648,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_devices_exception(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -668,7 +668,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_devices_no_cleepmodule(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -688,7 +688,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_device(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -705,7 +705,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_device_unknown_device(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -722,7 +722,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_devices(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -740,7 +740,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_devices_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}, 'module3': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -756,7 +756,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_infos(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -790,7 +790,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_infos_local_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -824,7 +824,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_infos_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -839,7 +839,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_modules_configs(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -854,7 +854,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_modules_configs_with_error(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -876,7 +876,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module1'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -907,7 +907,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module1'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -944,7 +944,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module1'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -964,7 +964,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module1'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -989,7 +989,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module2'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1010,7 +1010,7 @@ class %(module_name)s(%(inherit)s):
                 'updated': ['module2'],
             }
         }
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module4': {}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1038,7 +1038,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_commands(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1055,7 +1055,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_module_commands_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1071,7 +1071,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_modules_debug(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1095,7 +1095,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_get_modules_debug_exception(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1150,7 +1150,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_rpc_wrapper(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True
@@ -1165,7 +1165,7 @@ class %(module_name)s(%(inherit)s):
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
     def test_rpc_wrapper_exception(self, appssources_mock):
-        appssources_mock.return_value.get_apps.return_value = {
+        appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2':{}}
         }
         appssources_mock.return_value.exists.return_value = True

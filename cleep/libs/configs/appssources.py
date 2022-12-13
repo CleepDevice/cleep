@@ -196,7 +196,7 @@ class AppsSources:
 
         self.__refresh_sources()
 
-    def get_apps(self):
+    def get_market(self):
         """
         Get all applications from aggregated content for all registered sources
 
@@ -211,10 +211,10 @@ class AppsSources:
         if self.apps["update"] != 0:
             return deepcopy(self.apps)
 
-        self.update_apps(force_update=False)
+        self.update_market(force_update=False)
         return deepcopy(self.apps)
 
-    def update_apps(self, force_update=True):
+    def update_market(self, force_update=True):
         """
         Update all applications from all sources
 
