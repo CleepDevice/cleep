@@ -23,24 +23,26 @@ class ModulesJson:
 
     """
 
-    def __init__(self, cleep_filesystem, source):
+    def __init__(self, cleep_filesystem, sources_path, source):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            sources_path (str): path to save source content
             source (dict): source content::
 
                 {
-                    filepath (string): source filepath
-                    remote_url_version (string): source remote url with custom version
-                    remote_url_latest (string): source remote url for latest version
+                    filename (str): source filename
+                    remote_url_version (str): source remote url with custom version
+                    remote_url_latest (str): source remote url for latest version
                 }
 
         """
         # members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.sources_path = sources_path
         self.source = source
 
     def __is_valid(self):
@@ -53,7 +55,7 @@ class ModulesJson:
         if not isinstance(self.source, dict):
             return False
 
-        keys = ["filepath", "remote_url_version", "remote_url_latest"]
+        keys = ["filename", "remote_url_version", "remote_url_latest"]
         if not all([key in self.source for key in keys]):
             return False
 
@@ -67,9 +69,9 @@ class ModulesJson:
         Return source file path
 
         Returns:
-            string: source filepath
+            str: source filepath
         """
-        return self.source["filepath"]
+        return os.path.join(self.sources_path, self.source["filename"])
 
     def exists(self):
         """
@@ -78,7 +80,7 @@ class ModulesJson:
         Returns:
             bool: True if modules.json exists
         """
-        return os.path.exists(self.source["filepath"])
+        return os.path.exists(self.get_source_filepath())
 
     def get_empty(self):
         """
@@ -106,14 +108,15 @@ class ModulesJson:
             Exception if modules.json does not exist or is invalid
         """
         # check
-        if not os.path.exists(self.source["filepath"]):
+        source_filepath = self.get_source_filepath()
+        if not os.path.exists(source_filepath):
             raise Exception(
                 'File "%s" doesn\'t exist. Please update it first.'
-                % self.source["filepath"]
+                % source_filepath
             )
 
         # read content
-        modules_json = self.cleep_filesystem.read_json(self.source["filepath"], "utf8")
+        modules_json = self.cleep_filesystem.read_json(source_filepath, "utf8")
 
         # check content
         if (
@@ -121,8 +124,8 @@ class ModulesJson:
             or "list" not in modules_json
             or "update" not in modules_json
         ):
-            self.logger.error('Invalid "%s" file content', self.source["filepath"])
-            raise Exception('Invalid "%s" file content' % self.source["filepath"])
+            self.logger.error('Invalid "%s" file content', source_filepath)
+            raise Exception('Invalid "%s" file content' % source_filepath)
 
         return modules_json
 
@@ -158,7 +161,8 @@ class ModulesJson:
         """
         if not self.__is_valid():
             raise Exception(f"Source is invalid: {self.source}")
-        self.logger.debug('Updating "%s" file...', self.source["filepath"])
+        source_filepath = self.get_source_filepath()
+        self.logger.debug('Updating "%s" file...', source_filepath)
 
         # download file (blocking because file is small)
         download = Download(self.cleep_filesystem)
@@ -166,25 +170,25 @@ class ModulesJson:
         if raw is None:
             raise Exception(
                 'Download of "%s" failed (download status %s)'
-                % (self.source["filepath"], download_status)
+                % (source_filepath, download_status)
             )
         remote_modules_json = json.loads(raw)
         self.logger.trace(
-            'Downloaded "%s": %s' % (self.source["filepath"], remote_modules_json)
+            'Downloaded "%s": %s' % (source_filepath, remote_modules_json)
         )
 
         # check remote content
         if "list" not in remote_modules_json or "update" not in remote_modules_json:
             self.logger.error(
-                'Remote "%s" file has invalid format', self.source["filepath"]
+                'Remote "%s" file has invalid format', source_filepath
             )
             raise Exception(
-                f"Remote \"{self.source['filepath']}\" file has invalid format"
+                f"Remote \"{source_filepath}\" file has invalid format"
             )
 
         # get local
         local_modules_json = None
-        if os.path.exists(self.source["filepath"]):
+        if os.path.exists(source_filepath):
             local_modules_json = self.get_content()
 
         # compare update field
@@ -200,11 +204,11 @@ class ModulesJson:
             or remote_modules_json["update"] > local_modules_json["update"]
         ):
             # modules.json updated, save new file
-            fd = self.cleep_filesystem.open(self.source["filepath"], "w")
+            fd = self.cleep_filesystem.open(source_filepath, "w")
             fd.write(raw)
             self.cleep_filesystem.close(fd)
             self.logger.info(
-                'File "%s" updated successfully', self.source["filepath"]
+                'File "%s" updated successfully', source_filepath
             )
 
             # make sure file is written
@@ -214,6 +218,6 @@ class ModulesJson:
 
         # no update from remote modules.json file
         self.logger.info(
-            "No difference between local and remote {self.source['filepath']}. File not updated."
+            "No difference between local and remote {source_filepath}. File not updated."
         )
         return False

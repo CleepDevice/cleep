@@ -17,17 +17,17 @@ from copy import deepcopy
 LOG_LEVEL = get_log_level()
 
 CUSTOM_SOURCE = {
-    "filepath": "/opt/cleep/custom.json",
-    "remote_url_version": "https://www.cleep.com/custom_%(version)s.json",
-    "remote_url_latest": "https://www.cleep.com/custom.json",
-}
-INVALID_SOURCE_FIELD = {
     "filename": "/opt/cleep/custom.json",
     "remote_url_version": "https://www.cleep.com/custom_%(version)s.json",
     "remote_url_latest": "https://www.cleep.com/custom.json",
 }
-INVALID_SOURCE_VERSION = {
+INVALID_SOURCE_FIELD = {
     "filepath": "/opt/cleep/custom.json",
+    "remote_url_version": "https://www.cleep.com/custom_%(version)s.json",
+    "remote_url_latest": "https://www.cleep.com/custom.json",
+}
+INVALID_SOURCE_VERSION = {
+    "filename": "/opt/cleep/custom.json",
     "remote_url_version": "https://www.cleep.com/custom_version.json",
     "remote_url_latest": "https://www.cleep.com/custom.json",
 }
@@ -96,7 +96,7 @@ class AppsSourcesTests(unittest.TestCase):
 
         AppsSources(cleep_filesystem)
 
-        cleep_filesystem.write_json.assert_called_with(AppsSources.APP_SOURCES_PATH, {"sources": DEFAULT_SOURCES}, 'utf8')
+        cleep_filesystem.write_json.assert_called_with(AppsSources.APPS_SOURCES_PATH, {"sources": DEFAULT_SOURCES}, 'utf8')
         self.assertEqual(cleep_filesystem.read_json.call_count, 2)
 
     @patch('os.path.exists')
@@ -176,7 +176,7 @@ class AppsSourcesTests(unittest.TestCase):
         
         self.l.add_source(CUSTOM_SOURCE)
 
-        self.cleep_filesystem.write_json.assert_called_with(AppsSources.APP_SOURCES_PATH, {
+        self.cleep_filesystem.write_json.assert_called_with(AppsSources.APPS_SOURCES_PATH, {
             "sources": [AppsSources.CLEEP_APPS_FREE, AppsSources.CLEEP_APPS_NON_FREE, CUSTOM_SOURCE],
         }, 'utf8')
         self.assertEqual(self.cleep_filesystem.read_json.call_count, 5)
@@ -219,9 +219,9 @@ class AppsSourcesTests(unittest.TestCase):
         }
         self.cleep_filesystem.write_json.return_value = True
         
-        self.l.delete_source(CUSTOM_SOURCE["filepath"])
+        self.l.delete_source(CUSTOM_SOURCE["filename"])
 
-        self.cleep_filesystem.write_json.assert_called_with(AppsSources.APP_SOURCES_PATH, {
+        self.cleep_filesystem.write_json.assert_called_with(AppsSources.APPS_SOURCES_PATH, {
             "sources": [AppsSources.CLEEP_APPS_FREE, AppsSources.CLEEP_APPS_NON_FREE],
         }, 'utf8')
         self.assertEqual(self.cleep_filesystem.read_json.call_count, 5)
@@ -237,7 +237,7 @@ class AppsSourcesTests(unittest.TestCase):
         self.cleep_filesystem.write_json.return_value = False
         
         with self.assertRaises(Exception) as cm:
-            self.l.delete_source(CUSTOM_SOURCE["filepath"])
+            self.l.delete_source(CUSTOM_SOURCE["filename"])
         self.assertEqual(str(cm.exception), 'Error saving new source')
 
     @patch('os.path.exists')
@@ -246,11 +246,11 @@ class AppsSourcesTests(unittest.TestCase):
 
         with self.assertRaises(MissingParameter) as cm:
             self.l.delete_source(None)
-        self.assertEqual(cm.exception.message, 'Parameter "source_filepath" is missing')
+        self.assertEqual(cm.exception.message, 'Parameter "source_filename" is missing')
 
         with self.assertRaises(InvalidParameter) as cm:
-            self.l.delete_source(AppsSources.CLEEP_APPS_FREE["filepath"])
-        self.assertEqual(cm.exception.message, 'Parameter "source_filepath" must not refer to a Cleep source')
+            self.l.delete_source(AppsSources.CLEEP_APPS_FREE["filename"])
+        self.assertEqual(cm.exception.message, 'Parameter "source_filename" must not refer to a Cleep source')
 
     @patch('os.path.exists')
     def test_get_market_without_update(self, os_path_exists_mock):

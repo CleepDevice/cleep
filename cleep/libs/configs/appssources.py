@@ -15,18 +15,19 @@ class AppsSources:
     """
 
     CLEEP_APPS_FREE = {
-        "filepath": "/etc/cleep/cleep-free-apps.json",
+        "filename": "cleep-free-apps.json",
         "remote_url_version": "https://raw.githubusercontent.com/tangb/cleep-apps/v%(version)s/modules.json",
         "remote_url_latest": "https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json",
     }
     CLEEP_APPS_NON_FREE = {
-        "filepath": "/etc/cleep/cleep-non-free-apps.json",
+        "filename": "cleep-non-free-apps.json",
         "remote_url_version": "https://raw.githubusercontent.com/tangb/cleep-apps-nonfree/v%(version)s/modules.json",
         "remote_url_latest": "https://raw.githubusercontent.com/tangb/cleep-apps-nonfree/main/modules.json",
     }
 
-    APP_SOURCES_PATH = "/etc/cleep/apps.sources"
-    MANDATORY_KEYS = ["filepath", "remote_url_version", "remote_url_latest"]
+    APPS_SOURCES_PATH = "/etc/cleep/apps.sources"
+    SOURCES_PATH = "/etc/cleep/sources"
+    MANDATORY_KEYS = ["filename", "remote_url_version", "remote_url_latest"]
 
     def __init__(self, cleep_filesystem):
         """
@@ -48,6 +49,9 @@ class AppsSources:
         """
         Refresh sources checking apps.sources file content and setting sources member
         """
+        if not os.path.exists(self.SOURCES_PATH):
+            self.cleep_filesystem.mkdirs(self.SOURCES_PATH)
+
         self.__check_apps_sources()
         self.__update_sources()
 
@@ -56,12 +60,12 @@ class AppsSources:
         Check apps sources file (existence and content)
         Create default file if error occured
         """
-        if not os.path.exists(self.APP_SOURCES_PATH):
+        if not os.path.exists(self.APPS_SOURCES_PATH):
             if not self.__create_default_file():
                 return
 
         try:
-            data = self.cleep_filesystem.read_json(self.APP_SOURCES_PATH, "utf8")
+            data = self.cleep_filesystem.read_json(self.APPS_SOURCES_PATH, "utf8")
             if not isinstance(data, dict) or not data.get("sources"):
                 raise Exception("Invalid apps.sources content")
             for source in data["sources"]:
@@ -91,7 +95,7 @@ class AppsSources:
                 "sources": sources,
             }
 
-            res = self.cleep_filesystem.write_json(self.APP_SOURCES_PATH, data, "utf8")
+            res = self.cleep_filesystem.write_json(self.APPS_SOURCES_PATH, data, "utf8")
             if not res:
                 raise Exception('Error writing "apps.sources" file content')
 
@@ -106,7 +110,7 @@ class AppsSources:
         Update sources from app.sources file
         """
         try:
-            data = self.cleep_filesystem.read_json(self.APP_SOURCES_PATH, "utf8")
+            data = self.cleep_filesystem.read_json(self.APPS_SOURCES_PATH, "utf8")
             self.sources = data["sources"]
         except Exception:
             self.logger.exception(
@@ -122,7 +126,7 @@ class AppsSources:
 
             [
                 {
-                    filepath (str): source filepath
+                    filename (str): source filename
                     remote_url_version (str): url for specific version
                     remote_url_latest (str): url for latest version
                 },
@@ -140,7 +144,7 @@ class AppsSources:
             source (dict): source::
 
                 {
-                    filepath (string): filepath to store source to
+                    filename (string): filename to store source to
                     remote_url_version (string): versionned remote url to get list of apps. Must contains
                                                  "%(version)s" to be able to replace with specific version
                     remote_url_latest (string): non versionned remote url to get list of apps. Use to get latest apps list
@@ -158,40 +162,40 @@ class AppsSources:
             )
 
         self.logger.debug('Add source %s', source)
-        data = self.cleep_filesystem.read_json(self.APP_SOURCES_PATH, "utf8")
+        data = self.cleep_filesystem.read_json(self.APPS_SOURCES_PATH, "utf8")
         data["sources"].append(source)
 
-        if not self.cleep_filesystem.write_json(self.APP_SOURCES_PATH, data, "utf8"):
+        if not self.cleep_filesystem.write_json(self.APPS_SOURCES_PATH, data, "utf8"):
             self.logger.error("Error saving new source %s", source)
             raise Exception("Error saving new source")
 
         self.__refresh_sources()
 
-    def delete_source(self, source_filepath):
+    def delete_source(self, source_filename):
         """
         Delete specified source
 
         Args:
-            source_filepath (str): source filepath
+            source_filename (str): source filename
 
         Raises:
             Exception if error occured
         """
-        if not source_filepath or not isinstance(source_filepath, str):
-            raise MissingParameter('Parameter "source_filepath" is missing')
-        if source_filepath in [AppsSources.CLEEP_APPS_FREE["filepath"], AppsSources.CLEEP_APPS_NON_FREE["filepath"]]:
-            raise InvalidParameter('Parameter "source_filepath" must not refer to a Cleep source')
+        if not source_filename or not isinstance(source_filename, str):
+            raise MissingParameter('Parameter "source_filename" is missing')
+        if source_filename in [AppsSources.CLEEP_APPS_FREE["filename"], AppsSources.CLEEP_APPS_NON_FREE["filename"]]:
+            raise InvalidParameter('Parameter "source_filename" must not refer to a Cleep source')
 
-        data = self.cleep_filesystem.read_json(self.APP_SOURCES_PATH, "utf8")
+        data = self.cleep_filesystem.read_json(self.APPS_SOURCES_PATH, "utf8")
         new_sources = [
             source
             for source in data["sources"]
-            if source["filepath"] != source_filepath
+            if source["filename"] != source_filename
         ]
         data["sources"] = new_sources
 
-        if not self.cleep_filesystem.write_json(self.APP_SOURCES_PATH, data, "utf8"):
-            self.logger.error("Error saving new source %s", source_filepath)
+        if not self.cleep_filesystem.write_json(self.APPS_SOURCES_PATH, data, "utf8"):
+            self.logger.error("Error saving new source %s", source_filename)
             raise Exception("Error saving new source")
 
         self.__refresh_sources()
@@ -234,11 +238,11 @@ class AppsSources:
         for source in self.sources:
             # update if not exists
             updated, source_apps = self.__get_modules_json_content(force_update, source)
-            self.logger.debug('Apps from source "%s": %s' % (source["filepath"], source_apps))
+            self.logger.debug('Apps from source "%s": %s' % (source["filename"], source_apps))
 
             apps["list"].update(source_apps["list"])
             if updated:
-                self.logger.debug('Source "%s" was updated since last update', source["filepath"])
+                self.logger.debug('Source "%s" was updated since last update', source["filename"])
                 has_updates = True
                 if source_apps["update"] > apps["update"]:
                     apps["update"] = source_apps["update"]
@@ -255,15 +259,15 @@ class AppsSources:
         Returns:
             tuple: updated status and modules.json content
         """
-        modules_json = ModulesJson(self.cleep_filesystem, source)
+        modules_json = ModulesJson(self.cleep_filesystem, self.SOURCES_PATH, source)
 
         updated = False
         if force_update or not modules_json.exists():
             try:
                 self.logger.debug('Updating source "%s"', source)
                 updated = modules_json.update()
-            except Exception:
-                self.logger.exception('Error occured while updating source "%s"', source)
+            except Exception as error:
+                self.logger.error('Error occured while updating source "%s": %s', source, str(error))
                 return False, modules_json.get_empty()
 
         return updated, modules_json.get_content()

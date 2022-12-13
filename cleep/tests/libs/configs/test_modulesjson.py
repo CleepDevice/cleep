@@ -20,15 +20,16 @@ from cleep.libs.tests.common import get_log_level
 LOG_LEVEL = get_log_level()
 
 CUSTOM_SOURCE = {
-    "filepath": "/opt/cleep/custom.json",
+    "filename": "custom.json",
     "remote_url_version": "https://www.cleep.com/custom_version.json",
     "remote_url_latest": "https://www.cleep.com/custom.json",
 }
 DEFAULT_SOURCE = {
-    "filepath": "/etc/cleep/test.json",
+    "filename": "test.json",
     "remote_url_version": "https://www.cleep.com/cleep.%(version)s.json",
     "remote_url_latest": "https://www.cleep.com/cleep.latest.json",
 }
+SOURCES_PATH = '/tmp/sources'
 
 class ModulesJsonTests(unittest.TestCase):
 
@@ -56,7 +57,7 @@ class ModulesJsonTests(unittest.TestCase):
             read_json_return_value = default_json
         self.cleep_filesystem.read_json.return_value = read_json_return_value
 
-        self.mj = ModulesJson(self.cleep_filesystem, custom_source)
+        self.mj = ModulesJson(self.cleep_filesystem, SOURCES_PATH, custom_source)
 
     def test_constructor_valid_custom_source(self):
         self._init_context(custom_source=CUSTOM_SOURCE)
@@ -69,7 +70,7 @@ class ModulesJsonTests(unittest.TestCase):
         filepath = self.mj.get_source_filepath()
         logging.debug('Filepath: %s', filepath)
 
-        self.assertEqual(filepath, DEFAULT_SOURCE["filepath"])
+        self.assertEqual(filepath, os.path.join(SOURCES_PATH, DEFAULT_SOURCE["filename"]))
 
     def test_get_empty(self):
         self._init_context()
@@ -87,7 +88,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.get_content()
-        self.assertEqual(str(cm.exception), 'File "/etc/cleep/test.json" doesn\'t exist. Please update it first.')
+        self.assertEqual(str(cm.exception), 'File "/tmp/sources/test.json" doesn\'t exist. Please update it first.')
 
     @patch('os.path.exists')
     def test_get_content_exception_invalid_content(self, os_path_exists_mock):
@@ -98,7 +99,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.get_content()
-        self.assertEqual(str(cm.exception), 'Invalid "/etc/cleep/test.json" file content')
+        self.assertEqual(str(cm.exception), 'Invalid "/tmp/sources/test.json" file content')
 
     @patch('os.path.exists')
     def test_get_content_custom_source(self, os_path_exists_mock):
@@ -107,10 +108,11 @@ class ModulesJsonTests(unittest.TestCase):
             read_json_return_value={'update': (int(time.time())-1000), 'list':{}},
             custom_source=CUSTOM_SOURCE
         )
+        source_path = os.path.join(SOURCES_PATH, CUSTOM_SOURCE['filename'])
 
         self.mj.get_content()
 
-        self.cleep_filesystem.read_json.assert_called_with(CUSTOM_SOURCE['filepath'], 'utf8')
+        self.cleep_filesystem.read_json.assert_called_with(source_path, 'utf8')
 
     @patch('os.path.exists')
     def test_exists(self, os_path_exists_mock):
@@ -257,7 +259,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Remote "/etc/cleep/test.json" file has invalid format')
+        self.assertEqual(str(cm.exception), 'Remote "/tmp/sources/test.json" file has invalid format')
 
     @patch('modulesjson.Download')
     @patch('modulesjson.requests')
@@ -272,7 +274,7 @@ class ModulesJsonTests(unittest.TestCase):
 
         with self.assertRaises(Exception) as cm:
             self.mj.update()
-        self.assertEqual(str(cm.exception), 'Download of "/etc/cleep/test.json" failed (download status 3)')
+        self.assertEqual(str(cm.exception), 'Download of "/tmp/sources/test.json" failed (download status 3)')
 
     def test_update_invalid_source_str_instead_of_dict(self):
         custom_source = "dummy.json"
@@ -284,7 +286,7 @@ class ModulesJsonTests(unittest.TestCase):
 
     def test_update_invalid_source_missing_key(self):
         custom_source = {
-            "filepath": "something",
+            "filename": "something",
             "remote_url_latest": "https://something",
         }
         self._init_context(custom_source=custom_source)
@@ -295,7 +297,7 @@ class ModulesJsonTests(unittest.TestCase):
 
     def test_update_invalid_source_no_version_pattern(self):
         custom_source = {
-            "filepath": "something",
+            "filename": "something",
             "remote_url_latest": "https://something",
             "remote_url_version": "https://something",
         }
