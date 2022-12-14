@@ -218,6 +218,6 @@ class ModulesJson:
 
         # no update from remote modules.json file
         self.logger.info(
-            "No difference between local and remote {source_filepath}. File not updated."
+            f"No difference between local and remote {source_filepath}. File not updated."
         )
         return False
