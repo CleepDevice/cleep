@@ -1193,9 +1193,6 @@ class CleepRenderer(CleepModule):
         """
         CleepModule.__init__(self, bootstrap, debug_enabled)
 
-        # init logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-
         # members
         self.profiles_types = []
 
