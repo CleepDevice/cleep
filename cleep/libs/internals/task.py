@@ -36,6 +36,7 @@ class Task:
             end_callback (function): call this function as soon as task is terminated
         """
         self._task = task
+        self._task_name = "task-%s" % getattr(self._task, "__name__", "unamed")
         self.logger = logger
         self._args = task_args or []
         self._kwargs = task_kwargs or {}
@@ -82,7 +83,7 @@ class Task:
             self.__task_start_timestamp += self._interval
             adjusted_interval = self.__task_start_timestamp - perf_counter()
             self.__timer = Timer(adjusted_interval, self.__run)
-            self.__timer.name = "task-%s" % getattr(self._task, "__name__", "unamed")
+            self.__timer.name = self._task_name
             self.__timer.daemon = True
             self.__timer.start()
         elif self.__end_callback:
@@ -113,13 +114,15 @@ class Task:
         """
         Start the task
         """
-        # accuracy
-        self.__task_start_timestamp = perf_counter()
         if self.__timer:
             self.stop()
         self.__timer = Timer(self._interval, self.__run)
         self.__timer.daemon = True
-        self.__timer.name = "task-%s" % getattr(self._task, "__name__", "unamed")
+        self.__timer.name = self._task_name
+
+        # accuracy
+        self.__task_start_timestamp = perf_counter() + self._interval
+
         self.__timer.start()
 
     def stop(self):
@@ -142,6 +145,7 @@ class Task:
             bool: True if running
         """
         return bool(self.__timer and self.__timer.is_alive())
+
 
 
 class CountTask(Task):

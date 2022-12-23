@@ -4,6 +4,7 @@ cleep (0.0.30) UNRELEASED; urgency=low
   * Fixed core: fix typo issue in inventory
   * Changed drivers: add unregister function
   * Changed core: handle multiple apps sources
+  * Fix core: task launches twice the function the first time
     
 cleep (0.0.29) UNRELEASED; urgency=low
   * Added UI: close dialog after device has restarted
