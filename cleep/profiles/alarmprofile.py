@@ -12,6 +12,7 @@ class AlarmProfile(RendererProfile):
 
     STATUS_UNKNOWN = 'unknown'
     STATUS_SCHEDULED = 'scheduled'
+    STATUS_UNSCHEDULED = 'unscheduled'
     STATUS_TRIGGERED = 'triggered'
     STATUS_STOPPED = 'stopped'
     STATUS_SNOOZED = 'snoozed'
@@ -22,5 +23,8 @@ class AlarmProfile(RendererProfile):
         self.minute = None
         self.timeout = None
         self.volume = None
+        self.count = None # scheduled alarm count
         self.status = self.STATUS_UNKNOWN
+        self.repeat = False
+        self.shuffle = False
 
