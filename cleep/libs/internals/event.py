@@ -23,6 +23,8 @@ class Event:
     EVENT_PARAMS = []
     # enable chart generation for this event
     EVENT_CHARTABLE = False
+    # enable auto event journalization
+    EVENT_JOURNALIZABLE = False
 
     def __init__(self, params):
         """
@@ -80,6 +82,17 @@ class Event:
         if not isinstance(self.EVENT_CHARTABLE, bool):
             raise NotImplementedError(
                 'EVENT_CHARTABLE class member declared in "%s" must be a bool'
+                % self.__class__.__name__
+            )
+
+        if not hasattr(self, "EVENT_JOURNALIZABLE"):
+            raise NotImplementedError(
+                'EVENT_JOURNALIZABLE class member must be declared in "%s"'
+                % self.__class__.__name__
+            )
+        if not isinstance(self.EVENT_JOURNALIZABLE, bool):
+            raise NotImplementedError(
+                'EVENT_JOURNALIZABLE class member declared in "%s" must be a bool'
                 % self.__class__.__name__
             )
 

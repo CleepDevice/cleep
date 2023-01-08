@@ -32,7 +32,7 @@ class EventTests(unittest.TestCase):
         pass
 
     def init_lib(self, event_name='test.dummy', event_params=[], event_chartable=False, get_renderers_formatters=[],
-            bus_push_result=None, event_chart_params=None, invalid_constructor_params=False):
+            bus_push_result=None, event_chart_params=None, invalid_constructor_params=False, event_journalizable=False):
         bus_push_result = MessageResponse(error=False, message='') if bus_push_result is None else bus_push_result
         self.internal_bus = Mock()
         self.internal_bus.push = Mock(return_value=bus_push_result)
@@ -45,6 +45,7 @@ class EventTests(unittest.TestCase):
         e.EVENT_NAME = event_name
         e.EVENT_PARAMS = event_params
         e.EVENT_CHARTABLE = event_chartable
+        e.EVENT_JOURNALIZABLE = event_journalizable
         if event_chart_params:
             e.EVENT_CHART_PARAMS = event_chart_params
 
@@ -93,6 +94,16 @@ class EventTests(unittest.TestCase):
         finally:
             Event.EVENT_CHARTABLE = False
 
+        try:
+            with self.assertRaises(NotImplementedError) as cm:
+                E = Event
+                E.EVENT_NAME = 'dummy2'
+                E.EVENT_JOURNALIZABLE = 1
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+            self.assertEqual(str(cm.exception), 'EVENT_JOURNALIZABLE class member declared in "Event" must be a bool')
+        finally:
+            Event.EVENT_JOURNALIZABLE = False
+
     def test_invalid_event_no_member(self):
         try:
             with self.assertRaises(NotImplementedError) as cm:
@@ -123,6 +134,16 @@ class EventTests(unittest.TestCase):
             self.assertEqual(str(cm.exception), 'EVENT_CHARTABLE class member must be declared in "Event"')
         finally:
             Event.EVENT_CHARTABLE = False
+
+        try:
+            with self.assertRaises(NotImplementedError) as cm:
+                E = Event
+                E.EVENT_NAME = 'dummy4'
+                del(E.EVENT_JOURNALIZABLE)
+                E({'internal_bus': Mock(), 'formatters_broker': Mock(), 'get_external_bus_name': Mock(return_value='externalbus')})
+            self.assertEqual(str(cm.exception), 'EVENT_JOURNALIZABLE class member must be declared in "Event"')
+        finally:
+            Event.EVENT_JOURNALIZABLE = False
 
     def test_send(self):
         self.init_lib(event_params=['param1'])
