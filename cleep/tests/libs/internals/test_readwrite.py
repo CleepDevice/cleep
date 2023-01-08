@@ -10,7 +10,12 @@ from cleep.libs.tests.session import AnyArg
 import unittest
 import logging
 from unittest.mock import Mock, patch
+import tempfile
 
+PopenMock = Mock()
+PopenMock.return_value.stdout = tempfile.NamedTemporaryFile(delete=True)
+
+@patch('readwrite.Popen', new=PopenMock)
 class ReadWriteTests(unittest.TestCase):
 
     def setUp(self):

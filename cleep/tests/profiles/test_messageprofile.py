@@ -4,15 +4,15 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from displaymessageprofile import DisplayMessageProfile
+from messageprofile import MessageProfile
 import logging
 import unittest
 
-class DisplayMessageProfileTests(unittest.TestCase):
+class MessageProfileTests(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        self.p = DisplayMessageProfile()
+        self.p = MessageProfile()
 
     def tearDown(self):
         pass
@@ -22,6 +22,6 @@ class DisplayMessageProfileTests(unittest.TestCase):
             self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_displaymessageprofile.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_messageprofile.py; coverage report -m -i
     unittest.main()
 

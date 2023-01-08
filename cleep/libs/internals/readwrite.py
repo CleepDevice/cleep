@@ -5,7 +5,7 @@ from cleep.libs.internals.console import Console
 import logging
 import os
 import traceback
-import subprocess
+from subprocess import Popen, PIPE
 
 
 class ReadWriteContext:
@@ -72,8 +72,8 @@ class ReadWrite:
         cmd = u'/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
         return [
             line.decode("utf-8").replace(u"\n", "")
-            for line in subprocess.Popen(
-                cmd, shell=True, stdout=subprocess.PIPE
+            for line in Popen(
+                cmd, shell=True, stdout=PIPE
             ).stdout.readlines()
         ]
 

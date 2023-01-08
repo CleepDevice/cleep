@@ -4,24 +4,24 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from speechrecognitioncommandprofile import SpeechRecognitionCommandProfile
+from identifiedmessageprofile import IdentifiedMessageProfile
 import logging
 import unittest
 
-class SpeechRecognitionCommandProfileTests(unittest.TestCase):
+class IdentifiedMessageProfileTests(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        self.p = SpeechRecognitionCommandProfile()
+        self.p = IdentifiedMessageProfile()
 
     def tearDown(self):
         pass
 
     def test_members(self):
-        for attr in ['error']:
+        for attr in ['message', 'id']:
             self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_speechrecognitioncommandprofile.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_identifiedmessageprofile.py; coverage report -m -i
     unittest.main()
 

@@ -3,7 +3,7 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class TimeRangeMessageProfile(RendererProfile):
+class TimeRangedMessageProfile(RendererProfile):
     """
     Message with time range profile
 

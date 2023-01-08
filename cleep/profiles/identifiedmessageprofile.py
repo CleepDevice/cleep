@@ -3,9 +3,9 @@
 
 from cleep.libs.internals.rendererprofile import RendererProfile
 
-class NamedMessageProfile(RendererProfile):
+class IdentifiedMessageProfile(RendererProfile):
     """
-    Named message profile
+    Identified message profile
 
     This message has an unique name that allows renderers to update the previous message
     """
@@ -14,5 +14,5 @@ class NamedMessageProfile(RendererProfile):
         # message to display
         self.message = None
         # unique message id to allow message identification
-        self.name = None
+        self.id = None
 

@@ -4,23 +4,23 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from soundtexttospeechprofile import SoundTextToSpeechProfile
+from alarmprofile import AlarmProfile
 import logging
 import unittest
 
-class SoundTextToSpeechProfileTests(unittest.TestCase):
+class AlertProfileTests(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        self.p = SoundTextToSpeechProfile()
+        self.p = AlarmProfile()
 
     def tearDown(self):
         pass
 
     def test_members(self):
-        for attr in ['text']:
+        for attr in ['hour', 'minute', 'timeout', 'volume', 'count', 'status', 'repeat', 'shuffle']:
             self.assertTrue(hasattr(self.p, attr))
 
 if __name__ == '__main__':
-    # coverage run --omit="*/lib/python2.7/*","*test_*.py" --concurrency=thread test_soundtexttospeechprofile.py; coverage report -m -i
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_alarmprofile.py; coverage report -m -i
     unittest.main()

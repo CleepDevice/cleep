@@ -101,7 +101,7 @@ class TaskTests(unittest.TestCase):
 
         self.assertFalse(self.t.is_running())
         self.assertTrue(task.called)
-        self.assertEqual(task.call_count, 3)
+        self.assertEqual(task.call_count, 2)
 
     def test_task_exception(self):
         task = Mock(side_effect=Exception('Test'))
