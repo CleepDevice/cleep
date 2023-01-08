@@ -6,6 +6,7 @@ cleep (0.0.30) UNRELEASED; urgency=low
   * Changed core: handle multiple apps sources
   * Fix core: task launches twice the function the first time
   * Addded core: add journalizable member to event
+  * Changed core: Improve code coverage
     
 cleep (0.0.29) UNRELEASED; urgency=low
   * Added UI: close dialog after device has restarted
