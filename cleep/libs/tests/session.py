@@ -381,14 +381,30 @@ class TestSession():
         )
         return False
 
+    def assert_command_not_called(self, command_name):
+        """
+        Assert command was not called
+        """
+        # check command is registered
+        if command_name not in self.__bus_command_handlers:
+            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+
+        # check command was called
+        if self.__bus_command_handlers[command_name]['calls'] != 0:
+            self.testcase.fail('Command "%s" was called while it should not' % command_name)
+
     def assert_command_called(self, command_name, to=None):
         """
         Assert command was called
         Like command_called_with but with assertion
         """
-        # check command call
+        # check command is registered
         if command_name not in self.__bus_command_handlers:
-            self.testcase.assertTrue(False, 'Command "%s" was not called' % command_name)
+            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+
+        # check command was called
+        if self.__bus_command_handlers[command_name]['calls'] == 0:
+            self.testcase.fail('Command "%s" was not called' % command_name)
 
         # check command recipient
         if to is not None:
@@ -402,16 +418,21 @@ class TestSession():
         """
         Same as command_called_with but with assertion
         """
-        # check command call
+        # check command is registered
         if command_name not in self.__bus_command_handlers:
-            self.testcase.assertTrue(False, 'Command "%s" was not called' % command_name)
+            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+
+        # check command was called
+        if self.__bus_command_handlers[command_name]['calls'] == 0:
+            self.testcase.fail('Command "%s" was not called' % command_name)
 
         # check command params
         if type(params) is not type(self.__bus_command_handlers[command_name]['lastparams']):
-            self.testcase.fail('Command "%s" parameters differs: %s is not %s' % (
+            self.testcase.fail('Command "%s" parameters differs: %s is not %s (%s)' % (
                 command_name,
                 type(params).__name__,
                 type(self.__bus_command_handlers[command_name]['lastparams']).__name__,
+                self.__bus_command_handlers[command_name]['lastparams'],
             ))
         elif isinstance(params, dict):
             self.testcase.assertDictEqual(
@@ -445,11 +466,17 @@ class TestSession():
         """
         return True if self.event_call_count(event_name) > 0 else False
 
+    def assert_event_not_called(self, event_name):
+        """
+        Assert specified event was not called
+        """
+        self.testcase.assertTrue(self.event_call_count(event_name) == 0, 'Event "%s" was called while it should' % event_name)
+
     def assert_event_called(self, event_name):
         """
         Same as event_called with assertion
         """
-        self.testcase.assertTrue(self.event_call_count(event_name) > 0, 'Event "%s" was not called' % event_name)
+        self.testcase.assertTrue(self.event_call_count(event_name) > 0, 'Event "%s" was not called while it should' % event_name)
 
     def event_call_count(self, event_name):
         """
