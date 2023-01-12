@@ -20,13 +20,16 @@ clone:
 steps:
   - name: clone
     image: 192.168.1.125:5000/cleep-git:latest
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
   - name: prepare-env
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
     commands:
       - printenv
       - ls -la
       - apt-get -o Acquire::ForceIPv4=true update
-      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget
+      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget python3-distutils
       - wget -O get-pip.py https://bootstrap.pypa.io/get-pip.py 
       - python3 get-pip.py
       - python3 --version
