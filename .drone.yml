@@ -20,6 +20,7 @@ clone:
 steps:
   - name: clone
     image: 192.168.1.125:5000/cleep-git:latest
+    network_mode: host
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
