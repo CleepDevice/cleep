@@ -26,7 +26,9 @@ steps:
       - printenv
       - ls -la
       - apt-get -o Acquire::ForceIPv4=true update
-      - python -m ensurepip --upgrade
+      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget
+      - wget -O get-pip.py https://bootstrap.pypa.io/get-pip.py 
+      - python3 get-pip.py
       - python3 --version
       - python3 -m pip install cleepcli
   - name: tests
