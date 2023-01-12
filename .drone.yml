@@ -1,0 +1,25 @@
+kind: pipeline
+type: docker
+name: check-branch
+
+platform:
+  arch: arm
+
+trigger:
+  branch:
+    - master
+  event:
+    - pull_request
+
+concurrency:
+  limit: 1
+
+steps:
+  - name: prepare-env
+    image: 192.168.1.125:5000/raspberrypios/buster:20211202
+    commands:
+      - python3 -m pip install cleepcli
+  - name: tests
+    image: 192.168.1.125:5000/raspberrypios/buster:20211202
+    commands:
+      - cleep-cli coretests
