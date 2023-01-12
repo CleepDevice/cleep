@@ -24,6 +24,9 @@ steps:
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
     commands:
       - printenv
+      - ls -la
+      - apt-get -o Acquire::ForceIPv4=true update
+      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget zip git
       - python3 -m pip install cleepcli
   - name: tests
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
