@@ -23,9 +23,9 @@ steps:
     network_mode: host
     privileged: true
     commands:
-      - printenv
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
+      - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: prepare-env
@@ -33,7 +33,6 @@ steps:
     network_mode: host
     privileged: true
     commands:
-      - printenv
       - ls -la
       - apt-get -o Acquire::ForceIPv4=true update
       - apt-get -o Acquire::ForceIPv4=true -y install python3 wget python3-distutils
@@ -41,6 +40,7 @@ steps:
       - python3 get-pip.py
       - python3 --version
       - python3 -m pip install cleepcli
+
   - name: tests
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
     commands:
