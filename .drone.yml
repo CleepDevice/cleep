@@ -40,5 +40,4 @@ steps:
       - python3 get-pip.py
       - python3 --version
       - python3 -m pip install cleepcli
-      - cleep-cli coresync
       - cleep-cli coretests
