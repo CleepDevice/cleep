@@ -35,7 +35,7 @@ steps:
     commands:
       - ls -la
       - apt-get -o Acquire::ForceIPv4=true update
-      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget python3-distutils
+      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget python3-distutils python3-dev
       - wget -O get-pip.py https://bootstrap.pypa.io/get-pip.py 
       - python3 get-pip.py
       - python3 --version
