@@ -28,7 +28,7 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: tests
+  - name: core-validation
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
     network_mode: host
     privileged: true
@@ -40,4 +40,5 @@ steps:
       - python3 get-pip.py
       - python3 --version
       - python3 -m pip install cleepcli
+      - cleep-cli coresync
       - cleep-cli coretests
