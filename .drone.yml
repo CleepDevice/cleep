@@ -41,4 +41,4 @@ steps:
       - python3 --version
       - python3 -m pip install cleepcli
       - pwd
-      - REPO_DIR=/cleep-dev cleep-cli coretests
+      - REPO_DIR=/drone/src/cleep-dev cleep-cli coretests
