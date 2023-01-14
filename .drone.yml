@@ -24,10 +24,13 @@ steps:
     privileged: true
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: prepare-env
     image: 192.168.1.125:5000/raspberrypios/buster:20211202
+    network_mode: host
+    privileged: true
     commands:
       - printenv
       - ls -la
