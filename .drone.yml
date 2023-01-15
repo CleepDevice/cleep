@@ -45,7 +45,8 @@ steps:
       - python3 --version
       - python3 -m pip install cleepcli
       - echo "Building Cleep..."
-      - cleep-cli corebuild
+      - printenv
+      - SENTRY_DSN=$SENTRY_DSN cleep-cli corebuild
       - echo "Installing Cleep..."
       - apt-get install --force-yes cleep_*_armhf.deb
       - echo "Executing tests..."
