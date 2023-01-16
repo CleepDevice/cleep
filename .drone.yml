@@ -49,7 +49,11 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - SENTRY_DSN=$SENTRY_DSN cleep-cli corebuild
       - echo "Installing Cleep..."
-      - apt-get install --force-yes cleep_*_armhf.deb
+      - pwd
+      - ls -la
+      - cd
+      - ls -la
+      - apt-get install --allow-unauthenticated --allow-downgrades --allow-remove-essential --allow-change-held-packages cleep_*_armhf.deb
       - echo "Executing tests..."
       - cleep-cli coretests
 
