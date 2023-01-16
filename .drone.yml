@@ -50,7 +50,7 @@ steps:
       - SENTRY_DSN=$SENTRY_DSN cleep-cli corebuild
       - echo "Installing Cleep..."
       - ls -la
-      - apt-get install --allow-unauthenticated --allow-downgrades --allow-remove-essential --allow-change-held-packages ./cleep_*_armhf.deb
+      - apt-get install --yes --allow-unauthenticated --allow-downgrades --allow-remove-essential --allow-change-held-packages ./cleep_*_armhf.deb
       - echo "Executing tests..."
       - cleep-cli coretests
 
