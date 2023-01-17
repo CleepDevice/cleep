@@ -36,6 +36,8 @@ steps:
     commands:
       - python3 -m pip -q --no-color install cleepcli --upgrade
       - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
