@@ -19,6 +19,7 @@ from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
+
 CUSTOM_SOURCE = {
     "filename": "custom.json",
     "remote_url_version": "https://www.cleep.com/custom_version.json",

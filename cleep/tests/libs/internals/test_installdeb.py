@@ -14,13 +14,16 @@ from unittest.mock import Mock, patch
 import subprocess
 import tempfile
 from threading import Timer
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 
 class InstallDebTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
         self.archive_name = 'wiringpi'
@@ -268,7 +271,7 @@ class InstallDebFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.data_path = os.path.abspath('../../data')
         self.archive_name = 'wiringpi'
         self.archive_path = os.path.join(self.data_path, '%s.deb' % self.archive_name)

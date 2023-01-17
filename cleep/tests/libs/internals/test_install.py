@@ -11,6 +11,10 @@ import unittest
 import logging
 from unittest.mock import Mock, patch, ANY
 from threading import Timer
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 INSTALLDEB_STATUS_IDLE = 0 
 INSTALLDEB_STATUS_RUNNING = 1 
@@ -70,7 +74,7 @@ class InstallTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         mock_endlessconsole.reset_mock()

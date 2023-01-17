@@ -17,6 +17,9 @@ import base64
 import responses
 import json
 from threading import Event
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 
 def create_files_tree(DOWNLOAD_FILE_PREFIX, CACHED_FILE_PREFIX, with_files=True):
@@ -32,7 +35,7 @@ class DownloadTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.fs = Mock()
 
@@ -329,7 +332,7 @@ class DownloadTestsNoCleepFilesystem(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.os_remove_original = os.remove
         self.os_rename_original = os.rename
         self.io_open_original = io.open
@@ -428,7 +431,7 @@ class DownloadTestsNoCleepFilesystem(unittest.TestCase):
 class DownloadTestsFileDownloadCancel(unittest.TestCase):
 
     def setUp(self):
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         TestLib()
         self.fs = Mock()
         self.async_status = None

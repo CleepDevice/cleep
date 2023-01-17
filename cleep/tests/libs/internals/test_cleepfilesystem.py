@@ -15,6 +15,9 @@ import io
 import json
 import shutil
 from distutils import dir_util
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 class MockFd():
     def __init__(self, content):
@@ -38,7 +41,7 @@ class CleepFilesystemTestsReadonly(unittest.TestCase):
     # tmpfs /tmp tmpfs nodev,nosuid 0 0"""
 
     def setUp(self):
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         TestLib()
         io = Mock()
 
@@ -63,7 +66,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.c = CleepFilesystem()
         self.c.DEBOUNCE_DURATION = 0.5

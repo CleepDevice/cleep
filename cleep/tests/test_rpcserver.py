@@ -17,6 +17,9 @@ from unittest.mock import Mock, patch, mock_open, ANY
 import json
 import time
 from collections import OrderedDict
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 class DummyDriver(Driver):
     def __init__(self, processing=False, is_installed=False, is_installed_exception=False):
@@ -90,7 +93,7 @@ class RpcServerTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         if rpcserver:

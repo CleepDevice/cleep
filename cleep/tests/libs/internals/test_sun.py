@@ -11,12 +11,16 @@ import logging
 import datetime
 from dateutil.tz import gettz
 from unittest.mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class SunTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.s = Sun()
         self.s.set_position(48.1113, -1.6800)

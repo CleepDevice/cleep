@@ -11,6 +11,9 @@ import unittest
 import logging
 from pprint import pformat
 from mock import patch, Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 class TestsAlsa(unittest.TestCase):
 
@@ -74,7 +77,7 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s %(levelname)s : %(message)s')
         self.fs = Mock()
         self.a = Alsa(self.fs)
 
