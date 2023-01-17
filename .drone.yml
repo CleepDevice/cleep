@@ -35,7 +35,7 @@ steps:
     privileged: true
     commands:
       - python3 -m pip -q --no-color install cleepcli --upgrade
-      - python3 -m freeze | grep cleepcli
+      - python3 -m pip freeze | grep cleepcli
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
@@ -49,7 +49,7 @@ steps:
         from_secret: sentry_dsn
     commands:
       - python3 -m pip -q --no-color install cleepcli --upgrade
-      - python3 -m freeze | grep cleepcli
+      - python3 -m pip freeze | grep cleepcli
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli corebuild
 
