@@ -1,8 +1,9 @@
 kind: pipeline
 type: docker
-name: release
+name: check
 
 platform:
+  os: linux
   arch: arm
 
 trigger:
@@ -58,6 +59,7 @@ type: docker
 name: release
 
 platform:
+  os: linux
   arch: arm
 
 trigger:
