@@ -12,11 +12,18 @@ import datetime
 from dateutil.tz import gettz
 from unittest.mock import Mock
 from cleep.libs.tests.common import get_log_level
-from freezegun import freeze_time
+from mock import patch
 
 LOG_LEVEL = get_log_level()
 
-@freeze_time("2023-01-18", tz_offset=-1)
+class MockedTimezone:
+    def tzutc(self):
+        return gettz('Europe/Paris')
+
+    def tzlocal(self):
+        return gettz('Europe/Paris')
+
+@patch("sun.tz", MockedTimezone())
 class SunTests(unittest.TestCase):
 
     def setUp(self):
@@ -54,7 +61,7 @@ class SunTests(unittest.TestCase):
         sunrise = self.s.get_sunrise_time()
         self.assertTrue(isinstance(sunrise, datetime.datetime))
         self.assertIsNotNone(sunrise.utcoffset())
-        self.assertEqual(self._get_timezone(sunrise), '+0000')
+        self.assertEqual(self._get_timezone(sunrise), '+0100')
 
     def test_get_sunrise_time_exception(self):
         self.s.set_position(85.0, 21.00)
@@ -80,7 +87,7 @@ class SunTests(unittest.TestCase):
         sunset = self.s.get_sunset_time()
         self.assertTrue(isinstance(sunset, datetime.datetime))
         self.assertIsNotNone(sunset.utcoffset())
-        self.assertEqual(self._get_timezone(sunset), '+0000')
+        self.assertEqual(self._get_timezone(sunset), '+0100')
 
     def test_get_sunset_time_exception(self):
         self.s.set_position(85.0, 21.00)
