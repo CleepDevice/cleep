@@ -12,10 +12,11 @@ import datetime
 from dateutil.tz import gettz
 from unittest.mock import Mock
 from cleep.libs.tests.common import get_log_level
+from freezegun import freeze_time
 
 LOG_LEVEL = get_log_level()
 
-
+@freeze_time("2023-01-18", tz_offset=-1)
 class SunTests(unittest.TestCase):
 
     def setUp(self):
