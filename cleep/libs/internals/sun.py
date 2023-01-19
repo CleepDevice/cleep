@@ -80,7 +80,7 @@ class Sun:
             raise Exception(
                 "The sun never rises on this location (on the specified date)"
             )
-        return sunrise.astimezone(local_time_zone)
+        return sunrise
 
     def sunrise(self):
         """
