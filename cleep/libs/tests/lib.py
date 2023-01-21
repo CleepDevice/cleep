@@ -26,8 +26,6 @@ class FileDescriptorMock():
         self.write_side_effect = write_side_effect
         self.read_side_effect = read_side_effect
         self.content = content
-        self.__step = 0
-        self.range = 4
 
     def get_content_hashes(self):
         """
@@ -68,12 +66,9 @@ class FileDescriptorMock():
                 raise self.read_side_effect
             else:
                 self.read_side_effect()
-        out = self.content[self.__step:self.__step+self.range]
-        self.__step += self.range
-        return None if len(out)==0 else out.encode('utf-8')
+        return None if len(self.content)==0 else self.content
 
     def close(self, *args, **kwargs):
-        self.__step = 0
         return
 
 
