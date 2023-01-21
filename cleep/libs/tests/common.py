@@ -1,5 +1,8 @@
 import os
 import logging
+import cleep.libs.internals.tools as tools
+
+tools.install_trace_logging_level()
 
 def get_log_level(default=logging.FATAL):
     """
