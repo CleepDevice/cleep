@@ -6,18 +6,15 @@ import sys
 import time
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-import download
 from download import Download
-from cleep.libs.tests.lib import TestLib, FileDescriptorMock
+from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 import shutil
 import io
 import base64
 import responses
-import json
-from threading import Event
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
