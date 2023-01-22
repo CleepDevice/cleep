@@ -60,13 +60,12 @@ class Sun:
             )
         return sunrise
 
-    def get_local_sunrise_time(self, date=None, local_time_zone=tz.tzlocal()):
+    def get_local_sunrise_time(self, date=None):
         """
         Get sunrise time for local or custom time zone.
 
         Args:
             date (datetime): reference date (default is today if nothing specified)
-            local_time_zone (tzlocal): local or custom time zone.
 
         Returns:
             datetime: local time zone sunrise datetime
@@ -113,13 +112,12 @@ class Sun:
             )
         return sunset
 
-    def get_local_sunset_time(self, date=None, local_time_zone=tz.tzlocal()):
+    def get_local_sunset_time(self, date=None):
         """
         Get sunset time for local or custom time zone.
 
         Args:
             date (datetime): reference date (default to today if nothing specified)
-            local_time_zone (tzlocal): local or custom time zone.
 
         Returns:
             datetime: local time zone sunset datetime
@@ -133,7 +131,7 @@ class Sun:
             raise Exception(
                 "The sun never sets on this location (on the specified date)"
             )
-        return sunset.astimezone(local_time_zone)
+        return sunset
 
     def sunset(self):
         """
@@ -190,16 +188,24 @@ class Sun:
             + (0.020 * math.sin(to_rad * 2 * mean))
             + 282.634
         )
-        longitude = self._force_range(longitude, 360)  # NOTE: longitude adjusted into the range [0,360)
+        longitude = self._force_range(
+            longitude, 360
+        )  # NOTE: longitude adjusted into the range [0,360)
 
         # 5a. calculate the Sun's right ascension
-        right_ascension = (1 / to_rad) * math.atan(0.91764 * math.tan(to_rad * longitude))
-        right_ascension = self._force_range(right_ascension, 360)  # NOTE: RA adjusted into the range [0,360)
+        right_ascension = (1 / to_rad) * math.atan(
+            0.91764 * math.tan(to_rad * longitude)
+        )
+        right_ascension = self._force_range(
+            right_ascension, 360
+        )  # NOTE: RA adjusted into the range [0,360)
 
         # 5b. right ascension value needs to be in the same quadrant as longitude
         longitude_quadrant = (math.floor(longitude / 90)) * 90
         right_ascension_quadrant = (math.floor(right_ascension / 90)) * 90
-        right_ascension = right_ascension + (longitude_quadrant - right_ascension_quadrant)
+        right_ascension = right_ascension + (
+            longitude_quadrant - right_ascension_quadrant
+        )
 
         # 5c. right ascension value needs to be converted into hours
         right_ascension = right_ascension / 15
@@ -230,7 +236,9 @@ class Sun:
 
         # 9. adjust back to UTC
         universal_time = mean_time - lng_hour
-        universal_time = self._force_range(universal_time, 24)  # UTC time in decimal format (e.g. 23.23)
+        universal_time = self._force_range(
+            universal_time, 24
+        )  # UTC time in decimal format (e.g. 23.23)
 
         # 10. Return
         hour = self._force_range(int(universal_time), 24)
@@ -252,7 +260,9 @@ class Sun:
                     month = 1
                     year += 1
 
-        return datetime.datetime(year, month, day, int(hour), int(minute), tzinfo=tz.tzutc())
+        return datetime.datetime(
+            year, month, day, int(hour), int(minute), tzinfo=tz.tzutc()
+        )
 
     @staticmethod
     def _force_range(value, maximum):
