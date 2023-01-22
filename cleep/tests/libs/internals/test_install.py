@@ -134,7 +134,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.refresh_system_packages())
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude update', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get update', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
 
@@ -146,7 +146,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.refresh_system_packages())
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude update', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get update', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
 
     def test_refresh_system_packages_blocking_failed(self):
@@ -157,7 +157,7 @@ class InstallTests(unittest.TestCase):
         self.assertFalse(self.i.refresh_system_packages())
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude update', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get update', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
 
     def test_refresh_system_packages_already_processing(self):
@@ -188,7 +188,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.install_system_package('dummy'))
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude install -y "dummy"', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get install -y "dummy"', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
 
@@ -200,7 +200,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.install_system_package('dummy'))
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude install -y "dummy"', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get install -y "dummy"', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
 
     def test_install_system_packages_blocking_failed(self):
@@ -229,7 +229,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.uninstall_system_package('dummy'))
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude remove -y "dummy"', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get remove -y "dummy"', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
 
@@ -241,7 +241,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.uninstall_system_package('dummy'))
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude remove -y "dummy"', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get remove -y "dummy"', ANY, ANY)
         self.assertTrue(mock_endlessconsole.return_value.start.called)
 
     def test_uninstall_system_packages_blocking_failed(self):
@@ -269,7 +269,7 @@ class InstallTests(unittest.TestCase):
         self.assertTrue(self.i.uninstall_system_package('dummy', purge=True))
 
         self.assertTrue(self.cleep_filesystem.enable_write.called)
-        mock_endlessconsole.assert_called_with('/usr/bin/aptitude purge -y "dummy"', ANY, ANY)
+        mock_endlessconsole.assert_called_with('/usr/bin/apt-get purge -y "dummy"', ANY, ANY)
 
     def test_callback_deb_done(self):
         self.init_lib()
