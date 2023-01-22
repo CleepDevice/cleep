@@ -29,12 +29,12 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: tests
+  - name: unit-tests
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     commands:
-      - python3 -m pip -q --no-color install cleepcli --upgrade
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - python3 -m pip freeze | grep cleepcli
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
@@ -50,7 +50,9 @@ steps:
       SENTRY_DSN:
         from_secret: sentry_dsn
     commands:
-      - python3 -m pip -q --no-color install cleepcli --upgrade
+      - apt-get -o Acquire::ForceIPv4=true update
+      - apt-get -o Acquire::ForceIPv4=true -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - python3 -m pip freeze | grep cleepcli
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli corebuild
