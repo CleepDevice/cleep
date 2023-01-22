@@ -135,9 +135,31 @@ class dhcpcdConfTests_validConf(unittest.TestCase):
         self.d = DhcpcdConf(self.fs, backup=False)
 
     @patch("dhcpcdconf.os.path.exists")
-    def test_is_installed(self, os_path_exists_mock):
+    @patch("dhcpcdconf.Console")
+    def test_is_installed(self, console_mock, os_path_exists_mock):
         os_path_exists_mock.return_value = True
+        console_mock.return_value.command.return_value = {
+            "error": False,
+            "killed": False,
+            "stdout": ["1"],
+        }
         self.assertTrue(self.d.is_installed())
+
+        os_path_exists_mock.return_value = True
+        console_mock.return_value.command.return_value = {
+            "error": False,
+            "killed": False,
+            "stdout": ["0"],
+        }
+        self.assertFalse(self.d.is_installed())
+
+        os_path_exists_mock.return_value = True
+        console_mock.return_value.command.return_value = {
+            "error": True,
+            "killed": False,
+            "stdout": [],
+        }
+        self.assertFalse(self.d.is_installed())
 
         os_path_exists_mock.return_value = False
         self.assertFalse(self.d.is_installed())
