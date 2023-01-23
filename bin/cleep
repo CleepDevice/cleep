@@ -57,7 +57,7 @@ LOG_SETTINGS = {
         }   
     },  
 }
-DRY_RUN_TIMEOUT = 6.0
+DRY_RUN_TIMEOUT = 10.0
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -174,12 +174,13 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         'external_bus': None,
     }
 
-def dry_run_stop_server(server):
+def dry_run_stop_server(server, inventory):
     """
     Stop RPC server in dry run
     """
     global logger
     (logger or logging).info('Stop forced by dry-run')
+    inventory.unload_modules()
     server.stop()
 
 
@@ -200,7 +201,7 @@ if __name__ == '__main__':
         log_stdout = False
         dry_run = False
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtNr', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun'])
+        opts, args = getopt.getopt(argv, 'hsd:DtNrv', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version'])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -217,6 +218,9 @@ if __name__ == '__main__':
                 readonly_enabled = False
             elif opt in ('-r', '--dryrun'):
                 dry_run = True
+            elif opt in ('v', '--version'):
+                print(VERSION)
+                sys.exit(0)
         
         # configure main logger
         if not log_stdout:
@@ -336,7 +340,7 @@ if __name__ == '__main__':
         }, bootstrap, inventory, debug)
 
         if dry_run:
-            timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server])
+            timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
             timer.start()
         rpcserver.start()
 
