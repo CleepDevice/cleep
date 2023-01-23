@@ -52,7 +52,8 @@ steps:
     privileged: true
     commands:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
-      - sleep 15
+      - systemctl start cleep
+      - sleep 20
       - cat /var/log/cleep.log
       - curl -X GET --fail http://127.0.0.1/health
 
