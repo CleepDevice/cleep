@@ -51,7 +51,7 @@ steps:
     network_mode: host
     privileged: true
     commands:
-      - apt-get install --yes --allow-unauthenticated --allow-downgrades --allow-remove-essential --allow-change-held-packages --with-new-pkgs ./cleep_*_armhf.deb
+      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
       - sleep 15
       - cat /var/log/cleep.log
       - curl -X GET --fail http://127.0.0.1/health
