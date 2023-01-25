@@ -47,7 +47,7 @@ steps:
       - chmod 644 ~/.ssh/id_ed25519.pub
       - ssh-keyscan github.com >> githubKey
       - ssh-keygen -lf githubKey
-      - cat githubKey ~/.ssh/known_hosts
+      - cat githubKey > ~/.ssh/known_hosts
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coredocs --publish
 
