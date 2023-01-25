@@ -51,6 +51,7 @@ steps:
       - ssh-keygen -lf githubKey
       - cat githubKey > ~/.ssh/known_hosts
       - # configure git
+      - cd cleep-dev
       - git config user.email "drone@localhost"
       - git config user.name "drone"
       - export REPO_DIR=/drone/src/cleep-dev
