@@ -52,8 +52,8 @@ steps:
       - cat githubKey > ~/.ssh/known_hosts
       - # configure git
       - cd cleep-dev
-      - git config user.email "drone@localhost"
-      - git config user.name "drone"
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coredocs --publish
 
