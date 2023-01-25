@@ -46,27 +46,22 @@ steps:
       - pwd
       - ls -la
 
-  - name: test-install
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    commands:
-      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
-      - cleep --noro --stdout --dryrun
-      - cleep --version > version.txt
-
-  - name: publish
+  - name: publish-docs
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - cleep-cli corepublish --version=$VERSION
+      - echo $ID_ED25519 > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo $ID_ED25519_PUB > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - cleep-cli coredocs --publish
 
 
 ---
@@ -127,7 +122,7 @@ steps:
       - echo "Executing tests..."
       - cleep-cli coretests
 
-  - name: unit-tests
+  - name: run-tests
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -139,3 +134,27 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+
+  - name: test-install
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    commands:
+      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - cleep --noro --stdout --dryrun
+      - cleep --version > version.txt
+
+  - name: publish
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - # TO REMOVE WHEN test-install step added before
+      - echo "0.0.30" > version.txt
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cleep-cli corepublish --version=$VERSION 
