@@ -1,3 +1,0 @@
-boddle>=0.2.8
-responses>=0.13.3
-
