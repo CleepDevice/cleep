@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cleep.libs.commands package &mdash; Cleep core 0.0.30 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/cleep.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/_static/cleep.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cleep.libs.configs package" href="cleep.libs.configs.html" />
+    <link rel="prev" title="cleep.libs package" href="cleep.libs.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #607d8b" >
+            <a href="../index.html" class="icon icon-home"> Cleep core
+            <img src="../_static/cleep-logo-red.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.0.30
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">cleep</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="cleep.html">cleep package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="cleep.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="cleep.libs.html">cleep.libs package</a><ul class="current">
+<li class="toctree-l5 current"><a class="reference internal" href="cleep.libs.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l6 current"><a class="current reference internal" href="#">cleep.libs.commands package</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cleep.libs.configs.html">cleep.libs.configs package</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cleep.libs.drivers.html">cleep.libs.drivers package</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cleep.libs.internals.html">cleep.libs.internals package</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cleep.libs.tests.html">cleep.libs.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.libs.html#module-cleep.libs">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cleep.profiles.html">cleep.profiles package</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#submodules">Submodules</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles.alarmprofile">cleep.profiles.alarmprofile module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles.alertprofile">cleep.profiles.alertprofile module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles.identifiedmessageprofile">cleep.profiles.identifiedmessageprofile module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles.messageprofile">cleep.profiles.messageprofile module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles.timerangedmessageprofile">cleep.profiles.timerangedmessageprofile module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.profiles.html#module-cleep.profiles">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cleep.resources.html">cleep.resources package</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="cleep.resources.html#submodules">Submodules</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.resources.html#module-cleep.resources.audiocaptureresource">cleep.resources.audiocaptureresource module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.resources.html#module-cleep.resources.audioplaybackresource">cleep.resources.audioplaybackresource module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cleep.resources.html#module-cleep.resources">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.bus">cleep.bus module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.common">cleep.common module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.core">cleep.core module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.exception">cleep.exception module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.inventory">cleep.inventory module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep.rpcserver">cleep.rpcserver module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cleep.html#module-cleep">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #607d8b" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Cleep core</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">cleep</a> &raquo;</li>
+          <li><a href="cleep.html">cleep package</a> &raquo;</li>
+          <li><a href="cleep.libs.html">cleep.libs package</a> &raquo;</li>
+      <li>cleep.libs.commands package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/cleep.libs.commands.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cleep-libs-commands-package">
+<h1>cleep.libs.commands package<a class="headerlink" href="#cleep-libs-commands-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-cleep.libs.commands.alsa">
+<span id="cleep-libs-commands-alsa-module"></span><h2>cleep.libs.commands.alsa module<a class="headerlink" href="#module-cleep.libs.commands.alsa" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Alsa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cleep_filesystem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Alsa commands helper (aplay, arecord, amixer).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.CGET">
+<span class="sig-name descname"><span class="pre">CGET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cget'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.CGET" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.CHANNELS_DOLBY">
+<span class="sig-name descname"><span class="pre">CHANNELS_DOLBY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.CHANNELS_DOLBY" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.CHANNELS_MONO">
+<span class="sig-name descname"><span class="pre">CHANNELS_MONO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.CHANNELS_MONO" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.CHANNELS_STEREO">
+<span class="sig-name descname"><span class="pre">CHANNELS_STEREO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.CHANNELS_STEREO" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.CSET">
+<span class="sig-name descname"><span class="pre">CSET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cset'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.CSET" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.FORMAT_S16LE">
+<span class="sig-name descname"><span class="pre">FORMAT_S16LE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'S16_LE'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.FORMAT_S16LE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.FORMAT_S24LE">
+<span class="sig-name descname"><span class="pre">FORMAT_S24LE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'S24_LE'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.FORMAT_S24LE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.FORMAT_S32LE">
+<span class="sig-name descname"><span class="pre">FORMAT_S32LE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'S32_LE'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.FORMAT_S32LE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.RATE_22K">
+<span class="sig-name descname"><span class="pre">RATE_22K</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">22050</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.RATE_22K" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.RATE_44K">
+<span class="sig-name descname"><span class="pre">RATE_44K</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">44100</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.RATE_44K" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.RATE_48K">
+<span class="sig-name descname"><span class="pre">RATE_48K</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">48000</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.RATE_48K" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.SIMPLE_MIXER_CONTROL">
+<span class="sig-name descname"><span class="pre">SIMPLE_MIXER_CONTROL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Simple</span> <span class="pre">mixer</span> <span class="pre">control'</span></em><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.SIMPLE_MIXER_CONTROL" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.amixer_control">
+<span class="sig-name descname"><span class="pre">amixer_control</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.amixer_control" title="Permalink to this definition"></a></dt>
+<dd><p>Execute amixer control</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>string</em>) – Alsa.CGET or Alsa.CSET</p></li>
+<li><p><strong>numid</strong> (<em>int</em>) – amixer numid. Use command “amixer controls” to get available numids</p></li>
+<li><p><strong>value</strong> (<em>string</em>) – value to use with CSET</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.InvalidParameter" title="cleep.exception.InvalidParameter"><strong>InvalidParameter</strong></a> – if parameter is invalid</p></li>
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.MissingParameter" title="cleep.exception.MissingParameter"><strong>MissingParameter</strong></a> – if parameter is missing</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_capture_devices">
+<span class="sig-name descname"><span class="pre">get_capture_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_capture_devices" title="Permalink to this definition"></a></dt>
+<dd><p>Return list of capture devices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>dict of outputs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">card</span> <span class="nb">id</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="n">name</span>
+        <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="n">description</span>
+        <span class="n">devices</span> <span class="p">(</span><span class="nb">dict</span><span class="p">):</span> <span class="p">{</span>
+            <span class="n">deviceid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="p">{</span>
+                <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+                <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+                <span class="n">cardid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">card</span> <span class="nb">id</span>
+                <span class="n">deviceid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">device</span> <span class="nb">id</span>
+            <span class="p">},</span>
+            <span class="o">...</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_controls">
+<span class="sig-name descname"><span class="pre">get_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_controls" title="Permalink to this definition"></a></dt>
+<dd><p>Get device controls</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>list of controls for current card:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="n">numid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">control</span> <span class="n">identifier</span>
+        <span class="n">iface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">control</span> <span class="n">iface</span>
+        <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">control</span> <span class="n">name</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_device_infos">
+<span class="sig-name descname"><span class="pre">get_device_infos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_device_infos" title="Permalink to this definition"></a></dt>
+<dd><p>Get device infos</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device_name</strong> (<em>string</em>) – device name to retrieve infos from</p></li>
+<li><p><strong>device_desc</strong> (<em>string</em>) – device description. If specified use device description to find a match</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>selected device info or None if nothing found:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span> <span class="p">(</span><span class="n">first</span> <span class="n">device</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">devices</span> <span class="p">(</span><span class="nb">list</span><span class="p">):</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">devices</span>
+        <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="n">cardid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="nb">id</span>
+                <span class="n">deviceid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="nb">id</span>
+                <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+                <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+            <span class="p">},</span>
+            <span class="o">...</span>
+        <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_playback_devices">
+<span class="sig-name descname"><span class="pre">get_playback_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_playback_devices" title="Permalink to this definition"></a></dt>
+<dd><p>Return list of playback devices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>dict of outputs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">card</span> <span class="nb">id</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="n">name</span>
+        <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="n">description</span>
+        <span class="n">devices</span> <span class="p">(</span><span class="nb">dict</span><span class="p">):</span> <span class="p">{</span>
+            <span class="n">deviceid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="p">{</span>
+                <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+                <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+                <span class="n">cardid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">card</span> <span class="nb">id</span>
+                <span class="n">deviceid</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">device</span> <span class="nb">id</span>
+            <span class="p">},</span>
+            <span class="o">...</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_selected_device">
+<span class="sig-name descname"><span class="pre">get_selected_device</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_selected_device" title="Permalink to this definition"></a></dt>
+<dd><p>Return selected device info</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>selected device info or None if nothing found:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span> <span class="p">(</span><span class="n">first</span> <span class="n">device</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">devices</span> <span class="p">(</span><span class="nb">list</span><span class="p">):</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">devices</span>
+        <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="n">cardid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">card</span> <span class="nb">id</span>
+                <span class="n">deviceid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="nb">id</span>
+                <span class="n">name</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+                <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+            <span class="p">},</span>
+            <span class="o">...</span>
+        <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_simple_controls">
+<span class="sig-name descname"><span class="pre">get_simple_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_simple_controls" title="Permalink to this definition"></a></dt>
+<dd><p>Get device controls (simple controls)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of controls</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.get_volume">
+<span class="sig-name descname"><span class="pre">get_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.get_volume" title="Permalink to this definition"></a></dt>
+<dd><p>Return current playback volume on current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>control</strong> (<em>string</em>) – amixer control that contains volume level. To get list of controls execute “amixer scontrols”</p></li>
+<li><p><strong>pattern</strong> (<em>string</em>) – pattern to use to parse volume level</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>volume or None if not found</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="cleep.html#cleep.exception.MissingParameter" title="cleep.exception.MissingParameter"><strong>MissingParameter</strong></a> – if parameter is missing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.play_sound">
+<span class="sig-name descname"><span class="pre">play_sound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.play_sound" title="Permalink to this definition"></a></dt>
+<dd><p>Play specified sound using aplay command. Please take care of setting timeout accordingly to your duration!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – sound file path</p></li>
+<li><p><strong>timeout</strong> (<em>float</em>) – max playing duration. If you want to play longer sound file, increase the timeout</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.InvalidParameter" title="cleep.exception.InvalidParameter"><strong>InvalidParameter</strong></a> – if parameter is invalid</p></li>
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.MissingParameter" title="cleep.exception.MissingParameter"><strong>MissingParameter</strong></a> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.record_sound">
+<span class="sig-name descname"><span class="pre">record_sound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'S32_LE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.record_sound" title="Permalink to this definition"></a></dt>
+<dd><p>Record sound. In charge of function caller to remove properly generated file
+After timeout command is killed so use timeout to record specific duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channels</strong> (<em>int</em>) – number of channels to record. Default CHANNELS_STEREO.</p></li>
+<li><p><strong>rate</strong> (<em>int</em>) – record rate. Default RATE_44K.</p></li>
+<li><p><strong>format</strong> (<em>string</em>) – RECORD_FORMAT_XXX. Default FORMAT_S32LE.</p></li>
+<li><p><strong>timeout</strong> (<em>float</em>) – max recording duration</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>path of recording file (wav format)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.MissingParameter" title="cleep.exception.MissingParameter"><strong>MissingParameter</strong></a> – if parameter is missing</p></li>
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.InvalidParameter" title="cleep.exception.InvalidParameter"><strong>InvalidParameter</strong></a> – if parameter is invalid</p></li>
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.CommandError" title="cleep.exception.CommandError"><strong>CommandError</strong></a> – if error occured during command execution</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save alsa configuration in /var/lib/alsa/asound.state</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if configuration saved successfully, False otherwise</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.alsa.Alsa.set_volume">
+<span class="sig-name descname"><span class="pre">set_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.alsa.Alsa.set_volume" title="Permalink to this definition"></a></dt>
+<dd><p>Set volume</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>control</strong> (<em>string</em>) – amixer control that contains volume level</p></li>
+<li><p><strong>pattern</strong> (<em>string</em>) – pattern to use to parse volume level</p></li>
+<li><p><strong>volume</strong> (<em>float</em>) – volume level to set (in percentage)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>new volume or None if failed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.InvalidParameter" title="cleep.exception.InvalidParameter"><strong>InvalidParameter</strong></a> – if parameter is invalid</p></li>
+<li><p><a class="reference internal" href="cleep.html#cleep.exception.MissingParameter" title="cleep.exception.MissingParameter"><strong>MissingParameter</strong></a> – if parameter is missing</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.blkid">
+<span id="cleep-libs-commands-blkid-module"></span><h2>cleep.libs.commands.blkid module<a class="headerlink" href="#module-cleep.libs.commands.blkid" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Blkid</span></span><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></em><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid.get_device">
+<span class="sig-name descname"><span class="pre">get_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid.get_device" title="Permalink to this definition"></a></dt>
+<dd><p>Get device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>device</strong> (<em>string</em>) – device to search for</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>device data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">path</span><span class="p">,</span>
+    <span class="n">uuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">uuid</span><span class="p">,</span>
+    <span class="nb">type</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">filesystem</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">partuuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">partuuid</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid.get_device_by_partuuid">
+<span class="sig-name descname"><span class="pre">get_device_by_partuuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">partuuid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid.get_device_by_partuuid" title="Permalink to this definition"></a></dt>
+<dd><p>Get device specified by partuuid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>partuuid</strong> (<em>string</em>) – device partuuid</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>device data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">path</span><span class="p">,</span>
+    <span class="n">uuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">uuid</span><span class="p">,</span>
+    <span class="nb">type</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">filesystem</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">partuuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">partuuid</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid.get_device_by_uuid">
+<span class="sig-name descname"><span class="pre">get_device_by_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid.get_device_by_uuid" title="Permalink to this definition"></a></dt>
+<dd><p>Get device specified by uuid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>uuid</strong> (<em>string</em>) – device uuid</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>device data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">path</span><span class="p">,</span>
+    <span class="n">uuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">uuid</span><span class="p">,</span>
+    <span class="nb">type</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">filesystem</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">partuuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">partuuid</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.blkid.Blkid.get_devices">
+<span class="sig-name descname"><span class="pre">get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.blkid.Blkid.get_devices" title="Permalink to this definition"></a></dt>
+<dd><p>Get all devices infos</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>dict of devices:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">path</span><span class="p">,</span>
+        <span class="n">uuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">uuid</span><span class="p">,</span>
+        <span class="nb">type</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">filesystem</span> <span class="nb">type</span><span class="p">,</span>
+        <span class="n">partuuid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">partuuid</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.ifconfig">
+<span id="cleep-libs-commands-ifconfig-module"></span><h2>cleep.libs.commands.ifconfig module<a class="headerlink" href="#module-cleep.libs.commands.ifconfig" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifconfig.Ifconfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ifconfig</span></span><a class="headerlink" href="#cleep.libs.commands.ifconfig.Ifconfig" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Command /sbin/ifconfig</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Command ifconfig parsing is replaced by netifaces library</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifconfig.Ifconfig.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></em><a class="headerlink" href="#cleep.libs.commands.ifconfig.Ifconfig.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifconfig.Ifconfig.get_configurations">
+<span class="sig-name descname"><span class="pre">get_configurations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ifconfig.Ifconfig.get_configurations" title="Permalink to this definition"></a></dt>
+<dd><p>Returns current network configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>interfaces configurations:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">interface1</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">)):</span> <span class="n">interface</span> <span class="n">name</span>
+        <span class="n">mac</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">mac</span> <span class="n">address</span>
+        <span class="n">ipv4</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">ipv4</span>
+        <span class="n">gateway_ipv4</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">gateway</span> <span class="n">ipv4</span>
+        <span class="n">netmask_ipv4</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">gateway</span> <span class="n">ipv4</span>
+        <span class="n">ipv6</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">ipv6</span>
+        <span class="n">gateway_ipv6</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">gateway</span> <span class="n">ipv6</span>
+        <span class="n">netmask_ipv6</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">gateway</span> <span class="n">ipv6</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.ifupdown">
+<span id="cleep-libs-commands-ifupdown-module"></span><h2>cleep.libs.commands.ifupdown module<a class="headerlink" href="#module-cleep.libs.commands.ifupdown" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifupdown.Ifupdown">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ifupdown</span></span><a class="headerlink" href="#cleep.libs.commands.ifupdown.Ifupdown" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<p>Command /sbin/ifup /sbin/ifdown.
+It also uses /sbin/ip command</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifupdown.Ifupdown.restart_interface">
+<span class="sig-name descname"><span class="pre">restart_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ifupdown.Ifupdown.restart_interface" title="Permalink to this definition"></a></dt>
+<dd><p>Restart specified interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface</strong> (<em>string</em>) – interface to restart</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed (but maybe not connected!)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifupdown.Ifupdown.start_interface">
+<span class="sig-name descname"><span class="pre">start_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ifupdown.Ifupdown.start_interface" title="Permalink to this definition"></a></dt>
+<dd><p>Start specified interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface</strong> (<em>string</em>) – interface to restart</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed (but maybe not connected!)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ifupdown.Ifupdown.stop_interface">
+<span class="sig-name descname"><span class="pre">stop_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ifupdown.Ifupdown.stop_interface" title="Permalink to this definition"></a></dt>
+<dd><p>Stop specified interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface</strong> (<em>string</em>) – interface to restart</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed (but maybe not connected!)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.ip">
+<span id="cleep-libs-commands-ip-module"></span><h2>cleep.libs.commands.ip module<a class="headerlink" href="#module-cleep.libs.commands.ip" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.ip.Ip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ip</span></span><a class="headerlink" href="#cleep.libs.commands.ip.Ip" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/ip helper.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.ip.Ip.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></em><a class="headerlink" href="#cleep.libs.commands.ip.Ip.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ip.Ip.get_status">
+<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ip.Ip.get_status" title="Permalink to this definition"></a></dt>
+<dd><p>Get network status</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>network status by interfaces:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">interface</span> <span class="n">name</span>
+        <span class="n">ipv4</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">ipv4</span> <span class="n">address</span>
+        <span class="n">netmask</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">netmask</span>
+        <span class="n">ipv6</span> <span class="s1">&#39;string): ipv6 address</span>
+        <span class="n">prefixlen</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">ipv6</span> <span class="n">prefix</span> <span class="n">length</span>
+        <span class="n">mac</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">mac</span> <span class="n">address</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ip.Ip.is_installed">
+<span class="sig-name descname"><span class="pre">is_installed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ip.Ip.is_installed" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if ip command is installed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True is installed</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.ip.Ip.restart_interface">
+<span class="sig-name descname"><span class="pre">restart_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.ip.Ip.restart_interface" title="Permalink to this definition"></a></dt>
+<dd><p>Restart specified interface</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This function has 5 seconds sleep so make sure to set appropriate timeout if any</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface_name</strong> (<em>string</em>) – interface name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if interface restarted successfully</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.iw">
+<span id="cleep-libs-commands-iw-module"></span><h2>cleep.libs.commands.iw module<a class="headerlink" href="#module-cleep.libs.commands.iw" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.iw.Iw">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Iw</span></span><a class="headerlink" href="#cleep.libs.commands.iw.Iw" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/iw helper.
+Return wireless network interface infos.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iw.Iw.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></em><a class="headerlink" href="#cleep.libs.commands.iw.Iw.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iw.Iw.get_adapters">
+<span class="sig-name descname"><span class="pre">get_adapters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iw.Iw.get_adapters" title="Permalink to this definition"></a></dt>
+<dd><p>Return all adapters with associated interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>list of adapters and connected network:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">adapter</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">associated</span> <span class="n">interface</span> <span class="n">name</span>
+        <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">connected</span> <span class="n">network</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iw.Iw.is_installed">
+<span class="sig-name descname"><span class="pre">is_installed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iw.Iw.is_installed" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if iw command is installed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True is installed</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.iwconfig">
+<span id="cleep-libs-commands-iwconfig-module"></span><h2>cleep.libs.commands.iwconfig module<a class="headerlink" href="#module-cleep.libs.commands.iwconfig" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Iwconfig</span></span><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/iwlist helper</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></em><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.INVALID_INTERFACE">
+<span class="sig-name descname"><span class="pre">INVALID_INTERFACE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'no</span> <span class="pre">wireless</span> <span class="pre">extensions'</span></em><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.INVALID_INTERFACE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.NOT_CONNECTED">
+<span class="sig-name descname"><span class="pre">NOT_CONNECTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'off/any'</span></em><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.NOT_CONNECTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.UNASSOCIATED">
+<span class="sig-name descname"><span class="pre">UNASSOCIATED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'unassociated'</span></em><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.UNASSOCIATED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.get_interfaces">
+<span class="sig-name descname"><span class="pre">get_interfaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.get_interfaces" title="Permalink to this definition"></a></dt>
+<dd><p>Return all interfaces with wireless informations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>dictionnary of found wifi networks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="p">{</span>
+        <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">connected</span> <span class="n">network</span> <span class="n">name</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwconfig.Iwconfig.set_network_to_connect_to">
+<span class="sig-name descname"><span class="pre">set_network_to_connect_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iwconfig.Iwconfig.set_network_to_connect_to" title="Permalink to this definition"></a></dt>
+<dd><p>Connect interface to specified network</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>May not work as expected, so please don’t use it</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interface</strong> (<em>string</em>) – interface name</p></li>
+<li><p><strong>network</strong> (<em>string</em>) – network name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed (may not be connected!)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.iwgetid">
+<span id="cleep-libs-commands-iwgetid-module"></span><h2>cleep.libs.commands.iwgetid module<a class="headerlink" href="#module-cleep.libs.commands.iwgetid" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwgetid.Iwgetid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Iwgetid</span></span><a class="headerlink" href="#cleep.libs.commands.iwgetid.Iwgetid" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/iwgetid helper</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwgetid.Iwgetid.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></em><a class="headerlink" href="#cleep.libs.commands.iwgetid.Iwgetid.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwgetid.Iwgetid.get_connections">
+<span class="sig-name descname"><span class="pre">get_connections</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iwgetid.Iwgetid.get_connections" title="Permalink to this definition"></a></dt>
+<dd><p>Return all wifi connections</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>dictionnary of found wifi networks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">interface</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">connected</span> <span class="n">network</span> <span class="n">name</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.iwlist">
+<span id="cleep-libs-commands-iwlist-module"></span><h2>cleep.libs.commands.iwlist module<a class="headerlink" href="#module-cleep.libs.commands.iwlist" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Iwlist</span></span><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/iwlist helper</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></em><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist.FREQ_2_4GHZ">
+<span class="sig-name descname"><span class="pre">FREQ_2_4GHZ</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'2.4GHz'</span></em><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist.FREQ_2_4GHZ" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist.FREQ_5GHZ">
+<span class="sig-name descname"><span class="pre">FREQ_5GHZ</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'5GHz'</span></em><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist.FREQ_5GHZ" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist.get_networks">
+<span class="sig-name descname"><span class="pre">get_networks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist.get_networks" title="Permalink to this definition"></a></dt>
+<dd><p>Return all wifi networks scanned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface</strong> (<em>string</em>) – interface name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>dictionnary of found wifi networks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">network</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">interface</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">interface</span> <span class="n">scanned</span>
+        <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">wifi</span> <span class="n">network</span> <span class="n">name</span>
+        <span class="n">encryption</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">encryption</span> <span class="nb">type</span> <span class="p">(</span><span class="n">TODO</span><span class="p">)</span>
+        <span class="n">signallevel</span> <span class="p">(</span><span class="nb">float</span><span class="p">):</span> <span class="n">wifi</span> <span class="n">signal</span> <span class="n">level</span>
+        <span class="n">frequencies</span> <span class="p">(</span><span class="nb">list</span><span class="p">):</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">supported</span> <span class="n">frequencies</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.iwlist.Iwlist.has_error">
+<span class="sig-name descname"><span class="pre">has_error</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.iwlist.Iwlist.has_error" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if error occured</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if error, False otherwise</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.lsblk">
+<span id="cleep-libs-commands-lsblk-module"></span><h2>cleep.libs.commands.lsblk module<a class="headerlink" href="#module-cleep.libs.commands.lsblk" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Lsblk</span></span><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></em><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk.get_device_infos">
+<span class="sig-name descname"><span class="pre">get_device_infos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk.get_device_infos" title="Permalink to this definition"></a></dt>
+<dd><p>Returns device infos according to device name (sda, sdb1…)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>device</strong> (<em>string</em>) – existing device name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of device infos or None if device not found</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk.get_devices_infos">
+<span class="sig-name descname"><span class="pre">get_devices_infos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk.get_devices_infos" title="Permalink to this definition"></a></dt>
+<dd><p>Returns all devices ordered by drive/partition</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of devices</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk.get_drives">
+<span class="sig-name descname"><span class="pre">get_drives</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk.get_drives" title="Permalink to this definition"></a></dt>
+<dd><p>Returns drives infos only</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of drives</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsblk.Lsblk.get_partitions">
+<span class="sig-name descname"><span class="pre">get_partitions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsblk.Lsblk.get_partitions" title="Permalink to this definition"></a></dt>
+<dd><p>Returns partitions infos only</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of partitions</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.lsmod">
+<span id="cleep-libs-commands-lsmod-module"></span><h2>cleep.libs.commands.lsmod module<a class="headerlink" href="#module-cleep.libs.commands.lsmod" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsmod.Lsmod">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Lsmod</span></span><a class="headerlink" href="#cleep.libs.commands.lsmod.Lsmod" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<p>Lsmod command helper</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsmod.Lsmod.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></em><a class="headerlink" href="#cleep.libs.commands.lsmod.Lsmod.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsmod.Lsmod.get_loaded_modules">
+<span class="sig-name descname"><span class="pre">get_loaded_modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsmod.Lsmod.get_loaded_modules" title="Permalink to this definition"></a></dt>
+<dd><p>Returns all loaded modules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of modules</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.lsmod.Lsmod.is_module_loaded">
+<span class="sig-name descname"><span class="pre">is_module_loaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.lsmod.Lsmod.is_module_loaded" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if specified module is loaded</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if module is loaded</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.modprobe">
+<span id="cleep-libs-commands-modprobe-module"></span><h2>cleep.libs.commands.modprobe module<a class="headerlink" href="#module-cleep.libs.commands.modprobe" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.modprobe.Modprobe">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Modprobe</span></span><a class="headerlink" href="#cleep.libs.commands.modprobe.Modprobe" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<p>Modprobe command helper</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.modprobe.Modprobe.load_module">
+<span class="sig-name descname"><span class="pre">load_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.modprobe.Modprobe.load_module" title="Permalink to this definition"></a></dt>
+<dd><p>Load specified module</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> (<em>string</em>) – module name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if module loaded successfully</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.modprobe.Modprobe.unload_module">
+<span class="sig-name descname"><span class="pre">unload_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.modprobe.Modprobe.unload_module" title="Permalink to this definition"></a></dt>
+<dd><p>Unload specified module</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> (<em>string</em>) – module name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if module unloaded successfully</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.rfkill">
+<span id="cleep-libs-commands-rfkill-module"></span><h2>cleep.libs.commands.rfkill module<a class="headerlink" href="#module-cleep.libs.commands.rfkill" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Rfkill</span></span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<p>Command /usr/sbin/rfkill helper</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.COMMAND_BLOCK">
+<span class="sig-name descname"><span class="pre">COMMAND_BLOCK</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'block'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.COMMAND_BLOCK" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.COMMAND_UNBLOCK">
+<span class="sig-name descname"><span class="pre">COMMAND_UNBLOCK</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'unblock'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.COMMAND_UNBLOCK" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.FLAG_BLOCKED">
+<span class="sig-name descname"><span class="pre">FLAG_BLOCKED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'blocked'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.FLAG_BLOCKED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.FLAG_UNBLOCKED">
+<span class="sig-name descname"><span class="pre">FLAG_UNBLOCKED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'unblocked'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.FLAG_UNBLOCKED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.TYPE_BLUETOOTH">
+<span class="sig-name descname"><span class="pre">TYPE_BLUETOOTH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'bluetooth'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.TYPE_BLUETOOTH" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.TYPE_WIFI">
+<span class="sig-name descname"><span class="pre">TYPE_WIFI</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'wlan'</span></em><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.TYPE_WIFI" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.block_device">
+<span class="sig-name descname"><span class="pre">block_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.block_device" title="Permalink to this definition"></a></dt>
+<dd><p>Block specified device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>device_id</strong> (<em>int</em>) – device id as returned by get_xxx_infos function. If None specified block all devices</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.get_bluetooth_infos">
+<span class="sig-name descname"><span class="pre">get_bluetooth_infos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.get_bluetooth_infos" title="Permalink to this definition"></a></dt>
+<dd><p>Returns bluetooth infos if any</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>bluetooth infos or None if no bluetooth adapter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+    <span class="nb">id</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">rfkill</span> <span class="n">device</span> <span class="nb">id</span>
+    <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+    <span class="n">blocked</span> <span class="p">(</span><span class="nb">bool</span><span class="p">):</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="n">blocked</span> <span class="p">(</span><span class="n">hard</span> <span class="ow">or</span> <span class="n">soft</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.get_wifi_infos">
+<span class="sig-name descname"><span class="pre">get_wifi_infos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.get_wifi_infos" title="Permalink to this definition"></a></dt>
+<dd><p>Returns wifi infos if any</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>wifi infos or None if no wireless adapter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">device</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">name</span>
+    <span class="nb">id</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">rfkill</span> <span class="n">device</span> <span class="nb">id</span>
+    <span class="n">desc</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">device</span> <span class="n">description</span>
+    <span class="n">blocked</span> <span class="p">(</span><span class="nb">bool</span><span class="p">):</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="n">blocked</span> <span class="p">(</span><span class="n">hard</span> <span class="ow">or</span> <span class="n">soft</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.is_installed">
+<span class="sig-name descname"><span class="pre">is_installed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.is_installed" title="Permalink to this definition"></a></dt>
+<dd><p>Check if rfkill is installed or not in the system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if rfkill command exists, False otherwise</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.rfkill.Rfkill.unblock_device">
+<span class="sig-name descname"><span class="pre">unblock_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.rfkill.Rfkill.unblock_device" title="Permalink to this definition"></a></dt>
+<dd><p>Unblock specified device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>device_id</strong> (<em>int</em>) – device id as returned by get_xxx_infos function. If None specified, unblock all devices</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if command succeed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.udevadm">
+<span id="cleep-libs-commands-udevadm-module"></span><h2>cleep.libs.commands.udevadm module<a class="headerlink" href="#module-cleep.libs.commands.udevadm" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Udevadm</span></span><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.Console" title="cleep.libs.internals.console.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.Console</span></code></a></p>
+<p>udevadm is used to determine device type.
+Device type can be ATA, USB, SDCARD or MMC</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.CACHE_DURATION">
+<span class="sig-name descname"><span class="pre">CACHE_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10.0</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.CACHE_DURATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.TYPE_ATA">
+<span class="sig-name descname"><span class="pre">TYPE_ATA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.TYPE_ATA" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.TYPE_MMC">
+<span class="sig-name descname"><span class="pre">TYPE_MMC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.TYPE_MMC" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.TYPE_SDCARD">
+<span class="sig-name descname"><span class="pre">TYPE_SDCARD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.TYPE_SDCARD" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.TYPE_UNKNOWN">
+<span class="sig-name descname"><span class="pre">TYPE_UNKNOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.TYPE_UNKNOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.TYPE_USB">
+<span class="sig-name descname"><span class="pre">TYPE_USB</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.TYPE_USB" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.udevadm.Udevadm.get_device_type">
+<span class="sig-name descname"><span class="pre">get_device_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.udevadm.Udevadm.get_device_type" title="Permalink to this definition"></a></dt>
+<dd><p>Return specified device type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>device</strong> (<em>string</em>) – device name (for example mmcblk0)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>device type (ATA=1, USB=2, SDCARD=3, MMC=4, UNKNOWN=0, see class constants)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands.wpacli">
+<span id="cleep-libs-commands-wpacli-module"></span><h2>cleep.libs.commands.wpacli module<a class="headerlink" href="#module-cleep.libs.commands.wpacli" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wpacli</span></span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="cleep.libs.internals.html#cleep.libs.internals.console.AdvancedConsole" title="cleep.libs.internals.console.AdvancedConsole"><code class="xref py py-class docutils literal notranslate"><span class="pre">cleep.libs.internals.console.AdvancedConsole</span></code></a></p>
+<p>Command /sbin/wpa_cli helper</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Man page <a class="reference external" href="https://www.freebsd.org/cgi/man.cgi?wpa_cli">https://www.freebsd.org/cgi/man.cgi?wpa_cli</a></p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATES">
+<span class="sig-name descname"><span class="pre">STATES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['DISCONNECTED',</span> <span class="pre">'INTERFACE_DISABLED',</span> <span class="pre">'INACTIVE',</span> <span class="pre">'SCANNING',</span> <span class="pre">'AUTHENTICATING',</span> <span class="pre">'ASSOCIATING',</span> <span class="pre">'ASSOCIATED',</span> <span class="pre">'4WAY_HANDSHAKE',</span> <span class="pre">'GROUP_HANDSHAKE',</span> <span class="pre">'COMPLETED']</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_4WAY_HANDSHAKE">
+<span class="sig-name descname"><span class="pre">STATE_4WAY_HANDSHAKE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'4WAY_HANDSHAKE'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_4WAY_HANDSHAKE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_ASSOCIATED">
+<span class="sig-name descname"><span class="pre">STATE_ASSOCIATED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ASSOCIATED'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_ASSOCIATED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_ASSOCIATING">
+<span class="sig-name descname"><span class="pre">STATE_ASSOCIATING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ASSOCIATING'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_ASSOCIATING" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_AUTHENTICATING">
+<span class="sig-name descname"><span class="pre">STATE_AUTHENTICATING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AUTHENTICATING'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_AUTHENTICATING" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_COMPLETED">
+<span class="sig-name descname"><span class="pre">STATE_COMPLETED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'COMPLETED'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_COMPLETED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_DISCONNECTED">
+<span class="sig-name descname"><span class="pre">STATE_DISCONNECTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DISCONNECTED'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_DISCONNECTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_GROUP_HANDSHAKE">
+<span class="sig-name descname"><span class="pre">STATE_GROUP_HANDSHAKE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'GROUP_HANDSHAKE'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_GROUP_HANDSHAKE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_INACTIVE">
+<span class="sig-name descname"><span class="pre">STATE_INACTIVE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'INACTIVE'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_INACTIVE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_INTERFACE_DISABLED">
+<span class="sig-name descname"><span class="pre">STATE_INTERFACE_DISABLED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'INTERFACE_DISABLED'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_INTERFACE_DISABLED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_SCANNING">
+<span class="sig-name descname"><span class="pre">STATE_SCANNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SCANNING'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_SCANNING" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATE_UNKNOWN">
+<span class="sig-name descname"><span class="pre">STATE_UNKNOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UNKNOWN'</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATE_UNKNOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATUS_CURRENT">
+<span class="sig-name descname"><span class="pre">STATUS_CURRENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATUS_CURRENT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATUS_DISABLED">
+<span class="sig-name descname"><span class="pre">STATUS_DISABLED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATUS_DISABLED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.STATUS_ENABLED">
+<span class="sig-name descname"><span class="pre">STATUS_ENABLED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.STATUS_ENABLED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.add_network">
+<span class="sig-name descname"><span class="pre">add_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encryption</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.add_network" title="Permalink to this definition"></a></dt>
+<dd><p>Start specified interface</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference external" href="https://www.freebsd.org/cgi/man.cgi?wpa_supplicant.conf%285%29">https://www.freebsd.org/cgi/man.cgi?wpa_supplicant.conf%285%29</a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>network</strong> (<em>string</em>) – network name</p></li>
+<li><p><strong>encryption</strong> (<em>string</em>) – encryption</p></li>
+<li><p><strong>password</strong> (<em>string</em>) – password (if no password set to empty string). If you need
+encrypted password use WpaSupplicantConf encrypt_password function</p></li>
+<li><p><strong>hidden</strong> (<em>bool</em>) – True if hidden network</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Result:</dt><dd><p>bool: True if command succeed (but maybe not connected!)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.disable_network">
+<span class="sig-name descname"><span class="pre">disable_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.disable_network" title="Permalink to this definition"></a></dt>
+<dd><p>Disable specified network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>network</strong> (<em>string</em>) – network name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if network disabled, False if network is not configured</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.enable_network">
+<span class="sig-name descname"><span class="pre">enable_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.enable_network" title="Permalink to this definition"></a></dt>
+<dd><p>Enable specified network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>network</strong> (<em>string</em>) – network name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if network enabled, False if network is not configured</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.get_configured_networks">
+<span class="sig-name descname"><span class="pre">get_configured_networks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.get_configured_networks" title="Permalink to this definition"></a></dt>
+<dd><p>Get configured networks. It returns network ids to manipulate it.</p>
+<dl>
+<dt>Results:</dt><dd><p>dict: configured networks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="p">{</span>
+        <span class="nb">id</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">network</span> <span class="nb">id</span><span class="o">.</span> <span class="n">This</span> <span class="nb">id</span> <span class="ow">is</span> <span class="n">used</span> <span class="n">to</span> <span class="n">perform</span> <span class="n">other</span> <span class="n">wpacli</span> <span class="n">actions</span>
+        <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">network</span> <span class="n">name</span>
+        <span class="n">bssid</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">bssid</span> <span class="p">(</span><span class="n">can</span> <span class="n">be</span> <span class="s1">&#39;any&#39;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">network</span> <span class="n">status</span> <span class="p">(</span><span class="n">STATUS_DISABLED</span><span class="p">,</span> <span class="n">STATUS_ENABLED</span><span class="p">,</span> <span class="n">STATUS_CURRENT</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.get_status">
+<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.get_status" title="Permalink to this definition"></a></dt>
+<dd><p>Return interface status</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interface_name</strong> (<em>string</em>) – interface name to get status on</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>wifi interface status:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">network</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">connected</span> <span class="n">network</span> <span class="n">name</span>
+    <span class="n">state</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">state</span> <span class="n">info</span> <span class="p">(</span><span class="n">see</span> <span class="n">STATE_XXX</span><span class="p">)</span>
+    <span class="n">ipaddress</span> <span class="p">(</span><span class="n">string</span><span class="p">):</span> <span class="n">ip</span> <span class="n">address</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.reconfigure_interface">
+<span class="sig-name descname"><span class="pre">reconfigure_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.reconfigure_interface" title="Permalink to this definition"></a></dt>
+<dd><p>Reconfigure specified interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interface</strong> (<em>string</em>) – interface name</p></li>
+<li><p><strong>pause</strong> (<em>float</em>) – pause before returning result. The pause helps to avoid empty networks list</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if reconfigure succeed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.remove_network">
+<span class="sig-name descname"><span class="pre">remove_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.remove_network" title="Permalink to this definition"></a></dt>
+<dd><p>Remove specified network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>network</strong> (<em>string</em>) – network name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if network removed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.scan_networks">
+<span class="sig-name descname"><span class="pre">scan_networks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.scan_networks" title="Permalink to this definition"></a></dt>
+<dd><p>Scan networks</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interface</strong> (<em>string</em>) – interface to scan</p></li>
+<li><p><strong>duration</strong> (<em>float</em>) – time to wait before retrieving scan results (default 3 seconds)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Result:</dt><dd><p>bool: True if command succeed (but maybe not connected!)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cleep.libs.commands.wpacli.Wpacli.select_network">
+<span class="sig-name descname"><span class="pre">select_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleep.libs.commands.wpacli.Wpacli.select_network" title="Permalink to this definition"></a></dt>
+<dd><p>Select specified network. All other networks are automatically disabled by this command</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>network</strong> (<em>string</em>) – network name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if network selected</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cleep.libs.commands">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cleep.libs.commands" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023 CleepDevice.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
