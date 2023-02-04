@@ -20,7 +20,7 @@ clone:
 
 steps:
   - name: clone
-    image: cleepregistry:5000/cleep-git:latest
+    image: 192.168.1.125:5000/cleep-git:latest
     network_mode: host
     privileged: true
     commands:
@@ -30,7 +30,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: build
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
@@ -47,7 +47,7 @@ steps:
       - ls -la
 
   - name: publish-debian-package
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
@@ -73,7 +73,9 @@ trigger:
   branch:
     - master
   event:
-    - pull_request
+    - tag
+  ref:
+    - refs/tags/v*-rc*
 
 concurrency:
   limit: 1
@@ -83,7 +85,7 @@ clone:
 
 steps:
   - name: clone
-    image: cleepregistry:5000/cleep-git:latest
+    image: 192.168.1.125:5000/cleep-git:latest
     network_mode: host
     privileged: true
     commands:
@@ -93,7 +95,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: run-tests
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     commands:
@@ -106,7 +108,7 @@ steps:
       - cleep-cli coretests --coverage --output
 
   - name: build
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
@@ -123,7 +125,7 @@ steps:
       - ls -la
 
   - name: test-install
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     commands:
@@ -132,7 +134,7 @@ steps:
       - cleep --version > version.txt
 
   - name: publish-docs
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
@@ -174,6 +176,9 @@ trigger:
     - master
   event:
     - tag
+  ref:
+    exclude:
+    - refs/tags/v*-rc*
 
 concurrency:
   limit: 1
@@ -183,7 +188,7 @@ clone:
 
 steps:
   - name: clone
-    image: cleepregistry:5000/cleep-git:latest
+    image: 192.168.1.125:5000/cleep-git:latest
     network_mode: host
     privileged: true
     commands:
@@ -193,7 +198,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: build
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
@@ -210,7 +215,7 @@ steps:
       - ls -la
 
   - name: test-install
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     commands:
@@ -219,7 +224,7 @@ steps:
       - cleep --version > version.txt
 
   - name: publish-deb
-    image: cleepregistry:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
     environment:
