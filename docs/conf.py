@@ -34,7 +34,6 @@ html_css_files = [
 ]
 html_logo = '_static/cleep-logo-red.png'
 html_favicon = '_static/favicon.ico'
-# html_baseurl = 'https://cleepdevice.github.io/cleep'
 todo_include_todos = True
 
 html_theme = 'sphinx_rtd_theme'
@@ -51,4 +50,3 @@ html_theme_options = {
 def setup(app):
     app.add_css_file('cleep.css')
     
-
