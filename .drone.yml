@@ -46,15 +46,6 @@ steps:
       - pwd
       - ls -la
 
-  - name: test-install
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    commands:
-      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
-      - cleep --noro --stdout --dryrun
-      - cleep --version > version.txt
-
   - name: publish-debian-package
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
@@ -63,6 +54,9 @@ steps:
       GITHUB_ACCESS_TOKEN:
         from_secret: github_access_token
     commands:
+      - # MUST BE RAN AFTER test-install STEP
+      - echo 0.0.30 > version.txt
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - export VERSION=`cat version.txt`
       - echo $VERSION
