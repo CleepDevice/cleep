@@ -46,22 +46,21 @@ steps:
       - pwd
       - ls -la
 
-  - name: publish-debian-package
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
     network_mode: host
     privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
     commands:
       - # MUST BE RAN AFTER test-install STEP
       - echo 0.0.30 > version.txt
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - docker --version
       - export VERSION=`cat version.txt`
       - echo $VERSION
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
+      - cp -a "cleep_$VERSION_armhf.deb" "cleep.deb"
+      - ls -la
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
 
 
 ---
@@ -164,6 +163,22 @@ steps:
       - git config --global user.name "drone"
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coredocs --publish
+
+  - name: publish-debian-package
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - # MUST BE RAN AFTER test-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corepublish --version=$VERSION
 
 
 ---
