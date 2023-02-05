@@ -57,7 +57,7 @@ steps:
       - docker --version
       - export VERSION=`cat version.txt`
       - echo $VERSION
-      - cp -a "cleep_$VERSION_armhf.deb" "cleep.deb"
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep.deb"
       - ls -la
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
