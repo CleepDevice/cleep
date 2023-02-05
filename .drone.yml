@@ -60,6 +60,7 @@ steps:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - export VERSION=`cat version.txt`
       - echo $VERSION
+      - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli corepublish --version=$VERSION
 
 
