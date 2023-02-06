@@ -19,17 +19,18 @@ clone:
   disable: true
 
 services:
-- name: launch-docker
-  image: mazzolino/docker:20.10.12-dind
-  privileged: true
-  volumes:
-    - name: dockersock
-      path: /var/run
-  command: ['--insecure-registry=192.168.1.125:5000']
+  - name: launch-docker
+    image: mazzolino/docker:20.10.12-dind
+    privileged: true
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    command: ['--insecure-registry=192.168.1.125:5000']
 
 volumes:
-- name: dockersock
-  temp: {}
+  - name: dockersock
+    temp: {}
 
 steps:
   - name: clone
