@@ -24,7 +24,7 @@ steps:
     network_mode: host
     privileged: true
     environment:
-      - DOCKER_HOST=unix:///drone/docker.sock
+      DOCKER_HOST: unix:///drone/docker.sock
     commands:
       - sleep 20 # give docker enough time to start
       - docker ps -a 
