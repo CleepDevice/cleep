@@ -18,16 +18,6 @@ concurrency:
 clone:
   disable: true
 
-steps:
-- name: test
-  image: mazzolino/docker:20.10.12-dind
-  volumes:
-  - name: dockersock
-    path: /var/run
-  commands:
-  - sleep 120 # give docker enough time to start
-  - docker ps -a
-
 services:
 - name: docker
   image: mazzolino/docker:20.10.12-dind
@@ -39,6 +29,41 @@ services:
 volumes:
 - name: dockersock
   temp: {}
+
+steps:
+  - name: build
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    environment:
+      SENTRY_DSN:
+        from_secret: sentry_dsn
+    commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corebuild
+      - pwd
+      - ls -la 
+
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    commands:
+      - # MUST BE RAN AFTER test-install STEP
+      - echo 0.0.30 > version.txt
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
 
 
 ---
