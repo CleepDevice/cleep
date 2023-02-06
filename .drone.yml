@@ -20,7 +20,7 @@ clone:
 
 steps:
 - name: test
-  image: docker:dind
+  image: mazzolino/docker:20.10.12-dind
   volumes:
   - name: dockersock
     path: /var/run
@@ -30,7 +30,7 @@ steps:
 
 services:
 - name: docker
-  image: docker:dind
+  image: mazzolino/docker:20.10.12-dind
   privileged: true
   volumes:
   - name: dockersock
