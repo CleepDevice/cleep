@@ -26,7 +26,7 @@ steps:
     environment:
       DOCKER_HOST: unix:///drone/docker.sock
     commands:
-      - sleep 30 # give docker enough time to start
+      - sleep 60 # give docker enough time to start
       - docker ps -a 
 
 services:
