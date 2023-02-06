@@ -19,7 +19,7 @@ clone:
   disable: true
 
 services:
-- name: docker
+- name: launch-docker
   image: mazzolino/docker:20.10.12-dind
   privileged: true
   volumes:
@@ -31,7 +31,17 @@ volumes:
   temp: {}
 
 steps:
-  - name: build
+  - name: clone
+    image: 192.168.1.125:5000/cleep-git:latest
+    network_mode: host
+    privileged: true
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: build-cleep
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     environment:
       SENTRY_DSN:
@@ -100,7 +110,7 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: run-tests
+  - name: run-cleep-tests
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -113,7 +123,7 @@ steps:
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
 
-  - name: build
+  - name: build-cleep
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -130,7 +140,7 @@ steps:
       - pwd
       - ls -la
 
-  - name: test-install
+  - name: test-cleep-install
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -139,7 +149,7 @@ steps:
       - cleep --noro --stdout --dryrun
       - cleep --version > version.txt
 
-  - name: publish-docs
+  - name: publish-cleep-docs
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -167,7 +177,7 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coredocs --publish
 
-  - name: publish-debian-package
+  - name: publish-cleep-deb
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -219,7 +229,7 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: build
+  - name: build-cleep
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -236,7 +246,7 @@ steps:
       - pwd
       - ls -la
 
-  - name: test-install
+  - name: test-cleep-install
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
@@ -245,7 +255,7 @@ steps:
       - cleep --noro --stdout --dryrun
       - cleep --version > version.txt
 
-  - name: publish-deb
+  - name: publish-cleep-deb
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
