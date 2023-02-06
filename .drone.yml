@@ -23,9 +23,8 @@ steps:
     image: 192.168.1.125:5000/cleep-utils:20230205
     network_mode: host
     privileged: true
-    volumes:
-      - name: dockersock
-        path: /var/run
+    environment:
+      - DOCKER_HOST=unix:///drone/docker.sock
     commands:
       - sleep 20 # give docker enough time to start
       - docker ps -a 
@@ -34,13 +33,7 @@ services:
   - name: docker
     image: mazzolino/docker:20.10.12-dind
     privileged: true
-    volumes:
-      - name: dockersock
-        path: /var/run
-
-volumes:
-  - name: dockersock
-    temp: {}
+    command: [ '-H', 'unix:///drone/docker.sock' ]
 
 
 ---
