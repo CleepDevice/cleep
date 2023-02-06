@@ -19,21 +19,26 @@ clone:
   disable: true
 
 steps:
-  - name: test
-    image: 192.168.1.125:5000/cleep-utils:20230205
-    network_mode: host
-    privileged: true
-    environment:
-      DOCKER_HOST: unix:///drone/docker.sock
-    commands:
-      - sleep 60 # give docker enough time to start
-      - docker ps -a 
+- name: test
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run
+  commands:
+  - sleep 60 # give docker enough time to start
+  - docker ps -a
 
 services:
-  - name: docker
-    image: mazzolino/docker:20.10.12-dind
-    privileged: true
-    command: [ '-H', 'unix:///drone/docker.sock' ]
+- name: docker
+  image: docker:dind
+  privileged: true
+  volumes:
+  - name: dockersock
+    path: /var/run
+
+volumes:
+- name: dockersock
+  temp: {}
 
 
 ---
