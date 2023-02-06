@@ -25,7 +25,7 @@ steps:
   - name: dockersock
     path: /var/run
   commands:
-  - sleep 60 # give docker enough time to start
+  - sleep 120 # give docker enough time to start
   - docker ps -a
 
 services:
