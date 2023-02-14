@@ -7,6 +7,9 @@ COPY cleep.deb .
 RUN apt -y install ./cleep.deb
 RUN systemctl disable cleep
 
-RUN cleep --stdout --noro --dryrun
+# always return true because Cleep could encounter errors
+# starting when updated core apps are not deployed yet because
+# they need new release docker image
+RUN cleep --stdout --noro --dryrun | true
 
 RUN python3 -m pip install cleepcli
