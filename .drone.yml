@@ -83,6 +83,36 @@ steps:
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
 
+  - name: update-app-ci
+    image: 192.168.1.125:5000/cleep-git:latest
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # update cleep-ci
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - git clone git@github.com:CleepDevice/cleep-ci.git
+      - cd cleep-ci
+      - sed "s/__CLEEP_RELEASE__/"$VERSION"/g" drone-app.template.yml > .drone-app.yml
+      - git add .drone-app.yml
+      - git commit -m "Update Cleep RC "$VERSION
+      - git push
 
 ---
 kind: pipeline
