@@ -34,7 +34,7 @@ volumes:
 
 steps:
   - name: clone
-    image: 192.168.1.125:5000/cleep-git:latest
+    image: 192.168.1.125:5000/cleep-git:20230215
     network_mode: host
     privileged: true
     commands:
@@ -58,33 +58,8 @@ steps:
       - pwd
       - ls -la 
 
-  - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20230205
-    network_mode: host
-    volumes:
-      - name: dockersock
-        path: /var/run
-    environment:
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
-    commands:
-      - # MUST BE RAN AFTER test-install STEP
-      - echo 0.0.30 > version.txt
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - docker --version
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
-      - cd cleep-dev
-      - ls -la 
-      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
-      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
-      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
-
   - name: update-app-ci
-    image: 192.168.1.125:5000/cleep-git:latest
+    image: 192.168.1.125:5000/cleep-git:20230215
     network_mode: host
     environment:
       ID_ED25519:
@@ -111,8 +86,8 @@ steps:
       - cd cleep-ci
       - sed "s/__CLEEP_RELEASE__/"$VERSION"/g" drone-app.template.yml > .drone-app.yml
       - git add .drone-app.yml
-      - git commit -m "Update Cleep RC "$VERSION
-      - git push
+      - git commit -m "Update Cleep RC-"$VERSION
+      - git push -u origin HEAD
 
 ---
 kind: pipeline
@@ -306,3 +281,27 @@ steps:
       - echo $VERSION
       - cleep-cli corepublish --version=$VERSION 
 
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - # MUST BE RAN AFTER test-install STEP
+      - echo 0.0.30 > version.txt
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
