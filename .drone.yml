@@ -34,7 +34,7 @@ volumes:
 
 steps:
   - name: clone
-    image: 192.168.1.125:5000/cleep-git:20230215
+    image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
     privileged: true
     commands:
@@ -43,23 +43,8 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: build-cleep
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    environment:
-      SENTRY_DSN:
-        from_secret: sentry_dsn
-    commands:
-      - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corebuild
-      - pwd
-      - ls -la 
-
-  - name: update-app-ci
-    image: 192.168.1.125:5000/cleep-git:20230215
+  - name: update-app-ci-for-release
+    image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
     environment:
       ID_ED25519:
@@ -67,6 +52,7 @@ steps:
       ID_ED25519_PUB:
         from_secret: id_ed25519_pub
     commands:
+      - echo 0.0.30 > version.txt
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
@@ -84,9 +70,10 @@ steps:
       - echo $VERSION
       - git clone git@github.com:CleepDevice/cleep-ci.git
       - cd cleep-ci
-      - sed "s/__CLEEP_RELEASE__/"$VERSION"/g" drone-app.template.yml > .drone-app.yml
-      - git add .drone-app.yml
-      - git commit -m "Update Cleep RC-"$VERSION
+      - echo $VERSION > .cleep-rc-version.txt
+      - ./generate-drone-app-yml.sh
+      - git add .drone-app.yml .cleep-rc-version.txt
+      - git commit -m "Update Cleep "$VERSION"-rc"
       - git push -u origin HEAD
 
 ---
@@ -294,7 +281,6 @@ steps:
         from_secret: docker_password
     commands:
       - # MUST BE RAN AFTER test-install STEP
-      - echo 0.0.30 > version.txt
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
       - export VERSION=`cat version.txt`
@@ -305,3 +291,19 @@ steps:
       - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+
+  - name: build-cleep
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    environment:
+      SENTRY_DSN:
+        from_secret: sentry_dsn
+    commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corebuild
+      - pwd
+      - ls -la 
+
