@@ -23,12 +23,12 @@ class ReadWriteContext:
 
     def to_dict(self):
         return {
-            u"isreadonlyfs": self.is_readonly_fs,
-            u"src": self.src,
-            u"dst": self.dst,
-            u"action": self.action,
-            u"boot": self.boot,
-            u"root": self.root,
+            "isreadonlyfs": self.is_readonly_fs,
+            "src": self.src,
+            "dst": self.dst,
+            "action": self.action,
+            "boot": self.boot,
+            "root": self.root,
         }
 
 
@@ -41,10 +41,10 @@ class ReadWrite:
     STATUS_READ = 1
     STATUS_UNKNOWN = 2
 
-    PARTITION_ROOT = u"/"
-    PARTITION_BOOT = u"/boot"
+    PARTITION_ROOT = "/"
+    PARTITION_BOOT = "/boot"
 
-    CLEEP_DIR = u"/tmp/cleep"
+    CLEEP_DIR = "/tmp/cleep"
 
     def __init__(self):
         """
@@ -69,9 +69,9 @@ class ReadWrite:
         """
         Return opened files for writing for current program
         """
-        cmd = u'/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
+        cmd = '/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
         return [
-            line.decode("utf-8").replace(u"\n", "")
+            line.decode("utf-8").replace("\n", "")
             for line in Popen(
                 cmd, shell=True, stdout=PIPE
             ).stdout.readlines()
@@ -101,7 +101,7 @@ class ReadWrite:
         Args:
             partition (string): partition to work on
         """
-        partition_mod = partition.replace(u"/", u"\/")
+        partition_mod = partition.replace("/", "\/")
         command = (
             r'/bin/mount | sed -n -e "s/^.* on %s .*(\(r[w|o]\).*/\1/p"' % partition_mod
         )
@@ -109,23 +109,23 @@ class ReadWrite:
         # self.logger.debug('Command "%s" result: %s' % (command, res))
 
         # check errors
-        if res[u"error"] or res[u"killed"] or len(res[u"stdout"]) == 0:
+        if res["error"] or res["killed"] or len(res["stdout"]) == 0:
             self.logger.error("Error when getting rw/ro flag: %s" % res)
             self.status[partition] = self.STATUS_UNKNOWN
             return
 
         # parse result
-        line = res[u"stdout"][0].strip()
-        if line == u"rw":
+        line = res["stdout"][0].strip()
+        if line == "rw":
             self.status[partition] = self.STATUS_WRITE
-            self.logger.trace(u'Partition "%s" is in WRITE mode' % partition)
-        elif line == u"ro":
+            self.logger.trace('Partition "%s" is in WRITE mode' % partition)
+        elif line == "ro":
             self.status[partition] = self.STATUS_READ
-            self.logger.trace(u'Partition "%s" is in READ mode' % partition)
+            self.logger.trace('Partition "%s" is in READ mode' % partition)
         else:
             self.status[partition] = self.STATUS_UNKNOWN
             self.logger.error(
-                u'Unable to get partition "%s" status: %s' % (partition, res[u"stdout"])
+                'Unable to get partition "%s" status: %s' % (partition, res["stdout"])
             )
 
     def __is_cleep_iso(self):
@@ -135,10 +135,17 @@ class ReadWrite:
         Returns:
             bool: True if it's cleep iso
         """
-        if os.path.exists(self.CLEEP_DIR):
-            return True
+        return os.path.exists(self.CLEEP_DIR)
 
-        return False
+    def __is_ci_env(self): # pragma: no cover
+        """
+        Return True if Cleep is running in CI env
+
+        Returns:
+            bool: True if running in CI env
+        """
+        ci_env = os.environ.get('CI_ENV', None)
+        return ci_env != None
 
     def get_status(self):
         """
@@ -172,38 +179,41 @@ class ReadWrite:
             bool: True if write enabled, False otherwise
         """
         if not self.__is_cleep_iso():
-            self.logger.trace(u"Not running on cleep iso")
+            self.logger.trace("Not running on cleep iso")
+            return False
+        if self.__is_ci_env(): # pragma: no cover
+            self.logger.trace("Running in CI env")
             return False
 
         # execute command
         res = self.console.command(
-            u"/bin/mount -o remount,rw %s" % partition, timeout=10.0
+            "/bin/mount -o remount,rw %s" % partition, timeout=10.0
         )
         self.logger.trace("Res: %s" % res)
 
         # check errors
-        if res[u"error"] or res[u"killed"]:
-            self.logger.error(u"Error when turning on writing mode: %s" % res)
+        if res["error"] or res["killed"]:
+            self.logger.error("Error when turning on writing mode: %s" % res)
 
             # dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error(u"%s" % u"".join(lines))
+            self.logger.error("%s" % "".join(lines))
 
             # dump opened files to log
             self.logger.error(
-                u"Opened files in RW by PID[%s]: %s"
-                % (os.getpid(), u"".join(self.__get_opened_files_for_writing()))
+                "Opened files in RW by PID[%s]: %s"
+                % (os.getpid(), "".join(self.__get_opened_files_for_writing()))
             )
 
             # and send crash report
             if self.crash_report:
                 self.crash_report.manual_report(
-                    u"Error when turning on writing mode",
+                    "Error when turning on writing mode",
                     {
-                        u"result": res,
-                        u"partition": partition,
-                        u"traceback": lines,
-                        u"files": self.__get_opened_files_for_writing(),
+                        "result": res,
+                        "partition": partition,
+                        "traceback": lines,
+                        "files": self.__get_opened_files_for_writing(),
                     },
                 )
 
@@ -225,6 +235,9 @@ class ReadWrite:
         """
         if not self.__is_cleep_iso():
             return False
+        if self.__is_ci_env(): # pragma: no cover
+            print('=====> CIenv')
+            return False
 
         # execute command
         res = self.console.command(
@@ -237,13 +250,13 @@ class ReadWrite:
 
             # dump current stack trace to log
             lines = traceback.format_list(traceback.extract_stack())
-            self.logger.error("%s" % u"".join(lines))
+            self.logger.error("%s" % "".join(lines))
 
             # dump opened files to log
             opened_files = self.__get_opened_files_for_writing()
             self.logger.error(
                 "Opened files in RW by PID[%s]: %s"
-                % (os.getpid(), u"".join(opened_files))
+                % (os.getpid(), "".join(opened_files))
             )
 
             # do not crash report if filesystem is busy
