@@ -35,17 +35,14 @@ volumes:
 steps:
   - name: clone
     image: 192.168.1.125:5000/cleep-git:20230216
-    network_mode: host
-    privileged: true
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: update-app-ci-for-release
+  - name: freeze-market
     image: 192.168.1.125:5000/cleep-git:20230216
-    network_mode: host
     environment:
       ID_ED25519:
         from_secret: id_ed25519
@@ -65,16 +62,20 @@ steps:
       - # configure git
       - git config --global user.email "drone@localhost"
       - git config --global user.name "drone"
-      - # update cleep-ci
+      - # get version
       - export VERSION=`cat version.txt`
       - echo $VERSION
-      - git clone git@github.com:CleepDevice/cleep-ci.git
-      - cd cleep-ci
-      - echo $VERSION > .cleep-rc-version.txt
-      - ./generate-drone-app-yml.sh
-      - git add .drone-app.yml .cleep-rc-version.txt
-      - git commit -m "Update Cleep "$VERSION"-rc"
-      - git push -u origin HEAD
+      - # freeze version on cleep-apps
+      - git clone git@github.com:CleepDevice/cleep-apps.git
+      - cd cleep-apps
+      - git tag "v"$VERSION
+      - git push --tags
+      - cd ..
+      - # freeze version on cleep-apps-nonfree
+      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
+      - cd cleep-apps-nonfree
+      - git tag "v"$VERSION
+      - git push --tags
 
 ---
 kind: pipeline
@@ -307,3 +308,66 @@ steps:
       - pwd
       - ls -la 
 
+  - name: update-app-ci-for-release
+    image: 192.168.1.125:5000/cleep-git:20230216
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # update cleep-ci
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - git clone git@github.com:CleepDevice/cleep-ci.git
+      - cd cleep-ci
+      - echo $VERSION > .cleep-release-version.txt
+      - ./generate-drone-app-yml.sh
+      - git add .drone-app.yml .cleep-release-version.txt
+      - git commit -m "Update Cleep "$VERSION" release"
+      - git push -u origin HEAD
+
+  - name: update-app-ci-for-release-candidate
+    image: 192.168.1.125:5000/cleep-git:20230216
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # update cleep-ci
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - git clone git@github.com:CleepDevice/cleep-ci.git
+      - cd cleep-ci
+      - echo $VERSION > .cleep-rc-version.txt
+      - ./generate-drone-app-yml.sh
+      - git add .drone-app.yml .cleep-rc-version.txt
+      - git commit -m "Update Cleep "$VERSION" release candidate"
+      - git push -u origin HEAD
