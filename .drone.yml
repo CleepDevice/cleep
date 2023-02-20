@@ -53,6 +53,31 @@ steps:
       - cleep-cli cigetmods
       - cleep --noro --stdout --dryrun
 
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - echo 0.0.30 > version.txt
+      - # MUST BE RAN AFTER test-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - # docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+
 
 ---
 kind: pipeline
