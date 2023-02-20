@@ -41,41 +41,18 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: freeze-market
-    image: 192.168.1.125:5000/cleep-git:20230216
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
+  - name: check-cleep-from-sources
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
     commands:
-      - echo 0.0.30 > version.txt
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # get version
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - # freeze version on cleep-apps
-      - git clone git@github.com:CleepDevice/cleep-apps.git
-      - cd cleep-apps
-      - git tag "v"$VERSION
-      - git push --tags
-      - cd ..
-      - # freeze version on cleep-apps-nonfree
-      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
-      - cd cleep-apps-nonfree
-      - git tag "v"$VERSION
-      - git push --tags
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - export REPO_DIR=/drone/src/cleep-dev
+      - export CLEEP_ENV=ci
+      - cleep-cli coresync
+      - cleep-cli cigetmods
+      - cleep --noro --stdout --dryrun
+
 
 ---
 kind: pipeline
@@ -103,13 +80,25 @@ clone:
 steps:
   - name: clone
     image: 192.168.1.125:5000/cleep-git:latest
-    network_mode: host
-    privileged: true
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: check-cleep-from-sources
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - export REPO_DIR=/drone/src/cleep-dev
+      - export CLEEP_ENV=ci
+      - cleep-cli coresync
+      - cleep-cli cigetmods
+      - cleep --noro --stdout --dryrun
 
   - name: run-cleep-tests
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
@@ -147,6 +136,7 @@ steps:
     privileged: true
     commands:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - export CLEEP_ENV=ci
       - cleep --noro --stdout --dryrun
       - cleep --version > version.txt
 
@@ -222,8 +212,6 @@ clone:
 steps:
   - name: clone
     image: 192.168.1.125:5000/cleep-git:latest
-    network_mode: host
-    privileged: true
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
@@ -253,6 +241,7 @@ steps:
     privileged: true
     commands:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - export CLEEP_ENV=ci
       - cleep --noro --stdout --dryrun
       - cleep --version > version.txt
 
@@ -371,3 +360,39 @@ steps:
       - git add .drone-app.yml .cleep-rc-version.txt
       - git commit -m "Update Cleep "$VERSION" release candidate"
       - git push -u origin HEAD
+
+  - name: freeze-market
+    image: 192.168.1.125:5000/cleep-git:20230216
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - echo 0.0.30 > version.txt
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # get version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - # freeze version on cleep-apps
+      - git clone git@github.com:CleepDevice/cleep-apps.git
+      - cd cleep-apps
+      - git tag "v"$VERSION
+      - git push --tags
+      - cd ..
+      - # freeze version on cleep-apps-nonfree
+      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
+      - cd cleep-apps-nonfree
+      - git tag "v"$VERSION
+      - git push --tags
