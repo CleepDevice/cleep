@@ -9,7 +9,7 @@ RUN apt -y install ./cleep.deb
 RUN systemctl disable cleep
 
 RUN python3 -m pip install cleepcli
-RUN mkdir -p /tmp/cleep-dev/modules REPO_DIR=/tmp/cleep-dev cleep-cli cigetmods && rm -rf /tmp/cleep-dev
+RUN mkdir -p /tmp/cleep-dev/modules && REPO_DIR=/tmp/cleep-dev cleep-cli cigetmods && rm -rf /tmp/cleep-dev
 
 RUN export CLEEP_ENV=ci
 RUN cleep --stdout --noro --dryrun > cleep.log 2>&1 | true
