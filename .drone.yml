@@ -18,19 +18,10 @@ concurrency:
 clone:
   disable: true
 
-services:
-  - name: launch-docker
-    image: mazzolino/docker:20.10.12-dind
-    privileged: true
-    network_mode: host
-    volumes:
-      - name: dockersock
-        path: /var/run
-    command: ['--insecure-registry=192.168.1.125:5000']
-
 volumes:
-  - name: dockersock
-    temp: {}
+  - name: dev
+    host:
+      path: /dev
 
 steps:
   - name: clone
@@ -41,46 +32,49 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: build-cleep
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+  - name: build-cleepos-image
+    image: mkaczanowski/packer-builder-arm:1.0.6
     network_mode: host
-    environment:
-      SENTRY_DSN:
-        from_secret: sentry_dsn
-    commands:
-      - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corebuild
-      - pwd
-      - ls -la
-
-  - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20230205
-    network_mode: host
+    privileged: true
     volumes:
-      - name: dockersock
-        path: /var/run
-    environment:
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
+      - name: dev
+        path: /dev
     commands:
-      - # MUST BE RAN AFTER test-install STEP
-      - echo 0.0.30 > version.txt
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - docker --version
+      - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
-      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
-      - cd cleep-dev
-      - ls -la 
-      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
-      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
-      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+      - # enable packer for arm (see https://github.com/mkaczanowski/packer-builder-arm/blob/master/docker/entrypoint.sh)
+      - mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
+      - find /proc/sys/fs/binfmt_misc -type f -name 'qemu-*' -exec sh -c 'echo -1 > "$1"' shell {} \;
+      - echo "Register qemu-aarch64"
+      - echo ":qemu-aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" > /proc/sys/fs/binfmt_misc/register
+      - echo "Register qemu-arm"
+      - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # get cleep-packer files
+      - git clone git@github.com:CleepDevice/cleep-packer.git
+      - cd cleep-packer
+      - # update cleepos version
+      - echo $VERSION
+      - # packer
+      - packer build cleepos-lite-arm.json
+      - ls -lh
+      - rm -f cleepos.img
+      - mv "*.zip" "*.sha256" ../.
+      - cd ..
+      - rm -rf cleep-packer
+      - ls -lh
 
 
 ---
@@ -118,7 +112,6 @@ steps:
   - name: check-cleep-from-sources
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
-    privileged: true
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - python3 -m pip freeze | grep cleepcli
@@ -145,7 +138,6 @@ steps:
   - name: build-cleep
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
-    privileged: true
     environment:
       SENTRY_DSN:
         from_secret: sentry_dsn
@@ -162,7 +154,6 @@ steps:
   - name: test-cleep-install
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
-    privileged: true
     commands:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
       - export CLEEP_ENV=ci
@@ -172,7 +163,6 @@ steps:
   - name: publish-cleep-docs
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
-    privileged: true
     environment:
       ID_ED25519:
         from_secret: id_ed25519
@@ -205,7 +195,7 @@ steps:
       GITHUB_ACCESS_TOKEN:
         from_secret: github_access_token
     commands:
-      - # MUST BE RAN AFTER test-install STEP
+      - # MUST BE RAN AFTER test-cleep-install STEP
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - export VERSION=`cat version.txt`
@@ -237,6 +227,20 @@ concurrency:
 
 clone:
   disable: true
+
+services:
+  - name: launch-docker
+    image: mazzolino/docker:20.10.12-dind
+    privileged: true
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    command: ['--insecure-registry=192.168.1.125:5000']
+
+volumes:
+  - name: dockersock
+    temp: {}
 
 steps:
   - name: clone
@@ -299,7 +303,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
-      - # MUST BE RAN AFTER test-install STEP
+      - # MUST BE RAN AFTER test-cleep-install STEP
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
       - export VERSION=`cat version.txt`
@@ -357,6 +361,8 @@ steps:
       - git add .drone-app.yml .cleep-release-version.txt
       - git commit -m "Update Cleep "$VERSION" release"
       - git push -u origin HEAD
+      - cd ..
+      - rm -rf cleep-ci
 
   - name: update-app-ci-for-release-candidate
     image: 192.168.1.125:5000/cleep-git:20230216
@@ -389,6 +395,11 @@ steps:
       - git add .drone-app.yml .cleep-rc-version.txt
       - git commit -m "Update Cleep "$VERSION" release candidate"
       - git push -u origin HEAD
+      - # keep latest release
+      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
+      - cd ..
+      - rm -rf cleep-ci
+      - echo $FREEZED_VERSION > freezed_version.txt
 
   - name: freeze-market
     image: 192.168.1.125:5000/cleep-git:20230216
@@ -398,7 +409,8 @@ steps:
       ID_ED25519_PUB:
         from_secret: id_ed25519_pub
     commands:
-      - echo 0.0.30 > version.txt
+      - # MUST BE EXECUTED AFTER update-app-ci-for-release-candidate STEP
+      - test -f freezed_version.txt || echo "No freezed_version.txt file found. Cannot continue"
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
@@ -425,3 +437,93 @@ steps:
       - cd cleep-apps-nonfree
       - git tag "v"$VERSION
       - git push --tags
+
+
+---
+kind: pipeline
+type: docker
+name: cleep-os
+
+platform:
+  os: linux
+  arch: amd64
+
+trigger:
+  branch:
+    - master
+  event:
+    - tag
+  ref:
+    - refs/tags/cleepos-v*
+
+concurrency:
+  limit: 1
+
+clone:
+  disable: true
+
+volumes:
+  - name: dev
+    host:
+      path: /dev
+
+steps:
+  - name: clone
+    image: 192.168.1.125:5000/cleep-git:latest
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: build-cleepos-image
+    image: mkaczanowski/packer-builder-arm:1.0.6
+    network_mode: host
+    privileged: true
+    volumes:
+      - name: dev
+        path: /dev
+    commands:
+      - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - # enable packer for arm (see https://github.com/mkaczanowski/packer-builder-arm/blob/master/docker/entrypoint.sh)
+      - mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
+      - find /proc/sys/fs/binfmt_misc -type f -name 'qemu-*' -exec sh -c 'echo -1 > "$1"' shell {} \;
+      - echo "Register qemu-aarch64"
+      - echo ":qemu-aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" > /proc/sys/fs/binfmt_misc/register
+      - echo "Register qemu-arm"
+      - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # get cleep-packer files
+      - git clone git@github.com:CleepDevice/cleep-packer.git
+      - cd cleep-packer
+      - # update cleepos version
+      - echo $VERSION
+      - # packer
+      - packer build cleepos-lite-arm.json
+      - ls -lh
+      - rm -f cleepos.img
+      - mv "*.zip" "*.sha256" ../.
+      - cd ..
+      - rm -rf cleep-packer
+      - ls -lh
+
+  - name: publish-cleepos-img
+    image: 192.168.1.125:5000/cleep-git:20230216
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
