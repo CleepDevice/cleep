@@ -58,6 +58,7 @@ steps:
       - cat githubKey > ~/.ssh/known_hosts
       - # get cleep-packer files
       - git clone git@github.com:CleepDevice/cleep-packer.git
+      - cp version.txt cleep-packer/.
       - cd cleep-packer
       - ./generate-cleepos-lite-arm-json.sh
       - head cleepos-lite-arm.json
