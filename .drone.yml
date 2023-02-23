@@ -44,7 +44,7 @@ steps:
     commands:
       - # get version from tag
       - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
-      - echo "0.0.30" > version.txt
+      - echo "0.0.29" > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
       - # configure ssh
