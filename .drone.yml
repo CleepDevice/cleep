@@ -33,24 +33,20 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: build-cleepos-image
-    image: mkaczanowski/packer-builder-arm:1.0.6
+  - name: prepare-cleepos-image-build
+    image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
-    privileged: true
-    volumes:
-      - name: dev
-        path: /dev
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
     commands:
+      - # get version from tag
       - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
+      - echo "0.0.30" > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
-      - # enable packer for arm (see https://github.com/mkaczanowski/packer-builder-arm/blob/master/docker/entrypoint.sh)
-      - mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
-      - find /proc/sys/fs/binfmt_misc -type f -name 'qemu-*' -exec sh -c 'echo -1 > "$1"' shell {} \;
-      - echo "Register qemu-aarch64"
-      - echo ":qemu-aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" > /proc/sys/fs/binfmt_misc/register
-      - echo "Register qemu-arm"
-      - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
@@ -60,15 +56,31 @@ steps:
       - ssh-keyscan github.com >> githubKey
       - ssh-keygen -lf githubKey
       - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
       - # get cleep-packer files
       - git clone git@github.com:CleepDevice/cleep-packer.git
       - cd cleep-packer
+      - ./generate-cleepos-lite-arm-json.sh
+      - head cleepos-lite-arm.json
+      - ls -l
+
+  - name: build-cleepos-image
+    image: mkaczanowski/packer-builder-arm:1.0.6
+    network_mode: host
+    privileged: true
+    volumes:
+      - name: dev
+        path: /dev
+    commands:
+      - # enable packer for arm (see https://github.com/mkaczanowski/packer-builder-arm/blob/master/docker/entrypoint.sh)
+      - mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
+      - find /proc/sys/fs/binfmt_misc -type f -name 'qemu-*' -exec sh -c 'echo -1 > "$1"' shell {} \;
+      - echo "Register qemu-aarch64"
+      - echo ":qemu-aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" > /proc/sys/fs/binfmt_misc/register
+      - echo "Register qemu-arm"
+      - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
       - # update cleepos version
       - echo $VERSION
-      - # packer
+      - # run packer
       - packer build cleepos-lite-arm.json
       - ls -lh
       - rm -f cleepos.img
