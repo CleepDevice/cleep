@@ -81,10 +81,12 @@ steps:
       - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
       - # run packer
       - cd cleep-packer
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
       - packer build cleepos-lite-arm.json
       - ls -lh
-      - mv "*.zip" ../.
-      - mv "*.sha256" ../.
+      - mv "cleepos_"$VERSION".zip" ../.
+      - mv "cleepos_"$VERSION".sha256" ../.
       - cd ..
       - rm -rf cleep-packer
       - ls -lh
