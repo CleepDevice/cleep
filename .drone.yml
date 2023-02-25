@@ -33,7 +33,7 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: prepare-cleepos-image-build
+  - name: prepare-cleepos-image
     image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
     environment:
@@ -44,7 +44,7 @@ steps:
     commands:
       - # get version from tag
       - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
-      - echo "0.0.29" > version.txt
+      - echo "0.0.30" > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
       - # configure ssh
@@ -56,12 +56,13 @@ steps:
       - ssh-keyscan github.com >> githubKey
       - ssh-keygen -lf githubKey
       - cat githubKey > ~/.ssh/known_hosts
+      - rm githubKey
       - # get cleep-packer files
       - git clone git@github.com:CleepDevice/cleep-packer.git
       - cp version.txt cleep-packer/.
       - cd cleep-packer
       - ./generate-cleepos-lite-arm-json.sh
-      - cat cleepos-lite-arm.json | grep CLEEP_VERSION
+      - head -n 4 cleepos-lite-arm.json
 
   - name: build-cleepos-image
     image: mkaczanowski/packer-builder-arm:1.0.6
@@ -82,11 +83,22 @@ steps:
       - cd cleep-packer
       - packer build cleepos-lite-arm.json
       - ls -lh
-      - rm -f cleepos.img
-      - mv "*.zip" "*.sha256" ../.
+      - mv "*.zip" ../.
+      - mv "*.sha256" ../.
       - cd ..
       - rm -rf cleep-packer
       - ls -lh
+
+  - name: publish-cleepos-image
+    image: 192.168.1.1:8662/cleep-utils:20230223
+    network_mode: host
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - ls -lh
+      - CHANGELOG=`realpath cleep-dev/debian/changelog`
+      - github-helper publishcleepos --owner=CleepDevice --repo=cleep --archive="cleepos_"$VERSION".zip" --sha256="cleepos_"$VERSION".sha256" --version=$VERSION --changelog=$CHANGELOG --token=$GITHUB_ACCESS_TOKEN
 
 
 ---
