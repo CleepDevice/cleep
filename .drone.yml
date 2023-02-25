@@ -99,6 +99,8 @@ steps:
         from_secret: github_access_token
     commands:
       - ls -lh
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
       - CHANGELOG=`realpath cleep-dev/debian/changelog`
       - github-helper publishcleepos --owner=CleepDevice --repo=cleep --archive="cleepos_"$VERSION".zip" --sha256="cleepos_"$VERSION".sha256" --version=$VERSION --changelog=$CHANGELOG --token=$GITHUB_ACCESS_TOKEN
 
