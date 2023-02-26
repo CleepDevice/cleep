@@ -4,14 +4,528 @@ name: development
 
 platform:
   os: linux
-  arch: amd64
-
+  arch: arm
 
 trigger:
   branch:
     - master
   event:
     - pull_request
+
+concurrency:
+  limit: 1
+
+clone:
+  disable: true
+
+steps:
+  - name: clone
+    image: 192.168.1.125:5000/cleep-git:latest
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: check-cleep-from-sources
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - export REPO_DIR=/drone/src/cleep-dev
+      - export CLEEP_ENV=ci
+      - cleep-cli coresync
+      - cleep-cli cigetmods
+      - cleep --noro --stdout --dryrun
+
+  - name: run-cleep-tests
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - python3 -m pip install -r requirements-test.txt
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli coresync
+      - cleep-cli coretests --coverage --output
+
+
+
+---
+kind: pipeline
+type: docker
+name: release-candidate
+
+platform:
+  os: linux
+  arch: arm
+
+trigger:
+  branch:
+    - master
+  event:
+    - tag
+  ref:
+    - refs/tags/v*-rc*
+
+concurrency:
+  limit: 1
+
+clone:
+  disable: true
+
+services:
+  - name: launch-docker
+    image: mazzolino/docker:20.10.12-dind
+    privileged: true
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    command: ['--insecure-registry=192.168.1.125:5000']
+
+volumes:
+  - name: dockersock
+    temp: {}
+
+steps:
+  - name: clone
+    image: 192.168.1.125:5000/cleep-git:latest
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: run-cleep-tests
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - python3 -m pip install -r requirements-test.txt
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli coresync
+      - cleep-cli coretests --coverage --output
+
+  - name: build-cleep-deb
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    environment:
+      SENTRY_DSN:
+        from_secret: sentry_dsn
+    commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corebuild
+      - ls -la
+
+  - name: test-cleep-install
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    commands:
+      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - export CLEEP_ENV=ci
+      - cleep --noro --stdout --dryrun
+      - cleep --version > version.txt
+
+  - name: publish-cleep-docs
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - cd cleep-dev
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli coredocs --publish
+
+  - name: publish-cleep-deb
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corepublish --version=$VERSION
+
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+
+  - name: update-app-ci-for-release-candidate
+    image: 192.168.1.125:5000/cleep-git:20230216
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # update cleep-ci
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - git clone git@github.com:CleepDevice/cleep-ci.git
+      - cd cleep-ci
+      - echo $VERSION > .cleep-rc-version.txt
+      - ./generate-drone-app-yml.sh
+      - git add .drone-app.yml .cleep-rc-version.txt
+      - git commit -m "Update Cleep "$VERSION" release candidate"
+      - git push -u origin HEAD
+      - # keep latest release
+      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
+      - cd ..
+      - rm -rf cleep-ci
+      - echo $FREEZED_VERSION > freezed_version.txt
+
+  - name: freeze-markets
+    image: 192.168.1.125:5000/cleep-git:20230216
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # MUST BE EXECUTED AFTER update-app-ci-for-release-candidate STEP
+      - test -f freezed_version.txt || echo "No freezed_version.txt file found. Cannot continue"
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # get version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - # freeze version on cleep-apps
+      - git clone git@github.com:CleepDevice/cleep-apps.git
+      - cd cleep-apps
+      - git tag "v"$VERSION
+      - git push --tags
+      - cd ..
+      - # freeze version on cleep-apps-nonfree
+      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
+      - cd cleep-apps-nonfree
+      - git tag "v"$VERSION
+      - git push --tags
+
+
+
+---
+kind: pipeline
+type: docker
+name: release
+
+platform:
+  os: linux
+  arch: arm
+
+trigger:
+  branch:
+    - master
+  event:
+    - tag
+  ref:
+    include:
+    - refs/tags/v*
+    exclude:
+    - refs/tags/v*-rc*
+
+concurrency:
+  limit: 1
+
+clone:
+  disable: true
+
+services:
+  - name: launch-docker
+    image: mazzolino/docker:20.10.12-dind
+    privileged: true
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    command: ['--insecure-registry=192.168.1.125:5000']
+
+volumes:
+  - name: dockersock
+    temp: {}
+
+steps:
+  - name: clone
+    image: 192.168.1.125:5000/cleep-git:latest
+    commands:
+      - git clone $DRONE_REMOTE_URL cleep-dev
+      - ls -la
+      - cd cleep-dev
+      - git checkout $DRONE_SOURCE_BRANCH
+
+  - name: run-cleep-tests
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - cd cleep-dev
+      - python3 -m pip install -r requirements-test.txt
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli coresync
+      - cleep-cli coretests --coverage --output
+
+  - name: build-cleep-deb
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    environment:
+      SENTRY_DSN:
+        from_secret: sentry_dsn
+    commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corebuild
+      - ls -la
+
+  - name: test-cleep-install
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    commands:
+      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - export CLEEP_ENV=ci
+      - cleep --noro --stdout --dryrun
+      - cleep --version > version.txt
+
+  - name: publish-cleep-docs
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - cd cleep-dev
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli coredocs --publish
+
+  - name: publish-cleep-deb
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corepublish --version=$VERSION
+
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+
+  - name: update-app-ci-for-release
+    image: 192.168.1.1:8662/cleep-git:20230216
+    network_mode: host
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # update cleep-ci
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - git clone git@github.com:CleepDevice/cleep-ci.git
+      - cd cleep-ci
+      - echo $VERSION > .cleep-release-version.txt
+      - ./generate-drone-app-yml.sh
+      - git add .drone-app.yml .cleep-release-version.txt
+      - git commit -m "Update Cleep "$VERSION" release"
+      - git push -u origin HEAD
+      - # keep latest release
+      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
+      - cd ..
+      - rm -rf cleep-ci
+      - echo $FREEZED_VERSION > freezed_version.txt
+
+  - name: freeze-markets
+    image: 192.168.1.125:5000/cleep-git:20230216
+    environment:
+      ID_ED25519:
+        from_secret: id_ed25519
+      ID_ED25519_PUB:
+        from_secret: id_ed25519_pub
+    commands:
+      - # MUST BE EXECUTED AFTER update-app-ci-for-release STEP
+      - test -f freezed_version.txt || echo "No freezed_version.txt file found. Cannot continue"
+      - # configure ssh
+      - mkdir -p ~/.ssh
+      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
+      - chmod 644 ~/.ssh/id_ed25519.pub
+      - ssh-keyscan github.com >> githubKey
+      - ssh-keygen -lf githubKey
+      - cat githubKey > ~/.ssh/known_hosts
+      - # configure git
+      - git config --global user.email "drone@localhost"
+      - git config --global user.name "drone"
+      - # get version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - # freeze version on cleep-apps
+      - git clone git@github.com:CleepDevice/cleep-apps.git
+      - cd cleep-apps
+      - git tag "v"$VERSION
+      - git push --tags
+      - cd ..
+      - # freeze version on cleep-apps-nonfree
+      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
+      - cd cleep-apps-nonfree
+      - git tag "v"$VERSION
+      - git push --tags
+
+
+
+---
+kind: pipeline
+type: docker
+name: release-cleepos
+
+platform:
+  os: linux
+  arch: amd64
+
+trigger:
+  branch:
+    - master
+  event:
+    - tag
+  ref:
+    - refs/tags/v*-cleepos*
 
 concurrency:
   limit: 1
@@ -44,7 +558,6 @@ steps:
     commands:
       - # get version from tag
       - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
-      - echo "0.0.30" > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
       - # configure ssh
@@ -104,454 +617,3 @@ steps:
       - CHANGELOG=`realpath cleep-dev/debian/changelog`
       - github-helper publishcleepos --owner=CleepDevice --repo=cleep-os --archive="cleepos_"$VERSION".zip" --sha256="cleepos_"$VERSION".sha256" --version=$VERSION --changelog=$CHANGELOG --token=$GITHUB_ACCESS_TOKEN
 
-
----
-kind: pipeline
-type: docker
-name: release-candidate
-
-platform:
-  os: linux
-  arch: arm
-
-trigger:
-  branch:
-    - master
-  event:
-    - tag
-  ref:
-    - refs/tags/v*-rc*
-
-concurrency:
-  limit: 1
-
-clone:
-  disable: true
-
-steps:
-  - name: clone
-    image: 192.168.1.125:5000/cleep-git:latest
-    commands:
-      - git clone $DRONE_REMOTE_URL cleep-dev
-      - ls -la
-      - cd cleep-dev
-      - git checkout $DRONE_SOURCE_BRANCH
-
-  - name: check-cleep-from-sources
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - cd cleep-dev
-      - export REPO_DIR=/drone/src/cleep-dev
-      - export CLEEP_ENV=ci
-      - cleep-cli coresync
-      - cleep-cli cigetmods
-      - cleep --noro --stdout --dryrun
-
-  - name: run-cleep-tests
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - cd cleep-dev
-      - python3 -m pip install -r requirements-test.txt
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli coresync
-      - cleep-cli coretests --coverage --output
-
-  - name: build-cleep
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    environment:
-      SENTRY_DSN:
-        from_secret: sentry_dsn
-    commands:
-      - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corebuild
-      - pwd
-      - ls -la
-
-  - name: test-cleep-install
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    commands:
-      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
-      - export CLEEP_ENV=ci
-      - cleep --noro --stdout --dryrun
-      - cleep --version > version.txt
-
-  - name: publish-cleep-docs
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
-    commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - cd cleep-dev
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli coredocs --publish
-
-  - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
-    commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
-
-
----
-kind: pipeline
-type: docker
-name: release
-
-platform:
-  os: linux
-  arch: arm
-
-trigger:
-  branch:
-    - master
-  event:
-    - tag
-  ref:
-    exclude:
-    - refs/tags/v*-rc*
-
-concurrency:
-  limit: 1
-
-clone:
-  disable: true
-
-services:
-  - name: launch-docker
-    image: mazzolino/docker:20.10.12-dind
-    privileged: true
-    network_mode: host
-    volumes:
-      - name: dockersock
-        path: /var/run
-    command: ['--insecure-registry=192.168.1.125:5000']
-
-volumes:
-  - name: dockersock
-    temp: {}
-
-steps:
-  - name: clone
-    image: 192.168.1.125:5000/cleep-git:latest
-    commands:
-      - git clone $DRONE_REMOTE_URL cleep-dev
-      - ls -la
-      - cd cleep-dev
-      - git checkout $DRONE_SOURCE_BRANCH
-
-  - name: build-cleep
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    environment:
-      SENTRY_DSN:
-        from_secret: sentry_dsn
-    commands:
-      - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corebuild
-      - pwd
-      - ls -la
-
-  - name: test-cleep-install
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    commands:
-      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
-      - export CLEEP_ENV=ci
-      - cleep --noro --stdout --dryrun
-      - cleep --version > version.txt
-
-  - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
-    commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - cleep-cli corepublish --version=$VERSION 
-
-  - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20230205
-    network_mode: host
-    volumes:
-      - name: dockersock
-        path: /var/run
-    environment:
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
-    commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - docker --version
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
-      - cd cleep-dev
-      - ls -la 
-      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
-      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
-      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
-
-  - name: build-cleep
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    environment:
-      SENTRY_DSN:
-        from_secret: sentry_dsn
-    commands:
-      - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corebuild
-      - pwd
-      - ls -la 
-
-  - name: update-app-ci-for-release
-    image: 192.168.1.125:5000/cleep-git:20230216
-    network_mode: host
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
-    commands:
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # update cleep-ci
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - git clone git@github.com:CleepDevice/cleep-ci.git
-      - cd cleep-ci
-      - echo $VERSION > .cleep-release-version.txt
-      - ./generate-drone-app-yml.sh
-      - git add .drone-app.yml .cleep-release-version.txt
-      - git commit -m "Update Cleep "$VERSION" release"
-      - git push -u origin HEAD
-      - cd ..
-      - rm -rf cleep-ci
-
-  - name: update-app-ci-for-release-candidate
-    image: 192.168.1.125:5000/cleep-git:20230216
-    network_mode: host
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
-    commands:
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # update cleep-ci
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - git clone git@github.com:CleepDevice/cleep-ci.git
-      - cd cleep-ci
-      - echo $VERSION > .cleep-rc-version.txt
-      - ./generate-drone-app-yml.sh
-      - git add .drone-app.yml .cleep-rc-version.txt
-      - git commit -m "Update Cleep "$VERSION" release candidate"
-      - git push -u origin HEAD
-      - # keep latest release
-      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
-      - cd ..
-      - rm -rf cleep-ci
-      - echo $FREEZED_VERSION > freezed_version.txt
-
-  - name: freeze-market
-    image: 192.168.1.125:5000/cleep-git:20230216
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
-    commands:
-      - # MUST BE EXECUTED AFTER update-app-ci-for-release-candidate STEP
-      - test -f freezed_version.txt || echo "No freezed_version.txt file found. Cannot continue"
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # get version
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - # freeze version on cleep-apps
-      - git clone git@github.com:CleepDevice/cleep-apps.git
-      - cd cleep-apps
-      - git tag "v"$VERSION
-      - git push --tags
-      - cd ..
-      - # freeze version on cleep-apps-nonfree
-      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
-      - cd cleep-apps-nonfree
-      - git tag "v"$VERSION
-      - git push --tags
-
-
----
-kind: pipeline
-type: docker
-name: cleep-os
-
-platform:
-  os: linux
-  arch: amd64
-
-trigger:
-  branch:
-    - master
-  event:
-    - tag
-  ref:
-    - refs/tags/cleepos-v*
-
-concurrency:
-  limit: 1
-
-clone:
-  disable: true
-
-volumes:
-  - name: dev
-    host:
-      path: /dev
-
-steps:
-  - name: clone
-    image: 192.168.1.125:5000/cleep-git:latest
-    commands:
-      - git clone $DRONE_REMOTE_URL cleep-dev
-      - ls -la
-      - cd cleep-dev
-      - git checkout $DRONE_SOURCE_BRANCH
-
-  - name: build-cleepos-image
-    image: mkaczanowski/packer-builder-arm:1.0.6
-    network_mode: host
-    privileged: true
-    volumes:
-      - name: dev
-        path: /dev
-    commands:
-      - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - # enable packer for arm (see https://github.com/mkaczanowski/packer-builder-arm/blob/master/docker/entrypoint.sh)
-      - mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
-      - find /proc/sys/fs/binfmt_misc -type f -name 'qemu-*' -exec sh -c 'echo -1 > "$1"' shell {} \;
-      - echo "Register qemu-aarch64"
-      - echo ":qemu-aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" > /proc/sys/fs/binfmt_misc/register
-      - echo "Register qemu-arm"
-      - echo ":qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" > /proc/sys/fs/binfmt_misc/register
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # get cleep-packer files
-      - git clone git@github.com:CleepDevice/cleep-packer.git
-      - cd cleep-packer
-      - # update cleepos version
-      - echo $VERSION
-      - # packer
-      - packer build cleepos-lite-arm.json
-      - ls -lh
-      - rm -f cleepos.img
-      - mv "*.zip" "*.sha256" ../.
-      - cd ..
-      - rm -rf cleep-packer
-      - ls -lh
-
-  - name: publish-cleepos-img
-    image: 192.168.1.125:5000/cleep-git:20230216
-    commands:
-      - git clone $DRONE_REMOTE_URL cleep-dev
-      - ls -la
-      - cd cleep-dev
-      - git checkout $DRONE_SOURCE_BRANCH
