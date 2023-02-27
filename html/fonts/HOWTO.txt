@@ -1,0 +1,4 @@
+update mdi.svg
+ - go to https://dev.materialdesignicons.com/getting-started/angularjs#frameworks
+ - download provided mdi.svg file
+ - replace with new one
