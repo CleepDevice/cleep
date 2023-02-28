@@ -1,0 +1,238 @@
+diff -Naru ../source/cleep.libs.commands.rst ./cleep.libs.commands.rst
+--- ../source/cleep.libs.commands.rst	2023-02-27 21:54:08.686724587 +0100
++++ ./cleep.libs.commands.rst	2023-02-27 23:33:21.199161868 +0100
+@@ -1,9 +1,6 @@
+ cleep.libs.commands package
+ ===========================
+ 
+-Submodules
+-----------
+-
+ cleep.libs.commands.alsa module
+ -------------------------------
+ 
+@@ -124,10 +121,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs.commands
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.libs.configs.rst ./cleep.libs.configs.rst
+--- ../source/cleep.libs.configs.rst	2023-02-27 21:54:08.756724277 +0100
++++ ./cleep.libs.configs.rst	2023-02-27 23:33:35.139064847 +0100
+@@ -1,9 +1,6 @@
+ cleep.libs.configs package
+ ==========================
+ 
+-Submodules
+-----------
+-
+ cleep.libs.configs.appssources module
+ -------------------------------------
+ 
+@@ -140,10 +137,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs.configs
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.libs.drivers.rst ./cleep.libs.drivers.rst
+--- ../source/cleep.libs.drivers.rst	2023-02-27 21:54:08.826723968 +0100
++++ ./cleep.libs.drivers.rst	2023-02-27 23:34:00.378889656 +0100
+@@ -1,9 +1,6 @@
+ cleep.libs.drivers package
+ ==========================
+ 
+-Submodules
+-----------
+-
+ cleep.libs.drivers.audiodriver module
+ -------------------------------------
+ 
+@@ -20,10 +17,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs.drivers
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.libs.internals.rst ./cleep.libs.internals.rst
+--- ../source/cleep.libs.internals.rst	2023-02-27 21:54:08.896723659 +0100
++++ ./cleep.libs.internals.rst	2023-02-27 23:34:15.188787136 +0100
+@@ -1,9 +1,6 @@
+ cleep.libs.internals package
+ ============================
+ 
+-Submodules
+-----------
+-
+ cleep.libs.internals.cleepbackup module
+ ---------------------------------------
+ 
+@@ -188,10 +185,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs.internals
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.libs.rst ./cleep.libs.rst
+--- ../source/cleep.libs.rst	2023-02-27 21:54:08.616724896 +0100
++++ ./cleep.libs.rst	2023-02-27 23:35:12.798390158 +0100
+@@ -1,22 +1,28 @@
+ cleep.libs package
+ ==================
+ 
+-Subpackages
+------------
++cleep.libs.commands
++-------------------
+ 
+-.. toctree::
+-   :maxdepth: 4
++.. toctree:: cleep.libs.commands
++
++cleep.libs.configs
++------------------
++
++.. toctree:: cleep.libs.configs
++
++cleep.libs.drivers
++------------------
++
++.. toctree:: cleep.libs.drivers
++
++cleep.libs.internals
++--------------------
++
++.. toctree:: cleep.libs.internals
++
++cleep.libs.tests
++----------------
++
++.. toctree:: cleep.libs.tests
+ 
+-   cleep.libs.commands
+-   cleep.libs.configs
+-   cleep.libs.drivers
+-   cleep.libs.internals
+-   cleep.libs.tests
+-
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.libs.tests.rst ./cleep.libs.tests.rst
+--- ../source/cleep.libs.tests.rst	2023-02-27 21:54:08.966723350 +0100
++++ ./cleep.libs.tests.rst	2023-02-27 23:35:26.168298420 +0100
+@@ -1,9 +1,6 @@
+ cleep.libs.tests package
+ ========================
+ 
+-Submodules
+-----------
+-
+ cleep.libs.tests.common module
+ ------------------------------
+ 
+@@ -36,10 +33,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.libs.tests
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.profiles.rst ./cleep.profiles.rst
+--- ../source/cleep.profiles.rst	2023-02-27 21:54:09.026723085 +0100
++++ ./cleep.profiles.rst	2023-02-27 23:35:37.988217434 +0100
+@@ -1,9 +1,6 @@
+ cleep.profiles package
+ ======================
+ 
+-Submodules
+-----------
+-
+ cleep.profiles.alarmprofile module
+ ----------------------------------
+ 
+@@ -44,10 +41,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep.profiles
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/cleep.rst ./cleep.rst
+--- ../source/cleep.rst	2023-02-27 21:54:08.546725205 +0100
++++ ./cleep.rst	2023-02-27 23:36:13.727973195 +0100
+@@ -1,19 +1,6 @@
+ cleep package
+ =============
+ 
+-Subpackages
+------------
+-
+-.. toctree::
+-   :maxdepth: 4
+-
+-   cleep.libs
+-   cleep.profiles
+-   cleep.resources
+-
+-Submodules
+-----------
+-
+ cleep.bus module
+ ----------------
+ 
+@@ -62,10 +49,3 @@
+    :undoc-members:
+    :show-inheritance:
+ 
+-Module contents
+----------------
+-
+-.. automodule:: cleep
+-   :members:
+-   :undoc-members:
+-   :show-inheritance:
+diff -Naru ../source/modules.rst ./modules.rst
+--- ../source/modules.rst	2023-02-27 21:54:09.106722731 +0100
++++ ./modules.rst	2023-02-27 23:36:42.477777387 +0100
+@@ -5,3 +5,7 @@
+    :maxdepth: 4
+ 
+    cleep
++   cleep.libs
++   cleep.profiles
++   cleep.resources
++
