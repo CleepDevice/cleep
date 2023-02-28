@@ -151,7 +151,7 @@ class InstallDeb:
         self.running = True
 
         # try install deb
-        command = f'/usr/bin/yes | /usr/bin/apt-get install --dry-run --yes "{deb}"'
+        command = f'/usr/bin/yes | /usr/bin/apt-get install --dry-run --yes "./{deb}"'
         self.logger.debug("Command: %s" % command)
         self._console = EndlessConsole(
             command, self.__callback_deb, self.__callback_end
@@ -221,7 +221,7 @@ class InstallDeb:
             self.cleep_filesystem.enable_write()
 
         # install deb
-        command = f'/usr/bin/yes | /usr/bin/apt-get install --yes "{deb}"'
+        command = f'/usr/bin/yes | /usr/bin/apt-get install --yes --fix-broken "./{deb}"'
         self.logger.debug("Command: %s" % command)
         self._console = EndlessConsole(
             command, self.__callback_deb, self.__callback_end

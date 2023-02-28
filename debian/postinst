@@ -59,7 +59,9 @@ case "$1" in
             if [ -f "/tmp/cleepmod/scripts/postinst.sh" ]; then
                 echo " - running postinst.sh script"
                 chmod +x /tmp/cleepmod/scripts/postinst.sh
+                cd /tmp/cleepmod/scripts/
                 /tmp/cleepmod/scripts/postinst.sh
+                cd -
                 checkResult $? 0 "Postinst.sh script failed"
             fi
             rm -rf /tmp/cleepmod

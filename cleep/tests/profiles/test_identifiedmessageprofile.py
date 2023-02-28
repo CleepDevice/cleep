@@ -7,11 +7,15 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', '')
 from identifiedmessageprofile import IdentifiedMessageProfile
 import logging
 import unittest
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class IdentifiedMessageProfileTests(unittest.TestCase):
 
     def setUp(self):
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.p = IdentifiedMessageProfile()
 
     def tearDown(self):

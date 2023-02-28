@@ -16,13 +16,13 @@ class AppsSources:
 
     CLEEP_APPS_FREE = {
         "filename": "cleep-free-apps.json",
-        "remote_url_version": "https://raw.githubusercontent.com/tangb/cleep-apps/v%(version)s/modules.json",
-        "remote_url_latest": "https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json",
+        "remote_url_version": "https://raw.githubusercontent.com/CleepDevice/cleep-apps/v%(version)s/modules.json",
+        "remote_url_latest": "https://raw.githubusercontent.com/CleepDevice/cleep-apps/main/modules.json",
     }
     CLEEP_APPS_NON_FREE = {
         "filename": "cleep-non-free-apps.json",
-        "remote_url_version": "https://raw.githubusercontent.com/tangb/cleep-apps-nonfree/v%(version)s/modules.json",
-        "remote_url_latest": "https://raw.githubusercontent.com/tangb/cleep-apps-nonfree/main/modules.json",
+        "remote_url_version": "https://raw.githubusercontent.com/CleepDevice/cleep-apps-nonfree/v%(version)s/modules.json",
+        "remote_url_latest": "https://raw.githubusercontent.com/CleepDevice/cleep-apps-nonfree/main/modules.json",
     }
 
     APPS_SOURCES_PATH = "/etc/cleep/apps.sources"

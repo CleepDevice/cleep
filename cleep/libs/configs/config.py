@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cleep.exception import InvalidParameter, MissingParameter, CommandError
 import os
 import re
-import io
-import shutil
 import logging
 import time
 
-class Config():
+
+class Config:
     """
     Helper class to read and write any configuration file.
 
@@ -22,9 +20,9 @@ class Config():
     It also ensures to read file content as unicode and it uses cleep filesystem to operate on readonly cleep distribution
     """
 
-    MODE_WRITE = u'w'
-    MODE_READ = u'r'
-    MODE_APPEND = u'a'
+    MODE_WRITE = "w"
+    MODE_READ = "r"
+    MODE_APPEND = "a"
 
     def __init__(self, cleep_filesystem, path, comment_tag, backup=True):
         """
@@ -38,13 +36,12 @@ class Config():
         """
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
         self.path = path
         self.backup_path = None
         self.comment_tag = comment_tag
-        self.__fd = None
+        self.__fdesc = None
 
-        #backup original file
+        # backup original file
         if path is not None and backup:
             self.backup_path = self.__get_backup_path(path)
             self._make_backup()
@@ -63,12 +60,14 @@ class Config():
             string: cleaned path
         """
         if self.path:
-            #use path value specified in constructor
-            self.logger.debug(u'Use path value specified in constructor (%s)' % self.path)
+            # use path value specified in constructor
+            self.logger.debug(
+                "Use path value specified in constructor (%s)", self.path
+            )
             return self.path
 
-        #use CONF member
-        path = getattr(self, u'CONF', u'')
+        # use CONF member
+        path = getattr(self, "CONF", "")
         path = os.path.expanduser(path)
         path = os.path.realpath(path)
 
@@ -86,7 +85,7 @@ class Config():
         Overwrite original config file by backup one
         """
         if not self.backup_path:
-            self.logger.info(u'Backup disabled')
+            self.logger.info("Backup disabled")
             return False
 
         if os.path.exists(self.backup_path):
@@ -106,9 +105,9 @@ class Config():
         base, ext = os.path.splitext(path)
         filename = os.path.split(base)[1]
 
-        return os.path.join(base_path, '%s.backup%s' % (filename, ext))
+        return os.path.join(base_path, f"{filename}.backup{ext}")
 
-    def _open(self, mode=u'r', encoding=None):
+    def _open(self, mode="r", encoding=None):
         """
         Open config file
 
@@ -122,21 +121,21 @@ class Config():
         Raises:
             Exception if file doesn't exist
         """
-        if not os.path.exists(self.__get_path()) and mode==self.MODE_READ:
-            raise Exception(u'%s file does not exist' % self.__get_path())
+        if not os.path.exists(self.__get_path()) and mode == self.MODE_READ:
+            raise Exception(f"{self.__get_path()} file does not exist")
 
-        self.logger.debug(u'Open "%s"' % self.__get_path())
-        self.__fd = self.cleep_filesystem.open(self.__get_path(), mode, encoding)
+        self.logger.debug('Open "%s"', self.__get_path())
+        self.__fdesc = self.cleep_filesystem.open(self.__get_path(), mode, encoding)
 
-        return self.__fd
+        return self.__fdesc
 
     def _close(self):
         """
         Close file descriptor is still opened
         """
-        if self.__fd:
-            self.cleep_filesystem.close(self.__fd)
-            self.__fd = None
+        if self.__fdesc:
+            self.cleep_filesystem.close(self.__fdesc)
+            self.__fdesc = None
 
     def _write(self, content):
         """
@@ -147,21 +146,21 @@ class Config():
             content (string): content to write
         """
         try:
-            fd = self._open(self.MODE_WRITE)
-            fd.write(content.rstrip())
+            fdesc = self._open(self.MODE_WRITE)
+            fdesc.write(content.rstrip())
             self._close()
             time.sleep(0.25)
 
             return True
 
-        except:
-            self.logger.exception('Failed to write config file:')
+        except Exception:
+            self.logger.exception("Failed to write config file:")
             return False
 
     def exists(self):
         """
         Return True if config file exists
-        
+
         Returns:
             bool: True if config file exists
         """
@@ -185,24 +184,27 @@ class Config():
                 ]
 
         """
-        #check file existence
+        # check file existence
         if not self.exists():
-            self.logger.debug(u'No file found (%s). Return empty result' % self.__get_path())
+            self.logger.debug(
+                "No file found (%s). Return empty result", self.__get_path()
+            )
             return []
 
         results = []
-        fd = self._open()
-        content = fd.read()
+        fdesc = self._open()
+        content = fdesc.read()
+        self.logger.trace("content=%s", content)
         self._close()
         matches = re.finditer(pattern, content, options)
 
-        #concat content list if options singleline specified (DOTALL)
-        #if re.DOTALL & options:
-        #    content = u''.join(content)
+        # concat content list if options singleline specified (DOTALL)
+        # if re.DOTALL & options:
+        #    content = ''.join(content)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
-            if len(group)>0 and len(match.groups())>0:
+            if len(group) > 0 and len(match.groups()) > 0:
                 if remove_none:
                     groups = list(filter(None, match.groups()))
                 else:
@@ -211,7 +213,9 @@ class Config():
 
         return results
 
-    def find_in_string(self, pattern, content, options=re.UNICODE | re.MULTILINE, remove_none=True):
+    def find_in_string(
+        self, pattern, content, options=re.UNICODE | re.MULTILINE, remove_none=True
+    ):
         """
         Find all pattern matches in specified string. Found order is respected.
         Please note only results with subgroups are returned.
@@ -234,9 +238,9 @@ class Config():
         results = []
 
         matches = re.finditer(pattern, content, options)
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
-            if len(group)>0 and len(match.groups())>0:
+            if len(group) > 0 and len(match.groups()) > 0:
                 if remove_none:
                     groups = list(filter(None, match.groups()))
                 else:
@@ -256,31 +260,33 @@ class Config():
             bool: True if line commented
         """
         if self.comment_tag is None:
-            #no way to add comment
-            self.logger.warning(u'Command tag not set. Unable to add command to config file.')
+            # no way to add comment
+            self.logger.warning(
+                "Command tag not set. Unable to add command to config file."
+            )
             return False
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        #read file content
-        fd = self._open()
-        lines = fd.readlines()
+        # read file content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #get line indexes to remove
+        # get line indexes to remove
         found = False
         index = 0
         for line in lines:
-            if line.strip()==comment.strip():
+            if line.strip() == comment.strip():
                 found = True
-                lines[index] = lines[index][len(self.comment_tag):]
+                lines[index] = lines[index][len(self.comment_tag) :]
                 break
             index += 1
 
         if found:
-            #write config file
-            return self._write(u''.join(lines))
+            # write config file
+            return self._write("".join(lines))
 
         return False
 
@@ -295,31 +301,33 @@ class Config():
             bool: True if line commented
         """
         if self.comment_tag is None:
-            #no way to add comment
-            self.logger.warning(u'Command tag not set. Unable to add command to config file.')
+            # no way to add comment
+            self.logger.warning(
+                "Command tag not set. Unable to add command to config file."
+            )
             return False
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        #read file content
-        fd = self._open()
-        lines = fd.readlines()
+        # read file content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #get line indexes to remove
+        # get line indexes to remove
         found = False
         index = 0
         for line in lines:
-            if line.strip()==comment.strip():
+            if line.strip() == comment.strip():
                 found = True
-                lines[index] = u'%s%s' % (self.comment_tag, lines[index])
+                lines[index] = f"{self.comment_tag}{lines[index]}"
                 break
             index += 1
 
         if found:
-            #write config file
-            return self._write(u''.join(lines))
+            # write config file
+            return self._write("".join(lines))
 
         return False
 
@@ -333,26 +341,26 @@ class Config():
         Returns:
             bool: True if content removed
         """
-        #check params
+        # check params
         if not isinstance(content, str):
-            raise Exception('Content parameter must be a string')
+            raise Exception("Content parameter must be a string")
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        fd = self._open()
-        lines = fd.read()
+        fdesc = self._open()
+        lines = fdesc.read()
         self._close()
 
-        #remove content
+        # remove content
         before = len(lines)
-        lines = lines.replace(content, '')
+        lines = lines.replace(content, "")
         after = len(lines)
 
-        if before!=after:
-            #write config file
-            return self._write(u''.join(lines))
-            
+        if before != after:
+            # write config file
+            return self._write("".join(lines))
+
         return False
 
     def remove_lines(self, removes):
@@ -365,36 +373,36 @@ class Config():
         Returns:
             bool: True if at least one line removed, False otherwise
         """
-        #check params
+        # check params
         if not isinstance(removes, list):
-            raise Exception('Removes parameter must be list of string')
+            raise Exception("Removes parameter must be list of string")
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        fd = self._open()
-        lines = fd.readlines()
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #get line indexes to remove
+        # get line indexes to remove
         indexes = []
         for remove in removes:
             index = 0
             for line in lines:
-                if line.strip()==remove.strip():
+                if line.strip() == remove.strip():
                     indexes.append(index)
                     break
                 index += 1
 
-        #delete lines
+        # delete lines
         indexes.sort()
         indexes.reverse()
         for index in indexes:
             lines.pop(index)
 
-        if len(indexes)>0:
-            #write config file
-            return self._write(u''.join(lines))
+        if len(indexes) > 0:
+            # write config file
+            return self._write("".join(lines))
 
         return False
 
@@ -409,15 +417,15 @@ class Config():
             int: number of lines removed
         """
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        #read content
-        fd = self._open()
-        lines = fd.readlines()
+        # read content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #remove line
+        # remove line
         count = 0
         indexes = []
         index = 0
@@ -428,23 +436,24 @@ class Config():
 
             index += 1
 
-        #delete lines
+        # delete lines
         indexes.sort()
         indexes.reverse()
         for index in indexes:
             lines.pop(index)
 
-        #write config file
-        if len(indexes)>0:
-            #write config file
-            if self._write(u''.join(lines)):
+        # write config file
+        if len(indexes) > 0:
+            # write config file
+            if self._write("".join(lines)):
                 return count
-            else:
-                return 0
-                
+            return 0
+
         return count
 
-    def remove_after(self, header_pattern, line_pattern, number_lines_to_delete, remove_header=True):
+    def remove_after(
+        self, header_pattern, line_pattern, number_lines_to_delete, remove_header=True
+    ):
         """
         Remove line matching pattern after header pattern
 
@@ -458,61 +467,64 @@ class Config():
             int: number of lines deleted (blank and commented lines not counted)
         """
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return 0
 
-        #read content
-        fd = self._open()
-        lines = fd.readlines()
+        # read content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #get line indexes to remove
+        # get line indexes to remove
         start = False
         indexes = []
         index = 0
         count = 0
         for line in lines:
-            self.logger.trace('LINE #%s = %s' % (index, line.rstrip()))
-            if len(line.strip())==0:
-                #emtpy line continue
+            self.logger.trace("LINE #%s = %s", index, line.rstrip())
+            if len(line.strip()) == 0:
+                # emtpy line continue
                 index += 1
                 continue
 
             if re.match(header_pattern, line):
-                #header found, start
-                self.logger.trace('Header found, start removing lines')
+                # header found, start
+                self.logger.trace("Header found, start removing lines")
                 start = True
                 if remove_header:
                     indexes.append(index)
                     count += 1
-            elif count==number_lines_to_delete:
-                #number of line to delete reached, stop
-                self.logger.debug('Number of line reached, stop statement')
+            elif count == number_lines_to_delete:
+                # number of line to delete reached, stop
+                self.logger.debug("Number of line reached, stop statement")
                 break
-            elif start and self.comment_tag is not None and line.strip().startswith(self.comment_tag):
-                #commented line
+            elif (
+                start
+                and self.comment_tag is not None
+                and line.strip().startswith(self.comment_tag)
+            ):
+                # commented line
                 pass
             elif start and re.match(line_pattern, line):
-                #save index of line to delete
-                self.logger.trace('Line pattern "%s" found' % line_pattern)
+                # save index of line to delete
+                self.logger.trace('Line pattern "%s" found', line_pattern)
                 indexes.append(index)
                 count += 1
             index += 1
-        self.logger.trace('Indexes=%s' % indexes)
+        self.logger.trace("Indexes=%s", indexes)
 
-        #delete lines
+        # delete lines
         indexes.sort()
         indexes.reverse()
         for index in indexes:
             lines.pop(index)
 
-        #write config file
-        if len(indexes)>0:
-            #write config file
-            if self._write(u''.join(lines)):
+        # write config file
+        if len(indexes) > 0:
+            # write config file
+            if self._write("".join(lines)):
                 return count
-            else:
-                return 0
+            return 0
 
         return count
 
@@ -527,45 +539,45 @@ class Config():
         Returns:
             bool: True if line found and replaced
         """
-        #check params
+        # check params
         if pattern is None:
-            raise Exception(u'Parameter "pattern" must be specified')
+            raise Exception('Parameter "pattern" must be specified')
         if replace is None:
-            raise Exception(u'Parameter "replace" must be specified')
+            raise Exception('Parameter "replace" must be specified')
         if not isinstance(pattern, str):
-            raise Exception(u'Parameter "pattern" must be a string')
+            raise Exception('Parameter "pattern" must be a string')
         if not isinstance(replace, str):
-            raise Exception(u'Parameter "replace" must be a string')
+            raise Exception('Parameter "replace" must be a string')
 
-        #add new line if necessary
-        if replace[len(replace)-1]!='\n':
-            replace += u'\n'
+        # add new line if necessary
+        if replace[len(replace) - 1] != "\n":
+            replace += "\n"
 
-        #read content
-        fd = self._open()
-        lines = fd.readlines()
+        # read content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
-        
-        #search line
+
+        # search line
         prog = re.compile(pattern)
         new_content = []
         found = False
         for line in lines:
             if re.match(prog, line) is not None:
-                #line found, append new one
+                # line found, append new one
                 new_content.append(replace)
                 found = True
             else:
-                #append line
+                # append line
                 new_content.append(line)
 
-        #write config file
+        # write config file
         if found:
-            return self._write(u''.join(new_content))
-        
-        #not found
+            return self._write("".join(new_content))
+
+        # not found
         return False
-        
+
     def add_lines(self, lines, end=True):
         """
         Add new lines.
@@ -579,40 +591,40 @@ class Config():
         Returns:
             bool: True if succeed
         """
-        #check params
+        # check params
         if not isinstance(lines, list):
-            raise Exception('Lines parameter must be list of string')
+            raise Exception("Lines parameter must be list of string")
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        #read content
-        fd = self._open()
-        content = fd.readlines()
+        # read content
+        fdesc = self._open()
+        content = fdesc.readlines()
         self._close()
 
         if end:
-            #add lines at end of file
-            if len(lines[len(lines)-1])!=0:
-                content.append(u'\n')
+            # add lines at end of file
+            if len(lines[len(lines) - 1]) != 0:
+                content.append("\n")
 
             for line in lines:
-                if line[len(line)-1]!=u'\n':
-                    content.append(line + u'\n')
+                if line[len(line) - 1] != "\n":
+                    content.append(line + "\n")
                 else:
                     content.append(line)
 
         else:
-            #add lines at beginning of file
+            # add lines at beginning of file
             lines.reverse()
             for line in lines:
-                if line[len(line)-1]!=u'\n':
-                    content = [line + u'\n'] + content
+                if line[len(line) - 1] != "\n":
+                    content = [line + "\n"] + content
                 else:
                     content = [line] + content
 
-        #write config file
-        return self._write(u''.join(content))
+        # write config file
+        return self._write("".join(content))
 
     def add(self, content, end=True):
         """
@@ -626,29 +638,29 @@ class Config():
         Returns:
             bool: True if content added
         """
-        #check params
+        # check params
         if not isinstance(content, str):
-            raise Exception('Lines parameter must be a string')
+            raise Exception("Lines parameter must be a string")
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return False
 
-        #read content
-        fd = self._open()
-        content_ = fd.read()
+        # read content
+        fdesc = self._open()
+        content_ = fdesc.read()
         self._close()
 
         if end:
-            #add new content at end
+            # add new content at end
             content_ += content
         else:
-            #add content at beginning
-            if content[len(content)-1]!=u'\n':
-                content_ = content + u'\n' + content_
+            # add content at beginning
+            if content[len(content) - 1] != "\n":
+                content_ = content + "\n" + content_
             else:
                 content_ = content + content_
 
-        #write config file
+        # write config file
         return self._write(content_)
 
     def get_content(self):
@@ -659,31 +671,29 @@ class Config():
             list: list of lines
         """
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
+            self.logger.debug("No file found (%s)", self.__get_path())
             return []
 
-        #read content
-        fd = self._open()
-        lines = fd.readlines()
+        # read content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
-        
+
         return lines
 
-    def dump(self): # pragma: no cover
+    def dump(self):  # pragma: no cover
         """
         Dump file content to stdout
         For debug and test purpose only
         """
         if not self.exists():
-            self.logger.debug(u'No file found (%s)' % self.__get_path())
-            return 
+            self.logger.debug("No file found (%s)", self.__get_path())
+            return
 
-        #read content
-        fd = self._open()
-        lines = fd.readlines()
+        # read content
+        fdesc = self._open()
+        lines = fdesc.readlines()
         self._close()
 
-        #print lines
-        self.logger.debug(u''.join(lines))
-
-
+        # print lines
+        self.logger.debug("".join(lines))

@@ -4,17 +4,19 @@
 import sys
 import subprocess
 import time
-from threading import Timer, Thread, Event, Lock
-try: # pragma: no cover
+from threading import Timer, Thread, Event
+
+try:  # pragma: no cover
     from Queue import Queue, Empty
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     from queue import Queue, Empty  # python 3.x
 import os
 import signal
 import logging
 import re
 
-ON_POSIX = 'posix' in sys.builtin_module_names
+ON_POSIX = "posix" in sys.builtin_module_names
+
 
 class EndlessConsole(Thread):
     """
@@ -43,7 +45,11 @@ class EndlessConsole(Thread):
                                      with 2 arguments: return code (string) and killed (bool))
             exec_dir (string): change execution directory if specified (default None)
         """
-        Thread.__init__(self, daemon=True, name='endlessconsole-%s' % getattr(callback, '__name__', 'unamed'))
+        Thread.__init__(
+            self,
+            daemon=True,
+            name=f"endlessconsole-{getattr(callback, '__name__', 'unamed')}",
+        )
 
         # members
         self.command = command
@@ -67,13 +73,13 @@ class EndlessConsole(Thread):
         self.__stop()
 
     def __enqueue_output(self, output, queue):
-        for line in iter(output.readline, b''):
+        for line in iter(output.readline, b""):
             if self.stopped.is_set():
                 break
-            queue.put(line.decode('utf-8').rstrip())
+            queue.put(line.decode("utf-8").rstrip())
         try:
             output.close()
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
 
     def get_start_time(self):
@@ -101,7 +107,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
-        self.logger.debug('Process killed manually')
+        self.logger.debug("Process killed manually")
         self.killed = True
         self.__stop()
 
@@ -122,21 +128,23 @@ class EndlessConsole(Thread):
             stdout = self.__stdout_queue.get_nowait()
         except Empty:
             pass
-        except Exception: # pragma: no cover
-            self.logger.exception('Error getting stdout queue')
+        except Exception:  # pragma: no cover
+            self.logger.exception("Error getting stdout queue")
 
         try:
             stderr = self.__stderr_queue.get_nowait()
         except Empty:
             pass
-        except Exception: # pragma: no cover
-            self.logger.exception('Error getting stderr queue')
+        except Exception:  # pragma: no cover
+            self.logger.exception("Error getting stderr queue")
 
         if stdout is not None or stderr is not None:
             try:
                 self.callback(stdout, stderr)
             except Exception:
-                self.logger.exception('Exception occured during EndlessCommand callback:')
+                self.logger.exception(
+                    "Exception occured during EndlessCommand callback:"
+                )
             return True
 
         return False
@@ -159,7 +167,7 @@ class EndlessConsole(Thread):
             cwd=self.exec_dir,
         )
         pid = proc.pid
-        self.logger.trace('PID=%d' % pid)
+        self.logger.trace("PID=%d", pid)
 
         if self.callback:
             # async stdout reading
@@ -167,7 +175,7 @@ class EndlessConsole(Thread):
                 target=self.__enqueue_output,
                 args=(proc.stdout, self.__stdout_queue),
                 daemon=True,
-                name='endlessconsole-stdout'
+                name="endlessconsole-stdout",
             )
             self.__stdout_thread.start()
 
@@ -176,7 +184,7 @@ class EndlessConsole(Thread):
                 target=self.__enqueue_output,
                 args=(proc.stderr, self.__stderr_queue),
                 daemon=True,
-                name='endlessconsole-stderr'
+                name="endlessconsole-stderr",
             )
             self.__stderr_thread.start()
 
@@ -191,29 +199,31 @@ class EndlessConsole(Thread):
             # check end of command
             if proc.returncode is not None:
                 return_code = proc.returncode
-                self.logger.debug('Process is terminated with return code %s' % proc.returncode)
+                self.logger.debug(
+                    "Process is terminated with return code %s", proc.returncode
+                )
                 break
 
             # pause
             time.sleep(0.25)
 
         # purge queues
-        self.logger.trace('Purging outputs...')
+        self.logger.trace("Purging outputs...")
         count = 0
         while self.__send_stds() or count <= 5:
-            self.logger.trace(' purging...')
+            self.logger.trace(" purging...")
             count += 1
             time.sleep(0.05)
-        self.logger.trace('Purge completed')
+        self.logger.trace("Purge completed")
 
         # make sure all stds are closed
         try:
             proc.stdout.close()
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
         try:
             proc.stderr.close()
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
 
         # make sure process (and child processes) is really killed
@@ -221,9 +231,9 @@ class EndlessConsole(Thread):
             try:
                 if ON_POSIX:
                     os.killpg(os.getpgid(pid), signal.SIGKILL)
-                else: # pragma: no cover
+                else:  # pragma: no cover
                     proc.kill()
-            except Exception: # pragma: no cover
+            except Exception:  # pragma: no cover
                 pass
 
         # process is over
@@ -231,18 +241,21 @@ class EndlessConsole(Thread):
 
         # stop callback
         if self.callback_end:
-            self.logger.trace('Call end callback')
+            self.logger.trace("Call end callback")
             try:
                 self.callback_end(return_code, self.killed)
             except Exception:
-                self.logger.exception('Exception occured during EndlessCommand end callback:')
+                self.logger.exception(
+                    "Exception occured during EndlessCommand end callback:"
+                )
 
 
-class Console():
+class Console:
     """
     Helper class to execute command lines.
     You can execute command right now using command method or after a certain amount of time using command_delayed
     """
+
     def __init__(self):
         """
         Constructor
@@ -259,7 +272,7 @@ class Console():
         """
         Destroy console object
         """
-        if self.timer: # pragma: no cover
+        if self.timer:  # pragma: no cover
             self.timer.cancel()
 
     def __process_lines(self, lines):
@@ -272,7 +285,7 @@ class Console():
         Results:
             list: input list of lines with eol removed
         """
-        return [line.decode('utf-8').rstrip() for line in lines]
+        return [line.decode("utf-8").rstrip() for line in lines]
 
     def get_last_return_code(self):
         """
@@ -310,10 +323,10 @@ class Console():
                 }
 
         """
-        self.logger.trace('Launch command "%s"' % command)
+        self.logger.trace('Launch command "%s"', command)
         # check params
         if timeout is None or timeout <= 0.0:
-            raise Exception('Timeout is mandatory and must be greater than 0')
+            raise Exception("Timeout is mandatory and must be greater than 0")
 
         # launch command
         proc = subprocess.Popen(
@@ -338,7 +351,9 @@ class Console():
             proc.poll()
             if proc.returncode is not None:
                 # command terminated
-                self.logger.trace('Command terminated with returncode %s' % proc.returncode)
+                self.logger.trace(
+                    "Command terminated with returncode %s", proc.returncode
+                )
                 return_code = proc.returncode
                 self.last_return_code = return_code
                 done = True
@@ -348,13 +363,15 @@ class Console():
             if time.time() > (start + timeout):
                 # timeout is over, kill command
                 pgid = os.getpgid(pid)
-                self.logger.debug('Timeout over, kill command for PID=%s PGID=%s' % (pid, pgid))
+                self.logger.debug(
+                    "Timeout over, kill command for PID=%s PGID=%s", pid, pgid
+                )
                 try:
                     if ON_POSIX:
                         os.killpg(pgid, signal.SIGKILL)
-                    else: # pragma: no cover
+                    else:  # pragma: no cover
                         proc.kill()
-                except Exception: # pragma: no cover
+                except Exception:  # pragma: no cover
                     pass
                 killed = True
                 break
@@ -364,26 +381,26 @@ class Console():
 
         # prepare result
         result = {
-            'returncode': return_code,
-            'error': False,
-            'killed': killed,
-            'stdout': [],
-            'stderr': []
+            "returncode": return_code,
+            "error": False,
+            "killed": killed,
+            "stdout": [],
+            "stderr": [],
         }
         if not killed:
-            result['stderr'] = self.__process_lines(proc.stderr.readlines())
-            result['error'] = len(result['stderr']) > 0
-            result['stdout'] = self.__process_lines(proc.stdout.readlines())
-        self.logger.trace('Result: %s' % result)
+            result["stderr"] = self.__process_lines(proc.stderr.readlines())
+            result["error"] = len(result["stderr"]) > 0
+            result["stdout"] = self.__process_lines(proc.stdout.readlines())
+        self.logger.trace("Result: %s" % result)
 
         # make sure all stds are closed
         try:
             proc.stdout.close()
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
         try:
             proc.stderr.close()
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
 
         # trigger callback (used for delayed command)
@@ -409,7 +426,7 @@ class Console():
         self.__callback = callback
         self.timer = Timer(delay, self.command, [command, timeout])
         self.timer.daemon = True
-        self.timer.name = 'commanddelayed'
+        self.timer.name = "commanddelayed"
         self.timer.start()
 
 
@@ -417,6 +434,7 @@ class AdvancedConsole(Console):
     """
     Create console with advanced feature like find function to match pattern on stdout
     """
+
     def __init__(self):
         """
         Constructor
@@ -444,12 +462,12 @@ class AdvancedConsole(Console):
         """
         # execute command
         res = self.command(command, timeout)
-        if res['returncode'] != 0:
+        if res["returncode"] != 0:
             # command failed
             return []
 
         # parse command output
-        content = '\n'.join(res['stdout'])
+        content = "\n".join(res["stdout"])
         return self.find_in_string(content, pattern, options)
 
     def find_in_string(self, string, pattern, options=re.UNICODE | re.MULTILINE):
@@ -479,4 +497,3 @@ class AdvancedConsole(Console):
                 results.append((group, match.groups()))
 
         return results
-

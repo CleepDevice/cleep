@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-    
+
 import logging
+
 try:
-    from cleep.libs.internals.console import AdvancedConsole, Console
-except: # pragma no cover
-    from console import AdvancedConsole, Console
+    from cleep.libs.internals.console import AdvancedConsole
+except:  # pragma no cover
+    from console import AdvancedConsole
 import time
 import os
+
 
 class Iw(AdvancedConsole):
     """
@@ -23,10 +25,9 @@ class Iw(AdvancedConsole):
         """
         AdvancedConsole.__init__(self)
 
-        #members
-        self._command = u'/sbin/iw dev'
+        # members
+        self._command = "/sbin/iw dev"
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
         self.adapters = {}
         self.timestamp = None
 
@@ -37,47 +38,48 @@ class Iw(AdvancedConsole):
         Returns:
             bool: True is installed
         """
-        return os.path.exists(u'/sbin/iw')
+        return os.path.exists("/sbin/iw")
 
     def __refresh(self):
         """
         Refresh all data
         """
-        #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION: # pragma no cover
-            self.logger.trace('Use cached data')
+        # check if refresh is needed
+        if (
+            self.timestamp is not None
+            and time.time() - self.timestamp <= self.CACHE_DURATION
+        ):  # pragma no cover
+            self.logger.trace("Use cached data")
             return
 
-        results = self.find(self._command, r'Interface\s(.*?)\s|ssid\s(.*?)\s')
-        if len(results)==0: # pragma no cover: unable to test if no interface
+        results = self.find(self._command, r"Interface\s(.*?)\s|ssid\s(.*?)\s")
+        self.logger.trace("results=%s", results)
+        if len(results) == 0:  # pragma no cover: unable to test if no interface
             self.adapters = {}
             return
-    
+
         entries = {}
         current_entry = None
         for group, groups in results:
-            #filter non values
+            # filter non values
             groups = list(filter(None, groups))
-        
-            if group.startswith(u'ssid') and current_entry is not None:
-                # pylint: disable=E1137
-                current_entry[u'network'] = groups[0]
 
-            elif group.startswith(u'Interface'):
-                current_entry = {
-                    u'interface': groups[0],
-                    u'network': None
-                }
+            if group.startswith("ssid") and current_entry is not None:
+                # pylint: disable=E1137
+                current_entry["network"] = groups[0]
+
+            elif group.startswith("Interface"):
+                current_entry = {"interface": groups[0], "network": None}
                 entries[groups[0]] = current_entry
 
-            elif group.startswith(u'ssid') and current_entry is not None:
+            elif group.startswith("ssid") and current_entry is not None:
                 # pylint: disable=E1137
-                current_entry[u'network'] = groups[0]
+                current_entry["network"] = groups[0]
 
-        #save adapters
+        # save adapters
         self.adapters = entries
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_adapters(self):
@@ -99,5 +101,3 @@ class Iw(AdvancedConsole):
         self.__refresh()
 
         return self.adapters
-
-

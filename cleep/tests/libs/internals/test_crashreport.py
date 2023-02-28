@@ -9,6 +9,10 @@ from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class MockedScope():
     def __init__(self):
@@ -28,7 +32,7 @@ class CrashReportTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.sentry_configure_scope = Mock()
         self.sentry_configure_scope.return_value.__enter__ = Mock()

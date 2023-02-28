@@ -10,12 +10,16 @@ import unittest
 import logging
 import time
 from unittest.mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class ModprobeTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.m = Modprobe()
 
     def tearDown(self):

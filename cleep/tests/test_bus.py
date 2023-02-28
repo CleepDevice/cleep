@@ -13,6 +13,9 @@ import logging
 from unittest.mock import Mock, patch
 import time
 from threading import Event, Thread
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
 
 class DummyModule(Thread):
     def __init__(self, bus, response=None, name='dummy', manual_pull=False):
@@ -89,7 +92,7 @@ class MessageBusTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.b = None
         self.mod1 = None
         self.mod2 = None
@@ -582,7 +585,7 @@ class BusClientTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         if self.p1:

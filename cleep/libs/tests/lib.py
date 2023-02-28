@@ -14,7 +14,7 @@ class FileDescriptorMock():
     """
     FileDescriptorMock is used to simulate output of file|io.open function and force some output values or side effects
     """
-    def __init__(self, write_side_effect=None, content='file content\n', read_side_effect=None):
+    def __init__(self, write_side_effect=None, content='file content\n', read_side_effect=None, readlines_side_effect=None):
         """
         Constructor
 
@@ -22,12 +22,12 @@ class FileDescriptorMock():
             write_side_effect (function|exception): function to call as write function side effect or exception to raise
             content (string): default file content returned by read
             read_side_effect (function|exception): function to call as read function side effect or exception to raise
+            readlines_side_effect (function|exception): function to call as readlines function side effect or exception to raise
         """
         self.write_side_effect = write_side_effect
         self.read_side_effect = read_side_effect
+        self.readlines_side_effect = readlines_side_effect
         self.content = content
-        self.__step = 0
-        self.range = 4
 
     def get_content_hashes(self):
         """
@@ -68,12 +68,18 @@ class FileDescriptorMock():
                 raise self.read_side_effect
             else:
                 self.read_side_effect()
-        out = self.content[self.__step:self.__step+self.range]
-        self.__step += self.range
-        return None if len(out)==0 else out.encode('utf-8')
+        return None if len(self.content)==0 else self.content
+
+    def readlines(self, *args, **kwargs):
+        if self.readlines_side_effect:
+            if isinstance(self.readlines_side_effect, Exception):
+                # pylint: disable=E0702
+                raise self.readlines_side_effect
+            else:
+                self.readlines_side_effect()
+        return None if len(self.content)==0 else self.content.split()
 
     def close(self, *args, **kwargs):
-        self.__step = 0
         return
 
 

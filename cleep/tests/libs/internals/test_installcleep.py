@@ -14,6 +14,10 @@ from unittest.mock import Mock, patch
 import zipfile
 from io import BytesIO
 import io
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class InstallDebStatus():
     STATUS_IDLE = 0
@@ -87,7 +91,7 @@ class InstallCleepTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.archive_name = 'test_installcleep.zip'
         self.checksum = '1234567890'
@@ -356,7 +360,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
     def setUp(self):
         t = TestLib(self)
         t.set_functional_tests()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         from cleep.libs.internals.cleepfilesystem import CleepFilesystem
         self.fs = CleepFilesystem()
         self.fs.enable_write(True, True)

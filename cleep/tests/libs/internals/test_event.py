@@ -10,6 +10,10 @@ from cleep.common import MessageResponse
 import unittest
 import logging
 from unittest.mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class DummyModule():
     def __init__(self, format_output={}, can_render_event_output=True):
@@ -20,7 +24,7 @@ class EventTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.module1_formatter = Mock()
         self.formatters = {
             'event1': {

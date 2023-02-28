@@ -4,8 +4,8 @@
 import calendar
 import math
 import datetime
-from dateutil import tz
 import logging
+from dateutil import tz
 
 
 class Sun:
@@ -53,21 +53,19 @@ class Sun:
             Exception when there is no sunrise and sunset on given location and date
         """
         date = datetime.date.today() if date is None else date
-        sr = self._calc_sun_time(date, True)
-        if sr is None:
+        sunrise = self._calc_sun_time(date, True)
+        if sunrise is None:
             raise Exception(
                 "The sun never rises on this location (on the specified date)"
             )
-        else:
-            return sr
+        return sunrise
 
-    def get_local_sunrise_time(self, date=None, local_time_zone=tz.tzlocal()):
+    def get_local_sunrise_time(self, date=None):
         """
         Get sunrise time for local or custom time zone.
 
         Args:
             date (datetime): reference date (default is today if nothing specified)
-            local_time_zone (tzlocal): local or custom time zone.
 
         Returns:
             datetime: local time zone sunrise datetime
@@ -76,13 +74,12 @@ class Sun:
             Exception if error occured
         """
         date = datetime.date.today() if date is None else date
-        sr = self._calc_sun_time(date, True)
-        if sr is None:
+        sunrise = self._calc_sun_time(date, True)
+        if sunrise is None:
             raise Exception(
                 "The sun never rises on this location (on the specified date)"
             )
-        else:
-            return sr.astimezone(local_time_zone)
+        return sunrise
 
     def sunrise(self):
         """
@@ -108,21 +105,19 @@ class Sun:
             Exception if error occured
         """
         date = datetime.date.today() if date is None else date
-        ss = self._calc_sun_time(date, False)
-        if ss is None:
+        sunset = self._calc_sun_time(date, False)
+        if sunset is None:
             raise Exception(
                 "The sun never sets on this location (on the specified date)"
             )
-        else:
-            return ss
+        return sunset
 
-    def get_local_sunset_time(self, date=None, local_time_zone=tz.tzlocal()):
+    def get_local_sunset_time(self, date=None):
         """
         Get sunset time for local or custom time zone.
 
         Args:
             date (datetime): reference date (default to today if nothing specified)
-            local_time_zone (tzlocal): local or custom time zone.
 
         Returns:
             datetime: local time zone sunset datetime
@@ -131,13 +126,12 @@ class Sun:
             Exception if error occured
         """
         date = datetime.date.today() if date is None else date
-        ss = self._calc_sun_time(date, False)
-        if ss is None:
+        sunset = self._calc_sun_time(date, False)
+        if sunset is None:
             raise Exception(
                 "The sun never sets on this location (on the specified date)"
             )
-        else:
-            return ss.astimezone(local_time_zone)
+        return sunset
 
     def sunset(self):
         """
@@ -168,87 +162,94 @@ class Sun:
         month = date.month
         year = date.year
 
-        TO_RAD = math.pi / 180.0
+        to_rad = math.pi / 180.0
 
         # 1. first calculate the day of the year
-        N1 = math.floor(275 * month / 9)
-        N2 = math.floor((month + 9) / 12)
-        N3 = 1 + math.floor((year - 4 * math.floor(year / 4) + 2) / 3)
-        N = N1 - (N2 * N3) + day - 30
+        temp1 = math.floor(275 * month / 9)
+        temp2 = math.floor((month + 9) / 12)
+        temp3 = 1 + math.floor((year - 4 * math.floor(year / 4) + 2) / 3)
+        day_of_year = temp1 - (temp2 * temp3) + day - 30
 
         # 2. convert the longitude to hour value and calculate an approximate time
-        lngHour = self.longitude / 15
+        lng_hour = self.longitude / 15
 
         if is_rise_time:
-            t = N + ((6 - lngHour) / 24)
+            time = day_of_year + ((6 - lng_hour) / 24)
         else:  # sunset
-            t = N + ((18 - lngHour) / 24)
+            time = day_of_year + ((18 - lng_hour) / 24)
 
         # 3. calculate the Sun's mean anomaly
-        M = (0.9856 * t) - 3.289
+        mean = (0.9856 * time) - 3.289
 
         # 4. calculate the Sun's true longitude
-        L = (
-            M
-            + (1.916 * math.sin(TO_RAD * M))
-            + (0.020 * math.sin(TO_RAD * 2 * M))
+        longitude = (
+            mean
+            + (1.916 * math.sin(to_rad * mean))
+            + (0.020 * math.sin(to_rad * 2 * mean))
             + 282.634
         )
-        L = self._force_range(L, 360)  # NOTE: L adjusted into the range [0,360)
+        longitude = self._force_range(
+            longitude, 360
+        )  # NOTE: longitude adjusted into the range [0,360)
 
         # 5a. calculate the Sun's right ascension
+        right_ascension = (1 / to_rad) * math.atan(
+            0.91764 * math.tan(to_rad * longitude)
+        )
+        right_ascension = self._force_range(
+            right_ascension, 360
+        )  # NOTE: RA adjusted into the range [0,360)
 
-        RA = (1 / TO_RAD) * math.atan(0.91764 * math.tan(TO_RAD * L))
-        RA = self._force_range(RA, 360)  # NOTE: RA adjusted into the range [0,360)
-
-        # 5b. right ascension value needs to be in the same quadrant as L
-        Lquadrant = (math.floor(L / 90)) * 90
-        RAquadrant = (math.floor(RA / 90)) * 90
-        RA = RA + (Lquadrant - RAquadrant)
+        # 5b. right ascension value needs to be in the same quadrant as longitude
+        longitude_quadrant = (math.floor(longitude / 90)) * 90
+        right_ascension_quadrant = (math.floor(right_ascension / 90)) * 90
+        right_ascension = right_ascension + (
+            longitude_quadrant - right_ascension_quadrant
+        )
 
         # 5c. right ascension value needs to be converted into hours
-        RA = RA / 15
+        right_ascension = right_ascension / 15
 
         # 6. calculate the Sun's declination
-        sinDec = 0.39782 * math.sin(TO_RAD * L)
-        cosDec = math.cos(math.asin(sinDec))
+        sin_dec = 0.39782 * math.sin(to_rad * longitude)
+        cos_dec = math.cos(math.asin(sin_dec))
 
         # 7a. calculate the Sun's local hour angle
-        cosH = (
-            math.cos(TO_RAD * zenith) - (sinDec * math.sin(TO_RAD * self.latitude))
-        ) / (cosDec * math.cos(TO_RAD * self.latitude))
+        cos_h = (
+            math.cos(to_rad * zenith) - (sin_dec * math.sin(to_rad * self.latitude))
+        ) / (cos_dec * math.cos(to_rad * self.latitude))
 
-        if cosH > 1:
+        if cos_h > 1:
             return None  # The sun never rises on this location (on the specified date)
-        if cosH < -1:  # pragma: no cover - hard to test
+        if cos_h < -1:  # pragma: no cover - hard to test
             return None  # The sun never sets on this location (on the specified date)
 
         # 7b. finish calculating H and convert into hours
-
         if is_rise_time:
-            H = 360 - (1 / TO_RAD) * math.acos(cosH)
+            hours = 360 - (1 / to_rad) * math.acos(cos_h)
         else:  # setting
-            H = (1 / TO_RAD) * math.acos(cosH)
-
-        H = H / 15
+            hours = (1 / to_rad) * math.acos(cos_h)
+        hours = hours / 15
 
         # 8. calculate local mean time of rising/setting
-        T = H + RA - (0.06571 * t) - 6.622
+        mean_time = hours + right_ascension - (0.06571 * time) - 6.622
 
         # 9. adjust back to UTC
-        UT = T - lngHour
-        UT = self._force_range(UT, 24)  # UTC time in decimal format (e.g. 23.23)
+        universal_time = mean_time - lng_hour
+        universal_time = self._force_range(
+            universal_time, 24
+        )  # UTC time in decimal format (e.g. 23.23)
 
         # 10. Return
-        hr = self._force_range(int(UT), 24)
-        min = round((UT - int(UT)) * 60, 0)
-        if min == 60:
-            hr += 1
-            min = 0
+        hour = self._force_range(int(universal_time), 24)
+        minute = round((universal_time - int(universal_time)) * 60, 0)
+        if minute == 60:
+            hour += 1
+            minute = 0
 
         # 10. check corner case https://github.com/SatAgro/suntime/issues/1
-        if hr == 24:
-            hr = 0
+        if hour == 24:
+            hour = 0
             day += 1
 
             if day > calendar.monthrange(year, month)[1]:
@@ -259,14 +260,15 @@ class Sun:
                     month = 1
                     year += 1
 
-        return datetime.datetime(year, month, day, int(hr), int(min), tzinfo=tz.tzutc())
+        return datetime.datetime(
+            year, month, day, int(hour), int(minute), tzinfo=tz.tzutc()
+        )
 
     @staticmethod
-    def _force_range(v, max):
-        # force v to be >= 0 and < max
-        if v < 0:
-            return v + max
-        elif v >= max:
-            return v - max
-
-        return v
+    def _force_range(value, maximum):
+        # force value to be >= 0 and < maximum
+        if value < 0:
+            return value + maximum
+        if value >= maximum:
+            return value - maximum
+        return value

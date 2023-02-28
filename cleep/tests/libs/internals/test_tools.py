@@ -12,12 +12,16 @@ import io
 import time
 import cleep
 from mock import patch
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class ToolsTests(unittest.TestCase):
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
     def tearDown(self):
         pass
@@ -202,7 +206,7 @@ class ToolsTests(unittest.TestCase):
 class ToolsTestsLogLevelTrace(unittest.TestCase):
 
     def test_install_trace_logging_level_for_custom_loggers(self):
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         tools.install_trace_logging_level()
         logger = logging.getLogger('test_trace_before')
@@ -215,7 +219,7 @@ class ToolsTestsLogLevelTrace(unittest.TestCase):
     def test_install_trace_logging_level_for_root_logger(self):
         tools.install_trace_logging_level()
         try:
-            logging.basicConfig(level=logging.TRACE, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+            logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
             logging.trace('trace message')
         except:
             self.fail('logging.TRACE not installed')

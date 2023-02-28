@@ -15,6 +15,10 @@ from pprint import pprint
 import io
 from unittest.mock import Mock, patch, ANY, mock_open
 import time
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class TestsWpaSupplicantConf(unittest.TestCase):
 
@@ -64,7 +68,7 @@ GD      Grenada"""
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.fs = Mock()
         self.w = WpaSupplicantConf(self.fs)

@@ -12,8 +12,10 @@ import unittest
 import logging
 from pprint import pformat
 import io
+from cleep.libs.tests.common import get_log_level
 
-logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+LOG_LEVEL = get_log_level()
+
 
 class CleepAudioTest(unittest.TestCase):
 
@@ -22,6 +24,8 @@ class CleepAudioTest(unittest.TestCase):
 
     def setUp(self):
         TestLib()
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+
         self.fs = CleepFilesystem()
         self.fs.enable_write()
         self.path = os.path.join(os.getcwd(), self.FILE_NAME)

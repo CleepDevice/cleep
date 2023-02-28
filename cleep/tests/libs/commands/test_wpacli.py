@@ -3,48 +3,74 @@
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
 from wpacli import Wpacli
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 import os
 from shutil import copyfile
+from cleep.libs.tests.common import get_log_level
+from mock import Mock, patch
 
+LOG_LEVEL = get_log_level()
+LIST_NETWORKS = [
+    "Selected interface 'p2p-dev-wlan0'",
+    "network id / ssid / bssid / flags",
+    "0   MyWifi    any",
+]
+SCAN_NETWORKS = [
+    "bssid / frequency / signal level / flags / ssid",
+    "b6:39:56:76:d5:58   2472    -86 [WPA2-PSK-CCMP][WPS][ESS]   MyWifi",
+]
 
 class WpacliTests(unittest.TestCase):
-
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s %(levelname)s : %(message)s')
+        logging.basicConfig(
+            level=LOG_LEVEL, format=u"%(asctime)s %(name)s %(levelname)s : %(message)s"
+        )
         self.w = Wpacli()
 
     def tearDown(self):
         pass
 
-    def test_scan_networks(self):
-        networks = self.w.scan_networks(interface='wlan0')
+    @patch("wpacli.time.sleep")
+    def test_scan_networks(self, time_sleep_mock):
+        self.w.command = Mock(return_value={"returncode": 0, "error": False, "killed": False, "stdout": SCAN_NETWORKS})
+
+        networks = self.w.scan_networks(interface="wlan0", duration=2.0)
         logging.debug(networks)
-        self.assertNotEqual(0, len(networks))
-        interface = list(networks.keys())[0]
-        network_name = list(networks[interface].keys())[0]
-        self.assertTrue('interface' in list(networks[interface][network_name].keys()))
-        self.assertTrue('network' in list(networks[interface][network_name].keys()))
-        self.assertTrue('encryption' in list(networks[interface][network_name].keys()))
-        self.assertTrue('signallevel' in list(networks[interface][network_name].keys()))
+
+        self.assertEqual(networks, {
+            'wlan0': {
+                'MyWifi': {
+                    'interface': 'wlan0',
+                    'network': 'MyWifi',
+                    'encryption': 'wpa2',
+                    'signallevel': 17
+                }
+            }
+        })
+        time_sleep_mock.assert_called_with(2.0)
 
     def test_get_configured_networks(self):
-        logging.info('Unable to test get_configured_networks, need to know valid wifi network')
-        #networks = self.w.get_configured_networks()
-        #logging.debug('Networks: %s' % networks)
-        #self.assertTrue(len(networks)>0, 'Networks list should contains data')
-        #for network_name, network in networks:
-        #    self.assertTrue('id' in network)
-        #    self.assertTrue('ssid' in network)
-        #    self.assertTrue('bssid' in network)
-        #    self.assertTrue('status' in network)
+        self.w.command = Mock(return_value={"returncode": 0, "error": False, "killed": False, "stdout": LIST_NETWORKS})
 
+        networks = self.w.get_configured_networks()
+        logging.debug("networks=%s", networks)
+        
+        self.assertEqual(networks, {
+            'MyWifi': {
+                'id': '0',
+                'ssid': 'MyWifi',
+                'bssid': 'any',
+                'status': 1
+            }
+        })
+        
 
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_iw.py; coverage report -m -i
+if __name__ == "__main__":
+    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_wpacli.py; coverage report -m -i
     unittest.main()

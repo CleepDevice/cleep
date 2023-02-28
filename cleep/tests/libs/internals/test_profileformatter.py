@@ -11,6 +11,10 @@ from cleep.exception import InvalidParameter
 import unittest
 import logging
 from mock import Mock
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 class DummyProfile(RendererProfile):
     def __init__(self, *args, **kwargs):
@@ -27,7 +31,7 @@ class DummyFormatter(ProfileFormatter):
 class ProfileFormatterTests(unittest.TestCase):
 
     def setUp(self):
-        logging.basicConfig(level=logging.FATAL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         TestLib()
 
     def test_init(self):

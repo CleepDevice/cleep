@@ -12,6 +12,10 @@ import json
 from unittest.mock import Mock
 from copy import deepcopy
 import responses
+from cleep.libs.tests.common import get_log_level
+
+LOG_LEVEL = get_log_level()
+
 
 GET_API_RATE = {
   "resources": {
@@ -363,7 +367,7 @@ GET_RELEASES = [
 class CleepGithubTests(unittest.TestCase):
 
     def setUp(self):
-        logging.basicConfig(level=logging.FATAL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         TestLib()
 
         self.owner = 'dummy'

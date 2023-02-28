@@ -134,7 +134,7 @@ class Install:
         self.cleep_filesystem.enable_write()
 
         # refresh packages
-        command = "/usr/bin/aptitude update"
+        command = "/usr/bin/apt-get update"
         self.logger.debug("Command: %s", command)
         self.__console = EndlessConsole(
             command, self.__callback_quiet, self.__callback_end
@@ -171,7 +171,7 @@ class Install:
 
     def install_system_package(self, package_name):
         """
-        Install package using aptitude
+        Install package using apt-get
 
         Args:
             package_name (string): package name to install
@@ -189,7 +189,7 @@ class Install:
         self.cleep_filesystem.enable_write()
 
         # install deb
-        command = '/usr/bin/aptitude install -y "%s"' % package_name
+        command = '/usr/bin/apt-get install -y "%s"' % package_name
         self.logger.debug("Command: %s", command)
         self.__running = True
         self.__console = EndlessConsole(
@@ -208,7 +208,7 @@ class Install:
 
     def uninstall_system_package(self, package_name, purge=False):
         """
-        Install package using aptitude
+        Install package using apt
 
         Args:
             package_name (string): package name to install
@@ -228,7 +228,7 @@ class Install:
 
         # install deb
         action = "purge" if purge else "remove"
-        command = '/usr/bin/aptitude %s -y "%s"' % (action, package_name)
+        command = '/usr/bin/apt-get %s -y "%s"' % (action, package_name)
         self.logger.debug("Command: %s", command)
         self.__running = True
         self.__console = EndlessConsole(

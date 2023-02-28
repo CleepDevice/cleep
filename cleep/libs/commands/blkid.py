@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cleep.libs.internals.console import Console
 import re
 import time
+from cleep.libs.internals.console import Console
+
 
 class Blkid(Console):
 
@@ -15,7 +16,7 @@ class Blkid(Console):
         """
         Console.__init__(self)
 
-        #set members
+        # set members
         self.timestamp = None
         self.devices = {}
 
@@ -23,29 +24,38 @@ class Blkid(Console):
         """
         Refresh data
         """
-        #check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.trace('Use cached data')
+        # check if refresh is needed
+        if (
+            self.timestamp is not None
+            and time.time() - self.timestamp <= self.CACHE_DURATION
+        ):
+            self.logger.trace("Use cached data")
             return
 
-        res = self.command(u'/sbin/blkid')
-        if not res[u'error'] and not res[u'killed']:
-            #parse data
-            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*TYPE=\"(.*?)\"\s+.*PARTUUID=\"(.*?)\"$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+        res = self.command("/sbin/blkid")
+        self.logger.trace("res=%s", res)
+        if not res["error"] and not res["killed"]:
+            # parse data
+            matches = re.finditer(
+                r"^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*TYPE=\"(.*?)\"\s+.*PARTUUID=\"(.*?)\"$",
+                "\n".join(res["stdout"]),
+                re.UNICODE | re.MULTILINE,
+            )
             for _, match in enumerate(matches):
                 groups = match.groups()
-                #group[0] = device
-                #group[1] = UUID
-                #group[2] = TYPE
-                #group[3] = PARTUUID
-                if len(groups)==4:
+                self.logger.trace("groups=%s", groups)
+                # group[0] = device
+                # group[1] = UUID
+                # group[2] = TYPE
+                # group[3] = PARTUUID
+                if len(groups) == 4:
                     data = {
-                        u'device': groups[0],
-                        u'uuid': groups[1],
-                        u'type': groups[2],
-                        u'partuuid': groups[3],
+                        "device": groups[0],
+                        "uuid": groups[1],
+                        "type": groups[2],
+                        "partuuid": groups[3],
                     }
-                    self.devices[data[u'device']] = data
+                    self.devices[data["device"]] = data
 
         self.timestamp = time.time()
 
@@ -90,7 +100,7 @@ class Blkid(Console):
         """
         self.__refresh()
         for device in self.devices.values():
-            if device[u'uuid']==uuid:
+            if device["uuid"] == uuid:
                 return device
         return None
 
@@ -114,7 +124,7 @@ class Blkid(Console):
         """
         self.__refresh()
         for device in self.devices.values():
-            if device[u'partuuid']==partuuid:
+            if device["partuuid"] == partuuid:
                 return device
         return None
 
@@ -137,7 +147,4 @@ class Blkid(Console):
 
         """
         self.__refresh()
-        return self.devices[device] if device in self.devices.keys() else None
-
-
-
+        return self.devices[device] if device in self.devices else None
