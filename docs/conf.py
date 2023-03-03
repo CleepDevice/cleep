@@ -30,7 +30,7 @@ html_static_path = [
     '_static'
 ]
 html_css_files = [
-    '_static/cleep.css'
+    'cleep.css'
 ]
 html_logo = '_static/cleep-logo-red.png'
 html_favicon = '_static/favicon.ico'

@@ -21,6 +21,7 @@ remote_*.log
 docs/*docs.tar.gz
 docs/*docs.zip
 docs/*docs.xml
+docs/source
 .vscode
 .pybuild
 debian/.debhelper

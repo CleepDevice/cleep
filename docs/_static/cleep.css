@@ -23,16 +23,20 @@
     color: #607d8b !important;
 }
 
+
 a:visited, a:hover {
     color: #d32f2f;
 }
 a {
+    color: #FFFFFF;
+}
+div.wy-nav-content a {
     color: #000000;
 }
-a:visited.icon.icon-home, a.icon.icon-home {
+div.wy-side-nav-search a.icon.icon-home {
     color: #FFFFFF !important;
 }
-a:hover.icon.icon-home {
+div.wy-side-nav-search a:hover.icon.icon-home {
     color: #d32f2f;
 }
 .wy-menu-vertical header,.wy-menu-vertical p.caption {
