@@ -86,7 +86,7 @@ services:
     volumes:
       - name: dockersock
         path: /var/run
-    command: ['--insecure-registry=192.168.1.125:5000']
+    command: ['--insecure-registry=192.168.1.125:5000 --max-concurrent-uploads=2']
 
 volumes:
   - name: dockersock
@@ -187,6 +187,7 @@ steps:
   - name: build-cleep-docker-image
     image: 192.168.1.125:5000/cleep-utils:20230205
     network_mode: host
+    privileged: true
     volumes:
       - name: dockersock
         path: /var/run
