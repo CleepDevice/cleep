@@ -107,7 +107,6 @@ steps:
     privileged: true
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
@@ -133,6 +132,7 @@ steps:
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     commands:
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - # install cleep
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
       - # force core modules to be updated from sources
@@ -152,7 +152,6 @@ steps:
         from_secret: id_ed25519_pub
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
@@ -346,6 +345,12 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+
+  - name: publish-coverage
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    commands:
+      - #TODO
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
