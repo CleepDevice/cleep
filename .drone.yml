@@ -133,7 +133,11 @@ steps:
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     commands:
+      - # install cleep
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - # force core modules to be updated from sources
+      - cleep-cli cigetmods
+      - # dry run
       - export CLEEP_ENV=ci
       - cleep --noro --stdout --dryrun
       - cleep --version > version.txt
