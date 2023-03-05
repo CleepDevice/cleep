@@ -207,7 +207,7 @@ steps:
       - ls -la 
       - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
-      - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
+      - docker push --quiet 192.168.1.125:5000/cleep/cleep:$VERSION 
 
   - name: update-app-ci-for-release-candidate
     image: 192.168.1.125:5000/cleep-git:20230216
