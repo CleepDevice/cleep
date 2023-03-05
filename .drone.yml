@@ -222,10 +222,10 @@ steps:
       - echo $VERSION > .cleep-rc-version.txt
       - ./generate-drone-app-yml.sh
       - git add .drone-app.yml .cleep-rc-version.txt
-      - git commit -m "Update Cleep "$VERSION" release candidate"
-      - git push -u origin HEAD
+      - git commit -m "Update Cleep "$VERSION" release candidate" | true
+      - git push -u origin HEAD | true
       - # keep latest release
-      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
+      - export FREEZED_VERSION=`cat .cleep-rc-version.txt`
       - cd ..
       - rm -rf cleep-ci
       - echo $FREEZED_VERSION > freezed_version.txt
@@ -473,8 +473,8 @@ steps:
       - echo $VERSION > .cleep-release-version.txt
       - ./generate-drone-app-yml.sh
       - git add .drone-app.yml .cleep-release-version.txt
-      - git commit -m "Update Cleep "$VERSION" release"
-      - git push -u origin HEAD
+      - git commit -m "Update Cleep "$VERSION" release" | true
+      - git push -u origin HEAD | true
       - # keep latest release
       - export FREEZED_VERSION=`cat .cleep-release-version.txt`
       - cd ..
