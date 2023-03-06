@@ -193,7 +193,7 @@ steps:
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - docker push --quiet 192.168.1.125:5000/cleep/cleep:$VERSION 
 
-  - name: update-app-ci-for-release-candidate
+  - name: update-app-ci-for-rc
     image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
     environment:
@@ -229,59 +229,6 @@ steps:
       - cd ..
       - rm -rf cleep-ci
       - echo $FREEZED_VERSION > freezed_version.txt
-
-  - name: freeze-markets
-    image: 192.168.1.125:5000/cleep-git:20230216
-    environment:
-      ID_ED25519:
-        from_secret: id_ed25519
-      ID_ED25519_PUB:
-        from_secret: id_ed25519_pub
-    commands:
-      - # MUST BE EXECUTED AFTER update-app-ci-for-release-candidate STEP
-      - test -f freezed_version.txt || echo "No freezed_version.txt file found. Cannot continue"
-      - # configure ssh
-      - mkdir -p ~/.ssh
-      - echo "$ID_ED25519" > ~/.ssh/id_ed25519
-      - chmod 600 ~/.ssh/id_ed25519
-      - echo "$ID_ED25519_PUB" > ~/.ssh/id_ed25519.pub
-      - chmod 644 ~/.ssh/id_ed25519.pub
-      - ssh-keyscan github.com >> githubKey
-      - ssh-keygen -lf githubKey
-      - cat githubKey > ~/.ssh/known_hosts
-      - # configure git
-      - git config --global user.email "drone@localhost"
-      - git config --global user.name "drone"
-      - # get version
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - # freeze version on cleep-apps
-      - git clone git@github.com:CleepDevice/cleep-apps.git
-      - cd cleep-apps
-      - git tag "v"$VERSION
-      - git push --tags
-      - cd ..
-      - # freeze version on cleep-apps-nonfree
-      - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
-      - cd cleep-apps-nonfree
-      - git tag "v"$VERSION
-      - git push --tags
-
-  - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
-    commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
 
 
 
@@ -404,22 +351,6 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coredocs --publish
 
-  - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
-    commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
-
   - name: build-cleep-docker-image
     image: 192.168.1.125:5000/cleep-utils:20230205
     network_mode: host
@@ -517,6 +448,22 @@ steps:
       - cd cleep-apps-nonfree
       - git tag "v"$VERSION
       - git push --tags
+
+  - name: publish-cleep-deb
+    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    network_mode: host
+    privileged: true
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: github_access_token
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corepublish --version=$VERSION
 
 
 
