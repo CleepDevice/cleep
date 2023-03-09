@@ -44,7 +44,6 @@ class CrashReport():
             self.logger.setLevel(logging.WARN)
 
         # members
-        self.__disabled_by_core = disabled_by_core
         self.__enabled = False
         self.__token = token
         self.__libs_version = libs_version or {}
@@ -53,9 +52,11 @@ class CrashReport():
         self.__filters = self.DEFAULT_FILTERS
 
         # disable crash report if necessary
-        if self.__disabled_by_core or not token:
+        if disabled_by_core or not token:
             self.logger.debug('Crash report forced to be disabled')
             self.disable()
+        else:
+            self.enable()
 
         # create and configure raven client
         SentryInit(

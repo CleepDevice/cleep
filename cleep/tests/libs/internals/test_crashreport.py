@@ -64,11 +64,11 @@ class CrashReportTests(unittest.TestCase):
         pass
 
     def test_init(self):
-        #crash report is disabled by default
-        self.assertFalse(self.c.is_enabled())
-        #crash report must init sentry stuff
+        # crash report is enabled by default
+        self.assertTrue(self.c.is_enabled())
+        # crash report must init sentry stuff
         self.assertTrue(self.sentry_init_mock.called)
-        #crash report must set some custom tags at startup
+        # crash report must set some custom tags at startup
         self.assertTrue(self.sentry_configure_scope.return_value.__enter__.called)
         self.assertGreaterEqual(self.sentry_configure_scope.return_value.__enter__.return_value.set_tag_calls, 7)
 
@@ -85,7 +85,6 @@ class CrashReportTests(unittest.TestCase):
         self.assertEqual(c.logger.getEffectiveLevel(), logging.WARN)
 
     def test_is_enabled(self):
-        self.assertFalse(self.c.is_enabled())
         self.c.enable()
         self.assertTrue(self.c.is_enabled())
         self.c.disable()
