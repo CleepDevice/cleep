@@ -1,3 +1,6 @@
+cleep (0.1.0) UNRELEASED; urgency=low
+  * Fixed core: #1407 Crash report always disabled at startup
+
 cleep (0.0.30) UNRELEASED; urgency=low
   * Fixed core: #1383 Cleep install fails due to missing dependency
   * Changed core: Handle application asset and bin paths
