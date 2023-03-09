@@ -193,7 +193,7 @@ steps:
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - docker push --quiet 192.168.1.125:5000/cleep/cleep:$VERSION 
 
-  - name: update-app-ci-for-rc
+  - name: update-cleep-ci-repo
     image: 192.168.1.125:5000/cleep-git:20230216
     network_mode: host
     environment:
@@ -219,13 +219,13 @@ steps:
       - echo $VERSION
       - git clone git@github.com:CleepDevice/cleep-ci.git
       - cd cleep-ci
+      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
       - echo $VERSION > .cleep-rc-version.txt
+      - echo $VERSION > .cleep-release-version.txt
       - ./generate-drone-app-yml.sh
-      - git add .drone-app.yml .cleep-rc-version.txt
+      - git add .drone-app.yml .cleep-rc-version.txt .cleep-release-version.txt
       - git commit -m "Update Cleep "$VERSION" release candidate" | true
       - git push -u origin HEAD | true
-      - # keep latest release
-      - export FREEZED_VERSION=`cat .cleep-rc-version.txt`
       - cd ..
       - rm -rf cleep-ci
       - echo $FREEZED_VERSION > freezed_version.txt
