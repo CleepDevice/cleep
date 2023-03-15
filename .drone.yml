@@ -288,6 +288,7 @@ trigger:
     - refs/tags/v*
     exclude:
     - refs/tags/v*-rc*
+    - refs/tags/v*-cleepos*
 
 concurrency:
   limit: 1
