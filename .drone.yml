@@ -322,20 +322,18 @@ steps:
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
     network_mode: host
     privileged: true
+    environment:
+      COVERALLS_REPO_TOKEN:
+        from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli pip coveralls --upgrade
       - python3 -m pip freeze | grep cleepcli
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
-
-  - name: publish-coverage
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
-    network_mode: host
-    commands:
-      - #TODO
+      - coveralls || /bin/true
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep/cleep:0.0.29
@@ -460,7 +458,7 @@ volumes:
 
 steps:
   - name: clone
-    image: 192.168.1.125:5000/cleep-git:20230216
+    image: 192.168.1.1:8662/cleep-git:20230315
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
@@ -468,7 +466,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: prepare-cleepos-image
-    image: 192.168.1.125:5000/cleep-git:20230216
+    image: 192.168.1.1:8662/cleep-git:20230315
     network_mode: host
     environment:
       ID_ED25519:
