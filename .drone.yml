@@ -525,7 +525,7 @@ steps:
       - ls -lh
 
   - name: publish-cleepos-image
-    image: 192.168.1.1:8662/cleep-utils:20230223
+    image: 192.168.1.1:8662/cleep-utils:20230315
     network_mode: host
     environment:
       GITHUB_ACCESS_TOKEN:
