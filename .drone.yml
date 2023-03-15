@@ -476,6 +476,7 @@ steps:
         from_secret: id_ed25519_pub
     commands:
       - # get version from tag
+      - echo "DRONE_TAG="$DRONE_TAG
       - echo $DRONE_TAG | awk -F "-v" '{ print $2 }' > version.txt
       - export VERSION=`cat version.txt`
       - echo $VERSION
