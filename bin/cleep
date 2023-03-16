@@ -21,7 +21,6 @@ from cleep.libs.internals.criticalresources import CriticalResources
 from cleep.libs.internals.drivers import Drivers
 import cleep.libs.internals.tools as tools
 from cleep.common import ExecutionStep
-from netifaces import version as netifaces_version
 from bottle import __version__ as bottle_version
 from gevent import __version__ as gevent_version
 from passlib import __version__ as passlib_version
@@ -109,7 +108,6 @@ def load_crash_report(debug, disabled):
         'bottle': bottle_version,
         'gevent': gevent_version,
         'greenlet': greenlet_version,
-        'netifaces': netifaces_version,
         'passlib': passlib_version,
         'requests': requests_version,
     }

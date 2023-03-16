@@ -55,7 +55,7 @@ class Ifconfig():
             netmask_ipv4 = None
             if netifaces.AF_INET in ifaddresses.keys() and len(ifaddresses[netifaces.AF_INET])>0 and u'addr' in ifaddresses[netifaces.AF_INET][0].keys():
                 ipv4 = ifaddresses[netifaces.AF_INET][0]['addr']
-                netmask_ipv4 = ifaddresses[netifaces.AF_INET][0]['netmask']
+                netmask_ipv4 = ifaddresses[netifaces.AF_INET][0]['mask']
             gateway_ipv4 = None
             if netifaces.AF_INET in gateways.keys():
                 if gateways[netifaces.AF_INET][0][1]==interface:
@@ -66,7 +66,7 @@ class Ifconfig():
             netmask_ipv6 = None
             if netifaces.AF_INET6 in ifaddresses.keys() and len(ifaddresses[netifaces.AF_INET6])>0 and u'addr' in ifaddresses[netifaces.AF_INET6][0].keys():
                 ipv6 = ifaddresses[netifaces.AF_INET6][0]['addr']
-                netmask_ipv6 = ifaddresses[netifaces.AF_INET6][0]['netmask']
+                netmask_ipv6 = ifaddresses[netifaces.AF_INET6][0]['mask']
             gateway_ipv6 = None
             if netifaces.AF_INET6 in gateways.keys():
                 if gateways[netifaces.AF_INET6][0][1]==interface:

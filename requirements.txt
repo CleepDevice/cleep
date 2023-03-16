@@ -1,12 +1,12 @@
-bottle==0.12.19
-gevent==21.12.0
-greenlet==1.1.2
+bottle==0.12.25
+gevent==22.10.2
+greenlet==2.0.2
 mock>=4.0.3
-netifaces==0.11.0
+netifaces2==0.0.16
 passlib==1.7.4
 python-dateutil==2.8.2
-requests==2.27.1
-simplejson==3.17.6
-sentry-sdk==1.5.2
+requests==2.28.2
+simplejson==3.18.4
+sentry-sdk==1.16.0
 uptime==3.0.1
 

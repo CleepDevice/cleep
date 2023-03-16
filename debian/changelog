@@ -1,4 +1,9 @@
 cleep (0.0.30) UNRELEASED; urgency=low
+  * Fixed core: bump dependencies and fix breaking changes (netifaces)
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
+
+cleep (0.0.30) UNRELEASED; urgency=low
   * Fixed core: #1383 Cleep install fails due to missing dependency
   * Changed core: Handle application asset and bin paths
   * Fixed core: fix typo issue in inventory
