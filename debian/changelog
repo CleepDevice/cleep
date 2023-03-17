@@ -1,5 +1,6 @@
 cleep (0.0.30) UNRELEASED; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
+  * Fixed core: #1408 fix /logs endpoint
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 

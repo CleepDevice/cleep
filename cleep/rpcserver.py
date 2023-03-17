@@ -939,7 +939,7 @@ def logs():  # pragma: no cover
     </script>"""
     content = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
 
-    lines = cleep_filesystem.read_data("/var/log/cleep.log", "r")
+    lines = cleep_filesystem.read_data("/var/log/cleep.log")
     lines = "" if not lines else lines
 
     return (

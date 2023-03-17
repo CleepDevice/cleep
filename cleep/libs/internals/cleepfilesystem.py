@@ -399,6 +399,8 @@ class CleepFilesystem():
             list: file lines or None if errors
         """
         fp = None
+        if encoding is None:
+            encoding = self.get_default_encoding()
         try:
             fp = self.open(path, 'r', encoding)
             return fp.readlines()
@@ -407,7 +409,7 @@ class CleepFilesystem():
             self.logger.exception('Unable to get content of file "%s":' % path)
             self.__report_exception({
                 'message': 'Unable to get content of file "%s"' % path,
-                'encoding': encoding or self.get_default_encoding(),
+                'encoding': encoding,
                 'path': path
             })
             return None
