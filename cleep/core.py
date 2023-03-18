@@ -1027,13 +1027,13 @@ class CleepModule(Cleep):
             raise_exc (boolean): if True raise exception
 
         Returns:
-            any: return data command result. Return None if error occured
+            any: message response data or None if error (and raise_exc False)
         """
         resp = self.send_command(command, to, params, timeout)
         if resp.error:
             self.logger.error(f'Error occured executing command {command} to {to}: {resp.message}')
             if raise_exc:
-                raise Exception(resp.data)
+                raise Exception(resp.message)
             return None
 
         return resp.data

@@ -866,6 +866,41 @@ class TestsCleepModule(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertTrue('my_command' in commands)
 
+    def test_send_command_advanced(self):
+        self._init_context()
+        resp = MessageResponse(error=False, data="response string", message="")
+        self.r.send_command = Mock(return_value=resp)
+        params = {"param1": "value1", "param2": 123}
+
+        result = self.r.send_command_advanced("mycommand", "dummy", params)
+
+        self.r.send_command.assert_called_with("mycommand", "dummy", params, 3.0)
+        self.assertEqual(result, "response string")
+
+    def test_send_command_advanced_when_error(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="Fatal error")
+        self.r.send_command = Mock(return_value=resp)
+        self.r.logger.error = Mock()
+        params = {"param1": "value1", "param2": 123}
+
+        result = self.r.send_command_advanced("mycommand", "dummy", params)
+
+        self.assertEqual(result, None)
+        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
+
+    def test_send_command_advanced_when_error_with_raise_option(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="Fatal error")
+        self.r.send_command = Mock(return_value=resp)
+        self.r.logger.error = Mock()
+        params = {"param1": "value1", "param2": 123}
+
+        with self.assertRaises(Exception) as cm:
+            self.r.send_command_advanced("mycommand", "dummy", params, raise_exc=True)
+        
+        self.assertEqual(str(cm.exception), "Fatal error")
+        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
 
 
 
