@@ -141,15 +141,16 @@ class RpcServerTests(unittest.TestCase):
         self.inventory.get_devices.return_value = self.DEVICES
         self.inventory.get_modules_configs.return_value = self.MODULES_CONFIGS
 
-        server_config = {
+        rpc_config = {
             'host': host,
             'port': port,
+            'ssl': True if ssl_key and ssl_cert else False,
             'ssl_key': ssl_key,
             'ssl_cert': ssl_cert,
         }
 
         if exec_configure:
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, debug_enabled)
+            rpcserver.configure(rpc_config, self.bootstrap, self.inventory, debug_enabled)
 
     @patch('json.load')
     def test_load_auth_with_no_accounts_and_enabled(self, json_load_mock):
@@ -336,12 +337,12 @@ class RpcServerTests(unittest.TestCase):
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
         }
 
-        rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
@@ -356,35 +357,32 @@ class RpcServerTests(unittest.TestCase):
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_valid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
+            'ssl': True,
             'ssl_key': 'mykey',
             'ssl_cert': 'mycert',
         }
 
-        with patch('os.path.exists') as mock_path_exists:
-            mock_path_exists.return_value = True
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
-
-            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert')
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert')
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_invalid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
+            'ssl': False,
             'ssl_key': 'mykey',
             'ssl_cert': 'mycert',
         }
 
-        with patch('os.path.exists') as mock_path_exists:
-            mock_path_exists.return_value = False
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
     def test_configure_debug_enabled(self):
         self._init_context(debug_enabled=True)
@@ -919,7 +917,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertTrue(message in resp)
 
-        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log', 'r')
+        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log')
 
     def test_authenticate(self):
         self._init_context()

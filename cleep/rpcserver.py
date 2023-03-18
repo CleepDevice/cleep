@@ -87,16 +87,17 @@ def load_auth():
         )
 
 
-def get_ssl_options(server_config):
+def get_ssl_options(rpc_config):
     """
     Return ssl options if any to pass to http server
 
     Args:
-        server_config (dict): server configuration::
+        rpc_config (dict): rpc configuration::
 
             {
                 host (str): server host
                 port (int): server port
+                ssl (bool): ssl enabled or not
                 ssl_key (str): server SSL key
                 ssl_cert (str): server SSL certificate
             }
@@ -110,36 +111,26 @@ def get_ssl_options(server_config):
             }
 
     """
-    ssl_key = server_config.get("ssl_key")
-    ssl_cert = server_config.get("ssl_cert")
-
-    if not ssl_key and not ssl_cert:
-        return {}
-
-    if ssl_key and ssl_cert and (not os.path.exists(ssl_key) or not os.path.exists(ssl_cert)):
-        logger.error(
-            "Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.",
-            ssl_key,
-            ssl_cert,
-        )
+    if not rpc_config.get("ssl"):
         return {}
 
     return {
-        "keyfile": ssl_key,
-        "certfile": ssl_cert,
+        "keyfile": rpc_config.get("ssl_key"),
+        "certfile": rpc_config.get("ssl_cert"),
     }
 
 
-def configure(server_config, bootstrap, inventory_, debug_enabled_):
+def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     """
     Configure rpcserver
 
     Args:
-        server_config (dict): server configuration::
+        rpc_config (dict): server configuration::
 
             {
                 host (str): server host
                 port (int): server port
+                ssl (bool): ssl enabled or not
                 ssl_key (str): server SSL key
                 ssl_cert (str): server SSL certificate
             }
@@ -170,9 +161,14 @@ def configure(server_config, bootstrap, inventory_, debug_enabled_):
     load_auth()
 
     # create server
-    ssl_options = get_ssl_options(server_config)
+    ssl_options = get_ssl_options(rpc_config)
+    protocol = "https" if rpc_config.get("ssl", False) else "http"
+    host = rpc_config.get("host", "0.0.0.0")
+    port = rpc_config.get("port", 80)
+    logger.info("Running RPC server %s://%s:%s", protocol, host, port)
+    logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
     server = pywsgi.WSGIServer(
-        (server_config.get("host", "0.0.0.0"), server_config.get("port", 80)),
+        (host, port),
         app,
         log=logger_requests,
         error_log=logger,

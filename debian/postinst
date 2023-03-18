@@ -27,6 +27,32 @@ checkResult() {
 
 case "$1" in
     configure)
+        # install self-signed certificate if necessary
+        # gist from https://gist.github.com/thbkrkr/aa16435cb6c183e55a33
+        if [ ! -f /etc/cleep/cert/ssl.crt ] || [ ! -f /etc/cleep/cert/ssl.key ]; then
+	        echo "Installing ssl certificate..."
+	        mkdir -p /tmp/cleep_ssl
+	        cd /tmp/cleep_ssl
+	        openssl rand -base64 48 > passphrase.txt
+	        checkResult $? 0
+	        openssl genrsa -aes128 -passout file:passphrase.txt -out server.key 2048
+	        checkResult $? 0
+	        openssl req -new -passin file:passphrase.txt -key server.key -out server.csr -subj "/O=Cleep/OU=Cleep"
+	        checkResult $? 0
+	        cp server.key server.key.org
+	        openssl rsa -in server.key.org -passin file:passphrase.txt -out server.key
+	        checkResult $? 0
+	        openssl x509 -req -days 36500 -in server.csr -signkey server.key -out server.crt
+	        checkResult $? 0
+			mkdir -p /etc/cleep/cert
+	        mv -f server.crt /etc/cleep/cert/ssl.crt
+	        mv -f server.key /etc/cleep/cert/ssl.key
+	        cd -
+	        rm -rf /tmp/cleep_ssl
+	        echo "Done"
+	        echo ""
+		fi
+
         # download modules.json from Cleep repository
         echo "Download modules.json from:"
         echo " 1 - $MODULES_JSON_VERSION"

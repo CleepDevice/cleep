@@ -1285,8 +1285,11 @@ class CleepExternalBus(Cleep):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init cleep
+        # init cleep
         Cleep.__init__(self, bootstrap, debug_enabled)
+
+        # store rpc config
+        self.rpc_config = bootstrap.get('rpc_config', {})
 
     def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
         """

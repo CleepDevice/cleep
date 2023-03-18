@@ -123,7 +123,7 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, 'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers):
+def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers, rpc_config):
     """
     Return bootstrap objects.
 
@@ -135,6 +135,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         crash_report (CrashReport): crash report singleton instance
         critical_resources (CriticalResources): critical resources handler singleton instance
         drivers (Drivers): drivers handler singleton instance
+        rpc_config (dict): rpc configuration (port, host, ssl opts)
 
     Returns:
         dict: dict of bootstrap objects::
@@ -153,6 +154,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
                 drivers (Drivers): drivers handler
                 execution_step (ExecutionStep): cleep execution step
                 external_bus (string): module name that holds external bus (only one allowed)
+                rpc_config (dict): rpc configuration (port, host, ssl opts)
             }
 
     """
@@ -170,6 +172,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         'drivers': drivers,
         'execution_step': ExecutionStep(),
         'external_bus': None,
+        'rpc_config': rpc_config,
     }
 
 def dry_run_stop_server(server, inventory):
@@ -180,6 +183,28 @@ def dry_run_stop_server(server, inventory):
     (logger or logging).info('Stop forced by dry-run')
     inventory.unload_modules()
     server.stop()
+
+def get_rpc_config(config):
+    """
+    Return rpc config
+    Handles invalid ssl config and fallback to http
+    """
+    ssl_key = config.get('rpc', {}).get('rpc_key')
+    ssl_cert = config.get('rpc', {}).get('rpc_cert')
+    ssl_enabled = True if ssl_key and ssl_cert else False
+
+    logger.debug('cleep.conf: %s', config)
+    if ssl_enabled and (not os.path.exists(ssl_cert) or not os.path.exists(ssl_key)):
+        logger.error('Invalid path for key or cert file specified in config. Fallback to HTTP')
+        ssl_enabled = False
+
+    return {
+        'host': config.get('rpc', {}).get('rpc_host', '0.0.0.0'),
+        'port': config.get('rpc', {}).get('rpc_ssl_port', 443) if ssl_enabled else config.get('rpc', {}).get('rpc_port', 80),
+        'ssl': ssl_enabled,
+        'ssl_key': ssl_key,
+        'ssl_cert': ssl_cert,
+    }
 
 
 if __name__ == '__main__':
@@ -244,6 +269,9 @@ if __name__ == '__main__':
         # load and check config file
         config = load_config(cleep_filesystem)
 
+        # prepare rpc config (shared in bootstrap)
+        rpc_config = get_rpc_config(config)
+
         # set debug level after config reading
         if config['debug']['trace_enabled']:
             trace_enabled = True
@@ -293,7 +321,8 @@ if __name__ == '__main__':
             cleep_filesystem,
             crash_report,
             critical_resources,
-            drivers
+            drivers,
+            rpc_config,
         )
 
         # configure brokers
@@ -330,12 +359,7 @@ if __name__ == '__main__':
         debug = False
         if trace_enabled or debug_modules.count('rpc')==1:
             debug = True
-        rpcserver.configure({
-            'host': config['rpc']['rpc_host'],
-            'port': config['rpc']['rpc_port'],
-            'ssl_key': config['rpc']['rpc_key'],
-            'ssl_cert': config['rpc']['rpc_cert'],
-        }, bootstrap, inventory, debug)
+        rpcserver.configure(rpc_config, bootstrap, inventory, debug)
 
         if dry_run:
             timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
