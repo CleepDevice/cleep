@@ -1,37 +1,32 @@
 # !/usr/bin/env python
 #  -*- coding: utf-8 -*-
 
-from cleep.exception import InvalidParameter, MissingParameter
-from cleep.common import CORE_MODULES
-from configparser import ConfigParser
 import ast
 import os
 import time
 import logging
+from passlib.hash import sha256_crypt
+from configparser import ConfigParser
+from cleep.common import CORE_MODULES
 
-class CleepConf():
+
+class CleepConf:
     """
     Helper class to update and read values from /etc/cleep/cleep.conf file
     """
 
-    CONF = u'/etc/cleep/cleep.conf'
+    CONF = "/etc/cleep/cleep.conf"
 
     DEFAULT_CONFIG = {
-        u'general': {
-            'modules': [],
-            'updated': []
+        "general": {"modules": [], "updated": []},
+        "rpc": {
+            "rpc_host": "0.0.0.0",
+            "rpc_port": 80,
+            "rpc_cert": "",
+            "rpc_key": "",
         },
-        u'rpc': {
-            'rpc_host': u'0.0.0.0',
-            'rpc_port': 80,
-            'rpc_cert': u'',
-            'rpc_key': u''
-        },
-        u'debug': {
-            'trace_enabled': False,
-            'debug_core': False,
-            'debug_modules': []
-        }
+        "debug": {"trace_enabled": False, "debug_core": False, "debug_modules": []},
+        "auth": {"accounts": {}, "enabled": False},
     }
 
     def __init__(self, cleep_filesystem):
@@ -44,30 +39,28 @@ class CleepConf():
         # members
         self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.__conf = None
 
     def __open(self):
         """
         Open config file
-        
+
         Returns:
             ConfigParser: ConfigParser instance
-
-        Raises:
-            Exception: if file doesn't exist
         """
-        # init conf reader
         self.__conf = ConfigParser()
+
         if not os.path.exists(self.CONF):
             # create empty file
-            fd = self.cleep_filesystem.open(self.CONF, u'w')
-            fd.write(u'')
-            self.cleep_filesystem.close(fd)
+            fdesc = self.cleep_filesystem.open(self.CONF, "w")
+            fdesc.write("")
+            self.cleep_filesystem.close(fdesc)
             time.sleep(0.10)
-        
+
         # load conf content
-        fd = self.cleep_filesystem.open(self.CONF, u'r')
-        self.__conf.read_file(fd)
-        self.cleep_filesystem.close(fd)
+        fdesc = self.cleep_filesystem.open(self.CONF, "r")
+        self.__conf.read_file(fdesc)
+        self.cleep_filesystem.close(fdesc)
 
         return self.__conf
 
@@ -77,32 +70,32 @@ class CleepConf():
         """
         if self.__conf and write:
             # workaround for unicode writing http://bugs.python.org/msg187829
-            f = self.cleep_filesystem.open(self.CONF, u'w')
-            self.__conf.write(f)
-            self.cleep_filesystem.close(f)
+            fdesc = self.cleep_filesystem.open(self.CONF, "w")
+            self.__conf.write(fdesc)
+            self.cleep_filesystem.close(fdesc)
 
     def check(self):
         """
         Check configuration file content, adding missing section or options
         """
-        config = self.__open()
-        updated = False
+        try:
+            config = self.__open()
+            updated = False
 
-        # merge with default config
-        for section in self.DEFAULT_CONFIG.keys():
-            # fix missing section
-            if not config.has_section(section):
-                config.add_section(section)
-                updated = True
-
-            # fix missing section keys
-            for key in self.DEFAULT_CONFIG[section].keys():
-                if not config.has_option(section, key):
-                    config.set(section, key, str(self.DEFAULT_CONFIG[section][key]))
+            # merge with default config
+            for (section, section_keys) in self.DEFAULT_CONFIG.items():
+                # fix missing section
+                if not config.has_section(section):
+                    config.add_section(section)
                     updated = True
 
-        # write changes to filesystem
-        self.__close(updated)
+                # fix missing section keys
+                for (key, value) in section_keys.items():
+                    if not config.has_option(section, key):
+                        config.set(section, key, str(value))
+                        updated = True
+        finally:
+            self.__close(updated)
 
     def as_dict(self):
         """
@@ -111,20 +104,22 @@ class CleepConf():
         Returns:
             dict: config content
         """
-        conf = self.__open()
-        self.__close()
-        config = {}
+        try:
+            conf = self.__open()
+            config = {}
 
-        for section in conf.sections():
-            config[section] = {}
-            for option, val in conf.items(section):
-                try:
-                    config[section][option] = ast.literal_eval(val)
-                except:
-                    # unable to eval option, consider it as a string
-                    config[section][option] = u'%s' % val
+            for section in conf.sections():
+                config[section] = {}
+                for option, val in conf.items(section):
+                    try:
+                        config[section][option] = ast.literal_eval(val)
+                    except Exception:
+                        # unable to eval option, consider it as a string
+                        config[section][option] = f"{val}"
 
-        return config
+            return config
+        finally:
+            self.__close()
 
     def install_module(self, module):
         """
@@ -136,20 +131,22 @@ class CleepConf():
         Returns:
             bool: True if module installed
         """
-        conf = self.__open()
-        self.logger.trace('Conf=%s' % conf)
-        
-        # check if module isn't already installed
-        modules = ast.literal_eval(conf.get(u'general', u'modules'))
-        if module in modules:
+        try:
+            conf = self.__open()
+            self.logger.trace("Conf=%s", conf)
+
+            # check if module isn't already installed
+            modules = ast.literal_eval(conf.get("general", "modules"))
+            if module in modules:
+                return True
+
+            # install module
+            modules.append(module)
+            conf.set("general", "modules", str(modules))
+
             return True
-
-        # install module
-        modules.append(module)
-        conf.set(u'general', u'modules', str(modules))
-        self.__close(True)
-
-        return True
+        finally:
+            self.__close(True)
 
     def uninstall_module(self, module):
         """
@@ -157,24 +154,28 @@ class CleepConf():
 
         Args:
             module (string): module name to uninstall
-        
+
         Returns:
             bool: True if module uninstalled
         """
-        conf = self.__open()
-        
-        # check if module is installed
-        modules = ast.literal_eval(conf.get(u'general', u'modules'))
-        if module not in modules:
-            self.logger.warning(u'Trying to uninstall not installed module "%s"' % module)
-            return False
+        try:
+            conf = self.__open()
 
-        # uninstall module
-        modules.remove(module)
-        conf.set(u'general', u'modules', str(modules))
-        self.__close(True)
+            # check if module is installed
+            modules = ast.literal_eval(conf.get("general", "modules"))
+            if module not in modules:
+                self.logger.warning(
+                    'Trying to uninstall not installed module "%s"', module
+                )
+                return False
 
-        return True
+            # uninstall module
+            modules.remove(module)
+            conf.set("general", "modules", str(modules))
+
+            return True
+        finally:
+            self.__close(True)
 
     def update_module(self, module):
         """
@@ -186,85 +187,99 @@ class CleepConf():
         Returns:
             bool: True if operation succeed
         """
-        conf = self.__open()
+        try:
+            conf = self.__open()
 
-        # check if module installed
-        modules = ast.literal_eval(conf.get(u'general', u'modules'))
-        if module not in modules:
-            self.logger.warning(u'Trying to update not installed module "%s"' % module)
-            return False
+            # check if module installed
+            modules = ast.literal_eval(conf.get("general", "modules"))
+            if module not in modules:
+                self.logger.warning(
+                    'Trying to update not installed module "%s"', module
+                )
+                return False
 
-        # check if module not already updated
-        updated = ast.literal_eval(conf.get(u'general', u'updated'))
-        if module in updated:
+            # check if module not already updated
+            updated = ast.literal_eval(conf.get("general", "updated"))
+            if module in updated:
+                return True
+
+            # update module
+            updated.append(module)
+            conf.set("general", "updated", str(updated))
+
             return True
-
-        # update module
-        updated.append(module)
-        conf.set(u'general', u'updated', str(updated))
-        self.__close(True)
-
-        return True
+        finally:
+            self.__close(True)
 
     def clear_updated_modules(self):
         """
         Erase updated module list from config
         """
-        conf = self.__open()
+        try:
+            conf = self.__open()
 
-        # clear list content
-        updated = ast.literal_eval(conf.get(u'general', u'updated'))
-        updated[:] = []
-        conf.set(u'general', u'updated', str(updated))
-        self.__close(True)
+            # clear list content
+            updated = ast.literal_eval(conf.get("general", "updated"))
+            updated[:] = []
+            conf.set("general", "updated", str(updated))
+        finally:
+            self.__close(True)
 
     def is_module_installed(self, module):
         """
         Return True if specified module is installed
-        
+
         Args:
             module (string): module name to check
 
         Returns:
             bool: True if module is installed
         """
-        conf = self.__open()
-        self.__close()
-        modules = ast.literal_eval(conf.get(u'general', u'modules'))
+        try:
+            conf = self.__open()
+            modules = ast.literal_eval(conf.get("general", "modules"))
 
-        return module in modules
+            return module in modules
+        finally:
+            self.__close()
 
     def is_module_updated(self, module):
         """
         Return True if specified module is installed
-        
+
         Args:
             module (string): module name to check
 
         Returns:
             bool: True if module is installed
         """
-        conf = self.__open()
-        self.__close()
-        modules = ast.literal_eval(conf.get(u'general', u'updated'))
+        try:
+            conf = self.__open()
+            modules = ast.literal_eval(conf.get("general", "updated"))
 
-        return module in modules
+            return module in modules
+        finally:
+            self.__close()
 
     def enable_trace(self):
         """
         Enable trace logging mode
         """
-        conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', str(True))
-        self.__close(True)
+        try:
+            conf = self.__open()
+            conf.set("debug", "trace_enabled", str(True))
+        finally:
+            self.__close(True)
 
     def disable_trace(self):
         """
         Disable trace logging mode
         """
-        conf = self.__open()
-        conf.set(u'debug', u'trace_enabled', str(False))
-        self.__close(True)
+        try:
+            conf = self.__open()
+            conf.set("debug", "trace_enabled", str(False))
+        finally:
+            self.__close(True)
 
     def is_trace_enabled(self):
         """
@@ -273,25 +288,32 @@ class CleepConf():
         Returns:
             bool: True if trace enabled
         """
-        conf = self.__open()
-        self.__close()
-        return ast.literal_eval(conf.get(u'debug', u'trace_enabled'))
+        try:
+            conf = self.__open()
+
+            return ast.literal_eval(conf.get("debug", "trace_enabled"))
+        finally:
+            self.__close()
 
     def enable_core_debug(self):
         """
         Enable core debug
         """
-        conf = self.__open()
-        conf.set(u'debug', u'debug_core', str(True))
-        self.__close(True)
+        try:
+            conf = self.__open()
+            conf.set("debug", "debug_core", str(True))
+        finally:
+            self.__close(True)
 
     def disable_core_debug(self):
         """
         Disable core debug
         """
-        conf = self.__open()
-        conf.set(u'debug', u'debug_core', str(False))
-        self.__close(True)
+        try:
+            conf = self.__open()
+            conf.set("debug", "debug_core", str(False))
+        finally:
+            self.__close(True)
 
     def is_core_debugged(self):
         """
@@ -300,9 +322,12 @@ class CleepConf():
         Returns:
             bool: True if core debug enabled
         """
-        conf = self.__open()
-        self.__close()
-        return ast.literal_eval(conf.get(u'debug', u'debug_core'))
+        try:
+            conf = self.__open()
+
+            return ast.literal_eval(conf.get("debug", "debug_core"))
+        finally:
+            self.__close()
 
     def enable_module_debug(self, module):
         """
@@ -314,26 +339,30 @@ class CleepConf():
         Returns:
             bool: True if module debug enabled
         """
-        conf = self.__open()
+        try:
+            conf = self.__open()
 
-        # check if module is installed
-        modules = ast.literal_eval(conf.get(u'general', u'modules'))
-        if module not in modules and module not in CORE_MODULES:
-            self.logger.warning(u'Trying to enable debug for not installed module "%s"' % module)
-            return False
-        
-        # check if module is in debug list
-        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
-        if module in modules:
-            # module already in debug list
+            # check if module is installed
+            modules = ast.literal_eval(conf.get("general", "modules"))
+            if module not in modules and module not in CORE_MODULES:
+                self.logger.warning(
+                    'Trying to enable debug for not installed module "%s"', module
+                )
+                return False
+
+            # check if module is in debug list
+            modules = ast.literal_eval(conf.get("debug", "debug_modules"))
+            if module in modules:
+                # module already in debug list
+                return True
+
+            # add module to debug list
+            modules.append(module)
+            conf.set("debug", "debug_modules", str(modules))
+
             return True
-
-        # add module to debug list
-        modules.append(module)
-        conf.set(u'debug', u'debug_modules', str(modules))
-        self.__close(True)
-
-        return True
+        finally:
+            self.__close(True)
 
     def disable_module_debug(self, module):
         """
@@ -341,24 +370,26 @@ class CleepConf():
 
         Args:
             module (string): module name to disable
-                             
+
         Returns:
             bool: True if module debug disabled
         """
-        conf = self.__open()
-        
-        # check if module is in debug list
-        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
-        if module not in modules:
-            # module not in debug list
-            return False
+        try:
+            conf = self.__open()
 
-        # remove module from debug list
-        modules.remove(module)
-        conf.set(u'debug', u'debug_modules', str(modules))
-        self.__close(True)
+            # check if module is in debug list
+            modules = ast.literal_eval(conf.get("debug", "debug_modules"))
+            if module not in modules:
+                # module not in debug list
+                return False
 
-        return True
+            # remove module from debug list
+            modules.remove(module)
+            conf.set("debug", "debug_modules", str(modules))
+
+            return True
+        finally:
+            self.__close(True)
 
     def is_module_debugged(self, module):
         """
@@ -370,11 +401,13 @@ class CleepConf():
         Returns:
             bool: True if module debug is enabled, False if disabled
         """
-        conf = self.__open()
-        self.__close()
-        modules = ast.literal_eval(conf.get(u'debug', u'debug_modules'))
+        try:
+            conf = self.__open()
+            modules = ast.literal_eval(conf.get("debug", "debug_modules"))
 
-        return module in modules
+            return module in modules
+        finally:
+            self.__close()
 
     def set_rpc_config(self, host, port):
         """
@@ -387,13 +420,14 @@ class CleepConf():
         Returns:
             bool: True if rpc config saved
         """
-        conf = self.__open()
+        try:
+            conf = self.__open()
+            conf.set("rpc", "rpc_host", host)
+            conf.set("rpc", "rpc_port", str(port))
 
-        conf.set(u'rpc', u'rpc_host', host)
-        conf.set(u'rpc', u'rpc_port', str(port))
-        self.__close(True)
-
-        return True
+            return True
+        finally:
+            self.__close(True)
 
     def get_rpc_config(self):
         """
@@ -408,11 +442,13 @@ class CleepConf():
                 )
 
         """
-        conf = self.__open()
-        self.__close()
-        rpc = (conf.get(u'rpc', u'rpc_host'), conf.getint(u'rpc', u'rpc_port'))
+        try:
+            conf = self.__open()
+            rpc = (conf.get("rpc", "rpc_host"), conf.getint("rpc", "rpc_port"))
 
-        return rpc
+            return rpc
+        finally:
+            self.__close()
 
     def set_rpc_security(self, cert, key):
         """
@@ -425,13 +461,14 @@ class CleepConf():
         Returns:
             bool: True if values saved successfully
         """
-        conf = self.__open()
+        try:
+            conf = self.__open()
+            conf.set("rpc", "rpc_cert", cert)
+            conf.set("rpc", "rpc_key", key)
 
-        conf.set(u'rpc', u'rpc_cert', cert)
-        conf.set(u'rpc', u'rpc_key', key)
-        self.__close(True)
-
-        return True
+            return True
+        finally:
+            self.__close(True)
 
     def get_rpc_security(self):
         """
@@ -446,10 +483,115 @@ class CleepConf():
                 )
 
         """
-        conf = self.__open()
-        self.__close()
-        rpc = (conf.get(u'rpc', u'rpc_cert'), conf.get(u'rpc', u'rpc_key'))
+        try:
+            conf = self.__open()
+            rpc = (conf.get("rpc", "rpc_cert"), conf.get("rpc", "rpc_key"))
+            return rpc
+        finally:
+            self.__close()
 
-        return rpc
+    def get_auth_accounts(self):
+        """
+        Return auth existing accounts with encrypted password
 
+        Returns:
+            dict: if with_passwords options enabled, return dict with account-password
+        """
+        try:
+            conf = self.__open()
 
+            return ast.literal_eval(conf.get("auth", "accounts"))
+        finally:
+            self.__close()
+
+    def get_auth(self):
+        """
+        Return auth config at once
+
+        Returns:
+            dict: auth config::
+
+            {
+                enabled (bool): True if auth enabled, False otherwise
+                accounts (list): list of accounts names
+            }
+
+        """
+        try:
+            conf = self.__open()
+            accounts = ast.literal_eval(conf.get("auth", "accounts"))
+            enabled = ast.literal_eval(conf.get("auth", "enabled"))
+
+            return {"enabled": enabled, "accounts": list(accounts.keys())}
+        finally:
+            self.__close()
+
+    def add_auth_account(self, account, password):
+        """
+        Add auth account
+
+        Args:
+            account (str): account name
+            password (str): account password
+        """
+        try:
+            conf = self.__open()
+            accounts = ast.literal_eval(conf.get("auth", "accounts"))
+
+            if account in accounts:
+                raise Exception("Account already exists")
+
+            accounts[account] = sha256_crypt.hash(password)
+            conf.set("auth", "accounts", str(accounts))
+        finally:
+            self.__close(True)
+
+    def delete_auth_account(self, account):
+        """
+        Delete auth account
+
+        Args:
+            account (str): account name
+        """
+        try:
+            conf = self.__open()
+            accounts = ast.literal_eval(conf.get("auth", "accounts"))
+
+            if account not in accounts:
+                raise Exception("Account does not exist")
+
+            del accounts[account]
+            conf.set("auth", "accounts", str(accounts))
+
+            # disable auth if no more account
+            if len(accounts) == 0:
+                conf.set("auth", "enabled", str(False))
+        finally:
+            self.__close(True)
+
+    def enable_auth(self, enable=True):
+        """
+        Enable or disable authentication
+
+        Args:
+            enable (bool): True to enable auth (default) False to disable auth
+        """
+        try:
+            conf = self.__open()
+            conf.set("auth", "enabled", str(enable))
+        finally:
+            self.__close(True)
+
+    def is_auth_enabled(self):
+        """
+        Return if auth is enabled
+
+        Returns:
+            bool: True if auth enabled, False otherwise
+        """
+        try:
+            conf = self.__open()
+            enabled = ast.literal_eval(conf.get("auth", "enabled"))
+            return enabled
+        finally:
+            self.__close()

@@ -192,6 +192,11 @@ def get_rpc_config(config):
     ssl_key = config.get('rpc', {}).get('rpc_key')
     ssl_cert = config.get('rpc', {}).get('rpc_cert')
     ssl_enabled = True if ssl_key and ssl_cert else False
+    auth_enabled = config.get("auth", {}).get("enabled", False)
+    auth_accounts = config.get("auth", {}).get("accounts", {})
+    host = config.get('rpc', {}).get('rpc_host', '0.0.0.0')
+    port = config.get('rpc', {}).get('rpc_ssl_port', 443) if ssl_enabled else config.get('rpc', {}).get('rpc_port', 80)
+    protocol = ssl_enabled and 'https' or 'http'
 
     logger.debug('cleep.conf: %s', config)
     if ssl_enabled and (not os.path.exists(ssl_cert) or not os.path.exists(ssl_key)):
@@ -199,11 +204,13 @@ def get_rpc_config(config):
         ssl_enabled = False
 
     return {
-        'host': config.get('rpc', {}).get('rpc_host', '0.0.0.0'),
-        'port': config.get('rpc', {}).get('rpc_ssl_port', 443) if ssl_enabled else config.get('rpc', {}).get('rpc_port', 80),
+        'host': host,
+        'port': port,
         'ssl': ssl_enabled,
         'ssl_key': ssl_key,
         'ssl_cert': ssl_cert,
+        'auth': auth_enabled and len(auth_accounts) > 0,
+        'url': f'{protocol}://{host}:{port}'
     }
 
 

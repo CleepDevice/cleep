@@ -2,6 +2,7 @@ cleep (0.0.31) UNRELEASED; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
   * Fixed core: #1408 fix /logs endpoint
   * Added core: add https support to RPC server
+  * Added core: handle auth
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 

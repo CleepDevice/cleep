@@ -29,17 +29,18 @@ import uptime
 from passlib.hash import sha256_crypt
 from gevent import pywsgi
 from gevent import monkey
+
 monkey.patch_all()
 import bottle
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
+from cleep.libs.configs.cleepconf import CleepConf
 
 __all__ = ["app"]
 
 # constants
 BASE_DIR = "/opt/cleep/"
 HTML_DIR = os.path.join(BASE_DIR, "html")
-AUTH_FILE = "/etc/cleep/auth.conf"
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
 CLEEP_CACHE = None
@@ -48,7 +49,7 @@ CLEEP_CACHE = None
 polling = 0
 subscribed = False
 sessions = {}
-auth_config = {}
+auth_accounts = {}
 auth_enabled = False
 logger = None
 debug_enabled = False
@@ -65,26 +66,19 @@ def load_auth():
     """
     Load auth and enable auth if necessary
     """
-    global auth_enabled, auth_config
+    global auth_accounts, auth_enabled
 
     try:
-        with io.open(AUTH_FILE, "r", encoding="utf-8") as fdesc:
-            auth_config = json.load(fdesc)
-        logger.debug("auth.conf: %s", auth_config["accounts"])
+        cleep_conf = CleepConf(cleep_filesystem)
+        auth_accounts = cleep_conf.get_auth_accounts()
+        auth_enabled = cleep_conf.is_auth_enabled() and len(auth_accounts) > 0
 
-        auth_enabled = len(auth_config["accounts"]) > 0 and auth_config["enabled"]
         logger.debug("Auth enabled: %s", auth_enabled)
-
+        logger.debug("Auth accounts: %s", list(auth_accounts.keys()))
     except Exception:
-        auth_config = {}
+        auth_accounts = {}
+        auth_enabled = False
         logger.exception("Unable to load auth file. Auth disabled:")
-        crash_report.report_exception(
-            {
-                "message": "Unable to load auth file. Auth disabled:",
-                "auth_enabled": auth_enabled,
-                "auth_config": auth_config,
-            }
-        )
 
 
 def get_ssl_options(rpc_config):
@@ -168,11 +162,7 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     logger.info("Running RPC server %s://%s:%s", protocol, host, port)
     logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
     server = pywsgi.WSGIServer(
-        (host, port),
-        app,
-        log=logger_requests,
-        error_log=logger,
-        **ssl_options
+        (host, port), app, log=logger_requests, error_log=logger, **ssl_options
     )
 
 
@@ -238,48 +228,47 @@ def start():
             server.stop()
 
 
-def check_auth(username, password):
+def check_auth(account, password):
     """
     Check auth
 
     Args:
-        username (string): username
-        password (string): user password
+        account (str): account name
+        password (str): account password
     """
     # check session
     client_ip = bottle.request.environ.get("REMOTE_ADDR")
     logger.trace("Client ip: %s", client_ip)
-    session_key = f"{client_ip}-{username}"
+    session_key = f"{client_ip}-{account}"
     if session_key in sessions and sessions[session_key] >= uptime.uptime():
         # user still logged, update session timeout
         sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
         return True
 
-    # check auth
-    if username in auth_config["accounts"]:
-        logger.trace('Check password "%s"', password)
-        try:
-            if sha256_crypt.verify(password, auth_config["accounts"][username]):
-                # auth is valid, save session
-                sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
-                return True
+    # check account exists
+    if account not in auth_accounts:
+        logger.warning('Invalid auth account "%s"', account)
+        return False
 
-            # invalid password
-            logger.warning('Invalid password for user "%s"', username)
-            return False
+    try:
+        if sha256_crypt.verify(password, auth_accounts[account]):
+            # auth is valid, save session
+            sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
+            return True
 
-        except Exception:
-            logger.warning('Password failed for user from ip "%s"', client_ip)
-            return False
-
-    # username doesn't exist
-    logger.warning('Invalid username "%s"', username)
-    return False
+        # invalid password
+        logger.warning('Invalid password for account "%s"', account)
+        return False
+    except Exception:
+        logger.warning(
+            'Password failed for account "%s" from ip "%s"', account, client_ip
+        )
+        return False
 
 
 def authenticate():
     """
-    Authentication process
+    Authenticate decorator
     If authentication is enabled, check credentials
     """
 
@@ -287,9 +276,9 @@ def authenticate():
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if auth_enabled:
-                username, password = bottle.request.auth or (None, None)
-                logger.trace("username=%s password=%s", username, password)
-                if username is None or not check_auth(username, password):
+                account, password = bottle.request.auth or (None, None)
+                logger.debug("account=%s password=%s", account, password)
+                if account is None or not check_auth(account, password):
                     err = bottle.HTTPError(401, "Access denied")
                     err.add_header("WWW-Authenticate", 'Basic realm="private"')
                     return err
@@ -298,6 +287,7 @@ def authenticate():
         return wrapper
 
     return decorator
+
 
 def send_command(command, to, params, timeout=None):
     """
@@ -397,6 +387,16 @@ def get_drivers_from_inventory():
     return drivers
 
 
+@app.route("/reloadauth", method="POST")
+def reload_auth():
+    """
+    Reload auth configuration
+    Must be executed after update on auth configuration to reload changes
+    """
+    load_auth()
+    logger.info("Rpc auth configuration reloaded")
+
+
 @app.route("/upload", method="POST")
 @authenticate()
 def exec_upload():
@@ -424,7 +424,7 @@ def exec_upload():
         # check params
         if command is None or to is None:
             # not allowed, missing parameters
-            raise Exception('Missing parameters')
+            raise Exception("Missing parameters")
 
         else:
             # get file
@@ -585,7 +585,7 @@ def handle_post_command():
     if bottle.request.json is None or not isinstance(bottle.request.json, dict):
         raise Exception("Invalid payload, json required.")
     tmp_params = dict(bottle.request.json or {})
-    logger.debug('Post params: %s', tmp_params)
+    logger.debug("Post params: %s", tmp_params)
 
     to = tmp_params.get("to")
     if "to" in tmp_params:
@@ -652,8 +652,8 @@ def exec_command():
 
     return resp.to_dict()
 
+
 @app.route("/modules", method="POST")
-@authenticate()
 def get_modules():
     """
     Return modules with their configuration
@@ -680,7 +680,6 @@ def get_modules():
 
 
 @app.route("/devices", method="POST")
-@authenticate()
 def get_devices():
     """
     Return all devices
@@ -695,7 +694,6 @@ def get_devices():
 
 
 @app.route("/renderers", method="POST")
-@authenticate()
 def get_renderers():
     """
     Returns all renderers
@@ -710,7 +708,6 @@ def get_renderers():
 
 
 @app.route("/drivers", method="POST")
-@authenticate()
 def get_drivers():
     """
     Returns all drivers
@@ -725,7 +722,6 @@ def get_drivers():
 
 
 @app.route("/events", method="POST")
-@authenticate()
 def get_events():
     """
     Return all used events
@@ -762,25 +758,25 @@ def get_config():
     if not CLEEP_CACHE:
         logger.debug("Init cache")
         CLEEP_CACHE = {
-            'modules': get_modules_from_inventory(),
-            'events': get_events_from_inventory(),
-            'renderers': get_renderers_from_inventory(),
-            'drivers': get_drivers_from_inventory(),
+            "modules": get_modules_from_inventory(),
+            "events": get_events_from_inventory(),
+            "renderers": get_renderers_from_inventory(),
+            "drivers": get_drivers_from_inventory(),
         }
 
     try:
         # update volatile data
         modules_configs = inventory.get_modules_configs()
-        for module_name, module in CLEEP_CACHE['modules'].items():
-            module['config'] = modules_configs[module_name]
+        for module_name, module in CLEEP_CACHE["modules"].items():
+            module["config"] = modules_configs[module_name]
 
         return json.dumps(
             {
-                "modules": CLEEP_CACHE['modules'],
+                "modules": CLEEP_CACHE["modules"],
                 "devices": get_devices_from_inventory(),
-                "events": CLEEP_CACHE['events'],
-                "renderers": CLEEP_CACHE['renderers'],
-                "drivers": CLEEP_CACHE['drivers'],
+                "events": CLEEP_CACHE["events"],
+                "renderers": CLEEP_CACHE["renderers"],
+                "drivers": CLEEP_CACHE["drivers"],
             }
         )
     except Exception:
@@ -790,7 +786,6 @@ def get_config():
 
 
 @app.route("/registerpoll", method="POST")
-@authenticate()
 def registerpoll():
     """
     Register poll
@@ -884,8 +879,7 @@ def poll():
 
 
 @app.route("/<route:re:.*>", method="POST")
-# TODO add auth to external request
-# @authenticate()
+# TODO add auth to external request ?
 def rpc_wrapper(route):
     """
     Custom rpc route used to implement wrappers (ie REST=>RPC)
@@ -921,6 +915,7 @@ def index():
 
 
 @app.route("/logs", method="GET")
+@authenticate()
 def logs():  # pragma: no cover
     """
     Serve log file

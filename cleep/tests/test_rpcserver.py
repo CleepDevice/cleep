@@ -100,8 +100,8 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.sessions.clear()
             if isinstance(rpcserver.CLEEP_CACHE, dict):
                 rpcserver.CLEEP_CACHE.clear()
-            if rpcserver.logger:
-                rpcserver.logger.setLevel(logging.getLogger().getEffectiveLevel())
+            #if rpcserver.logger:
+            #    rpcserver.logger.setLevel(logging.getLogger().getEffectiveLevel())
 
     def _init_context(self, push_return_value=None, push_side_effect=None, no_bus=False, is_subscribed_return_value=None, is_subscribed_side_effect=None,
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False,
@@ -152,61 +152,56 @@ class RpcServerTests(unittest.TestCase):
         if exec_configure:
             rpcserver.configure(rpc_config, self.bootstrap, self.inventory, debug_enabled)
 
-    @patch('json.load')
-    def test_load_auth_with_no_accounts_and_enabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_no_accounts_and_enabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {}
+        self._init_context()
+
+        with boddle():
+            self.assertFalse(rpcserver.auth_enabled)
+
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_accounts_and_disabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = False
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.auth_enabled)
 
-    @patch('json.load')
-    def test_load_auth_with_accounts_and_disabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
-            },
-            'enabled': False,
-        }
-        self._init_context()
-
-        with boddle():
-            self.assertFalse(rpcserver.auth_enabled)
-
-    @patch('json.load')
-    def test_load_auth_with_accounts_and_enabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_accounts_and_enabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
         }
         self._init_context()
 
         with boddle():
             self.assertTrue(rpcserver.auth_enabled)
-            self.assertEqual(len(rpcserver.auth_config['accounts']), 1)
-            self.assertTrue('test' in rpcserver.auth_config['accounts'])
+            self.assertEqual(len(rpcserver.auth_accounts), 1)
+            self.assertTrue('test' in rpcserver.auth_accounts)
 
-    @patch('json.load')
-    def test_load_auth_failed(self, json_load_mock):
-        json_load_mock.side_effect = Exception('Test exception')
+    @patch("rpcserver.CleepConf")
+    @patch("rpcserver.logging")
+    def test_load_auth_failed(self, logging_mock, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.side_effect = Exception('Test exception')
+        logger_mock = Mock()
+        logging_mock.getLogger = Mock(return_value=logger_mock)
         self._init_context()
         
         with boddle():
-            self.assertTrue(self.crash_report.report_exception.called)
+            # self.assertTrue(self.crash_report.report_exception.called)
+            rpcserver.logger.exception.assert_called_with("Unable to load auth file. Auth disabled:")
 
-    @patch('json.load')
-    def test_check_auth(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
-            },
-            'enabled': True,
+    @patch("rpcserver.CleepConf")
+    def test_check_auth(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
         }
         self._init_context()
 
@@ -224,39 +219,33 @@ class RpcServerTests(unittest.TestCase):
             new_time = rpcserver.sessions[session_key]
             self.assertNotEqual(new_time, old_time)
 
-    @patch('json.load')
-    def test_check_auth_bad_password(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch("rpcserver.CleepConf")
+    def test_check_auth_bad_password(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('json.load')
-    def test_check_auth_invalid_password(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': 'Hkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_check_auth_invalid_password(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': 'Hkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('json.load')
-    def test_check_auth_invalid_user(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_check_auth_invalid_user(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
@@ -384,13 +373,16 @@ class RpcServerTests(unittest.TestCase):
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
-    def test_configure_debug_enabled(self):
+    @patch("rpcserver.logging")
+    def test_configure_debug_enabled(self, logging_mock):
+        logger_mock = Mock()
+        logging_mock.getLogger.return_value = logger_mock
         self._init_context(debug_enabled=True)
 
         with boddle():
             self.assertEqual(rpcserver.debug_enabled, True)
-            self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.DEBUG)
             self.assertTrue(rpcserver.is_debug_enabled())
+            logger_mock.setLevel.assert_called()
 
     def test_configure_debug_disabled(self):
         self._init_context(debug_enabled=False)
@@ -502,6 +494,19 @@ class RpcServerTests(unittest.TestCase):
             d = json.loads(rpcserver.get_drivers())
             logging.debug('Drivers: %s' % d)
             self.assertEqual(len(d), 2)
+
+    @patch("rpcserver.CleepConf")
+    def test_reload_auth(self, cleep_conf_mock):
+        is_auth_enabled_mock = Mock(return_value=True)
+        cleep_conf_mock.return_value.is_auth_enabled = is_auth_enabled_mock
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
+        }
+        self._init_context(get_drivers_gpio_exception=True)
+
+        rpcserver.reload_auth()
+
+        self.assertEqual(is_auth_enabled_mock.call_count, 2)
 
     @patch('rpcserver.bottle')
     def test_upload(self, mock_bottle):
