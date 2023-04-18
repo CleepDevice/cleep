@@ -737,6 +737,19 @@ def get_events():
 
     return json.dumps(events)
 
+@app.route("/commands", method="POST")
+def get_commands():
+    """
+    Return all commands
+
+    Returns:
+        list: list of commands
+    """
+    commands = inventory.get_module_commands(None)
+    logger.debug("Commands: %s", commands)
+
+    return json.dumps(commands)
+
 
 @app.route("/config", method="POST")
 @authenticate()

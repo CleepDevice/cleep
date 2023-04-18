@@ -709,7 +709,10 @@ class Inventory(Cleep):
                 ['command1', 'command2', ...]
 
         """
-        return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
+        if module is not None:
+            return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
+
+        return {module_name:module_instance.get_module_commands() for (module_name, module_instance) in self.__modules_instances.items()}
 
     def is_module_loaded(self, module):
         """
