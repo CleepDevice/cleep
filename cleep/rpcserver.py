@@ -32,6 +32,7 @@ from gevent import monkey
 
 monkey.patch_all()
 import bottle
+import socket
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
 from cleep.libs.configs.cleepconf import CleepConf
@@ -44,6 +45,7 @@ HTML_DIR = os.path.join(BASE_DIR, "html")
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
 CLEEP_CACHE = None
+LOCAL_ADDRS = ["127.0.0.1", "localhost", socket.gethostbyname(socket.gethostname())]
 
 # globals
 polling = 0
@@ -275,7 +277,8 @@ def authenticate():
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if auth_enabled:
+            remote_addr = bottle.request.environ.get('HTTP_X_FORWARDED_FOR') or bottle.request.environ.get('REMOTE_ADDR')
+            if auth_enabled and remote_addr not in LOCAL_ADDRS:
                 account, password = bottle.request.auth or (None, None)
                 logger.debug("account=%s password=%s", account, password)
                 if account is None or not check_auth(account, password):
