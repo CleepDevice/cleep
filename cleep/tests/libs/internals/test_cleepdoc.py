@@ -606,7 +606,7 @@ class CleepDocTests(unittest.TestCase):
                         "formats": [],
                     },
                     {
-                        "description": "The second parameter. Defaults to None.\nSecond line of description should be indented.",
+                        "description": "The second parameter. Defaults to None. Second line of description should be indented.",
                         "name": "param2",
                         "type": "str",
                         "optional": True,
@@ -632,7 +632,7 @@ class CleepDocTests(unittest.TestCase):
                 ],
                 "returns": [
                     {
-                        "description": "True if successful, False otherwise.\nThe return type is optional and may be specified at the beginning of\nthe ``Returns`` section followed by a colon.\n\nThe ``Returns`` section may span multiple lines and paragraphs.\nFollowing lines should be indented to match the first line.\n\nThe ``Returns`` section supports any reStructuredText formatting,\nincluding literal blocks::\n\n    {\n        'param1': param1,\n        'param2': param2,\n        \"param3\": param3\n    }",
+                        "description": "True if successful, False otherwise. The return type is optional and may be specified at the beginning of the ``Returns`` section followed by a colon. The ``Returns`` section may span multiple lines and paragraphs. Following lines should be indented to match the first line. The ``Returns`` section supports any reStructuredText formatting, including literal blocks",
                         "formats": [
                             "{'param1': param1,'param2': param2,\"param3\": param3}"
                         ],
@@ -641,7 +641,7 @@ class CleepDocTests(unittest.TestCase):
                 ],
                 "raises": [
                     {
-                        "description": "The ``Raises`` section is a list of all exceptions\nthat are relevant to the interface.",
+                        "description": "The ``Raises`` section is a list of all exceptions that are relevant to the interface.",
                         "type": "AttributeError",
                     },
                     {

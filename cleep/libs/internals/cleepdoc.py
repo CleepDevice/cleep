@@ -12,10 +12,7 @@ CUSTOM_TAG = "custom"
 
 class CleepDoc:
     def __init__(self):
-        # set logger
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        # patterns
 
     def get_command_doc(self, command):
         """
@@ -61,6 +58,8 @@ class CleepDoc:
                     deprecated (str): Deprecation description if command is deprecated, None otherwise
                 }
 
+        Raises:
+            Exception: if error occured during command documentation parsing
         """
         parsed_doc = self.__parse_doc(command)
 
@@ -331,12 +330,11 @@ class CleepDoc:
         """
         returns = []
         for docstring_return in docstring_returns or []:
-            literals = self.__get_literal_blocks(docstring_return.description)
+            (literals, description) = self.__get_literal_blocks(docstring_return.description)
 
             returns.append(
                 {
-                    # "args": docstring_return.args,
-                    "description": docstring_return.description.strip(),
+                    "description": CleepDoc.clean_description(description),
                     "formats": literals,
                     "type": CleepDoc.str_to_type(docstring_return.type_name),
                 }
@@ -369,12 +367,11 @@ class CleepDoc:
         """
         params = []
         for docstring_param in docstring_params or []:
-            literals = self.__get_literal_blocks(docstring_param.description)
+            (literals, description) = self.__get_literal_blocks(docstring_param.description)
 
             params.append(
                 {
-                    # "args": docstring_param.args,
-                    "description": docstring_param.description.strip(),
+                    "description": CleepDoc.clean_description(description),
                     "name": docstring_param.arg_name.strip(),
                     "type": CleepDoc.str_to_type(docstring_param.type_name),
                     "optional": docstring_param.is_optional,
@@ -408,8 +405,7 @@ class CleepDoc:
         for docstring_raise in docstring_raises or []:
             raises.append(
                 {
-                    # "args": docstring_raise.args,
-                    "description": docstring_raise.description.strip(),
+                    "description": CleepDoc.clean_description(docstring_raise.description),
                     "type": CleepDoc.str_to_type(docstring_raise.type_name),
                 }
             )
@@ -492,19 +488,40 @@ class CleepDoc:
 
     def __get_literal_blocks(self, string):
         """
-        Get literal blocks from specified string
+        Get literal blocks from specified string and remove them from input string
 
         Args:
             string (str): string to search literals on
+
+        Returns:
+            tuple: found literals and string without literals::
+
+                (str, str)
+
         """
         literal_blocks = []
 
-        matches = re.findall(LITERAL_BLOCKS_REGEX, string)  # , re.DOTALL)
+        matches = re.findall(LITERAL_BLOCKS_REGEX, string)
         self.logger.debug("Literal matches for '%s': %s", string, matches)
         for match in matches:
             match = list(filter(None, match))[0]
+            string = string.replace(match, "")
             literal = match.strip().replace("\n", "")
             literal = re.sub(WHITE_SPACES_REGEX, "", literal)
             literal_blocks.append(literal)
 
-        return literal_blocks
+        return (literal_blocks, string)
+
+    @staticmethod
+    def clean_description(description):
+        """
+        Clean description removing consecutive carriage returns, :: dots from literals and
+        replacing single carriage return with space
+
+        Args:
+            description: string to clean
+
+        Returns:
+            str: updated description
+        """
+        return re.sub(r"\n(?=\n)|::", "", description).replace("\n", " ").strip()
