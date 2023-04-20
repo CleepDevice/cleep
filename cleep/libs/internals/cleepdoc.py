@@ -5,7 +5,7 @@ from ast import literal_eval
 from docstring_parser import parse, DocstringStyle, ParseError
 
 MIN_DESCRIPTION_LEN = 10
-LITERAL_BLOCKS_REGEX = r"::\s+(\{[^\}\{]*\}|\([^\)\(]*\))|(\[[^\]\[]*\])"
+LITERAL_BLOCKS_REGEX = r"::\s+(\{(?:(?!::).)*\}|\[(?:(?!::).)*\]|\((?:(?!::).)*\))"
 WHITE_SPACES_REGEX = r"(\s{2,}|\t+)"
 CUSTOM_TAG = "custom"
 
@@ -501,10 +501,9 @@ class CleepDoc:
         """
         literal_blocks = []
 
-        matches = re.findall(LITERAL_BLOCKS_REGEX, string)
+        matches = re.findall(LITERAL_BLOCKS_REGEX, string, re.DOTALL)
         self.logger.debug("Literal matches for '%s': %s", string, matches)
         for match in matches:
-            match = list(filter(None, match))[0]
             string = string.replace(match, "")
             literal = match.strip().replace("\n", "")
             literal = re.sub(WHITE_SPACES_REGEX, "", literal)
