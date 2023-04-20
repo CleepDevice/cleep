@@ -1273,7 +1273,7 @@ class CleepRenderer(CleepModule):
 
 
 
-class CleepExternalBus(Cleep):
+class CleepExternalBus(CleepModule):
     """
     Base Cleep class for external bus implementation
     """
@@ -1286,7 +1286,7 @@ class CleepExternalBus(Cleep):
             debug_enabled (bool): flag to set debug level to logger.
         """
         # init cleep
-        Cleep.__init__(self, bootstrap, debug_enabled)
+        CleepModule.__init__(self, bootstrap, debug_enabled)
 
         # store rpc config
         self.rpc_config = bootstrap.get('rpc_config', {})
