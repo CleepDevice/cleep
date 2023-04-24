@@ -14,6 +14,8 @@ from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
+class CustomException(Exception):
+    pass
 
 class DummyApp:
     def command_without_doc(self):
@@ -730,9 +732,7 @@ class CleepDocTests(unittest.TestCase):
             {
                 "valid": True,
                 "errors": [],
-                "warnings": [
-                    "[raise custom<CustomException>] It is not adviced to use custom type. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
-                ],
+                "warnings": [],
             },
         )
 
@@ -830,7 +830,7 @@ class CleepDocTests(unittest.TestCase):
             valid,
             {
                 "errors": [
-                    "[arg param] Default value differs (from doc hello, from function 123)",
+                    "[arg param] Default value differs: from doc hello, from function 123. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html",
                 ],
                 "valid": False,
                 "warnings": [],
@@ -847,7 +847,7 @@ class CleepDocTests(unittest.TestCase):
             valid,
             {
                 "errors": [
-                    "[arg param] Optional flag is missing in arg documentation",
+                    "[arg param] Optional flag is missing in arg documentation. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html",
                 ],
                 "valid": False,
                 "warnings": [],
@@ -1112,9 +1112,7 @@ class CleepDocTests(unittest.TestCase):
             {
                 "valid": True,
                 "errors": [],
-                "warnings": [
-                    "[raise custom<CustomException>] It is not adviced to use custom type. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
-                ],
+                "warnings": [],
             },
         )
 

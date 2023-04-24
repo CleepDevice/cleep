@@ -183,7 +183,7 @@ class CleepDoc:
             and func_def != doc_def
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] Default value differs (from doc {doc_def}, from function {func_def})"
+                f"[arg {doc_arg['name']}] Default value differs: from doc {doc_def}, from function {func_def}. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
             )
 
         # check is optional flag
@@ -193,7 +193,7 @@ class CleepDoc:
             and doc_arg["optional"] in (None, False)
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] Optional flag is missing in arg documentation"
+                f"[arg {doc_arg['name']}] Optional flag is missing in arg documentation. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
             )
 
         # check formats
@@ -272,11 +272,6 @@ class CleepDoc:
             warnings (list): list of analyze warnings
         """
         self.logger.debug("Check raise: %s", doc_raise)
-        # check type
-        if CUSTOM_TAG in doc_raise["type"]:
-            warnings.append(
-                f"[raise {doc_raise['type']}] It is not adviced to use custom type. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
-            )
 
         # check description
         if len(doc_raise["description"]) == 0:
@@ -438,12 +433,11 @@ class CleepDoc:
         Returns:
             any: real type according to input string
         """
-
         def is_builtin_class(exp):
             try:
                 eval(exp)
                 return True
-            except Exception as e:
+            except Exception:
                 return False
 
         if type_str is None:
