@@ -160,6 +160,8 @@ class CleepDoc:
             warnings.append(
                 f"[arg {doc_arg['name']}] It is not adviced to use custom types. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
             )
+        if doc_arg["type"] == "None":
+            errors.append(f"[arg {doc_arg['name']}] Argument type is missing")
 
         # check description
         if len(doc_arg["description"]) == 0:

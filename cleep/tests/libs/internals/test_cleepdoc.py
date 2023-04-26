@@ -173,6 +173,15 @@ class DummyApp:
         """
         pass
 
+    def command_arg_missing_type(self, param):
+        """
+        Short description
+
+        Args:
+            param: custom type param
+        """
+        pass
+
     def command_arg_no_description(self, param):
         """
         Short description
@@ -802,6 +811,23 @@ class CleepDocTests(unittest.TestCase):
                 "warnings": [
                     "[arg param] It is not adviced to use custom types. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
                 ],
+            },
+        )
+
+    def test_is_command_doc_valid_arg_missing_type(self):
+        cmd = getattr(self.dummy, "command_arg_missing_type")
+
+        valid = self.cd.is_command_doc_valid(cmd)
+        logging.debug("Result: %s", valid)
+
+        self.assertDictEqual(
+            valid,
+            {
+                "errors": [
+                    "[arg param] Argument type is missing",
+                ],
+                "valid": False,
+                "warnings": [],
             },
         )
 
