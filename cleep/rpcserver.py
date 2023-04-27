@@ -679,7 +679,8 @@ def get_modules():
         modules = get_modules_from_inventory(installable=installable)
         logger.debug("Installable modules: %s", modules)
 
-    return json.dumps(modules)
+    resp = MessageResponse(data=modules)
+    return resp.to_dict()
 
 
 @app.route("/devices", method="POST")
@@ -693,7 +694,8 @@ def get_devices():
     devices = get_devices_from_inventory()
     logger.debug("Devices: %s", devices)
 
-    return json.dumps(devices)
+    resp = MessageResponse(data=devices)
+    return resp.to_dict()
 
 
 @app.route("/renderers", method="POST")
@@ -707,7 +709,8 @@ def get_renderers():
     renderers = get_renderers_from_inventory()
     logger.debug("Renderers: %s", renderers)
 
-    return json.dumps(renderers)
+    resp = MessageResponse(data=renderers)
+    return resp.to_dict()
 
 
 @app.route("/drivers", method="POST")
@@ -721,7 +724,8 @@ def get_drivers():
     drivers = get_drivers_from_inventory()
     logger.debug("Drivers: %s", drivers)
 
-    return json.dumps(drivers)
+    resp = MessageResponse(data=drivers)
+    return resp.to_dict()
 
 
 @app.route("/events", method="POST")
@@ -735,7 +739,8 @@ def get_events():
     events = get_events_from_inventory()
     logger.debug("Used events: %s", events)
 
-    return json.dumps(events)
+    resp = MessageResponse(data=events)
+    return resp.to_dict()
 
 @app.route("/commands", method="POST")
 def get_commands():
@@ -748,7 +753,8 @@ def get_commands():
     commands = inventory.get_module_commands(None)
     logger.debug("Commands: %s", commands)
 
-    return json.dumps(commands)
+    resp = MessageResponse(data=commands)
+    return resp.to_dict()
 
 @app.route("/doc/check/<app>", method="GET")
 def check_app_documentation(app):
@@ -824,25 +830,27 @@ def get_config():
             "drivers": get_drivers_from_inventory(),
         }
 
+    resp = MessageResponse()
     try:
         # update volatile data
         modules_configs = inventory.get_modules_configs()
         for module_name, module in CLEEP_CACHE["modules"].items():
             module["config"] = modules_configs[module_name]
 
-        return json.dumps(
-            {
-                "modules": CLEEP_CACHE["modules"],
-                "devices": get_devices_from_inventory(),
-                "events": CLEEP_CACHE["events"],
-                "renderers": CLEEP_CACHE["renderers"],
-                "drivers": CLEEP_CACHE["drivers"],
-            }
-        )
+        resp.data = {
+            "modules": CLEEP_CACHE["modules"],
+            "devices": get_devices_from_inventory(),
+            "events": CLEEP_CACHE["events"],
+            "renderers": CLEEP_CACHE["renderers"],
+            "drivers": CLEEP_CACHE["drivers"],
+        }
+
     except Exception:
         logger.exception("Error getting config")
+        resp.error = True
+        resp.message("Error getting configuration")
 
-    return json.dumps({})
+    return resp.to_dict()
 
 
 @app.route("/registerpoll", method="POST")
@@ -887,29 +895,26 @@ def poll():
     with pollcounter():
         params = dict(bottle.request.json or {})
         logger.trace("Poll params: %s", params)
-        # response content type.
         bottle.response.content_type = "application/json"
 
-        # init message
-        message = {"error": True, "data": None, "message": ""}
-
         # process poll
+        resp = MessageResponse(error=True, data=None, message="")
         if not bus:
             # bus not available yet
             logger.debug("polling: bus not available")
-            message["message"] = "Bus not available"
+            resp.message = "Bus not available"
             time.sleep(1.0)
 
         elif "pollKey" not in params:
             # rpc client no registered yet
             logger.debug("polling: registration key must be sent to poll request")
-            message["message"] = "Polling key is missing"
+            resp.message = "Polling key is missing"
             time.sleep(1.0)
 
         elif not bus.is_subscribed(f'rpc-{params["pollKey"]}'):
             # rpc client no registered yet
             logger.debug("polling: rpc client must be registered before polling")
-            message["message"] = "Client not registered"
+            resp.message = "Client not registered"
             time.sleep(1.0)
 
         else:
@@ -920,22 +925,21 @@ def poll():
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
 
                 # prepare output
-                message["error"] = False
-                message["data"] = msg["message"]
-                logger.debug("polling received %s", message)
+                resp.error = False
+                resp.data = msg["message"]
+                logger.debug("polling received %s", resp)
 
             except NoMessageAvailable:
-                message["message"] = "No message available"
+                resp.message = "No message available"
                 time.sleep(1.0)
 
             except Exception:
                 logger.exception("Poll exception")
                 crash_report.report_exception({"message": "Poll exception"})
-                message["message"] = "Internal error"
+                resp.message = "Internal error"
                 time.sleep(5.0)
 
-    # and return it
-    return json.dumps(message)
+    return resp.to_dict()
 
 
 @app.route("/<route:re:.*>", method="POST")

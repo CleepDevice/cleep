@@ -207,7 +207,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
      * @return boolean: true if error was handled, false otherwise
      */
     self._handleRespErrors = function(resp, defer) {
-        if (resp && resp.data && resp.data.error) {
+        if (resp?.data?.error) {
             if (resp.data.message.match(self.invalidApplicationRegexp)) {
                 // specific case with invalid app loaded, redirect to apps list
                 $window.location.href = '#!/modules';

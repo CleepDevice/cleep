@@ -31,7 +31,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
         return rpcService.getConfig()
             .then(function(resp) {
-                config = resp;
+                config = resp.data;
                 return self.refreshModulesUpdates();
             })
             .then(function() {
@@ -440,8 +440,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         } else {
             // installable modules not loaded, load it
             rpcService.getModules(true)
-                .then(function(modules) {
-                    self.__syncObject(self.installableModules, modules);
+                .then(function(resp) {
+                    self.__syncObject(self.installableModules, resp.data);
                 }, function() {
                     deferred.reject();
                 });
@@ -518,8 +518,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var deferred = $q.defer();
 
         rpcService.getDevices()
-            .then(function(devices) {
-                self._setDevices(devices);
+            .then(function(resp) {
+                self._setDevices(resp.data);
                 deferred.resolve(self.devices);
             }, function() {
                 deferred.reject();
@@ -648,8 +648,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var deferred = $q.defer();
 
         rpcService.getDrivers()
-            .then(function(drivers) {
-                self._setDrivers(drivers);
+            .then(function(resp) {
+                self._setDrivers(resp.data);
                 deferred.resolve(self.drivers);
             }, function() {
                 deferred.reject();
@@ -770,8 +770,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     $rootScope.$on('core.apps.updated', function(event, uuid, params) {
 		// refresh list of installable apps
         rpcService.getModules(true)
-            .then(function(modules) {
-                self.__syncObject(self.installableModules, modules);
+            .then(function(resp) {
+                self.__syncObject(self.installableModules, resp.data);
             }, function() {
                 deferred.reject();
             });
