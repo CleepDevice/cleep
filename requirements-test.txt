@@ -1,3 +1,4 @@
-boddle>=0.2.9
-responses>=0.23.1
+boddle==0.2.9
+responses==0.23.1
+coverage==6.5.0
 
