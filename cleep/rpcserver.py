@@ -750,6 +750,50 @@ def get_commands():
 
     return json.dumps(commands)
 
+@app.route("/doc/check/<app>", method="GET")
+def check_app_documentation(app):
+    """
+    Check application documentation
+    """
+    resp = MessageResponse()
+    try:
+        resp.data = inventory.check_module_documentation(app)
+        has_error = any([command_doc["valid"] is False for command_doc in resp.data.values()])
+        if has_error:
+            resp.error = True
+            resp.message = "Invalid application documentation"
+    except Exception as error:
+        logging.exception("Error checking application '%s' documentation", app)
+        resp.error = True
+        resp.message = str(error)
+
+    return resp.to_dict()
+
+@app.route("/doc/<app>", method="GET")
+def get_app_documentation(app):
+    """
+    Return documentation for specified application
+
+    Returns:
+        dict: application doc::
+
+            {
+                command (dict): command documentation
+                ...
+            }
+
+    """
+    resp = MessageResponse()
+    try:
+        doc = inventory.get_module_documentation(app)
+        logger.debug("%s documentation: %s", app, doc)
+        resp.data = doc
+    except Exception as error:
+        logger.exception("Unable to get application '%s' documentation: %s", app)
+        resp.error = True
+        resp.message = str(error)
+
+    return resp.to_dict()
 
 @app.route("/config", method="POST")
 @authenticate()
@@ -932,7 +976,7 @@ def index():
 
 @app.route("/logs", method="GET")
 @authenticate()
-def logs():  # pragma: no cover
+def logs(): # pragma: no cover
     """
     Serve log file
     """

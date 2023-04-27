@@ -13,7 +13,7 @@ from cleep.libs.internals.rendererprofile import RendererProfile
 from cleep.common import MessageResponse
 import unittest
 import logging
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch, ANY
 import time
 import io
 import copy
@@ -865,6 +865,48 @@ class TestsCleepModule(unittest.TestCase):
 
         self.assertEqual(len(commands), 1)
         self.assertTrue('my_command' in commands)
+
+    def test_get_documentation(self):
+        self._init_context()
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
+
+            result = self.r.get_documentation()
+
+            cleepdoc_mock.return_value.get_command_doc.assert_called_with(self.r.my_command)
+            self.assertDictEqual(result, {"my_command": "command doc"})
+
+    def test_get_documentation_use_cache(self):
+        self._init_context()
+        self.r._CleepModule__app_doc = "cached doc"
+
+        result = self.r.get_documentation()
+
+        self.assertEqual(result, "cached doc")
+
+    def test_get_documentation_disable_cache(self):
+        self._init_context()
+        self.r._CleepModule__app_doc = "cached doc"
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
+
+            result = self.r.get_documentation(no_cache=True)
+
+            cleepdoc_mock.return_value.get_command_doc.assert_called_with(self.r.my_command)
+            self.assertDictEqual(result, {"my_command": "command doc"})
+
+    def test_check_documentation(self):
+        self._init_context()
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.is_command_doc_valid.return_value = "command validity"
+
+            result = self.r.check_documentation()
+
+            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(self.r.my_command)
+            self.assertDictEqual(result, {"my_command": "command validity"})
 
     def test_send_command_advanced(self):
         self._init_context()

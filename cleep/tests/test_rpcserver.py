@@ -414,13 +414,79 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(len(args[0]), 1)
 
 
-    def test_events(self):
+    def test_get_events(self):
         self._init_context()
 
         with boddle():
             e = rpcserver.get_events()
             logging.debug('Events: %s' % e)
             self.assertEqual(e, json.dumps(self.EVENTS))
+
+    def test_get_commands(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        commands = {"module1": ["command1"], "module2": ["command2", "command3"]}
+        self.inventory.get_module_commands.return_value = commands
+
+        with boddle():
+            c = rpcserver.get_commands()
+            logging.debug("Commands: %s", c)
+            self.assertEqual(c, json.dumps(commands))
+
+    def test_check_app_documentation_with_valid_doc(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.return_value = {"command": { "valid": True}}
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {'error': False, 'message': '', 'data': {'command': {'valid': True}}})
+
+    def test_check_app_documentation_with_exception(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.side_effect = Exception("Error")
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {'error': True, 'message': "Error", 'data': None})
+
+    def test_check_app_documentation_with_invalid_doc(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.return_value = {"command": { "valid": False}}
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {'error': True, 'message': 'Invalid application documentation', 'data': {'command': {'valid': False}}})
+
+    def test_get_app_documentation(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.get_module_documentation.return_value = "documentation"
+
+        with boddle():
+            resp = rpcserver.get_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {'error': False, 'message': '', 'data': 'documentation'})
+
+    def test_get_app_documentation_with_exception(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.get_module_documentation.side_effect = Exception("Error")
+
+        with boddle():
+            resp = rpcserver.get_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {'error': True, 'message': 'Error', 'data': None})
 
     def test_modules(self):
         self._init_context()

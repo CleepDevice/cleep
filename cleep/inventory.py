@@ -493,9 +493,8 @@ class Inventory(Cleep):
                 ]
 
         Raises:
-            CommandError: if module doesn't exists
+            CommandError: if application doesn't exist
         """
-        # check values
         if module_name not in self.modules:
             raise InvalidParameter('Application "%s" doesn\'t exist' % module_name)
 
@@ -713,6 +712,49 @@ class Inventory(Cleep):
             return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
 
         return {module_name:module_instance.get_module_commands() for (module_name, module_instance) in self.__modules_instances.items()}
+
+    def get_module_documentation(self, module_name, no_cache=False):
+        """
+        Return module documentation
+
+        Args:
+            module_name (str): module name
+            no_cache (bool): True to not use cached documentation
+
+        Returns:
+            dict: module documentation::
+
+                {
+                    command (dict): command documentation
+                    ...
+                }
+
+        """
+        if module_name not in self.__modules_instances:
+            raise InvalidParameter('Application "%s" is not installed' % module_name)
+
+        return self.__modules_instances[module_name].get_documentation(no_cache)
+
+    def check_module_documentation(self, module_name):
+        """
+        Return module documentation validity
+
+        Args:
+            module_name (str): module name
+
+        Returns:
+            dict: module documentation validity::
+
+                {
+                    command (dict): command documentation validity
+                    ...
+                }
+
+        """
+        if module_name not in self.__modules_instances:
+            raise InvalidParameter('Application "%s" is not installed' % module_name)
+
+        return self.__modules_instances[module_name].check_documentation()
 
     def is_module_loaded(self, module):
         """

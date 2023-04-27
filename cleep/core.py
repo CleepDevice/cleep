@@ -17,6 +17,7 @@ from cleep.exception import InvalidParameter, MissingParameter
 from cleep.common import ExecutionStep, CORE_MODULES, MessageResponse
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
+from cleep.libs.internals.cleepdoc import CleepDoc
 
 
 __all__ = ['Cleep', 'CleepRpcWrapper', 'CleepModule', 'CleepResources', 'CleepRenderer']
@@ -453,7 +454,8 @@ class Cleep(BusClient):
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
                     'start', 'stop', 'push', 'on_event',
-                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced'
+                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced',
+                    'get_documentation', 'check_documentation',
                 ):
                 # filter bus commands
                 members.remove(member)
@@ -753,6 +755,9 @@ class CleepModule(Cleep):
         # init cleep 
         Cleep.__init__(self, bootstrap, debug_enabled)
 
+        # members
+        self.__app_doc = None
+
         # define app paths
         self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', self.__class__.__name__))
         self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
@@ -1013,6 +1018,71 @@ class CleepModule(Cleep):
         members = Cleep.get_module_commands(self)
         members.remove('get_module_devices')
         return members
+
+    def get_documentation(self, no_cache=False):
+        """
+        Return app documentation
+
+        Args:
+            no_cache (bool, optional): True to bypass cached documentation. Defaults to False.
+
+        Returns:
+            dict: app documentation::
+
+                {
+                    command name (dict): dict of command documentation
+                        {
+                            descriptions (dict): command descriptions (short and long)
+                            args (list): list of command arguments
+                            returns (list): list of command returned values
+                            raises (list): list of exception
+                        }
+                    ...
+                }
+
+        """
+        if self.__app_doc and not no_cache:
+            return self.__app_doc
+
+        cleep_doc = CleepDoc()
+        app_doc = {}
+
+        commands = self.get_module_commands()
+        for command_name in commands:
+            command_pointer = getattr(self, command_name)
+            app_doc[command_name] = cleep_doc.get_command_doc(command_pointer)
+        self.__app_doc = app_doc
+
+        return self.__app_doc
+
+    def check_documentation(self):
+        """
+        Check app documentation
+
+        Returns:
+            dict: app errors and warnings::
+
+                {
+                    command name (dict): check result for specified command
+                        {
+                            valid (bool): True if valid
+                            errors (list): list of errors
+                            warnings (list): list of warnings
+                        }
+                    ...
+                }
+
+        """
+        cleep_doc = CleepDoc()
+        app_doc_validity = {}
+
+        commands = self.get_module_commands()
+        for command_name in commands:
+            command_pointer = getattr(self, command_name)
+            command_doc_valid = cleep_doc.is_command_doc_valid(command_pointer)
+            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(command_pointer)
+
+        return app_doc_validity
 
     def send_command_advanced(self, command, to, params=None, timeout=3.0, raise_exc=False):
         """

@@ -291,7 +291,7 @@ class CleepDoc:
         """
         raw_doc = getdoc(command)
         if raw_doc is None or len(raw_doc.strip()) == 0:
-            raise Exception("Documentation must be provided")
+            raise Exception("There is no documentation for command '%s'" % command.__name__)
 
         try:
             parsed_doc = parse(raw_doc, style=DocstringStyle.GOOGLE)
