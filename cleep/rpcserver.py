@@ -761,9 +761,12 @@ def check_app_documentation(app):
     """
     Check application documentation
     """
+    query = dict(bottle.request.query or {})
+    with_details = True if query.get("details") else False
+
     resp = MessageResponse()
     try:
-        resp.data = inventory.check_module_documentation(app)
+        resp.data = inventory.check_module_documentation(app, with_details)
         has_error = any([command_doc["valid"] is False for command_doc in resp.data.values()])
         if has_error:
             resp.error = True

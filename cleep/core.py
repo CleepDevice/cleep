@@ -1055,9 +1055,12 @@ class CleepModule(Cleep):
 
         return self.__app_doc
 
-    def check_documentation(self):
+    def check_documentation(self, with_details):
         """
         Check app documentation
+
+        Args:
+            with_details (bool): append check details to result
 
         Returns:
             dict: app errors and warnings::
@@ -1080,7 +1083,7 @@ class CleepModule(Cleep):
         for command_name in commands:
             command_pointer = getattr(self, command_name)
             command_doc_valid = cleep_doc.is_command_doc_valid(command_pointer)
-            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(command_pointer)
+            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(command_pointer, with_details)
 
         return app_doc_validity
 

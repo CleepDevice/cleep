@@ -76,12 +76,13 @@ class CleepDoc:
             "deprecated": self.__docstring_deprecation_to_dict(parsed_doc.deprecation),
         }
 
-    def is_command_doc_valid(self, command):
+    def is_command_doc_valid(self, command, with_details=False):
         """
         Return command doc validation status
 
         Args:
-            command (method): command as return by getattr function
+            command (function): command as return by getattr function
+            with_details (bool): True to return detailed checks (by field). Defaults to False.
 
         Returns:
             dict: command validation status::
@@ -93,8 +94,19 @@ class CleepDoc:
                 }
 
         """
+        details = {
+            "global": {
+                "errors": [],
+                "warnings": [],
+            },
+            "args": {},
+            "returns": {},
+            "raises": {},
+        }
+        has_error = False
         errors = []
         warnings = []
+
         try:
             doc = self.get_command_doc(command)
 
@@ -107,65 +119,118 @@ class CleepDoc:
                 len(doc["descriptions"]["short"] or "") <= MIN_DESCRIPTION_LEN
                 and len(doc["descriptions"]["long"] or "") <= MIN_DESCRIPTION_LEN
             ):
-                errors.append(
-                    f"[descriptions] At least one description must be longer than {MIN_DESCRIPTION_LEN} chars"
-                )
+                has_error = True
+                msg = f"At least one description must be longer than {MIN_DESCRIPTION_LEN} chars"
+                details["global"]["errors"].append(msg)
+                errors.append(f"[global descriptions] {msg}")
 
             # args
             if len(doc["args"]) != len(command_args):
+                has_error = True
                 doc_args = [arg["name"] for arg in doc["args"]]
-                errors.append(
-                    f"[args] Command arguments differ from declaration (from doc {doc_args}, from command {list(command_args.keys())})"
-                )
+                msg = f"Command arguments differs from doc {doc_args} and from command declaration {list(command_args.keys())}"
+                details["global"]["errors"].append(msg)
+                errors.append(f"[global args] {msg}")
             else:
                 for arg in doc["args"]:
-                    self.__check_arg(arg, command_args, errors, warnings)
+                    check = self.__check_arg(arg, command_args)
+                    arg_name = arg.get("name", "None")
+                    details["args"][arg_name] = check
+                    if self.__fill_errors_and_warnings(check, f"arg {arg_name}", errors, warnings):
+                        has_error = True
 
             # returns
             for return_ in doc["returns"]:
-                self.__check_return(return_, errors, warnings)
+                check = self.__check_return(return_)
+                return_type = return_.get("type", "None")
+                details["returns"][return_type] = check
+                if self.__fill_errors_and_warnings(check, f"return {return_type}", errors, warnings):
+                    has_error = True
 
             # raises
             for raise_ in doc["raises"]:
-                self.__check_raise(raise_, errors, warnings)
+                check = self.__check_raise(raise_)
+                raise_type = raise_.get("type", "None")
+                details["raises"][raise_type] = check
+                if self.__fill_errors_and_warnings(check, f"raise {raise_type}", errors, warnings):
+                    has_error = True
 
         except Exception as error:
-            errors.append(f"[doc] Error parsing documentation: {str(error)}")
+            self.logger.exception("Error occured during doc parsing")
+            has_error = True
+            msg = f"Error parsing documentation: {str(error)}"
+            details["global"]["errors"].append(msg)
+            errors.append(f"[global] {msg}")
 
-        return {
-            "valid": len(errors) == 0,
+        out = {
+            "valid": not has_error,
             "errors": errors,
             "warnings": warnings,
         }
+        if with_details:
+            out["details"] = details
+        return out
 
-    def __check_arg(self, doc_arg, command_args, errors, warnings):
+    def __fill_errors_and_warnings(self, check_result, check_type, errors, warnings):
+        """
+        Fill errors and warnings list with check results
+
+        Args:
+            check_result (dict): result of check function
+            check_type (str): must be one of 'arg', 'return', 'raise'
+            errors (list): list of errors to fill
+            warnings (list): list of warnings to fill
+
+        Returns:
+            bool: True if errors found in check results
+        """
+        has_error = False
+
+        for error in check_result.get("errors", []):
+            has_error = True
+            errors.append(f"[{check_type}] {error}")
+
+        for warning in check_result.get("warnings", []):
+            warnings.append(f"[{check_type}] {warning}")
+
+        return has_error
+
+    def __check_arg(self, doc_arg, command_args):
         """
         Check documentation argument
 
         Args:
             doc_arg (dict): argument data from parsed doc
             command_args (list): list of arguments from command signature
-            errors (list): list of analyze errors
-            warnings (list): list of analyze warnings
+
+        Returns:
+            dict: dict of arg with errors or warnings::
+
+                {
+                    errors: [],
+                    warnings: [],
+                }
+
         """
         self.logger.debug("Check arg: %s", doc_arg)
+        errors = []
+        warnings = []
+
         # check arg exist in signature
         if doc_arg["name"] not in command_args:
-            errors.append(
-                f"[arg {doc_arg['name']}] This argument does not exist in command signature"
-            )
+            errors.append("This argument does not exist in command signature")
 
         # check type
         if CUSTOM_TAG in doc_arg["type"]:
             warnings.append(
-                f"[arg {doc_arg['name']}] It is not adviced to use custom types. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
+                "It is not adviced to use custom types. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
             )
         if doc_arg["type"] == "None":
-            errors.append(f"[arg {doc_arg['name']}] Argument type is missing")
+            errors.append("Argument type is missing")
 
         # check description
         if len(doc_arg["description"]) == 0:
-            errors.append(f"[arg {doc_arg['name']}] Argument description is missing")
+            errors.append("Argument description is missing")
 
         # check default value
         doc_def = doc_arg["default"]
@@ -185,99 +250,134 @@ class CleepDoc:
             and func_def != doc_def
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] Default value differs: from doc {doc_def}, from function {func_def}. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
+                f"Default value differs: from doc {doc_def}, from function {func_def}. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
             )
 
-        # check is optional flag
+        # check optional flag
         if (
             doc_arg["name"] in command_args
             and func_def != Signature.empty
             and doc_arg["optional"] in (None, False)
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] Optional flag is missing in arg documentation. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
+                "Optional flag is missing in arg documentation. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html"
             )
 
         # check formats
         if len(doc_arg["formats"]) > 1:
             warnings.append(
-                f"[arg {doc_arg['name']}] It's not adviced to publish more than one format for an argument"
+                "It's not adviced to publish more than one format for an argument"
             )
         if (
             doc_arg["type"] in ("tuple", "dict", "list")
             and len(doc_arg["formats"]) == 0
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] It's mandatory to explain {doc_arg['type']} content for complex argument"
+                f"It's mandatory to explain {doc_arg['type']} content for complex argument"
             )
         if (
             doc_arg["type"] in ("int", "float", "bool", "str")
             and len(doc_arg["formats"]) != 0
         ):
             errors.append(
-                f"[arg {doc_arg['name']}] Simple argument of type {doc_arg['type']} should not be explained"
+                f"Simple argument of type {doc_arg['type']} should not be explained"
             )
 
-    def __check_return(self, doc_return, errors, warnings):
+        return {
+            "errors": errors,
+            "warnings": warnings,
+        }
+
+
+    def __check_return(self, doc_return):
         """
         Check documentation return
 
         Args:
             doc_return (dict): return data from parsed doc
-            errors (list): list of analyze errors
-            warnings (list): list of analyze warnings
+
+        Returns:
+            dict: dict of arg with errors or warnings::
+
+                {
+                    errors: [],
+                    warnings: [],
+                }
+
         """
         self.logger.debug("Check return: %s", doc_return)
+        errors = []
+        warnings = []
+
         # check type
         if doc_return["type"] in ("None", None):
             errors.append(
-                f"[return {doc_return['type']}] Return type is mandatory. Please specify one"
+                "Return type is mandatory. Please specify one"
             )
         if CUSTOM_TAG in doc_return["type"]:
             warnings.append(
-                f"[return {doc_return['type']}] It is not adviced to use custom type. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
+                "It is not adviced to use custom type. Prefer using built-in ones (int, float, bool, str, tuple, dict, list)"
             )
 
         # check description
         if len(doc_return["description"]) == 0:
             errors.append(
-                f"[return {doc_return['type']}] Return description is missing"
+                "Return description is missing"
             )
 
         # check formats
         if len(doc_return["formats"]) > 1:
             warnings.append(
-                f"[arg {doc_return['type']}] It's not adviced to publish more than one format for a returned value"
+                "It's not adviced to publish more than one format for a returned value"
             )
         if (
             doc_return["type"] in ("tuple", "dict", "list")
             and len(doc_return["formats"]) == 0
         ):
             errors.append(
-                f"[return {doc_return['type']}] It's mandatory to explain {doc_return['type']} content for complex returned data"
+                f"It's mandatory to explain {doc_return['type']} content for complex returned data"
             )
         if (
             doc_return["type"] in ("int", "float", "bool", "str")
             and len(doc_return["formats"]) != 0
         ):
             errors.append(
-                f"[return {doc_return['type']}] Simple returned data of type {doc_return['type']} should not be explained"
+                f"Simple returned data of type {doc_return['type']} should not be explained"
             )
 
-    def __check_raise(self, doc_raise, errors, warnings):
+        return {
+            "errors": errors,
+            "warnings": warnings,
+        }
+
+    def __check_raise(self, doc_raise):
         """
         Check documentation raises
 
         Args:
             doc_raise (dict): raise data from parsed doc
-            errors (list): list of analyze errors
-            warnings (list): list of analyze warnings
+
+        Returns:
+            dict: dict of arg with errors or warnings::
+
+                {
+                    errors: [],
+                    warnings: [],
+                }
+
         """
         self.logger.debug("Check raise: %s", doc_raise)
+        errors = []
+        warnings = []
 
         # check description
         if len(doc_raise["description"]) == 0:
-            errors.append(f"[raise {doc_raise['type']}] Raise description is missing")
+            errors.append("Raise description is missing")
+
+        return {
+            "errors": errors,
+            "warnings": warnings,
+        }
 
     def __parse_doc(self, command):
         """

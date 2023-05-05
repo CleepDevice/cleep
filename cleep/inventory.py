@@ -735,12 +735,13 @@ class Inventory(Cleep):
 
         return self.__modules_instances[module_name].get_documentation(no_cache)
 
-    def check_module_documentation(self, module_name):
+    def check_module_documentation(self, module_name, with_details=False):
         """
         Return module documentation validity
 
         Args:
             module_name (str): module name
+            with_details (bool): add check details to output
 
         Returns:
             dict: module documentation validity::
@@ -754,7 +755,7 @@ class Inventory(Cleep):
         if module_name not in self.__modules_instances:
             raise InvalidParameter('Application "%s" is not installed' % module_name)
 
-        return self.__modules_instances[module_name].check_documentation()
+        return self.__modules_instances[module_name].check_documentation(with_details)
 
     def is_module_loaded(self, module):
         """

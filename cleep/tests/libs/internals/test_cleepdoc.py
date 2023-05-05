@@ -444,7 +444,7 @@ class CleepDocTests(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             self.cd.get_command_doc(cmd)
 
-        self.assertEqual(str(cm.exception), "Documentation must be provided")
+        self.assertEqual(str(cm.exception), "There is no documentation for command 'command_without_doc'")
 
     def test_get_command_doc_with_arg(self):
         cmd = getattr(self.dummy, "command_with_arg")
@@ -675,7 +675,7 @@ class CleepDocTests(unittest.TestCase):
             {
                 "valid": False,
                 "errors": [
-                    "[descriptions] At least one description must be longer than 10 chars",
+                    "[global descriptions] At least one description must be longer than 10 chars",
                 ],
                 "warnings": [],
             },
@@ -692,7 +692,7 @@ class CleepDocTests(unittest.TestCase):
             {
                 "valid": False,
                 "errors": [
-                    "[doc] Error parsing documentation: Invalid 'command_without_descriptions' documentation content",
+                    "[global] Error parsing documentation: Invalid 'command_without_descriptions' documentation content",
                 ],
                 "warnings": [],
             },
@@ -755,7 +755,7 @@ class CleepDocTests(unittest.TestCase):
             valid,
             {
                 "errors": [
-                    "[args] Command arguments differ from declaration (from doc ['param1', 'param2', '*args', '**kwargs'], from command [])",
+                    "[global args] Command arguments differs from doc ['param1', 'param2', '*args', '**kwargs'] and from command declaration []",
                     "[return bool] Simple returned data of type bool should not be explained",
                 ],
                 "valid": False,
@@ -773,7 +773,7 @@ class CleepDocTests(unittest.TestCase):
             valid,
             {
                 "errors": [
-                    "[args] Command arguments differ from declaration (from doc ['param1'], from command [])"
+                    "[global args] Command arguments differs from doc ['param1'] and from command declaration []"
                 ],
                 "valid": False,
                 "warnings": [],
@@ -1001,7 +1001,7 @@ class CleepDocTests(unittest.TestCase):
                 "errors": [],
                 "valid": True,
                 "warnings": [
-                    "[arg tuple] It's not adviced to publish more than one format for a returned value",
+                    "[return tuple] It's not adviced to publish more than one format for a returned value",
                 ],
             },
         )
@@ -1153,6 +1153,59 @@ class CleepDocTests(unittest.TestCase):
             "errors": ["[raise Exception] Raise description is missing"],
             "warnings": []
         })
+
+    def test_is_command_doc_valid_with_details(self):
+        cmd = getattr(self.dummy, "command_arg_unnecessary_formats")
+
+        valid = self.cd.is_command_doc_valid(cmd, with_details=True)
+        logging.debug("Result: %s", valid)
+
+        self.assertDictEqual(
+            valid,
+            {
+                "errors": [
+                    "[arg param1] Simple argument of type str should not be explained",
+                    "[arg param2] Simple argument of type int should not be explained",
+                    "[arg param3] Simple argument of type float should not be explained",
+                    "[arg param4] Simple argument of type str should not be explained",
+                    "[arg param5] Simple argument of type str should not be explained",
+                    "[arg param6] Simple argument of type bool should not be explained",
+                ],
+                "valid": False,
+                "warnings": [],
+                "details": {
+                    'args': {
+                        'param1': {
+                            'errors': ['Simple argument of type str should not be explained'],
+                            'warnings': []
+                        },
+                        'param2': {
+                            'errors': ['Simple argument of type int should not be explained'],
+                            'warnings': []
+                        },
+                        'param3': {
+                            'errors': ['Simple argument of type float should not be explained'],
+                            'warnings': []
+                        },
+                        'param4': {
+                            'errors': ['Simple argument of type str should not be explained'],
+                            'warnings': []
+                        },
+                        'param5': {
+                            'errors': ['Simple argument of type str should not be explained'],
+                            'warnings': []
+                        },
+                        'param6': {
+                            'errors': ['Simple argument of type bool should not be explained'],
+                            'warnings': []
+                        }
+                    },
+                    'global': {'errors': [], 'warnings': []},
+                    'raises': {},
+                    'returns': {}
+                }
+            },
+        )
 
 
 if __name__ == "__main__":
