@@ -27,6 +27,7 @@ from passlib import __version__ as passlib_version
 from greenlet import __version__ as greenlet_version
 from requests import __version__ as requests_version
 
+
 LOG_FILE = '/var/log/cleep.log'
 LOG_SETTINGS = { 
     'version': 1,
@@ -56,7 +57,8 @@ LOG_SETTINGS = {
         }   
     },  
 }
-DRY_RUN_TIMEOUT = 10.0
+DRY_RUN_TIMEOUT = 6.0
+CI_DOC_TIMEOUT = 2.0
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -66,8 +68,8 @@ class ConfigException(Exception):
 
 
 def usage():
-    print('Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-r|--dryrun] [-h|--help]]')
-    print(' -d|--debug        : enable debug for specified module names (coma separated: "network,system")')
+    print('Cleep usage: cleep [-d <app names>|--debug=<app names>] [-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-r|--dryrun] [-h|--help]')
+    print(' -d|--debug        : enable debug for specified application names (coma separated: "network,system")')
     print(' -D|--debugcore    : enable debug for Cleep core')
     print(' -t|--trace        : enable debug for everything (all modules, all libraries...)')
     print(' -s|--stdout       : dump log in console instead of log file')
@@ -184,6 +186,18 @@ def dry_run_stop_server(server, inventory):
     inventory.unload_modules()
     server.stop()
 
+def generate_app_documentation(app_name):
+    """
+    Generate application documentation
+    """
+    import warnings
+    import requests
+    warnings.simplefilter("ignore")
+    requests.packages.urllib3.disable_warnings()
+
+    resp = requests.get(f'https://localhost/doc/check/{app_name}?details=1', verify=False)
+    print(resp.json())
+
 def get_rpc_config(config):
     """
     Return rpc config
@@ -230,8 +244,9 @@ if __name__ == '__main__':
         debug_modules = []
         log_stdout = False
         dry_run = False
+        ci_doc_app_name = None
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtNrv', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version'])
+        opts, args = getopt.getopt(argv, 'hsd:DtNrvc:', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version', 'cidoc='])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -248,6 +263,9 @@ if __name__ == '__main__':
                 readonly_enabled = False
             elif opt in ('-r', '--dryrun'):
                 dry_run = True
+            elif opt in ('-c', '--cidoc'):
+                ci_doc_app_name = arg
+                dry_run = True
             elif opt in ('v', '--version'):
                 print(VERSION)
                 sys.exit(0)
@@ -263,6 +281,9 @@ if __name__ == '__main__':
             LOG_SETTINGS['root']['level'] = logging.TRACE
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger('Cleep')
+        if ci_doc_app_name is not None:
+            # no logging during ci doc
+            logger.setLevel(logging.FATAL)
         logger.info('========== Cleep v%s started ==========' % VERSION)
 
         # create cleep filesystem singleton (will be saved in bootstrap context)
@@ -369,8 +390,12 @@ if __name__ == '__main__':
         rpcserver.configure(rpc_config, bootstrap, inventory, debug)
 
         if dry_run:
-            timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
-            timer.start()
+            timer_stop_server = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
+            timer_stop_server.start()
+        if ci_doc_app_name:
+            timer_generate_doc = Timer(CI_DOC_TIMEOUT, generate_app_documentation, [ci_doc_app_name])
+            timer_generate_doc.start()
+
         rpcserver.start()
 
     except getopt.GetoptError as error:
