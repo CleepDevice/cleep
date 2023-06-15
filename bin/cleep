@@ -3,6 +3,7 @@
 
 
 import os
+import json
 import sys
 import getopt
 import logging
@@ -57,8 +58,8 @@ LOG_SETTINGS = {
         }   
     },  
 }
-DRY_RUN_TIMEOUT = 6.0
-CI_DOC_TIMEOUT = 2.0
+DRY_RUN_TIMEOUT = 8.0
+CI_DOC_TIMEOUT = 4.0
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -188,29 +189,59 @@ def dry_run_stop_server(server, inventory):
 
 def generate_app_documentation(app_name):
     """
-    Generate application documentation
+    Generate application documentation (--cidoc command line flag)
     """
     import warnings
     import requests
     warnings.simplefilter("ignore")
     requests.packages.urllib3.disable_warnings()
 
-    resp = requests.get(f'https://localhost/doc/check/{app_name}?details=1', verify=False)
-    print(resp.json())
+    global exit_code
 
-def get_rpc_config(config):
+    resp = requests.get(f'http://localhost/doc/{app_name}', verify=False)
+    resp = resp.json()
+
+    if resp["error"]:
+        print(f"Error occured: {resp['message']}")
+        exit_code = 1
+        return
+
+    print(json.dumps(resp["data"]))
+
+def check_app_documentation(app_name):
+    """
+    Check application documentation (--cicheckdoc command line flag)
+    """
+    import warnings
+    import requests
+    warnings.simplefilter("ignore")
+    requests.packages.urllib3.disable_warnings()
+
+    global exit_code
+
+    resp = requests.get(f'http://localhost/doc/check/{app_name}', verify=False)
+    resp = resp.json()
+
+    if resp["error"]:
+        exit_code = 1
+
+    print(json.dumps(resp["data"]))
+
+def get_rpc_config(config, force_http):
     """
     Return rpc config
     Handles invalid ssl config and fallback to http
     """
-    ssl_key = config.get('rpc', {}).get('rpc_key')
-    ssl_cert = config.get('rpc', {}).get('rpc_cert')
-    ssl_enabled = True if ssl_key and ssl_cert else False
+    ssl_key = config.get("rpc", {}).get("rpc_key")
+    ssl_cert = config.get("rpc", {}).get("rpc_cert")
+    ssl_enabled = True if ssl_key and ssl_cert and not force_http else False
     auth_enabled = config.get("auth", {}).get("enabled", False)
     auth_accounts = config.get("auth", {}).get("accounts", {})
-    host = config.get('rpc', {}).get('rpc_host', '0.0.0.0')
-    port = config.get('rpc', {}).get('rpc_ssl_port', 443) if ssl_enabled else config.get('rpc', {}).get('rpc_port', 80)
-    protocol = ssl_enabled and 'https' or 'http'
+    host = config.get("rpc", {}).get("rpc_host", "0.0.0.0")
+    port_http = config.get('rpc', {}).get('rpc_port', 80)
+    port_https = config.get("rpc", {}).get("rpc_ssl_port", 443)
+    port = port_https if ssl_enabled and not force_http else port_http
+    protocol = "https" if ssl_enabled and not force_http else "http"
 
     logger.debug('cleep.conf: %s', config)
     if ssl_enabled and (not os.path.exists(ssl_cert) or not os.path.exists(ssl_key)):
@@ -236,6 +267,7 @@ if __name__ == '__main__':
     internal_bus = None
     crash_report = None
     debug_core = False
+    force_http = False
     
     try:
         # handle command line parameters
@@ -245,8 +277,9 @@ if __name__ == '__main__':
         log_stdout = False
         dry_run = False
         ci_doc_app_name = None
+        ci_check_doc_app_name = None
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtNrvc:', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version', 'cidoc='])
+        opts, args = getopt.getopt(argv, 'hsd:DtNrvc:C:', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version', 'cidoc=', 'cicheckdoc='])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -265,6 +298,11 @@ if __name__ == '__main__':
                 dry_run = True
             elif opt in ('-c', '--cidoc'):
                 ci_doc_app_name = arg
+                force_http = True
+                dry_run = True
+            elif opt in ('-C', '--cicheckdoc'):
+                ci_check_doc_app_name = arg
+                force_http = True
                 dry_run = True
             elif opt in ('v', '--version'):
                 print(VERSION)
@@ -281,7 +319,7 @@ if __name__ == '__main__':
             LOG_SETTINGS['root']['level'] = logging.TRACE
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger('Cleep')
-        if ci_doc_app_name is not None:
+        if any([v is not None for v in [ci_doc_app_name, ci_check_doc_app_name]]):
             # no logging during ci doc
             logger.setLevel(logging.FATAL)
         logger.info('========== Cleep v%s started ==========' % VERSION)
@@ -298,7 +336,7 @@ if __name__ == '__main__':
         config = load_config(cleep_filesystem)
 
         # prepare rpc config (shared in bootstrap)
-        rpc_config = get_rpc_config(config)
+        rpc_config = get_rpc_config(config, force_http)
 
         # set debug level after config reading
         if config['debug']['trace_enabled']:
@@ -395,6 +433,9 @@ if __name__ == '__main__':
         if ci_doc_app_name:
             timer_generate_doc = Timer(CI_DOC_TIMEOUT, generate_app_documentation, [ci_doc_app_name])
             timer_generate_doc.start()
+        if ci_check_doc_app_name:
+            timer_check_doc = Timer(CI_DOC_TIMEOUT, check_app_documentation, [ci_check_doc_app_name])
+            timer_check_doc.start()
 
         rpcserver.start()
 
