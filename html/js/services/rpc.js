@@ -216,7 +216,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             console.error('Request failed: ' + resp.data.message);
             toast.error(resp.data.message || 'No error message');
             if (defer) {
-                defer.reject('request failed');
+                defer.reject(resp.data.message || 'Request failed');
             }
             return true;
         }
