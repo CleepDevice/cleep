@@ -7,6 +7,7 @@ cleep (0.0.31) UNRELEASED; urgency=low
   * Fixed ui: homogenize rpc responses using MessageResponse
   * Update ui: return command error message when command failed
   * Added bin: add option to generate app documentation
+  * Updated install: improve Cleep install and rollback if errors
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 

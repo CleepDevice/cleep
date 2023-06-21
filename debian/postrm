@@ -17,10 +17,10 @@ case "$1" in
     abort-install)
         ;; 
 
-    abort-upgrade)
-        ;; 
-
-    failed-upgrade)
+    abort-upgrade | failed-upgrade)
+        # restore backuped apps
+        rm -rf /opt/cleep/modules
+        cp -a /opt/cleep/modules.backup /opt/cleep/modules
         ;;
 
     *)

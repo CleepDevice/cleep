@@ -10,10 +10,15 @@ case "$1" in
         /etc/cleep/cleephelper.sh disable
         # stop Cleep
         /etc/cleep/cleephelper.sh stop
+        # clear apps
+        rm -rf /opt/cleep
+        rm -rf /var/opt/cleep
         ;; 
 
     upgrade)
-        # after upgrade let cleep restart by itself
+        # backup mandatory apps
+        rm -rf /opt/cleep/modules.backup
+        cp -a /opt/cleep/modules /opt/cleep/modules.backup
         ;;
         
     failed-upgrade)
