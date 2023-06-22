@@ -36,6 +36,10 @@ case "$1" in
         echo "Done"
         echo ""
 
+        # ensure folder structure to install apps
+        mkdir -p /opt/cleep/modules
+        touch /opt/cleep/modules/__init__.py
+
         # download modules.json from Cleep repository
         echo "Download modules.json from:"
         echo " 1 - $MODULES_JSON_VERSION"
