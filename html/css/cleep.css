@@ -276,3 +276,75 @@ md-toast.fatal .md-toast-content {
     padding: 16px;
 }
 
+
+/********** config-item ***********/
+/**
+.config-item:hover {
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+**/
+
+.config-item md-input-container .md-errors-spacer {
+    display: none;
+}
+
+.config-item > form {
+    margin: 0px !important;
+}
+
+.config-item input[type="time"]::-webkit-calendar-picker-indicator {
+    background-image: url(/images/arrow-down.gif);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 10px 5px;
+}
+
+.config-item-note-none {
+}
+
+.config-item-note-note {
+    background-color: rgb(226, 227, 229);
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-info {
+    background-color: rgb(207, 226, 255);
+    border: 1px solid rgb(158, 197, 254);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-success {
+    background-color: rgb(209, 231, 221);
+    border: 1px solid rgb(163, 207, 187);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-warning {
+    background-color: rgb(255, 243, 205);
+    border: 1px solid rgb(255, 230, 156);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-error {
+    background-color: rgb(248, 215, 218);
+    border: 1px solid rgb(241, 174, 181);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-section {
+    border-bottom: 1px solid rgb(196, 200, 203);
+    padding-bottom: 5px;
+}
+
+.config-item-section > span {
+    color: rgba(0, 0, 0, 0.54);
+    font-size: 16px;
+    font-weight: 500;
+}
