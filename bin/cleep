@@ -60,6 +60,7 @@ LOG_SETTINGS = {
 }
 DRY_RUN_TIMEOUT = 8.0
 CI_DOC_TIMEOUT = 4.0
+CLEEP_INSTALLED_MODULES_PATH = '/opt/cleep/modules'
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -258,6 +259,13 @@ def get_rpc_config(config, force_http):
         'url': f'{protocol}://{host}:{port}'
     }
 
+def symlink_modules():
+    """
+    Create symlink from Cleep python module path to installed modules path
+    """
+    cleep_modules_path = os.path.join(os.path.dirname(rpcserver.__file__), 'modules')
+    if not os.path.exists(cleep_modules_path):
+        os.symlink(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path)
 
 if __name__ == '__main__':
     exit_code = 0
@@ -270,6 +278,9 @@ if __name__ == '__main__':
     force_http = False
     
     try:
+        # before everything make sure modules are symlinked to Cleep install dir
+        symlink_modules()
+
         # handle command line parameters
         trace_enabled = False
         readonly_enabled = True
