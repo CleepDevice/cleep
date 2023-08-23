@@ -33,8 +33,7 @@ angular
         <md-button
             ng-if="$ctrl.clBtnClick"
             ng-click="$ctrl.onClick()"
-            class="{{ $ctrl.color }} {{ $ctrl.style }}"
-            style="min-width:48px;"
+            class="{{ $ctrl.color }} {{ $ctrl.style }} cl-button-sm"
             ng-disabled="($ctrl.checkForm && !$ctrl.clFormRef.inputField.$valid) || $ctrl.clBtnDisabled"
         >
             <md-tooltip ng-if="$ctrl.clBtnTooltip">{{ $ctrl.clBtnTooltip }}</md-tooltip>
@@ -188,7 +187,7 @@ angular
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
                 <div ng-if="$ctrl.buttons.length<=$ctrl.limit" ng-repeat="button in $ctrl.buttons">
-                    <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }}" style="min-width:48px;">
+                    <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }} cl-button-sm">
                         <md-icon ng-if="button.icon" md-svg-icon="{{ button.icon }}"></md-icon>
                         {{ button.label }}
                     </md-button>
@@ -196,13 +195,13 @@ angular
 
                 <div ng-if="$ctrl.buttons.length>$ctrl.limit">
                     <md-menu>
-                        <md-button class="md-raised md-primary" ng-click="$ctrl.openMenu($mdMenu, $event)" style="min-width:48px;">
+                        <md-button class="md-raised md-primary cl-button-sm" ng-click="$ctrl.openMenu($mdMenu, $event)">
                             <md-tooltip>Choose action</md-tooltip>
                             <md-icon md-svg-icon="dots-vertical"></md-icon>
                         </md-button>
                         <md-menu-content>
                             <md-menu-item ng-repeat="button in $ctrl.buttons">
-                                <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }}" style="min-width:48px;">
+                                <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }} cl-button-sm">
                                     <md-tooltip ng-if="button.tooltip">{{ button.tooltip }}</md-tooltip>
                                     <md-icon ng-if="button.icon" md-svg-icon="{{ button.icon }}"></md-icon>
                                     {{ button.label }} {{ button.color }}

@@ -3,10 +3,14 @@
     <!-- toolbar -->
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
-            <md-button href="#!dashboard" class="md-raised" aria-label="Go back">
+            <md-button hide="" show-gt-xs="" href="#!dashboard" class="md-raised">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to dashboard</md-tooltip>
                 Back
+            </md-button>
+            <md-button hide-gt-xs="" href="#!dashboard" class="md-raised cl-button-sm">
+                <md-icon md-svg-icon="arrow-left"></md-icon>
+                <md-tooltip>Back to dashboard</md-tooltip>
             </md-button>
         </div>
         <div class="toolbar-spacer"></div>
@@ -15,12 +19,16 @@
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
-            <md-input-container class="md-icon-float md-block no-error-spacer">
+            <md-input-container  hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
                 <md-icon md-svg-icon="magnify"></md-icon>
-                <input ng-model="modulesCtl.search['$']" type="text" aria-label="Search">
+                <input ng-model="modulesCtl.search['$']" type="text">
+            </md-input-container>
+            <md-input-container hide-gt-xs="" class="md-icon-float md-block no-error-spacer">
+                <md-icon md-svg-icon="magnify"></md-icon>
+                <input ng-model="modulesCtl.search['$']" type="text" size="6">
             </md-input-container>
             <div>
-                <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()" aria-label="Clear search">
+                <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()">
                     <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
@@ -114,12 +122,22 @@
 
                     <!-- open module page -->
                     <md-button
+                        hide="" show-gt-xs=""
                         ng-if="modulesCtl.cleepService.modules[module.name].hasConfig"
                         ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
                         ng-href="{{'#!module/'+module.name}}"
                     >
                         <md-icon md-svg-icon="open-in-app"></md-icon>
                         <span>Open</span>
+                    </md-button>
+                    <md-button
+                        hide-gt-xs="" class="cl-button-sm"
+                        ng-if="modulesCtl.cleepService.modules[module.name].hasConfig"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-href="{{'#!module/'+module.name}}"
+                    >
+                        <md-icon md-svg-icon="open-in-app"></md-icon>
+                        <md-tooltip>Back to modules list</md-tooltip>
                     </md-button>
 
                     <!-- module not started-->

@@ -3,10 +3,14 @@
     <!-- toolbar -->
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
-            <md-button href="#!modules" class="md-raised" aria-label="Go back">
+            <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to installed apps</md-tooltip>
                 Back
+            </md-button>
+            <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
+                <md-icon md-svg-icon="arrow-left"></md-icon>
+                <md-tooltip>Back to modules list</md-tooltip>
             </md-button>
         </div>
         <div class="toolbar-spacer"></div>
@@ -17,10 +21,10 @@
         <div layout="row" layout-align="end center">
             <md-input-container class="md-icon-float md-block no-error-spacer">
                 <md-icon md-svg-icon="magnify"></md-icon>
-                <input ng-model="installCtl.search['$']" ng-model-options="{debounce: 400}" type="text" aria-label="Search">
+                <input ng-model="installCtl.search['$']" ng-model-options="{debounce: 400}" type="text">
             </md-input-container>
             <div>
-                <md-button class="md-icon-button" ng-click="installCtl.clearSearch()" aria-label="Clear search">
+                <md-button class="md-icon-button" ng-click="installCtl.clearSearch()">
                     <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
@@ -111,7 +115,7 @@
                         ng-click="installCtl.gotoUpdateLogs()"
                     >
                         <md-icon md-svg-icon="file-document-outline"></md-icon>
-                        <span>Install failed, see logs</span>
+                        Install failed, see logs
                     </md-button>
    
                     <!-- install button -->
@@ -121,7 +125,7 @@
                         ng-click="installCtl.showIncompatibleDialog(module)"
                     >
                         <md-icon md-svg-icon="car-brake-alert"></md-icon>
-                        <span>Incompatible</span>
+                        Incompatible
                     </md-button>
                     <md-button
                         class="md-accent"

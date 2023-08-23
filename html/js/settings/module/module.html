@@ -3,10 +3,14 @@
     <!-- toolbar -->
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
-            <md-button href="#!modules" class="md-raised" aria-label="Go back">
+            <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to modules list</md-tooltip>
                 Back
+            </md-button>
+            <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
+                <md-icon md-svg-icon="arrow-left"></md-icon>
+                <md-tooltip>Back to modules list</md-tooltip>
             </md-button>
         </div>
         <div class="toolbar-spacer"></div>
@@ -18,10 +22,11 @@
         <div flex></div>
         <div>
             <md-menu>
-                <md-button aria-label="App infos" ng-click="moduleCtl.openAppInfos($mdMenu, $event)" class="md-raised md-primary">
+                <md-button hide="" show-gt-xs="" ng-click="moduleCtl.openAppInfos($mdMenu, $event)" class="md-raised md-primary">
                     <md-icon md-svg-icon="information-outline"></md-icon>
                     App infos
                 </md-button>
+
                 <md-menu-content>
                     <md-menu-item>
                         <md-button disabled="disabled">

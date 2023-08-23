@@ -162,8 +162,13 @@ md-toast.fatal .md-toast-content {
 }
 
 /********** smallest icon button **********/
-.button-raised-icon {
-    min-width: 50px !important;
+button.md-button.cl-button-sm {
+    min-width: 48px !important;
+}
+
+a.md-button.cl-button-sm {
+    min-width: 48px !important;
+    padding-top: 5px !important;
 }
 
 

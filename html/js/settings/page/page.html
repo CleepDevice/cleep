@@ -3,10 +3,14 @@
     <!-- toolbar -->
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
-            <md-button ng-href="#!module/{{pageCtl.module}}" class="md-raised" aria-label="Go back">
+            <md-button hide="" show-gt-xs="" ng-href="#!module/{{pageCtl.module}}" class="md-raised">
                 <md-icon md-svg-icon="arrow-left"></md-icon>
                 <md-tooltip>Back to {{pageCtl.module}} configuration page</md-tooltip>
                 Back to {{pageCtl.module}}
+            </md-button>
+            <md-button hide-gt-xs="" ng-href="#!module/{{pageCtl.module}}" class="md-raised cl-button-sm">
+                <md-icon md-svg-icon="arrow-left"></md-icon>
+                <md-tooltip>Back to {{pageCtl.module}} configuration page</md-tooltip>
             </md-button>
         </div>
         <div class="toolbar-spacer"></div>

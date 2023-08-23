@@ -33,13 +33,19 @@
                 <div flex></div>
                 <app-toolbar></app-toolbar>
                 <div layout="row" layout-align="end center">
-                    <md-button href="#!dashboard" class="md-raised" aria-label="Dashboard">
+                    <md-button hide="" show-gt-xs="" href="#!dashboard" class="md-raised">
                         <md-icon md-svg-icon="view-dashboard"></md-icon>
                         <span>Dashboard</span>
                     </md-button>
-                    <md-button href="#!modules" class="md-raised" aria-label="Apps">
+                    <md-button hide-gt-xs="" href="#!dashboard" class="md-raised cl-button-sm">
+                        <md-icon md-svg-icon="view-dashboard"></md-icon>
+                    </md-button>
+                    <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
                         <md-icon md-svg-icon="apps"></md-icon>
                         <span>Apps</span>
+                    </md-button>
+                    <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
+                        <md-icon md-svg-icon="apps"></md-icon>
                     </md-button>
                 </div>
                 <div class="toolbar-spacer"></div>
