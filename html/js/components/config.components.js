@@ -74,7 +74,7 @@ angular
 
 angular
 .module('Cleep')
-.component('configBase', {
+.component('configBasic', {
     transclude: true,
     template: function() {
         const formName = getFormName();
@@ -329,7 +329,7 @@ angular
 .module('Cleep')
 .component('configNumber', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -337,7 +337,7 @@ angular
             <md-input-container ng-if="!$ctrl.doNotDisplay">
                 <input ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" min="{{ $ctrl.clMin }}" max="{{ $ctrl.clMax }}" name="inputField" type="number" style="width: 80px;">
             </md-input-container>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -372,7 +372,7 @@ angular
 .module('Cleep')
 .component('configText', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -384,7 +384,7 @@ angular
                     ng-model="$ctrl.clModel"
                 >
             </md-input-container>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -416,7 +416,7 @@ angular
 .module('Cleep')
 .component('configSlider', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -429,7 +429,7 @@ angular
                     ng-model="$ctrl.clModel">
                 </md-slider>
             </md-slider-container>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -461,7 +461,7 @@ angular
 .module('Cleep')
 .component('configCheckbox', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -469,7 +469,7 @@ angular
             <md-checkbox ng-change="$ctrl.onClick()" ng-model="$ctrl.clModel">
                 {{ $ctrl.clCaption }}
             </md-checkbox>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -502,7 +502,7 @@ angular
 .module('Cleep')
 .component('configSwitch', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -510,7 +510,7 @@ angular
             <md-switch ng-change="$ctrl.onClick()" ng-model="$ctrl.clModel">
                 {{ $ctrl.clCaption }}
             </md-switch>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -543,7 +543,7 @@ angular
 .module('Cleep')
 .component('configSelect', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -560,7 +560,7 @@ angular
                     </md-option>
                 </md-select>
             </md-input-container>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -617,7 +617,7 @@ angular
 .module('Cleep')
 .component('configDate', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -629,7 +629,7 @@ angular
                 md-mode="$ctrl.inMode" md-hide-icons="calendar">
             </md-datepicker>
             </div>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -654,7 +654,7 @@ angular
 .module('Cleep')
 .component('configTime', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -662,7 +662,7 @@ angular
             <md-input-container>
                 <input ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-min="$ctrl.clMin" ng-max="$ctrl.clMax" name="inputField" type="time">
             </md-input-container>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -737,13 +737,13 @@ angular
 .module('Cleep')
 .component('configProgress', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
         >
             <md-progress-linear flex="50" md-mode="{{ $ctrl.mode }}" value="{{ $ctrl.clModel }}"></md-progress-linear>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
@@ -784,14 +784,14 @@ angular
 .module('Cleep')
 .component('configChips', {
     template: `
-        <config-base
+        <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
                 <md-chips ng-model="$ctrl.clModel" readonly="$ctrl.readonly" md-removable="$ctrl.removable" md-enable-chip-edit="$ctrl.editable">
                 </md-chips>
-        </config-base>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
