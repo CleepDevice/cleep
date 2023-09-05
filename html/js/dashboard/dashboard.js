@@ -2,14 +2,17 @@
  * Dashboard directive
  * Used to display device widgets dashboard
  */
-var dashboardDirective = function() {
+angular
+.module('Cleep')
+.directive('dashboardDirective', [
+function() {
 
     var dashboardController = function($scope, cleepService) {
         var self = this;
         self.loading = true;
         self.devices = cleepService.devices;
 
-        //only used to know when initial loading is terminated
+        // only used to know when initial loading is terminated
         cleepService.getModuleConfig('system')
             .then(function() {
                 self.loading = false;
@@ -23,31 +26,30 @@ var dashboardDirective = function() {
         controller: ['$scope', 'cleepService', dashboardController],
         controllerAs: 'dashboardCtl'
     };
-};
+}]);
 
 /**
  * Dashboard widget
  * Used to display dynamically device widgets
  * @see https://stackoverflow.com/a/41427771
  */
-var dashboardWidget = function($compile) {
-
+angular
+.module('Cleep')
+.directive('dashboardwidget', ['$compile',
+function($compile) {
     var dashboardWidgetLink = function(scope, element, attr) {
-        var widget = $compile('<div ' + scope.type + '-widget device="device"></div>')(scope);
+        const template = '<div '+scope.type+'-widget device="device" style="height:100%;"></div>';
+        var widget = $compile(template)(scope);
         element.append(widget);
     };
 
     return {
         restrict: 'E',
         scope: {
-          type: '@',
-          device: '='
+            type: '@',
+            device: '='
         },
         link: dashboardWidgetLink
     }
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.directive('dashboardDirective', [dashboardDirective]);
-Cleep.directive('dashboardwidget', ['$compile', dashboardWidget]);
+}]);
 

@@ -10,11 +10,23 @@
     </div>
 
     <!-- widgets -->
-    <div layout="row" layout-wrap layout-padding>
-        <div ng-repeat="device in dashboardCtl.devices | orderBy:'name'" class="no-padding">
-            <dashboardwidget ng-if="!device.hidden" type="{{device.type}}" device="device"></dashboardwidget>
-        </div>
-    </div>
+    <md-grid-list
+        style="margin:12px;"
+        md-cols-xs="1" md-cols-sm="2" md-cols-md="4" md-cols-gt-md="6"
+        md-row-height-gt-md="1:1" md-row-height="2:2"
+        md-gutter="12px">
+        <md-grid-tile
+            md-colspan="{{ device.widget.colspan || 1 }}" md-rowspan="{{ device.widget.rowspan || 1 }}"
+            md-colspan-xs="1" md-colspan-sm="1"
+            ng-repeat="device in dashboardCtl.devices | orderBy:'name'"
+            flex="100" layout="row" layout-align="center center">
+            <dashboardwidget
+                ng-if="!device.hidden"
+                type="{{device.type}}" device="device"
+                flex="100" style="height:100%;">
+            </dashboardwidget>
+        </md-grid-tile>
+    </md-grid-list>
 
     <!-- no widget -->
     <div ng-if="!dashboardCtl.loading && dashboardCtl.devices.length===0">
