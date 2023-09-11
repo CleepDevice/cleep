@@ -270,14 +270,11 @@ angular
 angular
 .module('Cleep')
 .component('configSection', {
-    template: function() {
-        const formName = getFormName();
-        return `
+    template: `
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item config-item-section">
             <span>{{ $ctrl.clTitle }}</span>
         </div>
-        `;
-    },
+    `,
     bindings: {
         clTitle: '@',
     },
@@ -701,14 +698,12 @@ angular
 angular
 .module('Cleep')
 .component('configNote', {
-    template: function() {
-        return `
+    template: `
         <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.style">
             <md-icon ng-if="$ctrl.clIcon" md-svg-icon="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" class="icon-md"></md-icon>
             <div flex layout="column" layout-align="start stretch" ng-bind-html="$ctrl.clNote"></div>
         </div>
-        `;
-    },
+    `,
     bindings: {
         clId: '@',
         clIcon: '@',
@@ -823,8 +818,7 @@ angular
 angular
 .module('Cleep')
 .component('configList', {
-    template: function() {
-        return `
+    template: `
         <md-list ng-cloak id="{{ $ctrl.clId }}">
             <data-list-item ng-repeat="item in $ctrl.clItems track by $index">
                 <md-subheader ng-if="item.subheader" class="md-no-sticky">
@@ -858,8 +852,7 @@ angular
                 </md-list-item>
             </data-list-item>
         </md-list>
-        `;
-    },
+    `,
     bindings: {
         clId: '@',
         clItems: '<',

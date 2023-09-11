@@ -31,20 +31,20 @@ Cleep.filter('deviceType', function($filter) {
     return function(devices, type) {
         if (type) {
             return $filter("filter")(devices, function(device) {
-                return device.__type==type;
+                return device.__type === type;
             });
         }
     };
 });
 
 /**
- * Device service filter
+ * Device module filter
  */
 Cleep.filter('filterDeviceByModule', function($filter) {
     return function(devices, module) {
         if( module ) {
             return $filter("filter")(devices, function(device) {
-                return device.module==module;
+                return device.module === module;
             });
         }
     };
