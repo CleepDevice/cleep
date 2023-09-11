@@ -259,13 +259,23 @@ def get_rpc_config(config, force_http):
         'url': f'{protocol}://{host}:{port}'
     }
 
-def symlink_modules():
+def symlink_modules(cleep_filesystem):
     """
     Create symlink from Cleep python module path to installed modules path
+    Should not fail Cleep startup so it delete existing modules dir if any
+
+    Args:
+        cleep_filesystem (CleepFilesystem): CleepFilesystem instance
     """
     cleep_modules_path = os.path.join(os.path.dirname(rpcserver.__file__), 'modules')
-    if not os.path.exists(cleep_modules_path):
-        os.symlink(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path)
+    if os.path.exists(cleep_modules_path) and not os.path.islink(cleep_modules_path):
+        # backup existing modules dir that should not exist
+        cleep_modules_path_backup = os.path.join(os.path.dirname(rpcserver.__file__), 'modules.backup')
+        if os.path.exists(cleep_modules_path_backup):
+            cleep_filesystem.remove(cleep_modules_path_backup)
+        cleep_filesystem.move(cleep_modules_path, cleep_modules_path_backup)
+
+    cleep_filesystem.ln(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path, force=True)
 
 if __name__ == '__main__':
     exit_code = 0
@@ -276,10 +286,11 @@ if __name__ == '__main__':
     crash_report = None
     debug_core = False
     force_http = False
+    cleep_filesystem = CleepFilesystem()
     
     try:
         # before everything make sure modules are symlinked to Cleep install dir
-        symlink_modules()
+        symlink_modules(cleep_filesystem)
 
         # handle command line parameters
         trace_enabled = False
@@ -336,7 +347,6 @@ if __name__ == '__main__':
         logger.info('========== Cleep v%s started ==========' % VERSION)
 
         # create cleep filesystem singleton (will be saved in bootstrap context)
-        cleep_filesystem = CleepFilesystem()
         if cleep_filesystem.is_readonly_fs:
             logger.info('Cleep is running on read-only feature enabled filesystem')
         if not readonly_enabled:
