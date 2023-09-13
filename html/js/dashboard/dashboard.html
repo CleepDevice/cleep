@@ -11,8 +11,8 @@
 
     <!-- widgets -->
     <md-grid-list
-        style="margin:12px;"
-        md-cols-xs="1" md-cols-sm="2" md-cols-md="4" md-cols-gt-md="6"
+        style="margin:12px;" ng-cloak
+        md-cols-xs="1" md-cols-sm="2" md-cols-md="4" md-cols-lg="6" md-cols-gt-lg="8"
         md-row-height-gt-md="1:1" md-row-height="2:2"
         md-gutter="12px">
         <md-grid-tile
@@ -22,8 +22,8 @@
             flex="100" layout="row" layout-align="center center">
             <dashboardwidget
                 ng-if="!device.hidden"
-                type="{{device.type}}" device="device"
-                flex="100" style="height:100%;">
+                type="{{ device.type }}" device="device"
+                flex="100">
             </dashboardwidget>
         </md-grid-tile>
     </md-grid-list>

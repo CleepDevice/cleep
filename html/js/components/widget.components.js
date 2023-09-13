@@ -17,25 +17,40 @@ angular
             <md-card-content layout="column" layout-align="center center" md-colors="{{ $ctrl.contentBgColor }}" style="height:100%;">
                 <ng-transclude></ng-transclude>
             </md-card-content>
-            <md-card-actions ng-if="$ctrl.hasFooter" layout="row">
-                <div layout="row" layout-align="start center" flex>
-                    <div ng-repeat="footer in $ctrl.footers" style="margin:5px;">
-                        <md-icon ng-if="footer.icon" md-svg-icon="{{ footer.icon }}">
+            <md-card-actions ng-if="$ctrl.hasFooter" layout="row" layout-align="space-between center">
+                <div ng-repeat="footer in $ctrl.footer" hide="" show-gt-xs="" ng-if="footer.condition($ctrl)">
+                    <div ng-if="!footer.click">
+                        <md-icon ng-if="footer.icon && footer.tooltip" md-svg-icon="{{ footer.icon }}">
                             <md-tooltip>{{ footer.tooltip }}</md-tooltip>
+                        </md-icon>
+                        <md-icon ng-if="footer.icon && !footer.tooltip" md-svg-icon="{{ footer.icon }}">
                         </md-icon>
                         <span ng-if="footer.label" class="{{ footer.class }}" flex="100">{{ footer.label }}</span>
                     </div>
+                    <div ng-if="footer.click">
+                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.class }} {{ $ctrl.clButtonSm }}">
+                            <md-icon ng-if="footer.icon" md-svg-icon="{{ footer.icon }}"></md-icon>
+                            <md-tooltip ng-if="footer.tooltip">{{ footer.tooltip }}</md-tooltip>
+                            {{ footer.label }}
+                        </md-button>
+                    </div>
                 </div>
-                <div ng-if="$ctrl.actions.length>0" layout="row" layout-align="end center" flex hide="" show-gt-xs="">
-                    <md-button ng-repeat="action in $ctrl.actions" ng-click="$ctrl.onActionClick($event, action)" class="{{ action.class }} {{ $ctrl.clButtonSm }}">
-                        <md-icon ng-if="action.icon" md-svg-icon="{{ action.icon }}"></md-icon>
-                        {{ action.label }}
-                    </md-button>
-                </div>
-                <div ng-if="$ctrl.actions.length>0" layout="row" layout-align="end center" flex hide-gt-xs="">
-                    <md-button ng-repeat="action in $ctrl.actions" ng-click="$ctrl.onActionClick($event, action)" class="{{ action.class }} cl-button-sm">
-                        <md-icon ng-if="action.icon" md-svg-icon="{{ action.icon }}"></md-icon>
-                    </md-button>
+
+                <div ng-repeat="footer in $ctrl.footer" hide-gt-xs="" ng-if="footer.condition($ctrl)">
+                    <div ng-if="!footer.click">
+                        <md-icon ng-if="footer.icon && footer.tooltip" md-svg-icon="{{ footer.icon }}">
+                            <md-tooltip>{{ footer.tooltip }}</md-tooltip>
+                        </md-icon>
+                        <md-icon ng-if="footer.icon && !footer.tooltip" md-svg-icon="{{ footer.icon }}">
+                        </md-icon>
+                        <span ng-if="footer.label" class="{{ footer.class }}" flex="100">{{ footer.label }}</span>
+                    </div>
+                    <div ng-if="footer.click">
+                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.class }} cl-button-sm">
+                            <md-icon ng-if="footer.icon" md-svg-icon="{{ footer.icon }}"></md-icon>
+                            <md-tooltip ng-if="footer.tooltip">{{ footer.tooltip }}</md-tooltip>
+                        </md-button>
+                    </div>
                 </div>
             </md-card-actions>
         </md-card>
@@ -45,14 +60,12 @@ angular
         clIcon: '<',
         clTitle: '<',
         clSubtitle: '<',
-        clActions: '<',
-        clFooters: '<',
+        clFooter: '<',
         clImage: '<',
     },  
     controller: function() {
         const ctrl = this;
-        ctrl.actions = [];
-        ctrl.footers = [];
+        ctrl.footer = [];
         ctrl.hasFooter = false;
         ctrl.BG_OFF_COLOR = {
             background: "default-primary-300",
@@ -63,38 +76,41 @@ angular
         ctrl.contentBgColor = ctrl.BG_OFF_COLOR;
 
         ctrl.$onInit = function() {
-            ctrl.prepareFooters(ctrl.clFooters);
-            ctrl.prepareActions(ctrl.clActions);
+            ctrl.prepareFooter(ctrl.clFooter);
         };
 
         ctrl.$onChanges = function(newVal, oldVal) {
             ctrl.contentBgColor = newVal.clDevice?.on ? ctrl.BG_ON_COLOR : ctrl.BG_OFF_COLOR;
         };
 
-        ctrl.prepareFooters = function(footers) {
+        ctrl.prepareFooter = function(footers) {
             if (!footers?.length) {
                 return;
             }
             ctrl.hasFooter = true;
 
             for (const footer of footers) {
-                ctrl.footers.push({
+                const isButton = Boolean(footer.click);
+                ctrl.footer.push({
                     icon: footer.icon,
-                    tooltip: footer.tooltip,
+                    tooltip: footer.tooltip ?? undefined,
                     label: footer.label,
-                    class: footer.class ?? 'md-caption',
+                    class: isButton ? footer.class : footer.class ?? 'md-caption',
+                    click: isButton ? footer.click : undefined,
+                    condition: footer.condition,
+                    clButtonSm: isButton ? (!footer.label?.length ? 'cl-button-sm' : '') : undefined
                 });
             }
         };
 
-        ctrl.prepareActions = function(actions) {
+        /*ctrl.prepareActions = function(actions) {
             if (!actions?.length) {
                 return;
             }
             ctrl.hasFooter = true;
 
             for (const action of actions) {
-                ctrl.actions.push({
+                ctrl.footers.push({
                     icon: action.icon,
                     label: action.label,
                     click: action.click,
@@ -102,7 +118,7 @@ angular
                     clButtonSm: !action.label?.length ? 'cl-button-sm' : '',
                 });
             }
-        };
+        };*/
 
         ctrl.onActionClick = (ev, action) => {
             if (action.click) {
@@ -110,5 +126,96 @@ angular
             }
         };
     },  
+});
+
+
+angular
+.module('Cleep')
+.component('widgetConf', {
+    template: `
+        <widget-basic
+            cl-title="$ctrl.title" cl-subtitle="$ctrl.subtitle" cl-icon="$ctrl.icon"
+            cl-image="$ctrl.image" cl-footer="$ctrl.footer" cl-device="$ctrl.clDevice">
+            <div ng-bind-html="$ctrl.getContent()"></div>
+        </widget-basic>
+    `,
+    bindings: {
+        clDevice: '<',
+        clWidgetConf: '<',
+        clAppIcon: '@',
+    },
+    controller: ['$interpolate', '$scope', '$injector', 'cleepService', 'rpcService', '$parse', function($interpolate, $scope, $injector, cleepService, rpcService, $parse) {
+        const ctrl = this;
+        ctrl.icon = undefined;
+        ctrl.title = undefined;
+        ctrl.subtitle = undefined;
+        ctrl.content = undefined;
+        ctrl.footer = [];
+        ctrl.image = undefined;
+        ctrl.deviceRegexp = /device\./g;
+        ctrl.commandTo = undefined;
+
+        ctrl.$onInit = function() {
+            ctrl.prepareVariables(ctrl.clWidgetConf, ctrl.clAppIcon);
+        };
+
+        ctrl.prepareVariables = function(conf, appIcon) {
+            ctrl.icon = conf.header?.icon ?? appIcon,
+            ctrl.title = conf.header?.title ?? ctrl.clDevice.name;
+            ctrl.subtitle = conf.header?.subtitle ?? ctrl.clDevice.type;
+            ctrl.image = conf.image;
+            ctrl.content = ctrl.prepareForInterpolate(conf.content, 'Please add widget content');
+
+            for (const footer of conf.footer || []) {
+                ctrl.footer.push({
+                    icon: footer?.icon,
+                    label: $interpolate(ctrl.prepareForInterpolate(footer?.label))($scope),
+                    click: footer?.action && ctrl.getActionClick(footer.action),
+                    class: footer?.class,
+                    tooltip: footer?.tooltip,
+                    condition: ctrl.prepareCondition(footer.condition),
+                });
+            }
+        };
+
+        ctrl.prepareCondition = function(condition) {
+            if (!condition) {
+                return () => true;
+            }
+
+            const variable = condition.variable.replace(ctrl.deviceRegexp, 'clDevice.');
+            const operator = condition.operator ?? '===';
+            const value = condition.value;
+
+            return $parse("" + variable + " " + operator + " " + value);
+        };
+
+        ctrl.prepareForInterpolate = function(str, defaultStr = '') {
+            if (!str?.length) {
+                return defaultStr;
+            }
+            return str.replace(ctrl.deviceRegexp, '$ctrl.clDevice.');
+        };
+
+        ctrl.getActionClick = function(action) {
+            return () => {
+                const uuidParamName = action.uuid ?? 'uuid';
+                const params = {
+                    [uuidParamName]: ctrl.clDevice.uuid,
+                };
+                rpcService.sendCommand(action.command, action.to, params, action.timeout)
+                    .then((resp) => {
+                        cleepService.reloadDevices();
+                    })
+            }
+        };
+
+        ctrl.getContent = function() {
+            if (!ctrl.content?.length) {
+                return '';
+            }
+            return $interpolate(ctrl.content)($scope);
+        };
+    }],
 });
 
