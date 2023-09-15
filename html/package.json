@@ -6,7 +6,7 @@
         "clean": "rm -rf node_modules"
     },
     "dependencies": {
-        "@mdi/font": "^6.5.95",
+        "@mdi/font": "^7.2.96",
         "angular": "^1.8.2",
         "angular-animate": "^1.8.2",
         "angular-aria": "^1.8.2",
@@ -21,9 +21,9 @@
         "angular-sanitize": "^1.8.2",
         "angular-material-badge": "^1.2.91",
         "angular-marked": "^1.2.2",
-        "codemirror-minified": "^5.65.0",
+        "codemirror-minified": "^5.65.9",
         "jquery": "^3.6.0",
-        "moment": "^2.29.1",
+        "moment": "^2.29.4",
         "oclazyload": "^1.1.0",
         "angularjs-gauge": "^2.2.0"
     },
