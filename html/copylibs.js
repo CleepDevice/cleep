@@ -51,13 +51,20 @@ var files = {
     'node_modules/angular-material-badge/source/angular-material-badge.css': 'css/angular-material-badge.css',
     // angularjs-gauge
     'node_modules/angularjs-gauge/dist/angularjs-gauge.min.js': 'js/libs/angularjs-gauge.min.js',
+    // material design icons
+    'node_modules/@mdi/font/fonts/materialdesignicons-webfont.eot': 'fonts/materialdesignicons-webfont.eot',
+    'node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf': 'fonts/materialdesignicons-webfont.ttf',
+    'node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff': 'fonts/materialdesignicons-webfont.woff',
+    'node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2': 'fonts/materialdesignicons-webfont.woff2',
+    'node_modules/@mdi/font/css/materialdesignicons.min.css': 'css/materialdesignicons.min.css',
+    'node_modules/@mdi/font/css/materialdesignicons.min.css.map': 'css/materialdesignicons.min.css.map',
 };
 
 for(var file in files) {
     var src = file;
     var dst = files[file];
         
-    if (src.indexOf('.min') === -1) {
+    if (src.indexOf('.min') === -1 && src.search(/eot|woff|ttf/g) === -1) {
         // minify file
         var minDst = files[src].replace(path.extname(files[src]), '.min'+path.extname(files[src]));
         console.log('minify ' + src + ' ==> ' + minDst);
