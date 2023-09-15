@@ -283,6 +283,9 @@ a.md-button.cl-button-sm {
 
 
 /********** config-item ***********/
+.config-input-container-no-margin {
+    margin: 0px 0px !important;
+}
 /**
 .config-item:hover {
     background-color: rgba(0,0,0,0.1);
@@ -345,11 +348,16 @@ a.md-button.cl-button-sm {
 
 .config-item-section {
     border-bottom: 1px solid rgb(196, 200, 203);
-    padding-bottom: 5px;
+    padding-bottom: 10px;
+    margin: 15px 0px 0px 15px;
 }
 
 .config-item-section > span {
     color: rgba(0, 0, 0, 0.54);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 500;
+}
+
+.config-list-item {
+    padding: 15px 0px;
 }

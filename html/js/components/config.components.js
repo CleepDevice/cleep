@@ -6,14 +6,15 @@ angular
 .module('Cleep')
 .component('configItemDesc', {
     template: `
-        <md-icon ng-if="$ctrl.icon" md-svg-icon="{{ $ctrl.icon }}" flex="none" style="margin:10px;"></md-icon>
+        <md-icon ng-if="$ctrl.icon" md-svg-icon="{{ $ctrl.icon }}" flex="none" style="margin:10px;" ng-class="$ctrl.clIconClass"></md-icon>
         <div layout="column" layout-align="center start">
             <div>{{ $ctrl.clTitle }}</div>
-            <div ng-if="$ctrl.clSubtitle" class="md-caption">{{ $ctrl.clSubtitle }}</div>
+            <div ng-if="$ctrl.clSubtitle" class="md-caption" style="margin-top: 5px;">{{ $ctrl.clSubtitle }}</div>
         </div>
     `,
     bindings: {
         clIcon: '<',
+        clIconClass: '<',
         clTitle: '<',
         clSubtitle: '<',
     },
@@ -79,10 +80,11 @@ angular
     template: function() {
         const formName = getFormName();
         return `
-        <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
+        <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
+                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <form ng-if="!$ctrl.noForm" name="`+formName+`">
                 <div flex="none" layout="row" layout-align="end center">
@@ -110,6 +112,7 @@ angular
         clTitle: '<',
         clSubtitle: '<',
         clIcon: '<',
+        clIconClass: '<',
         clModel: "<",
         clBtnColor: '<',
         clBtnStyle: '<',
@@ -119,12 +122,16 @@ angular
         clMeta: '<',
         clClick: '<',
         clNoForm: '<',
+        clClass: '@',
     },
     controller: function() {
         const ctrl = this;
+        ctrl.noForm = false;
+        ctrl.class = "config-item";
 
         ctrl.$onInit = function() {
             ctrl.noForm = ctrl.clNoForm ?? false;
+            ctrl.class += ctrl.clClass ? " " + ctrl.clClass : "";
         };
     },
 });
@@ -136,7 +143,8 @@ angular
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
+                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
                 <md-button ng-click="$ctrl.onClick()" class="{{ $ctrl.buttonColor }} {{ $ctrl.buttonStyle }}">
@@ -152,13 +160,14 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnLabel: '@',
         clBtnTooltip: '@',
         clMeta: '<',
-        clClick: '<',
+        clClick: '&',
     },
     controller: function () {
         const ctrl = this;
@@ -183,7 +192,8 @@ angular
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
+                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
                 <div ng-if="$ctrl.buttons.length<=$ctrl.limit" ng-repeat="button in $ctrl.buttons">
@@ -218,6 +228,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clButtons: '<',
     },
     controller: function () {
@@ -288,7 +299,8 @@ angular
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
+                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
                 <span ng-if="$ctrl.mode === 'markdown'" marked="$ctrl.clContent"></span>
@@ -302,6 +314,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clContent: '@',
         clMode: '@',
     },
@@ -327,11 +340,12 @@ angular
 .component('configNumber', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-input-container ng-if="!$ctrl.doNotDisplay">
+            <md-input-container ng-if="!$ctrl.doNotDisplay" class="config-input-container-no-margin">
                 <input ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" min="{{ $ctrl.clMin }}" max="{{ $ctrl.clMax }}" name="inputField" type="number" style="width: 80px;">
             </md-input-container>
         </config-basic>
@@ -341,6 +355,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clMax: "<",
         clMin: "<",
@@ -370,11 +385,12 @@ angular
 .component('configText', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-input-container>
+            <md-input-container class="config-input-container-no-margin">
                 <input
                     name="inputField" type="{{ $ctrl.inputType }}"
                     ng-required="$ctrl.clRequired" ng-minlength="$ctrl.clMin" ng-maxlength="$ctrl.clMax"
@@ -388,6 +404,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clMax: "<",
         clMin: "<",
@@ -414,14 +431,15 @@ angular
 .component('configSlider', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-slider-container>
                 <span>{{ $ctrl.clModel }}</span>
                 <md-slider
-                    name="inputField" md-discrete class="{{ $ctrl.clSliderClass }}"
+                    name="inputField" md-discrete class="{{ $ctrl.sliderClass }}"
                     min="{{ $ctrl.clMin }}" max="{{ $ctrl.clMax }}" step="{{ $ctrl.inputStep }}"
                     ng-model="$ctrl.clModel">
                 </md-slider>
@@ -433,6 +451,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clMax: "<",
         clMin: "<",
@@ -447,9 +466,12 @@ angular
     },
     controller: function () {
         const ctrl = this;
+        ctrl.inputStep = 1;
+        ctrl.sliderClass = '';
 
         ctrl.$onInit = function() {
             ctrl.inputStep = ctrl.clStep ?? 1;
+            ctrl.sliderClass = ctrl.clSliderClass ?? 'md-primary';
         };
     },
 });
@@ -459,7 +481,8 @@ angular
 .component('configCheckbox', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -473,6 +496,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: '=',
         clCaption: '@',
         clSelectedValue: '@',
@@ -500,7 +524,8 @@ angular
 .component('configSwitch', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -514,6 +539,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: '=',
         clCaption: '@',
         clOnValue: '@',
@@ -541,11 +567,12 @@ angular
 .component('configSelect', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-input-container>
+            <md-input-container class="config-input-container-no-margin">
                 <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel">
                     <md-option ng-repeat="option in $ctrl.options" ng-value="option.value" ng-disabled="option.disabled">
                         {{ option.label }}
@@ -557,6 +584,10 @@ angular
                     </md-option>
                 </md-select>
             </md-input-container>
+            <md-button ng-if="$ctrl.isMultiple" class="md-icon-button" ng-click="$ctrl.selectAll()">
+                <md-icon md-svg-icon="check-all"></md-icon>
+                <md-tooltip>Select all</md-tooltip>
+            </md-button>
         </config-basic>
     `,
     bindings: {
@@ -564,6 +595,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: '=',
         clRequired: '<',
         clOptions: '<',
@@ -607,6 +639,16 @@ angular
                 }
             }
         };
+
+        ctrl.selectAll = function() {
+            const fill = ctrl.clModel?.length !== ctrl.options.length
+            ctrl.clModel.splice(0, ctrl.clModel.length);
+            if (fill) {
+                for (const option of ctrl.options) {
+                    ctrl.clModel.push(option.value);
+                }
+            }
+        };
     },
 });
 
@@ -615,7 +657,8 @@ angular
 .component('configDate', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -633,6 +676,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clMax: "<",
         clMin: "<",
@@ -652,11 +696,12 @@ angular
 .component('configTime', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-input-container>
+            <md-input-container class="config-input-container-no-margin">
                 <input ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-min="$ctrl.clMin" ng-max="$ctrl.clMax" name="inputField" type="time">
             </md-input-container>
         </config-basic>
@@ -666,6 +711,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clMax: "<",
         clMin: "<",
@@ -699,20 +745,21 @@ angular
 .module('Cleep')
 .component('configNote', {
     template: `
-        <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.style">
-            <md-icon ng-if="$ctrl.clIcon" md-svg-icon="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" class="icon-md"></md-icon>
+        <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
+            <md-icon ng-if="$ctrl.clIcon" md-svg-icon="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" class="icon-md {{ $ctrl.clIconClas }}"></md-icon>
             <div flex layout="column" layout-align="start stretch" ng-bind-html="$ctrl.clNote"></div>
         </div>
     `,
     bindings: {
         clId: '@',
         clIcon: '@',
+        clIconClass: '@',
         clNote: '<',
-        clStyle: '@',
+        clType: '@',
     },
     controller: function () {
         const ctrl = this;
-        ctrl.styles = {
+        ctrl.types = {
             none: 'config-item config-item-note-none',
             note: 'config-item config-item-note-note',
             info: 'config-item config-item-note-info',
@@ -720,10 +767,11 @@ angular
             warning: 'config-item config-item-note-warning',
             error: 'config-item config-item-note-error',
         };
+        ctrl.class = ctrl.types[0];
 
         ctrl.$onInit = function() {
-            const style = Object.keys(ctrl.styles).includes(ctrl.clStyle) ? ctrl.clStyle : 'none';
-            ctrl.style = ctrl.styles[style];
+            const type = Object.keys(ctrl.types).includes(ctrl.clType) ? ctrl.clType : 'none';
+            ctrl.class = ctrl.types[type];
         };
     },
 });
@@ -733,7 +781,8 @@ angular
 .component('configProgress', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
         >
@@ -745,6 +794,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "<",
         clInfinite: "<",
         clBtnColor: '@',
@@ -780,7 +830,8 @@ angular
 .component('configChips', {
     template: `
         <config-basic
-            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-Subtitle="$ctrl.clSubtitle" cl-icon="$ctrl.clIcon"
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -793,6 +844,7 @@ angular
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
+        clIconClass: '@',
         clModel: "=",
         clReadonly: "<",
         clRequired: "<",
@@ -819,39 +871,16 @@ angular
 .module('Cleep')
 .component('configList', {
     template: `
-        <md-list ng-cloak id="{{ $ctrl.clId }}">
-            <data-list-item ng-repeat="item in $ctrl.clItems track by $index">
-                <md-subheader ng-if="item.subheader" class="md-no-sticky">
-                    {{ item.subheader }}
-                </md-subheader>
-
-                <md-divider ng-if="item.divider"></md-divider>
-
-                <md-list-item ng-if="item.label || item.labels" ng-class="{'md-2-line': item.labels.length===2, 'md-3-line': item.labels.length===3}">
-                    <md-icon md-svg-icon="{{ item.icon || 'chevron-double-right' }}"></md-icon>
-
-                    <p ng-if="item.label || item.labels.length===1">
-                        {{ item.label || item.labels[0] }}
-                    </p>
-                    <div ng-if="item.labels.length===2" class="md-list-item-text" layout="column">
-                        <h3>{{ item.labels[0] }}</h3>
-                        <p>{{ item.labels[1] }}</p>
-                    </div>
-                    <div ng-if="item.labels.length===3" class="md-list-item-text" layout="column">
-                        <h3>{{ item.labels[0] }}</h3>
-                        <h4>{{ item.labels[1] }}</h4>
-                        <p>{{ item.labels[2] }}</p>
-                    </div>
-
-                    <md-button ng-if="item.clicks.length>0" ng-repeat="click in item.clicks" ng-click="$ctrl.onClick($event, click, item)" class="md-secondary md-icon-button">
-                        <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
-                        <md-icon md-svg-icon="{{ click.icon }}"></md-icon>
-                    </md-button>
-                    <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($event, $index)"></md-checkbox>
-
-                </md-list-item>
-            </data-list-item>
-        </md-list>
+        <config-basic ng-repeat="item in $ctrl.clItems"
+            cl-title="item.title" cl-subtitle="item.subtitle"
+            cl-icon="item.icon" cl-icon-class="item.iconClass"
+            cl-class="config-list-item"
+        >
+            <md-button ng-if="item.clicks.length>0" ng-repeat="click in item.clicks" ng-click="$ctrl.onClick($event, click, item)" class="md-secondary md-icon-button {{ click.class }}">
+                <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
+                <md-icon md-svg-icon="{{ click.icon }}"></md-icon>
+            </md-button>
+        </config-basic>
     `,
     bindings: {
         clId: '@',
