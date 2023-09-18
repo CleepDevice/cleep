@@ -24,29 +24,29 @@
             <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
                 <div class="toolbar-spacer"></div>
                 <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
-                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <md-icon style="color:white;" md-font-icon="mdi mdi-cellphone"></md-icon>
                     <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
                 </div>
                 <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
-                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <md-icon style="color:white;" md-font-icon="mdi mdi-cellphone"></md-icon>
                     <h1 style="padding-left:5px;" class="md-title">{{mainCtl.hostname}}</h1>
                 </div>
                 <div flex></div>
                 <app-toolbar></app-toolbar>
                 <div layout="row" layout-align="end center">
                     <md-button hide="" show-gt-xs="" href="#!dashboard" class="md-raised">
-                        <md-icon md-svg-icon="view-dashboard"></md-icon>
+                        <md-icon md-font-icon="mdi mdi-view-dashboard"></md-icon>
                         <span>Dashboard</span>
                     </md-button>
                     <md-button hide-gt-xs="" href="#!dashboard" class="md-raised cl-button-sm">
-                        <md-icon md-svg-icon="view-dashboard"></md-icon>
+                        <md-icon md-font-icon="mdi mdi-view-dashboard"></md-icon>
                     </md-button>
                     <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
-                        <md-icon md-svg-icon="apps"></md-icon>
+                        <md-icon md-font-icon="mdi mdi-apps"></md-icon>
                         <span>Apps</span>
                     </md-button>
                     <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
-                        <md-icon md-svg-icon="apps"></md-icon>
+                        <md-icon md-font-icon="mdi mdi-apps"></md-icon>
                     </md-button>
                 </div>
                 <div class="toolbar-spacer"></div>

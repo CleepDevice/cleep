@@ -98,7 +98,12 @@ md-toast.fatal .md-toast-content {
 }
 
 /* icon */
+md-icon {
+    font-size: 24px;
+}
+
 .icon-xs {
+    line-height: 16px !important;
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -107,6 +112,7 @@ md-toast.fatal .md-toast-content {
 }
 
 .icon-md {
+    line-height: 32px !important;
     font-size: 32px;
     width: 32px;
     height: 32px;
@@ -115,6 +121,7 @@ md-toast.fatal .md-toast-content {
 }
 
 .icon-lg {
+    line-height: 48px !important;
     font-size: 48px;
     width: 48px;
     height: 48px;
@@ -123,6 +130,7 @@ md-toast.fatal .md-toast-content {
 }
 
 .icon-xl {
+    line-height: 72px !important;
     font-size: 72px;
     width: 72px;
     height: 72px;
@@ -131,6 +139,7 @@ md-toast.fatal .md-toast-content {
 }
 
 .icon-xxl {
+    line-height: 96px !important;
     font-size: 96px;
     width: 96px;
     height: 96px;
@@ -139,6 +148,7 @@ md-toast.fatal .md-toast-content {
 }
 
 .icon-xxxl {
+    line-height: 112px !important;
     font-size: 112px;
     width: 112px;
     height: 112px;
@@ -350,6 +360,10 @@ a.md-button.cl-button-sm {
     border-bottom: 1px solid rgb(196, 200, 203);
     padding-bottom: 10px;
     margin: 15px 0px 0px 15px;
+}
+
+.config-item-section div md-icon {
+    margin-right: 5px;
 }
 
 .config-item-section > span {
