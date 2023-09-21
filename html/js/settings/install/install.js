@@ -11,6 +11,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         self.country = null;
         self.countryAlpha = null;
         self.moduleToInstall = null;
+        self.loading = true;
         self.displayedModules = [];
         self.gaugeThreshold = {
             '0': { color: '#000000' },
@@ -34,10 +35,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          * @param module: module name (string)
          */
         self.install = function(module) {
-            // close modal
             self.closeDialog();
-
-            // launch install
             cleepService.installModule(module);
         };
 
@@ -46,24 +44,25 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          */
         self.fillModules = function() {
             cleepService.getModuleConfig('parameters')
-            .then((parametersConfig) => {
-                // update list of modules names
-                var modules = [];
-                for( var [moduleName, module] of Object.entries(cleepService.installableModules) ) {
-                    // fix module country alpha code
-                    var countryAlpha = module.country;
-                    if( countryAlpha===null || countryAlpha===undefined ) {
-                        countryAlpha = '';
-                    }
+                .then((parametersConfig) => {
+                    // update list of modules names
+                    var modules = [];
+                    for (const module of Object.values(cleepService.installableModules)) {
+                        // fix module country alpha code
+                        var countryAlpha = module.country;
+                        if( countryAlpha===null || countryAlpha===undefined ) {
+                            countryAlpha = '';
+                        }
 
-                    // append module if necessary
-                    if ((!module.installed || (module.installed && module.library)) &&
-                        (countryAlpha.length===0 || countryAlpha.toUpperCase()==parametersConfig.country.alpha2) ) {
-                        modules.push(module);
+                        // append module if necessary
+                        if ((!module.installed || (module.installed && module.library)) &&
+                            (countryAlpha.length===0 || countryAlpha.toUpperCase()==parametersConfig.country.alpha2) ) {
+                            modules.push(module);
+                        }
                     }
-                }
-                self.displayedModules = modules;
-            });
+                    self.displayedModules = modules;
+                    self.loading = false;
+                });
         };
 
         /**
@@ -134,7 +133,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             function() {
                 return cleepService.installableModules;
             },
-            function(newValue, oldValue) {
+            function(newValue) {
                 if( newValue && Object.keys(newValue).length ) {
                     self.fillModules();
                 }
