@@ -19,19 +19,16 @@
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
-            <md-input-container  hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
-                <cl-icon cl-mdi="magnify"></cl-icon>
+            <cl-icon cl-mdi="magnify"></cl-icon>
+            <md-input-container hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
                 <input ng-model="modulesCtl.search['$']" type="text">
             </md-input-container>
             <md-input-container hide-gt-xs="" class="md-icon-float md-block no-error-spacer">
-                <cl-icon cl-mdi="magnify"></cl-icon>
                 <input ng-model="modulesCtl.search['$']" type="text" size="6">
             </md-input-container>
-            <div>
-                <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()">
-                    <cl-icon cl-mdi="close"></cl-icon>
-                </md-button>
-            </div>
+            <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()">
+                <cl-icon cl-mdi="close"></cl-icon>
+            </md-button>
         </div>
     </div>
 

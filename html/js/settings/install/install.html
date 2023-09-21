@@ -15,19 +15,20 @@
         </div>
         <div class="toolbar-spacer"></div>
         <div>
-            <h1 class="md-title">Applications market</h1>
+            <h1 class="md-title">Apps market</h1>
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
-            <md-input-container class="md-icon-float md-block no-error-spacer">
-                <cl-icon cl-mdi="magnify"></cl-icon>
-                <input ng-model="installCtl.search['$']" ng-model-options="{debounce: 400}" type="text">
+            <cl-icon cl-mdi="magnify"></cl-icon>
+            <md-input-container hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
+                <input ng-model="installCtl.search['$']" type="text">
             </md-input-container>
-            <div>
-                <md-button class="md-icon-button" ng-click="installCtl.clearSearch()">
-                    <cl-icon cl-mdi="close"></cl-icon>
-                </md-button>
-            </div>
+            <md-input-container hide-gt-xs="" class="md-icon-float md-block no-error-spacer">
+                <input ng-model="installCtl.search['$']" type="text" size="6">
+            </md-input-container>
+            <md-button class="md-icon-button" ng-click="installCtl.clearSearch()">
+                <cl-icon cl-mdi="close"></cl-icon>
+            </md-button>
         </div>
     </div>
 
