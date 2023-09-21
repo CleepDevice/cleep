@@ -47,7 +47,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
                 // load installable modules if necessary
                 if(Object.keys(self.installableModules).length>0) {
-                    return rpcService.getModules(true);
+                    return self.getInstallableModules();
                 } else {
                     return Promise.resolve(null);
                 }
