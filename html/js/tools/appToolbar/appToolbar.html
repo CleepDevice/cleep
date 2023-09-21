@@ -1,6 +1,6 @@
 <div layout="row" layout-align="end center">
-    <md-button ng-repeat="btn in appToolbarCtl.buttons" class="md-raised {{btn.style}}" aria-label="{{btn.label}}" ng-click="appToolbarCtl.click(btn)">
-        <md-icon md-font-icon="mdi mdi-{{btn.icon}}"></md-icon>
+    <md-button ng-repeat="btn in appToolbarCtl.buttons" class="md-raised {{ btn.style }}" aria-label="{{ btn.label }}" ng-click="appToolbarCtl.click(btn)">
+        <cl-icon cl-mdi="{{ btn.icon }}"></cl-icon>
         {{btn.label}}
     </md-button>
 </div>

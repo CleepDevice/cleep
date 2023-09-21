@@ -98,6 +98,10 @@ md-toast.fatal .md-toast-content {
 }
 
 /* icon */
+.icon-white {
+    color: white;
+}
+
 md-icon {
     font-size: 24px;
 }

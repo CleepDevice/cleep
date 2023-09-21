@@ -4,7 +4,7 @@
             <h2>Application installation</h2>
             <span flex></span>
             <md-button class="md-icon-button" ng-click="installCtl.closeDialog()" aria-label="Close dialog">
-                <md-icon md-font-icon="mdi mdi-close"></md-icon>
+                <cl-icon cl-mdi="close"></cl-icon>
             </md-button>
         </div>
     </md-toolbar>
@@ -13,9 +13,9 @@
         <div class="md-dialog-content" layout="row" layout-align="space-between start">
         
             <!-- app info -->
-            <div layout="column" layout-align="space-between start" flex="20">
+            <div layout="column" layout-align="space-between start" style="width: 180px;">
                 <div style="width:100%; text-align:center; margin-bottom:15px;">
-                    <md-icon md-font-icon="mdi mdi-{{installCtl.moduleToInstall.icon || 'help-rhombus'}}" class="icon-xxxl"></md-icon>
+                    <cl-icon cl-mdi="{{ installCtl.moduleToInstall.icon || 'help-rhombus' }}" cl-class="icon-xxxl"></cl-icon>
                 </div>
                 <div class="md-headline" style="width:100%; text-align:center; margin-bottom:30px;">
                     {{(installCtl.moduleToInstall.label || installCtl.moduleToInstall.name) | firstUpper}}
@@ -29,7 +29,7 @@
                 <div style="margin-bottom:15px;">
                     <span class="subheader">Metrics:</span>
                     <a href="https://github.com/tangb/cleep/wiki/Application-metrics" target="_blank">
-                        <md-icon md-font-icon="mdi mdi-help-circle-outline" class="icon-xs"></md-icon>
+                        <cl-icon cl-mdi="help-circle-outline" cl-class="icon-xs"></cl-icon>
                     </a>
                 </div>
                 <div
@@ -78,7 +78,7 @@
                             <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see application links below.</span>
                             <span ng-if="installCtl.moduleToInstall.urls.info" style="margin-top:15px;">
                                 <a ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">More infos on this application</a>
-                                <md-icon md-font-icon="mdi mdi-open-in-new" class="icon-xs"></md-icon>
+                                <cl-icon cl-mdi="open-in-new" cl-class="icon-xs"></cl-icon>
                             </span>
                         </div>
                     </md-list-item>
@@ -120,11 +120,11 @@
 
     <md-dialog-actions>
         <md-button ng-click="installCtl.closeDialog()">
-            <md-icon md-font-icon="mdi mdi-close-circle"></md-icon>
+            <cl-icon cl-mdi="close-circle"></cl-icon>
             Cancel
         </md-button>
         <md-button ng-click="installCtl.install(installCtl.moduleToInstall.name)" class="md-accent">
-            <md-icon md-font-icon="mdi mdi-plus-circle"></md-icon>
+            <cl-icon cl-mdi="plus-circle"></cl-icon>
             Install
         </md-button>
     </md-dialog-actions>

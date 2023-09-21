@@ -4,7 +4,7 @@
             <h2>Application update</h2>
             <span flex></span>
             <md-button class="md-icon-button" ng-click="updateCtl.closeDialog()" aria-label="Close dialog">
-                <md-icon md-font-icon="mdi mdi-close"></md-icon>
+                <cl-icon cl-mdi="close"></cl-icon>
             </md-button>
         </div>
     </md-toolbar>
@@ -29,11 +29,11 @@
 
     <md-dialog-actions>
         <md-button ng-click="updateCtl.closeDialog()">
-            <md-icon md-font-icon="mdi mdi-close-circle"></md-icon>
+            <cl-icon cl-mdi="close-circle"></cl-icon>
             Cancel
         </md-button>
         <md-button ng-click="updateCtl.updateModule(updateCtl.moduleUpdate.name)" class="md-accent">
-            <md-icon md-font-icon="mdi mdi-update"></md-icon>
+            <cl-icon cl-mdi="update"></cl-icon>
             Update
         </md-button>
     </md-dialog-actions>
