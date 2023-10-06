@@ -144,16 +144,6 @@ Cleep.config([
 }]);*/
 
 /**
- * MDI font configuration
- */
-Cleep.config([
-	'$mdIconProvider',
-	function ($mdIconProvider) {
-		$mdIconProvider.defaultIconSet('fonts/mdi.svg');
-	},
-]);
-
-/**
  * Blockui configuration
  */
 Cleep.config([
