@@ -108,7 +108,8 @@ Cleep.factory('$exceptionHandler', [
  */
 Cleep.config([
 	'$mdThemingProvider',
-	function ($mdThemingProvider) {
+	'$provide',
+	function ($mdThemingProvider, $provide) {
 		$mdThemingProvider
 			.theme('default')
 			.primaryPalette('blue-grey')
@@ -116,9 +117,10 @@ Cleep.config([
 			.backgroundPalette('grey');
 		$mdThemingProvider
 			.theme('dark')
-			.primaryPalette('amber')
-			.accentPalette('blue')
 			.dark();
+		$mdThemingProvider.alwaysWatchTheme(true);
+
+		$provide.value('themeProvider', $mdThemingProvider);
 
 		/*$mdThemingProvider
         .theme('default')
