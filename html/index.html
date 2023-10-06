@@ -32,26 +32,12 @@
                     <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
                 </div>
                 <div flex></div>
-                <app-toolbar></app-toolbar>
                 <div layout="row" layout-align="end center">
-                    <md-button hide="" show-gt-xs="" href="#!dashboard" class="md-raised">
-                        <cl-icon cl-mdi="view-dashboard"></cl-icon>
-                        <span>Dashboard</span>
-                    </md-button>
-                    <md-button hide-gt-xs="" href="#!dashboard" class="md-raised cl-button-sm">
-                        <cl-icon cl-mdi="view-dashboard"></cl-icon>
-                    </md-button>
-                    <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
-                        <cl-icon cl-mdi="apps"></cl-icon>
-                        <span>Apps</span>
-                    </md-button>
-                    <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
-                        <cl-icon cl-mdi="apps"></cl-icon>
-                    </md-button>
+                    <cl-toolbar></cl-toolbar>
                 </div>
                 <div class="toolbar-spacer"></div>
             </div>
-            <div loading-bar-directive></div>
+            <cleep-loading-bar></cleep-loading-bar>
 
             <!-- page content -->
             <div ng-view></div>
@@ -88,7 +74,7 @@
     <script src="js/libs/angularjs-gauge.min.js?cleepversion"></script>
 
     <!-- application -->
-    <script src="js/tools/helpers.js?cleepversion"></script>
+    <script src="js/libs/helpers.js?cleepversion"></script>
     <script src="js/app.js?cleepversion"></script>
     <script src="js/app.configs.js?cleepversion"></script>
     <script src="js/app.filters.js?cleepversion"></script>
@@ -97,18 +83,8 @@
     <script src="js/services/cleep.js?cleepversion"></script>
     <script src="js/services/confirm.js?cleepversion"></script>
     <script src="js/services/dialog.js?cleepversion"></script>
-    <script src="js/services/appToolbar.js?cleepversion"></script>
-    <script src="js/tools/fabButton/fabButton.js?cleepversion"></script>
-    <script src="js/tools/uploadFile/uploadFile.js?cleepversion"></script>
-    <script src="js/tools/renderersSelector/renderersSelector.js?cleepversion"></script>
-    <script src="js/tools/loadingBar/loadingBar.js?cleepversion"></script>
-    <script src="js/tools/moduleImage/moduleImage.js?cleepversion"></script>
-    <script src="js/tools/appToolbar/appToolbar.js?cleepversion"></script>
-    <script src="js/settings/modules/modules.js?cleepversion"></script>
-    <script src="js/settings/module/module.js?cleepversion"></script>
-    <script src="js/settings/page/page.js?cleepversion"></script>
-    <script src="js/settings/install/install.js?cleepversion"></script>
-    <script src="js/dashboard/dashboard.js?cleepversion"></script>
+    <script src="js/app/modules/modules.js?cleepversion"></script>
+    <script src="js/app/module/module.js?cleepversion"></script>
 
     <!-- components -->
     <script src="js/components/config.components.js?cleepversion"></script>
