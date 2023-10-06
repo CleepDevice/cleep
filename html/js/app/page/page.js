@@ -197,7 +197,7 @@ var pageDirective = function($q, cleepService, $compile, $timeout, $routeParams,
     };
 
     return {
-        templateUrl: 'js/settings/page/page.html',
+        templateUrl: 'js/app/page/page.html',
         replace: true,
         controller: pageController,
         controllerAs: 'pageCtl',

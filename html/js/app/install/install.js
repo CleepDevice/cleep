@@ -73,7 +73,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'incompatibleCtl',
-                templateUrl: 'js/settings/install/incompatible.dialog.html',
+                templateUrl: 'js/app/install/incompatible.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -102,7 +102,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'installCtl',
-                templateUrl: 'js/settings/install/install.dialog.html',
+                templateUrl: 'js/app/install/install.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev, 
                 clickOutsideToClose: true,
@@ -161,7 +161,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
     }];
 
     return {
-        templateUrl: 'js/settings/install/install.html',
+        templateUrl: 'js/app/install/install.html',
         replace: true,
         controller: installController,
         controllerAs: 'installCtl',

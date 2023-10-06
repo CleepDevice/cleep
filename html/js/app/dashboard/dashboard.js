@@ -20,7 +20,7 @@ function() {
     };
 
     return {
-        templateUrl: 'js/dashboard/dashboard.html',
+        templateUrl: 'js/app/dashboard/dashboard.html',
         replace: true,
         scope: true,
         controller: ['$scope', 'cleepService', dashboardController],

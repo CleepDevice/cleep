@@ -169,7 +169,7 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
     };
 
     return {
-        templateUrl: 'js/settings/module/module.html',
+        templateUrl: 'js/app/module/module.html',
         replace: true,
         controller: moduleController,
         controllerAs: 'moduleCtl',

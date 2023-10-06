@@ -143,7 +143,7 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'updateCtl',
-                templateUrl: 'js/settings/modules/update.dialog.html',
+                templateUrl: 'js/app/modules/update.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -160,7 +160,7 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
             $mdDialog.show({
                 controller: function() { return self; },
                 controllerAs: 'notstartedCtl',
-                templateUrl: 'js/settings/modules/not-started.dialog.html',
+                templateUrl: 'js/app/modules/not-started.dialog.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose: true,
@@ -188,7 +188,7 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
     }];
 
     return {
-        templateUrl: 'js/settings/modules/modules.html',
+        templateUrl: 'js/app/modules/modules.html',
         replace: true,
         controller: modulesController,
         controllerAs: 'modulesCtl',
