@@ -272,7 +272,7 @@ def symlink_modules(cleep_filesystem):
         # backup existing modules dir that should not exist
         cleep_modules_path_backup = os.path.join(os.path.dirname(rpcserver.__file__), 'modules.backup')
         if os.path.exists(cleep_modules_path_backup):
-            cleep_filesystem.remove(cleep_modules_path_backup)
+            cleep_filesystem.rmdir(cleep_modules_path_backup)
         cleep_filesystem.move(cleep_modules_path, cleep_modules_path_backup)
 
     cleep_filesystem.ln(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path, force=True)
