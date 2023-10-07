@@ -13,7 +13,9 @@ cleep (0.0.31) UNRELEASED; urgency=low
   * Addeed ui: implement dashboard widget base component
   * Added ui: implement dashboard config widget component
   * Added ui: cache dashboard config widget component
-  * Updated ui: Bump js libraries
+  * Updated ui: bump js libraries
+  * Updated ui: move js tools in ui components file
+  * Added ui: compress js files during deb process
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 
