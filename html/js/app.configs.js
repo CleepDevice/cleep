@@ -33,6 +33,9 @@ Cleep.config([
 			.when('/module/:name/:page', {
 				template: '<div page-directive></div>',
 			})
+			.when('/components', {
+				template: '<div components-directive></div>',
+			})
 			.otherwise({
 				redirectTo: '/dashboard',
 			});

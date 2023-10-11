@@ -16,6 +16,7 @@ cleep (0.0.31) UNRELEASED; urgency=low
   * Updated ui: bump js libraries
   * Updated ui: move js tools in ui components file
   * Added ui: compress js files during deb process
+  * Adde ui: components page
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 
