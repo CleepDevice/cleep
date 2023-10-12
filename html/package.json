@@ -14,21 +14,22 @@
         "angular-block-ui": "^0.2.2",
         "angular-daterangepicker": "^0.2.3-alpha1",
         "angular-konami": "^0.2.0",
-        "angular-material": "^1.2.4",
+        "angular-marked": "^1.2.2",
+        "angular-material": "^1.2.5",
+        "angular-material-badge": "^1.2.91",
         "angular-material-data-table": "^0.10.10",
         "angular-messages": "^1.8.2",
         "angular-route": "^1.8.2",
         "angular-sanitize": "^1.8.2",
-        "angular-material-badge": "^1.2.91",
-        "angular-marked": "^1.2.2",
+        "angularjs-gauge": "^2.2.0",
         "codemirror-minified": "^5.65.9",
         "jquery": "^3.6.0",
         "moment": "^2.29.4",
-        "oclazyload": "^1.1.0",
-        "angularjs-gauge": "^2.2.0"
+        "oclazyload": "^1.1.0"
     },
     "devDependencies": {
-        "minify": "^10.5.2"
+        "minify": "^6.0.1",
+        "uglify-js": "^3.17.4"
     },
     "comments": {
         "deprecated-dependencies": {

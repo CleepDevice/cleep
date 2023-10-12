@@ -32,10 +32,10 @@ var files = {
     // jquery
     'node_modules/jquery/dist/jquery.min.js': 'js/libs/jquery.min.js',
     // codemirror
-    'node_modules/codemirror-minified/lib/codemirror.js': 'js/libs/codemirror.js',
-    'node_modules/codemirror-minified/mode/python/python.js': 'js/libs/codemirror-python.js',
+    'node_modules/codemirror-minified/lib/codemirror.js': 'js/libs/codemirror.min.js',
+    'node_modules/codemirror-minified/mode/python/python.js': 'js/libs/codemirror-python.min.js',
     // ABANDONED 'node_modules/ui-codemirror/src/ui-codemirror.js': 'js/libs/ui-codemirror.js',
-    'node_modules/codemirror-minified/lib/codemirror.css': 'css/codemirror.css',
+    'node_modules/codemirror-minified/lib/codemirror.css': 'css/codemirror.min.css',
     // data-table
     'node_modules/angular-material-data-table/dist/md-data-table.min.js': 'js/libs/md-data-table.min.js',
     'node_modules/angular-material-data-table/dist/md-data-table.min.css': 'css/md-data-table.min.css',
@@ -46,9 +46,10 @@ var files = {
     // markdown https://github.com/Hypercubed/angular-marked
     'node_modules/angular-marked/dist/angular-marked.min.js': 'js/libs/angular-marked.min.js',
     'node_modules/marked/lib/marked.js': 'js/libs/marked.js',
-    // badge https://github.com/jmouriz/angular-material-badge
-    'node_modules/angular-material-badge/source/angular-material-badge.js': 'js/libs/angular-material-badge.js',
-    'node_modules/angular-material-badge/source/angular-material-badge.css': 'css/angular-material-badge.css',
+    // ABADONNED badge https://github.com/jmouriz/angular-material-badge
+    // REPLACED BY https://github.com/CleepDevice/angular-material-badge
+    // 'node_modules/angular-material-badge/source/angular-material-badge.js': 'js/libs/angular-material-badge.js',
+    // 'node_modules/angular-material-badge/source/angular-material-badge.css': 'css/angular-material-badge.css',
     // angularjs-gauge
     'node_modules/angularjs-gauge/dist/angularjs-gauge.min.js': 'js/libs/angularjs-gauge.min.js',
     // material design icons
@@ -63,12 +64,17 @@ var files = {
 for(var file in files) {
     var src = file;
     var dst = files[file];
+    var alreadyMinifed = [
+        'node_modules/codemirror-minified/lib/codemirror.js',
+        'node_modules/codemirror-minified/mode/python/python.js',
+        'node_modules/codemirror-minified/lib/codemirror.css',
+    ];
         
-    if (src.indexOf('.min') === -1 && src.search(/eot|woff|ttf/g) === -1) {
+    if (src.indexOf('.min') === -1 && !alreadyMinifed.includes(src) && src.search(/css|eot|woff|ttf/g) === -1) {
         // minify file
         var minDst = files[src].replace(path.extname(files[src]), '.min'+path.extname(files[src]));
-        console.log('minify ' + src + ' ==> ' + minDst);
-        exec('node node_modules/.bin/minify "' + src + '" > "' + minDst + '"',
+        console.log('npx uglify --compress --mangle --output ' + minDst + ' -- ' + src);
+        exec('npx uglifyjs --compress --mangle --output "' + minDst + '" -- "' + src + '"',
             (error, stdout, stderr) => {
                 if (error) throw error;
             }

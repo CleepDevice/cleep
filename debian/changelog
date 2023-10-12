@@ -10,7 +10,7 @@ cleep (0.0.31) UNRELEASED; urgency=low
   * Updated install: improve Cleep install and rollback if errors
   * Added ui: implement config item components library
   * Updated ui: improve responsive
-  * Addeed ui: implement dashboard widget base component
+  * Added ui: implement dashboard widget base component
   * Added ui: implement dashboard config widget component
   * Added ui: cache dashboard config widget component
   * Updated ui: bump js libraries
