@@ -738,7 +738,7 @@ angular.module('Cleep').component('configDate', {
         clBtnIcon: '@',
         clBtnTooltip: '@',
         clMeta: '<',
-        clClick: '&',
+        clClick: '&?',
         clDisabled: '<?'
     },
 });
@@ -777,7 +777,7 @@ angular.module('Cleep').component('configTime', {
         clBtnIcon: '@',
         clBtnTooltip: '@',
         clMeta: '<',
-        clClick: '&',
+        clClick: '&?',
         clDisabled: '<?',
     },
     controller: function () {
@@ -912,7 +912,7 @@ angular.module('Cleep').component('configChips', {
         clBtnIcon: '@',
         clBtnTooltip: '@',
         clMeta: '<',
-        clClick: '&',
+        clClick: '&?',
     },
     controller: function () {
         const ctrl = this;
