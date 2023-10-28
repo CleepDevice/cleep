@@ -2,6 +2,33 @@ function getFormName() {
     return 'form' + Math.round(Math.random() * 100000000);
 }
 
+STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+ARGUMENT_NAMES = /([^\s,]+)/g;
+
+function callFunction(fn, data) {
+    // code from XXX
+    const fnStr = fn.toString().replace(STRIP_COMMENTS, '');
+    const fnArgs = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES) || [];
+
+    const args = [];
+    for (const arg of fnArgs) {
+        if (data?.[arg]) {
+            args.push(data[arg]);
+        } else if (data?.meta?.[arg]) {
+            args.push(data.meta[arg]);
+        } else {
+            args.push(undefined);
+        }
+    }
+
+    fn.apply(null, args);
+}
+
+function functionArgs(fn) {
+    const fnStr = fn.toString().replace(STRIP_COMMENTS, '');
+    const fnArgs = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES) || [];
+}
+
 angular.module('Cleep').component('configItemDesc', {
     template: `
         <cl-icon ng-if="$ctrl.icon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin:10px;" cl-class="{{ $ctrl.clIconClass }}"></cl-icon>
@@ -29,7 +56,7 @@ angular.module('Cleep').component('configItemSaveButton', {
     template: `
         <md-button
             ng-if="$ctrl.clBtnClick"
-            ng-click="$ctrl.onClick()"
+            ng-click="$ctrl.onClick($event)"
             class="{{ $ctrl.color }} {{ $ctrl.style }} cl-button-sm"
             ng-disabled="($ctrl.checkForm && !$ctrl.clFormRef.inputField.$valid) || $ctrl.clBtnDisabled === true"
         >
@@ -58,11 +85,12 @@ angular.module('Cleep').component('configItemSaveButton', {
             ctrl.checkForm = ctrl.clFormRef ?? false;
         };
 
-        ctrl.onClick = () => {
+        ctrl.onClick = ($event) => {
             if (ctrl.clBtnClick) {
                 ctrl.clBtnClick({
                     value: ctrl.clModel,
                     meta: ctrl.clMeta,
+                    event: $event,
                 });
             }
         };
@@ -81,8 +109,8 @@ angular.module('Cleep').component('configBasic', {
                 cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
-            <div ng-if="!$ctrl.noForm">
-                <form name="` + formName + `">
+            <div ng-if="!$ctrl.noForm" layout="row" layout-align="end center">
+                <form name="` + formName + `" style="margin-bottom: 0px;">
                     <div flex="none" layout="row" layout-align="end center">
                         <ng-transclude flex layout="row" layout-align="end center"></ng-transclude>
 
@@ -93,7 +121,7 @@ angular.module('Cleep').component('configBasic', {
                     </div>
                 </form>
             </div>
-            <div ng-if="$ctrl.noForm" flex layout="row" layout-align="end center">
+            <div ng-if="$ctrl.noForm" layout="row" layout-align="end center">
                 <ng-transclude flex layout="row" layout-align="end center"></ng-transclude>
 
                 <config-item-save-button
@@ -144,7 +172,7 @@ angular.module('Cleep').component('configButton', {
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
-                <md-button ng-click="$ctrl.onClick()" class="{{ $ctrl.buttonColor }} {{ $ctrl.buttonStyle }}" ng-disabled="$ctrl.clDisabled">
+                <md-button ng-click="$ctrl.onClick($event)" class="{{ $ctrl.buttonColor }} {{ $ctrl.buttonStyle }}" ng-disabled="$ctrl.clDisabled">
                     <md-tooltip ng-if="$ctrl.clBtnTooltip">{{ $ctrl.clBtnTooltip }}</md-tooltip>
                     <cl-icon ng-if="$ctrl.clBtnIcon" cl-mdi="{{ $ctrl.clBtnIcon }}"></cl-icon>
                     {{ $ctrl.clBtnLabel }}
@@ -175,10 +203,8 @@ angular.module('Cleep').component('configButton', {
             ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-raised';
         };
 
-        ctrl.onClick = () => {
-            if (ctrl.clClick) {
-                ctrl.clClick({ meta: ctrl.clMeta });
-            }
+        ctrl.onClick = ($event) => {
+            (ctrl.clClick || angular.noop)({ meta: ctrl.clMeta, event: $event });
         };
     },
 });
@@ -192,15 +218,15 @@ angular.module('Cleep').component('configButtons', {
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
-                <div ng-if="!$ctrl.collapse" ng-repeat="button in $ctrl.buttons track by $index">
-                    <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }} cl-button-sm" ng-disabled="button.disabled">
+                <div ng-if="$ctrl.buttons.length <= $ctrl.limit" ng-repeat="button in $ctrl.buttons track by $index">
+                    <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.color }} {{ button.style }} cl-button-sm" ng-disabled="button.disabled">
                         <md-tooltip ng-if="button.tooltip">{{ button.tooltip }}</md-tooltip>
                         <cl-icon ng-if="button.icon" cl-mdi="{{ button.icon }}"></cl-icon>
                         {{ button.label }}
                     </md-button>
                 </div>
 
-                <div ng-if="$ctrl.collapse">
+                <div ng-if="$ctrl.buttons.length > $ctrl.limit">
                     <md-menu>
                         <md-button class="md-raised md-primary cl-button-sm" ng-click="$ctrl.openMenu($mdMenu, $event)">
                             <md-tooltip>Choose action</md-tooltip>
@@ -208,9 +234,9 @@ angular.module('Cleep').component('configButtons', {
                         </md-button>
                         <md-menu-content>
                             <md-menu-item ng-repeat="button in $ctrl.buttons track by $index">
-                                <md-button ng-click="$ctrl.onClick(button)" class="{{ button.color }} {{ button.style }}" ng-disabled="button.disabled">
+                                <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.color }} {{ button.style }}" ng-disabled="button.disabled">
                                     <cl-icon ng-if="button.icon" cl-mdi="{{ button.icon }}"></cl-icon>
-                                    {{ button.label }} {{ button.color }}
+                                    {{ button.label }}
                                 </md-button>
                             </md-menu-item>
                         </md-menu-content>
@@ -226,20 +252,20 @@ angular.module('Cleep').component('configButtons', {
         clIcon: '@',
         clIconClass: '@',
         clButtons: '<',
-        clForceDisplay: '<?',
+        clLimit: '@?',
     },
     controller: function () {
         const ctrl = this;
         ctrl.buttons = [];
         ctrl.limit = 2;
-        ctrl.collapse = false;
+
+        ctrl.$onInit = function () {
+            ctrl.limit = ctrl.clLimit ?? 2;
+        };
 
         ctrl.$onChanges = function (changes) {
             if (changes.clButtons?.currentValue) {
                 ctrl.prepareButtons(changes.clButtons.currentValue);
-            }
-            if (changes.clForceDisplay?.currentValue) {
-                ctrl.updateCollapse();
             }
         };
 
@@ -251,8 +277,6 @@ angular.module('Cleep').component('configButtons', {
                         "' cl-buttons options must be an array"
                 );
             }
-
-            ctrl.updateCollapse(buttons);
 
             for (const button of buttons) {
                 ctrl.buttons.push({
@@ -268,28 +292,14 @@ angular.module('Cleep').component('configButtons', {
             }
         };
 
-        ctrl.updateCollapse = function(buttons) {
-            const buttonsCount = (buttons ?? ctrl.buttons)?.length || 0;
-            ctrl.collapse = buttonsCount > ctrl.limit && !ctrl.clForceDisplay;
-        };
-
-        ctrl.onClick = function (button) {
-            if (!button.click) {
-                console.warn(
+        ctrl.onClick = function ($event, button) {
+            if (!button.click || !angular.isFunction(button.click)) {
+                console.error(
                     "[cleep] ConfigButtons '" + ctrl.clId + "' button has no click binded"
                 );
                 return;
             }
-            if (!angular.isFunction(button.click)) {
-                console.warn(
-                    "[cleep] ConfigButtons '" +
-                        ctrl.clId +
-                        "' button must has function binded to click option"
-                );
-                return;
-            }
-
-            button.click({ meta: button.meta });
+            callFunction(button.click, { meta: button.meta, event: $event });
         };
 
         ctrl.openMenu = function ($mdMenu, ev) {
@@ -507,7 +517,11 @@ angular.module('Cleep').component('configSlider', {
         };
 
         ctrl.onChange = function () {
-            (ctrl.clOnChange || angular.noop)({ value: ctrl.clModel, meta: ctrl.clMeta });
+            const data = {
+                value: ctrl.clModel,
+                meta: ctrl.clMeta
+            };
+            (ctrl.clOnChange || angular.noop)(data);
         };
     },
 });
@@ -520,7 +534,7 @@ angular.module('Cleep').component('configCheckbox', {
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-checkbox ng-change="$ctrl.onClick()" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+            <md-checkbox ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
                 {{ $ctrl.clCaption }}
             </md-checkbox>
         </config-basic>
@@ -546,16 +560,13 @@ angular.module('Cleep').component('configCheckbox', {
             ctrl.noForm = ctrl.clNoForm ?? false;
         };
 
-        ctrl.onClick = () => {
-            if (ctrl.clClick) {
-                const value = ctrl.clModel
-                    ? ctrl.clSelectedValue || true
-                    : ctrl.clUnselectedValue || false;
-                ctrl.clClick({
-                    value,
-                    meta: ctrl.clMeta,
-                });
-            }
+        ctrl.onClick = ($event) => {
+            const data = {
+                value: ctrl.clModel ? (ctrl.clSelectedValue || true) : (ctrl.clUnselectedValue || false),
+                meta: ctrl.clMeta,
+                event: $event,
+            };
+            (ctrl.clClick || angular.noop)(data);
         };
     },
 });
@@ -568,7 +579,7 @@ angular.module('Cleep').component('configSwitch', {
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-switch ng-change="$ctrl.onClick()" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+            <md-switch ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
                 {{ $ctrl.clCaption }}
             </md-switch>
         </config-basic>
@@ -590,16 +601,13 @@ angular.module('Cleep').component('configSwitch', {
     controller: function () {
         const ctrl = this;
 
-        ctrl.onClick = () => {
-            if (ctrl.clClick) {
-                const value = ctrl.clModel
-                    ? ctrl.clOnValue || true
-                    : ctrl.clOffValue || false;
-                ctrl.clClick({
-                    value,
-                    meta: ctrl.clMeta,
-                });
-            }
+        ctrl.onClick = ($event) => {
+            const data = {
+                value: ctrl.clModel ? (ctrl.clOnValue || true) : (ctrl.clOffValue || false),
+                meta: ctrl.clMeta,
+                event: $event,
+            };
+            (ctrl.clClick || angular.noop)(data);
         };
     },
 });
@@ -804,7 +812,7 @@ angular.module('Cleep').component('configNote', {
         clId: '@',
         clIcon: '@',
         clIconClass: '@',
-        clNote: '<',
+        clNote: '@',
         clType: '@',
     },
     controller: function () {
@@ -822,7 +830,7 @@ angular.module('Cleep').component('configNote', {
         ctrl.$onInit = function () {
             const type = Object.keys(ctrl.types).includes(ctrl.clType)
                 ? ctrl.clType
-                : 'none';
+                : 'note';
             ctrl.class = ctrl.types[type];
         };
     },
@@ -931,11 +939,16 @@ angular.module('Cleep').component('configList', {
             cl-icon="item.icon" cl-icon-class="item.iconClass"
             cl-class="config-list-item"
         >
-            <md-button ng-if="item.clicks.length>0" ng-repeat="click in item.clicks track by $index" ng-click="$ctrl.onClick($event, click, item, $index)" class="md-secondary md-icon-button {{ click.class }}">
+            <md-button
+                ng-if="item.clicks.length>0"
+                ng-repeat="click in item.clicks track by $index"
+                ng-click="$ctrl.onClick($event, click, item, $index)"
+                class="md-secondary md-icon-button {{ click.class }}"
+            >
                 <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
                 <cl-icon cl-mdi="{{ click.icon }}"></cl-icon>
             </md-button>
-            <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($event, $index)"></md-checkbox>
+            <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($index)"></md-checkbox>
         </config-basic>
     `,
     bindings: {
@@ -967,15 +980,24 @@ angular.module('Cleep').component('configList', {
             }
         };
 
-        ctrl.onSelect = (ev, index) => {
-            const current = ctrl.clItems[index];
-            ctrl.clOnSelect({current, index, selections: ctrl.selected});
+        ctrl.onSelect = (index) => {
+            const data = {
+                current: ctrl.clItems[index],
+                selections: ctrl.selected,
+                index,
+            };
+            console.log('++', data);
+            ctrl.clOnSelect(data);
         };
 
-        ctrl.onClick = (ev, click, item, index) => {
-            if (click.click) {
-                click.click(item, index, click.meta || item.meta || undefined);
-            }
+        ctrl.onClick = ($event, click, item, index) => {
+            const data = {
+                item,
+                index,
+                meta: click.meta || item.meta || undefined,
+                event: $event
+            };
+            callFunction(click.click || angular.noop, data);
         };
     },
 });

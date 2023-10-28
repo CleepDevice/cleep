@@ -5,17 +5,7 @@ function() {
 
     var componentsController = function($interval) {
         var self = this;
-        self.meta = { test: 'some data' };
-        self.twoButtons = [
-            {color: 'md-primary', icon: 'account', label: 'account', tooltip: 'Account'},
-            {color: 'md-primary', icon: 'account-alert', label: 'account-alert', disabled:true}
-        ];
-        self.fourButtons = [
-            {color: 'md-primary', icon: 'account', label: 'account', tooltip: 'Account'},
-            {color: 'md-primary', icon: 'account-alert', label: 'account-alert', tooltip: 'Account-alert', disabled:true},
-            {color: 'md-accent', icon: 'account-arrow-down', label: 'account-arrow-down', tooltip: 'Account-arrow-down'},
-            {color: 'md-warn', icon: 'account-badge', label: 'account-badge', tooltip: 'Account-badge'},
-        ];
+        self.meta = { test: 'some data' , value: 666 };
         self.textContent = 'Some text content';
         self.htmlContent = 'Some html content<br><ul><li>bullet #1</li><li>bullet #2</li></ul>';
         self.markdownContent = 'Some markdown **bold** [link](https://google.com)';
@@ -37,20 +27,36 @@ function() {
         self.progress = 0;
         self.chips = ['chip1', 'chip2', 'chip3'];
         
-
         self.onClick = function(value, meta) {
             console.log('click parameters', { value, meta });
-        }
-        self.onSelect = function(current, index, selections) {
-            console.log('click select', { current, index, selections });
-        }
+        };
+
+        self.onSelect = function(current, index, selections, event) {
+            console.log('click select', { current, index, selections, event });
+        };
+
+        self.twoButtons = [
+            {color: 'md-primary', icon: 'account', label: 'account', tooltip: 'Account'},
+            {color: 'md-primary', icon: 'account-alert', label: 'account-alert', disabled:true}
+        ];
+        self.fourButtons = [
+            {color: 'md-primary', icon: 'account', label: 'account', tooltip: 'Account', click: self.onClick, meta: self.meta},
+            {color: 'md-primary', icon: 'account-alert', label: 'account-alert', tooltip: 'Account-alert', disabled:true},
+            {color: 'md-accent', icon: 'account-arrow-down', label: 'account-arrow-down', tooltip: 'Account-arrow-down'},
+            {color: 'md-warn', icon: 'account-badge', label: 'account-badge', tooltip: 'Account-badge'},
+        ];
 
         self.listItems = [
             {
-                title: 'item1', subtitle: 'description1', icon: 'alert', iconClass: 'md-primary', meta:{item: 'meta'}, clicks:[
-                    {tooltip: 'Delete', icon: 'delete', class:'md-accent', click: self.onClick},
-                    {tooltip: 'Hat', icon: 'account-cowboy-hat', click: self.onClick, meta: {click: 'meta'}},
-                ]
+                title: 'item1',
+                subtitle: 'description1',
+                icon: 'alert',
+                iconClass: 'md-primary',
+                meta: { item: 'meta' },
+                clicks:[
+                    { tooltip: 'Delete', icon: 'delete', class:'md-accent', click: self.onClick },
+                    { tooltip: 'Hat', icon: 'account-cowboy-hat', click: self.onClick, meta: { value: 'dummy', click: 'meta' } },
+                ],
             }
         ]
 
