@@ -790,5 +790,20 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         const config = self.widgetConfigs[deviceType];
         return config && JSON.parse(JSON.stringify(config));
     };
+
+    self.deviceRenderableWay = function (deviceType) {
+        const directiveName = deviceType + 'Widget';
+        const isAngularWidget = $injector.has(directiveName+'Directive');
+        if (isAngularWidget) {
+            return 'angular';
+        }
+
+        const hasWidgetConf = self.getWidgetConfig(deviceType);
+        if (Boolean(hasWidgetConf)) {
+            return 'conf'
+        }
+
+        return undefined
+    };
 }]);
 

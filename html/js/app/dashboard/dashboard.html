@@ -20,11 +20,11 @@
             md-colspan-xs="1" md-colspan-sm="1"
             ng-repeat="device in dashboardCtl.devices | orderBy:'name'"
             flex="100" layout="row" layout-align="center center">
-            <dashboardwidget
+            <dashboard-widget
                 ng-if="!device.hidden"
                 type="{{ device.type }}" device="device"
-                flex="100">
-            </dashboardwidget>
+                flex>
+            </dashboard-widget>
         </md-grid-tile>
     </md-grid-list>
 
