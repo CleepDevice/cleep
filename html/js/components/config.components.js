@@ -6,7 +6,6 @@ STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 ARGUMENT_NAMES = /([^\s,]+)/g;
 
 function callFunction(fn, data) {
-    // code from XXX
     const fnStr = fn.toString().replace(STRIP_COMMENTS, '');
     const fnArgs = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES) || [];
 
@@ -31,7 +30,16 @@ function functionArgs(fn) {
 
 angular.module('Cleep').component('configItemDesc', {
     template: `
-        <cl-icon ng-if="$ctrl.icon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin:10px;" cl-class="{{ $ctrl.clIconClass }}"></cl-icon>
+        <div>
+            <md-progress-circular
+                ng-if="$ctrl.showLoader"
+                md-diameter="24px"
+                md-mode="indeterminate"
+                style="margin: 10px;"
+                flex="none"
+            ></md-progress-circular>
+            <cl-icon ng-if="$ctrl.showIcon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconClass }}"></cl-icon>
+        </div>
         <div layout="column" layout-align="center start">
             <div>{{ $ctrl.clTitle }}</div>
             <div ng-if="$ctrl.clSubtitle" class="md-caption" style="margin-top: 5px;">{{ $ctrl.clSubtitle }}</div>
@@ -42,12 +50,17 @@ angular.module('Cleep').component('configItemDesc', {
         clIconClass: '<',
         clTitle: '<',
         clSubtitle: '<',
+        clLoading: '<?',
     },
     controller: function () {
         const ctrl = this;
+        ctrl.showLoader = false;
+        ctrl.showIcon = false;
 
         ctrl.$onInit = function () {
             ctrl.icon = ctrl.clIcon ?? 'chevron-right';
+            ctrl.showLoader = ctrl.clLoading ?? false;
+            ctrl.showIcon = !ctrl.showLoader;
         };
     },
 });
@@ -101,14 +114,14 @@ angular.module('Cleep').component('configBasic', {
     transclude: true,
     template: function () {
         const formName = getFormName();
-        return (
-            `
+        return (`
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
                 cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
-                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
-            </config-item-desc>
+                cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+                cl-loading="$ctrl.clLoading"
+            ></config-item-desc>
             <div ng-if="!$ctrl.noForm" layout="row" layout-align="end center">
                 <form name="` + formName + `" style="margin-bottom: 0px;">
                     <div flex="none" layout="row" layout-align="end center">
@@ -130,8 +143,7 @@ angular.module('Cleep').component('configBasic', {
                 </config-item-save-button>
             </div>
         </div>
-        `
-        );
+        `);
     },
     bindings: {
         clId: '<',
@@ -150,6 +162,7 @@ angular.module('Cleep').component('configBasic', {
         clNoForm: '<?',
         clClass: '@',
         clDisabled: '<',
+        clLoading: '<?',
     },
     controller: function () {
         const ctrl = this;
@@ -937,11 +950,12 @@ angular.module('Cleep').component('configList', {
         <config-basic ng-repeat="item in $ctrl.clItems track by $index"
             cl-title="item.title" cl-subtitle="item.subtitle"
             cl-icon="item.icon" cl-icon-class="item.iconClass"
-            cl-class="config-list-item"
+            cl-class="config-list-item" cl-loading="item.loading"
         >
             <md-button
                 ng-if="item.clicks.length>0"
                 ng-repeat="click in item.clicks track by $index"
+                ng-disabled="click.disabled"
                 ng-click="$ctrl.onClick($event, click, item, $index)"
                 class="md-secondary md-icon-button {{ click.class }}"
             >
@@ -986,7 +1000,6 @@ angular.module('Cleep').component('configList', {
                 selections: ctrl.selected,
                 index,
             };
-            console.log('++', data);
             ctrl.clOnSelect(data);
         };
 
