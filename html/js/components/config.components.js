@@ -592,7 +592,7 @@ angular.module('Cleep').component('configSwitch', {
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-switch ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+            <md-switch ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" style="margin: 8px 0px;">
                 {{ $ctrl.clCaption }}
             </md-switch>
         </config-basic>
@@ -645,7 +645,7 @@ angular.module('Cleep').component('configSelect', {
                     </md-option>
                 </md-select>
             </md-input-container>
-            <md-button ng-if="$ctrl.isMultiple" class="md-icon-button" ng-click="$ctrl.selectAll()" ng-disabled="$ctrl.clDisabled">
+            <md-button ng-if="$ctrl.showSelectAll" class="md-icon-button" ng-click="$ctrl.selectAll()" ng-disabled="$ctrl.clDisabled">
                 <cl-icon cl-mdi="check-all"></cl-icon>
                 <md-tooltip>Select all</md-tooltip>
             </md-button>
@@ -667,15 +667,18 @@ angular.module('Cleep').component('configSelect', {
         clMeta: '<',
         clClick: '&?',
         clDisabled: '<?',
+        clNoSelectAll: '<',
     },
     controller: function () {
         const ctrl = this;
         ctrl.options = [];
         ctrl.isMultiple = false;
+        ctrl.showSelectAll = false;
         ctrl.click = undefined;
 
         ctrl.$onInit = function () {
             ctrl.isMultiple = angular.isArray(ctrl.clModel);
+            ctrl.showSelectAll = ctrl.isMultiple && !(ctrl.clNoSelectAll ?? false);
         };
 
         ctrl.$onChanges = function (changes) {
@@ -962,7 +965,9 @@ angular.module('Cleep').component('configList', {
                 <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
                 <cl-icon cl-mdi="{{ click.icon }}"></cl-icon>
             </md-button>
-            <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($index)"></md-checkbox>
+            <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($index)">
+                {{ item.label }}
+            </md-checkbox>
         </config-basic>
     `,
     bindings: {
@@ -990,17 +995,18 @@ angular.module('Cleep').component('configList', {
         ctrl.prepareSelected = function (items) {
             if (ctrl.clSelectable) {
                 ctrl.selected.splice(0, ctrl.selected.length);
-                items.forEach(() => ctrl.selected.push(false));
+                items.forEach((item) => ctrl.selected.push(!!item.selected));
             }
         };
 
         ctrl.onSelect = (index) => {
             const data = {
+                value: ctrl.selected[index],
                 current: ctrl.clItems[index],
                 selections: ctrl.selected,
                 index,
             };
-            ctrl.clOnSelect(data);
+            (ctrl.clOnSelect || angular.noop)(data);
         };
 
         ctrl.onClick = ($event, click, item, index) => {
