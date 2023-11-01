@@ -158,7 +158,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
      * Get all drivers
      */
     self.getDrivers = function() {
-        var deferred = $q.defer();
+        var d = $q.defer();
 
         $http({
             method: 'POST',
@@ -174,7 +174,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             deferred.reject('request failed');
         });
 
-        return deferred.promise;
+        return d.promise;
     };
 
     /**
