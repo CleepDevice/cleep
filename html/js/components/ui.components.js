@@ -7,7 +7,7 @@ angular.module('Cleep').component('clIcon', {
         </md-icon>`,
     bindings: {
         clMdi: '@',
-        clTooltip: '@',
+        clTooltip: '@?',
         clClass: '@'
     },
 });
