@@ -674,7 +674,6 @@ angular.module('Cleep').component('configSelect', {
         ctrl.options = [];
         ctrl.isMultiple = false;
         ctrl.showSelectAll = false;
-        ctrl.click = undefined;
 
         ctrl.$onInit = function () {
             ctrl.isMultiple = angular.isArray(ctrl.clModel);
