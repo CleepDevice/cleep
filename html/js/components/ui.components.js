@@ -389,8 +389,8 @@ angular.module('Cleep').service('cleepToolbarService', function() {
     };
 
     self.addButton = function(label, icon, click, color) {
-        if (!style) {
-            style = 'md-primary';
+        if (!color) {
+            color = 'md-primary';
         }
 
         const id = self.__getId();
