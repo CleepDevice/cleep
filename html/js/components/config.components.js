@@ -79,7 +79,6 @@ angular.module('Cleep').component('configItemSaveButton', {
     `,
     bindings: {
         clBtnIcon: '<',
-        clBtnColor: '<',
         clBtnStyle: '<',
         clBtnClick: '<',
         clBtnTooltip: '<',
@@ -92,19 +91,19 @@ angular.module('Cleep').component('configItemSaveButton', {
         const ctrl = this;
 
         ctrl.$onInit = function () {
-            ctrl.color = ctrl.clBtnColor ?? 'md-primary';
-            ctrl.style = ctrl.clBtnStyle ?? 'md-raised';
+            ctrl.style = ctrl.clBtnStyle ?? 'md-primary md-raised';
             ctrl.icon = ctrl.clBtnIcon ?? 'content-save';
             ctrl.checkForm = ctrl.clFormRef ?? false;
         };
 
         ctrl.onClick = ($event) => {
             if (ctrl.clBtnClick) {
-                ctrl.clBtnClick({
+                const data = {
                     value: ctrl.clModel,
                     meta: ctrl.clMeta,
-                    event: $event,
-                });
+                    $event,
+                };
+                ctrl.clBtnClick(data);
             }
         };
     },
@@ -128,17 +127,17 @@ angular.module('Cleep').component('configBasic', {
                         <ng-transclude flex layout="row" layout-align="end center"></ng-transclude>
 
                         <config-item-save-button
-                            cl-btn-icon="$ctrl.clBtnIcon" cl-btn-style="$ctrl.clBtnStyle" cl-btn-color="$ctrl.clBtnColor" cl-btn-click="$ctrl.clClick" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.clBtnDisabled"
+                            cl-btn-icon="$ctrl.clBtnIcon" cl-btn-style="$ctrl.clBtnStyle" cl-btn-click="$ctrl.clClick" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.clBtnDisabled"
                             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-form-ref="` + formName + `">
                         </config-item-save-button>
                     </div>
                 </form>
             </div>
-            <div ng-if="$ctrl.noForm" layout="row" layout-align="end center">
+            <div ng-if="$ctrl.noForm" flex layout="row" layout-align="end center">
                 <ng-transclude flex layout="row" layout-align="end center"></ng-transclude>
 
                 <config-item-save-button
-                    cl-btn-icon="$ctrl.clBtnIcon" cl-btn-style="$ctrl.clBtnStyle" cl-btn-color="$ctrl.clBtnColor" cl-btn-click="$ctrl.clClick" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.clBtnDisabled"
+                    cl-btn-icon="$ctrl.clBtnIcon" cl-btn-style="$ctrl.clBtnStyle" cl-btn-click="$ctrl.clClick" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.clBtnDisabled"
                     cl-disabled="$ctrl.clDisabled" cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-form-ref="` + formName + `">
                 </config-item-save-button>
             </div>
@@ -152,7 +151,6 @@ angular.module('Cleep').component('configBasic', {
         clIcon: '<',
         clIconClass: '<',
         clModel: '<',
-        clBtnColor: '<',
         clBtnStyle: '<',
         clBtnIcon: '<',
         clBtnTooltip: '<',
@@ -199,7 +197,6 @@ angular.module('Cleep').component('configButton', {
         clSubtitle: '@',
         clIcon: '@',
         clIconClass: '@',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnLabel: '@',
@@ -212,12 +209,15 @@ angular.module('Cleep').component('configButton', {
         const ctrl = this;
 
         ctrl.$onInit = function () {
-            ctrl.buttonColor = ctrl.clBtnColor ?? 'md-primary';
-            ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-raised';
+            ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-primary md-raised';
         };
 
         ctrl.onClick = ($event) => {
-            (ctrl.clClick || angular.noop)({ meta: ctrl.clMeta, event: $event });
+            const data = {
+                meta: ctrl.clMeta,
+                $event,
+            };
+            (ctrl.clClick || angular.noop)(data);
         };
     },
 });
@@ -312,7 +312,11 @@ angular.module('Cleep').component('configButtons', {
                 );
                 return;
             }
-            callFunction(button.click, { meta: button.meta, event: $event });
+            const data = {
+                meta: button.meta,
+                $event,
+            };
+            callFunction(button.click, data);
         };
 
         ctrl.openMenu = function ($mdMenu, ev) {
@@ -392,7 +396,7 @@ angular.module('Cleep').component('configNumber', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container ng-if="!$ctrl.doNotDisplay" class="config-input-container-no-margin">
                 <input
@@ -413,7 +417,6 @@ angular.module('Cleep').component('configNumber', {
         clMax: '<',
         clMin: '<',
         clRequired: '<',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -442,7 +445,7 @@ angular.module('Cleep').component('configText', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container class="config-input-container-no-margin">
                 <input
@@ -464,7 +467,6 @@ angular.module('Cleep').component('configText', {
         clMin: '<',
         clRequired: '<',
         clPassword: '<',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -487,7 +489,7 @@ angular.module('Cleep').component('configSlider', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-slider-container style="padding-right: 8px;">
                 <span>{{ $ctrl.clModel }}</span>
@@ -510,7 +512,6 @@ angular.module('Cleep').component('configSlider', {
         clMin: '<',
         clStep: '<',
         clSliderClass: '@',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -545,7 +546,7 @@ angular.module('Cleep').component('configCheckbox', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-checkbox ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
                 {{ $ctrl.clCaption }}
@@ -577,7 +578,7 @@ angular.module('Cleep').component('configCheckbox', {
             const data = {
                 value: ctrl.clModel ? (ctrl.clSelectedValue || true) : (ctrl.clUnselectedValue || false),
                 meta: ctrl.clMeta,
-                event: $event,
+                $event,
             };
             (ctrl.clClick || angular.noop)(data);
         };
@@ -590,7 +591,7 @@ angular.module('Cleep').component('configSwitch', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-switch ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" style="margin: 8px 0px;">
                 {{ $ctrl.clCaption }}
@@ -618,7 +619,7 @@ angular.module('Cleep').component('configSwitch', {
             const data = {
                 value: ctrl.clModel ? (ctrl.clOnValue || true) : (ctrl.clOffValue || false),
                 meta: ctrl.clMeta,
-                event: $event,
+                $event,
             };
             (ctrl.clClick || angular.noop)(data);
         };
@@ -631,7 +632,7 @@ angular.module('Cleep').component('configSelect', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container class="config-input-container-no-margin">
                 <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
@@ -660,7 +661,6 @@ angular.module('Cleep').component('configSelect', {
         clModel: '=',
         clRequired: '<',
         clOptions: '<',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -727,7 +727,7 @@ angular.module('Cleep').component('configDate', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <div>
             <md-datepicker
@@ -748,7 +748,6 @@ angular.module('Cleep').component('configDate', {
         clMax: '<',
         clMin: '<',
         clRequired: '<',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -764,7 +763,7 @@ angular.module('Cleep').component('configTime', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container class="config-input-container-no-margin">
                 <input
@@ -787,7 +786,6 @@ angular.module('Cleep').component('configTime', {
         clRequired: '<',
         clShowSeconds: '<',
         clShowMilliseconds: '<',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -854,12 +852,13 @@ angular.module('Cleep').component('configNote', {
 angular.module('Cleep').component('configProgress', {
     template: `
         <config-basic
+            flex="50"
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clCancel" cl-no-form="true"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
         >
-            <md-progress-linear flex="50" md-mode="{{ $ctrl.mode }}" value="{{ $ctrl.clModel }}"></md-progress-linear>
+            <md-progress-linear ng-class="$ctrl.style" flex="50" md-mode="{{ $ctrl.mode }}" value="{{ $ctrl.clModel }}"></md-progress-linear>
         </config-basic>
     `,
     bindings: {
@@ -869,24 +868,24 @@ angular.module('Cleep').component('configProgress', {
         clIcon: '@',
         clIconClass: '@',
         clModel: '<',
-        clInfinite: '<',
-        clBtnColor: '@',
+        clInfinite: '<?',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
         clMeta: '<',
-        clCancel: '&',
+        clCancel: '&?',
+        clStyle: '@?',
     },
     controller: function () {
         const ctrl = this;
         ctrl.disabled = false;
 
         ctrl.$onInit = function () {
-            ctrl.buttonColor = ctrl.clBtnColor ?? 'md-primary';
-            ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-raised';
+            ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-primary md-raised';
             ctrl.buttonIcon = ctrl.clBtnIcon ?? 'cancel';
             ctrl.buttonTooltip = ctrl.clBtnTooltip ?? 'cancel';
             ctrl.mode = !!ctrl.clInfinite ? 'indeterminate' : 'determinate';
+            ctrl.style = ctrl.clStyle ?? 'md-primary';
         };
 
         ctrl.$onChanges = function (changes) {
@@ -902,7 +901,7 @@ angular.module('Cleep').component('configChips', {
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
             cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
-            cl-btn-color="$ctrl.clBtnColor" cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon"
+            cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon"
             cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-chips
@@ -922,7 +921,6 @@ angular.module('Cleep').component('configChips', {
         clRemovable: '<',
         clRequired: '<',
         clPlaceholder: '@',
-        clBtnColor: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -959,7 +957,7 @@ angular.module('Cleep').component('configList', {
                 ng-repeat="click in item.clicks track by $index"
                 ng-disabled="click.disabled"
                 ng-click="$ctrl.onClick($event, click, item, $index)"
-                class="md-secondary md-icon-button {{ click.class }}"
+                class="md-secondary md-icon-button {{ click.style }}"
             >
                 <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
                 <cl-icon cl-mdi="{{ click.icon }}"></cl-icon>
@@ -1013,7 +1011,7 @@ angular.module('Cleep').component('configList', {
                 item,
                 index,
                 meta: click.meta || item.meta || undefined,
-                event: $event
+                $event,
             };
             callFunction(click.click || angular.noop, data);
         };
