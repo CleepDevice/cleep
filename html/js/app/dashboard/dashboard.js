@@ -8,6 +8,7 @@ function ($rootScope, cleepService) {
         self.devices = [];
 
         self.prepareDevices = function () {
+            self.devices.splice(0, self.devices.length);
             for (const device of cleepService.devices) {
                 device.__renderable = cleepService.deviceRenderableWay(device.type);
                 if (device.__renderable) {
