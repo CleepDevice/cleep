@@ -247,7 +247,7 @@ angular.module('Cleep').component('configButtons', {
                         </md-button>
                         <md-menu-content>
                             <md-menu-item ng-repeat="button in $ctrl.buttons track by $index">
-                                <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.color }} {{ button.style }}" ng-disabled="button.disabled">
+                                <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.style }}" ng-disabled="button.disabled">
                                     <cl-icon ng-if="button.icon" cl-mdi="{{ button.icon }}"></cl-icon>
                                     {{ button.label }}
                                 </md-button>
@@ -293,8 +293,7 @@ angular.module('Cleep').component('configButtons', {
 
             for (const button of buttons) {
                 ctrl.buttons.push({
-                    color: button.color ?? '',
-                    style: button.style ?? (ctrl.collapse ? '' : 'md-raised'),
+                    style: button.style ?? (ctrl.collapse ? '' : 'md-raised md-primary'),
                     icon: button.icon,
                     label: button.label,
                     click: button.click,
@@ -349,7 +348,7 @@ angular.module('Cleep').component('configSection', {
     },
 });
 
-angular.module('Cleep').component('configInfo', {
+angular.module('Cleep').component('configComment', {
     template: `
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
@@ -358,9 +357,17 @@ angular.module('Cleep').component('configInfo', {
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
-                <span ng-if="$ctrl.mode === 'markdown'" marked="$ctrl.clContent"></span>
-                <span ng-if="$ctrl.mode === 'html'" ng-bind-html="$ctrl.clContent"></span>
-                <span ng-if="$ctrl.mode === ''">{{ $ctrl.clContent }}</span>
+                <span
+                    ng-if="$ctrl.mode === 'markdown'"
+                    marked="$ctrl.clComment"
+                    md-colors="::{ background: 'primary-100-0.4'}" style="padding: 10px;"
+                ></span>
+                <span
+                    ng-if="$ctrl.mode === 'html'" ng-bind-html="$ctrl.clComment"
+                ></span>
+                <span ng-if="$ctrl.mode === ''">
+                    {{ $ctrl.clComment }}
+                </span>
             </div>
         </div>
     `,
@@ -370,7 +377,7 @@ angular.module('Cleep').component('configInfo', {
         clSubtitle: '@',
         clIcon: '@',
         clIconClass: '@',
-        clContent: '<',
+        clComment: '<',
         clMode: '@',
     },
     controller: function () {
@@ -641,6 +648,9 @@ angular.module('Cleep').component('configSelect', {
                     </md-option>
                 </md-select>
                 <md-select ng-if="!$ctrl.isMultiple" name="inputField" ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+                    <md-option ng-if="$ctrl.clEmpty" value="">
+                        <em>{{ $ctrl.clEmpty }}</em>
+                    </md-option>
                     <md-option ng-repeat="option in $ctrl.options track by $index" ng-value="option.value" ng-disabled="option.disabled">
                         {{ option.label }}
                     </md-option>
@@ -668,6 +678,7 @@ angular.module('Cleep').component('configSelect', {
         clClick: '&?',
         clDisabled: '<?',
         clNoSelectAll: '<',
+        clEmpty: '@?',
     },
     controller: function () {
         const ctrl = this;
@@ -944,10 +955,10 @@ angular.module('Cleep').component('configChips', {
 angular.module('Cleep').component('configList', {
     template: `
         <config-basic
-            ng-if="$ctrl.clItems.length === 0"
-            cl-title="$ctrl.empty" cl-icon="'playlist-remove'"
+            ng-if="$ctrl.displayEmpty"
+            cl-title="$ctrl.empty" cl-icon="$ctrl.emptyIcon"
         ></config-basic>
-        <config-basic ng-repeat="item in $ctrl.clItems track by $index"
+        <config-basic ng-repeat="item in $ctrl.items track by $index"
             cl-title="item.title" cl-subtitle="item.subtitle"
             cl-icon="item.icon" cl-icon-class="item.iconClass"
             cl-class="config-list-item" cl-loading="item.loading"
@@ -972,21 +983,52 @@ angular.module('Cleep').component('configList', {
         clItems: '<',
         clSelectable: '<',
         clOnSelect: '&?',
-        clEmpty: '@',
+        clEmpty: '@?',
+        clEmptyIcon: '@?',
     },
     controller: function () {
         const ctrl = this;
         ctrl.selected = [];
+        ctrl.items = [];
+        ctrl.displayEmpty = false;
+        ctrl.emptyIcon = 'playlist-remove';
+        ctrl.empty = '';
 
         ctrl.$onInit = function () {
-            ctrl.empty = ctrl.clEmpty ?? 'No item in list';
             ctrl.prepareSelected(ctrl.clItems);
         };
 
         ctrl.$onChanges = function (changes) {
             if (changes.clItems?.currentValue) {
+                ctrl.setItems(changes.clItems.currentValue);
                 ctrl.prepareSelected(changes.clItems.currentValue);
             }
+            if (changes.clEmpty?.currentValue) {
+                ctrl.setDisplayEmpty();
+            }
+            if (changes.clEmptyIcon?.currentValue) {
+                ctrl.emptyIcon = ctrl.clEmptyIcon;
+            }
+        };
+
+        ctrl.setItems = function (items) {
+            // for non object items list, bind value to title field
+            ctrl.items.splice(0, ctrl.items.length);
+            for (const item of items) {
+                if (angular.isObject(item)) {
+                    ctrl.items.push(item);
+                } else {
+                    ctrl.items.push({
+                        title: item.toString(),
+                    });
+                }
+            }
+            ctrl.setDisplayEmpty();
+        };
+
+        ctrl.setDisplayEmpty = function () {
+            ctrl.empty = ctrl.clEmpty ?? 'No item in list';
+            ctrl.displayEmpty = ctrl.empty.length !== 0 && ctrl.items.length === 0;
         };
 
         ctrl.prepareSelected = function (items) {
@@ -1017,3 +1059,117 @@ angular.module('Cleep').component('configList', {
         };
     },
 });
+
+angular.module('Cleep').component('configBaseViewer', {
+    transclude: true,
+    template: `
+    <md-content layout-fill>
+        <md-toolbar class="md-hue-3">
+            <div class="md-toolbar-tools">
+                <h2 flex md-truncate>{{ $ctrl.clTitle }}</h2>
+                <md-button
+                    ng-repeat="btn in $ctrl.btns"
+                    ng-class="btn.style"
+                    ng-click="$ctrl.onClick($event, btn)"
+                >
+                    <cl-icon ng-if="btn.icon" class="icon-white" cl-mdi="{{ btn.icon }}"></cl-icon>
+                    {{ btn.label }}
+                </md-button>
+            </div>
+        </md-toolbar>
+        <ng-transclude layout-fill>Please inject your editor</ng-transclude>
+    </md-content>
+    `,
+    bindings: {
+        clTitle: '<?',
+        clButtons: '<?',
+    },
+    controller: function () {
+        const ctrl = this;
+        ctrl.btns = [];
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clButtons?.currentValue) {
+                ctrl.prepareButtons(changes.clButtons.currentValue);
+            }
+        };
+
+        ctrl.prepareButtons = function (buttons) {
+            for (const btn of buttons) {
+                ctrl.btns.push({
+                    label: btn.label ?? '',
+                    style: btn.style ?? 'md-primary md-raised',
+                    icon: btn.icon,
+                    click: btn.click,
+                });
+            }
+        };
+
+        ctrl.onClick = ($event, button) => {
+            callFunction(button.click || angular.noop, button.meta);
+        };
+    },
+});
+
+angular.module('Cleep').component('configHtmlViewer', {
+    template: `
+    <config-base-viewer cl-buttons="$ctrl.clButtons" cl-title="$ctrl.clTitle">
+        <div layout-fill md-colors="::{ background: 'primary-100-0.4'}">
+        </div>
+    </config-base-viewer>
+    `,
+    bindings: {
+        clTitle: '@?',
+        clButtons: '<?',
+        clHtml: '@',
+        clEmpty: '@?',
+    },
+    controller: function () {
+        const ctrl = this;
+        ctrl.html = 'No html';
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clHtml?.currentValue.length) {
+                ctrl.html = changes.clHtml?.currentValue;
+            } else {
+                ctrl.html = ctrl.clEmpty ?? 'No html';
+            }
+        };
+    },
+});
+
+angular.module('Cleep').component('configTextViewer', {
+    template: `
+    <config-base-viewer cl-buttons="$ctrl.clButtons" cl-title="$ctrl.clTitle">
+        <div layout-fill md-colors="::{ background: 'primary-100-0.4'}">
+            <div ng-if="!$ctrl.isHtml" ng-class="$ctrl.clClass" style="white-space: pre;" layout-padding>{{ $ctrl.text }}</div>
+            <div ng-if="$ctrl.isHtml" layout-padding style="display: inline-block;" ng-bind-html="$ctrl.text"></div>
+        </div>
+    </config-base-viewer>
+    `,
+    bindings: {
+        clTitle: '@?',
+        clButtons: '<?',
+        clText: '@',
+        clEmpty: '@?',
+        clClass: '@?',
+        clIsHtml: '<?',
+    },
+    controller: function () {
+        const ctrl = this;
+        ctrl.text = 'No text';
+        ctrl.isHtml = false;
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clIsHtml?.currentValue !== undefined) {
+                ctrl.isHtml = !!changes.clIsHtml.currentValue;
+            }
+            if (changes.clText?.currentValue?.length) {
+                ctrl.text = changes.clText.currentValue;
+            } else {
+                ctrl.text = ctrl.clEmpty ?? 'No text';
+            }
+        };
+    },
+});
+
