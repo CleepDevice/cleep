@@ -45,7 +45,7 @@ angular.module('Cleep').component('clAppFab', {
     template: `
     <div>
         <!-- single action -->
-        <md-button ng-if="$ctrl.actions.length === 1" ng-click="$ctrl.actions[0].click()" class="md-accent md-fab md-fab-bottom-right" style="position:fixed !important;">
+        <md-button ng-if="$ctrl.actions.length === 1" ng-click="$ctrl.onClick($ctrl.actions[0])" class="md-accent md-fab md-fab-bottom-right" style="position:fixed !important;">
             <md-tooltip md-direction="top">{{ $ctrl.actions[0].tooltip }}</md-tooltip>
             <cl-icon cl-mdi="{{ $ctrl.actions[0].icon }}"></cl-icon>
         </md-button>
@@ -58,7 +58,7 @@ angular.module('Cleep').component('clAppFab', {
                 </md-button>
             </md-fab-trigger>
             <md-fab-actions>
-                <md-button ng-repeat="action in $ctrl.actions" ng-click="action.click()" class="md-accent md-fab md-mini md-primary">
+                <md-button ng-repeat="action in $ctrl.actions" ng-click="$ctrl.onClick(action)" class="md-accent md-fab md-mini md-primary">
                     <md-tooltip md-direction="top">{{ action.tooltip }}</md-tooltip>
                     <cl-icon cl-mdi="{{ action.icon }}"></cl-icon>
                 </md-button>
@@ -66,24 +66,27 @@ angular.module('Cleep').component('clAppFab', {
         </md-fab-speed-dial>
     </div>
     `,
-    bindings: {
-        clActions: '<',
-    },
     controller: function($rootScope) {
         const ctrl = this;
         ctrl.actions = [];
 
-        ctrl.$onInit = function() {
-            if (!angular.isArray(ctrl.clActions)) {
+        $rootScope.$on('enableFab', function (event, actions) {
+            console.log('enableFab', actions);
+            if (!angular.isArray(actions)) {
                 console.error('Cleep cl-app-fab: Actions parameter must be an array');
                 return;
             }
-            ctrl.actions = ctrl.clActions;
-        };
+            ctrl.actions.splice(0, ctrl.actions.length);
+            ctrl.actions = actions;
+        });
 
         $rootScope.$on('$routeChangeSuccess', function() {
-            ctrl.actions = [];
+            ctrl.actions.splice(0, ctrl.actions.length);
         });
+
+        ctrl.onClick = (action) => {
+            (action.callback || angular.noop)();
+        };
     }
 });
 
