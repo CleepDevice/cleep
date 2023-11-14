@@ -183,7 +183,7 @@ angular.module('Cleep').component('configButton', {
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
-                <md-button ng-click="$ctrl.onClick($event)" class="{{ $ctrl.buttonColor }} {{ $ctrl.buttonStyle }}" ng-disabled="$ctrl.clDisabled">
+                <md-button ng-click="$ctrl.onClick($event)" class="{{ $ctrl.buttonStyle }}" ng-disabled="$ctrl.clDisabled">
                     <md-tooltip ng-if="$ctrl.clBtnTooltip">{{ $ctrl.clBtnTooltip }}</md-tooltip>
                     <cl-icon ng-if="$ctrl.clBtnIcon" cl-mdi="{{ $ctrl.clBtnIcon }}"></cl-icon>
                     {{ $ctrl.clBtnLabel }}
@@ -210,6 +210,9 @@ angular.module('Cleep').component('configButton', {
 
         ctrl.$onInit = function () {
             ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-primary md-raised';
+            if (!ctrl.btnLabel) {
+                ctrl.buttonStyle += ' cl-button-sm';
+            }
         };
 
         ctrl.onClick = ($event) => {
