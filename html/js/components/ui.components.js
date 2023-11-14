@@ -71,7 +71,6 @@ angular.module('Cleep').component('clAppFab', {
         ctrl.actions = [];
 
         $rootScope.$on('enableFab', function (event, actions) {
-            console.log('enableFab', actions);
             if (!angular.isArray(actions)) {
                 console.error('Cleep cl-app-fab: Actions parameter must be an array');
                 return;
@@ -310,7 +309,6 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
 
         scope.btnLabel = scope.clBtnLabel ?? 'Select file';
         scope.icon = scope.clIcon ?? 'upload';
-        console.log('scope', scope)
 
         // bind file input event to input and button
         if (input.length && button.length && textInput.length) {

@@ -253,6 +253,13 @@
                                 cl-on-select="$ctrl.onSelect(current, index, selections, event)"
                             ></config-list>
                         </p>
+                        <h3 class="md-subhead">Empty list</h3>
+                        <p class="md-body-1">
+                            <config-list
+                                cl-meta="$ctrl.meta" cl-selectable="true" cl-items="[]" cl-empty="Empty list" cl-empty-icon="alert"
+                                cl-on-select="$ctrl.onSelect(current, index, selections, event)"
+                            ></config-list>
+                        </p>
 
                     </md-content>
                 </md-tab>
