@@ -307,8 +307,9 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
         var button = $(element[0].querySelector('#uploadButton'));
         var textInput = $(element[0].querySelector('#textInput'));
 
-        scope.btnLabel = scope.clBtnLabel ?? 'Select file';
-        scope.icon = scope.clIcon ?? 'upload';
+        scope.btnLabel = scope.clBtnLabel || 'Select file';
+        scope.btnStyle = scope.clBtnStyle || 'md-raised md-primary';
+        scope.btnIcon = scope.clBtnIcon || 'upload';
 
         // bind file input event to input and button
         if (input.length && button.length && textInput.length) {
@@ -326,10 +327,7 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
                 var files = e.target.files;
                 if (files[0]) {
                     scope.filename = files[0].name;
-                    /**
-                     
-                     */
-                    scope.clOnSelect({file: files[0]});
+                    scope.clOnSelect({ file: files[0] });
                 } else {
                     scope.filename = null;
                 }
@@ -353,8 +351,8 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
         restrict: 'E',
         template: `
         <input id="fileInput" type="file" class="ng-hide">
-        <md-button id="uploadButton" class="md-raised md-primary">
-            <cl-icon cl-mdi="{{ icon }}"></cl-icon>
+        <md-button id="uploadButton" ng-class="btnStyle" ng-disabled="clDisabled">
+            <cl-icon cl-mdi="{{ btnIcon }}"></cl-icon>
             {{ btnLabel }}
         </md-button>
         <md-input-container md-no-float class="no-margin no-error-spacer" ng-show="clPlaceholder">
@@ -363,9 +361,11 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
         `,
         scope: {
             clOnSelect: '&',
-            clBtnLabel: '@',
-            clPlaceholder: '@',
-            clIcon: '@',
+            clBtnLabel: '@?',
+            clBtnIcon: '@?',
+            clBtnStyle: '@?',
+            clPlaceholder: '@?',
+            clDisabled: '<?',
         },
         link: uploadFileLink
     };

@@ -38,16 +38,16 @@ angular.module('Cleep').component('configItemDesc', {
                 style="margin: 10px;"
                 flex="none"
             ></md-progress-circular>
-            <cl-icon ng-if="$ctrl.showIcon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconClass }}"></cl-icon>
+            <cl-icon ng-if="$ctrl.showIcon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconStyle }}"></cl-icon>
         </div>
-        <div layout="column" layout-align="center start">
+        <div layout="column" layout-align="center start" style="min-height: 48px;">
             <div>{{ $ctrl.clTitle }}</div>
             <div ng-if="$ctrl.clSubtitle" class="md-caption" style="margin-top: 5px;">{{ $ctrl.clSubtitle }}</div>
         </div>
     `,
     bindings: {
         clIcon: '<',
-        clIconClass: '<',
+        clIconStyle: '<',
         clTitle: '<',
         clSubtitle: '<',
         clLoading: '<?',
@@ -117,7 +117,7 @@ angular.module('Cleep').component('configBasic', {
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
                 cl-loading="$ctrl.clLoading"
             ></config-item-desc>
@@ -149,7 +149,7 @@ angular.module('Cleep').component('configBasic', {
         clTitle: '<',
         clSubtitle: '<',
         clIcon: '<',
-        clIconClass: '<',
+        clIconStyle: '<',
         clModel: '<',
         clBtnStyle: '<',
         clBtnIcon: '<',
@@ -179,7 +179,7 @@ angular.module('Cleep').component('configButton', {
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
@@ -196,7 +196,7 @@ angular.module('Cleep').component('configButton', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnLabel: '@',
@@ -230,7 +230,7 @@ angular.module('Cleep').component('configButtons', {
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
@@ -266,7 +266,7 @@ angular.module('Cleep').component('configButtons', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clButtons: '<',
         clLimit: '@?',
     },
@@ -356,7 +356,7 @@ angular.module('Cleep').component('configComment', {
         <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
-                cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+                cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
                 cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
             </config-item-desc>
             <div flex="none" layout="row" layout-align="end center">
@@ -379,7 +379,7 @@ angular.module('Cleep').component('configComment', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clComment: '<',
         clMode: '@',
     },
@@ -404,7 +404,7 @@ angular.module('Cleep').component('configNumber', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -422,7 +422,7 @@ angular.module('Cleep').component('configNumber', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clMax: '<',
         clMin: '<',
@@ -453,7 +453,7 @@ angular.module('Cleep').component('configText', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -471,7 +471,7 @@ angular.module('Cleep').component('configText', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clMax: '<',
         clMin: '<',
@@ -497,14 +497,14 @@ angular.module('Cleep').component('configSlider', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-slider-container style="padding-right: 8px;">
                 <span>{{ $ctrl.clModel }}</span>
                 <md-slider
-                    name="inputField" md-discrete class="{{ $ctrl.sliderClass }}"
+                    name="inputField" md-discrete class="{{ $ctrl.sliderStyle }}"
                     min="{{ $ctrl.clMin }}" max="{{ $ctrl.clMax }}" step="{{ $ctrl.inputStep }}"
                     ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()">
                 </md-slider>
@@ -516,12 +516,12 @@ angular.module('Cleep').component('configSlider', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clMax: '<',
         clMin: '<',
         clStep: '<',
-        clSliderClass: '@',
+        clSliderStyle: '@',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -533,11 +533,11 @@ angular.module('Cleep').component('configSlider', {
     controller: function () {
         const ctrl = this;
         ctrl.inputStep = 1;
-        ctrl.sliderClass = '';
+        ctrl.sliderStyle = '';
 
         ctrl.$onInit = function () {
             ctrl.inputStep = ctrl.clStep ?? 1;
-            ctrl.sliderClass = ctrl.clSliderClass ?? 'md-primary';
+            ctrl.sliderStyle = ctrl.clSliderStyle ?? 'md-primary';
         };
 
         ctrl.onChange = function () {
@@ -554,7 +554,7 @@ angular.module('Cleep').component('configCheckbox', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -568,7 +568,7 @@ angular.module('Cleep').component('configCheckbox', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clCaption: '@',
         clSelectedValue: '@',
@@ -599,7 +599,7 @@ angular.module('Cleep').component('configSwitch', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -613,7 +613,7 @@ angular.module('Cleep').component('configSwitch', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clCaption: '@',
         clOnValue: '@',
@@ -640,7 +640,7 @@ angular.module('Cleep').component('configSelect', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -670,7 +670,7 @@ angular.module('Cleep').component('configSelect', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clRequired: '<',
         clOptions: '<',
@@ -739,7 +739,7 @@ angular.module('Cleep').component('configDate', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -757,7 +757,7 @@ angular.module('Cleep').component('configDate', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clMax: '<',
         clMin: '<',
@@ -775,7 +775,7 @@ angular.module('Cleep').component('configTime', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
@@ -793,7 +793,7 @@ angular.module('Cleep').component('configTime', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clMax: '<',
         clMin: '<',
@@ -831,14 +831,14 @@ angular.module('Cleep').component('configTime', {
 angular.module('Cleep').component('configNote', {
     template: `
         <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
-            <cl-icon ng-if="$ctrl.clIcon" cl-mdi="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" cl-class="icon-md {{ $ctrl.clIconClass }}"></cl-icon>
+            <cl-icon ng-if="$ctrl.clIcon" cl-mdi="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" cl-class="icon-md {{ $ctrl.clIconStyle }}"></cl-icon>
             <div flex layout="column" layout-align="start stretch" ng-bind-html="$ctrl.clNote"></div>
         </div>
     `,
     bindings: {
         clId: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clNote: '@',
         clType: '@',
     },
@@ -868,7 +868,7 @@ angular.module('Cleep').component('configProgress', {
         <config-basic
             flex="50"
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clCancel" cl-no-form="true"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
         >
@@ -880,7 +880,7 @@ angular.module('Cleep').component('configProgress', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '<',
         clInfinite: '<?',
         clBtnStyle: '@',
@@ -913,7 +913,7 @@ angular.module('Cleep').component('configChips', {
     template: `
         <config-basic
             cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
-            cl-icon="$ctrl.clIcon" cl-icon-class="$ctrl.clIconClass"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clClick" cl-no-form="true"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon"
             cl-btn-tooltip="$ctrl.clBtnTooltip"
@@ -929,7 +929,7 @@ angular.module('Cleep').component('configChips', {
         clTitle: '@',
         clSubtitle: '@',
         clIcon: '@',
-        clIconClass: '@',
+        clIconStyle: '@',
         clModel: '=',
         clReadonly: '<',
         clRemovable: '<',
@@ -963,7 +963,7 @@ angular.module('Cleep').component('configList', {
         ></config-basic>
         <config-basic ng-repeat="item in $ctrl.items track by $index"
             cl-title="item.title" cl-subtitle="item.subtitle"
-            cl-icon="item.icon" cl-icon-class="item.iconClass"
+            cl-icon="item.icon" cl-icon-style="item.iconStyle"
             cl-class="config-list-item" cl-loading="item.loading"
         >
             <md-button
@@ -1145,7 +1145,7 @@ angular.module('Cleep').component('configTextViewer', {
     template: `
     <config-base-viewer cl-buttons="$ctrl.clButtons" cl-title="$ctrl.clTitle">
         <div layout-fill md-colors="::{ background: 'primary-100-0.4'}">
-            <div ng-if="!$ctrl.isHtml" ng-class="$ctrl.clClass" style="white-space: pre;" layout-padding>{{ $ctrl.text }}</div>
+            <div ng-if="!$ctrl.isHtml" ng-class="$ctrl.clStyle" style="white-space: pre;" layout-padding>{{ $ctrl.text }}</div>
             <div ng-if="$ctrl.isHtml" layout-padding style="display: inline-block;" ng-bind-html="$ctrl.text"></div>
         </div>
     </config-base-viewer>
@@ -1155,7 +1155,7 @@ angular.module('Cleep').component('configTextViewer', {
         clButtons: '<?',
         clText: '@',
         clEmpty: '@?',
-        clClass: '@?',
+        clStyle: '@?',
         clIsHtml: '<?',
     },
     controller: function () {
@@ -1176,3 +1176,53 @@ angular.module('Cleep').component('configTextViewer', {
     },
 });
 
+angular.module('Cleep').component('configFile', {
+    template: `
+        <config-basic
+            cl-id="$ctrl.clId" cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle"
+            cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle" cl-no-form="true"
+        >
+            <cl-app-upload
+                cl-on-select="$ctrl.onClick(file)" cl-disabled="$clDisabled"
+                cl-btn-label="{{ $ctrl.clBtnLabel }}" cl-btn-style="{{ $ctrl.clBtnStyle }}" cl-btn-icon="{{ $ctrl.clBtnIcon }}"
+            ></cl-app-upload>
+        </config-basic>
+    `,
+    bindings: {
+        clId: '@',
+        clTitle: '@',
+        clSubtitle: '@',
+        clIcon: '@',
+        clIconStyle: '@',
+        clBtnStyle: '@',
+        clBtnIcon: '@',
+        clBtnLabel: '@',
+        clMeta: '<',
+        clClick: '&?',
+        clDisabled: '<',
+    },
+    controller: function () {
+        const ctrl = this;
+        ctrl.text = 'No text';
+        ctrl.isHtml = false;
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clIsHtml?.currentValue !== undefined) {
+                ctrl.isHtml = !!changes.clIsHtml.currentValue;
+            }
+            if (changes.clText?.currentValue?.length) {
+                ctrl.text = changes.clText.currentValue;
+            } else {
+                ctrl.text = ctrl.clEmpty ?? 'No text';
+            }
+        };
+
+        ctrl.onClick = function (file) {
+            const data = {
+                ...ctrl.clMeta,
+                file,
+            }
+            ctrl.clClick(data);
+        };
+    },
+});
