@@ -1,0 +1,314 @@
+@font-face {
+  font-family: 'brand';
+  src: url('../fonts/brand.eot?37158611');
+  src: url('../fonts/brand.eot?37158611#iefix') format('embedded-opentype'),
+       url('../fonts/brand.woff2?37158611') format('woff2'),
+       url('../fonts/brand.woff?37158611') format('woff'),
+       url('../fonts/brand.ttf?37158611') format('truetype'),
+       url('../fonts/brand.svg?37158611#brand') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'brand';
+    src: url('../fonts/brand.svg?37158611#brand') format('svg');
+  }
+}
+*/
+[class^="brand-"]:before, [class*=" brand-"]:before {
+  font-family: "brand";
+  font-style: normal;
+  font-weight: normal;
+  speak: never;
+
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Font smoothing. That was taken from TWBS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+
+.brand-artstation:before { content: '\e800'; } /* '' */
+.brand-atlassian:before { content: '\e801'; } /* '' */
+.brand-aws:before { content: '\e802'; } /* '' */
+.brand-babel:before { content: '\e803'; } /* '' */
+.brand-bitbucket:before { content: '\e804'; } /* '' */
+.brand-bitcoin:before { content: '\e805'; } /* '' */
+.brand-black-mesa:before { content: '\e806'; } /* '' */
+.brand-blender-software:before { content: '\e807'; } /* '' */
+.brand-bootstrap:before { content: '\e808'; } /* '' */
+.brand-box:before { content: '\e809'; } /* '' */
+.brand-bulma:before { content: '\e80a'; } /* '' */
+.brand-centos:before { content: '\e80b'; } /* '' */
+.brand-codepen:before { content: '\e80c'; } /* '' */
+.brand-cordova:before { content: '\e80d'; } /* '' */
+.brand-creative-commons:before { content: '\e80e'; } /* '' */
+.brand-cryengine:before { content: '\e80f'; } /* '' */
+.brand-debian:before { content: '\e810'; } /* '' */
+.brand-deviantart:before { content: '\e811'; } /* '' */
+.brand-dev-to:before { content: '\e812'; } /* '' */
+.brand-digital-ocean:before { content: '\e813'; } /* '' */
+.brand-disqus:before { content: '\e814'; } /* '' */
+.brand-dlna:before { content: '\e815'; } /* '' */
+.brand-docker:before { content: '\e816'; } /* '' */
+.brand-dolby:before { content: '\e817'; } /* '' */
+.brand-dot-net:before { content: '\e818'; } /* '' */
+.brand-dropbox:before { content: '\e819'; } /* '' */
+.brand-drupal:before { content: '\e81a'; } /* '' */
+.brand-electron-framework:before { content: '\e81b'; } /* '' */
+.brand-ember:before { content: '\e81c'; } /* '' */
+.brand-emby:before { content: '\e81d'; } /* '' */
+.brand-eslint:before { content: '\e81e'; } /* '' */
+.brand-ethereum:before { content: '\e81f'; } /* '' */
+.brand-evernote:before { content: '\e820'; } /* '' */
+.brand-facebook:before { content: '\e821'; } /* '' */
+.brand-facebook-gaming:before { content: '\e822'; } /* '' */
+.brand-facebook-messenger:before { content: '\e823'; } /* '' */
+.brand-facebook-workplace:before { content: '\e824'; } /* '' */
+.brand-fedora:before { content: '\e825'; } /* '' */
+.brand-firebase:before { content: '\e826'; } /* '' */
+.brand-firefox:before { content: '\e827'; } /* '' */
+.brand-folder-google-drive:before { content: '\e828'; } /* '' */
+.brand-font-awesome:before { content: '\e829'; } /* '' */
+.brand-freebsd:before { content: '\e82a'; } /* '' */
+.brand-gatsby:before { content: '\e82b'; } /* '' */
+.brand-gentoo:before { content: '\e82c'; } /* '' */
+.brand-git:before { content: '\e82d'; } /* '' */
+.brand-github:before { content: '\e82e'; } /* '' */
+.brand-gitlab:before { content: '\e82f'; } /* '' */
+.brand-gmail:before { content: '\e830'; } /* '' */
+.brand-gnome:before { content: '\e831'; } /* '' */
+.brand-gog:before { content: '\e832'; } /* '' */
+.brand-goodreads:before { content: '\e833'; } /* '' */
+.brand-google:before { content: '\e834'; } /* '' */
+.brand-google-ads:before { content: '\e835'; } /* '' */
+.brand-google-analytics:before { content: '\e836'; } /* '' */
+.brand-google-assistant:before { content: '\e837'; } /* '' */
+.brand-google-cardboard:before { content: '\e838'; } /* '' */
+.brand-google-chrome:before { content: '\e839'; } /* '' */
+.brand-google-circles:before { content: '\e83a'; } /* '' */
+.brand-google-circles-communities:before { content: '\e83b'; } /* '' */
+.brand-google-circles-extended:before { content: '\e83c'; } /* '' */
+.brand-google-circles-group:before { content: '\e83d'; } /* '' */
+.brand-google-classroom:before { content: '\e83e'; } /* '' */
+.brand-google-cloud:before { content: '\e83f'; } /* '' */
+.brand-google-downasaur:before { content: '\e840'; } /* '' */
+.brand-google-drive:before { content: '\e841'; } /* '' */
+.brand-google-earth:before { content: '\e842'; } /* '' */
+.brand-google-fit:before { content: '\e843'; } /* '' */
+.brand-google-glass:before { content: '\e844'; } /* '' */
+.brand-google-hangouts:before { content: '\e845'; } /* '' */
+.brand-google-keep:before { content: '\e846'; } /* '' */
+.brand-google-lens:before { content: '\e847'; } /* '' */
+.brand-google-maps:before { content: '\e848'; } /* '' */
+.brand-google-my-business:before { content: '\e849'; } /* '' */
+.brand-google-nearby:before { content: '\e84a'; } /* '' */
+.brand-google-play:before { content: '\e84b'; } /* '' */
+.brand-google-plus:before { content: '\e84c'; } /* '' */
+.brand-google-podcast:before { content: '\e84d'; } /* '' */
+.brand-google-spreadsheet:before { content: '\e84e'; } /* '' */
+.brand-google-street-view:before { content: '\e84f'; } /* '' */
+.brand-google-translate:before { content: '\e850'; } /* '' */
+.brand-graphql:before { content: '\e851'; } /* '' */
+.brand-home-assistant:before { content: '\e852'; } /* '' */
+.brand-hulu:before { content: '\e853'; } /* '' */
+.brand-instagram:before { content: '\e854'; } /* '' */
+.brand-jabber:before { content: '\e855'; } /* '' */
+.brand-humble-bundle:before { content: '\e856'; } /* '' */
+.brand-iobroker:before { content: '\e857'; } /* '' */
+.brand-jira:before { content: '\e858'; } /* '' */
+.brand-jquery:before { content: '\e859'; } /* '' */
+.brand-jsfiddle:before { content: '\e85a'; } /* '' */
+.brand-kickstarter:before { content: '\e85b'; } /* '' */
+.brand-kodi:before { content: '\e85c'; } /* '' */
+.brand-kubernetes:before { content: '\e85d'; } /* '' */
+.brand-language-c:before { content: '\e85e'; } /* '' */
+.brand-language-cpp:before { content: '\e85f'; } /* '' */
+.brand-language-csharp:before { content: '\e860'; } /* '' */
+.brand-language-fortran:before { content: '\e861'; } /* '' */
+.brand-language-css3:before { content: '\e862'; } /* '' */
+.brand-language-go:before { content: '\e863'; } /* '' */
+.brand-language-haskell:before { content: '\e864'; } /* '' */
+.brand-language-html5:before { content: '\e865'; } /* '' */
+.brand-language-java:before { content: '\e866'; } /* '' */
+.brand-language-javascript:before { content: '\e867'; } /* '' */
+.brand-language-kotlin:before { content: '\e868'; } /* '' */
+.brand-language-lua:before { content: '\e869'; } /* '' */
+.brand-language-markdown:before { content: '\e86a'; } /* '' */
+.brand-language-markdown-outline:before { content: '\e86b'; } /* '' */
+.brand-language-php:before { content: '\e86c'; } /* '' */
+.brand-language-python:before { content: '\e86d'; } /* '' */
+.brand-language-r:before { content: '\e86e'; } /* '' */
+.brand-language-ruby:before { content: '\e86f'; } /* '' */
+.brand-language-ruby-on-rails:before { content: '\e870'; } /* '' */
+.brand-language-rust:before { content: '\e871'; } /* '' */
+.brand-language-swift:before { content: '\e872'; } /* '' */
+.brand-language-typescript:before { content: '\e873'; } /* '' */
+.brand-language-xaml:before { content: '\e874'; } /* '' */
+.brand-laravel:before { content: '\e875'; } /* '' */
+.brand-lastpass:before { content: '\e876'; } /* '' */
+.brand-linkedin:before { content: '\e877'; } /* '' */
+.brand-linux:before { content: '\e878'; } /* '' */
+.brand-linux-mint:before { content: '\e879'; } /* '' */
+.brand-litecoin:before { content: '\e87a'; } /* '' */
+.brand-lumx:before { content: '\e87b'; } /* '' */
+.brand-manjaro:before { content: '\e87c'; } /* '' */
+.brand-mapbox:before { content: '\e87d'; } /* '' */
+.brand-mastodon:before { content: '\e87e'; } /* '' */
+.brand-material-design:before { content: '\e87f'; } /* '' */
+.brand-material-ui:before { content: '\e880'; } /* '' */
+.brand-meteor:before { content: '\e881'; } /* '' */
+.brand-microsoft:before { content: '\e882'; } /* '' */
+.brand-microsoft-access:before { content: '\e883'; } /* '' */
+.brand-microsoft-azure:before { content: '\e884'; } /* '' */
+.brand-microsoft-azure-devops:before { content: '\e885'; } /* '' */
+.brand-microsoft-bing:before { content: '\e886'; } /* '' */
+.brand-microsoft-dynamics-365:before { content: '\e887'; } /* '' */
+.brand-microsoft-edge:before { content: '\e888'; } /* '' */
+.brand-microsoft-excel:before { content: '\e889'; } /* '' */
+.brand-microsoft-internet-explorer:before { content: '\e88a'; } /* '' */
+.brand-microsoft-office:before { content: '\e88b'; } /* '' */
+.brand-microsoft-onedrive:before { content: '\e88c'; } /* '' */
+.brand-microsoft-onenote:before { content: '\e88d'; } /* '' */
+.brand-microsoft-outlook:before { content: '\e88e'; } /* '' */
+.brand-microsoft-powerpoint:before { content: '\e88f'; } /* '' */
+.brand-microsoft-sharepoint:before { content: '\e890'; } /* '' */
+.brand-microsoft-teams:before { content: '\e891'; } /* '' */
+.brand-microsoft-visual-studio:before { content: '\e892'; } /* '' */
+.brand-microsoft-visual-studio-code:before { content: '\e893'; } /* '' */
+.brand-microsoft-windows:before { content: '\e894'; } /* '' */
+.brand-microsoft-windows-classic:before { content: '\e895'; } /* '' */
+.brand-microsoft-word:before { content: '\e896'; } /* '' */
+.brand-microsoft-xbox:before { content: '\e897'; } /* '' */
+.brand-microsoft-xbox-controller:before { content: '\e898'; } /* '' */
+.brand-microsoft-xbox-controller-battery-alert:before { content: '\e899'; } /* '' */
+.brand-microsoft-xbox-controller-battery-charging:before { content: '\e89a'; } /* '' */
+.brand-microsoft-xbox-controller-battery-empty:before { content: '\e89b'; } /* '' */
+.brand-microsoft-xbox-controller-battery-full:before { content: '\e89c'; } /* '' */
+.brand-microsoft-xbox-controller-battery-low:before { content: '\e89d'; } /* '' */
+.brand-microsoft-xbox-controller-battery-medium:before { content: '\e89e'; } /* '' */
+.brand-microsoft-xbox-controller-menu:before { content: '\e89f'; } /* '' */
+.brand-microsoft-xbox-controller-off:before { content: '\e8a0'; } /* '' */
+.brand-microsoft-xbox-controller-view:before { content: '\e8a1'; } /* '' */
+.brand-midi:before { content: '\e8a2'; } /* '' */
+.brand-minecraft:before { content: '\e8a3'; } /* '' */
+.brand-nativescript:before { content: '\e8a4'; } /* '' */
+.brand-netflix:before { content: '\e8a5'; } /* '' */
+.brand-nfc:before { content: '\e8a6'; } /* '' */
+.brand-nintendo-switch:before { content: '\e8a7'; } /* '' */
+.brand-nintendo-wii:before { content: '\e8a8'; } /* '' */
+.brand-nintendo-wiiu:before { content: '\e8a9'; } /* '' */
+.brand-nix:before { content: '\e8aa'; } /* '' */
+.brand-nodejs:before { content: '\e8ab'; } /* '' */
+.brand-npm:before { content: '\e8ac'; } /* '' */
+.brand-nuxt:before { content: '\e8ad'; } /* '' */
+.brand-oci:before { content: '\e8ae'; } /* '' */
+.brand-odnoklassniki:before { content: '\e8af'; } /* '' */
+.brand-onepassword:before { content: '\e8b0'; } /* '' */
+.brand-openid:before { content: '\e8b1'; } /* '' */
+.brand-open-source-initiative:before { content: '\e8b2'; } /* '' */
+.brand-opera:before { content: '\e8b3'; } /* '' */
+.brand-origin:before { content: '\e8b4'; } /* '' */
+.brand-pandora:before { content: '\e8b5'; } /* '' */
+.brand-patreon:before { content: '\e8b6'; } /* '' */
+.brand-pi-hole:before { content: '\e8b7'; } /* '' */
+.brand-pinterest:before { content: '\e8b8'; } /* '' */
+.brand-plex:before { content: '\e8b9'; } /* '' */
+.brand-pokemon-go:before { content: '\e8ba'; } /* '' */
+.brand-polymer:before { content: '\e8bb'; } /* '' */
+.brand-qi:before { content: '\e8bc'; } /* '' */
+.brand-qqchat:before { content: '\e8bd'; } /* '' */
+.brand-react:before { content: '\e8be'; } /* '' */
+.brand-reddit:before { content: '\e8bf'; } /* '' */
+.brand-redhat:before { content: '\e8c0'; } /* '' */
+.brand-rollupjs:before { content: '\e8c1'; } /* '' */
+.brand-salesforce:before { content: '\e8c2'; } /* '' */
+.brand-sass:before { content: '\e8c3'; } /* '' */
+.brand-semantic-web:before { content: '\e8c4'; } /* '' */
+.brand-simple-icons:before { content: '\e8c5'; } /* '' */
+.brand-sina-weibo:before { content: '\e8c6'; } /* '' */
+.brand-skype:before { content: '\e8c7'; } /* '' */
+.brand-skype-business:before { content: '\e8c8'; } /* '' */
+.brand-slack:before { content: '\e8c9'; } /* '' */
+.brand-snapchat:before { content: '\e8ca'; } /* '' */
+.brand-sony-playstation:before { content: '\e8cb'; } /* '' */
+.brand-soundcloud:before { content: '\e8cc'; } /* '' */
+.brand-spotify:before { content: '\e8cd'; } /* '' */
+.brand-stack-exchange:before { content: '\e8ce'; } /* '' */
+.brand-stack-overflow:before { content: '\e8cf'; } /* '' */
+.brand-stackpath:before { content: '\e8d0'; } /* '' */
+.brand-steam:before { content: '\e8d1'; } /* '' */
+.brand-svg:before { content: '\e8d2'; } /* '' */
+.brand-symfony:before { content: '\e8d3'; } /* '' */
+.brand-tailwind:before { content: '\e8d4'; } /* '' */
+.brand-teamviewer:before { content: '\e8d5'; } /* '' */
+.brand-terraform:before { content: '\e8d6'; } /* '' */
+.brand-trello:before { content: '\e8d7'; } /* '' */
+.brand-twitch:before { content: '\e8d8'; } /* '' */
+.brand-twitter:before { content: '\e8d9'; } /* '' */
+.brand-ubisoft:before { content: '\e8da'; } /* '' */
+.brand-ubuntu:before { content: '\e8db'; } /* '' */
+.brand-umbraco:before { content: '\e8dc'; } /* '' */
+.brand-unicode:before { content: '\e8dd'; } /* '' */
+.brand-unity:before { content: '\e8de'; } /* '' */
+.brand-unreal:before { content: '\e8df'; } /* '' */
+.brand-vimeo:before { content: '\e8e0'; } /* '' */
+.brand-vlc:before { content: '\e8e1'; } /* '' */
+.brand-vuejs:before { content: '\e8e2'; } /* '' */
+.brand-vuetify:before { content: '\e8e3'; } /* '' */
+.brand-waze:before { content: '\e8e4'; } /* '' */
+.brand-webpack:before { content: '\e8e5'; } /* '' */
+.brand-webrtc:before { content: '\e8e6'; } /* '' */
+.brand-wechat:before { content: '\e8e7'; } /* '' */
+.brand-whatsapp:before { content: '\e8e8'; } /* '' */
+.brand-wikipedia:before { content: '\e8e9'; } /* '' */
+.brand-wordpress:before { content: '\e8ea'; } /* '' */
+.brand-xamarin:before { content: '\e8eb'; } /* '' */
+.brand-xmpp:before { content: '\e8ec'; } /* '' */
+.brand-yahoo:before { content: '\e8ed'; } /* '' */
+.brand-youtube:before { content: '\e8ee'; } /* '' */
+.brand-youtube-gaming:before { content: '\e8ef'; } /* '' */
+.brand-youtube-studio:before { content: '\e8f0'; } /* '' */
+.brand-youtube-subscription:before { content: '\e8f1'; } /* '' */
+.brand-youtube-tv:before { content: '\e8f2'; } /* '' */
+.brand-zend:before { content: '\e8f3'; } /* '' */
+.brand-zigbee:before { content: '\e8f4'; } /* '' */
+.brand-z-wave:before { content: '\e8f5'; } /* '' */
+.brand-android:before { content: '\e8f6'; } /* '' */
+.brand-android-studio:before { content: '\e8f7'; } /* '' */
+.brand-angular:before { content: '\e8f8'; } /* '' */
+.brand-angularjs:before { content: '\e8f9'; } /* '' */
+.brand-ansible:before { content: '\e8fa'; } /* '' */
+.brand-apache-kafka:before { content: '\e8fb'; } /* '' */
+.brand-apple:before { content: '\e8fc'; } /* '' */
+.brand-apple-finder:before { content: '\e8fd'; } /* '' */
+.brand-apple-icloud:before { content: '\e8fe'; } /* '' */
+.brand-apple-ios:before { content: '\e8ff'; } /* '' */
+.brand-apple-safari:before { content: '\e900'; } /* '' */
+.brand-arch:before { content: '\e901'; } /* '' */
