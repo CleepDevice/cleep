@@ -4,12 +4,12 @@
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
             <md-button hide="" show-gt-xs="" ng-href="#!module/{{pageCtl.module}}" class="md-raised">
-                <cl-icon cl-mdi="arrow-left"></cl-icon>
+                <cl-icon cl-icon="arrow-left"></cl-icon>
                 <md-tooltip>Back to {{pageCtl.module}} configuration page</md-tooltip>
                 Back to {{pageCtl.module}}
             </md-button>
             <md-button hide-gt-xs="" ng-href="#!module/{{pageCtl.module}}" class="md-raised cl-button-sm">
-                <cl-icon cl-mdi="arrow-left"></cl-icon>
+                <cl-icon cl-icon="arrow-left"></cl-icon>
                 <md-tooltip>Back to {{pageCtl.module}} configuration page</md-tooltip>
             </md-button>
         </div>
@@ -22,7 +22,7 @@
         <div flex></div>
         <div ng-if="pageCtl.tools && pageCtl.tools.length>0">
             <md-button ng-repeat="tool in pageCtl.tools" class="md-raised md-primary" ng-click="pageCtl.onToolClick(tool)">
-                <cl-icon cl-mdi="{{tool.icon}}"></cl-icon>
+                <cl-icon cl-icon="{{tool.icon}}"></cl-icon>
                 <md-tooltip ng-if="tool.tooltip" md-direction="top">{{tool.tooltip}}</md-tooltip>
                 {{tool.label}}
             </md-button>
@@ -32,7 +32,7 @@
     <!-- error -->
     <div ng-if="pageCtl.error" layout="row" layout-align="center center" layout-padding="15px">
         <div>
-            <cl-icon cl-mdi="alien-outline" clclass="icon-xl"></cl-icon>
+            <cl-icon cl-icon="alien-outline" clclass="icon-xl"></cl-icon>
         </div>
         <div>
             The page "{{pageCtl.page}}" is out there.

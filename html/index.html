@@ -6,6 +6,7 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="css/materialdesignicons.min.css?cleepversion"/>
+    <link rel="stylesheet" href="css/brand.css?cleepversion"/>
     <link rel="stylesheet" href="css/roboto-fonts.css?cleepversion">
     <link rel="stylesheet" href="css/angular-material.min.css?cleepversion"/>
     <link rel="stylesheet" href="css/md-data-table.min.css?cleepversion"/>
@@ -24,11 +25,11 @@
             <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
                 <div class="toolbar-spacer"></div>
                 <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
-                    <cl-icon cl-mdi="cellphone" cl-class="icon-white"></cl-icon>
+                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
                     <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
                 </div>
                 <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
-                    <cl-icon cl-mdi="cellphone" cl-class="icon-white"></cl-icon>
+                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
                     <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
                 </div>
                 <div flex></div>

@@ -4,12 +4,12 @@
     <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
         <div>
             <md-button hide="" show-gt-xs="" href="#!modules" class="md-raised">
-                <cl-icon cl-mdi="arrow-left"></cl-icon>
+                <cl-icon cl-icon="arrow-left"></cl-icon>
                 <md-tooltip>Back to installed apps</md-tooltip>
                 Back
             </md-button>
             <md-button hide-gt-xs="" href="#!modules" class="md-raised cl-button-sm">
-                <cl-icon cl-mdi="arrow-left"></cl-icon>
+                <cl-icon cl-icon="arrow-left"></cl-icon>
                 <md-tooltip>Back to modules list</md-tooltip>
             </md-button>
         </div>
@@ -19,7 +19,7 @@
         </div>
         <div flex></div>
         <div layout="row" layout-align="end center">
-            <cl-icon cl-mdi="magnify"></cl-icon>
+            <cl-icon cl-icon="magnify"></cl-icon>
             <md-input-container hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
                 <input ng-model="installCtl.search['$']" type="text">
             </md-input-container>
@@ -27,7 +27,7 @@
                 <input ng-model="installCtl.search['$']" type="text" size="6">
             </md-input-container>
             <md-button class="md-icon-button" ng-click="installCtl.clearSearch()">
-                <cl-icon cl-mdi="close"></cl-icon>
+                <cl-icon cl-icon="close"></cl-icon>
             </md-button>
         </div>
     </div>
@@ -36,7 +36,7 @@
     <div layout="row" layout-wrap>
 
         <div ng-if="!installCtl.displayedModules.length && !installCtl.loading" style="text-align:center; width:100%; padding-top:30px;">
-            <cl-icon cl-mdi="trophy-variant"></cl-icon>
+            <cl-icon cl-icon="trophy-variant"></cl-icon>
             <span>You are a Cleep master, you installed all available applications</span>
         </div>
 
@@ -63,7 +63,7 @@
                     <!-- module icon -->
                     <md-card-title-media>
                         <div class="md-media-sm">
-                            <cl-icon cl-mdi="{{ module.icon || 'help-rhombus' }}" cl-class="icon-xl" style="padding:4px;"></cl-icon>
+                            <cl-icon cl-icon="{{ module.icon || 'help-rhombus' }}" cl-class="icon-xl" style="padding:4px;"></cl-icon>
                         </div>
                     </md-card-title-media>
 
@@ -115,7 +115,7 @@
                         ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].update.failed"
                         ng-click="installCtl.gotoUpdateLogs()"
                     >
-                        <cl-icon cl-mdi="file-document-outline"></cl-icon>
+                        <cl-icon cl-icon="file-document-outline"></cl-icon>
                         Install failed, see logs
                     </md-button>
    
@@ -125,7 +125,7 @@
                         ng-if="!installCtl.cleepService.installableModules[module.name].compatible"
                         ng-click="installCtl.showIncompatibleDialog(module)"
                     >
-                        <cl-icon cl-mdi="car-brake-alert"></cl-icon>
+                        <cl-icon cl-icon="car-brake-alert"></cl-icon>
                         Incompatible
                     </md-button>
                     <md-button
@@ -134,7 +134,7 @@
                         ng-disabled="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].processing || !installCtl.cleepService.installableModules[module.name].compatible"
                         ng-click="installCtl.showInstallDialog(module, $event)"
                     >
-                        <cl-icon cl-mdi="plus-circle"></cl-icon>
+                        <cl-icon cl-icon="plus-circle"></cl-icon>
                         <span ng-if="!installCtl.cleepService.modulesUpdates[module.name].processing && !installCtl.cleepService.modulesUpdates[module.name].pending">
                             Install
                         </span>
@@ -147,7 +147,7 @@
                         class="md-accent"
                         ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].pending"
                     >
-                        <cl-icon mdcl-mdi="plus-circle"></cl-icon>
+                        <cl-icon cl-icon="plus-circle"></cl-icon>
                         Installed, please restart
                     </md-button>
 

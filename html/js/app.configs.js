@@ -163,7 +163,7 @@ Cleep.config([
 		tmpl += '      <md-card-title-media>';
 		tmpl += '        <div class="md-media-sm card-media" layout>';
 		tmpl +=
-			'          <cl-icon ng-if="state.icon!==undefined && state.icon!==null" cl-class="icon-xl" cl-mdi="{{ state.icon }}"></cl-icon>';
+			'          <cl-icon ng-if="state.icon!==undefined && state.icon!==null" cl-class="icon-xl" cl-icon="{{ state.icon }}"></cl-icon>';
 		tmpl +=
 			'          <md-progress-circular ng-if="state.spinner===undefined || state.spinner===true" md-mode="indeterminate" style="margin-top:14px; margin-left:10px;">';
 		tmpl += '        </div>';

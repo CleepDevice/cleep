@@ -38,7 +38,7 @@ angular.module('Cleep').component('configItemDesc', {
                 style="margin: 10px;"
                 flex="none"
             ></md-progress-circular>
-            <cl-icon ng-if="$ctrl.showIcon" cl-mdi="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconStyle }}"></cl-icon>
+            <cl-icon ng-if="$ctrl.showIcon" cl-icon="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconStyle }}"></cl-icon>
         </div>
         <div layout="column" layout-align="center start" style="min-height: 48px;">
             <div>{{ $ctrl.clTitle }}</div>
@@ -74,7 +74,7 @@ angular.module('Cleep').component('configItemSaveButton', {
             ng-disabled="($ctrl.checkForm && !$ctrl.clFormRef.inputField.$valid) || $ctrl.clBtnDisabled === true"
         >
             <md-tooltip ng-if="$ctrl.clBtnTooltip">{{ $ctrl.clBtnTooltip }}</md-tooltip>
-            <cl-icon cl-mdi="{{ $ctrl.icon }}"></cl-icon>
+            <cl-icon cl-icon="{{ $ctrl.icon }}"></cl-icon>
         </md-button>
     `,
     bindings: {
@@ -185,7 +185,7 @@ angular.module('Cleep').component('configButton', {
             <div flex="none" layout="row" layout-align="end center">
                 <md-button ng-click="$ctrl.onClick($event)" class="{{ $ctrl.buttonStyle }}" ng-disabled="$ctrl.clDisabled">
                     <md-tooltip ng-if="$ctrl.clBtnTooltip">{{ $ctrl.clBtnTooltip }}</md-tooltip>
-                    <cl-icon ng-if="$ctrl.clBtnIcon" cl-mdi="{{ $ctrl.clBtnIcon }}"></cl-icon>
+                    <cl-icon ng-if="$ctrl.clBtnIcon" cl-icon="{{ $ctrl.clBtnIcon }}"></cl-icon>
                     {{ $ctrl.clBtnLabel }}
                 </md-button>
             </div>
@@ -237,7 +237,7 @@ angular.module('Cleep').component('configButtons', {
                 <div ng-if="$ctrl.buttons.length <= $ctrl.limit" ng-repeat="button in $ctrl.buttons track by $index">
                     <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.color }} {{ button.style }} cl-button-sm" ng-disabled="button.disabled">
                         <md-tooltip ng-if="button.tooltip">{{ button.tooltip }}</md-tooltip>
-                        <cl-icon ng-if="button.icon" cl-mdi="{{ button.icon }}"></cl-icon>
+                        <cl-icon ng-if="button.icon" cl-icon="{{ button.icon }}"></cl-icon>
                         {{ button.label }}
                     </md-button>
                 </div>
@@ -246,12 +246,12 @@ angular.module('Cleep').component('configButtons', {
                     <md-menu>
                         <md-button class="md-raised md-primary cl-button-sm" ng-click="$ctrl.openMenu($mdMenu, $event)">
                             <md-tooltip>Choose action</md-tooltip>
-                            <cl-icon cl-mdi="dots-vertical"></cl-icon>
+                            <cl-icon cl-icon="dots-vertical"></cl-icon>
                         </md-button>
                         <md-menu-content>
                             <md-menu-item ng-repeat="button in $ctrl.buttons track by $index">
                                 <md-button ng-click="$ctrl.onClick($event, button)" class="{{ button.style }}" ng-disabled="button.disabled">
-                                    <cl-icon ng-if="button.icon" cl-mdi="{{ button.icon }}"></cl-icon>
+                                    <cl-icon ng-if="button.icon" cl-icon="{{ button.icon }}"></cl-icon>
                                     {{ button.label }}
                                 </md-button>
                             </md-menu-item>
@@ -332,7 +332,7 @@ angular.module('Cleep').component('configSection', {
     template: `
         <div layout="row" layout-align="start center" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item config-item-section">
             <div>
-                <cl-icon cl-mdi="{{ $ctrl.icon }}"></cl-icon>
+                <cl-icon cl-icon="{{ $ctrl.icon }}"></cl-icon>
             </div>
             <span>{{ $ctrl.clTitle }}</span>
         </div>
@@ -660,7 +660,7 @@ angular.module('Cleep').component('configSelect', {
                 </md-select>
             </md-input-container>
             <md-button ng-if="$ctrl.showSelectAll" class="md-icon-button" ng-click="$ctrl.selectAll()" ng-disabled="$ctrl.clDisabled">
-                <cl-icon cl-mdi="check-all"></cl-icon>
+                <cl-icon cl-icon="check-all"></cl-icon>
                 <md-tooltip>Select all</md-tooltip>
             </md-button>
         </config-basic>
@@ -831,7 +831,7 @@ angular.module('Cleep').component('configTime', {
 angular.module('Cleep').component('configNote', {
     template: `
         <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
-            <cl-icon ng-if="$ctrl.clIcon" cl-mdi="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" cl-class="icon-md {{ $ctrl.clIconStyle }}"></cl-icon>
+            <cl-icon ng-if="$ctrl.clIcon" cl-icon="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" cl-class="icon-md {{ $ctrl.clIconStyle }}"></cl-icon>
             <div flex layout="column" layout-align="start stretch" ng-bind-html="$ctrl.clNote"></div>
         </div>
     `,
@@ -974,7 +974,7 @@ angular.module('Cleep').component('configList', {
                 class="md-secondary md-icon-button {{ click.style }}"
             >
                 <md-tooltip ng-if="click.tooltip">{{ click.tooltip }}</md-tooltip>
-                <cl-icon cl-mdi="{{ click.icon }}"></cl-icon>
+                <cl-icon cl-icon="{{ click.icon }}"></cl-icon>
             </md-button>
             <md-checkbox ng-if="$ctrl.clSelectable" class="md-secondary" ng-model="$ctrl.selected[$index]" ng-change="$ctrl.onSelect($index)">
                 {{ item.label }}
@@ -1075,7 +1075,7 @@ angular.module('Cleep').component('configBaseViewer', {
                     ng-class="btn.style"
                     ng-click="$ctrl.onClick($event, btn)"
                 >
-                    <cl-icon ng-if="btn.icon" class="icon-white" cl-mdi="{{ btn.icon }}"></cl-icon>
+                    <cl-icon ng-if="btn.icon" class="icon-white" cl-icon="{{ btn.icon }}"></cl-icon>
                     {{ btn.label }}
                 </md-button>
             </div>

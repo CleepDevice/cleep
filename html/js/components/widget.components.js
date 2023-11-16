@@ -4,7 +4,7 @@ angular.module('Cleep').component('widgetBasic', {
         <md-card class="widget-bg-color" flex="100" style="height:100%; margin:0px;">
             <md-card-header ng-if="$ctrl.clTitle">
                 <md-card-avatar ng-if="$ctrl.clIcon">
-                    <cl-icon class="md-avatar-icon" cl-mdi="{{ $ctrl.clIcon }}"></cl-icon>
+                    <cl-icon class="md-avatar-icon" cl-icon="{{ $ctrl.clIcon }}"></cl-icon>
                 </md-card-avatar>
                 <md-card-header-text>
                     <span ng-if="$ctrl.clTitle" class="md-title">{{ $ctrl.clTitle }}</span>
@@ -18,12 +18,12 @@ angular.module('Cleep').component('widgetBasic', {
             <md-card-actions ng-if="$ctrl.hasFooter" layout="row" layout-align="space-between center">
                 <div ng-repeat="footer in $ctrl.footer" hide="" show-gt-xs="" ng-if="footer.condition($ctrl)">
                     <div ng-if="!footer.click">
-                        <cl-icon ng-if="footer.icon" cl-mdi="{{ footer.icon }}" cl-tooltip="{{ footer.tooltip }}"></cl-icon>
+                        <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}" cl-tooltip="{{ footer.tooltip }}"></cl-icon>
                         <span ng-if="footer.label" class="{{ footer.class }}" flex="100">{{ footer.label }}</span>
                     </div>
                     <div ng-if="footer.click">
-                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.class }} {{ $ctrl.clButtonSm }}">
-                            <cl-icon ng-if="footer.icon" cl-mdi="{{ footer.icon }}"></cl-icon>
+                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="md-raised {{ footer.class }} {{ $ctrl.clButtonSm }}">
+                            <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}"></cl-icon>
                             <md-tooltip ng-if="footer.tooltip">{{ footer.tooltip }}</md-tooltip>
                             {{ footer.label }}
                         </md-button>
@@ -32,12 +32,12 @@ angular.module('Cleep').component('widgetBasic', {
 
                 <div ng-repeat="footer in $ctrl.footer" hide-gt-xs="" ng-if="footer.condition($ctrl)">
                     <div ng-if="!footer.click">
-                        <cl-icon ng-if="footer.icon" cl-mdi="{{ footer.icon }}" cl-tooltip="footer.tooltip"></cl-icon>
+                        <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}" cl-tooltip="footer.tooltip"></cl-icon>
                         <span ng-if="footer.label" class="{{ footer.class }}" flex="100">{{ footer.label }}</span>
                     </div>
                     <div ng-if="footer.click">
-                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.class }} cl-button-sm">
-                            <cl-icon ng-if="footer.icon" cl-mdi="{{ footer.icon }}"></cl-icon>
+                        <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.class }} md-raised cl-button-sm">
+                            <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}"></cl-icon>
                             <md-tooltip ng-if="footer.tooltip">{{ footer.tooltip }}</md-tooltip>
                         </md-button>
                     </div>

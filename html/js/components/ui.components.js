@@ -1,14 +1,28 @@
 angular.module('Cleep').component('clIcon', {
     template: `
-        <md-icon ng-if="$ctrl.clTooltip" md-font-icon="mdi mdi-{{ $ctrl.clMdi }}" ng-class="$ctrl.clClass">
+        <md-icon ng-if="$ctrl.clTooltip" md-font-icon="{{ $ctrl.mdFontIcon }}" ng-class="$ctrl.clClass">
             <md-tooltip>{{ $ctrl.clTooltip }}</md-tooltip>
         </md-icon>
-        <md-icon ng-if="!$ctrl.clTooltip" md-font-icon="mdi mdi-{{ $ctrl.clMdi }}" ng-class="$ctrl.clClass">
+        <md-icon ng-if="!$ctrl.clTooltip" md-font-icon="{{ $ctrl.mdFontIcon }}" ng-class="$ctrl.clClass">
         </md-icon>`,
     bindings: {
-        clMdi: '@',
+        clIcon: '@',
         clTooltip: '@?',
-        clClass: '@'
+        clClass: '@?'
+    },
+    controller: function() {
+        const ctrl = this;
+
+        ctrl.$onChanges = function(changes) {
+            if (changes.clIcon?.currentValue) {
+                const icon = changes.clIcon.currentValue;
+                if (icon.startsWith('brand-')) {
+                    ctrl.mdFontIcon = 'brand ' + icon;
+                } else {
+                    ctrl.mdFontIcon = 'mdi mdi-' + icon;
+                }
+            }
+        };
     },
 });
 
@@ -47,20 +61,20 @@ angular.module('Cleep').component('clAppFab', {
         <!-- single action -->
         <md-button ng-if="$ctrl.actions.length === 1" ng-click="$ctrl.onClick($ctrl.actions[0])" class="md-accent md-fab md-fab-bottom-right" style="position:fixed !important;">
             <md-tooltip md-direction="top">{{ $ctrl.actions[0].tooltip }}</md-tooltip>
-            <cl-icon cl-mdi="{{ $ctrl.actions[0].icon }}"></cl-icon>
+            <cl-icon cl-icon="{{ $ctrl.actions[0].icon }}"></cl-icon>
         </md-button>
 
         <!-- multiple actions -->
         <md-fab-speed-dial ng-if="$ctrl.actions.length > 1" md-direction="left" class="md-scale md-fab-bottom-right" style="position:fixed !important;">
             <md-fab-trigger>
                 <md-button class="md-accent md-fab md-primary">
-                    <cl-icon cl-mdi="dots-vertical"></cl-icon>
+                    <cl-icon cl-icon="dots-vertical"></cl-icon>
                 </md-button>
             </md-fab-trigger>
             <md-fab-actions>
                 <md-button ng-repeat="action in $ctrl.actions" ng-click="$ctrl.onClick(action)" class="md-accent md-fab md-mini md-primary">
                     <md-tooltip md-direction="top">{{ action.tooltip }}</md-tooltip>
-                    <cl-icon cl-mdi="{{ action.icon }}"></cl-icon>
+                    <cl-icon cl-icon="{{ action.icon }}"></cl-icon>
                 </md-button>
             </md-fab-actions>
         </md-fab-speed-dial>
@@ -352,7 +366,7 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
         template: `
         <input id="fileInput" type="file" class="ng-hide">
         <md-button id="uploadButton" ng-class="btnStyle" ng-disabled="clDisabled">
-            <cl-icon cl-mdi="{{ btnIcon }}"></cl-icon>
+            <cl-icon cl-icon="{{ btnIcon }}"></cl-icon>
             {{ btnLabel }}
         </md-button>
         <md-input-container md-no-float class="no-margin no-error-spacer" ng-show="clPlaceholder">
@@ -420,11 +434,11 @@ angular.module('Cleep').service('cleepToolbarService', function() {
 }).component('clToolbar', {
     template: `
     <md-button ng-repeat="btn in $ctrl.toolbar.buttons" hide="" show-gt-xs="" ng-href="{{ btn.href }}" ng-click="$ctrl.onToolbarClick(btn)" ng-class="['md-raised', btn.color]">
-        <cl-icon cl-mdi="{{ btn.icon }}"></cl-icon>
+        <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
         {{ btn.label }}
     </md-button>
     <md-button ng-repeat="btn in $ctrl.toolbar.buttons" hide-gt-xs="" ng-href="{{ btn.href }}" ng-click="$ctrl.onToolbarClick(btn)" ng-class="['md-raised', 'cl-button-sm', btn.color]">
-        <cl-icon cl-mdi="{{ btn.icon }}"></cl-icon>
+        <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
     </md-button>
     `,
     controller: function(cleepToolbarService) {
