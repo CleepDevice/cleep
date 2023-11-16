@@ -461,7 +461,7 @@ angular.module('Cleep').component('configText', {
                 <input
                     name="inputField" type="{{ $ctrl.inputType }}"
                     ng-required="$ctrl.clRequired" ng-minlength="$ctrl.clMin" ng-maxlength="$ctrl.clMax" ng-disabled="$ctrl.clDisabled"
-                    ng-model="$ctrl.clModel" autocomplete="off"
+                    ng-model="$ctrl.clModel" autocomplete="off" placeholder="{{ $ctrl.clPlaceholder }}"
                 >
             </md-input-container>
         </config-basic>
@@ -483,6 +483,7 @@ angular.module('Cleep').component('configText', {
         clMeta: '<',
         clClick: '&?',
         clDisabled: '<?',
+        clPlaceholder: '@?',
     },
     controller: function () {
         const ctrl = this;
