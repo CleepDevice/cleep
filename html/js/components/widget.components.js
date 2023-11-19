@@ -98,9 +98,9 @@ angular.module('Cleep').component('widgetBasic', {
                 ctrl.footer.push({
                     type: footer.type ?? 'text',
                     icon: footer.icon,
-                    tooltip: footer.tooltip ?? undefined,
-                    label: footer.label,
-                    style: isButton ? footer.style : footer.style || 'md-caption',
+                    tooltip: footer.tooltip ?? 'Display chart',
+                    label: footer.label || '',
+                    style: isButton ? footer.style : footer.style || 'md-raised',
                     click: isButton ? footer.click : undefined,
                     condition: footer.condition,
                     clButtonSm: isButton
