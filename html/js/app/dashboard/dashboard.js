@@ -10,6 +10,9 @@ function ($rootScope, cleepService) {
         self.prepareDevices = function () {
             self.devices.splice(0, self.devices.length);
             for (const device of cleepService.devices) {
+                if (device.hidden) {
+                    continue;
+                }
                 device.__renderable = cleepService.deviceRenderableWay(device.type);
                 if (device.__renderable) {
                     self.devices.push(device);
@@ -51,25 +54,26 @@ angular
 .directive('dashboardWidget', ['$compile', '$injector', 'cleepService',
 function($compile, $injector, cleepService) {
     var dashboardWidgetLink = function(scope, element, attr) {
-        cleepService.getModuleDescription(scope.device.module).then((conf) => {
-            const isAngularWidget = scope.__renderable === 'angular';
-            const template = isAngularWidget ?
-                '<div ' + directiveName.toKebab() + ' device="device"></div>' :
-                '<widget-conf cl-device="device" cl-widget-conf="conf" cl-app-icon="' + conf.icon + '"></widget-conf>';
+        cleepService.getModuleDescription(scope.device.module)
+            .then((conf) => {
+                const isAngularWidget = scope.__renderable === 'angular';
+                const template = isAngularWidget ?
+                    '<div ' + directiveName.toKebab() + ' device="device"></div>' :
+                    '<widget-conf cl-device="device" cl-widget-conf="conf" cl-app-icon="' + conf.icon + '"></widget-conf>';
 
-            if (!isAngularWidget) {
-                // apply custom widget footer if any
-                const widgetConf = cleepService.getWidgetConfig(scope.type);
-                const customFooter = conf.widgets?.[scope.type]?.footer
-                if (customFooter) {
-                    widgetConf.footer = customFooter;
+                if (!isAngularWidget) {
+                    // apply custom widget footer if any
+                    const widgetConf = cleepService.getWidgetConfig(scope.type);
+                    const customFooter = conf.widgets?.[scope.type]?.footer
+                    if (customFooter) {
+                        widgetConf.footer = customFooter;
+                    }
+                    scope.conf = widgetConf;
                 }
-                scope.conf = widgetConf;
-            }
 
-            const widget = $compile(template)(scope);
-            element.append(widget);
-        });
+                const widget = $compile(template)(scope);
+                element.append(widget);
+            });
     };
 
     return {

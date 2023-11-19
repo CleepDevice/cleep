@@ -472,15 +472,12 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         for (var module in devices) {
             // add specific ui stuff
             for (var uuid in devices[module]) {
-                // add widget infos
-                devices[module][uuid].__widget = {
-                    mdcolors: '{background:"default-primary-300"}'
-                };
-
                 // add module which handles this device
                 devices[module][uuid].module = module;
-                // add if widget is hidden or not
-                devices[module][uuid].hidden = self.modules[module].library ? true : false;
+
+                // update widget hidden status
+                const hidden = self.modules[module].library ? true : Boolean(devices[module][uuid].hidden);
+                devices[module][uuid].hidden = hidden;
             }
 
             // store device
