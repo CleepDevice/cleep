@@ -114,7 +114,7 @@ angular.module('Cleep').component('configBasic', {
     template: function () {
         const formName = getFormName();
         return (`
-        <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
+        <div layout="column" layout-align="start stretch" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.style">
             <config-item-desc
                 flex layout="row" layout-align="start-center"
                 cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
@@ -158,18 +158,18 @@ angular.module('Cleep').component('configBasic', {
         clMeta: '<',
         clClick: '<',
         clNoForm: '<?',
-        clClass: '@',
+        clStyle: '@',
         clDisabled: '<',
         clLoading: '<?',
     },
     controller: function () {
         const ctrl = this;
         ctrl.noForm = false;
-        ctrl.class = 'config-item';
+        ctrl.style = 'config-item';
 
         ctrl.$onInit = function () {
-            ctrl.noForm = !!ctrl.clClick || !!ctrl.clNoForm;
-            ctrl.class += ctrl.clClass ? ' ' + ctrl.clClass : '';
+            ctrl.noForm = !(!!ctrl.clClick) || !!ctrl.clNoForm;
+            ctrl.style += ctrl.clStyle ? ' ' + ctrl.clStyle : '';
         };
     },
 });
