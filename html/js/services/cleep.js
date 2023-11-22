@@ -788,11 +788,11 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         return config && JSON.parse(JSON.stringify(config));
     };
 
-    self.deviceRenderableWay = function (deviceType) {
+    self.deviceRenderer = function (deviceType) {
         const directiveName = deviceType + 'Widget';
         const isAngularWidget = $injector.has(directiveName+'Directive');
         if (isAngularWidget) {
-            return 'angular';
+            return 'angular|' + directiveName;
         }
 
         const hasWidgetConf = self.getWidgetConfig(deviceType);

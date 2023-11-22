@@ -13,8 +13,8 @@ function ($rootScope, cleepService) {
                 if (device.hidden) {
                     continue;
                 }
-                device.__renderable = cleepService.deviceRenderableWay(device.type);
-                if (device.__renderable) {
+                device.__renderer = cleepService.deviceRenderer(device.type);
+                if (device.__renderer) {
                     self.devices.push(device);
                 } else {
                     console.warn('Device of type "' + device.type + '" has no renderable widget');
@@ -56,7 +56,8 @@ function($compile, $injector, cleepService) {
     var dashboardWidgetLink = function(scope, element, attr) {
         cleepService.getModuleDescription(scope.device.module)
             .then((conf) => {
-                const isAngularWidget = scope.__renderable === 'angular';
+                const isAngularWidget = scope.device.__renderer.startsWith('angular');
+                const directiveName = isAngularWidget ? scope.device.__renderer.split('|')[1] : '';
                 const template = isAngularWidget ?
                     '<div ' + directiveName.toKebab() + ' device="device"></div>' :
                     '<widget-conf cl-device="device" cl-widget-conf="conf" cl-app-icon="' + conf.icon + '"></widget-conf>';
