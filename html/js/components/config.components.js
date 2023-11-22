@@ -833,15 +833,18 @@ angular.module('Cleep').component('configNote', {
     template: `
         <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" ng-class="$ctrl.class">
             <cl-icon ng-if="$ctrl.clIcon" cl-icon="{{ $ctrl.clIcon }}" flex="none" style="margin:10px 20px 10px 10px;" cl-class="icon-md {{ $ctrl.clIconStyle }}"></cl-icon>
-            <div flex layout="column" layout-align="start stretch" ng-bind-html="$ctrl.clNote"></div>
+            <cl-app-img ng-if="$ctrl.clImgSrc" cl-src="{{ $ctrl.clImgSrc }}" cl-width="{{ $ctrl.clImgWidth }}" style="margin:10px 20px 10px 10px;"></cl-app-img>
+            <div flex layout="column" layout-align="start stretch"><span ng-bind-html="$ctrl.clNote"></span></div>
         </div>
     `,
     bindings: {
         clId: '@',
-        clIcon: '@',
-        clIconStyle: '@',
+        clIcon: '@?',
+        clIconStyle: '@?',
+        clImgSrc: '@?',
+        clImgWidth: '@?',
         clNote: '@',
-        clType: '@',
+        clType: '@?',
     },
     controller: function () {
         const ctrl = this;
