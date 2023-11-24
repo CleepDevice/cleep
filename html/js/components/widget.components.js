@@ -1,5 +1,8 @@
 angular.module('Cleep').component('widgetBasic', {
-    transclude: true,
+    transclude: {
+        content: '?widgetContent',
+        footer: '?widgetFooter',
+    },
     template: `
         <md-card class="widget-bg-color" flex="100" style="height:100%; margin:0px;">
             <md-card-header ng-if="$ctrl.clTitle">
@@ -13,8 +16,11 @@ angular.module('Cleep').component('widgetBasic', {
             </md-card-header>
             <img ng-if="$ctrl.clImage" ng-src="{{ $ctrl.clImage }}" class="md-card-image">
             <md-card-content layout="column" layout-align="center center" md-colors="{{ $ctrl.contentBgColor }}" style="height:100%;">
-                <ng-transclude></ng-transclude>
+                <ng-transclude ng-transclude-slot="content"></ng-transclude>
             </md-card-content>
+            <md-card-actions ng-if="$ctrl.hasFooterTranscluded" layout="row" flex>
+                <ng-transclude ng-transclude-slot="footer" flex></ng-transclude>
+            </md-card-actions>
             <md-card-actions ng-if="$ctrl.hasFooter" layout="row" layout-align="space-between center">
                 <div ng-repeat="footer in $ctrl.footer" hide="" show-gt-xs="" ng-if="footer.condition($ctrl)">
                     <div ng-if="footer.type === 'text'">
@@ -65,7 +71,7 @@ angular.module('Cleep').component('widgetBasic', {
         clFooter: '<',
         clImage: '<',
     },
-    controller: function () {
+    controller: function ($transclude) {
         const ctrl = this;
         ctrl.footer = [];
         ctrl.hasFooter = false;
@@ -76,9 +82,13 @@ angular.module('Cleep').component('widgetBasic', {
             background: 'default-accent-400',
         };
         ctrl.contentBgColor = ctrl.BG_OFF_COLOR;
+        ctrl.hasFooterTranscluded = false;
 
         ctrl.$onInit = function () {
-            ctrl.prepareFooter(ctrl.clFooter);
+            ctrl.hasFooterTranscluded = $transclude.isSlotFilled('footer');
+            if (!ctrl.hasFooterTranscluded) {
+                ctrl.prepareFooter(ctrl.clFooter);
+            }
         };
 
         ctrl.$onChanges = function (newVal, oldVal) {
@@ -126,7 +136,7 @@ angular.module('Cleep').component('widgetConf', {
         <widget-basic
             cl-title="$ctrl.title" cl-subtitle="$ctrl.subtitle" cl-icon="$ctrl.icon"
             cl-image="$ctrl.image" cl-footer="$ctrl.footer" cl-device="$ctrl.clDevice">
-            <div ng-bind-html="$ctrl.getContent()"></div>
+            <widget-content ng-bind-html="$ctrl.getContent()"></widget-content>
         </widget-basic>
     `,
     bindings: {
@@ -172,12 +182,15 @@ angular.module('Cleep').component('widgetConf', {
                 );
 
                 for (const footer of conf.footer || []) {
-                    if (footer.type === 'button') {
-                        ctrl.footer.push(ctrl.getButtonFooterItem(footer));
-                    } else if (footer.type === 'chart') {
-                        ctrl.footer.push(ctrl.getChartFooterItem(footer));
-                    } else {
-                        ctrl.footer.push(ctrl.getTextFooterItem(footer));
+                    switch (footer.type) {
+                        case 'button':
+                            ctrl.footer.push(ctrl.getButtonFooterItem(footer));
+                            break;
+                        case 'chart':
+                            ctrl.footer.push(ctrl.getChartFooterItem(footer));
+                            break;
+                        default:
+                            ctrl.footer.push(ctrl.getTextFooterItem(footer));
                     }
                 }
             };
