@@ -263,10 +263,14 @@ angular.module('Cleep').component('widgetConf', {
             };
 
             ctrl.getTextFooterItem = function (footer) {
+                const filterStr = footer.filter ? ' | ' + footer.filter : '';
+                const unitStr = footer.unit || '';
+                const attrStr = footer.attr ? '{{ device.' + footer.attr + filterStr + ' }}' + unitStr : '';
+
                 return {
                     type: 'text',
                     icon: footer?.icon,
-                    label: $interpolate(ctrl.prepareForInterpolate(footer?.label))($scope),
+                    label: $interpolate(ctrl.prepareForInterpolate(attrStr))($scope),
                     style: footer?.style,
                     tooltip: footer?.tooltip,
                     condition: ctrl.prepareCondition(footer.condition),
