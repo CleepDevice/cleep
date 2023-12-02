@@ -108,7 +108,7 @@ angular.module('Cleep').component('widgetBasic', {
                 ctrl.footer.push({
                     type: footer.type ?? 'text',
                     icon: footer.icon,
-                    tooltip: footer.tooltip ?? 'Display chart',
+                    tooltip: footer.tooltip,
                     label: footer.label || '',
                     style: isButton ? footer.style : footer.style || 'md-raised',
                     click: isButton ? footer.click : undefined,
@@ -136,7 +136,14 @@ angular.module('Cleep').component('widgetConf', {
         <widget-basic
             cl-title="$ctrl.title" cl-subtitle="$ctrl.subtitle" cl-icon="$ctrl.icon"
             cl-image="$ctrl.image" cl-footer="$ctrl.footer" cl-device="$ctrl.clDevice">
-            <widget-content ng-bind-html="$ctrl.getContent()"></widget-content>
+            <widget-content layout="row" layout-align="center center" layout-padding>
+                <div ng-if="$ctrl.content.raw" ng-bind-html="$ctrl.getContent()"></div>
+                <div ng-repeat="attr in $ctrl.content.attrs" ng-if="attr.condition($ctrl)">
+                    <cl-icon ng-if="attr.type === 'icon'" cl-class="icon-md" cl-icon="{{ attr.icon }}"></cl-icon>
+                    <div ng-if="attr.type === 'attr'" ng-bind="$ctrl.getAttr(attr)" class="md-display-1"></div>
+                </div>
+                </div>
+            </widget-content>
         </widget-basic>
     `,
     bindings: {
@@ -161,7 +168,10 @@ angular.module('Cleep').component('widgetConf', {
             ctrl.icon = undefined;
             ctrl.title = undefined;
             ctrl.subtitle = undefined;
-            ctrl.content = undefined;
+            ctrl.content = {
+                raw: undefined,
+                attrs: [],
+            };
             ctrl.footer = [];
             ctrl.image = undefined;
             ctrl.deviceRegexp = /device\./g;
@@ -176,11 +186,68 @@ angular.module('Cleep').component('widgetConf', {
                 ctrl.title = conf.header?.title ?? ctrl.clDevice.name;
                 ctrl.subtitle = conf.header?.subtitle ?? ctrl.clDevice.type;
                 ctrl.image = conf.image;
-                ctrl.content = ctrl.prepareForInterpolate(
-                    conf.content,
-                    'Please add widget content'
-                );
+                ctrl.prepareContent(conf);
+                ctrl.prepareFooter(conf);
+            };
 
+            ctrl.prepareContent = function (conf) {
+                if (angular.isString(conf.content)) {
+                    // raw content
+                    ctrl.content.raw = ctrl.prepareForInterpolate(
+                        conf.content,
+                        'Please add widget content'
+                    );
+                } else if (angular.isArray(conf.content)) {
+                    // advanced content
+                    for (const content of conf.content) {
+                        if (content.icon) {
+                            ctrl.content.attrs.push(ctrl.prepareIconContent(content));
+                        } else {
+                            ctrl.content.attrs.push(ctrl.prepareAttrContent(content));
+                        }
+                    }
+                } else {
+                    console.warn('Invalid content for "' + ctrl.clDevice.type + '" widget template');
+                }
+            };
+
+            ctrl.prepareIconContent = function (content) {
+                return {
+                    type: 'icon',
+                    icon: content.icon,
+                    ...(content.condition && { condition: ctrl.prepareCondition(content.condition) }),
+                };
+            };
+
+            ctrl.prepareAttrContent = function (content) {
+                const filterStr = content.filter ? ' | ' + content.filter : '';
+                const attrStr = '{{ device.' + content.attr + filterStr + ' }}';
+                const attr = {
+                    type: 'attr',
+                    attr: ctrl.prepareForInterpolate(attrStr),
+                    name: content.attr,
+                    condition: ctrl.prepareCondition(content.condition),
+                };
+
+                if (angular.isString(content)) {
+                    // simply attribute name
+                    return attr;
+                } else {
+                    // advanced attribute
+                    return {
+                        ...attr,
+                        ...(content?.trueLabel && { trueLabel: content.trueLabel }),
+                        ...(content?.falseLabel && { falseLabel: content.falseLabel }),
+                    };
+                }
+
+                return {
+                    type: 'attr',
+                    falseLabel: conf.content?.attrFalseLabel,
+                };
+            };
+
+            ctrl.prepareFooter = function (conf) {
                 for (const footer of conf.footer || []) {
                     switch (footer.type) {
                         case 'button':
@@ -266,11 +333,20 @@ angular.module('Cleep').component('widgetConf', {
                 };
             };
 
+            ctrl.getAttr = function (attr) {
+                if (attr.trueLabel && Boolean(ctrl.clDevice[attr.name])) {
+                    return attr.trueLabel;
+                } else if (attr.falseLabel && !Boolean(ctrl.clDevice[attr.name])) {
+                    return attr.falseLabel;
+                }
+                return $interpolate(attr.attr)($scope);
+            };
+
             ctrl.getContent = function () {
-                if (!ctrl.content?.length) {
+                if (!ctrl.content.raw?.length) {
                     return '';
                 }
-                return $interpolate(ctrl.content)($scope);
+                return $interpolate(ctrl.content.raw)($scope);
             };
         },
     ],
