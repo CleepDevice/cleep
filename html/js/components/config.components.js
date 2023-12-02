@@ -41,7 +41,7 @@ angular.module('Cleep').component('configItemDesc', {
             <cl-icon ng-if="$ctrl.showIcon" cl-icon="{{ $ctrl.icon }}" flex="none" style="margin: 10px;" cl-class="{{ $ctrl.clIconStyle }}"></cl-icon>
         </div>
         <div layout="column" layout-align="center start" style="min-height: 48px;">
-            <div>{{ $ctrl.clTitle }}</div>
+            <div ng-bind-html="$ctrl.clTitle"></div>
             <div ng-if="$ctrl.clSubtitle" class="md-caption" style="margin-top: 5px;">{{ $ctrl.clSubtitle }}</div>
         </div>
     `,
@@ -158,7 +158,7 @@ angular.module('Cleep').component('configBasic', {
         clMeta: '<',
         clClick: '<',
         clNoForm: '<?',
-        clStyle: '@',
+        clStyle: '@?',
         clDisabled: '<',
         clLoading: '<?',
     },
@@ -646,12 +646,12 @@ angular.module('Cleep').component('configSelect', {
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container class="config-input-container-no-margin">
-                <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+                <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()">
                     <md-option ng-repeat="option in $ctrl.options track by $index" ng-value="option.value" ng-disabled="option.disabled">
                         {{ option.label }}
                     </md-option>
                 </md-select>
-                <md-select ng-if="!$ctrl.isMultiple" name="inputField" ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
+                <md-select ng-if="!$ctrl.isMultiple" name="inputField" ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()">
                     <md-option ng-if="$ctrl.clEmpty" value="">
                         <em>{{ $ctrl.clEmpty }}</em>
                     </md-option>
@@ -683,6 +683,7 @@ angular.module('Cleep').component('configSelect', {
         clDisabled: '<?',
         clNoSelectAll: '<',
         clEmpty: '@?',
+        clChange: '&?',
     },
     controller: function () {
         const ctrl = this;
@@ -732,6 +733,15 @@ angular.module('Cleep').component('configSelect', {
             if (fill) {
                 selectableOptions.forEach((option) => ctrl.clModel.push(option.value));
             }
+        };
+
+        ctrl.onChange = function() {
+            const data = {
+                ...(ctrl.isMultiple && { values: ctrl.clModel }),
+                ...(!ctrl.isMultiple && { value: ctrl.clModel }),
+                meta: ctrl.clMeta || {},
+            };
+            (ctrl.clChange || angular.noop)(data);
         };
     },
 });
@@ -968,7 +978,7 @@ angular.module('Cleep').component('configList', {
         <config-basic ng-repeat="item in $ctrl.items track by $index"
             cl-title="item.title" cl-subtitle="item.subtitle"
             cl-icon="item.icon" cl-icon-style="item.iconStyle"
-            cl-class="config-list-item" cl-loading="item.loading"
+            cl-style="config-list-item" cl-loading="item.loading"
         >
             <md-button
                 ng-if="item.clicks.length>0"

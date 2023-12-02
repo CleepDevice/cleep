@@ -140,6 +140,7 @@
                                 cl-title="Line title" cl-subtitle="Line subtitle"
                                 cl-options="$ctrl.selectOptions" cl-disabled="false"
                                 cl-model="$ctrl.inputSelect" cl-click="$ctrl.onClick(value, meta)" cl-meta="$ctrl.meta"
+                                cl-change="$ctrl.onSelectChange(value, $event)"
                             ></config-select>
                         </p>
                         <h3 class="md-subhead">Multiple choices</h3>
@@ -148,6 +149,7 @@
                                 cl-title="Line title" cl-subtitle="Line subtitle"
                                 cl-options="$ctrl.selectOptions" cl-disabled="false"
                                 cl-model="$ctrl.inputSelects" cl-click="$ctrl.onClick(value, meta)" cl-meta="$ctrl.meta"
+                                cl-change="$ctrl.onSelectChange(values, $event)"
                             ></config-select>
                         </p>
 

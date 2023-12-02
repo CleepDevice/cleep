@@ -100,7 +100,7 @@ Cleep.filter('hrTemperature', function($filter) {
         result = '';
 
         if (angular.isUndefined(temperature) || temperature===null) {
-            result = '?';
+            result = '-';
         } else {
             result = Number(temperature).toFixed(1);
         }

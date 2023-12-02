@@ -35,6 +35,10 @@ function() {
             console.log('click select', { current, index, selections, event });
         };
 
+        self.onSelectChange = function(valueOrValues, event) {
+            console.log('On select change', { valueOrValues, event });
+        };
+
         self.twoButtons = [
             {color: 'md-primary', icon: 'account', label: 'account', tooltip: 'Account'},
             {color: 'md-primary', icon: 'account-alert', label: 'account-alert', disabled:true}
