@@ -28,11 +28,12 @@ angular.module('Cleep').component('clIcon', {
 
 angular.module('Cleep').component('clAppImg', {
     template: `
-        <img ng-src="{{ $ctrl.src }}" width="{{ $ctrl.clWidth }}"/>
+        <img ng-src="{{ $ctrl.src }}" width="{{ $ctrl.clWidth }}" height="{{ $ctrl.clHeight }}"/>
     `,
     bindings: {
         clSrc: '@',
         clWidth: '@?',
+        clHeight: '@?',
     },
     controller: function($location) {
         const MODULES_PATH = 'js/modules/';
