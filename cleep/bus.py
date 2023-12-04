@@ -455,18 +455,18 @@ class BusClient(threading.Thread):
 
         """
         args = {}
-        params_with_default = {}
+        params_with_default = []
 
         # get function parameters
         func_signature = inspect.signature(function)
-        params = func_signature.parameters
 
         # get params with default value
         for param in func_signature.parameters:
-            params_with_default[param] = False if func_signature.parameters[param].default == func_signature.empty else True
+            if func_signature.parameters[param].default != func_signature.empty:
+                params_with_default.append(param)
 
         # fill parameters list
-        for param in params:
+        for param in func_signature.parameters:
             if param == 'self': # pragma: no cover
                 # drop self param
                 continue
@@ -482,7 +482,7 @@ class BusClient(threading.Thread):
                     bus_message['event'].set()
                 args[BusClient.PARAM_MANUAL_RESPONSE] = manual_response if bus_message else None
                 bus_message['auto_response'] = args[BusClient.PARAM_MANUAL_RESPONSE] is None
-            elif (isinstance(message, dict) and param not in message) and param not in params_with_default.keys():
+            elif isinstance(message, dict) and param not in message and param not in params_with_default:
                 # missing parameter
                 return False, None
             else:
