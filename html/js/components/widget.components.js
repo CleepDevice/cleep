@@ -139,7 +139,7 @@ angular.module('Cleep').component('widgetConf', {
             <widget-content layout="row" layout-align="center center" layout-padding>
                 <div ng-if="$ctrl.content.raw" ng-bind-html="$ctrl.getContent()"></div>
                 <div ng-repeat="attr in $ctrl.content.attrs" ng-if="attr.condition($ctrl)">
-                    <cl-icon ng-if="attr.type === 'icon'" cl-class="icon-md" cl-icon="{{ attr.icon }}"></cl-icon>
+                    <cl-icon ng-if="attr.type === 'icon'" cl-class="icon-lg" cl-icon="{{ attr.icon }}"></cl-icon>
                     <div ng-if="attr.type === 'attr'" ng-bind="$ctrl.getAttr(attr)" class="md-display-1"></div>
                 </div>
                 </div>
