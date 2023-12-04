@@ -486,25 +486,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             }
         }
 
-        self.syncVar(self.devices, newDevices);
-    };
-
-    /**
-     * Synchronize non primitive variable content preserving variable reference
-     * It should be used only for object or array but it works for number, string... too
-     */
-    self.syncVar = function(variable, newContent) {
-        if (Array.isArray(variable)) {
-            variable.splice(0, variable.length);
-            Object.assign(variable, newContent);
-        } else if (typeof variable === 'object') {
-            for (let prop in variable) {
-                delete variable[prop];
-            }
-            Object.assign(variable, newContent);
-        } else {
-            variable = newContent;
-        }
+        self.devices = newDevices;
     };
 
     /**
