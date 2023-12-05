@@ -18,7 +18,7 @@
         <md-grid-tile
             md-colspan="{{ device.widget.colspan || 1 }}" md-rowspan="{{ device.widget.rowspan || 1 }}"
             md-colspan-xs="1" md-colspan-sm="1"
-            ng-repeat="device in dashboardCtl.devices | orderBy:'name'"
+            ng-repeat="device in dashboardCtl.devices | orderBy:'name' track by device.uuid"
             flex="100" layout="row" layout-align="center center">
             <dashboard-widget
                 ng-if="!device.hidden"
