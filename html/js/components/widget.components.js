@@ -15,8 +15,8 @@ angular.module('Cleep').component('widgetBasic', {
                 </md-card-header-text>
             </md-card-header>
             <img ng-if="$ctrl.clImage" ng-src="{{ $ctrl.clImage }}" class="md-card-image">
-            <md-card-content layout="column" layout-align="center center" md-colors="{{ $ctrl.contentBgColor }}" style="height:100%;">
-                <ng-transclude ng-transclude-slot="content"></ng-transclude>
+            <md-card-content layout="row" layout-align="center center" md-colors="{{ $ctrl.contentBgColor }}" style="height:100%">
+                <ng-transclude ng-transclude-slot="content" flex></ng-transclude>
             </md-card-content>
             <md-card-actions ng-if="$ctrl.hasFooterTranscluded" layout="row" flex>
                 <ng-transclude ng-transclude-slot="footer" flex></ng-transclude>
@@ -135,13 +135,13 @@ angular.module('Cleep').component('widgetConf', {
     template: `
         <widget-basic
             cl-title="$ctrl.title" cl-subtitle="$ctrl.subtitle" cl-icon="$ctrl.icon"
-            cl-image="$ctrl.image" cl-footer="$ctrl.footer" cl-device="$ctrl.clDevice">
-            <widget-content layout="row" layout-align="center center" layout-padding>
+            cl-image="$ctrl.image" cl-footer="$ctrl.footer" cl-device="$ctrl.clDevice" layout-fill>
+            <widget-content layout="{{ $ctrl.content.layout.mode }}" layout-align="{{ $ctrl.content.layout.align }}">
                 <div ng-if="$ctrl.content.raw" ng-bind-html="$ctrl.getContent()"></div>
                 <div ng-repeat="attr in $ctrl.content.attrs" ng-if="attr.condition($ctrl)">
-                    <cl-icon ng-if="attr.type === 'icon'" cl-class="icon-lg" cl-icon="{{ attr.icon }}"></cl-icon>
-                    <div ng-if="attr.type === 'attr'" ng-bind="$ctrl.getAttr(attr)" class="md-display-1"></div>
-                </div>
+                    <cl-icon ng-if="attr.type == 'icon'" cl-class="{{ attr.style }}" cl-icon="{{ attr.icon }}"></cl-icon>
+                    <div ng-if="attr.type == 'attr'" ng-bind="$ctrl.getAttr(attr)" class="{{ attr.style }}"></div>
+                    <div ng-if="attr.type == 'text'" ng-bind="attr.text" class="{{ attr.style }}"></div>
                 </div>
             </widget-content>
         </widget-basic>
@@ -171,6 +171,11 @@ angular.module('Cleep').component('widgetConf', {
             ctrl.content = {
                 raw: undefined,
                 attrs: [],
+                layout: {
+                    mode: 'row',
+                    align: 'space-around center'
+                },
+                bgColor: undefined,
             };
             ctrl.footer = [];
             ctrl.image = undefined;
@@ -191,31 +196,55 @@ angular.module('Cleep').component('widgetConf', {
             };
 
             ctrl.prepareContent = function (conf) {
+                ctrl.prepareContentConfig(conf.content);
+
                 if (angular.isString(conf.content)) {
-                    // raw content
-                    ctrl.content.raw = ctrl.prepareForInterpolate(
-                        conf.content,
-                        'Please add widget content'
-                    );
+                    ctrl.content.raw = ctrl.prepareForInterpolate(conf.content, 'Please add widget content');
                 } else if (angular.isArray(conf.content)) {
-                    // advanced content
-                    for (const content of conf.content) {
-                        if (content.icon) {
-                            ctrl.content.attrs.push(ctrl.prepareIconContent(content));
-                        } else {
-                            ctrl.content.attrs.push(ctrl.prepareAttrContent(content));
-                        }
-                    }
+                    ctrl.prepareContentItems(conf.content);
+                } else if (angular.isObject(conf.content)) {
+                    ctrl.prepareContentItems(conf.content?.items || []);
                 } else {
                     console.warn('Invalid content for "' + ctrl.clDevice.type + '" widget template');
                 }
+            };
+
+            ctrl.prepareContentConfig = function (content) {
+                if (content.layout?.mode) {
+                    ctrl.content.layout.mode = content.layout.mode;
+                }
+                if (content.layout?.align) {
+                    ctrl.content.layout.align = content.layout.align;
+                }
+            };
+
+            ctrl.prepareContentItems = function (items) {
+                for (const item of items) {
+                    if (item.icon) {
+                        ctrl.content.attrs.push(ctrl.prepareIconContent(item));
+                    } else if (item.attr) {
+                        ctrl.content.attrs.push(ctrl.prepareAttrContent(item));
+                    } else if (item.text) {
+                        ctrl.content.attrs.push(ctrl.prepareTextContent(item));
+                    }
+                }
+            };
+
+            ctrl.prepareTextContent = function (content) {
+                return {
+                    type: 'text',
+                    text: content.text || '',
+                    style: content.style || 'md-display-1',
+                    condition: ctrl.prepareCondition(content.condition),
+                };
             };
 
             ctrl.prepareIconContent = function (content) {
                 return {
                     type: 'icon',
                     icon: content.icon,
-                    ...(content.condition && { condition: ctrl.prepareCondition(content.condition) }),
+                    style: content.style || 'icon-lg',
+                    condition: ctrl.prepareCondition(content.condition),
                 };
             };
 
@@ -226,6 +255,7 @@ angular.module('Cleep').component('widgetConf', {
                     type: 'attr',
                     attr: ctrl.prepareForInterpolate(attrStr),
                     name: content.attr,
+                    style: content.style || 'md-display-1',
                     condition: ctrl.prepareCondition(content.condition),
                 };
 
@@ -306,14 +336,16 @@ angular.module('Cleep').component('widgetConf', {
                     return () => true;
                 }
 
-                const variable = condition.variable.replace(
-                    ctrl.deviceRegexp,
-                    'clDevice.'
-                );
-                const operator = condition.operator ?? '===';
-                const value = condition.value;
+                if (condition.attr == null || !condition.value == null) {
+                    console.error('Invalid condition specified in widget "' + ctrl.clDevice.type + '"');
+                }
 
-                return $parse('' + variable + ' ' + operator + ' ' + value);
+                const variable = 'clDevice.' + condition.attr;
+                const operator = condition.operator ?? '===';
+                const value = angular.isString(condition.value) ? '"' + condition.value + '"' : condition.value;
+
+                const cond = '' + variable + ' ' + operator + ' ' + value;
+                return $parse(cond);
             };
 
             ctrl.prepareForInterpolate = function (str, defaultStr = '') {
@@ -328,6 +360,7 @@ angular.module('Cleep').component('widgetConf', {
                     const uuidParamName = action.uuid ?? 'uuid';
                     const params = {
                         [uuidParamName]: ctrl.clDevice.uuid,
+                        ...action.params,
                     };
                     rpcService
                         .sendCommand(action.command, action.to, params, action.timeout)
