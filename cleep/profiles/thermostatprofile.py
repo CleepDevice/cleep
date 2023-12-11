@@ -17,5 +17,6 @@ class ThermostatProfile(RendererProfile):
 
     def __init__(self):
         RendererProfile.__init__(self)
+        self.device_uuid = None
         self.mode = None
 
