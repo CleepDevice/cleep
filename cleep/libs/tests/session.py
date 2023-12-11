@@ -43,6 +43,13 @@ class PatternArg(object):
     def __str__(self):
         return 'ContainArg(%s)' % self.pattern
 
+class CommandFailure(object):
+    """
+    Used to reference a command failure in command mock response
+    """
+    def __init__(self, message=None):
+        self.message = 'TEST: command failure' if message is None else message
+
 class TestSession():
     """
     Create session to be able to run tests on a Cleep module
@@ -51,6 +58,9 @@ class TestSession():
     def __init__(self, testcase):
         """
         Constructor
+
+        Args:
+            testcase (unittest.TestCase): current unit test
         """
         tools.install_trace_logging_level()
 
@@ -60,6 +70,8 @@ class TestSession():
         self.crash_report = None
         self.cleep_filesystem = None
         self.__module_class = None
+        self.__bus_command_handlers = {}
+        self.__event_handlers = {}
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -131,12 +143,13 @@ class TestSession():
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__debug_enabled = True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
         self.test_case_name = self.__get_test_case_name()
+        self.logger.debug('==> Running %s', self.testcase.id())
         
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.bootstrap.update(bootstrap)
-        self.__bus_command_handlers = {}
-        self.__event_handlers = {}
+        self.__bus_command_handlers.clear()
+        self.__event_handlers.clear()
         self.__module_instance = None
         self.__module_class = module_class # used for respawn
 
@@ -205,7 +218,10 @@ class TestSession():
         # process
         if self.__module_instance:
             self.__module_instance.stop()
-            self.__module_instance.join(2.0)
+            try:
+                self.__module_instance.join(2.0)
+            except RuntimeError as error:
+                raise Exception('TEST: Please don\'t forget to start module application before running unit test (session.start_module())') from error
 
         # config
         if hasattr(self.__module_instance, 'MODULE_CONFIG_FILE'):
@@ -256,10 +272,10 @@ class TestSession():
         Help user to make a ready to use command object
 
         Args:
-            command_name (string): command name
-            data (any): command result
-            fail (bool): set True to simulate command failure
-            no_response (bool): set True to simulate command no response
+            command_name (string): Command name
+            data (any): Command response. It can be a list of data to return where each call return a item from the list.
+            fail (bool): Set True to simulate command failure
+            no_response (bool): Set True to simulate command no response
 
         Returns:
             dict: awaited mocked command object
@@ -278,6 +294,9 @@ class TestSession():
         Args:
             command (dict): command object as returned by make_mock_command function
         """
+        if not self.__setup_executed:
+            raise Exception('TEST: Please run session.setup() before adding mocks')
+
         if command['command'] in self.__bus_command_handlers:
             self.logger.warning('Mock command "%s" already mocked' % command['command'])
             return
@@ -287,7 +306,7 @@ class TestSession():
             'calls': 0,
             'fail': command['fail'],
             'noresponse': command['noresponse'],
-            'lastparams': None,
+            'params': [],
             'last_to': None,
         }
 
@@ -298,31 +317,68 @@ class TestSession():
         Args:
             command_name (string): command name
         """
-        if command_name in self.__bus_command_handlers:
-            self.__bus_command_handlers[command_name]['fail'] = False
-            self.__bus_command_handlers[command_name]['noresponse'] = False
+        if command_name not in self.__bus_command_handlers:
+            raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
+
+        self.__bus_command_handlers[command_name]['fail'] = False
+        self.__bus_command_handlers[command_name]['noresponse'] = False
 
     def set_mock_command_fail(self, command_name):
         """
-        Flag command as fail will return error when called
+        Deprecated. Used only to keep test compatibility (typo in function name)
 
         Args:
             command_name (string): command name
         """
-        if command_name in self.__bus_command_handlers:
-            self.__bus_command_handlers[command_name]['fail'] = True
-            self.__bus_command_handlers[command_name]['noresponse'] = False
+        self.set_mock_command_failed(command_name)
+
+    def set_mock_command_failed(self, command_name):
+        """
+        When command is call a CommandError exception will be triggered
+
+        Args:
+            command_name (string): command name
+        """
+        if command_name not in self.__bus_command_handlers:
+            raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
+
+        self.__bus_command_handlers[command_name]['fail'] = True
+        self.__bus_command_handlers[command_name]['noresponse'] = False
 
     def set_mock_command_no_response(self, command_name):
         """
-        Flag command as not responding
+        When command is call a NoResponse exception will be triggered
 
         Args:
             command_name (string): command name
         """
-        if command_name in self.__bus_command_handlers:
-            self.__bus_command_handlers[command_name]['fail'] = False
-            self.__bus_command_handlers[command_name]['noresponse'] = True
+        if command_name not in self.__bus_command_handlers:
+            raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
+
+        self.__bus_command_handlers[command_name]['fail'] = False
+        self.__bus_command_handlers[command_name]['noresponse'] = True
+
+    def set_mock_command_response(self, command_name, data):
+        """
+        Overwrite existing command response returned for next call
+        
+        Args:
+            command_name (str): command name
+            data (any): Command response. It can be a list of data to return where each call return an item from the list.
+        """
+        if command_name not in self.__bus_command_handlers:
+            raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
+
+        self.__bus_command_handlers[command_name]['fail'] = False
+        self.__bus_command_handlers[command_name]['noresponse'] = False
+        self.__bus_command_handlers[command_name]['data'] = data
+
+    def set_mock_command_side_effects(self, command_name, side_effects):
+        """
+
+        """
+        if command_name not in self.__bus_command_handlers:
+            raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
 
     def command_called(self, command_name):
         """
@@ -351,6 +407,22 @@ class TestSession():
 
         return 0
 
+    def __check_command_called_with_params(self, command, params):
+        """
+        Check among all stored command parameters if specified ones have been called with
+
+        Args:
+            command (dict): command object
+            params (dict): command parameters to check
+
+        Returns:
+            bool: True if command was called with specified parameters, False otherwise
+        """
+        for cmd_params in command['params']:
+            if cmd_params == params:
+                return True
+        return False
+
     def command_called_with(self, command_name, params, to=None):
         """
         Return True if command is called with specified parameters
@@ -364,8 +436,8 @@ class TestSession():
             bool: True if command called with params
         """
         if command_name in self.__bus_command_handlers:
-            params_check = self.__bus_command_handlers[command_name]['lastparams'] == params
-            params_error = ('  Expected params: %s\n  Current params: %s' % (params, self.__bus_command_handlers[command_name]['lastparams'])
+            params_check = self.__check_command_called_with_params(self.__bus_command_handlers[command_name], params)
+            params_error = ('  Expected params: %s\n  Received params: %s' % (params, self.__bus_command_handlers[command_name]['params'])
                             if not params_check else '')
             to_check = True if to is None else self.__bus_command_handlers[command_name]['lastto'] == to
             to_error = ('  Expected to: %s\n  Current to: %s' % (to, self.__bus_command_handlers[command_name]['lastto'])
@@ -427,24 +499,33 @@ class TestSession():
             self.testcase.fail('Command "%s" was not called' % command_name)
 
         # check command params
-        if type(params) is not type(self.__bus_command_handlers[command_name]['lastparams']):
-            self.testcase.fail('Command "%s" parameters differs: %s is not %s (%s)' % (
-                command_name,
-                type(params).__name__,
-                type(self.__bus_command_handlers[command_name]['lastparams']).__name__,
-                self.__bus_command_handlers[command_name]['lastparams'],
-            ))
-        elif isinstance(params, dict):
-            self.testcase.assertDictEqual(
-                self.__bus_command_handlers[command_name]['lastparams'],
-                params,
-                'Command "%s" parameters are differents' % command_name,
-            )
-        elif params is None:
-            self.testcase.assertIsNone(
-                self.__bus_command_handlers[command_name]['lastparams'],
-                'Command "%s" parameters are not None' % command_name,
-            )
+        if len(self.__bus_command_handlers[command_name]['params']) == 1:
+            if type(params) is not type(self.__bus_command_handlers[command_name]['params'][0]):
+                self.testcase.fail('Command "%s" parameters differs: %s is not %s (%s)' % (
+                    command_name,
+                    type(params).__name__,
+                    type(self.__bus_command_handlers[command_name]['params'][0]).__name__,
+                    self.__bus_command_handlers[command_name]['params'][0],
+                ))
+            elif isinstance(params, dict):
+                self.testcase.assertDictEqual(
+                    self.__bus_command_handlers[command_name]['params'][0],
+                    params,
+                    'Command "%s" parameters are differents' % command_name,
+                )
+            elif params is None:
+                self.testcase.assertIsNone(
+                    self.__bus_command_handlers[command_name]['params'][0],
+                    'Command "%s" parameters are not None' % command_name,
+                )
+        else:
+            params_check = self.__check_command_called_with_params(self.__bus_command_handlers[command_name], params)
+            if not params_check:
+                self.testcase.fail('Command "%s" was not called with awaited parameters\n  Expected params: %s\n  Received params: %s' % (
+                    command_name,
+                    params,
+                    self.__bus_command_handlers[command_name]['params'],
+                ))
 
         # check command recipient
         if to is not None:
@@ -555,7 +636,7 @@ class TestSession():
         if request and request.command in self.__bus_command_handlers:
             self.logger.debug('TEST: push command "%s"' % request.command)
             self.__bus_command_handlers[request.command]['calls'] += 1
-            self.__bus_command_handlers[request.command]['lastparams'] = request.params
+            self.__bus_command_handlers[request.command]['params'].append(request.params)
             self.__bus_command_handlers[request.command]['lastdeviceid'] = request.device_id
             self.__bus_command_handlers[request.command]['lastto'] = request.to
 
@@ -566,10 +647,32 @@ class TestSession():
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
                 raise NoResponse(request.to, request.timeout, 'TEST: no response for command "%s"' % request.command)
 
-            # return self.__bus_command_handlers[request.command]['data']
+            command_data = self.__bus_command_handlers[request.command]['data']
+            if isinstance(command_data, list):
+                if len(command_data) > 0:
+                    data = command_data.pop(0)
+                    if isinstance(data, Exception):
+                        self.logger.debug('TEST: command "%s" fails for tests with custom "%s" exception', request.command, data.__class__.__name__)
+                        raise data
+                    elif isinstance(data, CommandFailure):
+                        self.logger.debug('TEST: command "%s" fails for test', request.command)
+                        return MessageResponse(
+                            error=True,
+                            data=None,
+                            message=data.message,
+                        )
+                else:
+                    self.logger.warning(
+                        'TEST: command "%s" is called more often than it has mocked responses. Return None by default.',
+                        request.command
+                    )
+                    data = None
+            else:
+                 data = command_data
+
             return MessageResponse(
                 error=False,
-                data=self.__bus_command_handlers[request.command]['data'],
+                data=data,
                 message='',
             )
 
