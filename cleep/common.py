@@ -42,8 +42,15 @@ class CATEGORIES(object):
     # fun application like christmas tree, halloween stuff...
     HOBBY = 'HOBBY'
 
-    ALL = ['APPLICATION', 'MOBILE', 'DRIVER', 'HOMEAUTOMATION', 'MEDIA', 'SERVICE', 'HOBBY']
-
+    ALL = [
+        'APPLICATION',
+        'MOBILE',
+        'DRIVER',
+        'HOMEAUTOMATION',
+        'MEDIA',
+        'SERVICE',
+        'HOBBY',
+    ]
 
 
 
@@ -53,11 +60,17 @@ class RENDERERS(object):
     Cleep renderer application types
     """
     # audio renderer
-    AUDIO = 'audio'
+    AUDIO = 'AUDIO'
     # display renderer
-    DISPLAY = 'display'
+    DISPLAY = 'DISPLAY'
+    # home automation renderer
+    HOMEAUTOMATION = 'HOMEAUTOMATION'
 
-    ALL = ['audio', 'display']
+    ALL = [
+        'AUDIO',
+        'DISPLAY',
+        'HOMEAUTOMATION',
+    ]
 
 
 
