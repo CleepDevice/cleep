@@ -159,7 +159,8 @@ class CommonProcess(threading.Thread):
         Args:
             script_path (string): script path
 
-        Return
+        Returns:
+            bool: True if script execution succeed, False otherwise
         """
         # init
         os.chmod(script_path, stat.S_IEXEC)
@@ -337,7 +338,7 @@ class UninstallModule(CommonProcess):
 
     def _run_script(self, context, script):
         """
-        Execute preinst.sh script
+        Execute specified script
 
         Args:
             context (Context): install context

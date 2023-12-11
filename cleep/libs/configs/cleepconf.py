@@ -77,6 +77,9 @@ class CleepConf:
     def check(self):
         """
         Check configuration file content, adding missing section or options
+
+        Returns:
+            bool: True if updated
         """
         try:
             config = self.__open()
@@ -94,6 +97,7 @@ class CleepConf:
                     if not config.has_option(section, key):
                         config.set(section, key, str(value))
                         updated = True
+            return updated
         finally:
             self.__close(updated)
 
@@ -495,7 +499,13 @@ class CleepConf:
         Return auth existing accounts with encrypted password
 
         Returns:
-            dict: if with_passwords options enabled, return dict with account-password
+            dict: if with_passwords options enabled, return dict with account-password::
+
+                {
+                    account (str): encrypted password (str),
+                    ...
+                }
+
         """
         try:
             conf = self.__open()
@@ -513,7 +523,7 @@ class CleepConf:
 
             {
                 enabled (bool): True if auth enabled, False otherwise
-                accounts (list): list of accounts names
+                accounts (list): List of accounts names
             }
 
         """
