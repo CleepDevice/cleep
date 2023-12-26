@@ -555,13 +555,13 @@ class Cleep(BusClient):
 
             [
                 {
-                    name (string): parameter name
-                    type (type): parameter primitive type (str, bool...)
-                    none (bool): True if parameter can be None
-                    empty (bool): True if string value can be empty
-                    value (any): parameter value
-                    validator (function): validator function. Take value in parameter and must return bool
-                    message (string): custom message to return instead of generic error
+                    name (string): parameter name (mandatory)
+                    value (any): parameter value (mandatory)
+                    type (type): parameter primitive type (str, bool...) (default str)
+                    none (bool): True if parameter can be None (optional)
+                    empty (bool): True if string value can be empty (optional)
+                    validator (function): validator function. Take value in parameter and must return bool (optional)
+                    message (string): custom message to return instead of generic error (optional)
                     validators (list): list of validators::
 
                         [
@@ -589,17 +589,17 @@ class Cleep(BusClient):
                 return
 
             # type
-            if not isinstance(parameter['value'], parameter['type']):
+            if not isinstance(parameter['value'], parameter.get('type', str)):
                 raise InvalidParameter(
                     'Parameter "%s" must be of type "%s"' % (
                         parameter['name'],
-                        parameter['type'].__name__,
+                        parameter.get('type', str).__name__,
                     )
                 )
 
             # empty
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
-                    parameter['type'] is str and
+                    parameter.get('type', str) is str and
                     len(parameter['value']) == 0):
                 raise InvalidParameter(
                     'Parameter "%s" is invalid (specified="%s")' % (
@@ -759,10 +759,11 @@ class CleepModule(Cleep):
         self.__app_doc = None
 
         # define app paths
-        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', self.__class__.__name__))
-        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
-        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', self.__class__.__name__))
-        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', self.__class__.__name__))
+        class_name = self.__class__.__name__.lower()
+        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', class_name))
+        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', class_name))
+        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', class_name))
+        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', class_name))
 
         # add devices section if missing
         if self._has_config_file() and not self._has_config_field('devices'):
@@ -789,6 +790,29 @@ class CleepModule(Cleep):
             self.cleep_filesystem.mkdirs(path)
         setattr(self.__class__, variable_name, path)
         self.__dict__[variable_name] = path
+
+    def get_env(self):
+        """
+        Return module environment variables
+        Useful when executing console command
+
+        Returns:
+            dict: env vars::
+
+                {
+                    APP_STORAGE_PATH (str): app storage path,
+                    APP_TMP_PATH (str): app tmp path,
+                    APP_ASSET_PATH (str): app asset path,
+                    APP_BIN_PATH (str): app binary path,
+                }
+
+        """
+        return {
+            'APP_STORAGE_PATH': self.APP_STORAGE_PATH,
+            'APP_TMP_PATH': self.APP_TMP_PATH,
+            'APP_ASSET_PATH': self.APP_ASSET_PATH,
+            'APP_BIN_PATH': self.APP_BIN_PATH,
+        }
 
     def _add_device(self, data):
         """
