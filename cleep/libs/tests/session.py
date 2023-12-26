@@ -124,7 +124,7 @@ class TestSession():
                 return item.name if item.name != '<module>' else '<test case name hidden by coverage>'
         return '<test case name not found>'
 
-    def setup(self, module_class, bootstrap={}):
+    def setup(self, module_class, bootstrap={}, clear_mocks=True):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
@@ -133,6 +133,7 @@ class TestSession():
             module_class (type): module class type
             bootstrap (dict): overwrite default bootstrap by specified one. You dont have to specify
                               all items, only specified ones will be replaced.
+            clear_mocks (bool): True to clear all mocks. Useful for module respawn
 
         Returns:
             Object: returns module_class instance
@@ -148,9 +149,10 @@ class TestSession():
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
         self.bootstrap.update(bootstrap)
-        self.__bus_command_handlers.clear()
-        self.__event_handlers.clear()
-        self.__module_instance = None
+        if clear_mocks:
+            self.__bus_command_handlers.clear()
+            self.__event_handlers.clear()
+            self.__module_instance = None
         self.__module_class = module_class # used for respawn
 
         # config
@@ -199,7 +201,7 @@ class TestSession():
         self.__module_instance.join()
 
         # create new module instance
-        module_instance = self.setup(self.__module_class, self.bootstrap)
+        module_instance = self.setup(self.__module_class, self.bootstrap, False)
 
         # start instance
         if start:
@@ -267,15 +269,16 @@ class TestSession():
         """
         return list(self.__bus_command_handlers.keys())
 
-    def make_mock_command(self, command_name, data=None, fail=False, no_response=False):
+    def make_mock_command(self, command_name, data=None, fail=False, no_response=False, side_effect=None):
         """
         Help user to make a ready to use command object
 
         Args:
             command_name (string): Command name
-            data (any): Command response. It can be a list of data to return where each call return a item from the list.
+            data (any): Command response
             fail (bool): Set True to simulate command failure
             no_response (bool): Set True to simulate command no response
+            side_effect (list): List of data to return. Each call to command returns first list item. If item if exception, it will be raised
 
         Returns:
             dict: awaited mocked command object
@@ -284,7 +287,8 @@ class TestSession():
             'command': command_name,
             'data': data,
             'fail': fail,
-            'noresponse': no_response
+            'noresponse': no_response,
+            'side_effect': side_effect,
         }
 
     def add_mock_command(self, command):
@@ -303,6 +307,7 @@ class TestSession():
 
         self.__bus_command_handlers[command['command']] = {
             'data': command['data'],
+            'side_effect': command['side_effect'],
             'calls': 0,
             'fail': command['fail'],
             'noresponse': command['noresponse'],
@@ -358,13 +363,14 @@ class TestSession():
         self.__bus_command_handlers[command_name]['fail'] = False
         self.__bus_command_handlers[command_name]['noresponse'] = True
 
-    def set_mock_command_response(self, command_name, data):
+    def set_mock_command_response(self, command_name, data=None, side_effect=None):
         """
         Overwrite existing command response returned for next call
         
         Args:
             command_name (str): command name
-            data (any): Command response. It can be a list of data to return where each call return an item from the list.
+            data (any): Command response
+            side_effect (list): List of data to return. Each call to command returns first list item. If item if exception, it will be raised
         """
         if command_name not in self.__bus_command_handlers:
             raise Exception(f'"{command_name}" not mocked. Please mock it first (session.add_mock_command)')
@@ -372,6 +378,7 @@ class TestSession():
         self.__bus_command_handlers[command_name]['fail'] = False
         self.__bus_command_handlers[command_name]['noresponse'] = False
         self.__bus_command_handlers[command_name]['data'] = data
+        self.__bus_command_handlers[command_name]['side_effect'] = side_effect
 
     def set_mock_command_side_effects(self, command_name, side_effects):
         """
@@ -647,10 +654,13 @@ class TestSession():
                 self.logger.debug('TEST: command "%s" returns no response for tests' % request.command)
                 raise NoResponse(request.to, request.timeout, 'TEST: no response for command "%s"' % request.command)
 
-            command_data = self.__bus_command_handlers[request.command]['data']
-            if isinstance(command_data, list):
-                if len(command_data) > 0:
-                    data = command_data.pop(0)
+            cmd_data = self.__bus_command_handlers[request.command]['data']
+            cmd_side_effect = self.__bus_command_handlers[request.command]['side_effect']
+            if cmd_data is None and cmd_side_effect is None:
+                data = cmd_data
+            elif isinstance(cmd_side_effect, list):
+                if len(cmd_side_effect) > 0:
+                    data = cmd_side_effect.pop(0)
                     if isinstance(data, Exception):
                         self.logger.debug('TEST: command "%s" fails for tests with custom "%s" exception', request.command, data.__class__.__name__)
                         raise data
@@ -668,7 +678,7 @@ class TestSession():
                     )
                     data = None
             else:
-                 data = command_data
+                 data = cmd_data
 
             return MessageResponse(
                 error=False,
