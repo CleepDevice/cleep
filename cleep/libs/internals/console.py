@@ -18,6 +18,48 @@ import re
 ON_POSIX = "posix" in sys.builtin_module_names
 
 
+def get_env(custom_env):
+    """
+    Return custom env for command execution
+
+    Args:
+        custom_env (dict): custom env
+
+    Returns:
+        dict: custom env
+    """
+    env = os.environ.copy()
+
+    for key, val in custom_env.items():
+        if key not in env:
+            env[key] = val
+
+    return env
+
+
+def set_opts(custom_opts, default_opts):
+    """
+    Return opts mixing custom opts with default ones
+
+    Args:
+        custom_opts (dict): custom options (usually specified by user)
+        default_opts (dict): defaut options
+
+    Returns:
+        dict: options
+    """
+    opts = {}
+
+    env = custom_opts.get('env', {})
+    for key, default in default_opts.items():
+        opts[key] = custom_opts.get(key) or default_opts.get(key)
+
+    # specific case for exec_dir that should be overwritten by APP_BIN_PATH from env
+    opts['exec_dir'] = opts['exec_dir'] or env.get('APP_BIN_PATH')
+
+    return opts
+
+
 class EndlessConsole(Thread):
     """
     Helper class to execute long command line (system update...)
@@ -33,17 +75,31 @@ class EndlessConsole(Thread):
         Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
-    def __init__(self, command, callback, callback_end=None, exec_dir=None):
+    DEFAULT_OPTS = {
+        'exec_dir': None,
+        'delay': 0.2,
+        'env': {},
+    }
+
+    def __init__(self, command, callback, callback_end=None, opts=DEFAULT_OPTS):
         """
         Constructor
 
         Args:
-            command (string): command to execute
+            command (string|list): command to execute. It is advised to use list version.
             callback (function): callback when message is received (the function will be called with 2
-                                 arguments: stdout (string) and stderr (string))
-            callback_end (function): callback when process is terminated (the function will be called
-                                     with 2 arguments: return code (string) and killed (bool))
-            exec_dir (string): change execution directory if specified (default None)
+                                 arguments: stdout (string) and stderr (string)),
+            callback_end (function): callback when process is terminated (the function will be called,
+                                     with 2 arguments: return code (string) and killed (bool)),
+            opts (dict): command options::
+
+                {
+                    exec_dir (str): Command line execution dir. Use APP_BIN_PATH from env if specified and exec_dir not set (defaut None),
+                    delay (double): Delay between std outputs checks (default 0.20),
+                    env (dict): Command line env vars to inject during command execution. get_env() function can be called to
+                                fill this option (default {}),
+                }
+
         """
         Thread.__init__(
             self,
@@ -56,7 +112,6 @@ class EndlessConsole(Thread):
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.exec_dir = exec_dir
         # self.logger.setLevel(logging.DEBUG)
         self.stopped = Event()
         self.killed = False
@@ -65,6 +120,7 @@ class EndlessConsole(Thread):
         self.__stderr_queue = Queue()
         self.__stdout_thread = None
         self.__stderr_thread = None
+        self.__opts = set_opts(opts, self.DEFAULT_OPTS)
 
     def __del__(self):
         """
@@ -156,15 +212,18 @@ class EndlessConsole(Thread):
         # launch command
         return_code = None
         self.__start_time = time.time()
+        shell = isinstance(self.command, str)
+
         proc = subprocess.Popen(
             self.command,
-            shell=True,
+            shell=shell,
             stdin=None,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=ON_POSIX,
             preexec_fn=os.setsid,
-            cwd=self.exec_dir,
+            cwd=self.__opts.get('exec_dir'),
+            env=get_env(self.__opts.get('env')),
         )
         pid = proc.pid
         self.logger.trace("PID=%d", pid)
@@ -205,7 +264,7 @@ class EndlessConsole(Thread):
                 break
 
             # pause
-            time.sleep(0.25)
+            time.sleep(self.__delay)
 
         # purge queues
         self.logger.trace("Purging outputs...")
@@ -256,6 +315,11 @@ class Console:
     You can execute command right now using command method or after a certain amount of time using command_delayed
     """
 
+    DEFAULT_OPTS = {
+        'exec_dir': None,
+        'env': {},
+    }
+
     def __init__(self):
         """
         Constructor
@@ -299,7 +363,7 @@ class Console:
         """
         return self.last_return_code
 
-    def command(self, command, timeout=2.0, exec_dir=None):
+    def command(self, command, timeout=2.0, opts=DEFAULT_OPTS):
         """
         Execute specified command line with auto kill after timeout
 
@@ -307,9 +371,15 @@ class Console:
             This function is blocking
 
         Args:
-            command (string): command to execute
+            command (string|list): command to execute. It is advised to use list version.
             timeout (float): wait timeout before killing process and return command result (default 2s)
-            exec_dir (string): change execution directory if specified (default None)
+            opts (dict): command options::
+
+                {
+                    exec_dir (str): Command line execution dir. Use APP_BIN_PATH from env if specified and exec_dir not set (defaut None),
+                    env (dict): Command line env vars to inject during command execution. get_env() function can be called to
+                                fill this option (default {}),
+                }
 
         Returns:
             dict: result of command::
@@ -323,6 +393,9 @@ class Console:
                 }
 
         """
+        opts = set_opts(opts, self.DEFAULT_OPTS)
+        shell = isinstance(command, str)
+
         self.logger.trace('Launch command "%s"', command)
         # check params
         if timeout is None or timeout <= 0.0:
@@ -331,13 +404,14 @@ class Console:
         # launch command
         proc = subprocess.Popen(
             command,
-            shell=True,
+            shell=shell,
             stdin=None,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=ON_POSIX,
             preexec_fn=os.setsid,
-            cwd=exec_dir,
+            cwd=opts.get('exec_dir'),
+            env=get_env(opts.get('env')),
         )
         pid = proc.pid
 
@@ -414,7 +488,7 @@ class Console:
         Execute specified command line after specified delay
 
         Args:
-            command (string): command to execute
+            command (string|list): command to execute. It is advised to use list version.
             delay (int): time to wait before executing command (milliseconds)
             timeout (float): timeout before killing command
             callback (function): function called when command is over. Callback will received command
@@ -446,7 +520,7 @@ class AdvancedConsole(Console):
         Find all pattern matches in command stdout. Found order is preserved
 
         Args:
-            command (string): command to execute
+            command (string|list): command to execute. It is advised to use list version.
             pattern (string): search pattern
             options (flag): regexp flags (see https://docs.python.org/3/library/re.html#module-contents)
             timeout (float): timeout before killing command
