@@ -555,7 +555,11 @@ class Inventory(Cleep):
         module = copy.deepcopy(self.modules[module_name])
 
         # add module config
-        module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+        try:
+            module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+        except:
+            self.logger.exception('Unable to retrieve "%s" app config. Return empty config', module_name)
+            module['config'] = {};
             
         # add module events
         module['events'] = events[module_name] if module_name in events else []
