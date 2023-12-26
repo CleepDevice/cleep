@@ -173,7 +173,7 @@ class CommonProcess(threading.Thread):
             script_path,
             self._script_callback,
             self._script_terminated_callback,
-            exec_dir,
+            { 'exec_dir': exec_dir },
         )
         console.start()
 
