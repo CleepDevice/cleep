@@ -17,7 +17,7 @@ import os
 import logging
 import types
 import traceback
-from mock import MagicMock
+from mock import MagicMock, Mock
 import re
 import warnings
 
@@ -124,7 +124,7 @@ class TestSession():
                 return item.name if item.name != '<module>' else '<test case name hidden by coverage>'
         return '<test case name not found>'
 
-    def setup(self, module_class, bootstrap={}, clear_mocks=True):
+    def setup(self, module_class, bootstrap={}, clear_mocks=True, mock_on_start=True, mock_on_stop=True):
         """
         Instanciate specified module overwriting some stuff and initalizing it with appropriate content
         Can be called during test setup.
@@ -134,6 +134,8 @@ class TestSession():
             bootstrap (dict): overwrite default bootstrap by specified one. You dont have to specify
                               all items, only specified ones will be replaced.
             clear_mocks (bool): True to clear all mocks. Useful for module respawn
+            mock_on_start (bool): Mock _on_start method to avoid side effects during unit tests execution
+            mock_on_stop (bool): Mock _on_stop method to avoid side effects during unit tests execution
 
         Returns:
             Object: returns module_class instance
@@ -162,6 +164,12 @@ class TestSession():
         
         # instanciate
         self.__module_instance = module_class(self.bootstrap, self.__debug_enabled)
+
+        # mock some methods
+        if mock_on_start:
+            self.__module_instance._on_start = Mock()
+        if mock_on_stop:
+            self.__module_instance._on_stop = Mock()
 
         self.__setup_executed = True
         return self.__module_instance
@@ -218,7 +226,7 @@ class TestSession():
             return
 
         # process
-        if self.__module_instance:
+        if self.__module_instance and self.__module_instance.is_alive():
             self.__module_instance.stop()
             try:
                 self.__module_instance.join(2.0)
