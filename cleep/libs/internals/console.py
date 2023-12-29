@@ -264,7 +264,7 @@ class EndlessConsole(Thread):
                 break
 
             # pause
-            time.sleep(self.__delay)
+            time.sleep(self.__opts.get('delay', 0.2))
 
         # purge queues
         self.logger.trace("Purging outputs...")
