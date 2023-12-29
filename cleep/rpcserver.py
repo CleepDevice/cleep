@@ -665,7 +665,7 @@ def get_modules():
         installable (bool): if True will return installable modules only. Otherwise returns installed modules
 
     Returns:
-        dict: map of modules with their configuration, devices, commands...
+        MessageResponse: map of modules with their configuration, devices, commands...
     """
     installable = False
     params = dict(bottle.request.json or {})
@@ -689,7 +689,7 @@ def get_devices():
     Return all devices
 
     Returns:
-        dict: all devices by module
+        MessageResponse: all devices by module
     """
     devices = get_devices_from_inventory()
     logger.debug("Devices: %s", devices)
@@ -704,7 +704,7 @@ def get_renderers():
     Returns all renderers
 
     Returns:
-        dict: all renderers by type
+        MessageResponse: all renderers by type
     """
     renderers = get_renderers_from_inventory()
     logger.debug("Renderers: %s", renderers)
@@ -719,7 +719,7 @@ def get_drivers():
     Returns all drivers
 
     Returns:
-        dict: all drivers by type
+        MessageResponse: all drivers by type
     """
     drivers = get_drivers_from_inventory()
     logger.debug("Drivers: %s", drivers)
@@ -734,7 +734,7 @@ def get_events():
     Return all used events
 
     Returns:
-        list: list of used events
+        MessageResponse: list of used events
     """
     events = get_events_from_inventory()
     logger.debug("Used events: %s", events)
@@ -748,7 +748,7 @@ def get_commands():
     Return all commands
 
     Returns:
-        list: list of commands
+        MessageResponse: list of commands
     """
     commands = inventory.get_module_commands(None)
     logger.debug("Commands: %s", commands)
@@ -760,6 +760,9 @@ def get_commands():
 def check_app_documentation(app):
     """
     Check application documentation
+
+    Returns:
+        MessageResponse: check result
     """
     query = dict(bottle.request.query or {})
     with_details = True if query.get("details") else False
@@ -784,7 +787,7 @@ def get_app_documentation(app):
     Return documentation for specified application
 
     Returns:
-        dict: application doc::
+        MessageResponse: application doc::
 
             {
                 command (dict): command documentation
@@ -811,7 +814,7 @@ def get_config():
     Return device config
 
     Returns:
-        dict: all device config::
+        MessageResponse: all device config::
 
             {
                 modules (dict): all devices by module
@@ -851,7 +854,7 @@ def get_config():
     except Exception:
         logger.exception("Error getting config")
         resp.error = True
-        resp.message("Error getting configuration")
+        resp.message = "Error getting configuration"
 
     return resp.to_dict()
 
@@ -893,7 +896,7 @@ def poll():
     This is the endpoint for long poll clients.
 
     Returns:
-        dict: map of received event
+        MessageResponse: dict of received event
     """
     with pollcounter():
         params = dict(bottle.request.json or {})

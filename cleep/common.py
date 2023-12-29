@@ -252,7 +252,17 @@ class MessageResponse(object):
 
     def to_dict(self):
         """
-        Return message response
+        Return message response as dict
+
+        Returns:
+            dict: message response as dict::
+
+            {
+                error (bool): True if error occured, False otherwise,
+                message (str): response message. Can be an error message or info message
+                data (any): response data
+            }
+
         """
         return {'error':self.error, 'message':self.message, 'data':self.data}
 

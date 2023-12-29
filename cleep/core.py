@@ -453,7 +453,7 @@ class Cleep(BusClient):
                     'send_command', 'send_event', 'send_command_to_peer', 'send_event_to_peer',
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
-                    'start', 'stop', 'push', 'on_event',
+                    'start', 'stop', 'push', 'on_event', 'get_env',
                     'send_command_from_request', 'send_event_from_request', 'send_command_advanced',
                     'get_documentation', 'check_documentation',
                 ):
@@ -1079,12 +1079,12 @@ class CleepModule(Cleep):
 
         return self.__app_doc
 
-    def check_documentation(self, with_details):
+    def check_documentation(self, with_details=False):
         """
         Check app documentation
 
         Args:
-            with_details (bool): append check details to result
+            with_details (bool): append check details to result. Defaults to False.
 
         Returns:
             dict: app errors and warnings::
