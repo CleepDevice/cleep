@@ -32,7 +32,6 @@ from gevent import monkey
 
 monkey.patch_all()
 import bottle
-import socket
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
 from cleep.libs.configs.cleepconf import CleepConf
@@ -45,7 +44,14 @@ HTML_DIR = os.path.join(BASE_DIR, "html")
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
 CLEEP_CACHE = None
-LOCAL_ADDRS = ["127.0.0.1", "localhost", socket.gethostbyname(socket.gethostname())]
+LOCAL_ADDRS = ["127.0.0.1", "localhost"]
+try:
+    import socket
+    device_ip = socket.gethostbyname(socket.gethostname())
+    LOCAL_ADDRS.append(device_ip)
+except:
+    # surely in docker env
+    pass
 
 # globals
 polling = 0
