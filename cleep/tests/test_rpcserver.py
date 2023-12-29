@@ -420,7 +420,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             e = rpcserver.get_events()
             logging.debug('Events: %s' % e)
-            self.assertEqual(e, json.dumps(self.EVENTS))
+            self.assertEqual(e, {
+                'error': False,
+                'message': '',
+                'data': self.EVENTS
+            })
 
     def test_get_commands(self):
         self._init_context()
@@ -431,7 +435,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             c = rpcserver.get_commands()
             logging.debug("Commands: %s", c)
-            self.assertEqual(c, json.dumps(commands))
+            self.assertEqual(c, {
+                'error': False,
+                'message': '',
+                'data': commands,
+            })
 
     def test_check_app_documentation_with_valid_doc(self):
         self._init_context()
@@ -441,8 +449,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             resp = rpcserver.check_app_documentation("app")
             logging.debug("Resp: %s", resp)
-
-            self.assertDictEqual(resp, {'error': False, 'message': '', 'data': {'command': {'valid': True}}})
+            self.assertDictEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': {'command': {'valid': True}}
+            })
 
     def test_check_app_documentation_with_exception(self):
         self._init_context()
@@ -453,7 +464,11 @@ class RpcServerTests(unittest.TestCase):
             resp = rpcserver.check_app_documentation("app")
             logging.debug("Resp: %s", resp)
 
-            self.assertDictEqual(resp, {'error': True, 'message': "Error", 'data': None})
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': "Error",
+                'data': None
+            })
 
     def test_check_app_documentation_with_invalid_doc(self):
         self._init_context()
@@ -463,8 +478,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             resp = rpcserver.check_app_documentation("app")
             logging.debug("Resp: %s", resp)
-
-            self.assertDictEqual(resp, {'error': True, 'message': 'Invalid application documentation', 'data': {'command': {'valid': False}}})
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': 'Invalid application documentation',
+                'data': {'command': {'valid': False}}
+            })
 
     def test_get_app_documentation(self):
         self._init_context()
@@ -474,8 +492,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             resp = rpcserver.get_app_documentation("app")
             logging.debug("Resp: %s", resp)
-
-            self.assertDictEqual(resp, {'error': False, 'message': '', 'data': 'documentation'})
+            self.assertDictEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': 'documentation'
+            })
 
     def test_get_app_documentation_with_exception(self):
         self._init_context()
@@ -485,8 +506,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             resp = rpcserver.get_app_documentation("app")
             logging.debug("Resp: %s", resp)
-
-            self.assertDictEqual(resp, {'error': True, 'message': 'Error', 'data': None})
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': 'Error',
+                'data': None
+            })
 
     def test_modules(self):
         self._init_context()
@@ -494,7 +518,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES
+            })
             self.assertFalse(self.inventory.get_installable_modules.called)
             self.assertTrue(self.inventory.get_modules.called)
 
@@ -504,7 +532,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={'installable': True}):
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES,
+                })
             self.assertTrue(self.inventory.get_installable_modules.called)
             self.assertFalse(self.inventory.get_modules.called)
 
@@ -514,7 +546,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={'installable': False}):
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES
+            })
             self.assertFalse(self.inventory.get_installable_modules.called)
             self.assertTrue(self.inventory.get_modules.called)
 
@@ -522,15 +558,23 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle(method='POST'):
-            d = rpcserver.get_devices()
-            self.assertEqual(d, json.dumps(self.DEVICES))
+            resp = rpcserver.get_devices()
+            self.assertEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': self.DEVICES
+            })
 
     def test_renderers(self):
         self._init_context()
 
         with boddle(method='POST'):
             r = rpcserver.get_renderers()
-            self.assertEqual(r, json.dumps(self.RENDERERS))
+            self.assertEqual(r, {
+                'error': False,
+                'message': '',
+                'data': self.RENDERERS
+            })
 
     def test_drivers(self):
         self._init_context()
@@ -547,19 +591,19 @@ class RpcServerTests(unittest.TestCase):
             "installed": True,
         })
         with boddle(method='POST'):
-            d = json.loads(rpcserver.get_drivers())
-            logging.debug('Drivers: %s' % d)
-            self.assertEqual(len(d), 2)
-            self.assertTrue(d[0] in [a1, a2])
-            self.assertTrue(d[1] in [a1, a2])
+            resp = rpcserver.get_drivers()
+            logging.debug('Resp: %s' % resp)
+            self.assertEqual(len(resp['data']), 2)
+            self.assertTrue(resp['data'][0] in [a1, a2])
+            self.assertTrue(resp['data'][1] in [a1, a2])
 
     def test_drivers_one_driver_exception(self):
         self._init_context(get_drivers_gpio_exception=True)
 
         with boddle(method='POST'):
-            d = json.loads(rpcserver.get_drivers())
-            logging.debug('Drivers: %s' % d)
-            self.assertEqual(len(d), 2)
+            resp = rpcserver.get_drivers()
+            logging.debug('Resp: %s' % resp)
+            self.assertEqual(len(resp['data']), 2)
 
     @patch("rpcserver.CleepConf")
     def test_reload_auth(self, cleep_conf_mock):
@@ -845,8 +889,9 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle():
-            config = json.loads(rpcserver.get_config())
-            logging.debug('Config: %s' % config)
+            resp = rpcserver.get_config()
+            logging.debug('Resp: %s' % resp)
+            config = resp['data']
             self.assertTrue('modules' in config)
             for module_name, module in config['modules'].items():
                 self.assertTrue('config' in module)
@@ -864,21 +909,26 @@ class RpcServerTests(unittest.TestCase):
 
     @patch('json.dumps')
     def test_config_exception(self, json_dumps_mock):
-        json_dumps_mock.side_effect = [Exception('Test exception'), '{}']
         self._init_context()
+        # keep original function to restore it after test execution (there is only one rpcserver instance)
+        get_devices_from_inventory = rpcserver.get_devices_from_inventory
 
-        with boddle():
-            c = json.loads(rpcserver.get_config())
-            logging.debug('Config: %s' % c)
-            self.assertEqual(c, {})
+        try:
+            rpcserver.get_devices_from_inventory = Mock(side_effect=Exception('Test exception'))
+
+            with boddle():
+                resp = rpcserver.get_config()
+                logging.debug('Resp: %s' % resp)
+                self.assertIsNone(resp['data'])
+        finally:
+            rpcserver.get_devices_from_inventory = get_devices_from_inventory
 
     def test_config_use_cache(self):
         self._init_context()
 
         with boddle():
-            config = json.loads(rpcserver.get_config())
-            config = json.loads(rpcserver.get_config())
-
+            rpcserver.get_config()
+            rpcserver.get_config()
             self.assertEqual(self.inventory.get_modules.call_count, 1)
 
     def test_registerpoll(self):
@@ -895,7 +945,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle(json={}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Polling key is missing', 'data': None, 'error': True})
 
@@ -903,7 +953,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(no_bus=True)
 
         with boddle(json={}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Bus not available', 'data': None, 'error': True})
 
@@ -911,7 +961,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(is_subscribed_return_value=False)
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Client not registered', 'data': None, 'error': True})
 
@@ -922,7 +972,8 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_return_value=pull_resp)
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
+            logging.debug('Poll response: %s', resp)
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], pull_resp['message'])
             self.assertEqual(resp['message'], '')
@@ -934,7 +985,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_side_effect=NoMessageAvailable())
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], None)
             self.assertEqual(resp['message'], 'No message available')
@@ -946,7 +997,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_side_effect=Exception('Test exception'))
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], None)
             self.assertEqual(resp['message'], 'Internal error')

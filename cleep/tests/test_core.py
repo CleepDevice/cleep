@@ -633,10 +633,10 @@ class TestsCleepModule(unittest.TestCase):
         logging.debug(self.r.APP_ASSET_PATH)
         logging.debug(self.r.APP_BIN_PATH)
 
-        self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/DummyCleepModule")
-        self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/DummyCleepModule")
-        self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/DummyCleepModule")
-        self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/DummyCleepModule")
+        self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/dummycleepmodule")
+        self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/dummycleepmodule")
+        self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/dummycleepmodule")
+        self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/dummycleepmodule")
 
     def test_devices_section_exists(self):
         self._init_context()
@@ -905,7 +905,7 @@ class TestsCleepModule(unittest.TestCase):
 
             result = self.r.check_documentation()
 
-            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(self.r.my_command)
+            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(self.r.my_command, False)
             self.assertDictEqual(result, {"my_command": "command validity"})
 
     def test_send_command_advanced(self):

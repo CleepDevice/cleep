@@ -82,11 +82,11 @@ class CleepConfTests(unittest.TestCase):
         self.assertFalse(self.rc.is_core_debugged())
 
     def test_check(self):
-        self.assertIsNone(self.rc.check())
+        self.assertFalse(self.rc.check())
 
     def test_check_without_file(self):
         os.remove("%s" % self.FILE_NAME)
-        self.assertIsNone(self.rc.check())
+        self.assertTrue(self.rc.check())
 
     def test_install_module(self):
         self.assertTrue(self.rc.install_module("newmodule"))

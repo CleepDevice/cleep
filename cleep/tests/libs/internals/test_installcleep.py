@@ -259,6 +259,7 @@ class InstallCleepTests(unittest.TestCase):
 
     @patch('installcleep.InstallDeb')
     @patch('installcleep.Download')
+    # @unittest.skip('TODO: check why it is blocked')
     def test_install_deb_exception(self, download_mock, installdeb_mock):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, installdeb_install_side_effect=Exception('Test'))
         self._create_archive(None, None)
