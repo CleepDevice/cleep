@@ -107,6 +107,7 @@ steps:
     privileged: true
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
