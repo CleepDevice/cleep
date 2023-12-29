@@ -1,4 +1,4 @@
-cleep (0.0.31) UNRELEASED; urgency=low
+cleep (0.1.0) UNRELEASED; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
   * Fixed core: #1408 fix /logs endpoint
   * Added core: add https support to RPC server
