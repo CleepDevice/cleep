@@ -9,4 +9,4 @@ requests==2.28.2
 simplejson==3.18.4
 sentry-sdk==1.16.0
 uptime==3.0.1
-docstring-parser==0.15
+docstring-parser @ git+https://github.com/tangb/docstring_parser@master
