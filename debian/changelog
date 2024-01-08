@@ -19,6 +19,7 @@ cleep (0.1.0) UNRELEASED; urgency=low
   * Added ui: components page
   * Updated core: libs improvements (tests session, console)
   * Added core: add thermostat profile
+  * Updated core: use native unittest.mock lib instead of mock
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
 

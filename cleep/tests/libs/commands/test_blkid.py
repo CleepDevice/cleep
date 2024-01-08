@@ -13,7 +13,7 @@ import unittest
 import logging
 from pprint import pformat
 from cleep.libs.tests.common import get_log_level
-from mock import Mock
+from unittest.mock import Mock
 
 LOG_LEVEL = get_log_level()
 CONTENT = [

@@ -10,11 +10,11 @@ from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib, FileDescriptorMock
 import unittest
+from unittest.mock import Mock, patch
 import logging
 from pprint import pformat
 import io
 from cleep.libs.tests.common import get_log_level
-from mock import Mock, patch
 
 LOG_LEVEL = get_log_level()
 VALID_CONF = """# A sample configuration for dhcpcd.

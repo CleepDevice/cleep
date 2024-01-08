@@ -17,7 +17,7 @@ import os
 import logging
 import types
 import traceback
-from mock import MagicMock, Mock
+from unittest.mock import MagicMock
 import re
 import warnings
 
@@ -167,9 +167,9 @@ class TestSession():
 
         # mock some methods
         if mock_on_start:
-            self.__module_instance._on_start = Mock()
+            self.__module_instance._on_start = MagicMock()
         if mock_on_stop:
-            self.__module_instance._on_stop = Mock()
+            self.__module_instance._on_stop = MagicMock()
 
         self.__setup_executed = True
         return self.__module_instance

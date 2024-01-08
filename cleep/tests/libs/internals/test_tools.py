@@ -11,7 +11,7 @@ import logging
 import io
 import time
 import cleep
-from mock import patch
+from unittest.mock import patch
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

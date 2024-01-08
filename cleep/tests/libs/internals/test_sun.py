@@ -11,9 +11,8 @@ import unittest
 import logging
 import datetime
 from dateutil.tz import gettz
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from cleep.libs.tests.common import get_log_level
-from mock import patch
 
 LOG_LEVEL = get_log_level()
 
