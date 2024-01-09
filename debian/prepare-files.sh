@@ -5,6 +5,8 @@ CLEEP_VERSION=$(cat debian/cleep/DEBIAN/control | grep Version | awk '{ print $2
 # fix version in index.html to refresh cached files
 grep -rl "?cleepversion" debian/cleep/opt/cleep/html | xargs sed -i 's/?cleepversion/?v'"$CLEEP_VERSION"'/g'
 
+# minify binary from https://github.com/tdewolff/minify
+
 # minify non minified js files
 for FILE in $(find debian/cleep/opt/cleep/html/js/ -name '*.js' ! -name '*.min.js'); do
 	FILENAME=$(basename $FILE)
