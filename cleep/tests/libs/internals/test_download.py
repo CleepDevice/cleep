@@ -407,12 +407,12 @@ class DownloadTests(unittest.TestCase):
             self._end_callback,
             status_callback=self._status_callback,
         )
-        time.sleep(2)
+        time.sleep(1)
 
         self.assertGreaterEqual(self.status_callback_call, 1)
         self.assertEqual(self.end_callback_call, 1)
         self.assertEqual(self.async_status, self.d.STATUS_ERROR_INVALIDSIZE)
-        self.assertEqual(self.async_percent, 100)
+        self.assertEqual(self.async_percent, 0)
 
 
 class DownloadTestsNoCleepFilesystem(unittest.TestCase):

@@ -470,6 +470,10 @@ class Download:
             # download terminated
             self.logger.debug("Download terminated")
 
+        except requests.exceptions.ChunkedEncodingError as error:
+            self.logger.exception('Error downloaded file chunk "%s":', url)
+            return self.__send_download_end(self.STATUS_ERROR_INVALIDSIZE, None)
+
         except Exception:
             self.logger.exception('Error downloading file "%s":', url)
             return self.__send_download_end(self.STATUS_ERROR, None)
