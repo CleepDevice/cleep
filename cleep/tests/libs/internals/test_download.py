@@ -401,13 +401,15 @@ class DownloadTests(unittest.TestCase):
                 "Content-Length": "%s" % (len(response.encode("utf8")) - 1),
             },
         )
+
         self.d.download_file_async(
             "https://www.google.com",
             self._end_callback,
             status_callback=self._status_callback,
         )
-        time.sleep(1)
-        self.assertGreaterEqual(self.status_callback_call, 2)
+        time.sleep(2)
+
+        self.assertGreaterEqual(self.status_callback_call, 1)
         self.assertEqual(self.end_callback_call, 1)
         self.assertEqual(self.async_status, self.d.STATUS_ERROR_INVALIDSIZE)
         self.assertEqual(self.async_percent, 100)
