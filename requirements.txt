@@ -1,5 +1,5 @@
 bottle==0.12.25
-https://github.com/CleepDevice/cleep-libs-prebuild/raw/main/gevent/gevent-22.10.2-cp37-cp37m-linux_armv7l.whl
+gevent @ https://github.com/CleepDevice/cleep-libs-prebuild/raw/main/gevent/gevent-22.10.2-cp37-cp37m-linux_armv7l.whl
 greenlet==2.0.2
 netifaces2==0.0.21
 passlib==1.7.4
