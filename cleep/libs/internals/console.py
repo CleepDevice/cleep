@@ -11,7 +11,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from queue import Queue, Empty  # python 3.x
 import os
-import signal
+from signal import SIGKILL
 import logging
 import re
 
@@ -289,11 +289,16 @@ class EndlessConsole(Thread):
         if self.killed and pid != 1:
             try:
                 if ON_POSIX:
-                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+                    os.killpg(os.getpgid(pid), SIGKILL)
                 else:  # pragma: no cover
                     proc.kill()
             except Exception:  # pragma: no cover
                 pass
+        else:
+            try:
+                proc.wait(timeout=2.0)
+            except Exception:  # pragma: no cover
+                os.kill(pid, SIGKILL)
 
         # process is over
         self.stopped.set()
@@ -436,17 +441,6 @@ class Console:
             # check timeout
             if time.time() > (start + timeout):
                 # timeout is over, kill command
-                pgid = os.getpgid(pid)
-                self.logger.debug(
-                    "Timeout over, kill command for PID=%s PGID=%s", pid, pgid
-                )
-                try:
-                    if ON_POSIX:
-                        os.killpg(pgid, signal.SIGKILL)
-                    else:  # pragma: no cover
-                        proc.kill()
-                except Exception:  # pragma: no cover
-                    pass
                 killed = True
                 break
 
@@ -476,6 +470,27 @@ class Console:
             proc.stderr.close()
         except Exception:  # pragma: no cover
             pass
+
+        # make sure process is really terminated
+        #try:
+        #    self.logger.debug('Wait for process to stop')
+        #    proc.wait(timeout=.5)
+        #except Exception as error:  # pragma: no cover
+        #    self.logger.debug('Error waiting process to stop: %s', error)
+        #    os.kill(pid, SIGKILL)
+        if killed:
+            pgid = os.getpgid(pid)
+            self.logger.debug(
+                "Timeout over, kill command for PID=%s PGID=%s", pid, pgid
+            )
+            try:
+                if ON_POSIX:
+                    os.killpg(pgid, SIGKILL)
+                else:  # pragma: no cover
+                    proc.kill()
+                proc.wait(timeout=5.0)
+            except Exception:  # pragma: no cover
+                pass
 
         # trigger callback (used for delayed command)
         if self.__callback:
