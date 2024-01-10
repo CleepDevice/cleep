@@ -25,3 +25,4 @@ docs/source
 .vscode
 .pybuild
 debian/.debhelper
+/tmp
