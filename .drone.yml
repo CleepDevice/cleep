@@ -102,7 +102,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: run-cleep-tests
-    image: 192.168.1.125/raspberrypios/buster:20220922
+    image: 192.168.1.125:5000/raspberrypios/buster:20220922
     network_mode: host
     privileged: true
     commands:
@@ -116,7 +116,7 @@ steps:
       - cleep-cli coretests --coverage --output
 
   - name: build-cleep-deb
-    image: 192.168.1.125/raspberrypios/buster:20220922
+    image: 192.168.1.125:5000/raspberrypios/buster:20220922
     network_mode: host
     environment:
       SENTRY_DSN:
@@ -131,7 +131,7 @@ steps:
       - ls -la
 
   - name: test-cleep-install
-    image: 192.168.1.125/raspberrypios/buster:20220922
+    image: 192.168.1.125:5000/raspberrypios/buster:20220922
     network_mode: host
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
@@ -146,7 +146,7 @@ steps:
       - cat version.txt
 
   - name: publish-cleep-docs
-    image: 192.168.1.125/raspberrypios/buster:20220922
+    image: 192.168.1.125:5000/raspberrypios/buster:20220922
     network_mode: host
     environment:
       ID_ED25519:
