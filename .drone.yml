@@ -106,6 +106,8 @@ steps:
     network_mode: host
     privileged: true
     commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
       - python3 -m pip -q --no-color install pip --upgrade
       - python3 -m pip -q --no-color install cleepcli --upgrade
       - cleep-cli --version
@@ -124,7 +126,7 @@ steps:
     commands:
       - apt-get -o Acquire::ForceIPv4=true -qq update
       - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli --upgrade
       - python3 -m pip freeze | grep cleepcli
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli corebuild
@@ -134,7 +136,10 @@ steps:
     image: 192.168.1.125:5000/raspberrypios/buster:20220922
     network_mode: host
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli --upgrade
       - # install cleep
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
       - # force core modules to be updated from sources
@@ -154,7 +159,10 @@ steps:
       ID_ED25519_PUB:
         from_secret: id_ed25519_pub
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli --upgrade
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
