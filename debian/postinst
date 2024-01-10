@@ -4,11 +4,6 @@
 
 set -e
 
-CLEEP_VERSION=`python3 -m pip show cleep | grep Version | awk '{ print $2 }'`
-MODULES_JSON_LATEST=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
-MODULES_JSON_VERSION=https://raw.githubusercontent.com/tangb/cleep-apps/v$CLEEP_VERSION/modules.json
-CLEEPMODS=( audio cleepbus network parameters system update )
-
 # Check command result
 # $1: command result (usually $?)
 # $2: awaited command result
