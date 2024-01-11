@@ -50,8 +50,10 @@ case "$1" in
         wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
         checkResult $? 0 "Unable to download modules.json file"
         # copy modules.json to cleep repository to Cleep be able to start without network
+        mkdir -p /etc/cleep
         cp -a /tmp/modules.json /etc/cleep/modules.json
         # install mandatory Cleep apps
+        mkdir -p /opt/cleep/html
         for CLEEPMOD in "${CLEEPMODS[@]}"; do
             echo "- installing $CLEEPMOD module"
             # download and checksum module

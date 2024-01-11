@@ -5,7 +5,7 @@ RUN apt-get -o Acquire::ForceIPv4=true upgrade -qqy 2>/dev/null >/dev/null
 RUN apt-get -o Acquire::ForceIPv4=true install python3 wget zip git -qqy
 
 COPY cleep.deb .
-RUN apt-get install ./cleep.deb -qqy 2>/dev/null >/dev/null
+RUN apt-get install ./cleep.deb -qy
 RUN systemctl disable cleep
 
 RUN python3 -m pip install -q cleepcli
