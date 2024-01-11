@@ -27,6 +27,12 @@ class CleepBackup:
         self.crash_report = crash_report
         self.cleep_filesystem = cleep_filesystem
 
+        # make sure path exists
+        if not os.path.exists(self.CLEEP_PATH):
+            self.cleep_filesystem.mkdirs(self.CLEEP_PATH)
+        if not os.path.exists(self.BACKUP_PATH):
+            self.cleep_filesystem.mkdirs(self.BACKUP_PATH)
+
     def backup(self): # pragma: no cover
         """
         Backup configuration files on filesystem
