@@ -297,6 +297,7 @@ class CleepFilesystemTests(unittest.TestCase):
         with io.open(self.FILE, 'w') as fd:
             fd.write(u'{"test": "read_json"}')
         lines = self.c.read_json(self.FILE)
+        logging.debug('Read lines: %s', lines)
         self.assertTrue(isinstance(lines, dict))
         self.assertTrue('test' in lines)
 
