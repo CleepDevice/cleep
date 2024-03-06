@@ -176,7 +176,7 @@ class %(module_name)s(%(inherit)s):
         self._init_context()
         
         j = self.i._get_market()
-        logging.debug('AppSources: %s' % j)
+        logging.debug('AppsSources: %s' % j)
 
         self.assertEqual(j, json_content)
 
