@@ -119,6 +119,7 @@ def get_ssl_options(rpc_config):
     return {
         "keyfile": rpc_config.get("ssl_key"),
         "certfile": rpc_config.get("ssl_cert"),
+        "do_handshake_on_connect": False, # suppress SSLV3_ALERT_CERTIFICATE_UNKNOWN SSL errors
     }
 
 
