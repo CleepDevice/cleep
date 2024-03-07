@@ -43,15 +43,17 @@ steps:
       - cd cleep-dev
       - git checkout $DRONE_SOURCE_BRANCH
 
-  - name: check-cleep-from-sources
+  - name: check-cleep-sources
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
+    environment:
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
+      - export CLEEP_CI=ci
+      - python3 -m pip -q --no-color install pip cleepcli --upgrade
+      - cleep-cli --version
       - cd cleep-dev
+      - python3 -m pip install -r requirements.txt
       - export REPO_DIR=/drone/src/cleep-dev
-      - export CLEEP_ENV=ci
       - cleep-cli coresync
       - cleep-cli cigetmods
       - cleep --noro --stdout --dryrun
@@ -64,8 +66,7 @@ steps:
       COVERALLS_REPO_TOKEN:
         from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install pip --upgrade
-      - python3 -m pip -q --no-color install cleepcli coveralls --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
@@ -82,14 +83,13 @@ steps:
     commands:
       - apt-get -o Acquire::ForceIPv4=true -qq update
       - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
-      - python3 -m pip -q --no-color install pip --upgrade
-      - python3 -m pip -q --no-color install cleepcli --upgrade
-      - python3 -m pip freeze | grep cleepcli
+      - python3 -m pip -q --no-color install pip cleepcli --upgrade
+      - cleep-cli --version
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli corebuild
       - ls -la
 
-  - name: test-cleep-install
+  - name: test-cleep-deb-install
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     commands:
