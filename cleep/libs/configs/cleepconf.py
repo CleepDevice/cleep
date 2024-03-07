@@ -51,7 +51,8 @@ class CleepConf:
         self.__conf = ConfigParser()
 
         if not os.path.exists(self.CONF):
-            # create empty file
+            base_path = os.path.dirname(self.CONF)
+            self.cleep_filesystem.mkdirs(base_path)
             fdesc = self.cleep_filesystem.open(self.CONF, "w")
             fdesc.write("")
             self.cleep_filesystem.close(fdesc)
@@ -82,8 +83,8 @@ class CleepConf:
             bool: True if updated
         """
         try:
-            config = self.__open()
             updated = False
+            config = self.__open()
 
             # merge with default config
             for (section, section_keys) in self.DEFAULT_CONFIG.items():
