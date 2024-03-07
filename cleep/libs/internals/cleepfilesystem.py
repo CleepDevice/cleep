@@ -796,7 +796,6 @@ class CleepFilesystem():
         """
         return self.mkdir(path, True)
 
-
     def rsync(self, src, dst, options='-ah --delete --exclude=".*"'):
         """
         Copy source to destination using rsync.

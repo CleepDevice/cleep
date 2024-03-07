@@ -13,7 +13,6 @@ from gc import get_referents
 from cleep.core import Cleep, CleepModule, CleepRenderer, CleepRpcWrapper
 from cleep.libs.configs.appssources import AppsSources
 from cleep.exception import CommandError, MissingParameter, InvalidParameter
-from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.install import Install
 import cleep.libs.internals.tools as Tools
 from cleep.common import CORE_MODULES, ExecutionStep
