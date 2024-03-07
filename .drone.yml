@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: development
+name: pre-release
 
 platform:
   os: linux
@@ -8,15 +8,31 @@ platform:
 
 trigger:
   branch:
-    - master
+    - release/*
   event:
-    - pull_request
+    - tag
+  ref:
+    - refs/tags/v*-pre*
 
 concurrency:
   limit: 1
 
 clone:
   disable: true
+
+services:
+  - name: launch-docker
+    image: mazzolino/docker:20.10.12-dind
+    privileged: true
+    network_mode: host
+    volumes:
+      - name: dockersock
+        path: /var/run
+    command: ['--insecure-registry=192.168.1.125:5000']
+
+volumes:
+  - name: dockersock
+    temp: {}
 
 steps:
   - name: clone
@@ -28,7 +44,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: check-cleep-from-sources
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     commands:
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
@@ -41,17 +57,78 @@ steps:
       - cleep --noro --stdout --dryrun
 
   - name: run-cleep-tests
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
+    environment:
+      COVERALLS_REPO_TOKEN:
+        from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
-      - python3 -m pip freeze | grep cleepcli
+      - python3 -m pip -q --no-color install pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli coveralls --upgrade
+      - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+
+  - name: build-cleep-deb
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
+    network_mode: host
+    environment:
+      SENTRY_DSN:
+        from_secret: sentry_dsn
+    commands:
+      - apt-get -o Acquire::ForceIPv4=true -qq update
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - python3 -m pip -q --no-color install pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli --upgrade
+      - python3 -m pip freeze | grep cleepcli
+      - export REPO_DIR=/drone/src/cleep-dev
+      - cleep-cli corebuild
+      - ls -la
+
+  - name: test-cleep-install
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
+    network_mode: host
+    commands:
+      - python3 -m pip -q --no-color install pip --upgrade
+      - python3 -m pip -q --no-color install cleepcli --upgrade
+      - # install cleep
+      - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
+      - # force core modules to be updated from sources
+      - cleep-cli cigetmods
+      - # dry run
+      - export CLEEP_ENV=ci
+      - cleep --noro --stdout --dryrun
+      - cleep --version > version.txt
+      - cat version.txt
+
+  - name: build-cleep-docker-image
+    image: 192.168.1.125:5000/cleep-utils:20230205
+    network_mode: host
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
+      - test -f version.txt || echo "No version.txt file found. Cannot continue"
+      - docker --version
+      - export VERSION=`cat version.txt`
+      - echo $VERSION
+      - cp -a "cleep_"$VERSION"_armhf.deb" "cleep-dev/cleep.deb"
+      - cd cleep-dev
+      - ls -la 
+      - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
+      - # DO NOT PUSH IMAGE TO REGISTRY
 
 
 
@@ -66,7 +143,7 @@ platform:
 
 trigger:
   branch:
-    - release/*
+    - master
   event:
     - tag
   ref:
@@ -102,21 +179,25 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: run-cleep-tests
-    image: 192.168.1.125:5000/cleep-build/buster:20220922
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
+    environment:
+      COVERALLS_REPO_TOKEN:
+        from_secret: coveralls_cleep_token
     commands:
       - python3 -m pip -q --no-color install pip --upgrade
-      - python3 -m pip -q --no-color install cleepcli --upgrade
+      - python3 -m pip -q --no-color install cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+      - coveralls || /bin/true
 
   - name: build-cleep-deb
-    image: 192.168.1.125:5000/cleep-build/buster:20220922
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     environment:
       SENTRY_DSN:
@@ -132,7 +213,7 @@ steps:
       - ls -la
 
   - name: test-cleep-install
-    image: 192.168.1.125:5000/cleep-build/buster:20220922
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     commands:
       - python3 -m pip -q --no-color install pip --upgrade
@@ -148,7 +229,7 @@ steps:
       - cat version.txt
 
   - name: publish-cleep-docs
-    image: 192.168.1.125:5000/cleep-build/buster:20220922
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     environment:
       ID_ED25519:
@@ -187,7 +268,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
+      - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
       - export VERSION=`cat version.txt`
@@ -293,6 +374,7 @@ trigger:
     include:
     - refs/tags/v*
     exclude:
+    - refs/tags/v*-pre*
     - refs/tags/v*-rc*
     - refs/tags/v*-cleepos*
 
@@ -326,7 +408,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: run-cleep-tests
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
     environment:
@@ -343,7 +425,7 @@ steps:
       - coveralls || /bin/true
 
   - name: build-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     environment:
       SENTRY_DSN:
@@ -358,7 +440,7 @@ steps:
       - ls -la
 
   - name: test-cleep-install
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     commands:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
@@ -367,7 +449,7 @@ steps:
       - cleep --version > version.txt
 
   - name: publish-cleep-docs
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     environment:
       ID_ED25519:
@@ -405,7 +487,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
+      - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
       - export VERSION=`cat version.txt`
@@ -418,14 +500,14 @@ steps:
       - docker push 192.168.1.125:5000/cleep/cleep:$VERSION
 
   - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep/cleep:0.0.29
+    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
     environment:
       GITHUB_ACCESS_TOKEN:
         from_secret: github_access_token
     commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP
+      - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - export VERSION=`cat version.txt`
