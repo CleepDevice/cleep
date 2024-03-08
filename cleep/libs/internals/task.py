@@ -3,6 +3,7 @@
 
 from threading import Timer
 from time import perf_counter
+import os
 
 __all__ = ["Task", "CountTask"]
 
@@ -123,7 +124,11 @@ class Task:
         # accuracy
         self.__task_start_timestamp = perf_counter() + self._interval
 
-        self.__timer.start()
+        CLEEP_ENV = os.environ.get('CLEEP_ENV', '')
+        if CLEEP_ENV.lower() == 'ci'
+            self.logger.info('Tash %s disabled during CI', self._task_name)
+        else:
+            self.__timer.start()
 
     def stop(self):
         """
