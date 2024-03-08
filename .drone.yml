@@ -46,7 +46,7 @@ steps:
   - name: check-cleep-sources
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
-    environment:
+    privileged: true
     commands:
       - export CLEEP_CI=ci
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
@@ -56,7 +56,7 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli cigetmods
-      - cleep-cli modssync
+      - cleep-cli modssync --run-scripts
       - cleep --noro --stdout --dryrun
 
   - name: run-cleep-tests
