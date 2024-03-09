@@ -871,14 +871,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_installable_modules(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module1'],
-            }
-        }
+    def test_get_installable_modules(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
@@ -902,14 +895,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_modules(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module1'],
-            }
-        }
+    def test_get_modules(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
@@ -939,14 +925,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_modules_module_failed(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module1'],
-            }
-        }
+    def test_get_modules_module_failed(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
@@ -959,14 +938,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_modules_no_filter(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module1'],
-            }
-        }
+    def test_get_modules_no_filter(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
         }
@@ -984,14 +956,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_modules_invalid_filter(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module2'],
-            }
-        }
+    def test_get_modules_invalid_filter(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module3':{}}
         }
@@ -1005,14 +970,7 @@ class %(module_name)s(%(inherit)s):
 
     @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    @patch('inventory.CleepConf')
-    def test_get_modules_with_filter(self, cleep_conf_mock, appssources_mock):
-        cleep_conf_mock.return_value.as_dict.return_value = {
-            'general': {
-                'modules': ['module1', 'module2'],
-                'updated': ['module2'],
-            }
-        }
+    def test_get_modules_with_filter(self, appssources_mock):
         appssources_mock.return_value.get_market.return_value = {
             'list': {'module1':{}, 'module2': {}, 'module4': {}}
         }
