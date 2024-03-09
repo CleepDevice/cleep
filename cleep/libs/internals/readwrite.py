@@ -144,8 +144,8 @@ class ReadWrite:
         Returns:
             bool: True if running in CI env
         """
-        ci_env = os.environ.get('CLEEP_ENV', None)
-        return ci_env == 'ci'
+        cleep_env = os.environ.get('CLEEP_ENV', '')
+        return cleep_env.lower() == 'ci'
 
     def get_status(self):
         """

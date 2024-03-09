@@ -125,7 +125,7 @@ class Task:
         self.__task_start_timestamp = perf_counter() + self._interval
 
         CLEEP_ENV = os.environ.get('CLEEP_ENV', '')
-        if CLEEP_ENV.lower() == 'ci'
+        if CLEEP_ENV.lower() == 'ci':
             self.logger.info('Tash %s disabled during CI', self._task_name)
         else:
             self.__timer.start()
