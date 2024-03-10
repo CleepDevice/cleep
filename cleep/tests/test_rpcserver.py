@@ -356,7 +356,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert')
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert', do_handshake_on_connect=False)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_invalid_ssl(self, mock_wsgi):
