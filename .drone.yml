@@ -123,6 +123,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
+      - echo "==> Drop docker image build for now (installed mandatory apps are not yet published)" && exit 0
       - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
