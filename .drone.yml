@@ -55,9 +55,11 @@ steps:
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
+      - # force all code to be updated from sources
       - cleep-cli coresync
       - cleep-cli cigetmods
       - cleep-cli modssync --run-scripts
+      - # dry run
       - cleep --noro --stdout --dryrun
 
   - name: run-cleep-tests
@@ -101,6 +103,7 @@ steps:
       - apt-get install --yes --fix-broken ./cleep_*_armhf.deb
       - # force core modules to be updated from sources
       - cleep-cli cigetmods
+      - cleep-cli modssync --run-scripts
       - # dry run
       - export CLEEP_ENV=ci
       - cleep --noro --stdout --dryrun
