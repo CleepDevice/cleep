@@ -4,8 +4,8 @@
 
 set -e
 
-MODULES_JSON_LATEST=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
-MODULES_JSON_VERSION=https://raw.githubusercontent.com/tangb/cleep-apps/v__CLEEP_VERSION__/modules.json
+MODULES_JSON_LATEST=https://raw.githubusercontent.com/CleepDevice/cleep-apps/main/modules.json
+MODULES_JSON_VERSION=https://raw.githubusercontent.com/CleepDevice/cleep-apps/v__CLEEP_VERSION__/modules.json
 CLEEPMODS=( audio cleepbus network parameters system update )
 
 # Check command result

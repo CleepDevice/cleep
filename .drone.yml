@@ -84,7 +84,7 @@ steps:
         from_secret: sentry_dsn
     commands:
       - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools dh-python
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - cleep-cli --version
       - export REPO_DIR=/drone/src/cleep-dev
@@ -206,7 +206,7 @@ steps:
         from_secret: sentry_dsn
     commands:
       - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools dh-python
       - python3 -m pip -q --no-color install pip --upgrade
       - python3 -m pip -q --no-color install cleepcli --upgrade
       - python3 -m pip freeze | grep cleepcli
@@ -434,7 +434,7 @@ steps:
         from_secret: sentry_dsn
     commands:
       - apt-get -o Acquire::ForceIPv4=true -qq update
-      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools
+      - apt-get -o Acquire::ForceIPv4=true -qq -y install python3 wget python3-distutils python3-dev devscripts python3-all python3-setuptools dh-python
       - python3 -m pip -q --no-color install cleepcli pip --upgrade
       - python3 -m pip freeze | grep cleepcli
       - export REPO_DIR=/drone/src/cleep-dev

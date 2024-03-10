@@ -4,8 +4,7 @@ Priority: optional
 Maintainer: Tanguy Bonneau <tanguy.bonneau@gmail.com>
 Build-Depends: debhelper (>=11~), dh-python, python3-all, python3-setuptools
 Standards-Version: 4.1.4
-Homepage: https://github.com/tangb/cleep
-X-Python3-Version: 3.7
+Homepage: https://github.com/CleepDevice/cleep
 
 Package: cleep
 Architecture: armhf
