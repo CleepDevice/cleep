@@ -70,7 +70,7 @@ steps:
       COVERALLS_REPO_TOKEN:
         from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install pip cleepcli --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
@@ -227,7 +227,7 @@ steps:
       COVERALLS_REPO_TOKEN:
         from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install pip cleepcli --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
@@ -488,7 +488,7 @@ steps:
       COVERALLS_REPO_TOKEN:
         from_secret: coveralls_cleep_token
     commands:
-      - python3 -m pip -q --no-color install pip cleepcli --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
       - python3 -m pip install -r requirements-test.txt
