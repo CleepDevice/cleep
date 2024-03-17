@@ -10,7 +10,7 @@ from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pformat
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

@@ -29,26 +29,35 @@ import uptime
 from passlib.hash import sha256_crypt
 from gevent import pywsgi
 from gevent import monkey
+
 monkey.patch_all()
 import bottle
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
+from cleep.libs.configs.cleepconf import CleepConf
 
 __all__ = ["app"]
 
 # constants
 BASE_DIR = "/opt/cleep/"
 HTML_DIR = os.path.join(BASE_DIR, "html")
-AUTH_FILE = "/etc/cleep/auth.conf"
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
 CLEEP_CACHE = None
+LOCAL_ADDRS = ["127.0.0.1", "localhost"]
+try:
+    import socket
+    device_ip = socket.gethostbyname(socket.gethostname())
+    LOCAL_ADDRS.append(device_ip)
+except:
+    # surely in docker env
+    pass
 
 # globals
 polling = 0
 subscribed = False
 sessions = {}
-auth_config = {}
+auth_accounts = {}
 auth_enabled = False
 logger = None
 debug_enabled = False
@@ -65,38 +74,32 @@ def load_auth():
     """
     Load auth and enable auth if necessary
     """
-    global auth_enabled, auth_config
+    global auth_accounts, auth_enabled
 
     try:
-        with io.open(AUTH_FILE, "r", encoding="utf-8") as fdesc:
-            auth_config = json.load(fdesc)
-        logger.debug("auth.conf: %s", auth_config["accounts"])
+        cleep_conf = CleepConf(cleep_filesystem)
+        auth_accounts = cleep_conf.get_auth_accounts()
+        auth_enabled = cleep_conf.is_auth_enabled() and len(auth_accounts) > 0
 
-        auth_enabled = len(auth_config["accounts"]) > 0 and auth_config["enabled"]
         logger.debug("Auth enabled: %s", auth_enabled)
-
+        logger.debug("Auth accounts: %s", list(auth_accounts.keys()))
     except Exception:
-        auth_config = {}
+        auth_accounts = {}
+        auth_enabled = False
         logger.exception("Unable to load auth file. Auth disabled:")
-        crash_report.report_exception(
-            {
-                "message": "Unable to load auth file. Auth disabled:",
-                "auth_enabled": auth_enabled,
-                "auth_config": auth_config,
-            }
-        )
 
 
-def get_ssl_options(server_config):
+def get_ssl_options(rpc_config):
     """
     Return ssl options if any to pass to http server
 
     Args:
-        server_config (dict): server configuration::
+        rpc_config (dict): rpc configuration::
 
             {
                 host (str): server host
                 port (int): server port
+                ssl (bool): ssl enabled or not
                 ssl_key (str): server SSL key
                 ssl_cert (str): server SSL certificate
             }
@@ -110,36 +113,27 @@ def get_ssl_options(server_config):
             }
 
     """
-    ssl_key = server_config.get("ssl_key")
-    ssl_cert = server_config.get("ssl_cert")
-
-    if not ssl_key and not ssl_cert:
-        return {}
-
-    if ssl_key and ssl_cert and (not os.path.exists(ssl_key) or not os.path.exists(ssl_cert)):
-        logger.error(
-            "Invalid key (%s) or cert (%s) file specified. Fallback to HTTP.",
-            ssl_key,
-            ssl_cert,
-        )
+    if not rpc_config.get("ssl"):
         return {}
 
     return {
-        "keyfile": ssl_key,
-        "certfile": ssl_cert,
+        "keyfile": rpc_config.get("ssl_key"),
+        "certfile": rpc_config.get("ssl_cert"),
+        "do_handshake_on_connect": False, # suppress SSLV3_ALERT_CERTIFICATE_UNKNOWN SSL errors
     }
 
 
-def configure(server_config, bootstrap, inventory_, debug_enabled_):
+def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     """
     Configure rpcserver
 
     Args:
-        server_config (dict): server configuration::
+        rpc_config (dict): server configuration::
 
             {
                 host (str): server host
                 port (int): server port
+                ssl (bool): ssl enabled or not
                 ssl_key (str): server SSL key
                 ssl_cert (str): server SSL certificate
             }
@@ -170,13 +164,14 @@ def configure(server_config, bootstrap, inventory_, debug_enabled_):
     load_auth()
 
     # create server
-    ssl_options = get_ssl_options(server_config)
+    ssl_options = get_ssl_options(rpc_config)
+    protocol = "https" if rpc_config.get("ssl", False) else "http"
+    host = rpc_config.get("host", "0.0.0.0")
+    port = rpc_config.get("port", 80)
+    logger.info("Running RPC server %s://%s:%s", protocol, host, port)
+    logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
     server = pywsgi.WSGIServer(
-        (server_config.get("host", "0.0.0.0"), server_config.get("port", 80)),
-        app,
-        log=logger_requests,
-        error_log=logger,
-        **ssl_options
+        (host, port), app, log=logger_requests, error_log=logger, **ssl_options
     )
 
 
@@ -242,58 +237,58 @@ def start():
             server.stop()
 
 
-def check_auth(username, password):
+def check_auth(account, password):
     """
     Check auth
 
     Args:
-        username (string): username
-        password (string): user password
+        account (str): account name
+        password (str): account password
     """
     # check session
     client_ip = bottle.request.environ.get("REMOTE_ADDR")
     logger.trace("Client ip: %s", client_ip)
-    session_key = f"{client_ip}-{username}"
+    session_key = f"{client_ip}-{account}"
     if session_key in sessions and sessions[session_key] >= uptime.uptime():
         # user still logged, update session timeout
         sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
         return True
 
-    # check auth
-    if username in auth_config["accounts"]:
-        logger.trace('Check password "%s"', password)
-        try:
-            if sha256_crypt.verify(password, auth_config["accounts"][username]):
-                # auth is valid, save session
-                sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
-                return True
+    # check account exists
+    if account not in auth_accounts:
+        logger.warning('Invalid auth account "%s"', account)
+        return False
 
-            # invalid password
-            logger.warning('Invalid password for user "%s"', username)
-            return False
+    try:
+        if sha256_crypt.verify(password, auth_accounts[account]):
+            # auth is valid, save session
+            sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
+            return True
 
-        except Exception:
-            logger.warning('Password failed for user from ip "%s"', client_ip)
-            return False
-
-    # username doesn't exist
-    logger.warning('Invalid username "%s"', username)
-    return False
+        # invalid password
+        logger.warning('Invalid password for account "%s"', account)
+        return False
+    except Exception:
+        logger.warning(
+            'Password failed for account "%s" from ip "%s"', account, client_ip
+        )
+        return False
 
 
 def authenticate():
     """
-    Authentication process
+    Authenticate decorator
     If authentication is enabled, check credentials
     """
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if auth_enabled:
-                username, password = bottle.request.auth or (None, None)
-                logger.trace("username=%s password=%s", username, password)
-                if username is None or not check_auth(username, password):
+            remote_addr = bottle.request.environ.get('HTTP_X_FORWARDED_FOR') or bottle.request.environ.get('REMOTE_ADDR')
+            if auth_enabled and remote_addr not in LOCAL_ADDRS:
+                account, password = bottle.request.auth or (None, None)
+                logger.debug("account=%s password=%s", account, password)
+                if account is None or not check_auth(account, password):
                     err = bottle.HTTPError(401, "Access denied")
                     err.add_header("WWW-Authenticate", 'Basic realm="private"')
                     return err
@@ -302,6 +297,7 @@ def authenticate():
         return wrapper
 
     return decorator
+
 
 def send_command(command, to, params, timeout=None):
     """
@@ -401,6 +397,16 @@ def get_drivers_from_inventory():
     return drivers
 
 
+@app.route("/reloadauth", method="POST")
+def reload_auth():
+    """
+    Reload auth configuration
+    Must be executed after update on auth configuration to reload changes
+    """
+    load_auth()
+    logger.info("Rpc auth configuration reloaded")
+
+
 @app.route("/upload", method="POST")
 @authenticate()
 def exec_upload():
@@ -428,7 +434,7 @@ def exec_upload():
         # check params
         if command is None or to is None:
             # not allowed, missing parameters
-            raise Exception('Missing parameters')
+            raise Exception("Missing parameters")
 
         else:
             # get file
@@ -589,7 +595,7 @@ def handle_post_command():
     if bottle.request.json is None or not isinstance(bottle.request.json, dict):
         raise Exception("Invalid payload, json required.")
     tmp_params = dict(bottle.request.json or {})
-    logger.debug('Post params: %s', tmp_params)
+    logger.debug("Post params: %s", tmp_params)
 
     to = tmp_params.get("to")
     if "to" in tmp_params:
@@ -656,8 +662,8 @@ def exec_command():
 
     return resp.to_dict()
 
+
 @app.route("/modules", method="POST")
-@authenticate()
 def get_modules():
     """
     Return modules with their configuration
@@ -666,7 +672,7 @@ def get_modules():
         installable (bool): if True will return installable modules only. Otherwise returns installed modules
 
     Returns:
-        dict: map of modules with their configuration, devices, commands...
+        MessageResponse: map of modules with their configuration, devices, commands...
     """
     installable = False
     params = dict(bottle.request.json or {})
@@ -680,68 +686,133 @@ def get_modules():
         modules = get_modules_from_inventory(installable=installable)
         logger.debug("Installable modules: %s", modules)
 
-    return json.dumps(modules)
+    resp = MessageResponse(data=modules)
+    return resp.to_dict()
 
 
 @app.route("/devices", method="POST")
-@authenticate()
 def get_devices():
     """
     Return all devices
 
     Returns:
-        dict: all devices by module
+        MessageResponse: all devices by module
     """
     devices = get_devices_from_inventory()
     logger.debug("Devices: %s", devices)
 
-    return json.dumps(devices)
+    resp = MessageResponse(data=devices)
+    return resp.to_dict()
 
 
 @app.route("/renderers", method="POST")
-@authenticate()
 def get_renderers():
     """
     Returns all renderers
 
     Returns:
-        dict: all renderers by type
+        MessageResponse: all renderers by type
     """
     renderers = get_renderers_from_inventory()
     logger.debug("Renderers: %s", renderers)
 
-    return json.dumps(renderers)
+    resp = MessageResponse(data=renderers)
+    return resp.to_dict()
 
 
 @app.route("/drivers", method="POST")
-@authenticate()
 def get_drivers():
     """
     Returns all drivers
 
     Returns:
-        dict: all drivers by type
+        MessageResponse: all drivers by type
     """
     drivers = get_drivers_from_inventory()
     logger.debug("Drivers: %s", drivers)
 
-    return json.dumps(drivers)
+    resp = MessageResponse(data=drivers)
+    return resp.to_dict()
 
 
 @app.route("/events", method="POST")
-@authenticate()
 def get_events():
     """
     Return all used events
 
     Returns:
-        list: list of used events
+        MessageResponse: list of used events
     """
     events = get_events_from_inventory()
     logger.debug("Used events: %s", events)
 
-    return json.dumps(events)
+    resp = MessageResponse(data=events)
+    return resp.to_dict()
 
+@app.route("/commands", method="POST")
+def get_commands():
+    """
+    Return all commands
+
+    Returns:
+        MessageResponse: list of commands
+    """
+    commands = inventory.get_module_commands(None)
+    logger.debug("Commands: %s", commands)
+
+    resp = MessageResponse(data=commands)
+    return resp.to_dict()
+
+@app.route("/doc/check/<app>", method="GET")
+def check_app_documentation(app):
+    """
+    Check application documentation
+
+    Returns:
+        MessageResponse: check result
+    """
+    query = dict(bottle.request.query or {})
+    with_details = True if query.get("details") else False
+
+    resp = MessageResponse()
+    try:
+        resp.data = inventory.check_module_documentation(app, with_details)
+        has_error = any([command_doc["valid"] is False for command_doc in resp.data.values()])
+        if has_error:
+            resp.error = True
+            resp.message = "Invalid application documentation"
+    except Exception as error:
+        logging.exception("Error checking application '%s' documentation", app)
+        resp.error = True
+        resp.message = str(error)
+
+    return resp.to_dict()
+
+@app.route("/doc/<app>", method="GET")
+def get_app_documentation(app):
+    """
+    Return documentation for specified application
+
+    Returns:
+        MessageResponse: application doc::
+
+            {
+                command (dict): command documentation
+                ...
+            }
+
+    """
+    resp = MessageResponse()
+    try:
+        doc = inventory.get_module_documentation(app)
+        logger.debug("%s documentation: %s", app, doc)
+        resp.data = doc
+    except Exception as error:
+        logger.exception("Unable to get application '%s' documentation: %s", app)
+        resp.error = True
+        resp.message = str(error)
+
+    return resp.to_dict()
 
 @app.route("/config", method="POST")
 @authenticate()
@@ -750,7 +821,7 @@ def get_config():
     Return device config
 
     Returns:
-        dict: all device config::
+        MessageResponse: all device config::
 
             {
                 modules (dict): all devices by module
@@ -766,35 +837,36 @@ def get_config():
     if not CLEEP_CACHE:
         logger.debug("Init cache")
         CLEEP_CACHE = {
-            'modules': get_modules_from_inventory(),
-            'events': get_events_from_inventory(),
-            'renderers': get_renderers_from_inventory(),
-            'drivers': get_drivers_from_inventory(),
+            "modules": get_modules_from_inventory(),
+            "events": get_events_from_inventory(),
+            "renderers": get_renderers_from_inventory(),
+            "drivers": get_drivers_from_inventory(),
         }
 
+    resp = MessageResponse()
     try:
         # update volatile data
         modules_configs = inventory.get_modules_configs()
-        for module_name, module in CLEEP_CACHE['modules'].items():
-            module['config'] = modules_configs[module_name]
+        for module_name, module in CLEEP_CACHE["modules"].items():
+            module["config"] = modules_configs[module_name]
 
-        return json.dumps(
-            {
-                "modules": CLEEP_CACHE['modules'],
-                "devices": get_devices_from_inventory(),
-                "events": CLEEP_CACHE['events'],
-                "renderers": CLEEP_CACHE['renderers'],
-                "drivers": CLEEP_CACHE['drivers'],
-            }
-        )
+        resp.data = {
+            "modules": CLEEP_CACHE["modules"],
+            "devices": get_devices_from_inventory(),
+            "events": CLEEP_CACHE["events"],
+            "renderers": CLEEP_CACHE["renderers"],
+            "drivers": CLEEP_CACHE["drivers"],
+        }
+
     except Exception:
         logger.exception("Error getting config")
+        resp.error = True
+        resp.message = "Error getting configuration"
 
-    return json.dumps({})
+    return resp.to_dict()
 
 
 @app.route("/registerpoll", method="POST")
-@authenticate()
 def registerpoll():
     """
     Register poll
@@ -831,34 +903,31 @@ def poll():
     This is the endpoint for long poll clients.
 
     Returns:
-        dict: map of received event
+        MessageResponse: dict of received event
     """
     with pollcounter():
         params = dict(bottle.request.json or {})
         logger.trace("Poll params: %s", params)
-        # response content type.
         bottle.response.content_type = "application/json"
 
-        # init message
-        message = {"error": True, "data": None, "message": ""}
-
         # process poll
+        resp = MessageResponse(error=True, data=None, message="")
         if not bus:
             # bus not available yet
             logger.debug("polling: bus not available")
-            message["message"] = "Bus not available"
+            resp.message = "Bus not available"
             time.sleep(1.0)
 
         elif "pollKey" not in params:
             # rpc client no registered yet
             logger.debug("polling: registration key must be sent to poll request")
-            message["message"] = "Polling key is missing"
+            resp.message = "Polling key is missing"
             time.sleep(1.0)
 
         elif not bus.is_subscribed(f'rpc-{params["pollKey"]}'):
             # rpc client no registered yet
             logger.debug("polling: rpc client must be registered before polling")
-            message["message"] = "Client not registered"
+            resp.message = "Client not registered"
             time.sleep(1.0)
 
         else:
@@ -869,27 +938,25 @@ def poll():
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
 
                 # prepare output
-                message["error"] = False
-                message["data"] = msg["message"]
-                logger.debug("polling received %s", message)
+                resp.error = False
+                resp.data = msg["message"]
+                logger.debug("polling received %s", resp)
 
             except NoMessageAvailable:
-                message["message"] = "No message available"
+                resp.message = "No message available"
                 time.sleep(1.0)
 
             except Exception:
                 logger.exception("Poll exception")
                 crash_report.report_exception({"message": "Poll exception"})
-                message["message"] = "Internal error"
+                resp.message = "Internal error"
                 time.sleep(5.0)
 
-    # and return it
-    return json.dumps(message)
+    return resp.to_dict()
 
 
 @app.route("/<route:re:.*>", method="POST")
-# TODO add auth to external request
-# @authenticate()
+# TODO add auth to external request ?
 def rpc_wrapper(route):
     """
     Custom rpc route used to implement wrappers (ie REST=>RPC)
@@ -925,7 +992,8 @@ def index():
 
 
 @app.route("/logs", method="GET")
-def logs():  # pragma: no cover
+@authenticate()
+def logs(): # pragma: no cover
     """
     Serve log file
     """
@@ -939,7 +1007,7 @@ def logs():  # pragma: no cover
     </script>"""
     content = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
 
-    lines = cleep_filesystem.read_data("/var/log/cleep.log", "r")
+    lines = cleep_filesystem.read_data("/var/log/cleep.log")
     lines = "" if not lines else lines
 
     return (

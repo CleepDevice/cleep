@@ -1,11 +1,11 @@
-FROM 192.168.1.125:5000/raspberrypios/buster:20220922
+FROM 192.168.1.125:5000/raspberrypios/bullseye:20231205
 
 RUN apt-get -o Acquire::ForceIPv4=true update -qqy
 RUN apt-get -o Acquire::ForceIPv4=true upgrade -qqy 2>/dev/null >/dev/null
 RUN apt-get -o Acquire::ForceIPv4=true install python3 wget zip git -qqy
 
 COPY cleep.deb .
-RUN apt-get install ./cleep.deb -qqy 2>/dev/null >/dev/null
+RUN apt-get install ./cleep.deb -qy
 RUN systemctl disable cleep
 
 RUN python3 -m pip install -q cleepcli

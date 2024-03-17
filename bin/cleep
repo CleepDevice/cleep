@@ -3,6 +3,7 @@
 
 
 import os
+import json
 import sys
 import getopt
 import logging
@@ -21,12 +22,12 @@ from cleep.libs.internals.criticalresources import CriticalResources
 from cleep.libs.internals.drivers import Drivers
 import cleep.libs.internals.tools as tools
 from cleep.common import ExecutionStep
-from netifaces import version as netifaces_version
 from bottle import __version__ as bottle_version
 from gevent import __version__ as gevent_version
 from passlib import __version__ as passlib_version
 from greenlet import __version__ as greenlet_version
 from requests import __version__ as requests_version
+
 
 LOG_FILE = '/var/log/cleep.log'
 LOG_SETTINGS = { 
@@ -57,7 +58,9 @@ LOG_SETTINGS = {
         }   
     },  
 }
-DRY_RUN_TIMEOUT = 10.0
+DRY_RUN_TIMEOUT = 8.0
+CI_DOC_TIMEOUT = 4.0
+CLEEP_INSTALLED_MODULES_PATH = '/opt/cleep/modules'
 
 class ConfigException(Exception):
     def __init__(self, value):
@@ -67,8 +70,8 @@ class ConfigException(Exception):
 
 
 def usage():
-    print('Cleep usage: cleep [-d <module names>|--debug=<modules names>][-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-r|--dryrun] [-h|--help]]')
-    print(' -d|--debug        : enable debug for specified module names (coma separated: "network,system")')
+    print('Cleep usage: cleep [-d <app names>|--debug=<app names>] [-D|--debugcore] [-t|--trace] [-s|--stdout] [-N|--noro] [-r|--dryrun] [-h|--help]')
+    print(' -d|--debug        : enable debug for specified application names (coma separated: "network,system")')
     print(' -D|--debugcore    : enable debug for Cleep core')
     print(' -t|--trace        : enable debug for everything (all modules, all libraries...)')
     print(' -s|--stdout       : dump log in console instead of log file')
@@ -109,7 +112,6 @@ def load_crash_report(debug, disabled):
         'bottle': bottle_version,
         'gevent': gevent_version,
         'greenlet': greenlet_version,
-        'netifaces': netifaces_version,
         'passlib': passlib_version,
         'requests': requests_version,
     }
@@ -125,7 +127,7 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, 'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers):
+def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers, rpc_config):
     """
     Return bootstrap objects.
 
@@ -137,6 +139,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         crash_report (CrashReport): crash report singleton instance
         critical_resources (CriticalResources): critical resources handler singleton instance
         drivers (Drivers): drivers handler singleton instance
+        rpc_config (dict): rpc configuration (port, host, ssl opts)
 
     Returns:
         dict: dict of bootstrap objects::
@@ -155,6 +158,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
                 drivers (Drivers): drivers handler
                 execution_step (ExecutionStep): cleep execution step
                 external_bus (string): module name that holds external bus (only one allowed)
+                rpc_config (dict): rpc configuration (port, host, ssl opts)
             }
 
     """
@@ -172,6 +176,7 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         'drivers': drivers,
         'execution_step': ExecutionStep(),
         'external_bus': None,
+        'rpc_config': rpc_config,
     }
 
 def dry_run_stop_server(server, inventory):
@@ -183,6 +188,94 @@ def dry_run_stop_server(server, inventory):
     inventory.unload_modules()
     server.stop()
 
+def generate_app_documentation(app_name):
+    """
+    Generate application documentation (--cidoc command line flag)
+    """
+    import warnings
+    import requests
+    warnings.simplefilter("ignore")
+    requests.packages.urllib3.disable_warnings()
+
+    global exit_code
+
+    resp = requests.get(f'http://localhost/doc/{app_name}', verify=False)
+    resp = resp.json()
+
+    if resp["error"]:
+        print(f"Error occured: {resp['message']}")
+        exit_code = 1
+        return
+
+    print(json.dumps(resp["data"]))
+
+def check_app_documentation(app_name):
+    """
+    Check application documentation (--cicheckdoc command line flag)
+    """
+    import warnings
+    import requests
+    warnings.simplefilter("ignore")
+    requests.packages.urllib3.disable_warnings()
+
+    global exit_code
+
+    resp = requests.get(f'http://localhost/doc/check/{app_name}', verify=False)
+    resp = resp.json()
+
+    if resp["error"]:
+        exit_code = 1
+
+    print(json.dumps(resp["data"]))
+
+def get_rpc_config(config, force_http):
+    """
+    Return rpc config
+    Handles invalid ssl config and fallback to http
+    """
+    ssl_key = config.get("rpc", {}).get("rpc_key")
+    ssl_cert = config.get("rpc", {}).get("rpc_cert")
+    ssl_enabled = True if ssl_key and ssl_cert and not force_http else False
+    auth_enabled = config.get("auth", {}).get("enabled", False)
+    auth_accounts = config.get("auth", {}).get("accounts", {})
+    host = config.get("rpc", {}).get("rpc_host", "0.0.0.0")
+    port_http = config.get('rpc', {}).get('rpc_port', 80)
+    port_https = config.get("rpc", {}).get("rpc_ssl_port", 443)
+    port = port_https if ssl_enabled and not force_http else port_http
+    protocol = "https" if ssl_enabled and not force_http else "http"
+
+    logger.debug('cleep.conf: %s', config)
+    if ssl_enabled and (not os.path.exists(ssl_cert) or not os.path.exists(ssl_key)):
+        logger.error('Invalid path for key or cert file specified in config. Fallback to HTTP')
+        ssl_enabled = False
+
+    return {
+        'host': host,
+        'port': port,
+        'ssl': ssl_enabled,
+        'ssl_key': ssl_key,
+        'ssl_cert': ssl_cert,
+        'auth': auth_enabled and len(auth_accounts) > 0,
+        'url': f'{protocol}://{host}:{port}'
+    }
+
+def symlink_modules(cleep_filesystem):
+    """
+    Create symlink from Cleep python module path to installed modules path
+    Should not fail Cleep startup so it delete existing modules dir if any
+
+    Args:
+        cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+    """
+    cleep_modules_path = os.path.join(os.path.dirname(rpcserver.__file__), 'modules')
+    if os.path.exists(cleep_modules_path) and not os.path.islink(cleep_modules_path):
+        # backup existing modules dir that should not exist
+        cleep_modules_path_backup = os.path.join(os.path.dirname(rpcserver.__file__), 'modules.backup')
+        if os.path.exists(cleep_modules_path_backup):
+            cleep_filesystem.rmdir(cleep_modules_path_backup)
+        cleep_filesystem.move(cleep_modules_path, cleep_modules_path_backup)
+
+    cleep_filesystem.ln(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path, force=True)
 
 if __name__ == '__main__':
     exit_code = 0
@@ -192,16 +285,23 @@ if __name__ == '__main__':
     internal_bus = None
     crash_report = None
     debug_core = False
+    force_http = False
+    cleep_filesystem = CleepFilesystem()
     
     try:
+        # before everything make sure modules are symlinked to Cleep install dir
+        symlink_modules(cleep_filesystem)
+
         # handle command line parameters
         trace_enabled = False
         readonly_enabled = True
         debug_modules = []
         log_stdout = False
         dry_run = False
+        ci_doc_app_name = None
+        ci_check_doc_app_name = None
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, 'hsd:DtNrv', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version'])
+        opts, args = getopt.getopt(argv, 'hsd:DtNrvc:C:', ['help', 'stdout', 'debug=', 'debugcore', 'trace', 'noro', 'dryrun', 'version', 'cidoc=', 'cicheckdoc='])
         for opt, arg in opts:
             if opt in ('-h', '--help'):
                 usage()
@@ -218,6 +318,14 @@ if __name__ == '__main__':
                 readonly_enabled = False
             elif opt in ('-r', '--dryrun'):
                 dry_run = True
+            elif opt in ('-c', '--cidoc'):
+                ci_doc_app_name = arg
+                force_http = True
+                dry_run = True
+            elif opt in ('-C', '--cicheckdoc'):
+                ci_check_doc_app_name = arg
+                force_http = True
+                dry_run = True
             elif opt in ('v', '--version'):
                 print(VERSION)
                 sys.exit(0)
@@ -233,10 +341,12 @@ if __name__ == '__main__':
             LOG_SETTINGS['root']['level'] = logging.TRACE
         dictConfig(LOG_SETTINGS)
         logger = logging.getLogger('Cleep')
+        if any([v is not None for v in [ci_doc_app_name, ci_check_doc_app_name]]):
+            # no logging during ci doc
+            logger.setLevel(logging.FATAL)
         logger.info('========== Cleep v%s started ==========' % VERSION)
 
         # create cleep filesystem singleton (will be saved in bootstrap context)
-        cleep_filesystem = CleepFilesystem()
         if cleep_filesystem.is_readonly_fs:
             logger.info('Cleep is running on read-only feature enabled filesystem')
         if not readonly_enabled:
@@ -245,6 +355,9 @@ if __name__ == '__main__':
 
         # load and check config file
         config = load_config(cleep_filesystem)
+
+        # prepare rpc config (shared in bootstrap)
+        rpc_config = get_rpc_config(config, force_http)
 
         # set debug level after config reading
         if config['debug']['trace_enabled']:
@@ -295,7 +408,8 @@ if __name__ == '__main__':
             cleep_filesystem,
             crash_report,
             critical_resources,
-            drivers
+            drivers,
+            rpc_config,
         )
 
         # configure brokers
@@ -332,16 +446,18 @@ if __name__ == '__main__':
         debug = False
         if trace_enabled or debug_modules.count('rpc')==1:
             debug = True
-        rpcserver.configure({
-            'host': config['rpc']['rpc_host'],
-            'port': config['rpc']['rpc_port'],
-            'ssl_key': config['rpc']['rpc_key'],
-            'ssl_cert': config['rpc']['rpc_cert'],
-        }, bootstrap, inventory, debug)
+        rpcserver.configure(rpc_config, bootstrap, inventory, debug)
 
         if dry_run:
-            timer = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
-            timer.start()
+            timer_stop_server = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
+            timer_stop_server.start()
+        if ci_doc_app_name:
+            timer_generate_doc = Timer(CI_DOC_TIMEOUT, generate_app_documentation, [ci_doc_app_name])
+            timer_generate_doc.start()
+        if ci_check_doc_app_name:
+            timer_check_doc = Timer(CI_DOC_TIMEOUT, check_app_documentation, [ci_check_doc_app_name])
+            timer_check_doc.start()
+
         rpcserver.start()
 
     except getopt.GetoptError as error:

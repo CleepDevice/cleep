@@ -643,7 +643,7 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
         self.assertTrue(resp.error)
-        self.assertEqual(resp.message, 'command_with_params() missing 1 required positional argument: \'p2\'')
+        self.assertEqual(resp.message, 'Some command parameters are missing')
 
     def test_send_command_to_unknown_module(self):
         self._init_context()
@@ -719,7 +719,7 @@ class BusClientTests(unittest.TestCase):
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNotNone(resp)
         self.assertTrue(resp.error)
-        self.assertEqual(resp.message, 'command_with_params() missing 1 required positional argument: \'p2\'')
+        self.assertEqual(resp.message, 'Some command parameters are missing')
 
     def test_send_command_to_myself_invalid_command(self):
         self._init_context()

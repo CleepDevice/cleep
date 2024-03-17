@@ -1,9 +1,12 @@
 <html>
 <head>
     <title>Cleep</title>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/materialdesignicons.min.css?cleepversion"/>
+    <link rel="stylesheet" href="css/brand.css?cleepversion"/>
     <link rel="stylesheet" href="css/roboto-fonts.css?cleepversion">
     <link rel="stylesheet" href="css/angular-material.min.css?cleepversion"/>
     <link rel="stylesheet" href="css/md-data-table.min.css?cleepversion"/>
@@ -22,34 +25,26 @@
             <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
                 <div class="toolbar-spacer"></div>
                 <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
-                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
                     <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
                 </div>
                 <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
-                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
-                    <h1 style="padding-left:5px;" class="md-title">{{mainCtl.hostname}}</h1>
+                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
+                    <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
                 </div>
                 <div flex></div>
-                <app-toolbar></app-toolbar>
                 <div layout="row" layout-align="end center">
-                    <md-button href="#!dashboard" class="md-raised" aria-label="Dashboard">
-                        <md-icon md-svg-icon="view-dashboard"></md-icon>
-                        <span>Dashboard</span>
-                    </md-button>
-                    <md-button href="#!modules" class="md-raised" aria-label="Apps">
-                        <md-icon md-svg-icon="apps"></md-icon>
-                        <span>Apps</span>
-                    </md-button>
+                    <cl-toolbar></cl-toolbar>
                 </div>
                 <div class="toolbar-spacer"></div>
             </div>
-            <div loading-bar-directive></div>
+            <cleep-loading-bar></cleep-loading-bar>
 
             <!-- page content -->
             <div ng-view></div>
 
             <!-- action button -->
-            <div fab-button></div>
+            <cl-app-fab></cl-app-fab>
 
         </div>
 
@@ -80,7 +75,7 @@
     <script src="js/libs/angularjs-gauge.min.js?cleepversion"></script>
 
     <!-- application -->
-    <script src="js/tools/helpers.js?cleepversion"></script>
+    <script src="js/libs/helpers.js?cleepversion"></script>
     <script src="js/app.js?cleepversion"></script>
     <script src="js/app.configs.js?cleepversion"></script>
     <script src="js/app.filters.js?cleepversion"></script>
@@ -89,18 +84,17 @@
     <script src="js/services/cleep.js?cleepversion"></script>
     <script src="js/services/confirm.js?cleepversion"></script>
     <script src="js/services/dialog.js?cleepversion"></script>
-    <script src="js/services/appToolbar.js?cleepversion"></script>
-    <script src="js/tools/fabButton/fabButton.js?cleepversion"></script>
-    <script src="js/tools/uploadFile/uploadFile.js?cleepversion"></script>
-    <script src="js/tools/renderersSelector/renderersSelector.js?cleepversion"></script>
-    <script src="js/tools/loadingBar/loadingBar.js?cleepversion"></script>
-    <script src="js/tools/moduleImage/moduleImage.js?cleepversion"></script>
-    <script src="js/tools/appToolbar/appToolbar.js?cleepversion"></script>
-    <script src="js/settings/modules/modules.js?cleepversion"></script>
-    <script src="js/settings/module/module.js?cleepversion"></script>
-    <script src="js/settings/page/page.js?cleepversion"></script>
-    <script src="js/settings/install/install.js?cleepversion"></script>
-    <script src="js/dashboard/dashboard.js?cleepversion"></script>
+    <script src="js/app/modules/modules.js?cleepversion"></script>
+    <script src="js/app/module/module.js?cleepversion"></script>
+    <script src="js/app/page/page.js?cleepversion"></script>
+    <script src="js/app/install/install.js?cleepversion"></script>
+    <script src="js/app/dashboard/dashboard.js?cleepversion"></script>
+    <script src="js/app/components/components.js?cleepversion"></script>
+
+    <!-- components -->
+    <script src="js/components/config.components.js?cleepversion"></script>
+    <script src="js/components/widget.components.js?cleepversion"></script>
+    <script src="js/components/ui.components.js?cleepversion"></script>
 
 </body>
 </html>

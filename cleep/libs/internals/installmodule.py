@@ -25,6 +25,7 @@ PATH_SCRIPTS = "/opt/cleep/scripts"
 PATH_INSTALL = "/opt/cleep/install"
 PATH_APP_ASSET = "/var/opt/cleep/modules/asset"
 PATH_APP_BIN = "/var/opt/cleep/modules/bin"
+PATH_APP_BACKEND = "/opt/cleep/"
 ARCHIVE_FRONTEND_DIR = "frontend/"
 ARCHIVE_BACKEND_DIR = "backend/"
 ARCHIVE_ASSET_DIR = "asset/"
@@ -158,7 +159,8 @@ class CommonProcess(threading.Thread):
         Args:
             script_path (string): script path
 
-        Return
+        Returns:
+            bool: True if script execution succeed, False otherwise
         """
         # init
         os.chmod(script_path, stat.S_IEXEC)
@@ -171,7 +173,7 @@ class CommonProcess(threading.Thread):
             script_path,
             self._script_callback,
             self._script_terminated_callback,
-            exec_dir,
+            { 'exec_dir': exec_dir },
         )
         console.start()
 
@@ -296,7 +298,6 @@ class UninstallModule(CommonProcess):
         self.status = self.STATUS_IDLE
         self.update_process = update_process
         self.force_uninstall = force_uninstall
-        self.cleep_path = os.path.dirname(inspect.getfile(CleepModule))
         self.module_name = module_name
         self.module_infos = module_infos
 
@@ -337,7 +338,7 @@ class UninstallModule(CommonProcess):
 
     def _run_script(self, context, script):
         """
-        Execute preinst.sh script
+        Execute specified script
 
         Args:
             context (Context): install context
@@ -548,7 +549,7 @@ class UninstallModule(CommonProcess):
             # clean stuff
             try:
                 # clean backend
-                path = os.path.join(self.cleep_path, "modules", self.module_name)
+                path = os.path.join(PATH_APP_BACKEND, "modules", self.module_name)
                 if path and os.path.exists(path):
                     self.cleep_filesystem.rmdir(path)
                 # clean frontend
@@ -634,7 +635,6 @@ class InstallModule(CommonProcess):
         # members
         self.update_process = update_process
         self.status = self.STATUS_IDLE
-        self.cleep_path = os.path.dirname(inspect.getfile(CleepModule))
         self.module_name = module_name
         self.module_infos = module_infos
         self.error = ""
@@ -1015,7 +1015,7 @@ class InstallModule(CommonProcess):
             str: copied filepath, None otherwise
         """
         src_path = os.path.join(context.extract_path, archive_file)
-        dst_path = os.path.join(self.cleep_path, archive_file).replace(ARCHIVE_BACKEND_DIR, "")
+        dst_path = os.path.join(PATH_APP_BACKEND, archive_file).replace(ARCHIVE_BACKEND_DIR, "")
         self.logger.trace(f"Copy backend src={src_path} dst={dst_path}")
 
         # check file overwritings

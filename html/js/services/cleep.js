@@ -22,6 +22,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.events = {};
     self.drivers = {};
     self.modulesPath = 'js/modules/';
+    self.widgetConfigs = {};
 
     /**
      * Load Cleep config
@@ -31,7 +32,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
         return rpcService.getConfig()
             .then(function(resp) {
-                config = resp;
+                config = resp.data;
                 return self.refreshModulesUpdates();
             })
             .then(function() {
@@ -46,7 +47,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
                 // load installable modules if necessary
                 if(Object.keys(self.installableModules).length>0) {
-                    return rpcService.getModules(true);
+                    return self.getInstallableModules();
                 } else {
                     return Promise.resolve(null);
                 }
@@ -72,23 +73,23 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             'css': []
         };
 
-        if( !desc || !desc.global ) {
+        if (!desc || !desc.global) {
             return files;
         }
 
         // get global files
-        if( desc.global && desc.global.js ) {
-            for( var i=0; i<desc.global.js.length; i++ ) {
+        if (desc.global && desc.global.js) {
+            for (var i=0; i<desc.global.js.length; i++) {
                 files.js.push(self.modulesPath + module + '/' + desc.global.js[i]);
             }
         }
-        if( desc.global && desc.global.html ) {
-            for( var i=0; i<desc.global.html.length; i++ ) {
+        if (desc.global && desc.global.html) {
+            for (var i=0; i<desc.global.html.length; i++) {
                 files.html.push(self.modulesPath + module + '/' + desc.global.html[i]);
             }
         }
-        if( desc.global && desc.global.css ) {
-            for( var i=0; i<desc.global.css.length; i++ ) {
+        if (desc.global && desc.global.css) {
+            for (var i=0; i<desc.global.css.length; i++) {
                 files.css.push(self.modulesPath + module + '/' + desc.global.css[i]);
             }
         }
@@ -105,8 +106,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         Object.assign(source, update);
 
         // delete non existing items from update
-        for( var key of Object.keys(source) ) {
-            if( !(key in update) ) {
+        for (var key of Object.keys(source)) {
+            if (!(key in update)) {
                 delete source[key];
             }
         }
@@ -153,7 +154,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var d = $q.defer();
 
         // fill templates promises
-        for( var i=0; i<htmlFiles.length; i++ ) {
+        for (var i=0; i < htmlFiles.length; i++) {
             promises.push($http.get(htmlFiles[i]));
         }
 
@@ -161,12 +162,12 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         $q.all(promises)
             .then(function(templates) {
                 // check if templates available
-                if( !templates ) {
+                if (!templates) {
                     return $q.resolve();
                 }
 
                 // cache templates
-                for( var i=0; i<templates.length; i++ ) {
+                for (var i=0; i < templates.length; i++) {
                     var templateName = htmlFiles[i].replace(modulePath, '');
                     $templateCache.put(templateName, templates[i].data);
                 }
@@ -213,23 +214,25 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                 self.modules[module].desc = resp.data;
 
                 // set module icon
-                self.modules[module].icon = 'bookmark';
-                if( resp.data.icon ) {
-                    self.modules[module].icon = resp.data.icon;
+                self.modules[module].icon = resp.data?.icon ?? 'bookmark';
+
+                // store widget configs
+                for (const [deviceType, config] of Object.entries(resp.data.widgets || {})) {
+                    self.__storeWidgetConfig(deviceType, config);
                 }
 
                 // module "has config" flag
-                self.modules[module].hasConfig = Object.keys(resp.data.config).length!==0;
+                self.modules[module].hasConfig = Object.keys(resp.data.config).length !== 0;
 
                 // load module global objects (components, widgets and services)
                 files = self.__getModuleGlobalFiles(module, resp.data);
-                if( files.js.length===0 && files.html.length===0 ) {
+                if (files.js.length === 0 && files.html.length === 0) {
                     // no file to lazyload, stop chain here
                     return $q.reject('stop-chain');
                 };
 
                 // load css files asynchronously (no further process needed)
-                if( files.css.length>0 ) {
+                if (files.css.length > 0) {
                     self.__loadCssFiles(files.css);
                 }
 
@@ -251,7 +254,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                 return self.__loadJsFiles(files.js);
 
             }, function(err) {
-                if( err!='stop-chain' ) {
+                if (err !== 'stop-chain') {
                     // error occured during html or css files loading
                     console.error('Error loading modules html files:', err);
                 } else {
@@ -260,15 +263,15 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             })
             .then(function() {
                 // force getting service from injector to make them executed as soon as possible
-                for( var i=0; i<files.js.length; i++ ) {
-                    if( files.js[i].indexOf('service')>=0 ) {
+                for (var i=0; i<files.js.length; i++) {
+                    if (files.js[i].indexOf('service') >= 0) {
                         // guess service name from filename
                         serviceName = files.js[i].replace(/^.*[\\\/]/, '');
                         serviceName = serviceName.replace('.js', '');
                         serviceName = self.__camelize(serviceName);
 
                         // make sure
-                        if( $injector.has(serviceName) ) {
+                        if ($injector.has(serviceName)) {
                             $injector.get(serviceName, function(err) {
                                 console.error('Error occured during service loading:', err)
                             });
@@ -277,7 +280,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                 }
 
             }, function(err) {
-                if( err!='stop-chain' ) {
+                if (err != 'stop-chain') {
                     // error occured during js files loading
                     console.error('Error loading modules js files:', err);
                 } else {
@@ -304,9 +307,9 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         // init
         var deferred = $q.defer();
 
-        if( self.__deferredModules===null ) {
+        if (self.__deferredModules === null) {
             // module config already loaded, resolve it if available
-            if( self.modules[module] ) {
+            if (self.modules[module]) {
                 deferred.resolve(self.modules[module].desc);
             } else {
                 console.error('Unable to get description of unknown module "' + module + '"');
@@ -317,7 +320,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             // module not loaded, wait for it
             self.__deferredModules.promise
                 .then(function() {
-                    if( self.modules[module] ) {
+                    if (self.modules[module]) {
                         deferred.resolve(self.modules[module].desc);
                     } else {
                         deferred.reject('Module "' + module + '" does not exist');
@@ -340,8 +343,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
 
         // load description for each local modules
         var promises = [];
-        for( module in self.modules ) {
-            if( (self.modules[module].installed && self.modules[module].started) || self.modules[module].library ) {
+        for (module in self.modules) {
+            if ((self.modules[module].installed && self.modules[module].started) || self.modules[module].library) {
                 promises.push(self.__loadModule(module));
             }
         }
@@ -356,7 +359,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             })
             .finally(function() {
                 // no deferred during reboot/restart, handle this case
-                if( self.__deferredModules ) {
+                if (self.__deferredModules) {
                     self.__deferredModules.resolve();
                     self.__deferredModules = null;
                 }
@@ -368,13 +371,12 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @param module: module name to return configuration
      * @return promise: promise is resolved when configuration is loaded
      */
-    self.getModuleConfig = function(module)
-    {
+    self.getModuleConfig = function(module) {
         var deferred = $q.defer();
 
-        if( self.__deferredModules===null ) {
+        if (self.__deferredModules === null) {
             // module config already loaded, resolve it if available
-            if( self.modules[module] ) {
+            if (self.modules[module]) {
                 deferred.resolve(self.modules[module].config);
             } else {
                 console.error('Specified module "' + module + '" has no configuration');
@@ -398,14 +400,13 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @param module: module name
      * @return promise
      */
-    self.reloadModuleConfig = function(module)
-    {
+    self.reloadModuleConfig = function(module) {
         var deferred = $q.defer();
 
-        if( self.modules[module] ) {
+        if (self.modules[module]) {
             rpcService.sendCommand('get_module_config', module, null, 30)
                 .then(function(resp) {
-                    if( resp.error===false ) {
+                    if (resp.error === false) {
                         // save new config
                         self.modules[module].config = resp.data;
                         deferred.resolve(resp.data);
@@ -431,17 +432,16 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     /**
      * Get list of installable modules
      */
-    self.getInstallableModules = function()
-    {
+    self.getInstallableModules = function() {
         var deferred = $q.defer();
 
-        if( Object.keys(self.installableModules).length>0 ) {
+        if (Object.keys(self.installableModules).length > 0) {
             deferred.resolve(self.installableModules);
         } else {
             // installable modules not loaded, load it
             rpcService.getModules(true)
-                .then(function(modules) {
-                    self.__syncObject(self.installableModules, modules);
+                .then(function(resp) {
+                    self.__syncObject(self.installableModules, resp.data);
                 }, function() {
                     deferred.reject();
                 });
@@ -472,15 +472,12 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         for (var module in devices) {
             // add specific ui stuff
             for (var uuid in devices[module]) {
-                // add widget infos
-                devices[module][uuid].__widget = {
-                    mdcolors: '{background:"default-primary-300"}'
-                };
-
                 // add module which handles this device
                 devices[module][uuid].module = module;
-                // add if widget is hidden or not
-                devices[module][uuid].hidden = self.modules[module].library ? true : false;
+
+                // update widget hidden status
+                const hidden = self.modules[module].library ? true : Boolean(devices[module][uuid].hidden);
+                devices[module][uuid].hidden = hidden;
             }
 
             // store device
@@ -489,25 +486,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             }
         }
 
-        self.syncVar(self.devices, newDevices);
-    };
-
-    /**
-     * Synchronize non primitive variable content preserving variable reference
-     * It should be used only for object or array but it works for number, string... too
-     */
-    self.syncVar = function(variable, newContent) {
-        if (Array.isArray(variable)) {
-            variable.splice(0, variable.length);
-            Object.assign(variable, newContent);
-        } else if (typeof variable === 'object') {
-            for (let prop in variable) {
-                delete variable[prop];
-            }
-            Object.assign(variable, newContent);
-        } else {
-            variable = newContent;
-        }
+        self.devices = newDevices;
     };
 
     /**
@@ -518,8 +497,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var deferred = $q.defer();
 
         rpcService.getDevices()
-            .then(function(devices) {
-                self._setDevices(devices);
+            .then(function(resp) {
+                self._setDevices(resp.data);
                 deferred.resolve(self.devices);
             }, function() {
                 deferred.reject();
@@ -542,7 +521,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self._setRenderers = function(renderers) {
         self.renderers = renderers;
         // no deferred during reboot/restart, handle this case
-        if( self.__deferredRenderers ) {
+        if (self.__deferredRenderers) {
             self.__deferredRenderers.resolve();
             self.__deferredRenderers = null;
         }
@@ -555,7 +534,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.getRenderers = function() {
         var deferred = $q.defer();
 
-        if( self.__deferredRenderers===null ) {
+        if (self.__deferredRenderers === null) {
             // renderers already loaded, return collection
             deferred.resolve(self.renderers);
         } else {
@@ -577,7 +556,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self._setEvents = function(events) {
         self.events = events;
         // no deferred during reboot/restart, handle this case
-        if( self.__deferredEvents ) {
+        if (self.__deferredEvents) {
             self.__deferredEvents.resolve();
             self.__deferredEvents = null;
         }
@@ -590,7 +569,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.getEvents = function() {
         var deferred = $q.defer();
 
-        if( self.__deferredEvents===null ) {
+        if (self.__deferredEvents === null) {
             // events already loaded, return collection
             deferred.resolve(self.events);
         } else {
@@ -612,7 +591,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self._setDrivers = function(drivers) {
         self.drivers = drivers;
         // no deferred during reboot/restart, handle this case
-        if( self.__deferredDrivers ) {
+        if (self.__deferredDrivers) {
             self.__deferredDrivers.resolve();
             self.__deferredDrivers = null;
         }
@@ -625,7 +604,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.getDrivers = function() {
         var deferred = $q.defer();
 
-        if( self.__deferredDrivers===null ) {
+        if (self.__deferredDrivers === null) {
             // drivers already loaded, return collection
             deferred.resolve(self.drivers);
         } else {
@@ -648,8 +627,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         var deferred = $q.defer();
 
         rpcService.getDrivers()
-            .then(function(drivers) {
-                self._setDrivers(drivers);
+            .then(function(resp) {
+                self._setDrivers(resp.data);
                 deferred.resolve(self.drivers);
             }, function() {
                 deferred.reject();
@@ -664,8 +643,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @return true if module is loaded, false otherwise
      */
     self.isAppInstalled = function(app) {
-        for( var name in self.modules )  {
-            if( name===app && self.modules[name].installed ) {
+        for (var name in self.modules) {
+            if (name === app && self.modules[name].installed) {
                 return true;
             }
         }
@@ -676,7 +655,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * Returns renderers of specified type
      */
     self.getRenderersOfType = function(type) {
-        if( self.renderers[type] ) {
+        if (self.renderers[type]) {
             return self.renderers[type];
         }
 
@@ -695,7 +674,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.reboot = function() {
-        if( delay===null || delay===undefined ) {
+        if (delay === null || delay === undefined) {
             delay = 0;
         }
         return rpcService.sendCommand('reboot_device', 'system', {'delay': delay});
@@ -706,7 +685,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.poweroff = function() {
-        if( delay===null || delay===undefined ) {
+        if (delay === null || delay === undefined) {
             delay = 0;
         }
         return rpcService.sendCommand('poweroff_device', 'system', {'delay': delay});
@@ -717,7 +696,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * This function calls system module function to avoid adhesion of system service from angular app
      */
     self.restart = function(delay) {
-        if( delay===null || delay===undefined ) {
+        if (delay === null || delay === undefined) {
             delay = 0;
         }
         return rpcService.sendCommand('restart_cleep', 'system', {'delay': delay});
@@ -770,12 +749,40 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     $rootScope.$on('core.apps.updated', function(event, uuid, params) {
 		// refresh list of installable apps
         rpcService.getModules(true)
-            .then(function(modules) {
-                self.__syncObject(self.installableModules, modules);
+            .then(function(resp) {
+                self.__syncObject(self.installableModules, resp.data);
             }, function() {
                 deferred.reject();
             });
     });
 
+    self.__storeWidgetConfig = function(deviceType, config) {
+        if (self.widgetConfigs[deviceType]) {
+            // do not override existing template
+            return;
+        }
+
+        self.widgetConfigs[deviceType] = config;
+    };
+
+    self.getWidgetConfig = function(deviceType) {
+        const config = self.widgetConfigs[deviceType];
+        return config && JSON.parse(JSON.stringify(config));
+    };
+
+    self.deviceRenderer = function (deviceType) {
+        const directiveName = deviceType + 'Widget';
+        const isAngularWidget = $injector.has(directiveName+'Directive');
+        if (isAngularWidget) {
+            return 'angular|' + directiveName;
+        }
+
+        const hasWidgetConf = self.getWidgetConfig(deviceType);
+        if (Boolean(hasWidgetConf)) {
+            return 'conf'
+        }
+
+        return undefined
+    };
 }]);
 

@@ -158,7 +158,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
      * Get all drivers
      */
     self.getDrivers = function() {
-        var deferred = $q.defer();
+        var d = $q.defer();
 
         $http({
             method: 'POST',
@@ -174,7 +174,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             deferred.reject('request failed');
         });
 
-        return deferred.promise;
+        return d.promise;
     };
 
     /**
@@ -207,7 +207,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
      * @return boolean: true if error was handled, false otherwise
      */
     self._handleRespErrors = function(resp, defer) {
-        if (resp && resp.data && resp.data.error) {
+        if (resp?.data?.error) {
             if (resp.data.message.match(self.invalidApplicationRegexp)) {
                 // specific case with invalid app loaded, redirect to apps list
                 $window.location.href = '#!/modules';
@@ -216,7 +216,7 @@ function($http, $q, toast, $base64, $httpParamSerializer, $window) {
             console.error('Request failed: ' + resp.data.message);
             toast.error(resp.data.message || 'No error message');
             if (defer) {
-                defer.reject('request failed');
+                defer.reject(resp.data.message || 'Request failed');
             }
             return true;
         }

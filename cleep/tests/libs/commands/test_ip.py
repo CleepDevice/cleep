@@ -8,7 +8,7 @@ from ip import Ip
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

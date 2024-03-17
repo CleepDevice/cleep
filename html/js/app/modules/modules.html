@@ -1,0 +1,180 @@
+<md-content layout="column">
+
+    <!-- toolbar -->
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div>
+            <md-button hide="" show-gt-xs="" href="#!dashboard" class="md-raised">
+                <cl-icon cl-icon="arrow-left"></cl-icon>
+                <md-tooltip>Back to dashboard</md-tooltip>
+                Back
+            </md-button>
+            <md-button hide-gt-xs="" href="#!dashboard" class="md-raised cl-button-sm">
+                <cl-icon cl-icon="arrow-left"></cl-icon>
+                <md-tooltip>Back to dashboard</md-tooltip>
+            </md-button>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div>
+            <h1 class="md-title">Installed apps</h1>
+        </div>
+        <div flex></div>
+        <div layout="row" layout-align="end center">
+            <cl-icon cl-icon="magnify"></cl-icon>
+            <md-input-container hide="" show-gt-xs="" class="md-icon-float md-block no-error-spacer">
+                <input ng-model="modulesCtl.search['$']" type="text">
+            </md-input-container>
+            <md-input-container hide-gt-xs="" class="md-icon-float md-block no-error-spacer">
+                <input ng-model="modulesCtl.search['$']" type="text" size="6">
+            </md-input-container>
+            <md-button class="md-icon-button" ng-click="modulesCtl.clearSearch()">
+                <cl-icon cl-icon="close"></cl-icon>
+            </md-button>
+        </div>
+    </div>
+
+    <!-- applications list -->
+    <div layout="row" layout-wrap>
+        <div
+            id="mod-{{module.name}}"
+            ng-if="modulesCtl.displayedModules.length"
+            ng-repeat="module in modulesCtl.displayedModules | filter:modulesCtl.search | orderBy: 'name'"
+            flex-xl="25" flex-lg="33" flex-md="50" flex="100"
+        >
+
+            <md-card class="widget-bg-color">
+
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            {{(module.label || module.name) | firstUpper}}
+                        </span>
+                        <span class="md-subhead module-desc">
+                            {{module.description || 'No description'}}
+                        </span>
+                    </md-card-title-text>
+                    <md-card-title-media>
+                        <div class="md-media-sm">
+                            <cl-icon cl-icon="{{module.icon || 'help-rhombus'}}" cl-class="icon-xl" style="padding:4px;"></cl-icon>
+                        </div>
+                    </md-card-title-media>
+                </md-card-title>
+
+                <!-- progress bar -->
+                <md-card-content style="padding:0px; max-height:5px; min-height:5px;">
+                    <!-- initializing app process -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===0"
+                        md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- app process in progress -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress>0 && modulesCtl.cleepService.modulesUpdates[module.name].update.progress<100"
+                        ng-value="modulesCtl.cleepService.modulesUpdates[module.name].update.progress"
+                        md-mode="determinate">
+                    </md-progress-linear>
+                    <!-- finalizing app process -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===100"
+                        md-mode="indeterminate">
+                    </md-progress-linear>
+                    <!-- app process terminated -->
+                    <md-progress-linear
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && modulesCtl.cleepService.modulesUpdates[module.name].update.progress===100"
+                        ng-value="100"
+                        md-mode="determinate">
+                    </md-progress-linear>
+                </md-card-content>
+
+                <md-card-actions layout="row" layout-align="end center">
+
+                    <!-- process messages -->
+                    <md-button
+                        class="md-accent"
+                        disabled="disabled"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && !modulesCtl.cleepService.modulesUpdates[module.name].update.failed"
+                    >
+                        <cl-icon cl-icon="reload-alert"></cl-icon>
+                        <span>Success please restart</span>
+                    </md-button>
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && modulesCtl.cleepService.modulesUpdates[module.name].update.failed"
+                        ng-click="modulesCtl.gotoUpdateModule()"
+                    >
+                        <cl-icon cl-icon="file-document-outline"></cl-icon>
+                        <span>Failure see logs</span>
+                    </md-button>
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                    >
+                        <cl-icon cl-icon="cog-refresh-outline"></cl-icon>
+                        <span ng-if="modulesCtl.cleepService.modulesUpdates[module.name].updatable">Updating...</span>
+                        <span ng-if="!modulesCtl.cleepService.modulesUpdates[module.name].updatable">Uninstalling...</span>
+                    </md-button>
+
+                    <!-- open module page -->
+                    <md-button
+                        hide="" show-gt-xs=""
+                        ng-if="modulesCtl.cleepService.modules[module.name].hasConfig"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-href="{{'#!module/'+module.name}}"
+                    >
+                        <cl-icon cl-icon="open-in-app"></cl-icon>
+                        <span>Open</span>
+                    </md-button>
+                    <md-button
+                        hide-gt-xs="" class="cl-button-sm"
+                        ng-if="modulesCtl.cleepService.modules[module.name].hasConfig"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-href="{{'#!module/'+module.name}}"
+                    >
+                        <cl-icon cl-icon="open-in-app"></cl-icon>
+                        <md-tooltip>Back to modules list</md-tooltip>
+                    </md-button>
+
+                    <!-- module not started-->
+                    <md-button
+                        ng-if="!modulesCtl.cleepService.modules[module.name].started"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-click="modulesCtl.showNotStartedDialog(modulesCtl.cleepService.modules[module.name])"
+                        class="md-accent"
+                    >
+                        <cl-icon cl-icon="alert-decagram"></cl-icon>
+                        <span>Not started</span>
+                    </md-button>
+
+                    <!-- update button -->
+                    <md-button
+                        class="md-accent"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name].updatable"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-click="modulesCtl.showModuleUpdateDialog(modulesCtl.cleepService.modulesUpdates[module.name])"
+                        class="md-accent"
+                    >
+                        <cl-icon cl-icon="update"></cl-icon>
+                        <span>Update</span>
+                    </md-button>
+
+                    <!-- uninstall module -->
+                    <md-button
+                        ng-if="!modulesCtl.cleepService.modules[module.name].core"
+                        ng-disabled="modulesCtl.cleepService.modulesUpdates[module.name].pending || modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-click="modulesCtl.uninstallModule(module.name)"
+                    >
+                        <cl-icon cl-icon="delete"></cl-icon>
+                    </md-button>
+
+                </md-card-actions>
+
+            </md-card>
+
+        </div>
+    </div>
+ 
+</md-content>
+

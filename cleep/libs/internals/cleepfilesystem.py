@@ -399,6 +399,8 @@ class CleepFilesystem():
             list: file lines or None if errors
         """
         fp = None
+        if encoding is None:
+            encoding = self.get_default_encoding()
         try:
             fp = self.open(path, 'r', encoding)
             return fp.readlines()
@@ -407,7 +409,7 @@ class CleepFilesystem():
             self.logger.exception('Unable to get content of file "%s":' % path)
             self.__report_exception({
                 'message': 'Unable to get content of file "%s"' % path,
-                'encoding': encoding or self.get_default_encoding(),
+                'encoding': encoding,
                 'path': path
             })
             return None
@@ -429,7 +431,7 @@ class CleepFilesystem():
         """
         lines = self.read_data(path, encoding)
         try:
-            lines = json.loads('\n'.join(lines), encoding=encoding)
+            lines = json.loads('\n'.join(lines))
 
         except:
             self.logger.exception('Unable to parse file "%s" content as json:' % (path))
@@ -793,7 +795,6 @@ class CleepFilesystem():
             bool: True if operation succeed
         """
         return self.mkdir(path, True)
-
 
     def rsync(self, src, dst, options='-ah --delete --exclude=".*"'):
         """

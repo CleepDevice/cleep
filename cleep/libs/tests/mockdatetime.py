@@ -1,5 +1,5 @@
 import datetime
-import mock
+from unittest.mock import patch
 
 # Allow to mock datetime object that is not mutable
 # code from https://solidgeargroup.com/en/mocking-the-time/
@@ -37,5 +37,5 @@ def mock_datetime(target, datetime_module):
     import logging
     MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
 
-    return mock.patch.object(datetime_module, 'datetime', MockedDatetime)
+    return patch.object(datetime_module, 'datetime', MockedDatetime)
 

@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', '')
 from coredevicedeletedevent import CoreDeviceDeletedEvent
 import logging
 import unittest
-from mock import Mock
+from unittest.mock import Mock
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

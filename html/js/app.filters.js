@@ -10,7 +10,7 @@ var Cleep = angular.module('Cleep');
  */
 Cleep.filter('capitalize', function() {
     return function(str) {
-        return (!!str) ? str.charAt(0).toUpperCase() + str.substr(1).toLowerCase() : '';
+        return (!!str) ? str.charAt(0).toUpperCase() + str.substring(1).toLowerCase() : '';
     };
 });
 
@@ -20,7 +20,7 @@ Cleep.filter('capitalize', function() {
 Cleep.filter('serviceName', function() {
     return function(str) {
         var tmp = str.replace('Service','');
-        return (!!tmp) ? tmp.charAt(0).toUpperCase() + tmp.substr(1).toLowerCase() : '';
+        return (!!tmp) ? tmp.charAt(0).toUpperCase() + tmp.substring(1).toLowerCase() : '';
     };
 });
 
@@ -29,22 +29,22 @@ Cleep.filter('serviceName', function() {
  */
 Cleep.filter('deviceType', function($filter) {
     return function(devices, type) {
-        if( type ) {
+        if (type) {
             return $filter("filter")(devices, function(device) {
-                return device.__type==type;
+                return device.__type === type;
             });
         }
     };
 });
 
 /**
- * Device service filter
+ * Device module filter
  */
 Cleep.filter('filterDeviceByModule', function($filter) {
     return function(devices, module) {
         if( module ) {
             return $filter("filter")(devices, function(device) {
-                return device.module==module;
+                return device.module === module;
             });
         }
     };
@@ -55,21 +55,13 @@ Cleep.filter('filterDeviceByModule', function($filter) {
  */
 Cleep.filter('hrDatetime', function($filter) {
     return function(ts, shortYear) {
-        if( angular.isUndefined(ts) || !ts )
-        {
+        if (angular.isUndefined(ts) || !ts) {
             return '-';
         }
-        else
-        {
-            if( angular.isUndefined(shortYear) )
-            {
-                return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
-            }
-            else
-            {
-                return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
-            }
+        if (angular.isUndefined(shortYear)) {
+            return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
         }
+        return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
     };
 });
 
@@ -78,18 +70,13 @@ Cleep.filter('hrDatetime', function($filter) {
  */
 Cleep.filter('hrTime', function($filter) {
     return function(ts, withSeconds) {
-        if( angular.isUndefined(ts) || !ts )
-        {
+        if (angular.isUndefined(ts) || !ts) {
             return '-';
         }
-        else
-        {
-            if( !angular.isUndefined(withSeconds) ) {
-                return moment.unix(ts).format('HH:mm:ss');
-            } else {
-                return moment.unix(ts).format('HH:mm');
-            }
+        if( !angular.isUndefined(withSeconds) ) {
+            return moment.unix(ts).format('HH:mm:ss');
         }
+        return moment.unix(ts).format('HH:mm');
     };
 });
 
@@ -98,37 +85,35 @@ Cleep.filter('hrTime', function($filter) {
  */
 Cleep.filter('hrMilliseconds', function($filter) {
     return function(ts) {
-        if( angular.isUndefined(ts) || !ts )
-        {
+        if (angular.isUndefined(ts) || !ts) {
             return '-';
         }
-        else
-        {
-            return moment.unix(ts).format('HH:mm:ss.SSS');
-        }
+        return moment.unix(ts).format('HH:mm:ss.SSS');
     };
 });
 
 /**
  * Temperature to string (with unit)
  */
-Cleep.filter('temperature', function($filter) {
+Cleep.filter('hrTemperature', function($filter) {
     return function(temperature, unit) {
         result = '';
 
-        if( angular.isUndefined(temperature) || temperature===null )
-            result = '?';
-        else
+        if (angular.isUndefined(temperature) || temperature===null) {
+            result = '-';
+        } else {
             result = Number(temperature).toFixed(1);
+        }
 
-        if( angular.isUndefined(unit) || unit===null )
+        if (angular.isUndefined(unit) || unit===null) {
             result += '?';
-        else if( unit=='celsius' )
+        } else if (unit == 'celsius') {
             result += '°C';
-        else if( unit=='fahrenheit' )
+        } else if (unit == 'fahrenheit') {
             result += '°F';
-        else
+        } else {
             result += '?';
+        }
 
         return result;
     };
@@ -139,9 +124,9 @@ Cleep.filter('temperature', function($filter) {
  */
 Cleep.filter('graphDialogTitle', function($filter) {
     return function(device) {
-        if( angular.isUndefined(device) || device===null )
+        if (angular.isUndefined(device) || device===null) {
             return 'Sensor graph';
-
+        }
         result = device.type + ' chart of ' + device.name;
         return result.firstUpperCase();
     };
@@ -152,9 +137,9 @@ Cleep.filter('graphDialogTitle', function($filter) {
  */
 Cleep.filter('firstUpper', function($filter) {
     return function(string) {
-        if( angular.isUndefined(string) || string===null )
+        if (angular.isUndefined(string) || string===null) {
             return '';
-
+        }
         return string.firstUpperCase();
     };
 });
@@ -164,16 +149,19 @@ Cleep.filter('firstUpper', function($filter) {
  */
 Cleep.filter('orderObjByKey', function() {
     return function(items, field, reverse) {
-        if (!angular.isObject(items)) return items;
+        if (!angular.isObject(items)) {
+            return items;
+        }
         var filtered = Object.keys(items).sort().reduce(function(a,v) {a[v] = items[v]; return a;}, {});
-        if(reverse) filtered.reverse();
+        if (reverse) {
+            filtered.reverse();
+        }
         return filtered;
     };
 });
 
 /**
  * Add leading zero
- *
  */
 Cleep.filter('padzero', function($filter) {
     return function(value, length, max) {

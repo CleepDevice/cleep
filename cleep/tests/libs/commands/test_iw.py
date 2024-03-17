@@ -10,7 +10,7 @@ from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from cleep.libs.tests.common import get_log_level
-from mock import Mock
+from unittest.mock import Mock
 
 LOG_LEVEL = get_log_level()
 OUTPUT = [

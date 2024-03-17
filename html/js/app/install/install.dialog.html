@@ -1,0 +1,133 @@
+<md-dialog aria-label="Install dialog" flex="75">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Application installation</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="installCtl.closeDialog()" aria-label="Close dialog">
+                <cl-icon cl-icon="close"></cl-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content>
+        <div class="md-dialog-content" layout="row" layout-align="space-between start">
+        
+            <!-- app info -->
+            <div layout="column" layout-align="space-between start" style="width: 180px;">
+                <div style="width:100%; text-align:center; margin-bottom:15px;">
+                    <cl-icon cl-icon="{{ installCtl.moduleToInstall.icon || 'help-rhombus' }}" cl-class="icon-xxxl"></cl-icon>
+                </div>
+                <div class="md-headline" style="width:100%; text-align:center; margin-bottom:30px;">
+                    {{(installCtl.moduleToInstall.label || installCtl.moduleToInstall.name) | firstUpper}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader">Version:</span> {{installCtl.moduleToInstall.version}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader">Author:</span> {{installCtl.moduleToInstall.author}}
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span class="subheader">Metrics:</span>
+                    <a href="https://github.com/tangb/cleep/wiki/Application-metrics" target="_blank">
+                        <cl-icon cl-icon="help-circle-outline" cl-class="icon-xs"></cl-icon>
+                    </a>
+                </div>
+                <div
+                    style="padding-top:15px; text-align:center; width:100%;"
+                    ng-if="installCtl.moduleToInstall.quality"
+                >
+                   <ng-gauge
+                        thresholds="installCtl.gaugeThreshold"
+                        duration="1000"
+                        size="100"
+                        type="semi"
+                        thick="4"
+                        value="installCtl.moduleToInstall.quality"
+                        min="0" max="10"
+                        cap="round"
+                        label="Code quality"
+                        append="/10">
+                    </ng-gauge>
+                </div>
+                <div
+                    style="padding-top:15px; text-align:center; width:100%;"
+                    ng-if="installCtl.moduleToInstall.quality"
+                >
+                    <ng-gauge
+                        thresholds="installCtl.gaugeThreshold"
+                        duration="1000"
+                        size="100"
+                        type="semi"
+                        thick="4"
+                        value="installCtl.moduleToInstall.confidence"
+                        min="0" max="10"
+                        cap="round"
+                        label="Code confidence"
+                        append="/10">
+                    </ng-gauge>
+                </div>
+            </div>
+
+            <div flex>
+                <md-list ng-if="!installCtl.moduleToInstall.local">
+                    <!-- long description -->
+                    <md-subheader style="background-color:white;" class="md-no-sticky">Description</md-subheader>
+                    <md-list-item>
+                        <div layout="column" layout-align="start stretch">
+                            <span ng-if="installCtl.moduleToInstall.longdescription.length>0" ng-bind-html="installCtl.sceLongDescription"></span>
+                            <span ng-if="installCtl.moduleToInstall.longdescription.length===0">No description provided. Please see application links below.</span>
+                            <span ng-if="installCtl.moduleToInstall.urls.info" style="margin-top:15px;">
+                                <a ng-href="{{installCtl.moduleToInstall.urls.info}}" target="_blank">More infos on this application</a>
+                                <cl-icon cl-icon="open-in-new" cl-class="icon-xs"></cl-icon>
+                            </span>
+                        </div>
+                    </md-list-item>
+
+                    <!-- changelog -->
+                    <md-subheader style="background-color:white;" class="md-no-sticky">Changelog</md-subheader>
+                    <md-list-item>
+                        <span ng-if="installCtl.moduleToInstall.changelog.length>0" marked="installCtl.moduleToInstall.changelog"></span>
+                        <span ng-if="installCtl.moduleToInstall.changelog.length===0">No changelog provided</span>
+                    </md-list-item>
+
+                    <!-- screenshots -->
+                    <md-subheader
+                        style="background-color:white;"
+                        class="md-no-sticky"
+                        ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0"
+                    >
+                        Screenshots
+                    </md-subheader>
+                    <md-list-item ng-if="installCtl.moduleToInstall.screenshots && installCtl.moduleToInstall.screenshots.length>0">
+                        <div ng-repeat="screenshot in installCtl.moduleToInstall.screenshots">
+                            <img
+                                ng-src="{{screenshot}"
+                                style="max-height:300px; width:100%; height:100%; object-fit:contain; overflow:hidden; border: 1px solid #E0E0E0; border-radius:5px;"
+                            />
+                        </div>
+                    </md-list-item>
+                </md-list>
+
+                <md-list ng-if="installCtl.moduleToInstall.local">
+                    <md-list-item>
+                        <p>This application has no info because it is locally installed (surely for your developments)</p>
+                    </md-list-item>
+                </md-list>
+            </div>
+
+        </div>
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="installCtl.closeDialog()">
+            <cl-icon cl-icon="close-circle"></cl-icon>
+            Cancel
+        </md-button>
+        <md-button ng-click="installCtl.install(installCtl.moduleToInstall.name)" class="md-accent">
+            <cl-icon cl-icon="plus-circle"></cl-icon>
+            Install
+        </md-button>
+    </md-dialog-actions>
+
+</md-dialog>
+

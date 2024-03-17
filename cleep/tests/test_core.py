@@ -13,7 +13,7 @@ from cleep.libs.internals.rendererprofile import RendererProfile
 from cleep.common import MessageResponse
 import unittest
 import logging
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch, ANY
 import time
 import io
 import copy
@@ -633,10 +633,10 @@ class TestsCleepModule(unittest.TestCase):
         logging.debug(self.r.APP_ASSET_PATH)
         logging.debug(self.r.APP_BIN_PATH)
 
-        self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/DummyCleepModule")
-        self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/DummyCleepModule")
-        self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/DummyCleepModule")
-        self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/DummyCleepModule")
+        self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/dummycleepmodule")
+        self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/dummycleepmodule")
+        self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/dummycleepmodule")
+        self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/dummycleepmodule")
 
     def test_devices_section_exists(self):
         self._init_context()
@@ -866,6 +866,83 @@ class TestsCleepModule(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertTrue('my_command' in commands)
 
+    def test_get_documentation(self):
+        self._init_context()
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
+
+            result = self.r.get_documentation()
+
+            cleepdoc_mock.return_value.get_command_doc.assert_called_with(self.r.my_command)
+            self.assertDictEqual(result, {"my_command": "command doc"})
+
+    def test_get_documentation_use_cache(self):
+        self._init_context()
+        self.r._CleepModule__app_doc = "cached doc"
+
+        result = self.r.get_documentation()
+
+        self.assertEqual(result, "cached doc")
+
+    def test_get_documentation_disable_cache(self):
+        self._init_context()
+        self.r._CleepModule__app_doc = "cached doc"
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
+
+            result = self.r.get_documentation(no_cache=True)
+
+            cleepdoc_mock.return_value.get_command_doc.assert_called_with(self.r.my_command)
+            self.assertDictEqual(result, {"my_command": "command doc"})
+
+    def test_check_documentation(self):
+        self._init_context()
+
+        with patch('core.CleepDoc') as cleepdoc_mock:
+            cleepdoc_mock.return_value.is_command_doc_valid.return_value = "command validity"
+
+            result = self.r.check_documentation()
+
+            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(self.r.my_command, False)
+            self.assertDictEqual(result, {"my_command": "command validity"})
+
+    def test_send_command_advanced(self):
+        self._init_context()
+        resp = MessageResponse(error=False, data="response string", message="")
+        self.r.send_command = Mock(return_value=resp)
+        params = {"param1": "value1", "param2": 123}
+
+        result = self.r.send_command_advanced("mycommand", "dummy", params)
+
+        self.r.send_command.assert_called_with("mycommand", "dummy", params, 3.0)
+        self.assertEqual(result, "response string")
+
+    def test_send_command_advanced_when_error(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="Fatal error")
+        self.r.send_command = Mock(return_value=resp)
+        self.r.logger.error = Mock()
+        params = {"param1": "value1", "param2": 123}
+
+        result = self.r.send_command_advanced("mycommand", "dummy", params)
+
+        self.assertEqual(result, None)
+        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
+
+    def test_send_command_advanced_when_error_with_raise_option(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="Fatal error")
+        self.r.send_command = Mock(return_value=resp)
+        self.r.logger.error = Mock()
+        params = {"param1": "value1", "param2": 123}
+
+        with self.assertRaises(Exception) as cm:
+            self.r.send_command_advanced("mycommand", "dummy", params, raise_exc=True)
+        
+        self.assertEqual(str(cm.exception), "Fatal error")
+        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
 
 
 

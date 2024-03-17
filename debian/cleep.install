@@ -1,5 +1,4 @@
 bin/cleep usr/bin
-bin/cleep_auth usr/bin
 html/* opt/cleep/html/
 conf/* etc/cleep/
 scripts/cleep.service lib/systemd/system/

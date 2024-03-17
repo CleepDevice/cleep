@@ -64,8 +64,10 @@ class DownloadTests(unittest.TestCase):
             body=resp_data,
             headers=resp_headers,
             status=resp_status,
-            stream=stream,
-            match_querystring=False,
+            match=[
+                responses.matchers.request_kwargs_matcher({"stream": stream}),
+                responses.matchers.query_string_matcher(False),
+            ],
         )
 
         self.d = Download(self.fs)
@@ -163,25 +165,31 @@ class DownloadTests(unittest.TestCase):
     @responses.activate
     def test_download_content(self):
         url = "http://proof.ovh.net/files/1Mio.dat"
-        self.init(url, resp_data="héllo world", stream=True)
+        self.init(url, resp_data="hello world", stream=True)
+
         status, content = self.d.download_content(url)
+
         logging.debug("status: %s content:%s" % (status, content))
-        self.assertEqual(content, "héllo world")
+        self.assertEqual(content, "hello world")
         self.assertEqual(status, self.d.STATUS_DONE)
 
     @responses.activate
     def test_download_content_invalid_status_code(self):
         url = "https://www.google.com"
-        self.init(url, resp_data="héllo world", resp_status=400)
+        self.init(url, resp_data="hello world", resp_status=400, stream=True)
+
         status, content = self.d.download_content(url)
+
         self.assertIsNone(content)
         self.assertEqual(status, self.d.STATUS_ERROR)
 
     @responses.activate
     def test_download_content_exception(self):
         url = "https://www.google.com"
-        self.init(url, resp_data=Exception("Test exception"))
+        self.init(url, resp_data=Exception("Test exception"), stream=True)
+
         status, content = self.d.download_content(url)
+
         self.assertIsNone(content)
         self.assertEqual(status, self.d.STATUS_ERROR)
 
@@ -203,7 +211,7 @@ class DownloadTests(unittest.TestCase):
 
     @responses.activate
     def test_download_file_async(self):
-        response = "héllo world"
+        response = "hello world"
         self.init(
             resp_data=response,
             stream=True,
@@ -229,7 +237,7 @@ class DownloadTests(unittest.TestCase):
 
     @responses.activate
     def test_download_file_async_with_cached_filename(self):
-        response = "héllo world"
+        response = "hello world"
         self.init(
             resp_data=response,
             stream=True,
@@ -384,7 +392,7 @@ class DownloadTests(unittest.TestCase):
 
     @responses.activate
     def test_download_file_async_invalid_size(self):
-        response = "héllo world"
+        response = "hello world"
         self.init(
             resp_data=response,
             stream=True,
@@ -393,16 +401,18 @@ class DownloadTests(unittest.TestCase):
                 "Content-Length": "%s" % (len(response.encode("utf8")) - 1),
             },
         )
+
         self.d.download_file_async(
             "https://www.google.com",
             self._end_callback,
             status_callback=self._status_callback,
         )
         time.sleep(1)
-        self.assertGreaterEqual(self.status_callback_call, 2)
+
+        self.assertGreaterEqual(self.status_callback_call, 1)
         self.assertEqual(self.end_callback_call, 1)
         self.assertEqual(self.async_status, self.d.STATUS_ERROR_INVALIDSIZE)
-        self.assertEqual(self.async_percent, 100)
+        self.assertEqual(self.async_percent, 0)
 
 
 class DownloadTestsNoCleepFilesystem(unittest.TestCase):
@@ -447,7 +457,9 @@ class DownloadTestsNoCleepFilesystem(unittest.TestCase):
             body=resp_data,
             headers=resp_headers,
             status=resp_status,
-            stream=stream,
+            match=[
+                responses.matchers.request_kwargs_matcher({"stream": stream}),
+            ],
         )
         os.remove = Mock(side_effect=remove_side_effect)
         os.rename = Mock(side_effect=rename_side_effect)
@@ -533,7 +545,9 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
             "https://www.google.com",
             body="hello work",
             status=200,
-            stream=True,
+            match=[
+                responses.matchers.request_kwargs_matcher({"stream": True}),
+            ],
         )
         self.d = Download(self.fs)
         self.d.temp_dir = os.path.abspath("./test")

@@ -1,0 +1,45 @@
+<md-dialog aria-label="Module not started" flex="50">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Incompatible application</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="incompatibleCtl.closeDialog()" aria-label="Close dialog">
+                <cl-icon cl-icon="close"></cl-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content>
+        <div class="md-dialog-content" layout="row">
+
+            <div flex="20" layout="row" layout-align="center center">
+                <cl-icon cl-icon="car-brake-alert" cl-class="icon-xxl"></cl-icon>
+            </div>
+
+            <div flex>
+                <span>This application has incompatibility with installed applications and cannot be installed.</span>
+                <br/>
+                <span>This problem can be solved most of the time by upgrading Cleep.</span>
+                <br/><br/>
+                <span>
+                    For your information this is {{incompatibleCtl.moduleIncompatible.name}} compatibility string: 
+                    <span style="font-style: italic;">{{incompatibleCtl.moduleIncompatible.compat}}</span>
+                </span>
+            </div>
+
+        </div>
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="incompatibleCtl.gotoUpdateCleep()" class="md-accent">
+            <cl-icon cl-icon="close-circle"></cl-icon>
+            Go to Cleep udpate page
+        </md-button>
+        <md-button ng-click="incompatibleCtl.closeDialog()">
+            <cl-icon cl-icon="close-circle"></cl-icon>
+            Close
+        </md-button>
+    </md-dialog-actions>
+
+</md-dialog>
+

@@ -17,16 +17,30 @@ LOG_LEVEL = get_log_level()
 
 class CleepBackupTests(unittest.TestCase):
 
+    CLEEP_PATH = '/tmp/etc/cleep'
+    FILENAMES = ['test1.json', 'test2.txt']
+
     def setUp(self):
         TestLib()
         logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.crash_report = Mock()
         self.fs = Mock()
 
+        if not os.path.exists(self.CLEEP_PATH):
+            os.makedirs(self.CLEEP_PATH)
+
+        for filename in self.FILENAMES:
+            open(os.path.join(self.CLEEP_PATH, filename), 'a').close()
+
         self.c = CleepBackup(self.fs, self.crash_report)
+        self.c.CLEEP_PATH = self.CLEEP_PATH
 
     def tearDown(self):
-        pass
+        for filename in self.FILENAMES:
+            try:
+                os.remove(os.path.join(self.CLEEP_PATH, filename))
+            except:
+                pass
 
     def test_generate_archive(self):
         archive = None

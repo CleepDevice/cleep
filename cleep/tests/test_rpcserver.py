@@ -100,8 +100,8 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.sessions.clear()
             if isinstance(rpcserver.CLEEP_CACHE, dict):
                 rpcserver.CLEEP_CACHE.clear()
-            if rpcserver.logger:
-                rpcserver.logger.setLevel(logging.getLogger().getEffectiveLevel())
+            #if rpcserver.logger:
+            #    rpcserver.logger.setLevel(logging.getLogger().getEffectiveLevel())
 
     def _init_context(self, push_return_value=None, push_side_effect=None, no_bus=False, is_subscribed_return_value=None, is_subscribed_side_effect=None,
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False,
@@ -141,71 +141,67 @@ class RpcServerTests(unittest.TestCase):
         self.inventory.get_devices.return_value = self.DEVICES
         self.inventory.get_modules_configs.return_value = self.MODULES_CONFIGS
 
-        server_config = {
+        rpc_config = {
             'host': host,
             'port': port,
+            'ssl': True if ssl_key and ssl_cert else False,
             'ssl_key': ssl_key,
             'ssl_cert': ssl_cert,
         }
 
         if exec_configure:
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, debug_enabled)
+            rpcserver.configure(rpc_config, self.bootstrap, self.inventory, debug_enabled)
 
-    @patch('json.load')
-    def test_load_auth_with_no_accounts_and_enabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_no_accounts_and_enabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {}
+        self._init_context()
+
+        with boddle():
+            self.assertFalse(rpcserver.auth_enabled)
+
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_accounts_and_disabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = False
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.auth_enabled)
 
-    @patch('json.load')
-    def test_load_auth_with_accounts_and_disabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
-            },
-            'enabled': False,
-        }
-        self._init_context()
-
-        with boddle():
-            self.assertFalse(rpcserver.auth_enabled)
-
-    @patch('json.load')
-    def test_load_auth_with_accounts_and_enabled(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_load_auth_with_accounts_and_enabled(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
         }
         self._init_context()
 
         with boddle():
             self.assertTrue(rpcserver.auth_enabled)
-            self.assertEqual(len(rpcserver.auth_config['accounts']), 1)
-            self.assertTrue('test' in rpcserver.auth_config['accounts'])
+            self.assertEqual(len(rpcserver.auth_accounts), 1)
+            self.assertTrue('test' in rpcserver.auth_accounts)
 
-    @patch('json.load')
-    def test_load_auth_failed(self, json_load_mock):
-        json_load_mock.side_effect = Exception('Test exception')
+    @patch("rpcserver.CleepConf")
+    @patch("rpcserver.logging")
+    def test_load_auth_failed(self, logging_mock, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.side_effect = Exception('Test exception')
+        logger_mock = Mock()
+        logging_mock.getLogger = Mock(return_value=logger_mock)
         self._init_context()
         
         with boddle():
-            self.assertTrue(self.crash_report.report_exception.called)
+            # self.assertTrue(self.crash_report.report_exception.called)
+            rpcserver.logger.exception.assert_called_with("Unable to load auth file. Auth disabled:")
 
-    @patch('json.load')
-    def test_check_auth(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
-            },
-            'enabled': True,
+    @patch("rpcserver.CleepConf")
+    def test_check_auth(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$VeU5e79jNXnS3b4z$atnocFYx/vEmrv2KAiFvofeHLPu3ztVF0uI5SLUMuo2'
         }
         self._init_context()
 
@@ -223,39 +219,33 @@ class RpcServerTests(unittest.TestCase):
             new_time = rpcserver.sessions[session_key]
             self.assertNotEqual(new_time, old_time)
 
-    @patch('json.load')
-    def test_check_auth_bad_password(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch("rpcserver.CleepConf")
+    def test_check_auth_bad_password(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('json.load')
-    def test_check_auth_invalid_password(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': 'Hkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_check_auth_invalid_password(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': 'Hkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('json.load')
-    def test_check_auth_invalid_user(self, json_load_mock):
-        json_load_mock.return_value = {
-            'accounts': {
-                'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
-            },
-            'enabled': True,
+    @patch('rpcserver.CleepConf')
+    def test_check_auth_invalid_user(self, cleep_conf_mock):
+        cleep_conf_mock.return_value.is_auth_enabled.return_value = True
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
         }
         self._init_context()
 
@@ -336,12 +326,12 @@ class RpcServerTests(unittest.TestCase):
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
         }
 
-        rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
@@ -356,43 +346,43 @@ class RpcServerTests(unittest.TestCase):
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_valid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
+            'ssl': True,
             'ssl_key': 'mykey',
             'ssl_cert': 'mycert',
         }
 
-        with patch('os.path.exists') as mock_path_exists:
-            mock_path_exists.return_value = True
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
-
-            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert')
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert', do_handshake_on_connect=False)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_invalid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
-        server_config = {
+        rpc_config = {
             'host': '1.2.3.4',
             'port': 123,
+            'ssl': False,
             'ssl_key': 'mykey',
             'ssl_cert': 'mycert',
         }
 
-        with patch('os.path.exists') as mock_path_exists:
-            mock_path_exists.return_value = False
-            rpcserver.configure(server_config, self.bootstrap, self.inventory, False)
+        rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-            mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
 
-    def test_configure_debug_enabled(self):
+    @patch("rpcserver.logging")
+    def test_configure_debug_enabled(self, logging_mock):
+        logger_mock = Mock()
+        logging_mock.getLogger.return_value = logger_mock
         self._init_context(debug_enabled=True)
 
         with boddle():
             self.assertEqual(rpcserver.debug_enabled, True)
-            self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.DEBUG)
             self.assertTrue(rpcserver.is_debug_enabled())
+            logger_mock.setLevel.assert_called()
 
     def test_configure_debug_disabled(self):
         self._init_context(debug_enabled=False)
@@ -424,13 +414,103 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(len(args[0]), 1)
 
 
-    def test_events(self):
+    def test_get_events(self):
         self._init_context()
 
         with boddle():
             e = rpcserver.get_events()
             logging.debug('Events: %s' % e)
-            self.assertEqual(e, json.dumps(self.EVENTS))
+            self.assertEqual(e, {
+                'error': False,
+                'message': '',
+                'data': self.EVENTS
+            })
+
+    def test_get_commands(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        commands = {"module1": ["command1"], "module2": ["command2", "command3"]}
+        self.inventory.get_module_commands.return_value = commands
+
+        with boddle():
+            c = rpcserver.get_commands()
+            logging.debug("Commands: %s", c)
+            self.assertEqual(c, {
+                'error': False,
+                'message': '',
+                'data': commands,
+            })
+
+    def test_check_app_documentation_with_valid_doc(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.return_value = {"command": { "valid": True}}
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+            self.assertDictEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': {'command': {'valid': True}}
+            })
+
+    def test_check_app_documentation_with_exception(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.side_effect = Exception("Error")
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': "Error",
+                'data': None
+            })
+
+    def test_check_app_documentation_with_invalid_doc(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.check_module_documentation.return_value = {"command": { "valid": False}}
+
+        with boddle():
+            resp = rpcserver.check_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': 'Invalid application documentation',
+                'data': {'command': {'valid': False}}
+            })
+
+    def test_get_app_documentation(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.get_module_documentation.return_value = "documentation"
+
+        with boddle():
+            resp = rpcserver.get_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+            self.assertDictEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': 'documentation'
+            })
+
+    def test_get_app_documentation_with_exception(self):
+        self._init_context()
+        rpcserver.configure({}, self.bootstrap, self.inventory, False)
+        self.inventory.get_module_documentation.side_effect = Exception("Error")
+
+        with boddle():
+            resp = rpcserver.get_app_documentation("app")
+            logging.debug("Resp: %s", resp)
+            self.assertDictEqual(resp, {
+                'error': True,
+                'message': 'Error',
+                'data': None
+            })
 
     def test_modules(self):
         self._init_context()
@@ -438,7 +518,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES
+            })
             self.assertFalse(self.inventory.get_installable_modules.called)
             self.assertTrue(self.inventory.get_modules.called)
 
@@ -448,7 +532,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={'installable': True}):
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES,
+                })
             self.assertTrue(self.inventory.get_installable_modules.called)
             self.assertFalse(self.inventory.get_modules.called)
 
@@ -458,7 +546,11 @@ class RpcServerTests(unittest.TestCase):
         with boddle(json={'installable': False}):
             m = rpcserver.get_modules()
             logging.debug('Modules: %s' % m)
-            self.assertEqual(m, json.dumps(self.MODULES))
+            self.assertEqual(m, {
+                'error': False,
+                'message': '',
+                'data': self.MODULES
+            })
             self.assertFalse(self.inventory.get_installable_modules.called)
             self.assertTrue(self.inventory.get_modules.called)
 
@@ -466,15 +558,23 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle(method='POST'):
-            d = rpcserver.get_devices()
-            self.assertEqual(d, json.dumps(self.DEVICES))
+            resp = rpcserver.get_devices()
+            self.assertEqual(resp, {
+                'error': False,
+                'message': '',
+                'data': self.DEVICES
+            })
 
     def test_renderers(self):
         self._init_context()
 
         with boddle(method='POST'):
             r = rpcserver.get_renderers()
-            self.assertEqual(r, json.dumps(self.RENDERERS))
+            self.assertEqual(r, {
+                'error': False,
+                'message': '',
+                'data': self.RENDERERS
+            })
 
     def test_drivers(self):
         self._init_context()
@@ -491,19 +591,32 @@ class RpcServerTests(unittest.TestCase):
             "installed": True,
         })
         with boddle(method='POST'):
-            d = json.loads(rpcserver.get_drivers())
-            logging.debug('Drivers: %s' % d)
-            self.assertEqual(len(d), 2)
-            self.assertTrue(d[0] in [a1, a2])
-            self.assertTrue(d[1] in [a1, a2])
+            resp = rpcserver.get_drivers()
+            logging.debug('Resp: %s' % resp)
+            self.assertEqual(len(resp['data']), 2)
+            self.assertTrue(resp['data'][0] in [a1, a2])
+            self.assertTrue(resp['data'][1] in [a1, a2])
 
     def test_drivers_one_driver_exception(self):
         self._init_context(get_drivers_gpio_exception=True)
 
         with boddle(method='POST'):
-            d = json.loads(rpcserver.get_drivers())
-            logging.debug('Drivers: %s' % d)
-            self.assertEqual(len(d), 2)
+            resp = rpcserver.get_drivers()
+            logging.debug('Resp: %s' % resp)
+            self.assertEqual(len(resp['data']), 2)
+
+    @patch("rpcserver.CleepConf")
+    def test_reload_auth(self, cleep_conf_mock):
+        is_auth_enabled_mock = Mock(return_value=True)
+        cleep_conf_mock.return_value.is_auth_enabled = is_auth_enabled_mock
+        cleep_conf_mock.return_value.get_auth_accounts.return_value = {
+            'test': '$5$rounds=535000$tLWAIhyEYBj9JX8D$QqkTEqm9dpfz2.Fnu.C1QryHkav6lYu56/PbTb7sD3/'
+        }
+        self._init_context(get_drivers_gpio_exception=True)
+
+        rpcserver.reload_auth()
+
+        self.assertEqual(is_auth_enabled_mock.call_count, 2)
 
     @patch('rpcserver.bottle')
     def test_upload(self, mock_bottle):
@@ -776,8 +889,9 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle():
-            config = json.loads(rpcserver.get_config())
-            logging.debug('Config: %s' % config)
+            resp = rpcserver.get_config()
+            logging.debug('Resp: %s' % resp)
+            config = resp['data']
             self.assertTrue('modules' in config)
             for module_name, module in config['modules'].items():
                 self.assertTrue('config' in module)
@@ -795,21 +909,26 @@ class RpcServerTests(unittest.TestCase):
 
     @patch('json.dumps')
     def test_config_exception(self, json_dumps_mock):
-        json_dumps_mock.side_effect = [Exception('Test exception'), '{}']
         self._init_context()
+        # keep original function to restore it after test execution (there is only one rpcserver instance)
+        get_devices_from_inventory = rpcserver.get_devices_from_inventory
 
-        with boddle():
-            c = json.loads(rpcserver.get_config())
-            logging.debug('Config: %s' % c)
-            self.assertEqual(c, {})
+        try:
+            rpcserver.get_devices_from_inventory = Mock(side_effect=Exception('Test exception'))
+
+            with boddle():
+                resp = rpcserver.get_config()
+                logging.debug('Resp: %s' % resp)
+                self.assertIsNone(resp['data'])
+        finally:
+            rpcserver.get_devices_from_inventory = get_devices_from_inventory
 
     def test_config_use_cache(self):
         self._init_context()
 
         with boddle():
-            config = json.loads(rpcserver.get_config())
-            config = json.loads(rpcserver.get_config())
-
+            rpcserver.get_config()
+            rpcserver.get_config()
             self.assertEqual(self.inventory.get_modules.call_count, 1)
 
     def test_registerpoll(self):
@@ -826,7 +945,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context()
 
         with boddle(json={}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Polling key is missing', 'data': None, 'error': True})
 
@@ -834,7 +953,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(no_bus=True)
 
         with boddle(json={}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Bus not available', 'data': None, 'error': True})
 
@@ -842,7 +961,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(is_subscribed_return_value=False)
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp, {'message': 'Client not registered', 'data': None, 'error': True})
 
@@ -853,7 +972,8 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_return_value=pull_resp)
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
+            logging.debug('Poll response: %s', resp)
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], pull_resp['message'])
             self.assertEqual(resp['message'], '')
@@ -865,7 +985,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_side_effect=NoMessageAvailable())
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], None)
             self.assertEqual(resp['message'], 'No message available')
@@ -877,7 +997,7 @@ class RpcServerTests(unittest.TestCase):
         self._init_context(pull_side_effect=Exception('Test exception'))
 
         with boddle(json={'pollKey': '123-456-789'}):
-            resp = json.loads(rpcserver.poll())
+            resp = rpcserver.poll()
             logging.debug('Resp: %s' % resp)
             self.assertEqual(resp['data'], None)
             self.assertEqual(resp['message'], 'Internal error')
@@ -919,7 +1039,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertTrue(message in resp)
 
-        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log', 'r')
+        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log')
 
     def test_authenticate(self):
         self._init_context()

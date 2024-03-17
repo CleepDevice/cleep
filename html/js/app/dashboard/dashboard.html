@@ -1,0 +1,37 @@
+<div layout="column">
+
+    <!-- toolbar -->
+    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+        <div class="toolbar-spacer"></div>
+        <div layout="row" layout-align="left center">
+            <cl-icon cl-icon="view-dashboard"></cl-icon>
+            <h1 style="padding-left:5px;" class="md-title">Dashboard</h1>
+        </div>
+    </div>
+
+    <!-- widgets -->
+    <md-grid-list
+        style="margin:12px;" ng-cloak
+        md-cols-xs="1" md-cols-sm="2" md-cols-md="4" md-cols-lg="6" md-cols-gt-lg="8"
+        md-row-height-gt-md="1:1" md-row-height="2:2"
+        md-gutter="12px">
+        <md-grid-tile
+            md-colspan="{{ device.widget.colspan || 1 }}" md-rowspan="{{ device.widget.rowspan || 1 }}"
+            md-colspan-xs="1" md-colspan-sm="1"
+            ng-repeat="device in dashboardCtl.devices | orderBy:'name' track by device.uuid"
+            flex="100" layout="row" layout-align="center center">
+            <dashboard-widget
+                ng-if="!device.hidden"
+                type="{{ device.type }}" device="device"
+                flex>
+            </dashboard-widget>
+        </md-grid-tile>
+    </md-grid-list>
+
+    <!-- no widget -->
+    <div ng-if="!dashboardCtl.loading && dashboardCtl.devices.length===0">
+        <span>You have no widget, <a href="#!/install">install modules</a> to add some on this dashboard.</span>
+    </div>
+
+</div>
+

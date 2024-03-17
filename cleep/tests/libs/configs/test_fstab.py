@@ -9,8 +9,8 @@ from fstab import Fstab
 from cleep.exception import MissingParameter
 from cleep.libs.tests.lib import TestLib, FileDescriptorMock
 import unittest
+from unittest.mock import Mock
 import logging
-from mock import Mock
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

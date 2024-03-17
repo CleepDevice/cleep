@@ -13,7 +13,6 @@ from gc import get_referents
 from cleep.core import Cleep, CleepModule, CleepRenderer, CleepRpcWrapper
 from cleep.libs.configs.appssources import AppsSources
 from cleep.exception import CommandError, MissingParameter, InvalidParameter
-from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.install import Install
 import cleep.libs.internals.tools as Tools
 from cleep.common import CORE_MODULES, ExecutionStep
@@ -493,9 +492,8 @@ class Inventory(Cleep):
                 ]
 
         Raises:
-            CommandError: if module doesn't exists
+            CommandError: if application doesn't exist
         """
-        # check values
         if module_name not in self.modules:
             raise InvalidParameter('Application "%s" doesn\'t exist' % module_name)
 
@@ -556,7 +554,11 @@ class Inventory(Cleep):
         module = copy.deepcopy(self.modules[module_name])
 
         # add module config
-        module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+        try:
+            module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+        except:
+            self.logger.exception('Unable to retrieve "%s" app config. Return empty config', module_name)
+            module['config'] = {};
             
         # add module events
         module['events'] = events[module_name] if module_name in events else []
@@ -709,7 +711,54 @@ class Inventory(Cleep):
                 ['command1', 'command2', ...]
 
         """
-        return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
+        if module is not None:
+            return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
+
+        return {module_name:module_instance.get_module_commands() for (module_name, module_instance) in self.__modules_instances.items()}
+
+    def get_module_documentation(self, module_name, no_cache=False):
+        """
+        Return module documentation
+
+        Args:
+            module_name (str): module name
+            no_cache (bool): True to not use cached documentation
+
+        Returns:
+            dict: module documentation::
+
+                {
+                    command (dict): command documentation
+                    ...
+                }
+
+        """
+        if module_name not in self.__modules_instances:
+            raise InvalidParameter('Application "%s" is not installed' % module_name)
+
+        return self.__modules_instances[module_name].get_documentation(no_cache)
+
+    def check_module_documentation(self, module_name, with_details=False):
+        """
+        Return module documentation validity
+
+        Args:
+            module_name (str): module name
+            with_details (bool): add check details to output
+
+        Returns:
+            dict: module documentation validity::
+
+                {
+                    command (dict): command documentation validity
+                    ...
+                }
+
+        """
+        if module_name not in self.__modules_instances:
+            raise InvalidParameter('Application "%s" is not installed' % module_name)
+
+        return self.__modules_instances[module_name].check_documentation(with_details)
 
     def is_module_loaded(self, module):
         """

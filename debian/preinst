@@ -4,6 +4,10 @@
 
 set -e
 
+MODULES_JSON_LATEST=https://raw.githubusercontent.com/CleepDevice/cleep-apps/main/modules.json
+MODULES_JSON_VERSION=https://raw.githubusercontent.com/CleepDevice/cleep-apps/v__CLEEP_VERSION__/modules.json
+CLEEPMODS=( audio cleepbus network parameters system update )
+
 # Check command result
 # $1: command result (usually $?)
 # $2: awaited command result
@@ -30,11 +34,59 @@ case "$1" in
 
         # install python dependencies
         echo "Installing python dependencies..."
-        python3 -m pip install --no-cache-dir --trusted-host pypi.python.org "bottle==0.12.19" "greenlet==1.1.2" "mock>=4.0.3" "netifaces==0.11.0" "passlib==1.7.4" "python-dateutil==2.8.2" "requests==2.27.1" "simplejson==3.17.6" "sentry-sdk==1.5.2" "uptime==3.0.1"
-        python3 -m pip install "https://github.com/CleepDevice/cleep-libs-prebuild/raw/main/gevent/gevent-21.12.0-cp37-cp37m-linux_armv7l.whl"
+        python3 -m pip install --no-cache-dir --trusted-host pypi.python.org __CLEEP_REQUIREMENTS__
         checkResult $? 0
         echo "Done"
         echo ""
+
+        # ensure folder structure to install apps
+        mkdir -p /opt/cleep/modules
+        touch /opt/cleep/modules/__init__.py
+
+        # download modules.json from Cleep repository
+        echo "Download modules.json from:"
+        echo " 1 - $MODULES_JSON_VERSION"
+        echo " 2 - $MODULES_JSON_LATEST"
+        wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
+        checkResult $? 0 "Unable to download modules.json file"
+        # copy modules.json to cleep repository to Cleep be able to start without network
+        mkdir -p /etc/cleep
+        cp -a /tmp/modules.json /etc/cleep/modules.json
+        # install mandatory Cleep apps
+        mkdir -p /opt/cleep/html
+        for CLEEPMOD in "${CLEEPMODS[@]}"; do
+            echo "- installing $CLEEPMOD module"
+            # download and checksum module
+            download=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.download | awk '{ gsub("\"","",$0); print $0}'`
+            checksum=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.sha256 | awk '{ gsub("\"","",$0); print $0}'`
+            wget $download -q --show-progress -O /tmp/cleepmod.zip
+            echo "$checksum /tmp/cleepmod.zip" > /tmp/cleepmod.sha
+            checkResult $? 0 "Unable to create sha file"
+            sha256sum --quiet -c /tmp/cleepmod.sha
+            checkResult $? 0 "Checksum does not match for current app"
+            # install module
+            unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
+            checkResult $? 0 "Unzip failed"
+            cp -a /tmp/cleepmod/backend/* /opt/cleep/
+            checkResult $? 0 "Backend copy failed"
+            if [ -d "/tmp/cleepmod/frontend/" ]; then
+                cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
+                checkResult $? 0 "Frontend copy failed"
+            fi
+            if [ -f "/tmp/cleepmod/scripts/postinst.sh" ]; then
+                echo " - running postinst.sh script"
+                chmod +x /tmp/cleepmod/scripts/postinst.sh
+                cd /tmp/cleepmod/scripts/
+                /tmp/cleepmod/scripts/postinst.sh
+                cd -
+                checkResult $? 0 "Postinst.sh script failed"
+            fi
+            rm -rf /tmp/cleepmod
+            rm -f /tmp/cleepmod.zip
+            rm -f /tmp/cleepmod.sha
+            echo " - done"
+        done
+        rm -f /tmp/modules.json
         ;;
 
     *)

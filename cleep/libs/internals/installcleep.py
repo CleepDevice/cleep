@@ -277,7 +277,6 @@ class InstallCleep(threading.Thread):
         self.status = self.STATUS_UPDATING
         error = False
         package_path = None
-        extract_path = None
 
         try:
             # send status asap to update frontend
@@ -333,8 +332,6 @@ class InstallCleep(threading.Thread):
             try:
                 if package_path:
                     self.cleep_filesystem.rm(package_path)
-                if extract_path:
-                    self.cleep_filesystem.rmdir(extract_path)
             except:  # pragma: no cover
                 self.logger.exception("Exception during Cleep update cleaning:")
 

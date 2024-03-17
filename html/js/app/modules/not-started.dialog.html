@@ -1,0 +1,48 @@
+<md-dialog aria-label="Application not started" flex="50">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Application not started</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="notstartedCtl.closeDialog()" aria-label="Close dialog">
+                <cl-icon cl-icon="close"></cl-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content>
+        <div class="md-dialog-content" layout="row">
+
+            <div flex="20" layout="row" layout-align="center center">
+                <cl-icon cl-icon="emoticon-cry-outline" cl-class="icon-xxl"></cl-icon>
+            </div>
+
+            <div flex>
+                <span>It appears installed application "{{notstartedCtl.moduleNotStarted.name}}" was unable to start correctly.</span>
+                <br/><br/>
+                <span>To try to fix this problem check if the application has an available update and update it consequently.</span>
+                <br/>
+                <span>If no update is available uninstall it and try to install it again.</span>
+                <br/>
+                <span>If uninstall always failed, force uninstall clicking on "Force uninstall" button below</span>
+                <br/></br>
+                <span>If you enable crash report in system application ("Advanced" tab), the error is already reported.</span>
+                <br/>
+                <span>If the option is disabled, you can post issue on application bug page.</span>
+            </div>
+
+        </div>
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="notstartedCtl.forceUninstallModule(notstartedCtl.moduleNotStarted.name)" class="md-accent">
+            <cl-icon cl-icon="close-circle"></cl-icon>
+            Force uninstall
+        </md-button>
+        <md-button ng-click="notstartedCtl.closeDialog()">
+            <cl-icon cl-icon="close-circle"></cl-icon>
+            Close
+        </md-button>
+    </md-dialog-actions>
+
+</md-dialog>
+

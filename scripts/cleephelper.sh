@@ -34,6 +34,7 @@ function disable_on_systemctl {
 case $1 in
   enable)
     echo "Enabling Cleep at startup..."
+    if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl unmask cleep.service; fi
     if [[ `systemctl 2> /dev/null` =~ -\.mount ]]; then systemctl enable cleep.service;
     elif [[ -f /etc/init.d/cron && ! -h /etc/init.d/cron ]]; then update-rc.d cleep defaults;
     else echo "Error: unable to find suitable startup system. Cleep will NOT start automatically"; exit; fi

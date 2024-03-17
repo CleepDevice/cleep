@@ -4,11 +4,6 @@
 
 set -e
 
-CLEEP_VERSION=`python3 -m pip show cleep | grep Version | awk '{ print $2 }'`
-MODULES_JSON_LATEST=https://raw.githubusercontent.com/tangb/cleep-apps/main/modules.json
-MODULES_JSON_VERSION=https://raw.githubusercontent.com/tangb/cleep-apps/v$CLEEP_VERSION/modules.json
-CLEEPMODS=( audio cleepbus network parameters system update )
-
 # Check command result
 # $1: command result (usually $?)
 # $2: awaited command result
@@ -27,52 +22,36 @@ checkResult() {
 
 case "$1" in
     configure)
-        # download modules.json from Cleep repository
-        echo "Download modules.json from:"
-        echo " 1 - $MODULES_JSON_VERSION"
-        echo " 2 - $MODULES_JSON_LATEST"
-        wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
-        checkResult $? 0 "Unable to download modules.json file"
-        # copy modules.json to cleep repository to Cleep be able to start without network
-        cp -a /tmp/modules.json /etc/cleep/modules.json
-        # install mandatory Cleep apps
+        # make sure sym link exist for modules
         CLEEP_INSTALL_PATH=`python3 -m pip show cleep | grep Location | awk '{ print $2 }'`
-        for CLEEPMOD in "${CLEEPMODS[@]}"; do
-            echo "- installing $CLEEPMOD module"
-            # download and checksum module
-            download=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.download | awk '{ gsub("\"","",$0); print $0}'`
-            checksum=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.sha256 | awk '{ gsub("\"","",$0); print $0}'`
-            wget $download -q --show-progress -O /tmp/cleepmod.zip
-            echo "$checksum /tmp/cleepmod.zip" > /tmp/cleepmod.sha
-            checkResult $? 0 "Unable to create sha file"
-            sha256sum --quiet -c /tmp/cleepmod.sha
-            checkResult $? 0 "Checksum does not match for current app"
-            # install module
-            unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
-            checkResult $? 0 "Unzip failed"
-            cp -a /tmp/cleepmod/backend/* "$CLEEP_INSTALL_PATH/cleep/"
-            checkResult $? 0 "Backend copy failed"
-            if [ -d "/tmp/cleepmod/frontend/" ]; then
-                cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
-                checkResult $? 0 "Frontend copy failed"
-            fi
-            if [ -f "/tmp/cleepmod/scripts/postinst.sh" ]; then
-                echo " - running postinst.sh script"
-                chmod +x /tmp/cleepmod/scripts/postinst.sh
-                cd /tmp/cleepmod/scripts/
-                /tmp/cleepmod/scripts/postinst.sh
-                cd -
-                checkResult $? 0 "Postinst.sh script failed"
-            fi
-            rm -rf /tmp/cleepmod
-            rm -f /tmp/cleepmod.zip
-            rm -f /tmp/cleepmod.sha
-            echo " - done"
-        done
-        rm -f /tmp/modules.json
+        ln -s /opt/cleep/modules $CLEEP_INSTALL_PATH"/cleep/modules"
+	    checkResult $? 0 "Unable to symlink apps directory"
 
-        # fix version in index.html to clear cache
-        grep -rl "?cleepversion" /opt/cleep/html | xargs sed -i 's/?cleepversion/?v'"$CLEEP_VERSION"'/g'
+        # install self-signed certificate if necessary
+        # gist from https://gist.github.com/thbkrkr/aa16435cb6c183e55a33
+        if [ ! -f /etc/cleep/cert/ssl.crt ] || [ ! -f /etc/cleep/cert/ssl.key ]; then
+	        echo "Installing ssl certificate..."
+	        mkdir -p /tmp/cleep_ssl
+	        cd /tmp/cleep_ssl
+	        openssl rand -base64 48 > passphrase.txt
+	        checkResult $? 0 "Unable to create local SSL certificate [1]"
+	        openssl genrsa -aes128 -passout file:passphrase.txt -out server.key 2048
+	        checkResult $? 0 "Unable to create local SSL certificate [2]"
+	        openssl req -new -passin file:passphrase.txt -key server.key -out server.csr -subj "/O=Cleep/OU=Cleep"
+	        checkResult $? 0 "Unable to create local SSL certificate [3]"
+	        cp server.key server.key.org
+	        openssl rsa -in server.key.org -passin file:passphrase.txt -out server.key
+	        checkResult $? 0 "Unable to create local SSL certificate [4]"
+	        openssl x509 -req -days 36500 -in server.csr -signkey server.key -out server.crt
+	        checkResult $? 0 "Unable to create local SSL certificate [5]"
+			mkdir -p /etc/cleep/cert
+	        mv -f server.crt /etc/cleep/cert/ssl.crt
+	        mv -f server.key /etc/cleep/cert/ssl.key
+	        cd -
+	        rm -rf /tmp/cleep_ssl
+	        echo "Done"
+	        echo ""
+		fi
 
         # enable Cleep at startup
         /etc/cleep/cleephelper.sh enable

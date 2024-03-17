@@ -10,7 +10,7 @@ from cleep.libs.internals.rendererprofile import RendererProfile
 from cleep.exception import InvalidParameter
 import unittest
 import logging
-from mock import Mock
+from unittest.mock import Mock
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()

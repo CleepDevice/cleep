@@ -1,3 +1,5 @@
-boddle>=0.2.9
-responses>=0.22.0
+-r requirements.txt
+boddle==0.2.9
+responses==0.23.3
+coverage==7.2.7
 

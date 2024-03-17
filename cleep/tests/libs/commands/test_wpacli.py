@@ -12,7 +12,7 @@ import logging
 import os
 from shutil import copyfile
 from cleep.libs.tests.common import get_log_level
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 LOG_LEVEL = get_log_level()
 LIST_NETWORKS = [

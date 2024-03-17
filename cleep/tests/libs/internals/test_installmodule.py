@@ -1109,8 +1109,8 @@ class InstallModuleTests(unittest.TestCase):
         logging.debug('cleep_fs calls: %s' % self.cleep_filesystem.mock_calls)
         self.assertEqual(self.cleep_filesystem.copy.call_count, 8) # 5 files in walk return value
 
-        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/module.py', '/python-cleep-path/modules/module/module.py')
-        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/__init__.py', '/python-cleep-path/modules/module/__init__.py')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/module.py', '/opt/cleep/modules/module/module.py')
+        self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/backend/modules/module/__init__.py', '/opt/cleep/modules/module/__init__.py')
         self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/desc.json', '/opt/cleep/html/js/modules/module/desc.json')
         self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/module.config.js', '/opt/cleep/html/js/modules/module/module.config.js')
         self.cleep_filesystem.copy.assert_any_call(f'{self.c.extract_path}/frontend/js/modules/module/module.config.html', '/opt/cleep/html/js/modules/module/module.config.html')

@@ -17,6 +17,7 @@ from cleep.exception import InvalidParameter, MissingParameter
 from cleep.common import ExecutionStep, CORE_MODULES, MessageResponse
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
+from cleep.libs.internals.cleepdoc import CleepDoc
 
 
 __all__ = ['Cleep', 'CleepRpcWrapper', 'CleepModule', 'CleepResources', 'CleepRenderer']
@@ -452,8 +453,9 @@ class Cleep(BusClient):
                     'send_command', 'send_event', 'send_command_to_peer', 'send_event_to_peer',
                     'get_module_commands', 'get_module_commands', 'get_module_config',
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
-                    'start', 'stop', 'push', 'on_event',
-                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced'
+                    'start', 'stop', 'push', 'on_event', 'get_env',
+                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced',
+                    'get_documentation', 'check_documentation',
                 ):
                 # filter bus commands
                 members.remove(member)
@@ -553,13 +555,13 @@ class Cleep(BusClient):
 
             [
                 {
-                    name (string): parameter name
-                    type (type): parameter primitive type (str, bool...)
-                    none (bool): True if parameter can be None
-                    empty (bool): True if string value can be empty
-                    value (any): parameter value
-                    validator (function): validator function. Take value in parameter and must return bool
-                    message (string): custom message to return instead of generic error
+                    name (string): parameter name (mandatory)
+                    value (any): parameter value (mandatory)
+                    type (type): parameter primitive type (str, bool...) (default str)
+                    none (bool): True if parameter can be None (optional)
+                    empty (bool): True if string value can be empty (optional)
+                    validator (function): validator function. Take value in parameter and must return bool (optional)
+                    message (string): custom message to return instead of generic error (optional)
                     validators (list): list of validators::
 
                         [
@@ -587,17 +589,17 @@ class Cleep(BusClient):
                 return
 
             # type
-            if not isinstance(parameter['value'], parameter['type']):
+            if not isinstance(parameter['value'], parameter.get('type', str)):
                 raise InvalidParameter(
                     'Parameter "%s" must be of type "%s"' % (
                         parameter['name'],
-                        parameter['type'].__name__,
+                        parameter.get('type', str).__name__,
                     )
                 )
 
             # empty
             if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
-                    parameter['type'] is str and
+                    parameter.get('type', str) is str and
                     len(parameter['value']) == 0):
                 raise InvalidParameter(
                     'Parameter "%s" is invalid (specified="%s")' % (
@@ -753,11 +755,15 @@ class CleepModule(Cleep):
         # init cleep 
         Cleep.__init__(self, bootstrap, debug_enabled)
 
+        # members
+        self.__app_doc = None
+
         # define app paths
-        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', self.__class__.__name__))
-        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', self.__class__.__name__))
-        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', self.__class__.__name__))
-        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', self.__class__.__name__))
+        class_name = self.__class__.__name__.lower()
+        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', class_name))
+        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', class_name))
+        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', class_name))
+        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', class_name))
 
         # add devices section if missing
         if self._has_config_file() and not self._has_config_field('devices'):
@@ -784,6 +790,29 @@ class CleepModule(Cleep):
             self.cleep_filesystem.mkdirs(path)
         setattr(self.__class__, variable_name, path)
         self.__dict__[variable_name] = path
+
+    def get_env(self):
+        """
+        Return module environment variables
+        Useful when executing console command
+
+        Returns:
+            dict: env vars::
+
+                {
+                    APP_STORAGE_PATH (str): app storage path,
+                    APP_TMP_PATH (str): app tmp path,
+                    APP_ASSET_PATH (str): app asset path,
+                    APP_BIN_PATH (str): app binary path,
+                }
+
+        """
+        return {
+            'APP_STORAGE_PATH': self.APP_STORAGE_PATH,
+            'APP_TMP_PATH': self.APP_TMP_PATH,
+            'APP_ASSET_PATH': self.APP_ASSET_PATH,
+            'APP_BIN_PATH': self.APP_BIN_PATH,
+        }
 
     def _add_device(self, data):
         """
@@ -1014,6 +1043,74 @@ class CleepModule(Cleep):
         members.remove('get_module_devices')
         return members
 
+    def get_documentation(self, no_cache=False):
+        """
+        Return app documentation
+
+        Args:
+            no_cache (bool, optional): True to bypass cached documentation. Defaults to False.
+
+        Returns:
+            dict: app documentation::
+
+                {
+                    command name (dict): dict of command documentation
+                        {
+                            descriptions (dict): command descriptions (short and long)
+                            args (list): list of command arguments
+                            returns (list): list of command returned values
+                            raises (list): list of exception
+                        }
+                    ...
+                }
+
+        """
+        if self.__app_doc and not no_cache:
+            return self.__app_doc
+
+        cleep_doc = CleepDoc()
+        app_doc = {}
+
+        commands = self.get_module_commands()
+        for command_name in commands:
+            command_pointer = getattr(self, command_name)
+            app_doc[command_name] = cleep_doc.get_command_doc(command_pointer)
+        self.__app_doc = app_doc
+
+        return self.__app_doc
+
+    def check_documentation(self, with_details=False):
+        """
+        Check app documentation
+
+        Args:
+            with_details (bool): append check details to result. Defaults to False.
+
+        Returns:
+            dict: app errors and warnings::
+
+                {
+                    command name (dict): check result for specified command
+                        {
+                            valid (bool): True if valid
+                            errors (list): list of errors
+                            warnings (list): list of warnings
+                        }
+                    ...
+                }
+
+        """
+        cleep_doc = CleepDoc()
+        app_doc_validity = {}
+
+        commands = self.get_module_commands()
+        for command_name in commands:
+            command_pointer = getattr(self, command_name)
+            command_doc_valid = cleep_doc.is_command_doc_valid(command_pointer)
+            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(command_pointer, with_details)
+
+        return app_doc_validity
+
     def send_command_advanced(self, command, to, params=None, timeout=3.0, raise_exc=False):
         """
         Send command as default send_command function but handle errors logging them and return data
@@ -1027,13 +1124,13 @@ class CleepModule(Cleep):
             raise_exc (boolean): if True raise exception
 
         Returns:
-            any: return data command result. Return None if error occured
+            any: message response data or None if error (and raise_exc False)
         """
         resp = self.send_command(command, to, params, timeout)
         if resp.error:
             self.logger.error(f'Error occured executing command {command} to {to}: {resp.message}')
             if raise_exc:
-                raise Exception(resp.data)
+                raise Exception(resp.message)
             return None
 
         return resp.data
@@ -1273,7 +1370,7 @@ class CleepRenderer(CleepModule):
 
 
 
-class CleepExternalBus(Cleep):
+class CleepExternalBus(CleepModule):
     """
     Base Cleep class for external bus implementation
     """
@@ -1285,8 +1382,11 @@ class CleepExternalBus(Cleep):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init cleep
-        Cleep.__init__(self, bootstrap, debug_enabled)
+        # init cleep
+        CleepModule.__init__(self, bootstrap, debug_enabled)
+
+        # store rpc config
+        self.rpc_config = bootstrap.get('rpc_config', {})
 
     def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
         """
