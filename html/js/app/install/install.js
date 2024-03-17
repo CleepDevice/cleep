@@ -46,7 +46,7 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
             cleepService.getModuleConfig('parameters')
                 .then((parametersConfig) => {
                     // update list of modules names
-                    var modules = [];
+                    const modules = [];
                     for (const module of Object.values(cleepService.installableModules)) {
                         // fix module country alpha code
                         var countryAlpha = module.country;
@@ -130,10 +130,8 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
          * Fill modules as soon as cleep configuration is loaded
          */
         $scope.$watch(
-            function() {
-                return cleepService.installableModules;
-            },
-            function(newValue) {
+            () => cleepService.installableModules,
+            (newValue) => {
                 if( newValue && Object.keys(newValue).length ) {
                     self.fillModules();
                 }
