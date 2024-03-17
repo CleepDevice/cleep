@@ -1,4 +1,4 @@
-cleep (0.1.0) UNRELEASED; urgency=low
+cleep (0.1.0) unstable; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
   * Fixed core: #1408 fix /logs endpoint
   * Added core: add https support to RPC server
@@ -20,8 +20,10 @@ cleep (0.1.0) UNRELEASED; urgency=low
   * Updated core: libs improvements (tests session, console)
   * Added core: add thermostat profile
   * Updated core: use native unittest.mock lib instead of mock
+  * Update core: improve CI
+  * Update core: use python3.9
 
- -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, xx Jan xxxx xx:xx:xx +0200
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, 17 Mar 2024 11:00:00 +0200
 
 cleep (0.0.30) unstable; urgency=low
   * Fixed core: #1383 Cleep install fails due to missing dependency
