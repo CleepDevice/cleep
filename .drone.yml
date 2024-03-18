@@ -83,7 +83,9 @@ steps:
         from_secret: codacy_project_token
     commands:
       - cd cleep-dev/cleep/tests
-      - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
+      - ls -la
+      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh 
+      - bash codacy.sh report -r .coverage
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
@@ -230,7 +232,9 @@ steps:
         from_secret: codacy_project_token
     commands:
       - cd cleep-dev/cleep/tests
-      - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
+      - ls -la
+      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh 
+      - bash codacy.sh report -r .coverage
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
