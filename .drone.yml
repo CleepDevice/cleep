@@ -74,6 +74,7 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+      - cleep-cli coretestscov --xml --quiet
 
   - name: export-coverage
     image: 192.168.1.125:5000/cleep-codacy:20240318
@@ -84,8 +85,8 @@ steps:
     commands:
       - cd cleep-dev
       - ls -la cleep/tests/
-      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh 
-      - bash codacy.sh report -r cleep/tests/.coverage
+      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh
+      - bash codacy.sh report -r cleep/tests/coverage.xml
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
@@ -223,6 +224,7 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+      - cleep-cli coretestscov --xml --quiet
 
   - name: export-coverage
     image: 192.168.1.125:5000/cleep-codacy:20240318
@@ -233,8 +235,8 @@ steps:
     commands:
       - cd cleep-dev
       - ls -la cleep/tests/
-      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh 
-      - bash codacy.sh report -r cleep/tests/.coverage
+      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh
+      - bash codacy.sh report -r cleep/tests/coverage.xml
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
@@ -492,6 +494,7 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
+      - cleep-cli coretestscov --xml --quiet
 
   - name: export-coverage
     image: 192.168.1.125:5000/cleep-codacy:20240318
@@ -502,8 +505,8 @@ steps:
     commands:
       - cd cleep-dev
       - ls -la cleep/tests/
-      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh 
-      - bash codacy.sh report -r cleep/tests/.coverage
+      - curl -Ls -o codacy.sh https://coverage.codacy.com/get.sh
+      - bash codacy.sh report -r cleep/tests/coverage.xml
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
