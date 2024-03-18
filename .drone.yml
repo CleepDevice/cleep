@@ -142,22 +142,6 @@ steps:
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
       - # DO NOT PUSH IMAGE TO REGISTRY
 
-  - name: publish-cleep-deb
-    image: 192.168.1.125:5000/cleep-build/bullseye:20231205
-    network_mode: host
-    privileged: true
-    environment:
-      GITHUB_ACCESS_TOKEN:
-        from_secret: github_access_token
-    commands:
-      - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
-      - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install pip cleepcli --upgrade
-      - export VERSION=`cat version.txt`
-      - echo $VERSION
-      - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
-
 
 
 ---
@@ -414,11 +398,11 @@ steps:
     commands:
       - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - export VERSION=`cat version.txt`
       - echo $VERSION
       - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
+      - cleep-cli corepublish --version=$VERSION --prerelease
 
 
 
@@ -555,7 +539,7 @@ steps:
       ID_ED25519_PUB:
         from_secret: id_ed25519_pub
     commands:
-      - python3 -m pip -q --no-color install cleepcli pip --upgrade
+      - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - # configure ssh
       - mkdir -p ~/.ssh
       - echo "$ID_ED25519" > ~/.ssh/id_ed25519
