@@ -66,9 +66,6 @@ steps:
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
-    environment:
-      COVERALLS_REPO_TOKEN:
-        from_secret: coveralls_cleep_token
     commands:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
@@ -77,7 +74,16 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
-      - coveralls || /bin/true
+
+  - name: export-coverage
+    image: 192.168.1.125:5000/cleep-codacy:20240318
+    network_mode: host
+    environment:
+      CODACY_PROJECT_TOKEN:
+        from_secret: codacy_project_token
+    commands:
+      - cd cleep-dev/cleep/tests
+      - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
@@ -223,9 +229,6 @@ steps:
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
-    environment:
-      COVERALLS_REPO_TOKEN:
-        from_secret: coveralls_cleep_token
     commands:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
@@ -234,7 +237,16 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
-      - coveralls || /bin/true
+
+  - name: export-coverage
+    image: 192.168.1.125:5000/cleep-codacy:20240318
+    network_mode: host
+    environment:
+      CODACY_PROJECT_TOKEN:
+        from_secret: codacy_project_token
+    commands:
+      - cd cleep-dev/cleep/tests
+      - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
@@ -484,9 +496,6 @@ steps:
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     privileged: true
-    environment:
-      COVERALLS_REPO_TOKEN:
-        from_secret: coveralls_cleep_token
     commands:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
@@ -495,7 +504,16 @@ steps:
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
       - cleep-cli coretests --coverage --output
-      - coveralls || /bin/true
+
+  - name: export-coverage
+    image: 192.168.1.125:5000/cleep-codacy:20240318
+    network_mode: host
+    environment:
+      CODACY_PROJECT_TOKEN:
+        from_secret: codacy_project_token
+    commands:
+      - cd cleep-dev/cleep/tests
+      - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
 
   - name: build-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
