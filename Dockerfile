@@ -6,8 +6,7 @@ RUN apt-get -o Acquire::ForceIPv4=true install python3 wget zip git -qqy
 RUN apt-get clean
 
 COPY cleep.deb .
-RUN export CLEEP_ENV=ci
-RUN apt-get install ./cleep.deb -qyf
+RUN CLEEP_ENV=ci apt-get install ./cleep.deb -qyf
 RUN systemctl disable cleep
 
 RUN python3 -m pip install -q cleepcli
