@@ -63,6 +63,7 @@ class Inventory(Cleep):
         # self.logger.setLevel(logging.DEBUG)
 
         # members
+        self.CLEEP_ENV = os.environ.get("CLEEP_ENV", "").lower()
         self.__modules_loaded = False
         self.__rpcserver = rpcserver
         self.configured_modules = configured_modules
@@ -346,15 +347,16 @@ class Inventory(Cleep):
                 # load module
                 self.__load_module(module_name, local_modules)
 
-            except Exception as e:
+            except Exception as error:
                 # failed to load mandatory module
-                self.__modules_in_error[module_name] = str(e)
-                self.logger.exception('Core application "%s" exception:' % module_name)
-                self.logger.error('Unable to load core application "%s". System will be instable' % module_name)
-                self.crash_report.report_exception({
-                    'message': 'Unable to load core application "%s". System will be instable' % module_name,
-                    'module_name': module_name
-                })
+                self.__modules_in_error[module_name] = str(error)
+                if self.CLEEP_ENV != 'ci':
+                    self.logger.exception('Core application "%s" exception:' % module_name)
+                    self.logger.error('Unable to load core application "%s". System will be instable' % module_name)
+                    self.crash_report.report_exception({
+                        'message': 'Unable to load core application "%s". System will be instable' % module_name,
+                        'module_name': module_name
+                    })
 
             finally:
                 # clear module loading tree (replace it with clear() available in python3)
