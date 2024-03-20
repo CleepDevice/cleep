@@ -143,7 +143,7 @@ steps:
       - ls -la 
       - docker login 192.168.1.125:5000 --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
       - docker build -f Dockerfile -t 192.168.1.125:5000/cleep/cleep:$VERSION .
-      - # DO NOT PUSH IMAGE TO REGISTRY
+      - # DO NOT PUSH IMAGE TO REGISTRY VOLONTARY
 
 
 
