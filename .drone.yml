@@ -217,7 +217,7 @@ steps:
     network_mode: host
     privileged: true
     commands:
-      - # drop stage if necessary
+      - echo $DRONE_COMMIT_MESSAGE
       - >
         [[ "$DRONE_COMMIT_MESSAGE" = *'[TESTS SKIP]'* ]] && echo "==> Stage dropped because commit message" && exit 0
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
@@ -312,7 +312,7 @@ steps:
         from_secret: docker_password
     commands:
       - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
-      - # drop stage if necessary
+      - echo $DRONE_COMMIT_MESSAGE
       - >
         [[ "$DRONE_COMMIT_MESSAGE" = *'[DOCKER SKIP]'* ]] && echo "==> Stage dropped because commit message" && exit 0
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
@@ -548,7 +548,7 @@ steps:
       - cleep --version > version.txt
       - cat version.txt
 
-  - name: publish-cleep-docs
+  - name: publish-cleep-api-docs
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
     network_mode: host
     environment:
