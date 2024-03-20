@@ -217,6 +217,8 @@ steps:
     network_mode: host
     privileged: true
     commands:
+      - >
+        [[ "$DRONE_COMMIT_MESSAGE" = *'[TESTS SKIP]'* ]] && echo "==> Stage dropped because commit message" && exit 0
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
@@ -309,6 +311,8 @@ steps:
         from_secret: docker_password
     commands:
       - # MUST BE RAN AFTER test-cleep-install STEP to get version.txt file generated
+      - >
+        [[ "$DRONE_COMMIT_MESSAGE" = *'[DOCKER SKIP]'* ]] && echo "==> Stage dropped because commit message" && exit 0
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - docker --version
       - export VERSION=`cat version.txt`
@@ -382,17 +386,20 @@ steps:
       - # get version
       - export VERSION=`cat version.txt`
       - echo $VERSION
+      - # TODO use cleep-ci to freeze configured markets
       - # freeze version on cleep-apps
       - git clone git@github.com:CleepDevice/cleep-apps.git
       - cd cleep-apps
-      - git tag "v"$VERSION
-      - git push --tags
+      - export TAG_EXISTS=`git tag --list "v"$VERSION | wc -l`
+      - >
+        [ $TAG_EXISTS -eq 0 ] && git tag "v"$VERSION && git push --tags || true
       - cd ..
       - # freeze version on cleep-apps-nonfree
       - git clone git@github.com:CleepDevice/cleep-apps-nonfree.git
       - cd cleep-apps-nonfree
-      - git tag "v"$VERSION
-      - git push --tags
+      - export TAG_EXISTS=`git tag --list "v"$VERSION | wc -l`
+      - >
+        [ $TAG_EXISTS -eq 0 ] && git tag "v"$VERSION && git push --tags || true
 
   - name: publish-cleep-deb
     image: 192.168.1.125:5000/cleep-build/bullseye:20231205
