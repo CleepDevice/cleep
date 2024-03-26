@@ -415,9 +415,9 @@ steps:
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - export VERSION=`cat version.txt`
-      - echo $VERSION
+      - echo "version=$VERSION" "tag=$DRONE_TAG"
       - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION --prerelease
+      - cleep-cli corepublish --version=$VERSION --prerelease --tag=$DRONE_TAG
 
 
 
@@ -611,9 +611,9 @@ steps:
       - test -f version.txt || echo "No version.txt file found. Cannot continue"
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - export VERSION=`cat version.txt`
-      - echo $VERSION
+      - echo "version=$VERSION" "tag=$DRONE_TAG"
       - export REPO_DIR=/drone/src/cleep-dev
-      - cleep-cli corepublish --version=$VERSION
+      - cleep-cli corepublish --version=$VERSION --tag=$DRONE_TAG
 
 
 
