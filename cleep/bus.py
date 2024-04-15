@@ -64,12 +64,12 @@ class MessageBus():
         self.__stopped = True
 
         # clear all queues
-        for q in self._queues:
+        for queue in self._queues:
             continu = True
             while continu:
                 try:
-                    msg = self._queues[q].pop()
-                    self.logger.debug('Purging %s queue message: %s' % (q, msg))
+                    msg = self._queues[queue].pop()
+                    self.logger.debug('Purging %s queue message: %s', queue, msg)
                     if msg['event']:
                         msg['event'].set()
                 except:
@@ -78,6 +78,15 @@ class MessageBus():
         # stop purge thread
         if self.__purge:
             self.__purge.stop()
+
+    def _is_app_stopped(self):
+        """
+        Return stopped value
+
+        Returns:
+            bool: True if app stooped
+        """
+        return self.__stopped
 
     def app_configured(self):
         """
@@ -124,11 +133,11 @@ class MessageBus():
 
         # get request as dict
         request_dict = request.to_dict()
-        self.logger.trace('Received message %s to push to "%s" module with timeout %s' % (
+        self.logger.trace('Received message %s to push to "%s" module with timeout %s',
             request_dict,
             request.to,
             timeout
-        ))
+        )
 
         # push message according to context
         if request.to in self._queues:
@@ -140,7 +149,7 @@ class MessageBus():
         if request.to is None:
             # no recipient specified, broadcast message
             return self.__push_to_broadcast(request, request_dict, timeout)
-            
+
         # App is configured but recipient is not subscribed, raise exception
         raise InvalidModule(request.to)
 
@@ -172,15 +181,15 @@ class MessageBus():
             return MessageResponse()
 
         # wait for response
-        self.logger.trace('Push wait for response (%s seconds)....' % str(timeout))
+        self.logger.trace('Push wait for response (%s seconds)...', str(timeout))
         if event.wait(timeout):
             # response received
-            self.logger.debug('Response received %s' % str(msg['response']))
+            self.logger.debug('Response received %s', str(msg['response']))
             return msg['response']
-        else:
-            # no response in time
-            self.logger.debug('Command has timed out')
-            raise NoResponse(request.to, timeout, request_dict)
+
+        # no response in time
+        self.logger.debug('Command has timed out')
+        raise NoResponse(request.to, timeout, request_dict)
 
     def __push_to_rpc(self, request, request_dict, timeout):
         """
@@ -194,12 +203,12 @@ class MessageBus():
             'response': None,
             'auto_response': True,
         }
-        self.logger.debug('Broadcast to RPC clients message %s' % str(msg))
+        self.logger.debug('Broadcast to RPC clients message %s', str(msg))
 
         # append message to rpc queues
-        for q in self._queues.keys():
-            if q.startswith('rpc-'):
-                self._queues[q].appendleft(msg)
+        for queue in self._queues.keys():
+            if queue.startswith('rpc-'):
+                self._queues[queue].appendleft(msg)
 
         return MessageResponse()
 
@@ -214,7 +223,7 @@ class MessageBus():
             'response':None,
             'auto_response': True,
         }
-        self.logger.debug('Broadcast message %s' % str(msg))
+        self.logger.debug('Broadcast message %s', str(msg))
 
         # append message to queues
         for module_queue in self._queues:
@@ -258,12 +267,11 @@ class MessageBus():
 
             if not timeout:
                 return self.__pull_without_timeout(module, module_lc, timeout)
-            else:
-                return self.__pull_with_timeout(module, module_lc, timeout)
+            return self.__pull_with_timeout(module, module_lc, timeout)
 
         else:
             # subscriber not found
-            self.logger.error('Module %s not found' % module_lc)
+            self.logger.error('Module %s not found', module_lc)
             raise InvalidModule(module_lc)
 
     def __pull_without_timeout(self, module, module_lc, timeout):
@@ -272,7 +280,7 @@ class MessageBus():
         """
         try:
             msg = self._queues[module_lc].pop()
-            self.logger.trace('"%s" pulled without timeout: %s' % (module_lc, msg))
+            self.logger.trace('"%s" pulled without timeout: %s', module_lc, msg)
             return msg
 
         except IndexError:
@@ -297,7 +305,7 @@ class MessageBus():
         while i < loop:
             try:
                 msg = self._queues[module_lc].pop()
-                self.logger.trace('"%s" pulled with timeout %s' % (module_lc, msg))
+                self.logger.trace('"%s" pulled with timeout %s', module_lc, msg)
                 return msg
 
             except IndexError:
@@ -327,7 +335,7 @@ class MessageBus():
             module_name (string): module name
         """
         module_name_lc = module_name.lower()
-        self.logger.trace('Add subscription for module "%s"' % module_name_lc)
+        self.logger.trace('Add subscription for module "%s"', module_name_lc)
         self._queues[module_name_lc] = deque(maxlen=self.DEQUE_MAX_LEN)
         self.__activities[module_name_lc] = int(uptime.uptime())
 
@@ -342,12 +350,12 @@ class MessageBus():
             InvalidParameter: if module is unknown.
         """
         module_name_lc = module_name.lower()
-        self.logger.debug('Remove subscription for module "%s"' % module_name_lc)
+        self.logger.debug('Remove subscription for module "%s"', module_name_lc)
         if module_name_lc in self._queues:
             del self._queues[module_name_lc]
             del self.__activities[module_name_lc]
         else:
-            self.logger.error('Subscriber "%s" not found' % module_name_lc)
+            self.logger.error('Subscriber "%s" not found', module_name_lc)
             raise InvalidModule(module_name_lc)
 
     def is_subscribed(self, module_name):
@@ -371,7 +379,7 @@ class MessageBus():
         for module, last_pull in copy.items():
             if now > (last_pull + self.SUBSCRIPTION_LIFETIME):
                 # remove inactive subscription
-                self.logger.debug('Remove obsolete subscription "%s"' % module)
+                self.logger.debug('Remove obsolete subscription "%s"', module)
                 self.remove_subscription(module)
 
 
@@ -405,10 +413,11 @@ class BusClient(threading.Thread):
         threading.Thread.__init__(
             self,
             daemon=True,
-            name='module-%s' % module_name.lower()
+            name=f'module-{module_name.lower()}'
         )
 
         # members
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.__continue = True
         self.__bus = bootstrap['internal_bus']
         self.__bootstrap_crash_report = bootstrap['crash_report']
@@ -417,12 +426,14 @@ class BusClient(threading.Thread):
         self.__module_join_event.clear()
         self.__core_join_event = bootstrap['core_join_event']
         self.__on_start_event = Event()
-        self.__bootstrap = bootstrap
 
         # subscribe module to bus
         self.__bus.add_subscription(self.__module_name)
 
     def stop(self):
+        """
+        Stop thread
+        """
         self.__continue = False
 
     def __get_crash_report(self):
@@ -535,10 +546,10 @@ class BusClient(threading.Thread):
                 # response awaited
                 response.fill_from_response(self.__bus.push(request, timeout))
 
-        except Exception as e:
+        except Exception as error:
             self.logger.exception('Error occured while pushing message to bus')
             response.error = True
-            response.message = str(e)
+            response.message = str(error)
 
         return response
 
@@ -593,24 +604,24 @@ class BusClient(threading.Thread):
             # get command reference
             module_function = getattr(self, command)
             if module_function is not None:
-                (ok, args) = self.__check_command_parameters(module_function, params, self.__module_name)
-                if ok:
+                (params_ok, args) = self.__check_command_parameters(module_function, params, self.__module_name)
+                if params_ok:
                     try:
                         resp.data = module_function(**args)
-                    except Exception as e:
+                    except Exception as error:
                         self.logger.exception('Exception during send_command in the same module:')
                         resp.error = True
-                        resp.message = str(e)
+                        resp.message = str(error)
                 else:
                     # invalid command
-                    self.logger.error('Some command "%s" parameters are missing: %s' % (command, params))
+                    self.logger.error('Some command "%s" parameters are missing: %s', command, params)
                     resp.error = True
                     resp.message = 'Some command parameters are missing'
 
         except AttributeError:
-            self.logger.exception('Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name))
+            self.logger.exception('Command "%s" doesn\'t exist in "%s" module', command, self.__module_name)
             resp.error = True
-            resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (command, self.__module_name)
+            resp.message = f'Command "{command}" doesn\'t exist in "{self.__module_name}" module'
 
         except Exception:
             self.logger.exception('Internal error:')
@@ -635,14 +646,14 @@ class BusClient(threading.Thread):
         if to == self.__module_name:
             # message recipient is the module itself, bypass bus and execute directly the command
             return self.__execute_command(command, params)
-        else:
-            # send command to another module
-            request = MessageRequest()
-            request.to = to
-            request.command = command
-            request.params = params
 
-            return self.push(request, timeout)
+        # send command to another module
+        request = MessageRequest()
+        request.to = to
+        request.command = command
+        request.params = params
+
+        return self.push(request, timeout)
 
     def send_command_from_request(self, request, timeout=3.0):
         """
@@ -663,8 +674,7 @@ class BusClient(threading.Thread):
         if request.to == self.__module_name:
             # message recipient is the module itself, bypass bus and execute directly the command
             return self.__execute_command(request.command, request.params)
-        else:
-            return self.push(request, timeout)
+        return self.push(request, timeout)
 
     def _on_process(self):
         """
@@ -754,16 +764,16 @@ class BusClient(threading.Thread):
                 - infinite loop on message bus (custom process can run on each loop)
 
         """
-        self.logger.trace('BusClient %s started' % self.__module_name)
+        self.logger.trace('BusClient %s started', self.__module_name)
 
         # configuration
         try:
             self._configure()
         except Exception:
             self.__continue = False
-            self.logger.exception('Exception during module "%s" configuration:' % self.__module_name)
+            self.logger.exception('Exception during module "%s" configuration:', self.__module_name)
             self.__get_crash_report().report_exception({
-                'message': 'Exception during module "%s" configuration' % self.__module_name,
+                'message': f'Exception during module "{self.__module_name}" configuration',
                 'module': self.__module_name
             })
         except KeyboardInterrupt: # pragma: no cover
@@ -785,10 +795,10 @@ class BusClient(threading.Thread):
                 # custom process (do not crash bus on exception)
                 try:
                     self._on_process()
-                except Exception as e:
-                    self.logger.exception('Critical error occured in on_process: %s' % str(e))
+                except Exception as error:
+                    self.logger.exception('Critical error occured in on_process: %s', str(error))
                     self.__get_crash_report().report_exception({
-                        'message': 'Critical error occured in on_process: %s' % str(e),
+                        'message': f'Critical error occured in on_process: {str(error)}',
                         'module': self.__module_name
                     })
 
@@ -810,61 +820,58 @@ class BusClient(threading.Thread):
                 if msg and 'message' in msg:
                     if 'command' in msg['message']:
                         # command received, process it
-                        if ('command' in msg['message'] and msg['message']['command'] != None and
+                        if ('command' in msg['message'] and msg['message']['command'] is not None and
                                 len(msg['message']['command']) > 0):
                             try:
                                 # get command reference
                                 command = getattr(self, msg['message']['command'])
                                 self.logger.debug(
-                                    'Module "%s" received command "%s" from "%s" with params: %s' % (
-                                        self.__module_name,
-                                        msg['message']['command'],
-                                        msg['message']['sender'],
-                                        msg['message']['params']
-                                    )
+                                    'Module "%s" received command "%s" from "%s" with params: %s',
+                                    self.__module_name,
+                                    msg['message']['command'],
+                                    msg['message']['sender'],
+                                    msg['message']['params']
                                 )
 
                                 # check if command was found
                                 if command is not None:
                                     # check if message contains all command parameters
-                                    (ok, args) = self.__check_command_parameters(
+                                    (params_ok, args) = self.__check_command_parameters(
                                         command,
                                         msg['message']['params'],
                                         msg['message']['sender'],
-                                        msg,
+                                        msg
                                     )
 
-                                    if ok:
+                                    if params_ok:
                                         # execute command
                                         try:
                                             resp.data = command(**args)
 
-                                        except CommandError as e:
-                                            self.logger.error('Command error: %s' % str(e))
+                                        except CommandError as error:
+                                            self.logger.error('Command error: %s', str(error))
                                             resp.error = True
-                                            resp.message = str(e)
+                                            resp.message = str(error)
 
-                                        except CommandInfo as e:
+                                        except CommandInfo as error:
                                             # informative message
                                             resp.error = False
-                                            resp.message = str(e)
+                                            resp.message = str(error)
 
-                                        except Exception as e:
+                                        except Exception as error:
                                             # command failed
                                             self.logger.exception(
-                                                'Exception running command "%s" on module "%s"' % (
-                                                    msg['message']['command'],
-                                                    self.__module_name
-                                                )
+                                                'Exception running command "%s" on module "%s"',
+                                                 msg['message']['command'],
+                                                 self.__module_name
                                             )
                                             resp.error = True
-                                            resp.message = '%s' % str(e)
+                                            resp.message = str(error)
                                     else:
                                         self.logger.error(
-                                            'Some "%s" command parameters are missing: %s' % (
-                                                msg['message']['command'],
-                                                msg['message']['params']
-                                            )
+                                            'Some "%s" command parameters are missing: %s',
+                                            msg['message']['command'],
+                                            msg['message']['params']
                                         )
                                         resp.error = True
                                         resp.message = 'Some command parameters are missing'
@@ -874,16 +881,12 @@ class BusClient(threading.Thread):
                                 if not msg['message']['broadcast']:
                                     # log message only for non broadcasted message
                                     self.logger.exception(
-                                        'Command "%s" doesn\'t exist in "%s" module' % (
-                                            msg['message']['command'],
-                                            self.__module_name
-                                        )
-                                    )
-                                    resp.error = True
-                                    resp.message = 'Command "%s" doesn\'t exist in "%s" module' % (
+                                        'Command "%s" doesn\'t exist in "%s" module',
                                         msg['message']['command'],
                                         self.__module_name
                                     )
+                                    resp.error = True
+                                    resp.message = f'Command "{msg["message"]["command"]}" doesn\'t exist in "{self.__module_name}" module'
 
                             except Exception: # pragma: no cover
                                 # robustness: this case should not happen because bus already check it
@@ -895,7 +898,7 @@ class BusClient(threading.Thread):
                         else: # pragma: no cover
                             # robustness: this case should not happen because bus already check it
                             # no command specified
-                            self.logger.error('No command specified in message %s' % msg['message'])
+                            self.logger.error('No command specified in message %s', msg['message'])
                             resp.error = True
                             resp.message = 'No command specified in message'
 
@@ -909,12 +912,11 @@ class BusClient(threading.Thread):
 
                     elif 'event' in msg['message']:
                         self.logger.debug(
-                            '%s received event "%s" from "%s" with params: %s' % (
-                                self.__module_name,
-                                msg['message']['event'],
-                                msg['message']['sender'],
-                                msg['message']['params']
-                            )
+                            '%s received event "%s" from "%s" with params: %s',
+                            self.__module_name,
+                            msg['message']['event'],
+                            msg['message']['sender'],
+                            msg['message']['params']
                         )
                         if 'sender' in msg['message'] and msg['message']['sender'] == self.__module_name: # pragma: no cover
                             # robustness: this cas should not happen because bus already check it
@@ -928,7 +930,7 @@ class BusClient(threading.Thread):
                             except:
                                 # do not crash module
                                 self.logger.exception(
-                                    'Exception during on_event call, handled by "%s" module:' % self.__module_name
+                                    'Exception during on_event call, handled by "%s" module:', self.__module_name
                                 )
 
                 else: # pragma: no cover
@@ -942,7 +944,7 @@ class BusClient(threading.Thread):
 
             except: # pragma: no cover
                 # robustness: this case should not happen because all extraneous code is properly surrounded by try...except
-                self.logger.exception('Fatal exception occured running module "%s":' % self.__module_name)
+                self.logger.exception('Fatal exception occured running module "%s":', self.__module_name)
                 self.__get_crash_report().report_exception({
                     'message': 'Fatal exception occured running module',
                     'module': self.__module_name
@@ -953,7 +955,7 @@ class BusClient(threading.Thread):
         try:
             self._on_stop()
         except:
-            self.logger.exception('Fatal exception occured stopping module "%s":' % self.__module_name)
+            self.logger.exception('Fatal exception occured stopping module "%s":', self.__module_name)
             self.__get_crash_report().report_exception({
                 'message': 'Fatal exception occured stopping module',
                 'module': self.__module_name,
@@ -961,5 +963,5 @@ class BusClient(threading.Thread):
 
         # remove subscription
         self.__bus.remove_subscription(self.__module_name)
-        self.logger.trace('BusClient %s stopped' % self.__module_name)
+        self.logger.trace('BusClient %s stopped', self.__module_name)
 
