@@ -6,13 +6,13 @@
 # Cleep modules
 
 import logging
-import time
 import os
 import inspect
 from zipfile import ZipFile
 import threading
 import tempfile
 import stat
+from gevent import sleep
 from cleep.libs.internals.console import EndlessConsole
 from cleep.core import CleepModule
 from cleep.libs.internals.download import Download
@@ -180,7 +180,7 @@ class CommonProcess(threading.Thread):
         # monitor end of script execution
         while self._script_running:
             # pause
-            time.sleep(0.25)
+            sleep(0.25)
 
         # check script result
         if self._pre_script_execution and self._pre_script_status["returncode"] == 0:
@@ -1380,9 +1380,9 @@ class UpdateModule(threading.Thread):
             # run uninstall
             self._is_uninstalling = True
             uninstall.start()
-            time.sleep(0.5)
+            sleep(0.5)
             while uninstall.is_uninstalling():
-                time.sleep(0.25)
+                sleep(0.25)
             if uninstall.get_status()["status"] != uninstall.STATUS_UNINSTALLED:
                 # uninstall failed
                 # TODO implement rollback reinstalling previous module version
@@ -1395,9 +1395,9 @@ class UpdateModule(threading.Thread):
             # run new package install
             self._is_uninstalling = False
             install.start()
-            time.sleep(0.5)
+            sleep(0.5)
             while install.is_installing():
-                time.sleep(0.25)
+                sleep(0.25)
             if install.get_status()["status"] != install.STATUS_INSTALLED:
                 # install failed
                 # TODO implement rollback reinstalling previous module version

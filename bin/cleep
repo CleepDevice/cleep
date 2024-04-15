@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
+from gevent import monkey
+monkey.patch_all()
 import os
 import json
 import sys
@@ -15,6 +17,7 @@ from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from cleep import inventory as cleep_inventory
 from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+from cleep.libs.internals.taskfactory import TaskFactory
 import importlib
 from cleep import __version__ as VERSION
 from cleep.libs.internals.crashreport import CrashReport
@@ -27,6 +30,7 @@ from gevent import __version__ as gevent_version
 from passlib import __version__ as passlib_version
 from greenlet import __version__ as greenlet_version
 from requests import __version__ as requests_version
+import time
 
 
 LOG_FILE = '/var/log/cleep.log'
@@ -58,8 +62,7 @@ LOG_SETTINGS = {
         }   
     },  
 }
-DRY_RUN_TIMEOUT = 8.0
-CI_DOC_TIMEOUT = 4.0
+ACTION_TIMEOUT = 8.0
 CLEEP_INSTALLED_MODULES_PATH = '/opt/cleep/modules'
 
 class ConfigException(Exception):
@@ -127,19 +130,17 @@ def load_crash_report(debug, disabled):
 
     return CrashReport(sentry_dsn, 'CleepDevice', VERSION, libs_version, debug, disabled)
 
-def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_filesystem, crash_report, critical_resources, drivers, rpc_config):
+def get_bootstrap_objects(debug, internal_bus, cleep_filesystem, crash_report, rpc_config, app_stop_event):
     """
     Return bootstrap objects.
 
     Args:
+        debug (bool): debug flag
         internal_bus (MessageBus): message bus instance
-        events_broker (EventsBroker): events broker instance
-        formatters_broker (ProfileFormattersBroker): formatters broker instance
         cleep_filesystem (CleepFilesystem): cleep filesystem singleton instance
         crash_report (CrashReport): crash report singleton instance
-        critical_resources (CriticalResources): critical resources handler singleton instance
-        drivers (Drivers): drivers handler singleton instance
         rpc_config (dict): rpc configuration (port, host, ssl opts)
+        app_stop_event (Event): application stop event
 
     Returns:
         dict: dict of bootstrap objects::
@@ -159,12 +160,14 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
                 execution_step (ExecutionStep): cleep execution step
                 external_bus (string): module name that holds external bus (only one allowed)
                 rpc_config (dict): rpc configuration (port, host, ssl opts)
+                app_stop_event (Event): stop event to sync all threads
+                task_factory (TaskFactory): Task factory singleton
             }
 
     """
-    return {
-        'events_broker': events_broker,
-        'formatters_broker': formatters_broker,
+    bootstrap = {
+        'events_broker': EventsBroker(debug),
+        'formatters_broker': ProfileFormattersBroker(debug),
         'internal_bus': internal_bus,
         'module_join_event': Event(),
         'core_join_event': Event(),
@@ -172,21 +175,56 @@ def get_bootstrap_objects(internal_bus, events_broker, formatters_broker, cleep_
         'crash_report': crash_report,
         'log_file': LOG_FILE,
         'test_mode': False,
-        'critical_resources': critical_resources,
-        'drivers': drivers,
+        'critical_resources': None,
+        'drivers': Drivers(debug),
         'execution_step': ExecutionStep(),
         'external_bus': None,
         'rpc_config': rpc_config,
+        'app_stop_event': app_stop_event,
+        'task_factory': None,
     }
 
-def dry_run_stop_server(server, inventory):
+    # task factory needs app_stop_event
+    bootstrap['task_factory'] = TaskFactory(bootstrap)
+    # critical resources needs task_factory
+    bootstrap["critical_resources"] = CriticalResources(bootstrap, debug)
+
+    # configure brokers
+    bootstrap["events_broker"].configure(bootstrap)
+    bootstrap["formatters_broker"].configure(bootstrap)
+
+    return bootstrap
+
+def stop_cleep(debug_core, rpc_server, inventory, internal_bus, app_stop_event):
+    """
+    Properly stop RPC server
+
+    Args:
+        rpc_server (RpcServer): RPC server instance
+        inventory (Inventory): Inventory instance
+        internal_bus (Bus): internal bus instance
+        app_stop_event (Event): application stop event
+    """
+    app_stop_event.set()
+    if inventory:
+        inventory.unload_modules()
+        inventory.stop()
+    if internal_bus:
+        internal_bus.stop()
+
+    if debug_core:
+        time.sleep(4.0)
+        (logger or logging).info('='*10 + 'THREADS' + '='*10)
+        for thread in enumerate():
+            logger.info('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
+        (logger or logging).info('='*20)
+
+def dry_run():
     """
     Stop RPC server in dry run
     """
     global logger
     (logger or logging).info('Stop forced by dry-run')
-    inventory.unload_modules()
-    server.stop()
 
 def generate_app_documentation(app_name):
     """
@@ -203,11 +241,12 @@ def generate_app_documentation(app_name):
     resp = resp.json()
 
     if resp["error"]:
-        print(f"Error occured: {resp['message']}")
+        print(json.dumps({
+            "error": resp['message'],
+        }))
         exit_code = 1
-        return
-
-    print(json.dumps(resp["data"]))
+    else:
+        print(json.dumps(resp["data"]))
 
 def check_app_documentation(app_name):
     """
@@ -225,8 +264,8 @@ def check_app_documentation(app_name):
 
     if resp["error"]:
         exit_code = 1
-
-    print(json.dumps(resp["data"]))
+    else:
+        print(json.dumps(resp["data"]))
 
 def get_rpc_config(config, force_http):
     """
@@ -277,6 +316,24 @@ def symlink_modules(cleep_filesystem):
 
     cleep_filesystem.ln(CLEEP_INSTALLED_MODULES_PATH, cleep_modules_path, force=True)
 
+def execute_command_action(options):
+    """
+    Process command line actions that requires Cleep to be stopped after execution
+    """
+    action_timer = None
+    if options.get("ci_generate_doc"):
+        action_timer = Timer(ACTION_TIMEOUT, generate_app_documentation, [ci_doc_app_name])
+    elif options.get("ci_check_doc"):
+        action_timer = Timer(ACTION_TIMEOUT, check_app_documentation, [ci_check_doc_app_name])
+    elif options.get("dry_run"):
+        action_timer = Timer(ACTION_TIMEOUT, dry_run)
+
+    if action_timer:
+        action_timer.start()
+        rpcserver = options.get("rpcserver")
+        stop_timer = Timer(ACTION_TIMEOUT + 2.0, rpcserver.stop)
+        stop_timer.start()
+
 if __name__ == '__main__':
     exit_code = 0
     tools.install_trace_logging_level()
@@ -287,7 +344,8 @@ if __name__ == '__main__':
     debug_core = False
     force_http = False
     cleep_filesystem = CleepFilesystem()
-    
+    app_stop_event = Event()
+
     try:
         # before everything make sure modules are symlinked to Cleep install dir
         symlink_modules(cleep_filesystem)
@@ -343,7 +401,8 @@ if __name__ == '__main__':
         logger = logging.getLogger('Cleep')
         if any([v is not None for v in [ci_doc_app_name, ci_check_doc_app_name]]):
             # no logging during ci doc
-            logger.setLevel(logging.FATAL)
+            # logger.setLevel(logging.FATAL)
+            pass
         logger.info('========== Cleep v%s started ==========' % VERSION)
 
         # create cleep filesystem singleton (will be saved in bootstrap context)
@@ -391,30 +450,20 @@ if __name__ == '__main__':
             debug = True
         internal_bus = bus.MessageBus(crash_report, debug)
 
-        # create system instances (factories, critical resources handler...)
+        # force debug state
         debug = False
         if trace_enabled or debug_core:
             debug = True
-        events_broker = EventsBroker(debug)
-        formatters_broker = ProfileFormattersBroker(debug)
-        critical_resources = CriticalResources(debug)
-        drivers = Drivers(debug)
 
         # build bootstrap objects collection
         bootstrap = get_bootstrap_objects(
+            debug,
             internal_bus,
-            events_broker,
-            formatters_broker,
             cleep_filesystem,
             crash_report,
-            critical_resources,
-            drivers,
             rpc_config,
+            app_stop_event,
         )
-
-        # configure brokers
-        events_broker.configure(bootstrap)
-        formatters_broker.configure(bootstrap)
 
         # create inventory
         logger.debug('Initializing inventory')
@@ -442,21 +491,18 @@ if __name__ == '__main__':
 
         # unlock bus and launch webserver (blocking)
         logger.info('Cleep running...')
-        internal_bus.app_configured()
-        debug = False
-        if trace_enabled or debug_modules.count('rpc')==1:
-            debug = True
+        internal_bus.app_configured(bootstrap["task_factory"])
+        debug = trace_enabled or debug_modules.count('rpc') == 1
         rpcserver.configure(rpc_config, bootstrap, inventory, debug)
 
-        if dry_run:
-            timer_stop_server = Timer(DRY_RUN_TIMEOUT, dry_run_stop_server, [rpcserver.server, inventory])
-            timer_stop_server.start()
-        if ci_doc_app_name:
-            timer_generate_doc = Timer(CI_DOC_TIMEOUT, generate_app_documentation, [ci_doc_app_name])
-            timer_generate_doc.start()
-        if ci_check_doc_app_name:
-            timer_check_doc = Timer(CI_DOC_TIMEOUT, check_app_documentation, [ci_check_doc_app_name])
-            timer_check_doc.start()
+        execute_command_action({
+            "inventory": inventory,
+            "internal_bus": internal_bus,
+            "rpcserver": rpcserver,
+            "dry_run": dry_run,
+            "ci_generate_doc": ci_doc_app_name,
+            "ci_check_doc": ci_check_doc_app_name,
+        })
 
         rpcserver.start()
 
@@ -468,25 +514,14 @@ if __name__ == '__main__':
     except SystemExit:
         pass
  
-    except:
+    except Exception as error:
         exit_code = 1
         (logger or logging).exception('Exception during startup:')
 
     # clean all stuff
-    (logger or logging).debug('Stopping Cleep core')
-    if inventory:
-        inventory.unload_modules()
-        inventory.stop()
-    if internal_bus:
-        internal_bus.stop()
-
-    if debug_core:
-        (logger or logging).info('='*10 + 'THREADS' + '='*10)
-        for thread in enumerate():
-            logger.info('- %s: daemon=%s alive=%s' % (thread.name, thread.daemon, thread.is_alive()))
-        (logger or logging).info('='*20)
-
-    (logger or logging).info('Cleep stopped')
+    (logger or logging).info('Stopping Cleep core')
+    stop_cleep(debug_core, rpcserver, inventory, internal_bus, app_stop_event)
+    (logger or logging).info('Cleep stopped [%d]', exit_code)
 
     sys.exit(exit_code)
 

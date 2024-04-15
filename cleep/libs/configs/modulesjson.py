@@ -5,6 +5,7 @@ import logging
 import os
 import json
 import time
+from gevent import sleep
 import requests
 from cleep import __version__ as CLEEP_VERSION
 from cleep.libs.internals.download import Download
@@ -212,7 +213,7 @@ class ModulesJson:
             )
 
             # make sure file is written
-            time.sleep(0.25)
+            sleep(0.25)
 
             return True
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import time
+from gevent import sleep
 from cleep.libs.internals.console import AdvancedConsole
 from cleep.libs.configs.wpasupplicantconf import WpaSupplicantConf
 import cleep.libs.internals.tools as Tools
@@ -163,7 +163,7 @@ class Wpacli(AdvancedConsole):
             self.command(f"{self.wpacli} scan")
 
         # wait few seconds
-        time.sleep(duration)
+        sleep(duration)
 
         # parse results
         if interface:
@@ -440,7 +440,7 @@ class Wpacli(AdvancedConsole):
 
         # pause if requested
         if pause:
-            time.sleep(pause)
+            sleep(pause)
 
         return True
 

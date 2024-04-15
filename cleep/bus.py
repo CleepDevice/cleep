@@ -3,12 +3,12 @@
 
 import logging
 import threading
-import time
 import math
 import inspect
 from collections import deque
 from threading import Event
 import uptime
+from gevent import sleep
 from cleep.libs.internals.task import Task
 from cleep.common import MessageResponse, MessageRequest
 from cleep.exception import (NoMessageAvailable, InvalidParameter, BusError, NoResponse, CommandError, CommandInfo,
@@ -30,6 +30,7 @@ class MessageBus():
     STARTUP_TIMEOUT = 30.0
     DEQUE_MAX_LEN = 100
     SUBSCRIPTION_LIFETIME = 600 # in seconds
+    PURGE_SUBSCRIPTIONS_DELAY = 120 # in seconds
 
     def __init__(self, crash_report, debug_enabled):
         """
@@ -88,15 +89,18 @@ class MessageBus():
         """
         return self.__stopped
 
-    def app_configured(self):
+    def app_configured(self, task_factory):
         """
         Set internal bus flag to say application is ready and messages can be processed
+
+        Args:
+            task_factory (TaskFactory): task factory instance
         """
         # then set app is configured
         self.__app_configured = True
 
         # and finally launch purge subscriptions task
-        self.__purge = Task(60.0, self.purge_subscriptions, self.logger)
+        self.__purge = task_factory.create_task(self.PURGE_SUBSCRIPTIONS_DELAY, self.purge_subscriptions)
         self.__purge.start()
 
         # now push function will handle new messages
@@ -321,7 +325,7 @@ class MessageBus():
                 })
                 raise BusError('Error when pulling message')
 
-            time.sleep(0.10)
+            sleep(0.10)
             i += 1
 
         # end of loop and no message found
@@ -426,6 +430,7 @@ class BusClient(threading.Thread):
         self.__module_join_event.clear()
         self.__core_join_event = bootstrap['core_join_event']
         self.__on_start_event = Event()
+        self.__task_factory = bootstrap["task_factory"]
 
         # subscribe module to bus
         self.__bus.add_subscription(self.__module_name)
@@ -786,7 +791,7 @@ class BusClient(threading.Thread):
 
         # run on_start function asynchronously to avoid dead locks if
         # bus message is mutually used between 2 modules
-        start_task = Task(None, self._on_start, self.logger, end_callback=self.__started_callback)
+        start_task = self.__task_factory.create_task(None, self._on_start, end_callback=self.__started_callback)
         start_task.start()
 
         # now run infinite loop on message bus
@@ -810,7 +815,7 @@ class BusClient(threading.Thread):
                 except NoMessageAvailable:
                     # no message available
                     # release CPU
-                    time.sleep(.25)
+                    sleep(.25)
                     continue
 
                 # create response

@@ -31,18 +31,20 @@ class Download:
     STATUS_CANCELED = 7
     STATUS_CACHED = 8
 
-    def __init__(self, cleep_filesystem):
+    def __init__(self, cleep_filesystem, task_factory):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance. If None does not handle R/O mode
+            task_factory (TaskFactory): TaskFactory instance
         """
         # logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # members
         self.cleep_filesystem = cleep_filesystem
+        self.task_factory = task_factory
         self.temp_dir = tempfile.gettempdir()
         self.__cancel = False
         self.__status_callback = None
@@ -341,10 +343,9 @@ class Download:
         self.__cancel = False
         self.__status_callback = status_callback
 
-        self.__download_task = Task(
+        self.__download_task = self.task_factory.create_task(
             None,
             self.download_file,
-            self.logger,
             task_kwargs={
                 "url": url,
                 "end_callback": end_callback,

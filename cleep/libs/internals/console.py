@@ -4,6 +4,7 @@
 import sys
 import subprocess
 import time
+from gevent import sleep
 from threading import Timer, Thread, Event
 
 try:  # pragma: no cover
@@ -264,7 +265,7 @@ class EndlessConsole(Thread):
                 break
 
             # pause
-            time.sleep(self.__opts.get('delay', 0.2))
+            sleep(self.__opts.get('delay', 0.2))
 
         # purge queues
         self.logger.trace("Purging outputs...")
@@ -272,7 +273,7 @@ class EndlessConsole(Thread):
         while self.__send_stds() or count <= 5:
             self.logger.trace(" purging...")
             count += 1
-            time.sleep(0.05)
+            sleep(0.05)
         self.logger.trace("Purge completed")
 
         # make sure all stds are closed
@@ -445,7 +446,7 @@ class Console:
                 break
 
             # pause
-            time.sleep(0.125)
+            sleep(0.125)
 
         # prepare result
         result = {

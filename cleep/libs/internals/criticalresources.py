@@ -30,12 +30,16 @@ class CriticalResources:
     giving a possibilty to acquire the resource, release it and acquire it again if necessary.
     """
 
-    PYTHON_CLEEP_IMPORT_PATH = u"cleep.resources."
-    RESOURCES_DIR = u"../../resources"
+    PYTHON_CLEEP_IMPORT_PATH = "cleep.resources."
+    RESOURCES_DIR = "../../resources"
 
-    def __init__(self, debug_enabled):
+    def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
+
+        Args:
+            bootstrap (dict): bootstrap context
+            debug_enabled (bool): debug enabled flag
         """
         # logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -43,6 +47,7 @@ class CriticalResources:
             self.logger.setLevel(logging.DEBUG)
 
         # members
+        self.task_factory = bootstrap["task_factory"]
         self.__mutex = Lock()
         self.crash_report = None
         # resource data:
@@ -81,9 +86,9 @@ class CriticalResources:
         path = os.path.join(os.path.dirname(__file__), self.RESOURCES_DIR)
         if not os.path.exists(path):
             self.__report_exception(
-                {u"message": u"Invalid resources path", u"path": path}
+                {"message": "Invalid resources path", "path": path}
             )
-            raise Exception(u'Invalid resources path "%s"' % path)
+            raise Exception('Invalid resources path "%s"' % path)
 
         try:
             for f in os.listdir(path):
@@ -93,17 +98,17 @@ class CriticalResources:
                 self.logger.trace("Resource=%s ext=%s" % (resource, ext))
                 if (
                     os.path.isfile(fullpath)
-                    and ext == u".py"
-                    and resource != u"__init__"
-                    and resource != u"resource"
+                    and ext == ".py"
+                    and resource != "__init__"
+                    and resource != "resource"
                 ):
                     self.logger.debug(
                         'Loading "%s"'
-                        % u"%s%s"
+                        % "%s%s"
                         % (self.PYTHON_CLEEP_IMPORT_PATH, resource)
                     )
                     mod_ = importlib.import_module(
-                        u"%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, resource)
+                        "%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, resource)
                     )
 
                     resource_class_name = self.__get_resource_class_name(resource, mod_)
@@ -111,13 +116,13 @@ class CriticalResources:
                     if resource_class_name:
                         class_ = getattr(mod_, resource_class_name)
                         self.resources[class_.RESOURCE_NAME] = {
-                            u"using": None,
-                            u"waiting": [],
-                            u"permanent": None,
+                            "using": None,
+                            "waiting": [],
+                            "permanent": None,
                         }
                     else:
                         self.logger.error(
-                            u"Resource class must have the same name than filename"
+                            "Resource class must have the same name than filename"
                         )
                         raise AttributeError(
                             'Invalid resource "%s" tryed to be loaded' % resource
@@ -125,14 +130,14 @@ class CriticalResources:
 
         except AttributeError:
             self.logger.exception(
-                u'Resource "%s" has surely invalid name, please refer to coding rules:'
+                'Resource "%s" has surely invalid name, please refer to coding rules:'
                 % resource
             )
             raise Exception('Invalid resource "%s" tryed to be loaded' % resource)
 
         except:
             self.logger.exception(
-                u'Resource "%s" wasn\'t imported successfully. Please check event source code.'
+                'Resource "%s" wasn\'t imported successfully. Please check event source code.'
                 % resource
             )
             raise Exception('Error occured trying to load resource "%s"' % resource)
@@ -194,9 +199,9 @@ class CriticalResources:
             Exception: if resource does not exist or resource already have permanent module configured
         """
         if not self.__is_resource_referenced(resource_name):
-            raise Exception(u'Resource "%s" does not exists' % resource_name)
+            raise Exception('Resource "%s" does not exists' % resource_name)
         if not callable(acquired_callback) or not callable(need_release_callback):
-            raise Exception(u"Callbacks must be functions")
+            raise Exception("Callbacks must be functions")
         self.logger.debug(
             'Registering resource "%s" for module "%s" (permanent=%s)'
             % (resource_name, module_name, permanent)
@@ -204,25 +209,25 @@ class CriticalResources:
 
         # check if resource already registered and if it's not already have a permanent module
         if (
-            self.resources[resource_name][u"permanent"] is not None
+            self.resources[resource_name]["permanent"] is not None
             and permanent is True
         ):
             raise Exception(
-                u'Resource "%s" already has permanent module "%s" configured. Only one allowed'
-                % (resource_name, self.resources[resource_name][u"permanent"])
+                'Resource "%s" already has permanent module "%s" configured. Only one allowed'
+                % (resource_name, self.resources[resource_name]["permanent"])
             )
 
         # save callbacks
         if module_name not in self.callbacks:
             self.callbacks[module_name] = {}
         self.callbacks[module_name][resource_name] = {
-            u"acquired_callback": acquired_callback,
-            u"need_release_callback": need_release_callback,
+            "acquired_callback": acquired_callback,
+            "need_release_callback": need_release_callback,
         }
 
         # acquire resource right now if permanent
         if permanent:
-            self.resources[resource_name][u"permanent"] = module_name
+            self.resources[resource_name]["permanent"] = module_name
             self.acquire_resource(module_name, resource_name)
 
     def is_resource_permanently_acquired(self, resource_name):
@@ -236,10 +241,10 @@ class CriticalResources:
             bool: True if permanently acquired
         """
         if not self.__is_resource_referenced(resource_name):
-            raise Exception(u'Resource "%s" does not exists' % resource_name)
+            raise Exception('Resource "%s" does not exists' % resource_name)
 
         return (
-            True if self.resources[resource_name][u"permanent"] is not None else False
+            True if self.resources[resource_name]["permanent"] is not None else False
         )
 
     def acquire_resource(self, module_name, resource_name):
@@ -256,65 +261,63 @@ class CriticalResources:
             Exception: if resource does not exist
         """
         if not self.__is_resource_referenced(resource_name):
-            raise Exception(u'Resource "%s" does not exists' % resource_name)
+            raise Exception('Resource "%s" does not exists' % resource_name)
         if module_name not in self.callbacks:
             raise Exception(
-                u'Module "%s" try to acquire resource "%s" which it is not registered on'
+                'Module "%s" try to acquire resource "%s" which it is not registered on'
                 % (module_name, resource_name)
             )
 
         self.__mutex.acquire()
 
         self.logger.trace(
-            u'Module "%s" is acquiring resource "%s"' % (module_name, resource_name)
+            'Module "%s" is acquiring resource "%s"' % (module_name, resource_name)
         )
         try:
-            if self.resources[resource_name][u"using"] == None:
+            if self.resources[resource_name]["using"] == None:
                 # resource is not used at this time, acquire it right now
                 self.logger.debug(
-                    u'Resource "%s" is available, "%s" acquire it right now'
+                    'Resource "%s" is available, "%s" acquire it right now'
                     % (resource_name, module_name)
                 )
-                self.resources[resource_name][u"using"] = module_name
-                task = Task(
+                self.resources[resource_name]["using"] = module_name
+                task = self.task_factory.create_task(
                     None,
-                    self.callbacks[module_name][resource_name][u"acquired_callback"],
-                    self.logger,
+                    self.callbacks[module_name][resource_name]["acquired_callback"]
                     [resource_name],
                 )
                 task.start()
 
             elif self.resources[resource_name]["using"] == module_name:
                 self.logger.debug(
-                    u'Module "%s" is trying to acquire resource "%s" already acquired by itself. Drop request'
+                    'Module "%s" is trying to acquire resource "%s" already acquired by itself. Drop request'
                     % (module_name, resource_name)
                 )
 
             else:
                 # resource is not free, add module to waiting queue
-                if module_name not in self.resources[resource_name][u"waiting"]:
+                if module_name not in self.resources[resource_name]["waiting"]:
                     self.logger.debug(
-                        u'Resource "%s" is in use by "%s", queue module "%s" (queue size=%s)'
+                        'Resource "%s" is in use by "%s", queue module "%s" (queue size=%s)'
                         % (
                             resource_name,
                             self.resources[resource_name]["using"],
                             module_name,
-                            len(self.resources[resource_name][u"waiting"]),
+                            len(self.resources[resource_name]["waiting"]),
                         )
                     )
-                    self.resources[resource_name][u"waiting"].insert(0, module_name)
+                    self.resources[resource_name]["waiting"].insert(0, module_name)
 
                 # and inform module that is using resource it must releases it
                 self.logger.debug(
-                    u'Inform module "%s" its acquired resource "%s" is needed by another module'
-                    % (self.resources[resource_name][u"using"], resource_name)
+                    'Inform module "%s" its acquired resource "%s" is needed by another module'
+                    % (self.resources[resource_name]["using"], resource_name)
                 )
-                task = Task(
+                task = self.task_factory.create_task(
                     None,
-                    self.callbacks[self.resources[resource_name][u"using"]][
+                    self.callbacks[self.resources[resource_name]["using"]][
                         resource_name
-                    ][u"need_release_callback"],
-                    self.logger,
+                    ]["need_release_callback"],
                     [resource_name],
                 )
                 task.start()
@@ -322,13 +325,13 @@ class CriticalResources:
 
         except:
             self.logger.exception(
-                u'Error occured acquiring critical resource "%s"' % resource_name
+                'Error occured acquiring critical resource "%s"' % resource_name
             )
             self.__report_exception(
                 {
-                    u"error": 'Error acquiring critical resource "%s"' % resource_name,
-                    u"resource_name": resource_name,
-                    u"module_name": module_name,
+                    "error": 'Error acquiring critical resource "%s"' % resource_name,
+                    "resource_name": resource_name,
+                    "module_name": module_name,
                 }
             )
 
@@ -353,19 +356,19 @@ class CriticalResources:
             not self.__is_resource_referenced(resource_name)
             or not resource_name in self.resources
         ):
-            raise Exception(u'Resource "%s" does not exists' % resource_name)
+            raise Exception('Resource "%s" does not exists' % resource_name)
 
-        if not self.resources[resource_name][u"using"]:
+        if not self.resources[resource_name]["using"]:
             # no module has acquired the resource
             self.logger.warning(
-                u'Unable to release not acquired resource "%s"' % resource_name
+                'Unable to release not acquired resource "%s"' % resource_name
             )
             return False
 
-        if self.resources[resource_name][u"using"] != module_name:
+        if self.resources[resource_name]["using"] != module_name:
             # module is not using resource at this time, it can't release it
             self.logger.warning(
-                u'Module "%s" can\'t release resource "%s" not acquired by it'
+                'Module "%s" can\'t release resource "%s" not acquired by it'
                 % (module_name, resource_name)
             )
             return False
@@ -373,29 +376,28 @@ class CriticalResources:
         self.__mutex.acquire()
 
         self.logger.trace(
-            u'Module "%s" is releasing resource "%s"' % (module_name, resource_name)
+            'Module "%s" is releasing resource "%s"' % (module_name, resource_name)
         )
         try:
             # get next module that wants to acquire resource
             next_module = None
-            if len(self.resources[resource_name][u"waiting"]) > 0:
-                next_module = self.resources[resource_name][u"waiting"].pop()
-            elif self.resources[resource_name][u"permanent"] is not None:
-                next_module = self.resources[resource_name][u"permanent"]
+            if len(self.resources[resource_name]["waiting"]) > 0:
+                next_module = self.resources[resource_name]["waiting"].pop()
+            elif self.resources[resource_name]["permanent"] is not None:
+                next_module = self.resources[resource_name]["permanent"]
 
             # configure new resource acquirer
-            self.resources[resource_name][u"using"] = next_module
-            self.logger.trace(u"callbacks: %s" % self.callbacks)
-            self.logger.trace(u"next_module: %s" % next_module)
+            self.resources[resource_name]["using"] = next_module
+            self.logger.trace("callbacks: %s" % self.callbacks)
+            self.logger.trace("next_module: %s" % next_module)
             if next_module:
                 self.logger.debug(
-                    u'Request next module "%s" for resource "%s" acquisition'
+                    'Request next module "%s" for resource "%s" acquisition'
                     % (next_module, resource_name)
                 )
-                task = Task(
+                task = self.task_factory.create_task(
                     None,
-                    self.callbacks[next_module][resource_name][u"acquired_callback"],
-                    self.logger,
+                    self.callbacks[next_module][resource_name]["acquired_callback"],
                     [resource_name],
                 )
                 task.start()
@@ -403,13 +405,13 @@ class CriticalResources:
 
         except:
             self.logger.exception(
-                u'Error occuring releasing critical resource "%s"' % resource_name
+                'Error occuring releasing critical resource "%s"' % resource_name
             )
             self.__report_exception(
                 {
-                    u"error": 'Error releasing critical resource "%s"' % resource_name,
-                    u"resource_name": resource_name,
-                    u"module_name": module_name,
+                    "error": 'Error releasing critical resource "%s"' % resource_name,
+                    "resource_name": resource_name,
+                    "module_name": module_name,
                 }
             )
 

@@ -1,11 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from threading import Timer
+from threading import Thread, Event
 from time import perf_counter
+from gevent import sleep
 import os
 
 __all__ = ["Task", "CountTask"]
+
+
+class CancelableTimer(Thread):
+    """
+    Really cancelable timer versus native Timer that cancels only when task runs
+    """
+    def __init__(self, interval, task):
+        """
+        Create new cancelable timer. Task internal usage only because task parameters are not supported
+
+        Args:
+            interval (double): time to wait (in seconds)
+            task (function): task to run after timeout
+        """
+        Thread.__init__(self)
+        self.__event = Event()
+        self.task = task
+        self.interval = int(interval) or 1
+        self.__canceled = False
+
+    def run(self):
+        while self.interval > 0 and not self.__event.is_set():
+            self.interval -= 1
+            timeout = self.interval if self.interval <= 1 else 1
+            self.__event.wait(timeout)
+
+        if not self.__canceled:
+            self.task()
+
+    def cancel(self):
+        self.__canceled = True
+        self.__event.set()
 
 
 class Task:
@@ -21,6 +54,7 @@ class Task:
         interval,
         task,
         logger,
+        app_stop_event,
         task_args=None,
         task_kwargs=None,
         end_callback=None,
@@ -32,12 +66,15 @@ class Task:
             interval (float): interval to repeat task (in seconds). If None task is executed once
             task (callback): function to call periodically
             logger (logger): logger instance used to log message in task
+            app_stop_event (Event): stop event to stop thread asap app is stopped
             task_args (list): list of task parameters
             task_kwargs (dict): dict of task parameters
             end_callback (function): call this function as soon as task is terminated
         """
         self._task = task
-        self._task_name = "task-%s" % getattr(self._task, "__name__", "unamed")
+        caller_class_name = type(self._task.__self__).__name__
+        function_name = getattr(self._task, "__name__", "unamed")
+        self._task_name = f"task.{caller_class_name}.{function_name}"
         self.logger = logger
         self._args = task_args or []
         self._kwargs = task_kwargs or {}
@@ -47,6 +84,7 @@ class Task:
         self.__stopped = False
         self.__end_callback = end_callback
         self.__task_start_timestamp = perf_counter()
+        self._app_stop_event = app_stop_event
 
     def __run(self):
         """
@@ -83,7 +121,7 @@ class Task:
         if run_again and not self.__stopped:
             self.__task_start_timestamp += self._interval
             adjusted_interval = self.__task_start_timestamp - perf_counter()
-            self.__timer = Timer(adjusted_interval, self.__run)
+            self.__timer = CancelableTimer(adjusted_interval, self.__run)
             self.__timer.name = self._task_name
             self.__timer.daemon = True
             self.__timer.start()
@@ -104,7 +142,7 @@ class Task:
             while (
                 not self.__timer or not self.__timer.is_alive()
             ):  # pragma: no cover - sync
-                time.sleep(0.1)
+                sleep(0.1)
             self.__timer.join()
         else:
             while self._run_count > 0:
@@ -115,20 +153,23 @@ class Task:
         """
         Start the task
         """
+        if self._app_stop_event.is_set():
+            self.stop()
+            return
+
         if self.__timer:
             self.stop()
-        self.__timer = Timer(self._interval, self.__run)
+        self.__timer = CancelableTimer(self._interval, self.__run)
         self.__timer.daemon = True
         self.__timer.name = self._task_name
 
         # accuracy
         self.__task_start_timestamp = perf_counter() + self._interval
 
-        CLEEP_ENV = os.environ.get('CLEEP_ENV', '')
-        if CLEEP_ENV.lower() == 'ci':
-            self.logger.info('Tash %s disabled during CI', self._task_name)
-        else:
-            self.__timer.start()
+        #CLEEP_ENV = os.environ.get('CLEEP_ENV', '')
+        #if CLEEP_ENV.lower() == 'ci':
+        #    self.logger.info('Tash %s disabled during CI', self._task_name)
+        #else:self.__timer.start()
 
     def stop(self):
         """

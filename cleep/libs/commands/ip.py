@@ -7,9 +7,9 @@ try:
     from cleep.libs.internals import tools as Tools
 except: # pragma no cover
     from console import AdvancedConsole, Console
-import time
 import os
 import re
+from gevent import sleep
 
 class Ip(AdvancedConsole):
     """
@@ -145,7 +145,7 @@ class Ip(AdvancedConsole):
             'command': self._command,
             'interface': interface_name,
         })
-        time.sleep(1.0)
+        sleep(1.0)
         resp_up = self.command('%(command)s link set %(interface)s up' % {
             'command': self._command,
             'interface': interface_name,

@@ -7,7 +7,7 @@ Core implements all kind of cleep modules/apps
 
 import logging
 import os
-import time
+from gevent import sleep
 import copy
 import uuid
 from threading import Lock
@@ -50,7 +50,6 @@ class Cleep(BusClient):
         BusClient.__init__(self, self.MODULE_NAME, bootstrap)
 
         # init logger
-        self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.debug_enabled = debug_enabled
@@ -59,8 +58,10 @@ class Cleep(BusClient):
         self.__execution_step = bootstrap['execution_step']
         self.events_broker = bootstrap['events_broker']
         self.cleep_filesystem = bootstrap['cleep_filesystem']
+        self.task_factory = bootstrap["task_factory"]
         self.drivers = bootstrap['drivers']
         self._external_bus_name = bootstrap['external_bus']
+        self.app_stop_event = bootstrap["app_stop_event"]
 
         # load and check configuration
         self.__config_lock = Lock()
@@ -153,7 +154,7 @@ class Cleep(BusClient):
                 self.logger.debug('No config file found, create default one')
                 out = {}
                 self.cleep_filesystem.write_json(path, out)
-                time.sleep(0.25)
+                sleep(0.25)
 
         except:
             self.logger.exception('Unable to load config file %s:', path)
@@ -352,7 +353,8 @@ class Cleep(BusClient):
 
         # set members and register driver
         driver.configure({
-            'cleep_filesystem': self.cleep_filesystem,
+            "cleep_filesystem": self.cleep_filesystem,
+            "task_factory": self.task_factory,
         })
         self.drivers.register(driver)
         driver._on_registered()

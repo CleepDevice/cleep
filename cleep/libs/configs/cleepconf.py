@@ -3,7 +3,7 @@
 
 import ast
 import os
-import time
+from gevent import sleep
 import logging
 from passlib.hash import sha256_crypt
 from configparser import ConfigParser
@@ -56,7 +56,7 @@ class CleepConf:
             fdesc = self.cleep_filesystem.open(self.CONF, "w")
             fdesc.write("")
             self.cleep_filesystem.close(fdesc)
-            time.sleep(0.10)
+            sleep(0.10)
 
         # load conf content
         fdesc = self.cleep_filesystem.open(self.CONF, "r")

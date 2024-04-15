@@ -8,6 +8,7 @@
 import logging
 import time
 import os
+from gevent import sleep
 from cleep.libs.internals.console import EndlessConsole
 from cleep.exception import MissingParameter, InvalidParameter
 
@@ -181,7 +182,7 @@ class InstallDeb:
                 self.running = False
                 self.status = self.STATUS_TIMEOUT
 
-            time.sleep(0.25)
+            sleep(0.25)
 
         # handle result
         return not error and self.status == self.STATUS_DONE
@@ -252,7 +253,7 @@ class InstallDeb:
                     self.running = False
                     self.status = self.STATUS_TIMEOUT
 
-                time.sleep(0.25)
+                sleep(0.25)
 
             # disable write at end of command execution
             self.cleep_filesystem.disable_write()

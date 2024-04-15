@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-import time
+from gevent import sleep
 from cleep.libs.internals.console import Console
 
 class Ifupdown(Console):
@@ -72,7 +72,7 @@ class Ifupdown(Console):
             return False
 
         #pause
-        time.sleep(0.5)
+        sleep(0.5)
 
         #start interface
         if not self.start_interface(interface):

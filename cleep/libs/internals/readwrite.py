@@ -236,7 +236,6 @@ class ReadWrite:
         if not self.__is_cleep_iso():
             return False
         if self.__is_ci_env(): # pragma: no cover
-            print('=====> CIenv')
             return False
 
         # execute command

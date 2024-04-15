@@ -4,8 +4,7 @@
 import os
 import re
 import logging
-import time
-
+from gevent import sleep
 
 class Config:
     """
@@ -149,7 +148,7 @@ class Config:
             fdesc = self._open(self.MODE_WRITE)
             fdesc.write(content.rstrip())
             self._close()
-            time.sleep(0.25)
+            sleep(0.25)
 
             return True
 

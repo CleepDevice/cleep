@@ -23,14 +23,10 @@ import io
 import json
 import logging
 import os
-import time
 import uuid
 import uptime
 from passlib.hash import sha256_crypt
-from gevent import pywsgi
-from gevent import monkey
-
-monkey.patch_all()
+from gevent import pywsgi, pool, sleep
 import bottle
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
@@ -170,8 +166,9 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     port = rpc_config.get("port", 80)
     logger.info("Running RPC server %s://%s:%s", protocol, host, port)
     logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
+    workers = pool.Pool(20)
     server = pywsgi.WSGIServer(
-        (host, port), app, log=logger_requests, error_log=logger, **ssl_options
+        (host, port), app, log=logger_requests, error_log=logger, spawn=workers, **ssl_options
     )
 
 
@@ -236,6 +233,12 @@ def start():
             server.close()
             server.stop()
 
+def stop():
+    """
+    Stop RPC server
+    """
+    server.close()
+    server.stop()
 
 def check_auth(account, password):
     """
@@ -446,7 +449,7 @@ def exec_upload():
             # remove file if already exists
             if os.path.exists(path):
                 os.remove(path)
-                time.sleep(0.25)
+                sleep(0.25)
 
             # save file locally
             upload.save(path)
@@ -916,19 +919,19 @@ def poll():
             # bus not available yet
             logger.debug("polling: bus not available")
             resp.message = "Bus not available"
-            time.sleep(1.0)
+            sleep(1.0)
 
         elif "pollKey" not in params:
             # rpc client no registered yet
             logger.debug("polling: registration key must be sent to poll request")
             resp.message = "Polling key is missing"
-            time.sleep(1.0)
+            sleep(1.0)
 
         elif not bus.is_subscribed(f'rpc-{params["pollKey"]}'):
             # rpc client no registered yet
             logger.debug("polling: rpc client must be registered before polling")
             resp.message = "Client not registered"
-            time.sleep(1.0)
+            sleep(1.0)
 
         else:
             # wait for event (blocking by default) until end of timeout
@@ -944,13 +947,13 @@ def poll():
 
             except NoMessageAvailable:
                 resp.message = "No message available"
-                time.sleep(1.0)
+                sleep(1.0)
 
             except Exception:
                 logger.exception("Poll exception")
                 crash_report.report_exception({"message": "Poll exception"})
                 resp.message = "Internal error"
-                time.sleep(5.0)
+                sleep(5.0)
 
     return resp.to_dict()
 

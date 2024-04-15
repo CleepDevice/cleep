@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*
 
 import logging
-import time
 import os
+from gevent import sleep
 from cleep.libs.internals.console import EndlessConsole
 from cleep.libs.internals.installmodule import (
     InstallModule,
@@ -145,7 +145,7 @@ class Install:
         if self.blocking:
             self.__running = True
             while self.__running:
-                time.sleep(0.25)
+                sleep(0.25)
 
             return self.status == self.STATUS_DONE
 
@@ -200,7 +200,7 @@ class Install:
         # blocking mode
         if self.blocking:
             while self.__running:
-                time.sleep(0.25)
+                sleep(0.25)
 
             return self.status == self.STATUS_DONE
 
@@ -239,7 +239,7 @@ class Install:
         # blocking mode
         if self.blocking:
             while self.__running:
-                time.sleep(0.25)
+                sleep(0.25)
 
             return self.status == self.STATUS_DONE
 
@@ -293,7 +293,7 @@ class Install:
         if self.blocking:
             # loop
             while self.status == self.STATUS_PROCESSING:
-                time.sleep(0.25)
+                sleep(0.25)
 
             return self.status == self.STATUS_DONE
 
@@ -370,7 +370,7 @@ class Install:
         if self.blocking:
             # loop
             while self.__running:
-                time.sleep(0.25)
+                sleep(0.25)
 
             return self.status == self.STATUS_DONE
 
@@ -500,7 +500,7 @@ class Install:
         if self.blocking:
             # wait for end of installation
             while install.is_installing():
-                time.sleep(0.25)
+                sleep(0.25)
 
             # check install status
             return install.get_status().get("status") == InstallModule.STATUS_INSTALLED
@@ -624,7 +624,7 @@ class Install:
         if self.blocking:
             # wait for end of installation
             while uninstall.is_uninstalling():
-                time.sleep(0.25)
+                sleep(0.25)
 
             # check uinstall status
             return (
@@ -793,7 +793,7 @@ class Install:
         if self.blocking:
             # wait for end of update
             while update.is_updating():
-                time.sleep(0.25)
+                sleep(0.25)
 
             # check update status
             return update.get_status().get("status") == UpdateModule.STATUS_UPDATED

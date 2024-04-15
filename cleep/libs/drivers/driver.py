@@ -6,7 +6,7 @@ import logging
 from cleep.libs.internals.task import Task
 from cleep.exception import CommandError
 
-class Driver():
+class Driver:
     """
     Base driver class
     """
@@ -63,10 +63,12 @@ class Driver():
 
                 {
                     cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+                    task_factory (TaskFactory): TaskFactory instance
                 }
 
         """
         self.cleep_filesystem = params['cleep_filesystem']
+        self.task_factory = params['task_factory']
 
     def install(self, end_callback, params=None, logger=None):
         """
@@ -103,7 +105,7 @@ class Driver():
             callback(self.type, self.name, success, message)
 
         self.logger.trace('Launch driver install task')
-        task = Task(None, install, logger if logger else self.logger, [end_callback, params])
+        task = self.task_factory.create_task(None, install, [end_callback, params])
         task.start()
         return task
 
@@ -141,7 +143,7 @@ class Driver():
             callback(self.type, self.name, success, message)
 
         self.logger.trace('Launch driver uninstall task')
-        task = Task(None, uninstall, logger if logger else self.logger, [end_callback, params])
+        task = self.task_factory.create_task(None, uninstall, [end_callback, params])
         task.start()
         return task
 
