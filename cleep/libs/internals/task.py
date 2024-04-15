@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import logging
 from threading import Thread, Event
 from time import perf_counter
 from gevent import sleep
-import os
 
 __all__ = ["Task", "CountTask"]
 
@@ -26,6 +27,7 @@ class CancelableTimer(Thread):
         self.task = task
         self.interval = int(interval) or 1
         self.__canceled = False
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self):
         while self.interval > 0 and not self.__event.is_set():
@@ -34,7 +36,10 @@ class CancelableTimer(Thread):
             self.__event.wait(timeout)
 
         if not self.__canceled:
+            self.logger.trace("Task %s ran", self.name)
             self.task()
+        else:
+            self.logger.trace("Task %s stopped", self.name)
 
     def cancel(self):
         self.__canceled = True
@@ -166,10 +171,7 @@ class Task:
         # accuracy
         self.__task_start_timestamp = perf_counter() + self._interval
 
-        #CLEEP_ENV = os.environ.get('CLEEP_ENV', '')
-        #if CLEEP_ENV.lower() == 'ci':
-        #    self.logger.info('Tash %s disabled during CI', self._task_name)
-        #else:self.__timer.start()
+        self.__timer.start()
 
     def stop(self):
         """
