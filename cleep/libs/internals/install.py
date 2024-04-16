@@ -35,13 +35,14 @@ class Install:
     STATUS_DONE = 2
     STATUS_ERROR = 3
 
-    def __init__(self, cleep_filesystem, crash_report, status_callback, blocking=False):
+    def __init__(self, cleep_filesystem, crash_report, task_factory, status_callback, blocking=False):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): Crash report instance
+            task_factory (TaskFactory): Task factory instance
             status_callback (function): status callback. Params: status
             blocking (bool): enable or not blocking mode. If blocking mode is enabled, all functions are blocking
         """
@@ -490,6 +491,7 @@ class Install:
             status_callback=self.__callback_install_module,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         if extra and extra.get("package"):
             install.set_package(extra.get("package"))
@@ -617,6 +619,7 @@ class Install:
             status_callback=self.__callback_uninstall_module,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         uninstall.start()
 

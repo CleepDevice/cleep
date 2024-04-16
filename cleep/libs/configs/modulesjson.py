@@ -24,12 +24,13 @@ class ModulesJson:
 
     """
 
-    def __init__(self, cleep_filesystem, sources_path, source):
+    def __init__(self, cleep_filesystem, task_factory, sources_path, source):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            task_factory (TaskFactory): TaskFactory instance
             sources_path (str): path to save source content
             source (dict): source content::
 
@@ -166,7 +167,7 @@ class ModulesJson:
         self.logger.debug('Updating "%s" file...', source_filepath)
 
         # download file (blocking because file is small)
-        download = Download(self.cleep_filesystem)
+        download = Download(self.cleep_filesystem, self.task_factory)
         download_status, raw = download.download_content(self.__get_remote_url())
         if raw is None:
             raise Exception(

@@ -29,16 +29,18 @@ class AppsSources:
     SOURCES_PATH = "/etc/cleep/sources"
     MANDATORY_KEYS = ["filename", "remote_url_version", "remote_url_latest"]
 
-    def __init__(self, cleep_filesystem):
+    def __init__(self, cleep_filesystem, task_factory):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
+            task_factory (TaskFactory): TaskFactory instance
         """
         # members
-        self.cleep_filesystem = cleep_filesystem
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.cleep_filesystem = cleep_filesystem
+        self.task_factory = task_factory
         self.apps = {"update": 0, "list": {}}
         self.last_update = 0
         self.sources = []
@@ -259,15 +261,15 @@ class AppsSources:
         Returns:
             tuple: updated status and modules.json content
         """
-        modules_json = ModulesJson(self.cleep_filesystem, self.SOURCES_PATH, source)
+        modules_json = ModulesJson(self.cleep_filesystem, self.task_factory, self.SOURCES_PATH, source)
 
         updated = False
         if force_update or not modules_json.exists():
             try:
                 self.logger.debug('Updating source "%s"', source)
                 updated = modules_json.update()
-            except Exception as error:
-                self.logger.error('Error occured while updating source "%s": %s', source, str(error))
+            except Exception:
+                self.logger.exception('Error occured while updating source "%s"', source)
                 return False, modules_json.get_empty()
 
         return updated, modules_json.get_content()

@@ -71,6 +71,7 @@ class Inventory(Cleep):
         self.bootstrap = bootstrap
         self.events_broker = bootstrap['events_broker']
         self.formatters_broker = bootstrap['formatters_broker']
+        self.task_factory = bootstrap["task_factory"]
         # dict to store event to synchronize module startups
         self.__module_join_events = []
         # used to store modules status (library or not) during modules loading
@@ -253,7 +254,7 @@ class Inventory(Cleep):
             }
 
         """
-        apps_sources = AppsSources(self.cleep_filesystem)
+        apps_sources = AppsSources(self.cleep_filesystem, self.task_factory)
         market = apps_sources.get_market()
         return market
 

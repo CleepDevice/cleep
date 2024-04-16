@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from bus import MessageBus, BusClient, deque, inspect
-from cleep.libs.tests.lib import TestLib
 from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage, NotReady
+from cleep.libs.internals.taskfactory import TaskFactory
 import unittest
 import logging
 from unittest.mock import Mock, patch
-import time
+from gevent import sleep
 from threading import Event, Thread
 from cleep.libs.tests.common import get_log_level
 
@@ -80,7 +81,7 @@ class DummyModule(Thread):
                     if not isinstance(e, NoMessageAvailable):
                         logging.debug('Exception pulling on DummyModule "%s": %s' % (self.name, e.__class__.__name__))
 
-            time.sleep(0.10)
+            sleep(0.10)
 
     def pulled_messages(self):
         return self._pulled_messages
@@ -117,6 +118,9 @@ class MessageBusTests(unittest.TestCase):
         self.b = MessageBus(self.crash_report, debug_enabled=False)
         self.STARTUP_TIMEOUT = self.b.STARTUP_TIMEOUT
         self.SUBSCRIPTION_LIFETIME = self.b.SUBSCRIPTION_LIFETIME
+        self.task_factory = TaskFactory({
+            "app_stop_event": Event()
+        })
 
     def _get_message_request(self, command='dummycommand', params={}, to=None):
         msg = MessageRequest()
@@ -152,7 +156,7 @@ class MessageBusTests(unittest.TestCase):
         self.b.add_subscription('otherdummy')
         self.assertTrue(self.b.is_subscribed('dummy'))
         self.assertTrue(self.b.is_subscribed('otherdummy'))
-        time.sleep(1)
+        sleep(1)
         self.b.purge_subscriptions()
         self.assertFalse(self.b.is_subscribed('dummy'))
         self.assertFalse(self.b.is_subscribed('otherdummy'))
@@ -166,9 +170,9 @@ class MessageBusTests(unittest.TestCase):
 
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         self.mod1.push(self._get_message_request(to='otherdummy'))
-        time.sleep(0.5)
+        sleep(0.5)
 
         self.assertEqual(self.mod2.pulled_messages(), 1)
         
@@ -181,9 +185,9 @@ class MessageBusTests(unittest.TestCase):
 
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         self.b.push(self._get_message_request(to='rpc'))
-        time.sleep(0.5)
+        sleep(0.5)
        
         self.assertEqual(self.mod1.pulled_messages(), 1)
         self.assertEqual(self.mod2.pulled_messages(), 1)
@@ -192,7 +196,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         resp = self.b.push(self._get_message_request())
         self.b.push(self._get_message_request())
         self.assertTrue(isinstance(resp, MessageResponse))
@@ -213,10 +217,10 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to=None))
-        time.sleep(0.75)
+        sleep(0.75)
         
         self.assertEqual(self.mod1.pulled_messages(), 0)
         self.assertEqual(self.mod2.pulled_messages(), 1)
@@ -227,7 +231,7 @@ class MessageBusTests(unittest.TestCase):
         self.mod1 = DummyModule(self.b, name='myself')
         self.mod1.start()
         self.b.add_subscription(self.mod1.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to='myself'))
         
@@ -239,7 +243,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         with self.assertRaises(NoResponse) as cm:
             self.b.push(self._get_message_request(to='dummy'), timeout=0.25)
 
@@ -247,7 +251,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         with self.assertRaises(InvalidMessage) as cm:
             self.b.push(self._get_message_request(command=None, to='dummy'))
         self.assertEqual(str(cm.exception), 'Invalid message')
@@ -263,8 +267,8 @@ class MessageBusTests(unittest.TestCase):
         self.b.add_subscription(self.mod2.name)
 
         self.mod1.push(self._get_message_request(to='otherdummy'), timeout=0.0)
-        self.b.app_configured()
-        time.sleep(0.5)
+        self.b.app_configured(self.task_factory)
+        sleep(0.5)
         
         self.assertTrue(isinstance(self.mod1.last_response(), MessageResponse))
         self.assertEqual(self.mod2.pulled_messages(), 1)
@@ -278,13 +282,13 @@ class MessageBusTests(unittest.TestCase):
         self.b.add_subscription(self.mod1.name)
         self.mod1.push(self._get_message_request(to='otherdummy'))
 
-        time.sleep(0.5)
+        sleep(0.5)
         self.mod2 = DummyModule(self.b, name='otherdummy', response=self.dummy_response)
         self.mod2.start()
         self.b.add_subscription(self.mod2.name)
 
-        self.b.app_configured()
-        time.sleep(0.5)
+        self.b.app_configured(self.task_factory)
+        sleep(0.5)
 
         last_response = self.mod1.last_response()
         logging.debug('Last response mod1: %s' % last_response)
@@ -301,7 +305,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         self.b.stop()
         
         # broadcast message
@@ -318,7 +322,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         with self.assertRaises(InvalidParameter) as cm:
             self.b.push({'dummy': 666})
@@ -329,7 +333,7 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         with self.assertRaises(InvalidModule) as cm:
             self.b.push(self._get_message_request(to='otherdummy'))
@@ -339,10 +343,10 @@ class MessageBusTests(unittest.TestCase):
         self._init_context()
 
         self.b.add_subscription('dummy')
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
         self.b.push(self._get_message_request())
         self.b.push(self._get_message_request())
-        time.sleep(0.25)
+        sleep(0.25)
         self.b.stop()
 
         with self.assertRaises(IndexError) as cm:
@@ -357,10 +361,10 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to=self.mod2.name))
-        time.sleep(0.5)
+        sleep(0.5)
         
         self.assertEqual(self.mod1.pulled_messages(), 0)
         self.assertEqual(self.mod2.pulled_messages(), 1)
@@ -376,10 +380,10 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to=self.mod2.name))
-        time.sleep(0.25)
+        sleep(0.25)
         
         with self.assertRaises(BusError) as cm:
             self.mod2.pull(None)
@@ -393,7 +397,7 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         with self.assertRaises(NoMessageAvailable) as cm:
             self.mod2.pull(timeout=0.1)
@@ -407,12 +411,12 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to=self.mod2.name))
-        time.sleep(0.25)
+        sleep(0.25)
         self.mod2.pull(None)
-        time.sleep(0.25)
+        sleep(0.25)
         
         self.assertEqual(self.mod2.pulled_messages(), 1)
         last_response = self.mod1.last_response()
@@ -428,7 +432,7 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
     
         with self.assertRaises(NoMessageAvailable) as cm:
             self.mod2.pull(None)
@@ -446,7 +450,7 @@ class MessageBusTests(unittest.TestCase):
         self.mod2.start()
         self.b.add_subscription(self.mod1.name)
         self.b.add_subscription(self.mod2.name)
-        self.b.app_configured()
+        self.b.app_configured(self.task_factory)
 
         with self.assertRaises(BusError) as cm:
             self.mod2.pull(None)
@@ -466,18 +470,22 @@ class TestProcess1(BusClient):
         self.on_start = on_start
 
     def _on_process(self):
+        logging.debug('TestProcess1: on_process')
         if self.on_process:
             self.on_process()
 
     def _on_start(self):
+        logging.debug('TestProcess1: on_start')
         if self.on_start:
             self.on_start()
 
     def _on_stop(self):
+        logging.debug('TestProcess1: on_stop')
         if self.on_stop:
             self.on_stop()
 
     def _configure(self):
+        logging.debug('TestProcess1: configure')
         if self.on_configure:
             self.on_configure()
 
@@ -504,8 +512,8 @@ class TestProcess1(BusClient):
         return 'command broadcast wih param=%s' % param
 
     def _on_event(self, event):
-        self.__command_call('on_event')
         self.logger.debug('Event received: %s' % event)
+        self.__command_call('on_event')
 
 
 class TestProcess2(BusClient):
@@ -526,7 +534,7 @@ class TestProcess2(BusClient):
 
     def command_timeout(self):
         self.__command_call('command_timeout')
-        time.sleep(3.5)
+        sleep(3.5)
         return 'command_timeout'
 
     def command_broadcast(self, param):
@@ -599,12 +607,16 @@ class BusClientTests(unittest.TestCase):
 
     def _init_context(self, p1_on_process=None, p1_on_configure=None, p1_on_stop=None, p1_on_start=None):
         self.crash_report = Mock()
+        self.task_factory = TaskFactory({
+            "app_stop_event": Event()
+        })
         self.internal_bus = MessageBus(self.crash_report, debug_enabled=False)
         self.bootstrap = {
             'internal_bus': self.internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'crash_report': self.crash_report,
+            'task_factory': self.task_factory,
         }
 
         self.p1 = TestProcess1(self.bootstrap, on_process=p1_on_process, on_configure=p1_on_configure, on_stop=p1_on_stop, on_start=p1_on_start)
@@ -613,8 +625,8 @@ class BusClientTests(unittest.TestCase):
         self.p2.start()
         self.p3 = None
 
-        time.sleep(0.25)
-        self.internal_bus.app_configured()
+        sleep(0.25)
+        self.internal_bus.app_configured(self.task_factory)
 
     def _get_message_request(self, command='dummycommand', params={}, to=None):
         msg = MessageRequest()
@@ -671,7 +683,7 @@ class BusClientTests(unittest.TestCase):
 
         resp = self.p2.send_command(command='command_broadcast', params={'param':'hello'}, to=None)
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
-        time.sleep(0.5)
+        sleep(0.5)
 
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNone(resp.data)
@@ -948,7 +960,7 @@ class BusClientTests(unittest.TestCase):
 
         resp = self.p2.send_event(event, {'p1': 'event'})
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
-        time.sleep(0.5)
+        sleep(0.5)
 
         self.assertTrue(isinstance(resp, MessageResponse))
         self.assertIsNone(resp.data)
@@ -959,11 +971,11 @@ class BusClientTests(unittest.TestCase):
         self._init_context()
         self.p3 = TestProcess3(self.bootstrap)
         self.p3.start()
-        time.sleep(0.5)
+        sleep(0.5)
         event = 'event.dummy.test'
 
         resp = self.p2.send_event(event, {'p1': 'event'}, to='testprocess3')
-        time.sleep(0.5)
+        sleep(0.5)
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertTrue(isinstance(resp, MessageResponse))
@@ -974,11 +986,11 @@ class BusClientTests(unittest.TestCase):
         self._init_context()
         self.p2 = TestProcess3(self.bootstrap)
         self.p2.start()
-        time.sleep(0.5)
+        sleep(0.5)
         
         req = MessageRequest(event='event.dummy.test', params={'param': 'value'})
         resp =self.p2.send_event_from_request(req)
-        time.sleep(0.5)
+        sleep(0.5)
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
 
         self.assertTrue(isinstance(resp, MessageResponse))
@@ -1004,7 +1016,7 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         self.p1.stop()
-        time.sleep(1.0)
+        sleep(1.0)
 
         self.assertEqual(Context.call_count, 1)
 
@@ -1017,7 +1029,7 @@ class BusClientTests(unittest.TestCase):
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         self.p1.stop()
-        time.sleep(1.0)
+        sleep(1.0)
 
         self.assertTrue(self.crash_report.report_exception.called)
         self.assertEqual(self.crash_report.report_exception.call_count, 1)
@@ -1032,9 +1044,10 @@ class BusClientTests(unittest.TestCase):
         self._init_context(p1_on_start=on_start)
 
         resp = self.p1.send_command(command='command_without_params', to='testprocess1')
+        sleep(1.0)
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         self.p1.stop()
-        time.sleep(1.0)
+        sleep(1.0)
 
         self.assertEqual(Context.call_count, 1)
 
@@ -1048,7 +1061,7 @@ class BusClientTests(unittest.TestCase):
         logging.debug('Response [%s]: %s' % (resp.__class__.__name__, resp))
         self.p1._wait_is_started()
         self.p1.stop()
-        time.sleep(1.0)
+        sleep(1.0)
 
         self.assertFalse(self.crash_report.report_exception.called)
 

@@ -42,13 +42,14 @@ class InstallCleep(threading.Thread):
     STATUS_ERROR_DOWNLOAD_PACKAGE = 5
     STATUS_ERROR_DEB = 6
 
-    def __init__(self, cleep_filesystem, crash_report):
+    def __init__(self, cleep_filesystem, crash_report, task_factory):
         """
         Constructor
 
         Args:
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
+            task_factory (TaskFactory): TaskFactory instance
         """
         threading.Thread.__init__(self, daemon=True, name="installcleep")
 
@@ -60,6 +61,7 @@ class InstallCleep(threading.Thread):
         self.status = self.STATUS_IDLE
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
+        self.task_factory = task_factory
         self.__reset()
 
     def __reset(self):
@@ -285,7 +287,7 @@ class InstallCleep(threading.Thread):
                 self.callback(self.get_status())
 
             # download checksum file
-            download = Download(self.cleep_filesystem)
+            download = Download(self.cleep_filesystem, self.task_factory)
             checksum = self.__download_checksum(download, self.url_checksum)
             if not checksum:
                 self.status = self.STATUS_ERROR_DOWNLOAD_CHECKSUM

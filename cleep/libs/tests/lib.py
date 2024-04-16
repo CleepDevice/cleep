@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from gevent import monkey
+monkey.patch_all()
 import cleep.libs.internals.tools as tools
 import os
 import logging

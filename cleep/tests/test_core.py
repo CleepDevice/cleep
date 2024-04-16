@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer, CleepExternalBus
-from cleep.libs.tests.lib import TestLib
 from cleep.libs.tests.common import get_log_level
 from cleep.exception import InvalidParameter, MissingParameter
 from cleep.libs.drivers.driver import Driver
@@ -101,6 +101,8 @@ class TestsCleep(unittest.TestCase):
 
         self.events_broker = Mock()
         self.drivers = Mock()
+        self.task_factory = Mock()
+        self.app_stop_event = Mock()
 
         self.bootstrap = {
             'internal_bus': MagicMock(),
@@ -113,6 +115,8 @@ class TestsCleep(unittest.TestCase):
             'crash_report': self.crash_report,
             'test_mode': False,
             'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 

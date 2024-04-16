@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from gevent import monkey
+monkey.patch_all()
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
@@ -69,6 +70,7 @@ class TestSession():
         self.__debug_enabled = False
         self.crash_report = None
         self.cleep_filesystem = None
+        self.task_factory = None
         self.__module_class = None
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
@@ -96,6 +98,11 @@ class TestSession():
         core_join_event = Event()
         core_join_event.set()
 
+        app_stop_event = Event()
+        app_stop_event.set()
+
+        self.task_factory = MagicMock()
+
         return {
             'internal_bus': internal_bus,
             'events_broker': events_broker,
@@ -110,6 +117,8 @@ class TestSession():
             'drivers': Drivers(debug),
             'log_file': '/tmp/cleep.log',
             'external_bus': 'cleepbus',
+            'app_stop_event': app_stop_event,
+            'task_factory': self.task_factory,
         }
 
     def __get_test_case_name(self):

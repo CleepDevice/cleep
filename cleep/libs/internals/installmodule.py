@@ -72,7 +72,7 @@ class CommonProcess(threading.Thread):
     Common process class for install/uninstall/update module
     """
 
-    def __init__(self, status_callback, cleep_filesystem, crash_report):
+    def __init__(self, status_callback, cleep_filesystem, crash_report, task_factory):
         """
         Constructor
 
@@ -80,6 +80,7 @@ class CommonProcess(threading.Thread):
             status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
+            task_factory (TaskFactory): TaskFactory instance
         """
         threading.Thread.__init__(
             self,
@@ -96,6 +97,7 @@ class CommonProcess(threading.Thread):
         self.status_callback = status_callback
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
+        self.task_factory = task_factory
         self._script_running = False
         self._pre_script_execution = False
         self._pre_script_status = {"returncode": None, "stdout": [], "stderr": []}
@@ -279,6 +281,7 @@ class UninstallModule(CommonProcess):
         status_callback,
         cleep_filesystem,
         crash_report,
+        task_factory,
     ):
         """
         Constructor
@@ -291,8 +294,9 @@ class UninstallModule(CommonProcess):
             callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem instance
             crash_report (CrashReport): CrashReport instance
+            task_factory (TaskFactory): TaskFactory instance
         """
-        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report)
+        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report, task_factory)
 
         # members
         self.status = self.STATUS_IDLE
@@ -618,6 +622,7 @@ class InstallModule(CommonProcess):
         status_callback,
         cleep_filesystem,
         crash_report,
+        task_factory,
     ):
         """
         Constructor
@@ -629,8 +634,9 @@ class InstallModule(CommonProcess):
             status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
+            task_factory (TaskFactory): TaskFactory instance
         """
-        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report)
+        CommonProcess.__init__(self, status_callback, cleep_filesystem, crash_report, task_factory)
 
         # members
         self.update_process = update_process
@@ -714,7 +720,7 @@ class InstallModule(CommonProcess):
         """
         self.logger.debug('Download file "%s"' % self.module_infos["download"])
         try:
-            download = Download(self.cleep_filesystem)
+            download = Download(self.cleep_filesystem, self.task_factory)
             download_status, context.archive_path = download.download_file(
                 self.module_infos["download"], check_sha256=self.module_infos["sha256"]
             )
@@ -1250,6 +1256,7 @@ class UpdateModule(threading.Thread):
         status_callback,
         cleep_filesystem,
         crash_report,
+        task_factory,
     ):
         """
         Constructor
@@ -1261,6 +1268,7 @@ class UpdateModule(threading.Thread):
             status_callback (function): status callback
             cleep_filesystem (CleepFilesystem): CleepFilesystem singleton
             crash_report (CrashReport): Crash report instance
+            task_factory (TaskFactory): TaskFactory instance
         """
         threading.Thread.__init__(
             self, daemon=True, name="updatemodule-%s" % module_name
@@ -1277,6 +1285,7 @@ class UpdateModule(threading.Thread):
         self.status_callback = status_callback
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
+        self.task_factory = task_factory
         self.status = self.STATUS_IDLE
         self._is_uninstalling = True
         # initialized when update process starts
@@ -1365,6 +1374,7 @@ class UpdateModule(threading.Thread):
                 self._status_callback,
                 self.cleep_filesystem,
                 self.crash_report,
+                self.task_factory,
             )
             self.__uninstall_status = uninstall.get_status()
             install = InstallModule(
@@ -1374,6 +1384,7 @@ class UpdateModule(threading.Thread):
                 self._status_callback,
                 self.cleep_filesystem,
                 self.crash_report,
+                self.task_factory,
             )
             self.__install_status = install.get_status()
 
