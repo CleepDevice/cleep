@@ -43,6 +43,7 @@ class ModulesJson:
         """
         # members
         self.cleep_filesystem = cleep_filesystem
+        self.task_factory = task_factory
         self.logger = logging.getLogger(self.__class__.__name__)
         self.sources_path = sources_path
         self.source = source

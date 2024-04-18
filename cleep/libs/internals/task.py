@@ -159,6 +159,7 @@ class Task:
         Start the task
         """
         if self._app_stop_event.is_set():
+            self.logger.debug('Task "%s" is not started because Cleep is stopping', self._task_name)
             self.stop()
             return
 

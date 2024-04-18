@@ -941,7 +941,7 @@ class BusClient(threading.Thread):
                 else: # pragma: no cover
                     # robustness: this case should not happen because bus already check it
                     # received message is malformed
-                    self.logger.warning('Received message is malformed, message dropped')
+                    self.logger.warning('Received message is malformed, message dropped: %s', msg)
 
             except KeyboardInterrupt: # pragma: no cover
                 # user stops cleep

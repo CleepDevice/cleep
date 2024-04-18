@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 import rpcserver
-from cleep.libs.tests.lib import TestLib
 from cleep.libs.drivers.driver import Driver
 from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoMessageAvailable
@@ -333,7 +333,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_default_config(self, mock_wsgi):
@@ -341,7 +341,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure({}, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, error_log=ANY, log=ANY)
+        mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_valid_ssl(self, mock_wsgi):
@@ -356,7 +356,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, keyfile='mykey', certfile='mycert', do_handshake_on_connect=False)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY, keyfile='mykey', certfile='mycert', do_handshake_on_connect=False)
 
     @patch('rpcserver.pywsgi.WSGIServer')
     def test_configure_with_invalid_ssl(self, mock_wsgi):
@@ -371,7 +371,7 @@ class RpcServerTests(unittest.TestCase):
 
         rpcserver.configure(rpc_config, self.bootstrap, self.inventory, False)
 
-        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY)
+        mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
     @patch("rpcserver.logging")
     def test_configure_debug_enabled(self, logging_mock):

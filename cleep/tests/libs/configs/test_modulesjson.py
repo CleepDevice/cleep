@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from modulesjson import ModulesJson
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
-from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pprint
@@ -57,8 +57,9 @@ class ModulesJsonTests(unittest.TestCase):
         if read_json_return_value is None:
             read_json_return_value = default_json
         self.cleep_filesystem.read_json.return_value = read_json_return_value
+        self.task_factory = Mock()
 
-        self.mj = ModulesJson(self.cleep_filesystem, SOURCES_PATH, custom_source)
+        self.mj = ModulesJson(self.cleep_filesystem, self.task_factory, SOURCES_PATH, custom_source)
 
     def test_constructor_valid_custom_source(self):
         self._init_context(custom_source=CUSTOM_SOURCE)

@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from appssources import AppsSources
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
-from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock, patch, MagicMock
@@ -82,8 +82,9 @@ class AppsSourcesTests(unittest.TestCase):
             "sources": sources
         }
         os_path_exists_mock.return_value = True
+        self.task_factory = Mock()
 
-        self.l = AppsSources(self.cleep_filesystem)
+        self.l = AppsSources(self.cleep_filesystem, self.task_factory)
 
     @patch('os.path.exists')
     def test_contructor_create_default_file(self, os_path_exists_mock):
@@ -93,8 +94,9 @@ class AppsSourcesTests(unittest.TestCase):
             "sources": [CUSTOM_SOURCE]
         }
         cleep_filesystem.write_json.return_value = True
+        task_factory = Mock()
 
-        AppsSources(cleep_filesystem)
+        AppsSources(cleep_filesystem, task_factory)
 
         cleep_filesystem.write_json.assert_called_with(AppsSources.APPS_SOURCES_PATH, {"sources": DEFAULT_SOURCES}, 'utf8')
         self.assertEqual(cleep_filesystem.read_json.call_count, 2)
@@ -107,12 +109,13 @@ class AppsSourcesTests(unittest.TestCase):
             "sources": [CUSTOM_SOURCE]
         }
         cleep_filesystem.write_json.return_value = False
+        task_factory = Mock()
 
         with patch('appssources.logging') as logging_mock:
             logger_mock = Mock()
             logging_mock.getLogger.return_value = logger_mock
             
-            AppsSources(cleep_filesystem)
+            AppsSources(cleep_filesystem, task_factory)
             
             logger_mock.exception.assert_called_with('Unable to create default apps.sources file')
             self.assertEqual(cleep_filesystem.write_json.call_count, 1)
@@ -122,12 +125,13 @@ class AppsSourcesTests(unittest.TestCase):
         os_path_exists_mock.return_value = True
         cleep_filesystem = Mock()
         cleep_filesystem.read_json.return_value = INVALID_SOURCES1
+        task_factory = Mock()
 
         with patch('appssources.logging') as logging_mock:
             logger_mock = Mock()
             logging_mock.getLogger.return_value = logger_mock
             
-            AppsSources(cleep_filesystem)
+            AppsSources(cleep_filesystem, task_factory)
             
             logger_mock.warning.assert_called_with('Invalid "apps.sources" content, generate default content')
             self.assertEqual(cleep_filesystem.write_json.call_count, 1)
@@ -137,12 +141,13 @@ class AppsSourcesTests(unittest.TestCase):
         os_path_exists_mock.return_value = True
         cleep_filesystem = Mock()
         cleep_filesystem.read_json.return_value = INVALID_SOURCES2
+        task_factory = Mock()
 
         with patch('appssources.logging') as logging_mock:
             logger_mock = Mock()
             logging_mock.getLogger.return_value = logger_mock
             
-            AppsSources(cleep_filesystem)
+            AppsSources(cleep_filesystem, task_factory)
             
             logger_mock.warning.assert_called_with('Invalid "apps.sources" content, generate default content')
             self.assertEqual(cleep_filesystem.write_json.call_count, 1)

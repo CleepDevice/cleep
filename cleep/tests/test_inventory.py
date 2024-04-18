@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from inventory import Inventory
-from cleep.libs.tests.lib import TestLib
 from cleep.exception import InvalidParameter
+from cleep.libs.internals.taskfactory import TaskFactory
 import unittest
 import logging
 from unittest.mock import Mock, patch
@@ -142,6 +143,10 @@ class %(module_name)s(%(inherit)s):
         self.internal_bus = Mock()
         self.internal_bus.pull.side_effect = side_effect
 
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
         self.bootstrap = {
             'internal_bus': self.internal_bus,
             'module_join_event': Mock(),
@@ -154,6 +159,8 @@ class %(module_name)s(%(inherit)s):
             'test_mode': False,
             'formatters_broker': self.formatters_broker,
             'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
         }
 
         debug_config = {

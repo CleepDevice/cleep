@@ -283,7 +283,7 @@ class CriticalResources:
                 self.resources[resource_name]["using"] = module_name
                 task = self.task_factory.create_task(
                     None,
-                    self.callbacks[module_name][resource_name]["acquired_callback"]
+                    self.callbacks[module_name][resource_name]["acquired_callback"],
                     [resource_name],
                 )
                 task.start()

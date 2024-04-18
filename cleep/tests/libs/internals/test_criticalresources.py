@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from cleep.libs.internals.task import Task
 from criticalresources import CriticalResources
-from cleep.libs.tests.lib import TestLib
+from cleep.libs.internals.taskfactory import TaskFactory
+from threading import Event
 import unittest
 import logging
 import time
@@ -17,7 +19,6 @@ from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
-
 class CriticalResourcesTests(unittest.TestCase):
 
     def setUp(self):
@@ -25,7 +26,14 @@ class CriticalResourcesTests(unittest.TestCase):
         logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         enable_log = True if logging.getLogger().getEffectiveLevel()==logging.DEBUG else False
 
-        self.c = CriticalResources(enable_log)
+        app_stop_event = Event()
+        task_factory = TaskFactory({ "app_stop_event": app_stop_event })
+
+        bootstrap = {
+            "task_factory": task_factory,
+        }
+
+        self.c = CriticalResources(bootstrap, enable_log)
         self.acquired_cb_count = 0
         self.need_release_cb_count = 0
         self.acquired_cb_last_resource = None
@@ -34,6 +42,9 @@ class CriticalResourcesTests(unittest.TestCase):
     def tearDown(self):
         self.acquired_cb_count = 0
         self.need_release_cb_count = 0
+
+    def _fake_task(self, interval, task, args, kwargs):
+        pass
 
     def _acquired_cb(self, resource_name):
         self.acquired_cb_count += 1
@@ -205,13 +216,16 @@ class Mydummyresource():
         logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
 
         self.resources_dir = '/tmp/resources'
+        self.bootstrap = {
+            "task_factory": Mock(),
+        }
 
     def test_load_resources_invalid_path(self):
         c = CriticalResources
         c.RESOURCES_DIR = self.resources_dir
         c.PYTHON_CLEEP_IMPORT_PATH = ''
         with self.assertRaises(Exception) as cm:
-            c(False)
+            c(self.bootstrap, False)
         self.assertEqual(str(cm.exception), 'Invalid resources path "%s"' % c.RESOURCES_DIR)
 
     def test_load_resources_invalid_resource_path(self):
@@ -226,7 +240,7 @@ class Mydummyresource():
             c.RESOURCES_DIR = self.resources_dir
             c.PYTHON_CLEEP_IMPORT_PATH = 'resources'
             with self.assertRaises(Exception) as cm:
-                c(False)
+                c(self.bootstrap, False)
             self.assertEqual(str(cm.exception), 'Error occured trying to load resource "dummyResource"')
         finally:
             if os.path.exists(self.resources_dir):
@@ -247,7 +261,7 @@ class Mydummyresource():
             c.RESOURCES_DIR = self.resources_dir
             c.PYTHON_CLEEP_IMPORT_PATH = ''
             with self.assertRaises(Exception) as cm:
-                c(False)
+                c(self.bootstrap, False)
             self.assertEqual(str(cm.exception), 'Invalid resource "dummyResource" tryed to be loaded')
         finally:
             if os.path.exists(self.resources_dir):

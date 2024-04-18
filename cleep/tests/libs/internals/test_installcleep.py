@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from installcleep import InstallCleep, Download, InstallDeb, EndlessConsole
-from cleep.libs.tests.lib import TestLib
 from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
@@ -131,6 +131,7 @@ class InstallCleepTests(unittest.TestCase):
         self.crash_report = Mock()
         self.crash_report.manual_report = Mock()
         self.crash_report.report_exception = Mock()
+        self.task_factory = Mock()
 
         if download_mock:
             DownloadStatus.init_mock(download_mock)
@@ -165,7 +166,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -190,7 +191,7 @@ class InstallCleepTests(unittest.TestCase):
         def invalid_callback(*args, **kwargs):
             raise Exception('Test')
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, invalid_callback)
         i.join()
 
@@ -205,7 +206,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_content_return_value=(3, None))
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -219,7 +220,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_content_side_effect=Exception('Test'))
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -234,7 +235,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_file_side_effect=Exception('test'))
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -248,7 +249,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -264,7 +265,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, installdeb_install_side_effect=Exception('Test'))
         self._create_archive(None, None)
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -284,7 +285,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, installdeb_get_status_return_value=installdeb_get_status_return_value)
         self._create_archive(None, None)
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -300,7 +301,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_file_return_value=download_file_return_value)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -316,7 +317,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_file_return_value=download_file_return_value)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -332,7 +333,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_file_return_value=download_file_return_value)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -348,7 +349,7 @@ class InstallCleepTests(unittest.TestCase):
         self._init_context(download_mock=download_mock, installdeb_mock=installdeb_mock, download_file_return_value=download_file_return_value)
         self._create_archive()
 
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(self.archive_url, self.checksum_url, self.callback)
         i.join()
 
@@ -381,7 +382,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         name = 'installcleep.ok'
         url_cleep = self.url_cleep % name
         url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
@@ -393,7 +394,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         name = 'installcleep.deb-ko'
         url_cleep = self.url_cleep % name
         url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
@@ -403,7 +404,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         name = 'installcleep.noscript-ok'
         url_cleep = self.url_cleep % name
         url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 
@@ -413,7 +414,7 @@ class InstallCleepFunctionalTests(unittest.TestCase):
         name = 'installcleep.badchecksum-ko'
         url_cleep = self.url_cleep % name
         url_checksum = self.url_checksum % name
-        i = InstallCleep(self.fs, self.crash_report)
+        i = InstallCleep(self.fs, self.crash_report, self.task_factory)
         i.install(url_cleep, url_checksum, self.callback)
         i.join()
 

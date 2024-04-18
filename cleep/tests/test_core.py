@@ -7,16 +7,19 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 from core import Cleep, CleepRpcWrapper, CleepModule, CleepResources, CleepRenderer, CleepExternalBus
 from cleep.libs.tests.common import get_log_level
-from cleep.exception import InvalidParameter, MissingParameter
+from cleep.exception import InvalidParameter, MissingParameter, NoMessageAvailable
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.rendererprofile import RendererProfile
 from cleep.common import MessageResponse
+from cleep.libs.internals.taskfactory import TaskFactory
+from threading import Event
 import unittest
 import logging
 from unittest.mock import Mock, MagicMock, patch, ANY
-import time
 import io
 import copy
+from gevent import sleep
+import time
 
 LOG_LEVEL = get_log_level()
 
@@ -101,11 +104,15 @@ class TestsCleep(unittest.TestCase):
 
         self.events_broker = Mock()
         self.drivers = Mock()
-        self.task_factory = Mock()
-        self.app_stop_event = Mock()
+        self.app_stop_event = Event()
+        self.app_stop_event.set()
+        self.task_factory = TaskFactory({ 'app_stop_event': self.app_stop_event })
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -323,7 +330,8 @@ class TestsCleep(unittest.TestCase):
         self._init_context()
         d = DummyDriver(Driver.DRIVER_AUDIO, 'dummydriver')
         d.configure({
-            'cleep_filesystem': self.cleep_filesystem
+            'cleep_filesystem': self.cleep_filesystem,
+            'task_factory': self.task_factory,
         })
 
         self.r._register_driver(d)
@@ -409,9 +417,9 @@ class TestsCleep(unittest.TestCase):
         self._init_context()
         
         self.r.start()
-        time.sleep(1.0)
+        sleep(1.0)
         self.r.stop()
-        time.sleep(1.0)
+        sleep(1.0)
 
         self.assertTrue(self.r.stop_called)
 
@@ -606,9 +614,15 @@ class TestsCleepModule(unittest.TestCase):
             self.events_broker.get_event_instance.side_effect = Exception('Test exception')
 
         self.drivers = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -618,6 +632,8 @@ class TestsCleepModule(unittest.TestCase):
             'crash_report': self.crash_report,
             'test_mode': False,
             'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005' if with_sentry else None
 
@@ -683,6 +699,19 @@ class TestsCleepModule(unittest.TestCase):
 
         self.r._delete_device(device1['uuid'])
         self.assertEqual(self.r._get_device_count(), 1)
+
+    def test_get_env(self):
+        self._init_context()
+
+        env = self.r.get_env()
+        logging.debug('Env: %s', env)
+
+        self.assertDictEqual(env, {
+            'APP_STORAGE_PATH': '/var/opt/cleep/modules/storage/dummycleepmodule',
+            'APP_TMP_PATH': '/tmp/cleep/modules/dummycleepmodule',
+            'APP_ASSET_PATH': '/var/opt/cleep/modules/asset/dummycleepmodule',
+            'APP_BIN_PATH': '/var/opt/cleep/modules/bin/dummycleepmodule'
+        })
 
     def test_add_device(self):
         self._init_context()
@@ -998,9 +1027,15 @@ class TestsCleepRpcWrapper(unittest.TestCase):
         self.cleep_filesystem = Mock()
         self.events_broker = Mock()
         self.drivers = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1010,6 +1045,8 @@ class TestsCleepRpcWrapper(unittest.TestCase):
             'crash_report': self.crash_report,
             'test_mode': False,
             'external_bus': 'testbusapp',
+            'task_factory': self.task_factory,
+            'app_stop_event': self.app_stop_event,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -1097,9 +1134,15 @@ class TestsCleepResources(unittest.TestCase):
         self.drivers = Mock()
 
         self.critical_resources = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1110,6 +1153,8 @@ class TestsCleepResources(unittest.TestCase):
             'test_mode': False,
             'critical_resources': self.critical_resources,
             'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -1221,9 +1266,15 @@ class TestsCleepRenderer(unittest.TestCase):
         self.drivers = Mock()
 
         self.critical_resources = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1234,6 +1285,8 @@ class TestsCleepRenderer(unittest.TestCase):
             'test_mode': False,
             'critical_resources': self.critical_resources,
             'external_bus': 'testbusapp',
+            'task_factory': self.task_factory,
+            'app_stop_event': self.app_stop_event,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
@@ -1350,9 +1403,15 @@ class TestsCleepExternalBus(unittest.TestCase):
         self.drivers = Mock()
 
         self.critical_resources = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
 
         self.bootstrap = {
-            'internal_bus': MagicMock(),
+            'internal_bus': internal_bus,
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': self.drivers,
@@ -1363,6 +1422,8 @@ class TestsCleepExternalBus(unittest.TestCase):
             'test_mode': False,
             'critical_resources': self.critical_resources,
             'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
         }
         sentry_dsn = 'https://8ba3f328a88a44b09zf18a02xf412612@sentry.io/1356005'
 
