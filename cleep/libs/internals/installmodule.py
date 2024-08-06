@@ -34,7 +34,7 @@ SCRIPTS_DIR = "scripts/"
 TESTS_DIR = "tests/"
 
 
-class Context:
+class ProcessContext:
     """
     Current process context
     """
@@ -485,7 +485,7 @@ class UninstallModule(CommonProcess):
         # init
         self.running = True
         self.status = self.STATUS_UNINSTALLING
-        context = Context()
+        context = ProcessContext()
         context.step = "init"
         context.force_uninstall = self.force_uninstall
         context.module_log = None
@@ -1089,7 +1089,7 @@ class InstallModule(CommonProcess):
         # init
         self.running = True
         self.status = self.STATUS_INSTALLING
-        context = Context()
+        context = ProcessContext()
         rollback = False
         context.install_log = None
         context.install_log_fd = None

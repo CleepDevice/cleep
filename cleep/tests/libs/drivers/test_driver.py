@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from driver import Driver
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
-from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from cleep.libs.internals.task import Task
 from unittest.mock import Mock
 import time
 from cleep.libs.tests.common import get_log_level
+from cleep.libs.internals.taskfactory import TaskFactory
+from threading import Event
 
 LOG_LEVEL = get_log_level()
 
@@ -27,11 +29,12 @@ class DriverTests(unittest.TestCase):
         self.fs = CleepFilesystem()
         self.fs.enable_write = Mock()
         self.fs.disable_write = Mock()
-        #Task.start = Mock()
+        self.task_factory = TaskFactory({ "app_stop_event": Event() })
 
         self.d = Driver('dummy', 'dummyname')
         self.d.configure({
             'cleep_filesystem': self.fs,
+            'task_factory': self.task_factory,
         })
         self.end_called = False
         self.end_result = None

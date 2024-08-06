@@ -53,6 +53,7 @@ class Install:
         # members
         self.cleep_filesystem = cleep_filesystem
         self.crash_report = crash_report
+        self.task_factory = task_factory
         self.blocking = blocking
         self.__console = None
         self.status = self.STATUS_IDLE

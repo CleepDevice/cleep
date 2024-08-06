@@ -50,6 +50,7 @@ class SunTests(unittest.TestCase):
 
     def test_sunrise(self):
         sunrise = self.s.sunrise()
+
         self.assertTrue(isinstance(sunrise, datetime.datetime))
         self.assertIsNotNone(sunrise.utcoffset())
         self.assertEqual(self._get_timezone(sunrise), self.utcoffset)
@@ -57,8 +58,10 @@ class SunTests(unittest.TestCase):
     def test_sunrise_exception(self):
         self.s.set_position(85.0, 21.00)
         d = datetime.date(2014, 1, 3)
+
         with self.assertRaises(Exception) as cm:
             self.s.get_local_sunrise_time(date=d)
+
         self.assertEqual(
             str(cm.exception),
             "The sun never rises on this location (on the specified date)",
@@ -66,9 +69,10 @@ class SunTests(unittest.TestCase):
 
     def test_get_sunrise_time(self):
         sunrise = self.s.get_sunrise_time()
+
         self.assertTrue(isinstance(sunrise, datetime.datetime))
         self.assertIsNotNone(sunrise.utcoffset())
-        self.assertEqual(self._get_timezone(sunrise), "+0100")
+        self.assertEqual(self._get_timezone(sunrise), self.utcoffset)
 
     def test_get_sunrise_time_exception(self):
         self.s.set_position(85.0, 21.00)
@@ -100,7 +104,7 @@ class SunTests(unittest.TestCase):
         sunset = self.s.get_sunset_time()
         self.assertTrue(isinstance(sunset, datetime.datetime))
         self.assertIsNotNone(sunset.utcoffset())
-        self.assertEqual(self._get_timezone(sunset), "+0100")
+        self.assertEqual(self._get_timezone(sunset), self.utcoffset)
 
     def test_get_sunset_time_exception(self):
         self.s.set_position(85.0, 21.00)

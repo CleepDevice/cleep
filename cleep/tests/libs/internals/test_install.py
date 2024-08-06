@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from install import Install
-from cleep.libs.tests.lib import TestLib
 from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
@@ -86,8 +86,9 @@ class InstallTests(unittest.TestCase):
         self.crash_report = Mock()
         self.cleep_filesystem = Mock()
         self.status_callback = Mock()
+        self.task_factory = Mock()
 
-        self.i = Install(self.cleep_filesystem, self.crash_report, self.status_callback, blocking)
+        self.i = Install(self.cleep_filesystem, self.crash_report, self.task_factory, self.status_callback, blocking)
 
     def end_callback(self, status=Install.STATUS_DONE):
         self.i._Install__running = False
@@ -658,7 +659,8 @@ class InstallTests(unittest.TestCase):
             update_process=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_installmodule.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
@@ -678,7 +680,8 @@ class InstallTests(unittest.TestCase):
             update_process=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_installmodule.return_value.start.called)
         self.assertFalse(self.cleep_filesystem.enable_write.called)
@@ -698,7 +701,8 @@ class InstallTests(unittest.TestCase):
             update_process=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_installmodule.return_value.start.called)
         self.assertFalse(self.cleep_filesystem.enable_write.called)
@@ -909,7 +913,8 @@ class InstallTests(unittest.TestCase):
             force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_uninstallmodule.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
@@ -930,7 +935,8 @@ class InstallTests(unittest.TestCase):
             force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_uninstallmodule.return_value.start.called)
         self.assertFalse(self.cleep_filesystem.enable_write.called)

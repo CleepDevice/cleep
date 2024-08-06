@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from installmodule import InstallModule, UninstallModule, UpdateModule, Download, Context, PATH_FRONTEND
+from installmodule import InstallModule, UninstallModule, UpdateModule, Download, ProcessContext, PATH_FRONTEND
 import cleep.libs.internals.download
 from cleep.libs.internals.installdeb import InstallDeb
-from cleep.libs.tests.lib import TestLib
 from cleep.exception import MissingParameter, InvalidParameter
 import unittest
 import logging
@@ -15,11 +15,12 @@ import time
 from unittest.mock import Mock, patch, MagicMock
 import subprocess
 import tempfile
-from threading import Timer
+from threading import Timer, Event
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 import shutil
 import cleep
 from cleep.libs.tests.common import get_log_level
+from cleep.libs.internals.taskfactory import TaskFactory
 
 INSTALL_DIR = cleep.__file__.replace('__init__.py', '')
 
@@ -30,9 +31,10 @@ class UninstallModuleTests(unittest.TestCase):
     def setUp(self):
         TestLib()
         logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        self.app_stop_event = Event()
 
     def tearDown(self):
-        pass
+        self.app_stop_event.set()
 
     def _init_context(self, module_name='module', module_infos=None, update_process=False, cleep_filesystem_copy_side_effect=None,
             cleep_filesystem_open_side_effect=None, callback_side_effect=None, force_uninstall=False, cleep_filesystem_rm_side_effect=None,
@@ -47,15 +49,16 @@ class UninstallModuleTests(unittest.TestCase):
             self.cleep_filesystem.rm.side_effect = cleep_filesystem_rm_side_effect
         if cleep_filesystem_rmdir_side_effect:
             self.cleep_filesystem.rmdir.side_effect = cleep_filesystem_rmdir_side_effect
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
         if module_infos is None:
             module_infos = self._get_module_infos()
 
         self.callback = Mock(side_effect=callback_side_effect)
 
-        self.u = UninstallModule(module_name, module_infos, update_process, force_uninstall, self.callback, self.cleep_filesystem, self.crash_report)
+        self.u = UninstallModule(module_name, module_infos, update_process, force_uninstall, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         self.u.cleep_path = '/python-cleep-path'
-        self.c = Context()
+        self.c = ProcessContext()
         self.c.force_uninstall = force_uninstall
         self.c.module_log = None
         self.c.install_dir = 'dummy'
@@ -540,6 +543,8 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         self.cleep_filesystem = CleepFilesystem()
         self.cleep_filesystem.enable_write()
         self.crash_report = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -556,6 +561,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
             shutil.rmtree(os.path.join('modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', igore_errors=True)
+        self.app_stop_event.set()
 
     def callback(self, status):
         pass
@@ -565,7 +571,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.ok'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -584,7 +590,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
         #uninstall module
-        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
+        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
@@ -604,7 +610,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.noscript-ok'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '0b43bcff0e4dc88f4e24261913bd118cb53c9c9a82ab1a61b053477615421da7'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -621,7 +627,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
         #uninstall module
-        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
+        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
@@ -639,7 +645,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.preuninst-ko'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '0565957885fb6438bfbeeb44e54f7ec66bb0144d196e9243bfd8e452b3e22853'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -656,7 +662,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
         #uninstall module
-        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
+        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
@@ -675,7 +681,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.postuninst-ko'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '0b7a48ca0c39926915a22213fccc871064b5e8e5054e4095d0b9b4c14ce39493'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -692,7 +698,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         time.sleep(1.0)
 
         #uninstall module
-        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
+        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
@@ -710,7 +716,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.postuninst-ko'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '0b7a48ca0c39926915a22213fccc871064b5e8e5054e4095d0b9b4c14ce39493'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -730,7 +736,7 @@ class UninstallModuleFunctionalTests(unittest.TestCase):
         os.remove('/opt/cleep/install/test/test.log')
 
         #uninstall module
-        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report)
+        u = UninstallModule('test', self.module_infos, False, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
@@ -753,9 +759,10 @@ class InstallModuleTests(unittest.TestCase):
     def setUp(self):
         TestLib()
         logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        self.app_stop_event = Event()
 
     def tearDown(self):
-        pass
+        self.app_stop_event.set()
 
     def _init_context(self, module_name='module', module_infos=None, update_process=False, cleep_filesystem_copy_side_effect=None,
             cleep_filesystem_open_side_effect=None, callback_side_effect=None):
@@ -765,15 +772,16 @@ class InstallModuleTests(unittest.TestCase):
             self.cleep_filesystem.copy.side_effect = cleep_filesystem_copy_side_effect
         if cleep_filesystem_open_side_effect:
             self.cleep_filesystem.open.side_effect = cleep_filesystem_open_side_effect
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
         if module_infos is None:
             module_infos = self._get_module_infos()
 
         self.callback = Mock(side_effect=callback_side_effect)
 
-        self.i = InstallModule(module_name, module_infos, update_process, self.callback, self.cleep_filesystem, self.crash_report)
+        self.i = InstallModule(module_name, module_infos, update_process, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         self.i.cleep_path = '/python-cleep-path'
-        self.c = Context()
+        self.c = ProcessContext()
         self.c.archive_path = None
         self.c.extract_path = None
 
@@ -1628,6 +1636,8 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         self.cleep_filesystem = CleepFilesystem()
         self.cleep_filesystem.enable_write()
         self.crash_report = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -1644,6 +1654,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
             shutil.rmtree(os.path.join(INSTALL_DIR, 'modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
+        self.app_stop_event.set()
 
     def callback(self, status):
         pass
@@ -1653,7 +1664,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.ok'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -1676,7 +1687,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.noscript-ok'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '0b43bcff0e4dc88f4e24261913bd118cb53c9c9a82ab1a61b053477615421da7'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -1700,7 +1711,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         self.module_infos['download'] = self.url_archive % name
         #enter invalid checkum
         self.module_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -1724,7 +1735,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.preinst-ko'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '7c96e007d2ecebcde543c2bbf7f810904976f1dae7a8bfce438807e5b30392a6'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -1748,7 +1759,7 @@ class InstallModuleFunctionalTests(unittest.TestCase):
         name = 'cleepmod_test_1.0.0.postinst-ko'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '31d04988811c1ab449278bce66d608d1fbbc9324b0d60dd260ce36a326b700b4'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
@@ -1774,20 +1785,22 @@ class UpdateModuleTests(unittest.TestCase):
     def setUp(self):
         TestLib()
         logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
+        self.app_stop_event = Event()
 
     def tearDown(self):
-        pass
+        self.app_stop_event.set()
 
     def _init_context(self, module_name='module', new_module_infos=None, callback_side_effect=None, force_uninstall=False):
         self.crash_report = Mock()
         self.cleep_filesystem = Mock()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
         if new_module_infos is None:
             new_module_infos = self._get_module_infos('2.0.0')
 
         self.status_callback = Mock(side_effect=callback_side_effect)
 
-        self.u = UpdateModule(module_name, new_module_infos, force_uninstall, self.status_callback, self.cleep_filesystem, self.crash_report)
+        self.u = UpdateModule(module_name, new_module_infos, force_uninstall, self.status_callback, self.cleep_filesystem, self.crash_report, self.task_factory)
 
     def _init_install_mock(self, install_mock, timeout=1.5, get_status_return_value=None):
         class InstallContext():
@@ -2076,6 +2089,8 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
         self.cleep_filesystem = CleepFilesystem()
         self.cleep_filesystem.enable_write()
         self.crash_report = Mock()
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
 
     def tearDown(self):
         if os.path.exists('/tmp/preinst.tmp'):
@@ -2092,44 +2107,45 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
             shutil.rmtree(os.path.join(INSTALL_DIR, 'modules/test'), ignore_errors=True)
         if os.path.exists('/opt/cleep/html/js/modules/test'):
             shutil.rmtree('/opt/cleep/html/js/modules/test', ignore_errors=True)
+        self.app_stop_event.set()
 
     def callback(self, status):
         pass
 
     def test_update_ok(self):
-        #install
+        # install
         name = 'cleepmod_test_1.0.0.ok'
         self.module_infos['download'] = self.url_archive % name
         self.module_infos['sha256'] = '5a522882b74f990ba0175808f52540bd1c1bcfe258873f83fc9e90e85d64a8f4'
-        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        i = InstallModule('test', self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         i.start()
         time.sleep(0.5)
 
-        #wait until end of install
+        # wait until end of install
         while i.is_installing():
             time.sleep(0.25)
         self.assertEqual(i.get_status()['status'], i.STATUS_INSTALLED)
 
-        #check installation
+        # check installation
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/desc.json')))
         self.assertTrue(os.path.exists('/opt/cleep/install/test/test.log'))
         self.assertTrue(os.path.exists('/opt/cleep/install/test/preuninst.sh'))
         self.assertTrue(os.path.exists('/opt/cleep/install/test/postuninst.sh'))
 
-        #make sure cleepfilesystem free everything
+        # make sure cleepfilesystem free everything
         time.sleep(1.0)
 
-        #update module
-        u = UpdateModule('test', self.module_infos, self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report)
+        # update module
+        u = UpdateModule('test', self.module_infos, self.module_infos, False, self.callback, self.cleep_filesystem, self.crash_report, self.task_factory)
         u.start()
         time.sleep(0.5)
 
-        #wait until end of update
+        # wait until end of update
         while u.is_updating():
             time.sleep(0.25)
         self.assertEqual(u.get_status()['status'], u.STATUS_UPDATED)
 
-        #check update
+        # check update
         self.assertTrue(os.path.exists(os.path.join(PATH_FRONTEND, 'js/modules/test/')))
         self.assertTrue(os.path.exists('/opt/cleep/install/test/'))
 

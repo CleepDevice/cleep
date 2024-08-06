@@ -36,7 +36,7 @@ class WpacliTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch("wpacli.time.sleep")
+    @patch("wpacli.sleep")
     def test_scan_networks(self, time_sleep_mock):
         self.w.command = Mock(return_value={"returncode": 0, "error": False, "killed": False, "stdout": SCAN_NETWORKS})
 
