@@ -25,24 +25,21 @@ class CancelableTimer(Thread):
         Thread.__init__(self)
         self.__event = Event()
         self.task = task
-        self.interval = int(interval) or 1
-        self.__canceled = False
+        self.interval = interval
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self):
         while self.interval > 0 and not self.__event.is_set():
-            self.interval -= 1
             timeout = self.interval if self.interval <= 1 else 1
+            self.logger.trace('Task tick: interval=%s timeout=%s', self.interval, timeout)
             self.__event.wait(timeout)
+            self.interval -= 1
 
-        if not self.__canceled:
+        if not self.__event.is_set():
             self.logger.trace("Task %s ran", self.name)
             self.task()
-        else:
-            self.logger.trace("Task %s stopped", self.name)
 
     def cancel(self):
-        self.__canceled = True
         self.__event.set()
 
 
@@ -77,9 +74,12 @@ class Task:
             end_callback (function): call this function as soon as task is terminated
         """
         self._task = task
-        caller_class_name = type(self._task.__self__).__name__
+        try:
+            caller_class_name = f'.{type(self._task.__self__).__name__}'
+        except:
+            caller_class_name = ''
         function_name = getattr(self._task, "__name__", "unamed")
-        self._task_name = f"task.{caller_class_name}.{function_name}"
+        self._task_name = f"task{caller_class_name}.{function_name}"
         self.logger = logger
         self._args = task_args or []
         self._kwargs = task_kwargs or {}
@@ -136,8 +136,6 @@ class Task:
     def wait(self):
         """
         Wait for current task to be done
-        If task loops indefinitely, this function will return after current loop has terminated
-        If task is a count task, this function will wait until end of all loops
         """
         if self._run_count is None and not self.__timer:
             self.logger.warning("No task is running")
@@ -206,8 +204,9 @@ class CountTask(Task):
         self,
         interval,
         task,
-        logger,
         count,
+        logger,
+        app_stop_event,
         task_args=None,
         task_kwargs=None,
         end_callback=None,
@@ -218,13 +217,14 @@ class CountTask(Task):
         Args:
             interval (int): interval to repeat task (in seconds)
             task (function): function to call periodically
-            logger (logger): logger instance used to log message in task
             count (int): number of times to run task
+            logger (logger): logger instance used to log message in task
+            app_stop_event (Event): application stop event
             task_args (list): list of task parameters
             task_kwargs (dict): dict of task parameters
             end_callback (function): call this function as soon as task is terminated
         """
         Task.__init__(
-            self, interval, task, logger, task_args, task_kwargs, end_callback
+            self, interval, task, logger, app_stop_event, task_args, task_kwargs, end_callback
         )
         self._run_count = count

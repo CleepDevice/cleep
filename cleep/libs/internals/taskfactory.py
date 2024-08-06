@@ -4,7 +4,7 @@
 from inspect import currentframe, getframeinfo, getmodulename
 from pathlib import Path
 import logging
-from cleep.libs.internals.task import Task
+from cleep.libs.internals.task import Task, CountTask
 
 class TaskFactory:
     """
@@ -41,6 +41,29 @@ class TaskFactory:
 
         # create new task
         task = Task(interval, task, logger, self.__app_stop_event, task_args, task_kwargs, end_callback);
+        self.tasks.append(task)
+        return task
+
+    def create_count_task(self, interval, task, count, task_args=None, task_kwargs=None, end_callback=None):
+        """
+        Create new count task
+
+        Args:
+            interval (float): interval to repeat task (in seconds). If None task is executed once
+            task (callback): function to call periodically
+            count (int): number of time to run task before stopping
+            task_args (list): list of task parameters
+            task_kwargs (dict): dict of task parameters
+            end_callback (function): call this function as soon as task is terminatedœ
+        """
+        # get logger instance from caller
+        caller_frame = currentframe().f_back
+        first_arg_name = caller_frame.f_code.co_varnames[0]
+        caller_instance = caller_frame.f_locals[first_arg_name]
+        logger = caller_instance.logger or self.logger
+
+        # create new task
+        task = CountTask(interval, task, count, logger, self.__app_stop_event, task_args, task_kwargs, end_callback);
         self.tasks.append(task)
         return task
 

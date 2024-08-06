@@ -11,6 +11,9 @@ def get_log_level(default=logging.FATAL):
     if 'DEBUG' in os.environ:
         return logging.DEBUG
 
+    if 'TRACE' in os.environ:
+        return logging.TRACE
+
     if 'LOGLEVEL' in os.environ:
         if os.environ['LOGLEVEL'].upper() == 'TRACE':
             return logging.TRACE

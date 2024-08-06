@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
 import time
-
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
 from download import Download
-from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from unittest.mock import Mock
@@ -16,6 +15,8 @@ import io
 import base64
 import responses
 from cleep.libs.tests.common import get_log_level
+from cleep.libs.internals.taskfactory import TaskFactory
+from threading import Event
 
 LOG_LEVEL = get_log_level()
 
@@ -39,6 +40,7 @@ class DownloadTests(unittest.TestCase):
         )
 
         self.fs = Mock()
+        self.task_factory = TaskFactory({ "app_stop_event": Event() })
 
         self.async_status = None
         self.async_filepath = None
@@ -70,7 +72,7 @@ class DownloadTests(unittest.TestCase):
             ],
         )
 
-        self.d = Download(self.fs)
+        self.d = Download(self.fs, self.task_factory)
         self.d.temp_dir = os.path.abspath("./test")
 
     def test_add_auth_token(self):
@@ -220,12 +222,14 @@ class DownloadTests(unittest.TestCase):
                 "Content-Length": "%s" % len(response.encode("utf8")),
             },
         )
+
         self.d.download_file_async(
             "https://www.google.com",
             self._end_callback,
             status_callback=self._status_callback,
         )
         time.sleep(1)
+        
         self.assertGreaterEqual(self.status_callback_call, 2)
         self.assertEqual(self.end_callback_call, 1)
         self.assertEqual(self.async_status, self.d.STATUS_DONE)
@@ -433,6 +437,8 @@ class DownloadTestsNoCleepFilesystem(unittest.TestCase):
         self.end_callback_call = 0
         self.status_callback_call = 0
 
+        self.task_factory = TaskFactory({ "app_stop_event": Event() })
+
     def tearDown(self):
         os.remove = self.os_remove_original
         os.rename = self.os_rename_original
@@ -463,7 +469,7 @@ class DownloadTestsNoCleepFilesystem(unittest.TestCase):
         )
         os.remove = Mock(side_effect=remove_side_effect)
         os.rename = Mock(side_effect=rename_side_effect)
-        self.d = Download(None)
+        self.d = Download(None, self.task_factory)
         self.d.temp_dir = os.path.abspath("./test")
 
     @responses.activate
@@ -531,6 +537,7 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
         )
         TestLib()
         self.fs = Mock()
+        self.task_factory = TaskFactory({ "app_stop_event": Event() })
         self.async_status = None
         self.async_filepath = None
 
@@ -549,7 +556,7 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
                 responses.matchers.request_kwargs_matcher({"stream": True}),
             ],
         )
-        self.d = Download(self.fs)
+        self.d = Download(self.fs, self.task_factory)
         self.d.temp_dir = os.path.abspath("./test")
 
     def _end_callback(self, status, filepath):
@@ -565,10 +572,12 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
     def test_download_file_async(self):
         self.init()
         self.fs.open.side_effect = self._delay
+
         self.d.download_file_async("https://www.google.com", self._end_callback)
         time.sleep(0.5)
         self.d.cancel()
         time.sleep(1.0)
+
         self.assertEqual(self.async_status, self.d.STATUS_CANCELED)
         self.assertEqual(self.async_filepath, None)
 
