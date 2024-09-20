@@ -7,37 +7,40 @@ from threading import Thread, Event
 from time import perf_counter
 from gevent import sleep
 
-__all__ = ["Task", "CountTask"]
+__all__ = ["Task", "CountTask", "CancelableTimer"]
 
 
 class CancelableTimer(Thread):
     """
-    Really cancelable timer versus native Timer that cancels only when task runs
+    Really cancelable timer versus native Timer that can be canceled only when task is
+    running (and not when it is pending)
     """
-    def __init__(self, interval, task):
+    def __init__(self, interval, task, task_args=None, task_kwargs=None):
         """
         Create new cancelable timer. Task internal usage only because task parameters are not supported
 
         Args:
             interval (double): time to wait (in seconds)
-            task (function): task to run after timeout
+            task (function): task to run after interval has passed
         """
         Thread.__init__(self)
         self.__event = Event()
-        self.task = task
-        self.interval = interval
+        self._task = task
+        self._args = task_args or []
+        self._kwargs = task_kwargs or {}
+        self._interval = interval
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self):
-        while self.interval > 0 and not self.__event.is_set():
-            timeout = self.interval if self.interval <= 1 else 1
-            self.logger.trace('Task tick: interval=%s timeout=%s', self.interval, timeout)
+        while self._interval > 0 and not self.__event.is_set():
+            timeout = self._interval if self._interval <= 1 else 1
+            self.logger.trace('Task tick: interval=%s timeout=%s', self._interval, timeout)
             self.__event.wait(timeout)
-            self.interval -= 1
+            self._interval -= 1
 
         if not self.__event.is_set():
-            self.logger.trace("Task %s ran", self.name)
-            self.task()
+            self.logger.trace("Task %s ran", self._task.__name__)
+            self._task(*self._args, **self._kwargs)
 
     def cancel(self):
         self.__event.set()
