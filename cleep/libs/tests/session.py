@@ -7,6 +7,7 @@ from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.internals.profileformattersbroker import ProfileFormattersBroker
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.criticalresources import CriticalResources
+from cleep.libs.internals.taskfactory import TaskFactory
 from cleep.exception import NoResponse, CommandError
 from cleep import bus
 from cleep.libs.internals import event
@@ -74,6 +75,7 @@ class TestSession():
         self.__module_class = None
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
+        self.__app_stop_event = None
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -92,16 +94,16 @@ class TestSession():
         fs = CleepFilesystem()
         fs.enable_write(True, True)
         self.cleep_filesystem = MagicMock()
-
-        critical_resources = CriticalResources(debug)
         
         core_join_event = Event()
         core_join_event.set()
 
-        app_stop_event = Event()
-        app_stop_event.set()
+        self.__app_stop_event = Event()
+        # self.__app_stop_event.set()
 
-        self.task_factory = MagicMock()
+        self.task_factory = TaskFactory({ 'app_stop_event': self.__app_stop_event })
+
+        critical_resources = CriticalResources({ "task_factory": self.task_factory }, debug)
 
         return {
             'internal_bus': internal_bus,
@@ -117,7 +119,7 @@ class TestSession():
             'drivers': Drivers(debug),
             'log_file': '/tmp/cleep.log',
             'external_bus': 'cleepbus',
-            'app_stop_event': app_stop_event,
+            'app_stop_event': self.__app_stop_event,
             'task_factory': self.task_factory,
         }
 
@@ -233,6 +235,9 @@ class TestSession():
         """
         if not self.__setup_executed:
             return
+
+        # initiate Cleep shutdown
+        self.__app_stop_event.set()
 
         # process
         if self.__module_instance and self.__module_instance.is_alive():
