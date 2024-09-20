@@ -4,7 +4,7 @@
 from inspect import currentframe, getframeinfo, getmodulename
 from pathlib import Path
 import logging
-from cleep.libs.internals.task import Task, CountTask
+from cleep.libs.internals.task import Task, CountTask, CancelableTimer
 
 class TaskFactory:
     """
@@ -55,6 +55,9 @@ class TaskFactory:
             task_args (list): list of task parameters
             task_kwargs (dict): dict of task parameters
             end_callback (function): call this function as soon as task is terminatedœ
+
+        Returns:
+            Task instance
         """
         # get logger instance from caller
         caller_frame = currentframe().f_back
@@ -66,6 +69,21 @@ class TaskFactory:
         task = CountTask(interval, task, count, logger, self.__app_stop_event, task_args, task_kwargs, end_callback);
         self.tasks.append(task)
         return task
+
+    def create_timer(self, interval, task):
+        """
+        Create new timer (that is really cancelable)
+
+        Args:
+            interval (float): run task after interval has passed
+            task (callback): function to run
+
+        Returns:
+            CancelableTimer instance
+        """
+        timer = CancelableTimer(interval, task)
+        self.tasks.append(timer)
+        return timer
 
     def stop_all_tasks(self):
         """
