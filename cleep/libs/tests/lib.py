@@ -103,6 +103,7 @@ class TestLib():
     def set_functional_tests(self):
         if self.test_case is None:
             logging.warning('Can\'t declare functional test if "test_case" param not specified during TestLib() init')
+            return
         if KEY_FUNCTIONAL_TEST not in os.environ:
             self.test_case.skipTest('Functional tests are skipped')
 
