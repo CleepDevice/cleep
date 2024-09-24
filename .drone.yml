@@ -120,7 +120,7 @@ steps:
       - cat version.txt
 
   - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20240923
+    image: 192.168.1.125:5000/cleep-utils:20240924
     network_mode: host
     privileged: true
     volumes:
@@ -299,7 +299,7 @@ steps:
       - cleep-cli coredocs --publish
 
   - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20240923
+    image: 192.168.1.125:5000/cleep-utils:20240924
     network_mode: host
     privileged: true
     volumes:
@@ -575,7 +575,7 @@ steps:
       - cleep-cli coredocs --publish
 
   - name: build-cleep-docker-image
-    image: 192.168.1.125:5000/cleep-utils:20240923
+    image: 192.168.1.125:5000/cleep-utils:20240924
     network_mode: host
     privileged: true
     volumes:
@@ -714,7 +714,7 @@ steps:
       - ls -lh
 
   - name: publish-cleepos-image
-    image: 192.168.1.1:8662/cleep-utils:20240923
+    image: 192.168.1.1:8662/cleep-utils:20240924
     network_mode: host
     environment:
       GITHUB_ACCESS_TOKEN:
