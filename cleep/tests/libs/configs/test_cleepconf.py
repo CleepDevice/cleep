@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cleep.libs.tests.lib import TestLib
 import os
 import sys
-
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
 from cleepconf import CleepConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.download import Download
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
-from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
 from pprint import pprint
