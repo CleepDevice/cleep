@@ -52,7 +52,7 @@ class ToolsTests(unittest.TestCase):
         mock_platform.machine.return_value = 'amd64'
         with self.assertRaises(Exception) as cm:
             tools.raspberry_pi_infos()
-        self.assertEqual(str(cm.exception), 'Not arm platform')
+        self.assertEqual(str(cm.exception), 'Not arm platform (found amd64)')
 
     def test_install_dbm_to_percent(self):
         self.assertEqual(tools.dbm_to_percent(-1), 100)

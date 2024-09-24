@@ -458,8 +458,8 @@ def raspberry_pi_infos():
         Exception if platform is not ARM
     """
     machine = platform.machine()
-    if not machine.startswith("arm") or not machine.startswith("aarch64"):
-        raise Exception("Not arm platform (found %s)", machine)
+    if not machine.startswith("arm") and not machine.startswith("aarch64"):
+        raise Exception("Not arm platform (found %s)" % machine)
     cmd = '/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     revision = proc.communicate()[0].decode("utf-8").replace("\n", "")
