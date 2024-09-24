@@ -138,7 +138,7 @@ class ProfileFormattersBroker:
             raise Exception("Invalid modules path")
 
         self.logger.debug("Loading formatters:")
-        for root, _, filenames in os.walk(path):
+        for root, _, filenames in sorted(os.walk(path)):
             for filename in filenames:
                 try:
                     fullpath = os.path.join(root, filename)

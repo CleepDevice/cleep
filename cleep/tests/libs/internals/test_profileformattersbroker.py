@@ -121,6 +121,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
             with io.open(os.path.join(self.MODULES_DIR, "dummyprofile.py"), "w") as fd:
                 fd.write(DUMMY_PROFILE)
             for app_name in add_apps:
+                logging.debug("Registering app '%s'", app_name)
                 app_dir = os.path.join(self.MODULES_DIR, app_name)
                 formatter_class = "%sFormatter" % app_name
                 os.mkdir(app_dir)
@@ -305,7 +306,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
             self.p._ProfileFormattersBroker__formatters["test.event.test"][
                 "app2"
             ].__class__.__name__,
-            "app3Formatter",
+            "app1Formatter",
         )
 
     def test_register_renderer_no_best_formatter_found(self):
