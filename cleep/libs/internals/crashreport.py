@@ -11,20 +11,29 @@ from sentry_sdk import capture_exception as SentryCaptureException
 from sentry_sdk import configure_scope
 import cleep.libs.internals.tools as Tools
 
-class CrashReport():
+
+class CrashReport:
     """
     Crash report class
     """
 
     DEFAULT_FILTERS = [
-        'KeyboardInterrupt',
-        'zmq.error.ZMQError',
-        'AssertionError',
-        'ForcedException',
-        'NotReady'
+        "KeyboardInterrupt",
+        "zmq.error.ZMQError",
+        "AssertionError",
+        "ForcedException",
+        "NotReady",
     ]
 
-    def __init__(self, token, product, product_version, libs_version=None, debug=False, disabled_by_core=False):
+    def __init__(
+        self,
+        token,
+        product,
+        product_version,
+        libs_version=None,
+        debug=False,
+        disabled_by_core=False,
+    ):
         """
         Constructor
 
@@ -54,7 +63,7 @@ class CrashReport():
 
         # disable crash report if necessary
         if self.__disabled_by_core or not token:
-            self.logger.debug('Crash report forced to be disabled')
+            self.logger.debug("Crash report forced to be disabled")
             self.disable()
 
         # create and configure raven client
@@ -63,33 +72,35 @@ class CrashReport():
             release=product_version,
             attach_stacktrace=True,
             before_send=self.__filter_exception,
-            default_integrations=False
+            default_integrations=False,
         )
 
         # fill current scope
         with configure_scope() as scope:
-            scope.set_tag('platform', platform.platform())
-            scope.set_tag('product', product)
-            scope.set_tag('product_version', product_version)
+            scope.set_tag("platform", platform.platform())
+            scope.set_tag("product", product)
+            scope.set_tag("product_version", product_version)
             for key, value in libs_version.items():
                 scope.set_tag(key, value)
             try:
                 # append more metadata for raspberry
                 infos = Tools.raspberry_pi_infos()
-                scope.set_tag('raspberrypi_model', infos[u'model'])
-                scope.set_tag('raspberrypi_revision', infos[u'revision'])
-                scope.set_tag('raspberrypi_pcbrevision', infos[u'pcbrevision'])
-            except Exception as error: # pragma: no cover
-                self.logger.debug('Application is not running on a raspberry pi: %s' % str(error))
+                scope.set_tag("raspberrypi_model", infos["model"])
+                scope.set_tag("raspberrypi_revision", infos["revision"])
+                scope.set_tag("raspberrypi_pcbrevision", infos["pcbrevision"])
+            except Exception as error:  # pragma: no cover
+                self.logger.debug(
+                    "Application is not running on a raspberry pi: %s" % str(error)
+                )
 
-    def __filter_exception(self, event, hint): # pragma: no cover
+    def __filter_exception(self, event, hint):  # pragma: no cover
         """
         Callback used to filter sent exceptions
         """
-        if 'exc_info' in hint:
-            _, exc_value, _ = hint['exc_info']
+        if "exc_info" in hint:
+            _, exc_value, _ = hint["exc_info"]
             if type(exc_value).__name__ in self.__filters:
-                self.logger.debug('Exception "%s" filtered' % type(exc_value).__name__)
+                self.logger.debug('Exception "%s" filtered', type(exc_value).__name__)
                 return None
 
         return event
@@ -116,14 +127,14 @@ class CrashReport():
         """
         Enable crash report
         """
-        self.logger.debug('Crash report is enabled')
+        self.logger.debug("Crash report is enabled")
         self.__enabled = True
 
     def disable(self):
         """
         Disable crash report
         """
-        self.logger.debug('Crash report is disabled')
+        self.logger.debug("Crash report is disabled")
         self.__enabled = False
 
     def report_exception(self, extra=None):
@@ -134,7 +145,7 @@ class CrashReport():
             extra (dict): extra metadata to post with the report
         """
         if self.__enabled:
-            self.logger.debug('Send crash report')
+            self.logger.debug("Send crash report")
             with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
                 SentryCaptureException()
@@ -148,7 +159,7 @@ class CrashReport():
             extra (dict): extra metadata to post with the report
         """
         if self.__enabled:
-            self.logger.debug('Send manual report')
+            self.logger.debug("Send manual report")
             with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
                 SentryCaptureMessage(message)
@@ -181,9 +192,9 @@ class CrashReport():
 
         """
         return {
-            'libsversion': copy.deepcopy(self.__libs_version),
-            'product': self.__product,
-            'productversion': self.__product_version,
+            "libsversion": copy.deepcopy(self.__libs_version),
+            "product": self.__product,
+            "productversion": self.__product_version,
         }
 
     def add_module_version(self, module_name, module_version):
@@ -197,4 +208,3 @@ class CrashReport():
         self.__libs_version[module_name.lower()] = module_version
         with configure_scope() as scope:
             scope.set_tag(module_name, module_version)
-
