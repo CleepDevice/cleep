@@ -451,7 +451,7 @@ clone:
 
 services:
   - name: launch-docker
-    image: mazzolino/docker:20.10.12-dind
+    image: arm32v7/docker:26.1.2-dind
     privileged: true
     network_mode: host
     volumes:
