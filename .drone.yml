@@ -22,7 +22,7 @@ clone:
 
 services:
   - name: launch-docker
-    image: mazzolino/docker:20.10.12-dind
+    image: arm32v7/docker:26.1.2-dind
     privileged: true
     network_mode: host
     volumes:
@@ -172,7 +172,7 @@ clone:
 
 services:
   - name: launch-docker
-    image: mazzolino/docker:20.10.12-dind
+    image: arm32v7/docker:26.1.2-dind
     privileged: true
     network_mode: host
     volumes:
@@ -647,7 +647,7 @@ volumes:
 
 steps:
   - name: clone
-    image: 192.168.1.1:8662/cleep-git:20240923
+    image: 192.168.1.1:8662/cleep-git:20240927
     commands:
       - git clone $DRONE_REMOTE_URL cleep-dev
       - ls -la
@@ -655,7 +655,7 @@ steps:
       - git checkout $DRONE_SOURCE_BRANCH
 
   - name: prepare-cleepos-image
-    image: 192.168.1.1:8662/cleep-git:20240923
+    image: 192.168.1.1:8662/cleep-git:20240927
     network_mode: host
     environment:
       ID_ED25519:
@@ -714,7 +714,7 @@ steps:
       - ls -lh
 
   - name: publish-cleepos-image
-    image: 192.168.1.1:8662/cleep-utils:20240924
+    image: 192.168.1.1:8662/cleep-utils:20240927
     network_mode: host
     environment:
       GITHUB_ACCESS_TOKEN:
