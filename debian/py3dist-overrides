@@ -1,8 +1,0 @@
-pyre_gevent python-pyre-gevent
-netifaces   python3-netifaces
-psutil  python3-psutil
-simplejson  python3-simplejson
-spidev  python3-spidev
-scipy   python3-scipy
-pygame  python3-pygame
-rpi.gpio    python3-rpi.gpio
