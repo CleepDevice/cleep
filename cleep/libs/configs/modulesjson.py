@@ -114,8 +114,7 @@ class ModulesJson:
         source_filepath = self.get_source_filepath()
         if not os.path.exists(source_filepath):
             raise Exception(
-                'File "%s" doesn\'t exist. Please update it first.'
-                % source_filepath
+                'File "%s" doesn\'t exist. Please update it first.' % source_filepath
             )
 
         # read content
@@ -145,6 +144,10 @@ class ModulesJson:
             url = self.source["remote_url_version"] % {"version": CLEEP_VERSION}
             resp = requests.get(url)
             if resp.status_code == 200:
+                self.logger.info(
+                    "Frozen market for version %s found. Market apps won't be updated anymore. Please upgrade Cleep version",
+                    CLEEP_VERSION,
+                )
                 return url
         except:
             # do not fail
@@ -182,12 +185,8 @@ class ModulesJson:
 
         # check remote content
         if "list" not in remote_modules_json or "update" not in remote_modules_json:
-            self.logger.error(
-                'Remote "%s" file has invalid format', source_filepath
-            )
-            raise Exception(
-                f"Remote \"{source_filepath}\" file has invalid format"
-            )
+            self.logger.error('Remote "%s" file has invalid format', source_filepath)
+            raise Exception(f'Remote "{source_filepath}" file has invalid format')
 
         # get local
         local_modules_json = None
@@ -210,9 +209,7 @@ class ModulesJson:
             fd = self.cleep_filesystem.open(source_filepath, "w")
             fd.write(raw)
             self.cleep_filesystem.close(fd)
-            self.logger.info(
-                'File "%s" updated successfully', source_filepath
-            )
+            self.logger.info('File "%s" updated successfully', source_filepath)
 
             # make sure file is written
             sleep(0.25)
