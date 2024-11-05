@@ -36,36 +36,37 @@ installDefaultApps() {
     mkdir -p /opt/cleep/html
     for CLEEPMOD in "${CLEEPMODS[@]}"; do
         echo
-        echo "=> Installing $CLEEPMOD module"
+        echo "==> Installing $CLEEPMOD module"
         # download and checksum module
         download=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.download | awk '{ gsub("\"","",$0); print $0}'`
         checksum=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.sha256 | awk '{ gsub("\"","",$0); print $0}'`
+        echo " - download archive $download"
         wget $download -q --show-progress -O /tmp/cleepmod.zip
         echo "$checksum /tmp/cleepmod.zip" > /tmp/cleepmod.sha
-        checkResult $? 0 "Unable to create sha file"
+        checkResult $? 0 " X unable to create sha file"
         sha256sum --quiet -c /tmp/cleepmod.sha
-        checkResult $? 0 "Checksum does not match for current app"
+        checkResult $? 0 " X checksum does not match"
         # install module
         unzip -q -o -d /tmp/cleepmod /tmp/cleepmod.zip
-        checkResult $? 0 "Unzip failed"
+        checkResult $? 0 " X unzip failed"
         cp -a /tmp/cleepmod/backend/* /opt/cleep/
-        checkResult $? 0 "Backend copy failed"
+        checkResult $? 0 " X backend copy failed"
         if [ -d "/tmp/cleepmod/frontend/" ]; then
             cp -a /tmp/cleepmod/frontend/* /opt/cleep/html/
-            checkResult $? 0 "Frontend copy failed"
+            checkResult $? 0 " X frontend copy failed"
         fi
         if [ -f "/tmp/cleepmod/scripts/postinst.sh" ]; then
             echo " - running postinst.sh script"
             chmod +x /tmp/cleepmod/scripts/postinst.sh
             cd /tmp/cleepmod/scripts/
             /tmp/cleepmod/scripts/postinst.sh
-            checkResult $? 0 "Postinst.sh script failed"
+            checkResult $? 0 " X postinst.sh script failed"
             cd -
         fi
         rm -rf /tmp/cleepmod
         rm -f /tmp/cleepmod.zip
         rm -f /tmp/cleepmod.sha
-        echo "Done"
+        echo " - done"
         echo ""
     done
     rm -f /tmp/modules.json
