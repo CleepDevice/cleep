@@ -22,10 +22,12 @@ checkResult() {
 
 installDefaultApps() {
     # download modules.json from Cleep repository
-    echo "Download modules.json from:"
-    echo " 1 - $MODULES_JSON_VERSION"
-    echo " 2 - $MODULES_JSON_LATEST"
-    wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
+    echo "Download versionned modules.json from $MODULES_JSON_VERSION"
+    wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json
+    if [ $? -ne 0 ]; then
+        echo "Download latest modules.json from $MODULES_JSON_LATEST"
+        wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
+    fi
     checkResult $? 0 "Unable to download modules.json file"
     # copy modules.json to cleep repository to Cleep be able to start without network
     mkdir -p /etc/cleep
@@ -33,7 +35,8 @@ installDefaultApps() {
     # install mandatory Cleep apps
     mkdir -p /opt/cleep/html
     for CLEEPMOD in "${CLEEPMODS[@]}"; do
-        echo "- installing $CLEEPMOD module"
+        echo
+        echo "=> Installing $CLEEPMOD module"
         # download and checksum module
         download=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.download | awk '{ gsub("\"","",$0); print $0}'`
         checksum=`cat /tmp/modules.json | /usr/bin/jq .list.$CLEEPMOD.sha256 | awk '{ gsub("\"","",$0); print $0}'`
@@ -56,8 +59,8 @@ installDefaultApps() {
             chmod +x /tmp/cleepmod/scripts/postinst.sh
             cd /tmp/cleepmod/scripts/
             /tmp/cleepmod/scripts/postinst.sh
-            cd -
             checkResult $? 0 "Postinst.sh script failed"
+            cd -
         fi
         rm -rf /tmp/cleepmod
         rm -f /tmp/cleepmod.zip
