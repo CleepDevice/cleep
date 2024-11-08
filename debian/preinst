@@ -23,12 +23,14 @@ checkResult() {
 installDefaultApps() {
     # download modules.json from Cleep repository
     echo "Download versionned modules.json from $MODULES_JSON_VERSION"
-    wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json
-    if [ $? -ne 0 ]; then
+    wget $MODULES_JSON_VERSION -q --show-progress -O /tmp/modules.json || (rm -rf /tmp/modules.json && /bin/true)
+    if [ ! -f /tmp/modules.json ]; then
         echo "Download latest modules.json from $MODULES_JSON_LATEST"
-        wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json
+        wget $MODULES_JSON_LATEST -q --show-progress -O /tmp/modules.json || (rm -rf /tmp/modules.json && /bin/true)
     fi
-    checkResult $? 0 "Unable to download modules.json file"
+    if [ ! -f /tmp/modules.json ]; then
+        checkResult 1 0 "Unable to download modules.json file"
+    fi
     # copy modules.json to cleep repository to Cleep be able to start without network
     mkdir -p /etc/cleep
     cp -a /tmp/modules.json /etc/cleep/modules.json
