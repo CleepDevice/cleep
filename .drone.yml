@@ -52,6 +52,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
@@ -70,6 +72,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
@@ -202,6 +206,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
@@ -223,6 +229,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync
@@ -481,6 +489,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
@@ -499,6 +509,8 @@ steps:
       - python3 -m pip -q --no-color install pip cleepcli coveralls --upgrade
       - cleep-cli --version
       - cd cleep-dev
+      - export PACKAGES=`cat packages.list | paste -sd " " -`
+      - apt-get install -y $PACKAGES
       - python3 -m pip install -r requirements-test.txt
       - export REPO_DIR=/drone/src/cleep-dev
       - cleep-cli coresync

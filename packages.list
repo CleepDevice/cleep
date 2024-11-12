@@ -1,0 +1,10 @@
+lsof
+jq
+libffi-dev
+libssl-dev
+python3-dev
+python3-distutils
+libopenblas0
+libatlas3-base
+ntp
+ntpdate
