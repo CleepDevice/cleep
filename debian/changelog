@@ -1,3 +1,6 @@
+cleep (0.1.1) unstable; urgency=low
+  * Fixed core: add parameters app system dependencies
+
 cleep (0.1.0) unstable; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
   * Fixed core: #1408 fix /logs endpoint
