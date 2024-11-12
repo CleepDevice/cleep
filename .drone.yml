@@ -57,6 +57,8 @@ steps:
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
+      - # check Cleep version
+      - cleep-cli cicorecheckversion
       - # force all code to be updated from sources
       - cleep-cli coresync
       - cleep-cli cigetmods
@@ -211,6 +213,8 @@ steps:
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
+      - # check Cleep version
+      - cleep-cli cicorecheckversion
       - # force all code to be updated from sources
       - cleep-cli coresync
       - cleep-cli cigetmods
@@ -494,6 +498,8 @@ steps:
       - python3 -m pip install -r requirements.txt
       - python3 -m pip freeze
       - export REPO_DIR=/drone/src/cleep-dev
+      - # check Cleep version
+      - cleep-cli cicorecheckversion
       - # force all code to be updated from sources
       - cleep-cli coresync
       - cleep-cli cigetmods
