@@ -1,5 +1,10 @@
 cleep (0.1.1) unstable; urgency=low
-  * Fixed core: add parameters app system dependencies
+  * Fixed package: add parameters app system dependencies
+  * Fixed package: add packages.list file
+  * Fixed CI: install system dependencies during CI steps
+  * Fixed CI: fix market freezed version
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, 12 Nov 2024 22:00:00 +0100
 
 cleep (0.1.0) unstable; urgency=low
   * Fixed core: bump dependencies and fix breaking changes (netifaces)

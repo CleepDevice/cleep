@@ -370,7 +370,7 @@ steps:
       - git commit -m "Update Cleep "$VERSION" release candidate" | true
       - git push -u origin HEAD | true
       - # keep latest release
-      - export FREEZED_VERSION=`cat .cleep-rc-version.txt`
+      - export FREEZED_VERSION=`cat .cleep-release-version.txt`
       - cd ..
       - rm -rf cleep-ci
       - echo $FREEZED_VERSION > freezed_version.txt
@@ -397,8 +397,8 @@ steps:
       - # configure git
       - git config --global user.email "drone@cleep.dev"
       - git config --global user.name "drone"
-      - # get version
-      - export VERSION=`cat version.txt`
+      - # get freezed version
+      - export VERSION=`cat freezed_version.txt`
       - echo $VERSION
       - # TODO use cleep-ci to freeze configured markets
       - # freeze version on cleep-apps
