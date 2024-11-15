@@ -22,8 +22,9 @@ class CleepConf:
         "rpc": {
             "rpc_host": "0.0.0.0",
             "rpc_port": 80,
-            "rpc_cert": "",
-            "rpc_key": "",
+            "rpc_port_ssl": 443,
+            "rpc_cert": "/etc/cleep/cert/ssl.crt",
+            "rpc_key": "/etc/cleep/cert/ssl.key",
         },
         "debug": {"trace_enabled": False, "debug_core": False, "debug_modules": []},
         "auth": {"accounts": {}, "enabled": False},

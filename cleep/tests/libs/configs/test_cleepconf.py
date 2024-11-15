@@ -44,6 +44,7 @@ class CleepConfTests(unittest.TestCase):
         conf.add_section("rpc")
         conf.set("rpc", "rpc_host", "0.0.0.0")
         conf.set("rpc", "rpc_port", "80")
+        conf.set("rpc", "rpc_port_ssl", "443")
         conf.set("rpc", "rpc_cert", "")
         conf.set("rpc", "rpc_key", "")
         conf.add_section("debug")
