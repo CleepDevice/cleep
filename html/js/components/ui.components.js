@@ -35,7 +35,7 @@ angular.module('Cleep').component('clAppImg', {
         clWidth: '@?',
         clHeight: '@?',
     },
-    controller: function($location) {
+    controller: ['$location', function($location) {
         const MODULES_PATH = 'js/modules/';
         const ctrl = this;
         ctrl.src = '';
@@ -54,7 +54,7 @@ angular.module('Cleep').component('clAppImg', {
         ctrl.getAppName = function() {
             return $location.path().replace('/module/', '');
         };
-    }
+    }],
 });
 
 angular.module('Cleep').component('clAppFab', {
@@ -82,7 +82,7 @@ angular.module('Cleep').component('clAppFab', {
         </md-fab-speed-dial>
     </div>
     `,
-    controller: function($rootScope) {
+    controller: ['$rootScope', function($rootScope) {
         const ctrl = this;
         ctrl.actions = [];
 
@@ -102,7 +102,7 @@ angular.module('Cleep').component('clAppFab', {
         ctrl.onClick = (action) => {
             (action.callback || angular.noop)();
         };
-    }
+    }],
 });
 
 angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function($timeout) {
@@ -291,7 +291,7 @@ angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function(
         <md-progress-linear ng-if="$ctrl.status==100" md-mode="determinate" value="100"></md-progress-linear>
     </div>
     `,
-    controller: function($scope, cleepLoadingBarService) {
+    controller: ['$scope', 'cleepLoadingBarService', function($scope, cleepLoadingBarService) {
         const ctrl = this;
         ctrl.status = 0;
 
@@ -300,7 +300,7 @@ angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function(
         }, function(newStatus) {
             ctrl.status = newStatus * 100;
         });
-    }
+    }],
 });
 
 /**
@@ -443,7 +443,7 @@ angular.module('Cleep').service('cleepToolbarService', function() {
         <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
     </md-button>
     `,
-    controller: function(cleepToolbarService) {
+    controller: ['cleepToolbarService', function(cleepToolbarService) {
         const ctrl = this;
         ctrl.toolbar = cleepToolbarService;
 
@@ -456,6 +456,6 @@ angular.module('Cleep').service('cleepToolbarService', function() {
                 button.click();
             }
         };
-    }
+    }],
 });
 
