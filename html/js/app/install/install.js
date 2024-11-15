@@ -2,7 +2,10 @@
  * Configuration directive
  * Handle all modules configuration
  */
-var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
+angular
+.module('Cleep')
+.directive('installDirective', ['$q', 'cleepService', 'toastService', '$mdDialog', '$sce',
+function($q, cleepService, toast, $mdDialog, $sce) {
 
     var installController = ['$rootScope', '$scope','$element', '$window', function($rootScope, $scope, $element, $window) {
         var self = this;
@@ -164,8 +167,5 @@ var installDirective = function($q, cleepService, toast, $mdDialog, $sce) {
         controller: installController,
         controllerAs: 'installCtl',
     };
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.directive('installDirective', ['$q', 'cleepService', 'toastService', '$mdDialog', '$sce', installDirective]);
+}]);
 

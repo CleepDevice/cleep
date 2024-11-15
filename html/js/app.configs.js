@@ -42,16 +42,25 @@ Cleep.config([
 /**
  * Disable aria warnings
  */
-Cleep.config(function ($mdAriaProvider) {
-    $mdAriaProvider.disableWarnings();
-});
+Cleep.config([
+    '$mdAriaProvider',
+    function ($mdAriaProvider) {
+        $mdAriaProvider.disableWarnings();
+    },
+]);
 
 /**
  * Http interceptor to resolve cache problems
  */
-Cleep.config(function ($templateRequestProvider) {
-    $templateRequestProvider.httpOptions({ _isTemplate: true });
-}).factory('noCacheInterceptor', function ($templateCache) {
+Cleep.config([
+    '$templateRequestProvider',
+    function ($templateRequestProvider) {
+        $templateRequestProvider.httpOptions({ _isTemplate: true });
+    },
+])
+.factory('noCacheInterceptor', [
+    '$templateCache',
+    function ($templateCache) {
         const NO_CACHE_REGEX = /(?:json|html|svg|jpg)/;
         return {
             request: function (config) {
@@ -64,10 +73,14 @@ Cleep.config(function ($templateRequestProvider) {
                 return config;
             },
         };
-    })
-    .config(function ($httpProvider) {
+    },
+])
+.config([
+    '$httpProvider',
+    function ($httpProvider) {
         $httpProvider.interceptors.push('noCacheInterceptor');
-    });
+    },
+]);
 
 Cleep.factory('$exceptionHandler', [
     '$log',
