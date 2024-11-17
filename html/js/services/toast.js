@@ -1,7 +1,6 @@
 angular
 .module('Cleep')
-.service('toastService', ['$mdToast', '$mdDialog',
-function($mdToast, $mdDialog) {
+.service('toastService', ['$mdToast', '$mdDialog', function($mdToast, $mdDialog) {
     var self = this;
 
     /**

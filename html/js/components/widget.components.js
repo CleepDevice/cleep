@@ -71,7 +71,7 @@ angular.module('Cleep').component('widgetBasic', {
         clFooter: '<',
         clImage: '<',
     },
-    controller: function ($transclude) {
+    controller: ['$transclude', function ($transclude) {
         const ctrl = this;
         ctrl.footer = [];
         ctrl.hasFooter = false;
@@ -128,7 +128,7 @@ angular.module('Cleep').component('widgetBasic', {
                 action.click();
             }
         };
-    },
+    }],
 });
 
 angular.module('Cleep').component('widgetConf', {
