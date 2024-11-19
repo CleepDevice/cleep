@@ -154,12 +154,13 @@ class CommonProcess(threading.Thread):
         # script execution terminated
         self._script_running = False
 
-    def _execute_script(self, script_path):
+    def _execute_script(self, app_name, script_path):
         """
         Execute specified script
 
         Args:
-            script_path (string): script path
+            app_name (str): application name
+            script_path (str): script path
 
         Returns:
             bool: True if script execution succeed, False otherwise
@@ -167,6 +168,12 @@ class CommonProcess(threading.Thread):
         # init
         os.chmod(script_path, stat.S_IEXEC)
         exec_dir = os.path.dirname(script_path)
+        app_paths = {
+            "APP_STORAGE_PATH": os.path.join("/var/opt/cleep/modules/storage", app_name),
+            "APP_TMP_PATH": os.path.join('/tmp/cleep/modules', app_name),
+            "APP_ASSET_PATH": os.path.join('/var/opt/cleep/modules/asset/', app_name),
+            "APP_BIN_PATH": os.path.join('/var/opt/cleep/modules/bin/', app_name),
+        }
 
         # exec
         self._script_running = True
@@ -175,7 +182,10 @@ class CommonProcess(threading.Thread):
             script_path,
             self._script_callback,
             self._script_terminated_callback,
-            { 'exec_dir': exec_dir },
+            {
+                "exec_dir": exec_dir,
+                "env": app_paths,
+            },
         )
         console.start()
 
