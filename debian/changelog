@@ -1,3 +1,31 @@
+cleep (1.0.0) unstable; urgency=low
+  * Updated core: inject app paths during app install script execution
+  * Fixed core: bump dependencies and fix breaking changes (netifaces)
+  * Fixed core: #1408 fix /logs endpoint
+  * Added core: add https support to RPC server
+  * Added core: handle auth
+  * Added core: handle applications documentation
+  * Fixed ui: homogenize rpc responses using MessageResponse
+  * Update ui: return command error message when command failed
+  * Added bin: add option to generate app documentation
+  * Updated install: improve Cleep install and rollback if errors
+  * Added ui: implement config item components library
+  * Updated ui: improve responsive
+  * Added ui: implement dashboard widget base component
+  * Added ui: implement dashboard config widget component
+  * Added ui: cache dashboard config widget component
+  * Updated ui: bump js libraries
+  * Updated ui: move js tools in ui components file
+  * Added ui: compress js files during deb process
+  * Added ui: components page
+  * Updated core: libs improvements (tests session, console)
+  * Added core: add thermostat profile
+  * Updated core: use native unittest.mock lib instead of mock
+  * Updated core: improve CI
+  * Updated core: use python3.9
+
+ -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 5 Sep 2026 11:00:00 +0100
+
 cleep (0.1.3) unstable; urgency=low
   * Updated rpios: build for latest bullseye20250506
   * Fixed core: lib lsblk issue after new rpios version
@@ -21,33 +49,6 @@ cleep (0.1.1) unstable; urgency=low
   * Updated Core: enable SSL by default
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, 12 Nov 2024 22:00:00 +0100
-
-cleep (0.1.0) unstable; urgency=low
-  * Fixed core: bump dependencies and fix breaking changes (netifaces)
-  * Fixed core: #1408 fix /logs endpoint
-  * Added core: add https support to RPC server
-  * Added core: handle auth
-  * Added core: handle applications documentation
-  * Fixed ui: homogenize rpc responses using MessageResponse
-  * Update ui: return command error message when command failed
-  * Added bin: add option to generate app documentation
-  * Updated install: improve Cleep install and rollback if errors
-  * Added ui: implement config item components library
-  * Updated ui: improve responsive
-  * Added ui: implement dashboard widget base component
-  * Added ui: implement dashboard config widget component
-  * Added ui: cache dashboard config widget component
-  * Updated ui: bump js libraries
-  * Updated ui: move js tools in ui components file
-  * Added ui: compress js files during deb process
-  * Added ui: components page
-  * Updated core: libs improvements (tests session, console)
-  * Added core: add thermostat profile
-  * Updated core: use native unittest.mock lib instead of mock
-  * Update core: improve CI
-  * Update core: use python3.9
-
- -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sun, 17 Mar 2024 11:00:00 +0200
 
 cleep (0.0.30) unstable; urgency=low
   * Fixed core: #1383 Cleep install fails due to missing dependency
