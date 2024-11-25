@@ -72,9 +72,7 @@ class ReadWrite:
         cmd = '/usr/bin/lsof -p %s | grep -e "[[:digit:]]\+w"' % os.getpid()
         return [
             line.decode("utf-8").replace("\n", "")
-            for line in Popen(
-                cmd, shell=True, stdout=PIPE
-            ).stdout.readlines()
+            for line in Popen(cmd, shell=True, stdout=PIPE).stdout.readlines()
         ]
 
     def is_path_on_root(self, path):
@@ -137,15 +135,15 @@ class ReadWrite:
         """
         return os.path.exists(self.CLEEP_DIR)
 
-    def __is_ci_env(self): # pragma: no cover
+    def __is_ci_env(self):  # pragma: no cover
         """
         Return True if Cleep is running in CI env
 
         Returns:
             bool: True if running in CI env
         """
-        cleep_env = os.environ.get('CLEEP_ENV', '')
-        return cleep_env.lower() == 'ci'
+        cleep_env = os.environ.get("CLEEP_ENV", "")
+        return cleep_env.lower() == "ci"
 
     def get_status(self):
         """
@@ -181,7 +179,7 @@ class ReadWrite:
         if not self.__is_cleep_iso():
             self.logger.trace("Not running on cleep iso")
             return False
-        if self.__is_ci_env(): # pragma: no cover
+        if self.__is_ci_env():  # pragma: no cover
             self.logger.trace("Running in CI env")
             return False
 
@@ -235,7 +233,7 @@ class ReadWrite:
         """
         if not self.__is_cleep_iso():
             return False
-        if self.__is_ci_env(): # pragma: no cover
+        if self.__is_ci_env():  # pragma: no cover
             return False
 
         # execute command
