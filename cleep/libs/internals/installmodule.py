@@ -154,12 +154,11 @@ class CommonProcess(threading.Thread):
         # script execution terminated
         self._script_running = False
 
-    def _execute_script(self, app_name, script_path):
+    def _execute_script(self, script_path):
         """
         Execute specified script
 
         Args:
-            app_name (str): application name
             script_path (str): script path
 
         Returns:
@@ -169,10 +168,10 @@ class CommonProcess(threading.Thread):
         os.chmod(script_path, stat.S_IEXEC)
         exec_dir = os.path.dirname(script_path)
         app_paths = {
-            "APP_STORAGE_PATH": os.path.join("/var/opt/cleep/modules/storage", app_name),
-            "APP_TMP_PATH": os.path.join('/tmp/cleep/modules', app_name),
-            "APP_ASSET_PATH": os.path.join('/var/opt/cleep/modules/asset/', app_name),
-            "APP_BIN_PATH": os.path.join('/var/opt/cleep/modules/bin/', app_name),
+            "APP_STORAGE_PATH": os.path.join("/var/opt/cleep/modules/storage", self.module_name),
+            "APP_TMP_PATH": os.path.join('/tmp/cleep/modules', self.module_name),
+            "APP_ASSET_PATH": os.path.join('/var/opt/cleep/modules/asset/', self.module_name),
+            "APP_BIN_PATH": os.path.join('/var/opt/cleep/modules/bin/', self.module_name),
         }
 
         # exec
@@ -195,6 +194,7 @@ class CommonProcess(threading.Thread):
             sleep(0.25)
 
         # check script result
+        self.logger.debug('Pre script exec? %s', self._pre_script_execution)
         if self._pre_script_execution and self._pre_script_status["returncode"] == 0:
             return True
         if self._post_script_status["returncode"] == 0:
@@ -366,6 +366,7 @@ class UninstallModule(CommonProcess):
             self._pre_script_execution = script == "preuninst.sh"
             path = os.path.join(os.path.join(PATH_INSTALL, self.module_name, script))
             if os.path.exists(path):
+                self.logger.debug('Execute script %s', path)
                 if not self._execute_script(path):
                     self._log_process_status(
                         context,
@@ -501,9 +502,8 @@ class UninstallModule(CommonProcess):
         context.module_log = None
         context.install_dir = None
 
-        self._log_process_status(
-            context, logging.INFO, 'Start module "%s" uninstallation' % self.module_name
-        )
+        msg = f'Start module "{self.module_name}" uninstallation'
+        self._log_process_status(context, logging.INFO, msg)
 
         try:
             # enable write mode
@@ -1107,9 +1107,8 @@ class InstallModule(CommonProcess):
         context.archive_path = None
         context.step = "init"
 
-        self._log_process_status(
-            context, logging.INFO, 'Start module "%s" installation' % self.module_name
-        )
+        msg = f'Start module "{self.module_name} v{self.module_infos["version"]}" installation'
+        self._log_process_status(context, logging.INFO, msg)
 
         try:
             # enable write mode
@@ -1248,6 +1247,7 @@ class InstallModule(CommonProcess):
         self._step(context, cancel=False)
 
 
+
 class UpdateModule(threading.Thread):
     """
     Update CleepOS module
@@ -1374,7 +1374,7 @@ class UpdateModule(threading.Thread):
         """
         try:
             # init
-            self.logger.info('Start module "%s" update' % self.module_name)
+            self.logger.info('Start module "%s" update to v%s', self.module_name, self.new_module_infos["version"])
             self.status = self.STATUS_UPDATING
             uninstall = UninstallModule(
                 self.module_name,
