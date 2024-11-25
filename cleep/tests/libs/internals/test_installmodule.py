@@ -19,7 +19,7 @@ from threading import Timer, Event
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 import shutil
 import cleep
-from cleep.libs.tests.common import get_log_level
+from cleep.libs.tests.common import get_log_level, AnyArg
 from cleep.libs.internals.taskfactory import TaskFactory
 
 INSTALL_DIR = cleep.__file__.replace('__init__.py', '')
@@ -155,6 +155,7 @@ class UninstallModuleTests(unittest.TestCase):
         self.assertFalse(self.u._run_script(self.c, 'preuninst.sh'))
         status = self.u.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['prescript']['returncode'], 130)
         self.assertEqual(status['prescript']['stdout'], ['message on stdout'])
         self.assertEqual(status['prescript']['stderr'], ['message on stderr'])
@@ -1059,6 +1060,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.extract_path = '/tmp/123456789'
 
         self.assertFalse(self.i._run_script(self.c, 'postinst.sh'))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(status['prescript']['returncode'], None)
@@ -1089,6 +1091,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.extract_path = '/tmp/123456789'
 
         self.assertFalse(self.i._run_script(self.c, 'preinst.sh'))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 1)
@@ -1185,6 +1188,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.install_log_fd = MagicMock()
 
         self.assertFalse(self.i._copy_module_files(self.c))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 2)
@@ -1209,6 +1213,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.install_log_fd = MagicMock()
 
         self.assertFalse(self.i._copy_module_files(self.c))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 2)
@@ -1233,6 +1238,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.install_log_fd = MagicMock()
 
         self.assertFalse(self.i._copy_module_files(self.c))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 2)
@@ -1257,6 +1263,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.install_log_fd = MagicMock()
 
         self.assertFalse(self.i._copy_module_files(self.c))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 2)
@@ -1275,13 +1282,13 @@ class InstallModuleTests(unittest.TestCase):
             ('test/dummy', [], ['file.py']),
         ]
         tools_mock.is_core_lib.return_value = False
-
         self._init_context()
         self.c.archive_path = '/tmp/dummy/zip'
         self.c.extract_path = '/tmp/123456789'
         self.c.install_log_fd = MagicMock()
 
         self.assertTrue(self.i._copy_module_files(self.c))
+
         logging.debug('cleep_fs calls: %s' % self.cleep_filesystem.mock_calls)
         self.assertEqual(self.cleep_filesystem.copy.call_count, 5) # 5 files in walk return value
 
@@ -1291,13 +1298,13 @@ class InstallModuleTests(unittest.TestCase):
         os_mock.path.join = os.path.join
         os_mock.path.exists.side_effect = [True, True, False, False]
         os_mock.walk.side_effect = Exception('Test exception')
-
         self._init_context()
         self.c.archive_path = '/tmp/dummy/zip'
         self.c.extract_path = '/tmp/123456789'
         self.c.install_log_fd = MagicMock()
 
         self.assertFalse(self.i._copy_module_files(self.c))
+
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
         self.assertEqual(len(status['process']), 1)
@@ -1318,6 +1325,7 @@ class InstallModuleTests(unittest.TestCase):
         self.c.install_log = '/tmp/install.log'
 
         self.i._rollback_install(self.c)
+
         logging.debug('Rm mock calls: %s' % self.cleep_filesystem.rm.mock_calls)
         self.assertEqual(self.cleep_filesystem.rm.call_count, 5)
         logging.debug('Rmdir mock calls: %s' % self.cleep_filesystem.rmdir_call_mocks)
@@ -1337,6 +1345,7 @@ class InstallModuleTests(unittest.TestCase):
 
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(len(status['process']), 1)
         self.assertTrue(status['process'][0].startswith('Exception ocurred during "module" module installation rollback'))
         self.assertTrue(self.crash_report.report_exception.called)
@@ -1359,6 +1368,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_INSTALLED)
         self.assertTrue(self.callback.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1384,6 +1394,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertFalse(self.i._download_archive.called)
         self.assertEqual(status['status'], InstallModule.STATUS_INSTALLED)
         self.assertTrue(self.callback.called)
@@ -1406,6 +1417,7 @@ class InstallModuleTests(unittest.TestCase):
         self.i._copy_module_files = Mock(return_value=True)
 
         self.i.run()
+
         status = self.i.get_status()
         self.assertEqual(status['status'], InstallModule.STATUS_CANCELED)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1419,6 +1431,7 @@ class InstallModuleTests(unittest.TestCase):
         self.i.run()
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_INTERNAL)
         self.assertTrue(status['process'][1].startswith('Exception occured during module "module" installation'))
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1444,6 +1457,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_INSTALLED)
         self.assertTrue(self.callback.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1464,6 +1478,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_DOWNLOAD)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1483,6 +1498,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_EXTRACT)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1502,6 +1518,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_PREINST)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1521,6 +1538,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_BACKUP)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1540,6 +1558,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_COPY)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1559,6 +1578,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+
         self.assertEqual(status['status'], InstallModule.STATUS_ERROR_POSTINST)
         self.assertTrue(self.i._rollback_install.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1577,6 +1597,7 @@ class InstallModuleTests(unittest.TestCase):
             time.sleep(0.25)
         status = self.i.get_status()
         logging.debug('Status: %s' % status)
+        
         self.assertEqual(status['status'], InstallModule.STATUS_INSTALLED)
         self.assertTrue(self.callback.called)
         self.assertTrue(self.cleep_filesystem.enable_write.called)
@@ -1602,6 +1623,84 @@ class InstallModuleTests(unittest.TestCase):
         self.assertTrue(self.cleep_filesystem.enable_write.called)
         self.assertTrue(self.cleep_filesystem.disable_write.called)
 
+    @patch('installmodule.os')
+    @patch('installmodule.EndlessConsole')
+    def test_execute_script_post_inst_success(self, console_mock, os_mock):
+        os_mock.path.dirname = os.path.dirname
+        os_mock.path.join = os.path.join
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+        self._init_console_mock(console_mock)
+        script_path = '/script/path/run.sh'
+
+        res = self.i._execute_script(script_path)
+        logging.debug('res: %s', res)
+
+        console_mock.assert_called_with(
+            script_path,
+            AnyArg(),
+            AnyArg(),
+            {
+                "exec_dir": "/script/path",
+                "env": {
+                    "APP_STORAGE_PATH": AnyArg(),
+                    "APP_TMP_PATH": AnyArg(),
+                    "APP_ASSET_PATH": AnyArg(),
+                    "APP_BIN_PATH": AnyArg(),
+                },
+            }
+        )
+        console_mock.return_value.start.assert_called()
+        self.assertTrue(res)
+
+    @patch('installmodule.os')
+    @patch('installmodule.EndlessConsole')
+    def test_execute_script_pre_inst_success(self, console_mock, os_mock):
+        os_mock.path.dirname = os.path.dirname
+        os_mock.path.join = os.path.join
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+        self._init_console_mock(console_mock)
+        script_path = '/script/path/run.sh'
+        self.i._pre_script_execution = True
+
+        res = self.i._execute_script(script_path)
+        logging.debug('res: %s', res)
+
+        console_mock.return_value.start.assert_called()
+        self.assertTrue(res)
+
+    @patch('installmodule.os')
+    @patch('installmodule.EndlessConsole')
+    def test_execute_script_failure(self, console_mock, os_mock):
+        os_mock.path.dirname = os.path.dirname
+        os_mock.path.join = os.path.join
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+        self._init_console_mock(console_mock, return_code=1)
+        script_path = '/script/path/run.sh'
+
+        res = self.i._execute_script(script_path)
+        logging.debug('res: %s', res)
+
+        console_mock.return_value.start.assert_called()
+        self.assertFalse(res)
+
+    def test_create_app_directories_create_all_directories(self):
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+
+        with patch('installmodule.os.path.exists') as os_path_exists_mock:
+            os_path_exists_mock.return_value = False
+            res = self.i._create_app_directories('myapp')
+
+        self.assertTrue(res)
+        self.assertEqual(self.cleep_filesystem.mkdirs.call_count, 4)
+        logging.debug('os.path.exists calls: %s', os_path_exists_mock.mock_calls)
+        os_path_exists_mock.assert_any_call('/var/opt/cleep/modules/storage/myapp')
+        os_path_exists_mock.assert_any_call('/var/opt/cleep/modules/bin/myapp')
+        os_path_exists_mock.assert_any_call('/var/opt/cleep/modules/asset/myapp')
+        os_path_exists_mock.assert_any_call('/tmp/cleep/modules/myapp')
 
 
 
@@ -2153,6 +2252,6 @@ class UpdateModuleFunctionalTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
+    # coverage run --omit="*/lib/python*/*,*test_*.py" --concurrency=thread test_installmodule.py; coverage report -i -m
     unittest.main()
 
