@@ -93,6 +93,7 @@ class Inventory(Cleep):
         self.__dependencies = {}
         # current module loading tree
         self.__module_loading_tree = []
+        self.__remote_access_urls = {}
 
         # events
         self.apps_updated_event = self._get_event('core.apps.updated')
@@ -941,3 +942,37 @@ class Inventory(Cleep):
             health[module_name] = self.__is_module_started(module_name)
 
         return health
+
+    def register_remote_access_url(self, url, command_sender):
+        """
+        Register url for device remote access. Only one url per application allowed.
+
+        Args:
+            url (str): url of remote access
+            command_sender (str): name of caller
+        """
+        self.__remote_access_urls[command_sender] = url
+
+    def unregister_remote_access_url(self, command_sender):
+        """
+        Unregister remote access url
+
+        Args:
+            command_sender (str): name of caller
+        """
+        if command_sender in self.__remote_access_urls:
+            del self.__remote_access_urls[command_sender]
+
+    def get_remote_access_urls(self):
+        """
+        Return all remote access urls
+
+        Returns:
+            dict: dist of registered remote access urls::
+
+                {
+                    app name: remote access url (str),
+                    ...
+                }
+        """
+        return self.__remote_access_urls
