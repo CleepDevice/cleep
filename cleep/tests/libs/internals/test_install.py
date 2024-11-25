@@ -994,7 +994,8 @@ class InstallTests(unittest.TestCase):
             force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_updatemodule.return_value.start.called)
         self.assertTrue(mock_resetstatus.called)
@@ -1014,7 +1015,8 @@ class InstallTests(unittest.TestCase):
             force_uninstall=False,
             status_callback=ANY,
             cleep_filesystem=self.cleep_filesystem,
-            crash_report=self.crash_report
+            crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         self.assertTrue(mock_updatemodule.return_value.start.called)
         self.assertFalse(self.cleep_filesystem.enable_write.called)

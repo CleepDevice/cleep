@@ -790,6 +790,7 @@ class Install:
             status_callback=self.__callback_update_module,
             cleep_filesystem=self.cleep_filesystem,
             crash_report=self.crash_report,
+            task_factory=self.task_factory,
         )
         update.start()
 
