@@ -1702,6 +1702,28 @@ class InstallModuleTests(unittest.TestCase):
         os_path_exists_mock.assert_any_call('/var/opt/cleep/modules/asset/myapp')
         os_path_exists_mock.assert_any_call('/tmp/cleep/modules/myapp')
 
+    def test_create_app_directories_create_missing_directories(self):
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+
+        with patch('installmodule.os.path.exists') as os_path_exists_mock:
+            os_path_exists_mock.side_effect = [False, True, False, True]
+            res = self.i._create_app_directories('myapp')
+
+        self.assertTrue(res)
+        self.assertEqual(self.cleep_filesystem.mkdirs.call_count, 2)
+
+    def test_create_app_directories_mkdirs_failed(self):
+        module_infos = self._get_module_infos()
+        self._init_context(module_infos=module_infos)
+
+        with patch('installmodule.os.path.exists') as os_path_exists_mock:
+            os_path_exists_mock.return_value = False
+            self.cleep_filesystem.mkdirs.return_value = False
+            res = self.i._create_app_directories('myapp')
+            logging.debug('Res: %s', res)
+
+        self.assertFalse(res)
 
 
 
