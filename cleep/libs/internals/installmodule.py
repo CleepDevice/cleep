@@ -267,6 +267,33 @@ class CommonProcess(threading.Thread):
         """
         raise NotImplementedError("_get_status method must be implemented")
 
+    def _create_app_directories(self, module_name):
+        """
+        Create all application directories as defined in core.py
+
+        Args:
+            module_name (str): module name
+
+        Returns:
+            bool: True if all directories created successfully, False otherwise
+        """
+        directories = [
+            os.path.join('/var/opt/cleep/modules/storage', module_name),
+            os.path.join('/tmp/cleep/modules', module_name),
+            os.path.join('/var/opt/cleep/modules/asset/', module_name),
+            os.path.join('/var/opt/cleep/modules/bin/', module_name),
+        ]
+        error = False
+
+        for directory in directories:
+            if os.path.exists(directory):
+                continue
+
+            if not self.cleep_filesystem.mkdirs(directory):
+                error = True
+
+        return not error
+
 
 class UninstallModule(CommonProcess):
     """
@@ -1152,6 +1179,9 @@ class InstallModule(CommonProcess):
             if not self._backup_scripts(context):
                 self.status = self.STATUS_ERROR_BACKUP
                 raise ForcedException()
+
+            # create application directories
+            self._create_app_directories(self.module_name)
 
             # pre installation script
             context.step = "preinst"
