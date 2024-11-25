@@ -869,6 +869,23 @@ def get_config():
     return resp.to_dict()
 
 
+@app.route("/remote-access", method="POST")
+@authenticate()
+def get_remote_access_urls():
+    """
+    Return device remote access urls
+
+    Returns:
+        MessageResponse: all remote access urls::
+
+            {
+                app name (str): url
+            }
+
+    """
+    return inventory.get_remote_access_urls()
+
+
 @app.route("/registerpoll", method="POST")
 def registerpoll():
     """

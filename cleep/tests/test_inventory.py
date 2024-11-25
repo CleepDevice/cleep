@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from cleep.libs.tests.lib import TestLib
+import warnings
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
@@ -18,10 +19,12 @@ from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
+warnings.filterwarnings("ignore", message="No source for code:")
+
 
 class InventoryTests(unittest.TestCase):
 
-    MODULE = u"""
+    MODULE = """
 from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer, CleepExternalBus
 
 class %(module_name)s(%(inherit)s):
@@ -1258,6 +1261,33 @@ class %(module_name)s(%(inherit)s):
             'dummy2': False,
             'dummy3': True,
         })
+
+    def test_register_remote_access_url(self):
+        self._init_context()
+
+        self.i.register_remote_access_url("http://test.com", "test")
+
+        urls = self.i.get_remote_access_urls()
+        self.assertEqual(urls, {
+            "test": "http://test.com"
+        })
+
+    def test_unregister_remote_access_url(self):
+        self._init_context()
+
+        self.i.register_remote_access_url("http://test.com", "test")
+        self.i.unregister_remote_access_url("test")
+
+        urls = self.i.get_remote_access_urls()
+        self.assertEqual(urls, {})
+
+    def test_unregister_remote_access_url_non_exists(self):
+        self._init_context()
+
+        self.i.unregister_remote_access_url("test")
+
+        urls = self.i.get_remote_access_urls()
+        self.assertEqual(urls, {})
 
 
 if __name__ == '__main__':

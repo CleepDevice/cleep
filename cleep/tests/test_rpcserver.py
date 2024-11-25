@@ -931,6 +931,13 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.get_config()
             self.assertEqual(self.inventory.get_modules.call_count, 1)
 
+    def test_get_remote_access_urls(self):
+        self._init_context()
+
+        with boddle():
+            rpcserver.get_remote_access_urls()
+            self.assertTrue(self.inventory.get_remote_access_urls.called)
+
     def test_registerpoll(self):
         self._init_context()
 
