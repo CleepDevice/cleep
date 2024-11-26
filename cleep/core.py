@@ -457,7 +457,8 @@ class Cleep(BusClient):
                     'is_debug_enabled', 'set_debug', 'is_module_loaded',
                     'start', 'stop', 'push', 'on_event', 'get_env',
                     'send_command_from_request', 'send_event_from_request', 'send_command_advanced',
-                    'get_documentation', 'check_documentation',
+                    'get_documentation', 'check_documentation', 'register_remote_access_url',
+                    'unregister_remote_access_url',
                 ):
                 # filter bus commands
                 members.remove(member)
@@ -496,7 +497,7 @@ class Cleep(BusClient):
         try:
             resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
             if resp.error:
-                self.logger.error(f'Unable to request inventory: {resp.message}')
+                self.logger.error('Unable to request inventory: %s', resp.message)
                 return False
 
             return resp.data
@@ -682,6 +683,54 @@ class Cleep(BusClient):
             },
             3.0,
         )
+
+    def register_remote_access_url(self, url):
+        """
+        Register remote access url
+
+        Args:
+            url (str): remote access url
+
+        Returns:
+            bool: True if url added
+        """
+        try:
+            resp = self.send_command('register_remote_access_url', 'inventory', {'url': url})
+            if resp.error:
+                self.logger.error('Unable to request inventory register_remote_access_url: %s', resp.message)
+                return False
+
+            return True
+
+        except:
+            self.logger.exception('Unable to register remote access url:')
+            self.crash_report.report_exception({
+                'message': 'Unable register remote access url',
+                'url': url,
+            })
+            return False
+
+    def unregister_remote_access_url(self):
+        """
+        Register remote access url
+
+        Returns:
+            bool: True if url added
+        """
+        try:
+            resp = self.send_command('unregister_remote_access_url', 'inventory')
+            if resp.error:
+                self.logger.error('Unable to request inventory unregister_remote_access_url: %s', resp.message)
+                return False
+
+            return True
+
+        except:
+            self.logger.exception('Unable to unregister remote access url:')
+            self.crash_report.report_exception({
+                'message': 'Unable unregister remote access url',
+            })
+            return False
 
 
 
@@ -1130,7 +1179,7 @@ class CleepModule(Cleep):
         """
         resp = self.send_command(command, to, params, timeout)
         if resp.error:
-            self.logger.error(f'Error occured executing command {command} to {to}: {resp.message}')
+            self.logger.error('Error occured executing command %s to %s: %s', command, to, resp.message)
             if raise_exc:
                 raise Exception(resp.message)
             return None

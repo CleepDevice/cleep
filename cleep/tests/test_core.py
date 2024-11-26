@@ -407,10 +407,11 @@ class TestsCleep(unittest.TestCase):
     @patch('core.Cleep.send_command')
     def test_is_module_loaded_exception(self, send_command_mock):
         self._init_context()
-
         send_command_mock.side_effect = Exception('Test exception')
 
-        self.assertEqual(self.r.is_module_loaded('otherdummy'), False)
+        res = self.r.is_module_loaded('otherdummy')
+
+        self.assertFalse(res)
         self.assertTrue(self.crash_report.report_exception.called)
 
     def test_start_stop(self):
@@ -519,6 +520,75 @@ class TestsCleep(unittest.TestCase):
             'message': 'No external bus application installed',
             'data': None,
         })
+
+    def test_register_remote_access_url(self):
+        self._init_context()
+        resp = MessageResponse(error=False, data="response string", message="")
+        self.r.send_command = Mock(return_value=resp)
+
+        res = self.r.register_remote_access_url('http://remote.url')
+
+        self.assertTrue(res)
+        self.r.send_command.assert_called_with(
+            'register_remote_access_url',
+            'inventory',
+            {
+                'url': 'http://remote.url',
+            },
+        )
+
+    def test_register_remote_access_url_failure(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="error")
+        self.r.send_command = Mock(return_value=resp)
+
+        res = self.r.register_remote_access_url('http://remote.url')
+
+        self.assertFalse(res)
+
+    @patch('core.CORE_MODULES', ['dummycleep'])
+    @patch('core.Cleep.send_command')
+    def test_register_remote_access_url_exception(self, send_command_mock):
+        self._init_context()
+        send_command_mock.side_effect = Exception('Test exception')
+
+        res = self.r.register_remote_access_url('http://remote.url')
+
+        self.assertFalse(res)
+        self.crash_report.report_exception.assert_called()
+
+    def test_unregister_remote_access_url(self):
+        self._init_context()
+        resp = MessageResponse(error=False, data="response string", message="")
+        self.r.send_command = Mock(return_value=resp)
+
+        res = self.r.unregister_remote_access_url()
+
+        self.assertTrue(res)
+        self.r.send_command.assert_called_with(
+            'unregister_remote_access_url',
+            'inventory',
+        )
+
+    def test_unregister_remote_access_url_failure(self):
+        self._init_context()
+        resp = MessageResponse(error=True, data="response string", message="error")
+        self.r.send_command = Mock(return_value=resp)
+
+        res = self.r.unregister_remote_access_url()
+
+        self.assertFalse(res)
+
+    @patch('core.CORE_MODULES', ['dummycleep'])
+    @patch('core.Cleep.send_command')
+    def test_unregister_remote_access_url_exception(self, send_command_mock):
+        self._init_context()
+        send_command_mock.side_effect = Exception('Test exception')
+
+        res = self.r.unregister_remote_access_url()
+
+        self.assertFalse(res)
+        self.crash_report.report_exception.assert_called()
 
 
 
@@ -962,7 +1032,7 @@ class TestsCleepModule(unittest.TestCase):
         result = self.r.send_command_advanced("mycommand", "dummy", params)
 
         self.assertEqual(result, None)
-        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
+        self.r.logger.error.assert_called_with("Error occured executing command %s to %s: %s", "mycommand", "dummy", "Fatal error")
 
     def test_send_command_advanced_when_error_with_raise_option(self):
         self._init_context()
@@ -975,7 +1045,7 @@ class TestsCleepModule(unittest.TestCase):
             self.r.send_command_advanced("mycommand", "dummy", params, raise_exc=True)
         
         self.assertEqual(str(cm.exception), "Fatal error")
-        self.r.logger.error.assert_called_with("Error occured executing command mycommand to dummy: Fatal error")
+        self.r.logger.error.assert_called_with("Error occured executing command %s to %s: %s", "mycommand", "dummy", "Fatal error")
 
 
 
