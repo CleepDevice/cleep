@@ -90,7 +90,6 @@ Cleep.factory('$exceptionHandler', [
         const TIMEOUT = 2000; // 2 seconds
 
         return function myExceptionHandler(exception, cause) {
-            // log in console
             $log.error(exception, cause);
 
             const toastService = $injector.get('toastService');
@@ -107,9 +106,9 @@ Cleep.factory('$exceptionHandler', [
             if (locationService.url().startsWith('/module/')) {
                 const appName = locationService.url().split('/').pop();
                 const now = new Date().getTime();
-                if ((cache[appName] || 0 + TIMEOUT) < now) {
+                if (((cache[appName] || 0) + TIMEOUT) < now) {
                     cache[appName] = now;
-                    toastService.fatal(`Error loading ${appName} application`);
+                    toastService.fatal(`Error with ${appName} application`);
                 }
             }
         };
