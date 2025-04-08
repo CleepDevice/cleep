@@ -15,7 +15,7 @@ RUN apt-get -o Acquire::ForceIPv4=true update -qqy \
     && rm -f ./cleep.deb
 RUN systemctl disable cleep || true
 
-RUN python3 -m pip install -q cleepcli
+RUN python3 -m pip install --upgrade -q cleepcli
 RUN mkdir -p /tmp/cleep-dev/modules && REPO_DIR=/tmp/cleep-dev cleep-cli cigetmods && rm -rf /tmp/cleep-dev
 
 RUN cleep --stdout --noro --dryrun > cleep.log 2>&1 || (cat cleep.log; false)
