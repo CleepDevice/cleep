@@ -9,6 +9,9 @@ cleep (1.0.0) unstable; urgency=low
   * Added core: add systemctl lib
   * Fixed ui: install app does not properly refresh apps list
   * Fixed core: fix issue in check_parameters function
+  * Updated core: add device update timestamp
+  * Fixed components: fix error in config component library
+  * Fixed ui: change way to sync devices data
   * Fixed core: bump dependencies and fix breaking changes (netifaces)
   * Fixed core: #1408 fix /logs endpoint
   * Added core: add https support to RPC server
