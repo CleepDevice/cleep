@@ -62,17 +62,24 @@ class Lsblk(Console):
             self.partitions = []
 
             #parse data
+            # Skip loop/rom/etc.: on newer images they appear before disks and left
+            # total_size unset (UnboundLocalError). Keep disk + part only.
+            current_drive = None
+            total_size = 0
             matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==10:
                     #name
                     name = groups[0]
-                    
+                    dev_type = (groups[3] or u'').strip().lower()
+                    if dev_type not in (u'disk', u'part'):
+                        continue
+
                     #drive properties
                     partition = True
                     model = None
-                    if groups[3].find('disk')!=-1:
+                    if dev_type == u'disk':
                         current_drive = name
                         model = groups[9]
                         partition = False
@@ -81,6 +88,8 @@ class Lsblk(Console):
                             total_size = int(total_size)
                         except: # pragma: no cover
                             pass
+                    elif current_drive is None:
+                        continue
 
                     #readonly flag
                     readonly = True
@@ -198,4 +207,3 @@ class Lsblk(Console):
                 return self.devices[drive][device]
 
         return None
-
