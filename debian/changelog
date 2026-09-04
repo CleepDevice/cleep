@@ -1,5 +1,6 @@
 cleep (0.1.3) unstable; urgency=low
-  * CI: test new pipeline
+  * Updated rpios: build for latest bullseye20250506
+  * Fixed core: lib lsblk issue after new rpios version
 
 cleep (0.1.2) unstable; urgency=low
   * Fixed bin: dry-run no longer shadows dry_run() (CI smoke test)
