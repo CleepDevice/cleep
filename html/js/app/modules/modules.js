@@ -172,17 +172,15 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
         /** 
          * Catch module uninstall events
          */
-        $rootScope.$on('update.module.uninstall', function(event, uuid, params) {
-            // module uninstall event received, refresh modules updates infos
-            cleepService.refreshModulesUpdates();
+        $scope.$on('update.module.uninstall', function(event, uuid, params) {
+            cleepService.applyModulesUpdateEvent(params);
         });
 
         /** 
          * Catch module update events
          */
-        $rootScope.$on('update.module.update', function(event, uuid, params) {
-            // module update event received, refresh modules updates infos
-            cleepService.refreshModulesUpdates();
+        $scope.$on('update.module.update', function(event, uuid, params) {
+            cleepService.applyModulesUpdateEvent(params);
         });
 
     }];

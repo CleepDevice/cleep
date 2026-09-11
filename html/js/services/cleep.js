@@ -15,6 +15,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.__deferredRenderers = $q.defer();
     self.__deferredDrivers = $q.defer();
     self.devices = [];
+    self.devicesRevision = 0;
     self.modules = {};
     self.installableModules = {};
     self.modulesUpdates = {};
@@ -49,7 +50,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                 if(Object.keys(self.installableModules).length>0) {
                     return self.getInstallableModules();
                 } else {
-                    return Promise.resolve(null);
+                    return $q.resolve(null);
                 }
             })
             .then(function(installableModules) {
@@ -441,7 +442,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             // installable modules not loaded, load it
             rpcService.getModules(true)
                 .then(function(resp) {
-                    self.__syncObject(self.installableModules, resp.data);
+                    self.installableModules = resp.data || {};
+                    deferred.resolve(self.installableModules);
                 }, function() {
                     deferred.reject();
                 });
@@ -458,9 +460,25 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         return rpcService.sendCommand('get_modules_updates', 'update')
             .then(function(resp) {
                 if(!resp.error) {
-                    self.__syncObject(self.modulesUpdates, resp.data);
+                    // New object reference so Angular watchers detect the refresh
+                    self.modulesUpdates = Object.assign({}, resp.data || {});
                 }
             });
+    };
+
+    /**
+     * Apply a module update progress event and refresh local map reference.
+     */
+    self.applyModulesUpdateEvent = function(params) {
+        if (!params || !params.module) {
+            return self.refreshModulesUpdates();
+        }
+        const moduleName = params.module;
+        const current = self.modulesUpdates[moduleName] || {};
+        self.modulesUpdates = Object.assign({}, self.modulesUpdates, {
+            [moduleName]: Object.assign({}, current, params),
+        });
+        return $q.resolve(self.modulesUpdates);
     };
 
     /**
@@ -512,6 +530,33 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      */
     self.getModuleDevices = function(module) {
         return self.devices.filter(device => device.module === module);
+    };
+
+    /**
+     * Return device by uuid
+     */
+    self.getDevice = function(uuid) {
+        return self.devices.find((device) => device.uuid === uuid);
+    };
+
+    /**
+     * Merge event/poll params into a device and replace the array slot so
+     * $watchCollection / component one-way bindings detect the change.
+     * Mutating properties in place is not enough for AngularJS 1.5+.
+     */
+    self.updateDevice = function(deviceId, params) {
+        if (!deviceId || !params) {
+            return false;
+        }
+        const index = self.devices.findIndex((device) => device.uuid === deviceId);
+        if (index < 0) {
+            return false;
+        }
+        const updated = Object.assign({}, self.devices[index], params);
+        self.devices[index] = updated;
+        self.devicesRevision++;
+        $rootScope.$broadcast('devices.updated', deviceId, updated);
+        return true;
     };
 
     /**

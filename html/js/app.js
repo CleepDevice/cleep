@@ -12,8 +12,8 @@ var Cleep = angular.module(
  * It holds some generic stuff like polling request, loaded services...
  */
 Cleep
-.controller('mainController', ['$rootScope', '$scope', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', '$mdDialog',
-function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $mdDialog) {
+.controller('mainController', ['$rootScope', '$scope', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', '$mdDialog', '$timeout',
+function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $mdDialog, $timeout) {
 
     var self = this;
     self.rebooting = false;
@@ -91,21 +91,16 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
                         // broadcast received message
                         $rootScope.$broadcast(response.data.event, response.data.device_id, response.data.params);
 
-                        // sync devices if possible
-                        for (var device of cleepService.devices) {
-                            if (device.uuid === response.data.device_id) {
-                                Object.assign(device, response.data.params);
-                                break;
-                            }
-                        }
+                        // Replace device reference so one-way bindings / $watchCollection see the change
+                        cleepService.updateDevice(response.data.device_id, response.data.params);
                     }
                 }
 
                 // reset next polling timeout
                 self.nextPollingTimeout = 1;
 
-                // relaunch polling right now
-                window.setTimeout(self.polling, 0);
+                // relaunch polling right now (inside Angular digest)
+                $timeout(self.polling, 0);
             }, 
             function(err) {
                 if( !self.rebooting && !self.restarting )
@@ -128,7 +123,7 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
                     // during reboot try every seconds
                     self.nextPollingTimeout = 1;
                 }
-                window.setTimeout(self.polling, self.nextPollingTimeout*1000);
+                $timeout(self.polling, self.nextPollingTimeout*1000);
             });
     };
 
@@ -167,7 +162,7 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
      */
     self.init = function() {
         // launch polling
-        window.setTimeout(self.polling, 0);
+        $timeout(self.polling, 0);
 
         // load config (modules, devices, renderers...)
         self.loadConfig();

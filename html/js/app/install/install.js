@@ -7,7 +7,7 @@ angular
 .directive('installDirective', ['$q', 'cleepService', 'toastService', '$mdDialog', '$sce',
 function($q, cleepService, toast, $mdDialog, $sce) {
 
-    var installController = ['$rootScope', '$scope','$element', '$window', function($rootScope, $scope, $element, $window) {
+    var installController = ['$scope','$element', '$window', function($scope, $element, $window) {
         var self = this;
         self.cleepService = cleepService;
         self.search = {'$': ''};
@@ -145,9 +145,8 @@ function($q, cleepService, toast, $mdDialog, $sce) {
         /**
          * Catch module install events
          */
-        $rootScope.$on('update.module.install', function(event, uuid, params) {
-            // module install event received, refresh modules updates infos
-            cleepService.refreshModulesUpdates();
+        $scope.$on('update.module.install', function(event, uuid, params) {
+            cleepService.applyModulesUpdateEvent(params);
         });
 
         /**

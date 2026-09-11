@@ -58,6 +58,16 @@ angular.module('Cleep').component('configItemDesc', {
         ctrl.showIcon = false;
 
         ctrl.$onInit = function () {
+            ctrl.syncFromBindings();
+        };
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clIcon || changes.clLoading) {
+                ctrl.syncFromBindings();
+            }
+        };
+
+        ctrl.syncFromBindings = function () {
             ctrl.icon = ctrl.clIcon ?? 'chevron-right';
             ctrl.showLoader = ctrl.clLoading ?? false;
             ctrl.showIcon = !ctrl.showLoader;
@@ -280,8 +290,8 @@ angular.module('Cleep').component('configButtons', {
         };
 
         ctrl.$onChanges = function (changes) {
-            if (changes.clButtons?.currentValue) {
-                ctrl.prepareButtons(changes.clButtons.currentValue);
+            if (changes.clButtons) {
+                ctrl.prepareButtons(changes.clButtons.currentValue || []);
             }
         };
 
@@ -292,8 +302,10 @@ angular.module('Cleep').component('configButtons', {
                         ctrl.clId +
                         "' cl-buttons options must be an array"
                 );
+                return;
             }
 
+            ctrl.buttons.splice(0, ctrl.buttons.length);
             for (const button of buttons) {
                 ctrl.buttons.push({
                     style: button.style ?? (ctrl.collapse ? '' : 'md-raised md-primary'),
@@ -697,12 +709,21 @@ angular.module('Cleep').component('configSelect', {
         };
 
         ctrl.$onChanges = function (changes) {
-            if (changes.clOptions?.currentValue) {
-                ctrl.prepareOptions(changes.clOptions.currentValue);
+            if (changes.clOptions) {
+                ctrl.setOptions(changes.clOptions.currentValue || []);
+            }
+            if (changes.clEmpty) {
+                ctrl.setDisplayEmpty();
             }
         };
 
-        ctrl.prepareOptions = function (options) {
+        ctrl.setOptions = function (options) {
+            ctrl.options.splice(0, ctrl.options.length);
+            if (!options?.length) {
+                ctrl.setDisplayEmpty();
+                return;
+            }
+
             const firstOption = options[0];
 
             if (!angular.isObject(firstOption)) {
@@ -1016,14 +1037,14 @@ angular.module('Cleep').component('configList', {
         };
 
         ctrl.$onChanges = function (changes) {
-            if (changes.clItems?.currentValue) {
-                ctrl.setItems(changes.clItems.currentValue);
-                ctrl.prepareSelected(changes.clItems.currentValue);
+            if (changes.clItems) {
+                ctrl.setItems(changes.clItems.currentValue || []);
+                ctrl.prepareSelected(changes.clItems.currentValue || []);
             }
-            if (changes.clEmpty?.currentValue) {
+            if (changes.clEmpty) {
                 ctrl.setDisplayEmpty();
             }
-            if (changes.clEmptyIcon?.currentValue) {
+            if (changes.clEmptyIcon) {
                 ctrl.emptyIcon = ctrl.clEmptyIcon;
             }
         };
@@ -1106,12 +1127,16 @@ angular.module('Cleep').component('configBaseViewer', {
         ctrl.btns = [];
 
         ctrl.$onChanges = function (changes) {
-            if (changes.clButtons?.currentValue) {
-                ctrl.prepareButtons(changes.clButtons.currentValue);
+            if (changes.clButtons) {
+                ctrl.prepareButtons(changes.clButtons.currentValue || []);
             }
         };
 
         ctrl.prepareButtons = function (buttons) {
+            ctrl.btns.splice(0, ctrl.btns.length);
+            if (!angular.isArray(buttons)) {
+                return;
+            }
             for (const btn of buttons) {
                 ctrl.btns.push({
                     label: btn.label ?? '',

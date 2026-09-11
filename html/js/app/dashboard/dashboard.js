@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.directive('dashboardDirective', ['$rootScope', 'cleepService',
-function ($rootScope, cleepService) {
+.directive('dashboardDirective', ['$rootScope', 'cleepService', '$timeout',
+function ($rootScope, cleepService, $timeout) {
     var dashboardController = function() {
         var self = this;
         self.loading = true;
@@ -35,7 +35,7 @@ function ($rootScope, cleepService) {
             }
         );
 
-        setTimeout(() => {
+        $timeout(() => {
             self.loading = false;
         }, 10000);
     };

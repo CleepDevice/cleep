@@ -25,19 +25,19 @@ angular.module('Cleep').component('widgetBasic', {
                 <div ng-repeat="footer in $ctrl.footer" hide="" show-gt-xs="" ng-if="footer.condition($ctrl)">
                     <div ng-if="footer.type === 'text'">
                         <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}" cl-tooltip="{{ footer.tooltip }}"></cl-icon>
-                        <span ng-if="footer.label" class="{{ footer.style }}" flex="100">{{ footer.label }}</span>
+                        <span ng-if="footer.getLabel || footer.label" class="{{ footer.style }}" flex="100">{{ footer.getLabel ? footer.getLabel() : footer.label }}</span>
                     </div>
                     <div ng-if="footer.type === 'button'">
                         <md-button ng-click="$ctrl.onActionClick($event, footer)" class="md-raised {{ footer.style }} {{ $ctrl.clButtonSm }}">
                             <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}"></cl-icon>
                             <md-tooltip ng-if="footer.tooltip">{{ footer.tooltip }}</md-tooltip>
-                            {{ footer.label }}
+                            {{ footer.getLabel ? footer.getLabel() : footer.label }}
                         </md-button>
                     </div>
                     <div ng-if="footer.type === 'chart'">
                         <chart-button
                             cl-device="$ctrl.clDevice" cl-options="footer.options" cl-tooltip="{{ footer.tooltip }}"
-                            cl-btn-label="{{ footer.label }}" cl-btn-style="{{ footer.style }}" cl-btn-icon="{{ footer.icon }}"
+                            cl-btn-label="{{ footer.getLabel ? footer.getLabel() : footer.label }}" cl-btn-style="{{ footer.style }}" cl-btn-icon="{{ footer.icon }}"
                         ></chart-button>
                     </div>
                 </div>
@@ -45,7 +45,7 @@ angular.module('Cleep').component('widgetBasic', {
                 <div ng-repeat="footer in $ctrl.footer" hide-gt-xs="" ng-if="footer.condition($ctrl)">
                     <div ng-if="footer.type === 'text'">
                         <cl-icon ng-if="footer.icon" cl-icon="{{ footer.icon }}" cl-tooltip="footer.tooltip"></cl-icon>
-                        <span ng-if="footer.label" class="{{ footer.style }}" flex="100">{{ footer.label }}</span>
+                        <span ng-if="footer.getLabel || footer.label" class="{{ footer.style }}" flex="100">{{ footer.getLabel ? footer.getLabel() : footer.label }}</span>
                     </div>
                     <div ng-if="footer.type === 'button'">
                         <md-button ng-click="$ctrl.onActionClick($event, footer)" class="{{ footer.style }} md-raised cl-button-sm">
@@ -56,7 +56,7 @@ angular.module('Cleep').component('widgetBasic', {
                     <div ng-if="footer.type === 'chart'">
                         <chart-button
                             cl-device="$ctrl.clDevice" cl-options="footer.options" cl-tooltip="{{ footer.tooltip }}"
-                            cl-btn-label="{{ footer.label }}" cl-btn-style="{{ footer.style }} cl-button-sm" cl-btn-icon="{{ footer.icon }}"
+                            cl-btn-label="{{ footer.getLabel ? footer.getLabel() : footer.label }}" cl-btn-style="{{ footer.style }} cl-button-sm" cl-btn-icon="{{ footer.icon }}"
                         ></chart-button>
                     </div>
                 </div>
@@ -89,15 +89,25 @@ angular.module('Cleep').component('widgetBasic', {
             if (!ctrl.hasFooterTranscluded) {
                 ctrl.prepareFooter(ctrl.clFooter);
             }
+            ctrl.updateContentBgColor(ctrl.clDevice);
         };
 
-        ctrl.$onChanges = function (newVal, oldVal) {
-            ctrl.contentBgColor = newVal.clDevice?.on
-                ? ctrl.BG_ON_COLOR
-                : ctrl.BG_OFF_COLOR;
+        ctrl.$onChanges = function (changes) {
+            if (changes.clDevice) {
+                ctrl.updateContentBgColor(changes.clDevice.currentValue);
+            }
+            if (changes.clFooter && !ctrl.hasFooterTranscluded) {
+                ctrl.prepareFooter(changes.clFooter.currentValue);
+            }
+        };
+
+        ctrl.updateContentBgColor = function (device) {
+            ctrl.contentBgColor = device?.on ? ctrl.BG_ON_COLOR : ctrl.BG_OFF_COLOR;
         };
 
         ctrl.prepareFooter = function (footers) {
+            ctrl.footer.splice(0, ctrl.footer.length);
+            ctrl.hasFooter = false;
             if (!footers?.length) {
                 return;
             }
@@ -110,11 +120,12 @@ angular.module('Cleep').component('widgetBasic', {
                     icon: footer.icon,
                     tooltip: footer.tooltip,
                     label: footer.label || '',
+                    getLabel: footer.getLabel,
                     style: isButton ? footer.style : footer.style || 'md-raised',
                     click: isButton ? footer.click : undefined,
-                    condition: footer.condition,
+                    condition: footer.condition || (() => true),
                     clButtonSm: isButton
-                        ? !footer.label?.length
+                        ? !footer.label?.length && !footer.getLabel
                             ? 'cl-button-sm'
                             : ''
                         : undefined,
@@ -186,11 +197,23 @@ angular.module('Cleep').component('widgetConf', {
                 ctrl.prepareVariables(ctrl.clWidgetConf, ctrl.clAppIcon);
             };
 
+            ctrl.$onChanges = function (changes) {
+                if (changes.clDevice && ctrl.clWidgetConf) {
+                    ctrl.title = ctrl.clWidgetConf.header?.title ?? ctrl.clDevice?.name;
+                    ctrl.subtitle = ctrl.clWidgetConf.header?.subtitle ?? ctrl.clDevice?.type;
+                }
+                if (changes.clWidgetConf?.currentValue) {
+                    ctrl.prepareVariables(changes.clWidgetConf.currentValue, ctrl.clAppIcon);
+                }
+            };
+
             ctrl.prepareVariables = function (conf, appIcon) {
                 ctrl.icon = conf.header?.icon ?? appIcon;
                 ctrl.title = conf.header?.title ?? ctrl.clDevice.name;
                 ctrl.subtitle = conf.header?.subtitle ?? ctrl.clDevice.type;
                 ctrl.image = conf.image;
+                ctrl.content.attrs.splice(0, ctrl.content.attrs.length);
+                ctrl.footer.splice(0, ctrl.footer.length);
                 ctrl.prepareContent(conf);
                 ctrl.prepareFooter(conf);
             };
@@ -295,12 +318,16 @@ angular.module('Cleep').component('widgetConf', {
             ctrl.getTextFooterItem = function (footer) {
                 const filterStr = footer.filter ? ' | ' + footer.filter : '';
                 const unitStr = footer.unit || '';
-                const attrStr = footer.attr ? '{{ device.' + footer.attr + filterStr + ' }}' + unitStr : '';
+                const attrStr = footer.attr ? '{{ device.' + footer.attr + filterStr + ' }}' + unitStr : undefined || footer.label;
+                const labelTemplate = ctrl.prepareForInterpolate(attrStr);
 
                 return {
                     type: 'text',
                     icon: footer?.icon,
-                    label: $interpolate(ctrl.prepareForInterpolate(attrStr))($scope),
+                    label: '',
+                    getLabel: function () {
+                        return $interpolate(labelTemplate || '')($scope);
+                    },
                     style: footer?.style,
                     tooltip: footer?.tooltip,
                     condition: ctrl.prepareCondition(footer.condition),
@@ -308,10 +335,14 @@ angular.module('Cleep').component('widgetConf', {
             };
 
             ctrl.getButtonFooterItem = function (footer) {
+                const labelTemplate = ctrl.prepareForInterpolate(footer?.label);
                 return {
                     type: 'button',
                     icon: footer?.icon,
-                    label: $interpolate(ctrl.prepareForInterpolate(footer?.label))($scope),
+                    label: '',
+                    getLabel: function () {
+                        return $interpolate(labelTemplate || '')($scope);
+                    },
                     click: footer?.action && ctrl.getActionClick(footer.action),
                     style: footer?.style,
                     tooltip: footer?.tooltip,
@@ -320,10 +351,14 @@ angular.module('Cleep').component('widgetConf', {
             };
 
             ctrl.getChartFooterItem = function (footer) {
+                const labelTemplate = ctrl.prepareForInterpolate(footer?.label);
                 return {
                     type: 'chart',
                     icon: footer?.icon || 'chart-areaspline',
-                    label: $interpolate(ctrl.prepareForInterpolate(footer?.label))($scope),
+                    label: '',
+                    getLabel: function () {
+                        return $interpolate(labelTemplate || '')($scope);
+                    },
                     style: footer?.style,
                     tooltip: footer?.tooltip,
                     condition: ctrl.prepareCondition(footer.condition),
