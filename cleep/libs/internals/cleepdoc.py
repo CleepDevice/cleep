@@ -8,6 +8,12 @@ MIN_DESCRIPTION_LEN = 10
 LITERAL_BLOCKS_REGEX = r"::\s+(\{(?:(?!::).)*\}|\[(?:(?!::).)*\]|\((?:(?!::).)*\))"
 WHITE_SPACES_REGEX = r"(\s{2,}|\t+)"
 CUSTOM_TAG = "custom"
+# Lenient fallback when docstring_parser leaves default=None (e.g. missing
+# trailing period after "Defaults to 100").
+DEFAULTS_TO_REGEX = re.compile(
+    r"Defaults\s+to\s+(.+?)(?:\.(?:\s|$)|$)",
+    flags=re.IGNORECASE | re.DOTALL,
+)
 
 
 class CleepDoc:
@@ -477,12 +483,26 @@ class CleepDoc:
                     "name": docstring_param.arg_name.strip(),
                     "type": CleepDoc.str_to_type(docstring_param.type_name),
                     "optional": docstring_param.is_optional,
-                    "default": self.__eval_string(docstring_param.default),
+                    "default": self.__resolve_param_default(docstring_param),
                     "formats": literals,
                 }
             )
 
         return params
+
+    def __resolve_param_default(self, docstring_param):
+        """
+        Resolve parameter default from docstring_parser, with a description
+        fallback when the parser did not extract "Defaults to ...".
+        """
+        raw_default = docstring_param.default
+        if raw_default is None and docstring_param.description:
+            match = DEFAULTS_TO_REGEX.search(docstring_param.description)
+            if match:
+                raw_default = match.group(1).strip().rstrip(".")
+        if raw_default is None:
+            return None
+        return self.__eval_string(raw_default)
 
     def __docstring_raises_to_dict(self, docstring_raises):
         """

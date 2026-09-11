@@ -200,6 +200,24 @@ class DummyApp:
         """
         pass
 
+    def command_arg_numeric_default(self, volume=100):
+        """
+        Short description that is long enough
+
+        Args:
+            volume (int, optional): Playback volume between 1 and 100. Defaults to 100.
+        """
+        pass
+
+    def command_arg_numeric_default_missing_period(self, volume=100):
+        """
+        Short description that is long enough
+
+        Args:
+            volume (int, optional): Playback volume between 1 and 100. Defaults to 100
+        """
+        pass
+
     def command_arg_optional(self, param=123):
         """
         Short description
@@ -859,6 +877,37 @@ class CleepDocTests(unittest.TestCase):
                     "[arg param] Default value differs: from doc hello, from function 123. See https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html",
                 ],
                 "valid": False,
+                "warnings": [],
+            },
+        )
+
+    def test_is_command_doc_valid_arg_numeric_default(self):
+        cmd = getattr(self.dummy, "command_arg_numeric_default")
+
+        valid = self.cd.is_command_doc_valid(cmd)
+        logging.debug("Result: %s", valid)
+
+        self.assertDictEqual(
+            valid,
+            {
+                "errors": [],
+                "valid": True,
+                "warnings": [],
+            },
+        )
+
+    def test_is_command_doc_valid_arg_numeric_default_missing_period(self):
+        """Parser often misses default when trailing period after value is absent."""
+        cmd = getattr(self.dummy, "command_arg_numeric_default_missing_period")
+
+        valid = self.cd.is_command_doc_valid(cmd)
+        logging.debug("Result: %s", valid)
+
+        self.assertDictEqual(
+            valid,
+            {
+                "errors": [],
+                "valid": True,
                 "warnings": [],
             },
         )
