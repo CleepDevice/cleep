@@ -1105,13 +1105,54 @@ class CleepModule(Cleep):
         cleep_doc = CleepDoc()
         app_doc_validity = {}
 
+        # Validate against a fresh class loaded from disk so modsync'd sources
+        # are checked even if this process still holds an older in-memory copy.
+        command_owner = self.__load_class_from_disk_for_doc_check()
+
         commands = self.get_module_commands()
         for command_name in commands:
-            command_pointer = getattr(self, command_name)
-            command_doc_valid = cleep_doc.is_command_doc_valid(command_pointer)
-            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(command_pointer, with_details)
+            command_pointer = getattr(command_owner, command_name)
+            app_doc_validity[command_name] = cleep_doc.is_command_doc_valid(
+                command_pointer, with_details
+            )
 
         return app_doc_validity
+
+    def __load_class_from_disk_for_doc_check(self):
+        """
+        Load a fresh copy of this module class from its source file.
+
+        Only applies to installed apps (cleep.modules.*). Does not replace the
+        live module in sys.modules (safe while Cleep runs). Falls back to the
+        in-memory class if reload fails or for non-app classes (tests, core).
+        """
+        module_name = self.__class__.__module__
+        if not module_name.startswith("cleep.modules."):
+            return self.__class__
+
+        try:
+            import importlib.util
+            import inspect
+            import time
+
+            path = inspect.getfile(self.__class__)
+            if path.endswith(".pyc"):
+                path = path[:-1]
+            temp_module_name = (
+                f"_cleep_doccheck_{self.__class__.__name__}_{time.time_ns()}"
+            )
+            spec = importlib.util.spec_from_file_location(temp_module_name, path)
+            if spec is None or spec.loader is None:
+                raise RuntimeError(f"Unable to load module spec from {path}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return getattr(module, self.__class__.__name__)
+        except Exception:
+            self.logger.exception(
+                "Unable to load module from disk for documentation check, "
+                "falling back to in-memory class"
+            )
+            return self.__class__
 
     def send_command_advanced(self, command, to, params=None, timeout=3.0, raise_exc=False):
         """

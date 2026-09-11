@@ -112,7 +112,13 @@ class CleepDoc:
 
             self.logger.debug("Found doc: %s", doc)
             command_signature = signature(command)
-            command_args = command_signature.parameters
+            # Bound methods already omit self; unbound/class functions include it.
+            # Always ignore self so both forms validate the same way.
+            command_args = {
+                name: param
+                for name, param in command_signature.parameters.items()
+                if name != "self"
+            }
 
             # descriptions
             if (
@@ -233,10 +239,9 @@ class CleepDoc:
             errors.append("Argument description is missing")
 
         # check default value
+        param = command_args.get(doc_arg["name"])
         doc_def = doc_arg["default"]
-        func_def = (
-            command_args.get(doc_arg["name"]) and command_args[doc_arg["name"]].default
-        )
+        func_def = param.default if param is not None else None
         self.logger.debug(
             "Default value from doc=%s[%s], from function=%s[%s]",
             doc_def,

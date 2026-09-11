@@ -938,7 +938,11 @@ class TestsCleepModule(unittest.TestCase):
 
             result = self.r.check_documentation()
 
-            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(self.r.my_command, False)
+            # Class attribute (unbound) is used so disk-reloaded classes validate
+            # the same way as live instances.
+            cleepdoc_mock.return_value.is_command_doc_valid.assert_called_with(
+                self.r.__class__.my_command, False
+            )
             self.assertDictEqual(result, {"my_command": "command validity"})
 
     def test_send_command_advanced(self):
