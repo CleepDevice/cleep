@@ -35,6 +35,7 @@ cleep (0.2.0) unstable; urgency=low
   * Updated core: use native unittest.mock lib instead of mock
   * Updated core: improve CI
   * Updated core: use python3.9
+  * Fixed core: problem with app compat field during market sync
 
  -- Tanguy Bonneau <tanguy.bonneau@gmail.com>  Sat, 5 Sep 2026 11:00:00 +0100
 
