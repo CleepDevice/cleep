@@ -593,6 +593,107 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
         self.assertTrue('module4' in self.i.modules)
+        # new module gets compatibility computed
+        self.assertIn('compatible', self.i.modules['module4'])
+        # installed module keeps its MODULE_VERSION, not market version
+        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')
+
+    @patch('inventory.CLEEP_VERSION', '0.1.4')
+    @patch('inventory.AppsSources')
+    @patch('inventory.CORE_MODULES', [])
+    def test_reload_modules_refreshes_not_installed_market_metadata(self, appssources_mock):
+        appssources_mock.return_value.get_market.side_effect = [
+            {
+                'update': 1587168000,
+                'list': {
+                    'module1': {'version': '0.0.0'},
+                    'localmusic': {
+                        'version': '1.0.0',
+                        'compat': 'cleep<=0.1.0',
+                        'changelog': 'old',
+                        'deps': ['audioplayer'],
+                    },
+                },
+            },
+            {
+                'update': 1587254400,
+                'list': {
+                    'module1': {'version': '0.0.0'},
+                    'localmusic': {
+                        'version': '1.2.0',
+                        'compat': 'cleep<=0.1.4',
+                        'changelog': 'new',
+                        'deps': ['audioplayer'],
+                        'icon': 'folder-music-outline',
+                    },
+                },
+            },
+        ]
+        appssources_mock.return_value.exists.return_value = True
+        self._init_context(configured_modules=['module1'])
+
+        self.i._load_modules()
+        self.assertEqual(self.i.modules['localmusic']['compat'], 'cleep<=0.1.0')
+        self.assertFalse(self.i.modules['localmusic']['compatible'])
+        self.assertFalse(self.i.modules['localmusic']['installed'])
+
+        self.i.reload_modules()
+
+        self.assertEqual(self.i.modules['localmusic']['compat'], 'cleep<=0.1.4')
+        self.assertEqual(self.i.modules['localmusic']['version'], '1.2.0')
+        self.assertEqual(self.i.modules['localmusic']['changelog'], 'new')
+        self.assertEqual(self.i.modules['localmusic']['deps'], ['audioplayer'])
+        self.assertEqual(self.i.modules['localmusic']['icon'], 'folder-music-outline')
+        self.assertTrue(self.i.modules['localmusic']['compatible'])
+        self.assertFalse(self.i.modules['localmusic']['installed'])
+
+    @patch('inventory.CLEEP_VERSION', '0.1.4')
+    @patch('inventory.AppsSources')
+    @patch('inventory.CORE_MODULES', [])
+    def test_reload_modules_refreshes_compat_for_installed_keeps_version(self, appssources_mock):
+        appssources_mock.return_value.get_market.side_effect = [
+            {
+                'update': 1587168000,
+                'list': {
+                    'module1': {
+                        'version': '9.9.9',
+                        'compat': 'cleep<=0.1.0',
+                        'changelog': 'old',
+                        'icon': 'old-icon',
+                    },
+                },
+            },
+            {
+                'update': 1587254400,
+                'list': {
+                    'module1': {
+                        'version': '9.9.9',
+                        'compat': 'cleep<=0.1.4',
+                        'changelog': 'new',
+                        'icon': 'new-icon',
+                        'download': 'https://example.com/app.zip',
+                    },
+                },
+            },
+        ]
+        appssources_mock.return_value.exists.return_value = True
+        self._init_context(configured_modules=['module1'])
+
+        self.i._load_modules()
+        self.assertTrue(self.i.modules['module1']['installed'])
+        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')  # MODULE_VERSION
+        self.assertEqual(self.i.modules['module1']['compat'], 'cleep<=0.1.0')
+        self.assertFalse(self.i.modules['module1']['compatible'])
+
+        self.i.reload_modules()
+
+        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')  # preserved
+        self.assertEqual(self.i.modules['module1']['compat'], 'cleep<=0.1.4')
+        self.assertEqual(self.i.modules['module1']['changelog'], 'new')
+        self.assertEqual(self.i.modules['module1']['icon'], 'new-icon')
+        self.assertEqual(self.i.modules['module1']['download'], 'https://example.com/app.zip')
+        self.assertTrue(self.i.modules['module1']['compatible'])
+        self.assertEqual(self.i.modules['module1']['label'], 'Module1')  # MODULE_LABEL preserved
 
     def test_wait_for_apps_started(self):
         core_join_event = Event()

@@ -37,6 +37,18 @@ class Inventory(Cleep):
     MODULES_SYNC_TIMEOUT = 60.0
     PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
     PYTHON_CLEEP_MODULES_PATH = 'modules'
+    # Market-only fields refreshed for installed apps (MODULE_* fields stay untouched)
+    __MARKET_ONLY_FIELDS = (
+        'compat',
+        'changelog',
+        'download',
+        'sha256',
+        'confidence',
+        'quality',
+        'price',
+        'icon',
+        'longdescription',
+    )
 
     def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
         """
@@ -259,9 +271,47 @@ class Inventory(Cleep):
         market = apps_sources.get_market()
         return market
 
+    def __recompute_compatibility(self):
+        """
+        Recompute compat/compatible flags for all modules using installed versions and CLEEP_VERSION
+        """
+        modules_versions = {
+            module_name: module.get('version', '0.0.0')
+            for module_name, module in self.modules.items()
+        }
+        modules_versions['cleep'] = CLEEP_VERSION
+        for module in self.modules.values():
+            compat = module.get('compat', '')
+            module.update({
+                'compat': compat,
+                'compatible': Tools.compare_compat_string(compat, modules_versions),
+            })
+
+    def __apply_not_installed_market_metadata(self, module_name, module_data, local=False):
+        """
+        Apply fresh market data for a not-installed application
+
+        Args:
+            module_name (string): application name
+            module_data (dict): market entry
+            local (bool): True if application is locally installed (dev)
+        """
+        self.modules[module_name] = copy.deepcopy(module_data)
+        self.modules[module_name].update({
+            'name': module_name,
+            'installed': False,
+            'library': False,
+            'local': local,
+            'core': False,
+            'screenshots': [],
+            'loadedby': [],
+            'version': module_data.get('version', '0.0.0'),
+            'deps': module_data.get('deps', []),
+        })
+
     def reload_modules(self):
         """
-        Reload modules refreshing only not installed modules
+        Reload modules from market: add new apps and refresh market metadata for existing ones
         """
         self.logger.info('Reloading modules')
         # get list of all available modules (from remote list)
@@ -274,19 +324,23 @@ class Inventory(Cleep):
             if module_name not in self.modules:
                 # new module, add new entry in existing modules list
                 self.logger.debug('Add new application "%s" to list of available applications', module_name)
-                self.modules[module_name] = module_data
-                
-                # add/force some metadata
-                self.modules[module_name].update({
-                    'name': module_name,
-                    'installed': False,
-                    'library': False,
-                    'local': False,
-                    'core': False,
-                    'screenshots': [],
-                    'deps': [],
-                    'loadedby': [],
-                })
+                self.__apply_not_installed_market_metadata(module_name, module_data)
+            elif not self.modules[module_name].get('installed'):
+                # refresh market metadata for not-installed apps (compat, version, changelog...)
+                self.logger.debug('Refresh market metadata for application "%s"', module_name)
+                self.__apply_not_installed_market_metadata(
+                    module_name,
+                    module_data,
+                    local=self.modules[module_name].get('local', False),
+                )
+            else:
+                # installed apps: refresh market-only fields (keeps MODULE_* values)
+                for field in self.__MARKET_ONLY_FIELDS:
+                    if field in module_data:
+                        self.modules[module_name][field] = module_data[field]
+
+        # recompute compatibility after market refresh
+        self.__recompute_compatibility()
 
         # trigger modules update event
         self.apps_updated_event.send()
@@ -391,13 +445,7 @@ class Inventory(Cleep):
                 del self.__module_loading_tree[:]
 
         # compute compat string
-        modules_versions = {module_name: module['version'] for module_name, module in self.modules.items()}
-        modules_versions['cleep'] = CLEEP_VERSION
-        for module_name, module in self.modules.items():
-            module.update({
-                'compat': module.get('compat', ''),
-                'compatible': Tools.compare_compat_string(module.get('compat', ''), modules_versions),
-            })
+        self.__recompute_compatibility()
 
         # execution step: INIT->CONFIG
         self.bootstrap['execution_step'].step = ExecutionStep.CONFIG
