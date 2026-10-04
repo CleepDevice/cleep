@@ -13,21 +13,34 @@ var Cleep = angular.module(
  * It holds some generic stuff like polling request, loaded services...
  */
 Cleep
-.controller('mainController', ['$rootScope', '$scope', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$route', '$mdDialog', '$timeout',
-function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $mdDialog, $timeout) {
+.controller('mainController', ['$rootScope', '$scope', 'rpcService', 'cleepService', 'blockUI', 'toastService', '$mdDialog', '$timeout', '$window',
+function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog, $timeout, $window) {
 
     var self = this;
     self.rebooting = false;
     self.restarting = false;
     self.notConnected = false;
     self.reloadConfig = false;
+    self.uiReloadScheduled = false;
     self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
 
     /**
+     * Hard-reload the UI once (resets Angular injector / ocLazyLoad singletons).
+     */
+    self.__hardReloadUi = function() {
+        if (self.uiReloadScheduled) {
+            return;
+        }
+        self.uiReloadScheduled = true;
+        $window.location.reload();
+    };
+
+    /**
      * Reload config after reconnect/restart with a short grace period and retries.
      * Avoids racing asset loads against a device that is still coming back up.
+     * Ends with a full page reload so updated app frontends are picked up.
      */
     self.__reloadAfterReconnect = function(message) {
         // Wait for nginx/Cleep to accept connections again after restart/sync
@@ -45,8 +58,8 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
                 if (message && message.length > 0) {
                     toast.success(message);
                 }
-                $route.reload();
                 blockUI.stop();
+                self.__hardReloadUi();
             }, function(err) {
                 console.error('Unable to reload application config after reconnect:', err);
                 blockUI.stop();
@@ -176,6 +189,18 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
      * Init main controller
      */
     self.init = function() {
+        // After app install/update/uninstall batch, hard-reload UI assets
+        $rootScope.$on('system.cleep.needrestart', function() {
+            if (self.uiReloadScheduled) {
+                return;
+            }
+            self.uiReloadScheduled = true;
+            toast.info('Update applied, reloading interface...');
+            $timeout(function() {
+                $window.location.reload();
+            }, 700);
+        });
+
         // launch polling
         $timeout(self.polling, 0);
 

@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Updated ui: hard reload interface after Cleep restart reconnect and after app updates
 - Fixed ui: unlock installed apps card after failed update
 - Fixed ui: show update failure on installed apps without requiring pending restart
 - Fixed ui: "Update failed, see logs" opens Update app logs for that application
