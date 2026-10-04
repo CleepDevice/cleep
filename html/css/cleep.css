@@ -377,6 +377,54 @@ a.md-button.cl-button-sm {
     font-weight: 500;
 }
 
+.config-item-section .config-section-action {
+    margin: 0 0 0 8px;
+    flex: none;
+}
+
 .config-list-item {
     padding: 10px 0px;
 }
+
+/********** config-collapse ***********/
+.config-collapse {
+    margin: 8px 0 16px;
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-collapse-header {
+    cursor: pointer;
+    padding: 4px 12px;
+    margin: 0 !important;
+    user-select: none;
+}
+
+.config-collapse .config-item {
+    margin-bottom: 0;
+}
+
+.config-collapse-header:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.config-collapse-disabled .config-collapse-header {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.config-collapse-disabled .config-collapse-header:hover {
+    background-color: transparent;
+}
+
+.config-collapse-chevron {
+    margin-left: 8px;
+    opacity: 0.65;
+}
+
+.config-collapse-body {
+    padding: 4px 12px 12px;
+    border-top: 1px solid rgb(226, 227, 229);
+}
+

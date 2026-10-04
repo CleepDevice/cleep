@@ -1,5 +1,7 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added ui: optional action button on config-section (label, icon, click)
+- Added ui: add config-collapse panel component
 - Updated ui: remove unused AngularJS dependency injections
 - Updated ui: fatal module toast during config/page panel load; milder error toast at runtime
 - Updated ui: hard reload interface after Cleep restart reconnect and after app updates

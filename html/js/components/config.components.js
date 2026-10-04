@@ -344,23 +344,50 @@ angular.module('Cleep').component('configButtons', {
 
 angular.module('Cleep').component('configSection', {
     template: `
-        <div layout="row" layout-align="start center" layout-gt-xs="row" layout-align-gt-xs="start center" id="{{ $ctrl.clId }}" class="config-item config-item-section">
+        <div layout="row" layout-align="start center" id="{{ $ctrl.clId }}" class="config-item config-item-section">
             <div>
                 <cl-icon cl-icon="{{ $ctrl.icon }}"></cl-icon>
             </div>
-            <span>{{ $ctrl.clTitle }}</span>
+            <span flex>{{ $ctrl.clTitle }}</span>
+            <md-button
+                ng-if="$ctrl.hasAction"
+                ng-click="$ctrl.onClick($event)"
+                class="md-primary md-raised cl-button-sm config-section-action"
+            >
+                <cl-icon ng-if="$ctrl.clBtnIcon" cl-icon="{{ $ctrl.clBtnIcon }}"></cl-icon>
+                {{ $ctrl.clBtnLabel }}
+            </md-button>
         </div>
     `,
     bindings: {
         clTitle: '@',
         clIcon: '@',
+        clBtnLabel: '@',
+        clBtnIcon: '@',
+        clClick: '&?',
     },
     controller: function () {
         const ctrl = this;
         ctrl.icon = undefined;
+        ctrl.hasAction = false;
 
         ctrl.$onInit = function () {
-            ctrl.icon = ctrl.clIcon ?? 'bookmark-outline';
+            ctrl.syncFromBindings();
+        };
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clIcon || changes.clBtnLabel || changes.clBtnIcon) {
+                ctrl.syncFromBindings();
+            }
+        };
+
+        ctrl.syncFromBindings = function () {
+            ctrl.icon = ctrl.clIcon || 'bookmark-outline';
+            ctrl.hasAction = !!(ctrl.clBtnLabel || ctrl.clBtnIcon);
+        };
+
+        ctrl.onClick = ($event) => {
+            (ctrl.clClick || angular.noop)({ $event });
         };
     },
 });
@@ -1345,4 +1372,64 @@ angular.module('Cleep').component('configTabs', {
     },
 
 
+});
+
+/**
+ * Collapsible panel for grouping config items.
+ *
+ * Usage:
+ *   <config-collapse cl-title="Advanced" cl-subtitle="Optional" cl-icon="cog" cl-opened="$ctrl.open">
+ *       <config-text ...></config-text>
+ *   </config-collapse>
+ */
+angular.module('Cleep').component('configCollapse', {
+    transclude: true,
+    template: `
+        <div id="{{ $ctrl.clId }}" class="config-collapse" ng-class="{ 'config-collapse-opened': $ctrl.clOpened, 'config-collapse-disabled': $ctrl.clDisabled }">
+            <div
+                class="config-item config-collapse-header"
+                layout="row" layout-align="start center"
+                ng-click="$ctrl.toggle()"
+                role="button"
+                aria-expanded="{{ !!$ctrl.clOpened }}"
+            >
+                <config-item-desc
+                    flex layout="row" layout-align="start center"
+                    cl-icon="$ctrl.clIcon" cl-icon-style="$ctrl.clIconStyle"
+                    cl-title="$ctrl.clTitle" cl-subtitle="$ctrl.clSubtitle">
+                </config-item-desc>
+                <cl-icon
+                    flex="none"
+                    cl-icon="{{ $ctrl.clOpened ? 'chevron-up' : 'chevron-down' }}"
+                    cl-class="config-collapse-chevron"
+                ></cl-icon>
+            </div>
+            <div class="config-collapse-body" ng-show="$ctrl.clOpened" ng-transclude></div>
+        </div>
+    `,
+    bindings: {
+        clId: '@',
+        clTitle: '@',
+        clSubtitle: '@',
+        clIcon: '@',
+        clIconStyle: '@',
+        clOpened: '=?',
+        clDisabled: '<?',
+    },
+    controller: function () {
+        const ctrl = this;
+
+        ctrl.$onInit = function () {
+            if (ctrl.clOpened === undefined || ctrl.clOpened === null) {
+                ctrl.clOpened = false;
+            }
+        };
+
+        ctrl.toggle = function () {
+            if (ctrl.clDisabled) {
+                return;
+            }
+            ctrl.clOpened = !ctrl.clOpened;
+        };
+    },
 });
