@@ -6,8 +6,8 @@
  */
 angular
 .module('Cleep')
-.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http',
-function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http) {
+.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', 'moduleUiState',
+function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http, moduleUiState) {
 
     const moduleController = ['$scope','$element', function($scope, $element) {
         const self = this;
@@ -120,6 +120,8 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
             const modulePath = self.modulesPath + module + '/';
             let files;
 
+            moduleUiState.loading = true;
+
             // load module description
             cleepService.getModuleDescription(module)
                 .then(function(desc) {
@@ -159,6 +161,9 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
                     if( err!=='STOPCHAIN' ) {
                         console.error('Error loading module js/css files:', err);
                     }
+                })
+                .finally(function() {
+                    moduleUiState.loading = false;
                 });
         };
     }];

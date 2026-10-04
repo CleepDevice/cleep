@@ -83,6 +83,16 @@ Cleep.config([
     },
 ]);
 
+/**
+ * Shared UI state for module config/page panels.
+ * loading is true while lazy-load / compile is in progress.
+ */
+Cleep.factory('moduleUiState', function () {
+    return {
+        loading: false,
+    };
+});
+
 Cleep.factory('$exceptionHandler', [
     '$log',
     '$injector',
@@ -95,21 +105,35 @@ Cleep.factory('$exceptionHandler', [
 
             const toastService = $injector.get('toastService');
             const locationService = $injector.get('$location');
+            const moduleUiState = $injector.get('moduleUiState');
 
             if (typeof exception === 'string' && exception.startsWith('Possibly')) {
                 // should be already handled by a service
                 return;
             }
-            if (!toastService || !locationService) {
+            if (!toastService || !locationService || !moduleUiState) {
                 return;
             }
 
-            if (locationService.url().startsWith('/module/')) {
-                const appName = locationService.url().split('/').pop();
-                const now = new Date().getTime();
-                if (((cache[appName] || 0) + TIMEOUT) < now) {
-                    cache[appName] = now;
-                    toastService.fatal(`Error with ${appName} application`);
+            // Module pages: fatal toast while loading the panel, milder toast at runtime.
+            const path = locationService.path() || '';
+            if (!path.startsWith('/module/')) {
+                return;
+            }
+
+            const parts = path.split('/').filter(Boolean);
+            const appName = parts[1];
+            if (!appName) {
+                return;
+            }
+
+            const now = new Date().getTime();
+            if (((cache[appName] || 0) + TIMEOUT) < now) {
+                cache[appName] = now;
+                if (moduleUiState.loading) {
+                    toastService.fatal(`Error loading ${appName} application`);
+                } else {
+                    toastService.error(`Error in ${appName} application`);
                 }
             }
         };
