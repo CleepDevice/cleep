@@ -8,8 +8,8 @@
  */
 angular
 .module('Cleep')
-.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', '$rootScope',
-function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $rootScope) {
+.service('cleepService', ['$injector', '$q', 'toastService', 'rpcService', '$http', '$ocLazyLoad', '$templateCache', '$rootScope', '$timeout',
+function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $rootScope, $timeout) {
 
     const self = this;
     self.__deferredModules = $q.defer();
@@ -28,10 +28,100 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.widgetConfigs = {};
 
     /**
+     * Return True when a load/network error is likely transient
+     * (device restart, SFTP sync, short connection drop...).
+     */
+    self.__isTransientLoadError = function(err) {
+        if (!err) {
+            return false;
+        }
+        if (err === 'Connection problem') {
+            return true;
+        }
+        if (typeof err.status === 'number' && (err.status === -1 || err.status === 0)) {
+            return true;
+        }
+        if (err.message && /Unable to load|Failed to load|ERR_CONNECTION|Network Error/i.test(err.message)) {
+            return true;
+        }
+        if (typeof err === 'string' && /Unable to load|Failed to load|ERR_CONNECTION|Connection problem|request failed/i.test(err)) {
+            return true;
+        }
+        return false;
+    };
+
+    /**
+     * Retry a promise-returning function on transient failures.
+     * @param fn: function returning a promise
+     * @param options: { maxAttempts, delayMs, label }
+     */
+    self.withLoadRetry = function(fn, options) {
+        options = options || {};
+        const maxAttempts = options.maxAttempts || 5;
+        const delayMs = options.delayMs || 800;
+        const label = options.label || 'asset';
+        const deferred = $q.defer();
+
+        const attempt = function(n) {
+            $q.when(fn())
+                .then(function(result) {
+                    deferred.resolve(result);
+                }, function(err) {
+                    if (n >= maxAttempts || !self.__isTransientLoadError(err)) {
+                        deferred.reject(err);
+                        return;
+                    }
+                    console.warn(
+                        'Transient error loading ' + label + ' (attempt ' + n + '/' + maxAttempts + '), retrying...',
+                        err
+                    );
+                    $timeout(function() {
+                        attempt(n + 1);
+                    }, delayMs * n);
+                });
+        };
+        attempt(1);
+        return deferred.promise;
+    };
+
+    /**
+     * HTTP GET with retry on transient errors.
+     */
+    self.httpGetWithRetry = function(url, config) {
+        return self.withLoadRetry(function() {
+            return $http.get(url, config);
+        }, {
+            label: url,
+            maxAttempts: 5,
+            delayMs: 800,
+        });
+    };
+
+    /**
+     * ocLazyLoad with retry on transient errors.
+     */
+    self.lazyLoadWithRetry = function(loadConfig) {
+        const files = loadConfig && loadConfig.files ? loadConfig.files : loadConfig;
+        const label = Array.isArray(files) ? files.join(',') : 'lazyload';
+        return self.withLoadRetry(function() {
+            return $ocLazyLoad.load(loadConfig);
+        }, {
+            label: label,
+            maxAttempts: 5,
+            delayMs: 800,
+        });
+    };
+
+    /**
      * Load Cleep config
      */
     self.loadConfig = function() {
         let config;
+
+        // Allow callers waiting on modules after a reconnect/reload
+        if (self.__deferredModules === null) {
+            self.__deferredModules = $q.defer();
+        }
 
         return rpcService.getConfig()
             .then(function(resp) {
@@ -106,7 +196,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @return promise
      */
     self.__loadJsFiles = function(jsFiles) {
-        return $ocLazyLoad.load({
+        return self.lazyLoadWithRetry({
             'cache': false,
             'reconfig': true,
             'rerun': true,
@@ -122,8 +212,9 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      * @return promise
      */
     self.__loadCssFiles = function(cssFiles) {
-        return $ocLazyLoad.load(cssFiles, {
-            cache: false
+        return self.lazyLoadWithRetry({
+            cache: false,
+            files: cssFiles,
         });
     };
 
@@ -143,7 +234,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
             // load only missing templates
             const templateName = htmlFile.replace(modulePath, '').split('?')[0];
             if (!$templateCache.get(templateName)) {
-                promises.push($http.get(htmlFile));
+                promises.push(self.httpGetWithRetry(htmlFile));
             }
         }
 
@@ -151,7 +242,8 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         $q.all(promises)
             .then(function(templates) {
                 if (!templates) {
-                    return $q.resolve();
+                    d.resolve();
+                    return;
                 }
 
                 // cache templates
@@ -159,11 +251,10 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                     const templateName = template.config?.url.replace(modulePath, '').split('?')[0];
                     $templateCache.put(templateName, template.data);
                 }
+                d.resolve();
             }, function(err) {
                 console.error('Error occured loading html files:', err);
-            })
-            .finally(function() {
-                d.resolve();
+                d.reject(err);
             });
 
         return d.promise;
@@ -195,7 +286,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         }
 
         // load desc.json file from module folder
-        $http.get(url)
+        self.httpGetWithRetry(url)
             .then(function(resp) {
                 // save desc content
                 self.modules[module].desc = resp.data;

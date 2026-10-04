@@ -26,6 +26,35 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
     self.nextPollingTimeout = 1;
 
     /**
+     * Reload config after reconnect/restart with a short grace period and retries.
+     * Avoids racing asset loads against a device that is still coming back up.
+     */
+    self.__reloadAfterReconnect = function(message) {
+        // Wait for nginx/Cleep to accept connections again after restart/sync
+        return $timeout(angular.noop, 1500)
+            .then(function() {
+                return cleepService.withLoadRetry(function() {
+                    return self.loadConfig(false);
+                }, {
+                    label: 'application config',
+                    maxAttempts: 5,
+                    delayMs: 1000,
+                });
+            })
+            .then(function() {
+                if (message && message.length > 0) {
+                    toast.success(message);
+                }
+                $route.reload();
+                blockUI.stop();
+            }, function(err) {
+                console.error('Unable to reload application config after reconnect:', err);
+                blockUI.stop();
+                toast.error('Unable to reload device configuration');
+            });
+    };
+
+    /**
      * Handle polling
      */
     self.polling = function() {
@@ -62,19 +91,7 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $route, $
                 // reload application config after restart/reboot/connection loss
                 if (self.reloadConfig) {
                     self.reloadConfig = false;
-                    self.loadConfig(false)
-                        .then(function() {
-                            // toast message
-                            if( message && message.length>0 ) {
-                                toast.success(message);
-                            }
-
-                            // force displayed component reloading
-                            $route.reload();
-
-                            // unblock ui
-                            blockUI.stop();
-                    });
+                    self.__reloadAfterReconnect(message);
                 }
 
                 if (response && response.data && !response.error) {

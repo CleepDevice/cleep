@@ -1,4 +1,5 @@
 cleep (0.2.0) unstable; urgency=low
+  * Fixed ui: avoids stuck "connection lost" during fast SFTP sync
   * Updated core: inject app paths during app install script execution
   * Updated core: create app paths during install+update process
   * Updated core: improve code libs coverage

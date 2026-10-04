@@ -57,7 +57,7 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
          * @param files: list of js files
          */
         self.__loadJsCssFiles = function(files) {
-            return $ocLazyLoad.load({
+            return cleepService.lazyLoadWithRetry({
                 'cache': false,
                 'reconfig': false,
                 'rerun': false,
@@ -78,7 +78,7 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
                 // load only missing templates
                 const templateName = htmlFile.replace(modulePath, '').split('?')[0];
                 if (!$templateCache.get(templateName)) {
-                    promises.push($http.get(htmlFile));
+                    promises.push(cleepService.httpGetWithRetry(htmlFile));
                 }
             }
 
@@ -86,6 +86,7 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
             $q.all(promises)
                 .then(function(templates) {
                     if (!templates) {
+                        d.resolve();
                         return;
                     }
 
@@ -94,11 +95,10 @@ function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templ
                         const templateName = template.config?.url.replace(modulePath, '').split('?')[0];
                         $templateCache.put(templateName, template.data);
                     }
+                    d.resolve();
                 }, function(err) {
                     console.error('Error occured loading html files:', err);
-                })
-                .finally(function() {
-                    d.resolve();
+                    d.reject(err);
                 });
     
             return d.promise;
