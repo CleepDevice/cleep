@@ -111,9 +111,9 @@
 
                     <!-- logs button -->
                     <md-button
-                        class="md-primary"
+                        class="md-primary md-raised"
                         ng-if="installCtl.cleepService.modulesUpdates[module.name] && installCtl.cleepService.modulesUpdates[module.name].update.failed"
-                        ng-click="installCtl.gotoUpdateLogs()"
+                        ng-click="installCtl.gotoUpdateLogs(module.name)"
                     >
                         <cl-icon cl-icon="file-document-outline"></cl-icon>
                         Install failed, see logs

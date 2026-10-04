@@ -114,10 +114,14 @@ function($q, cleepService, toast, $mdDialog, $sce) {
         };
 
         /**
-         * Redirect to update module logs page
+         * Redirect to Update app logs tab (optionally open one app's logs).
          */
-        self.gotoUpdateLogs = function() {
-            $window.location.href = '#!/module/update?tab=logs';
+        self.gotoUpdateLogs = function(moduleName) {
+            var url = '#!/module/update?tab=logs';
+            if (moduleName) {
+                url += '&app=' + encodeURIComponent(moduleName);
+            }
+            $window.location.href = url;
         };
 
         /** 

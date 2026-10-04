@@ -33,11 +33,15 @@ function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location
         };
 
         /**
-         * Redirect to update module page
+         * Redirect to Update app logs tab (optionally open one app's logs).
          */
-        self.gotoUpdateModule = function() {
-            $window.location.href = '#!/module/update?tab=logs';
-        }
+        self.gotoUpdateModule = function(moduleName) {
+            var url = '#!/module/update?tab=logs';
+            if (moduleName) {
+                url += '&app=' + encodeURIComponent(moduleName);
+            }
+            $window.location.href = url;
+        };
 
         /**
          * Uninstall module

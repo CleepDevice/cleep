@@ -543,16 +543,28 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     };
 
     /**
-     * Apply a module update progress event and refresh local map reference.
+     * Apply a module install/update/uninstall event.
+     * Terminal statuses (DONE/ERROR) re-fetch full state so processing/pending/failed
+     * match the backend (events only carry {module, status}).
      */
     self.applyModulesUpdateEvent = function(params) {
         if (!params || !params.module) {
             return self.refreshModulesUpdates();
         }
+        // Install.STATUS_DONE = 2, STATUS_ERROR = 3
+        const status = Number(params.status);
+        if (status === 2 || status === 3) {
+            return self.refreshModulesUpdates();
+        }
         const moduleName = params.module;
         const current = self.modulesUpdates[moduleName] || {};
+        const next = Object.assign({}, current, params);
+        // Install.STATUS_PROCESSING = 1 — events omit processing flag
+        if (status === 1) {
+            next.processing = true;
+        }
         self.modulesUpdates = Object.assign({}, self.modulesUpdates, {
-            [moduleName]: Object.assign({}, current, params),
+            [moduleName]: next,
         });
         return $q.resolve(self.modulesUpdates);
     };

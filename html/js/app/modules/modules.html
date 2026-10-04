@@ -101,12 +101,12 @@
                         <span>Success please restart</span>
                     </md-button>
                     <md-button
-                        class="md-accent"
-                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].pending && modulesCtl.cleepService.modulesUpdates[module.name].update.failed"
-                        ng-click="modulesCtl.gotoUpdateModule()"
+                        class="md-accent md-raised"
+                        ng-if="modulesCtl.cleepService.modulesUpdates[module.name] && modulesCtl.cleepService.modulesUpdates[module.name].update.failed && !modulesCtl.cleepService.modulesUpdates[module.name].processing"
+                        ng-click="modulesCtl.gotoUpdateModule(module.name)"
                     >
                         <cl-icon cl-icon="file-document-outline"></cl-icon>
-                        <span>Failure see logs</span>
+                        <span>Update failed, see logs</span>
                     </md-button>
                     <md-button
                         class="md-accent"
