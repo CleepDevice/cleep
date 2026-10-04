@@ -175,28 +175,9 @@ class %(module_name)s(%(inherit)s):
         Inventory.PYTHON_CLEEP_MODULES_PATH = 'tests/modules'
         Inventory.MODULES_SYNC_TIMEOUT = 2.0
 
-    @patch('inventory.AppsSources')
-    def test_get_market(self, appssources_mock):
-        json_content = {
-            'update': 0,
-            'list': ['module1', 'module2']
-        }
-        appssources_mock.return_value.get_market.return_value = json_content
-        appssources_mock.return_value.exists.return_value = True
-        self._init_context()
-        
-        j = self.i._get_market()
-        logging.debug('AppsSources: %s' % j)
 
-        self.assertEqual(j, json_content)
-
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules(self):
         self._init_context(configured_modules=['module1', 'module2'])
 
         # we use _configure instead of "self.i._load_modules()" just to cover this function
@@ -246,13 +227,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('deps' in self.i.modules['module3'])
         self.assertTrue('local' in self.i.modules['module3'])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cleeprenderer_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_cleeprenderer_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRenderer')
 
         self.i._load_modules()
@@ -263,13 +239,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cleepexternalbus_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_cleepexternalbus_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepExternalBus')
 
         self.i._load_modules()
@@ -282,13 +253,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(self.bootstrap['external_bus'], 'module1')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_rpcwrapper_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_rpcwrapper_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -299,13 +265,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_unknown_module(self):
         self._init_context(configured_modules=['module1', 'dummy'])
 
         self.i._load_modules()
@@ -315,13 +276,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_deps(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_deps(self):
         self._init_context(mod1_deps=['module2'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -333,13 +289,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_unknown_dep(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_unknown_dep(self):
         self._init_context(configured_modules=['module1'], mod1_deps=['dummy'])
 
         self.i._load_modules()
@@ -349,13 +300,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_circular_deps(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_circular_deps(self):
         self._init_context(mod1_deps=['module2'], mod2_deps=['module1'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -367,13 +313,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_dep_already_loaded(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_with_dep_already_loaded(self):
         self._init_context(mod1_deps=['module3'], mod2_deps=['module3'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -386,14 +327,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_local_module(self, appssources_mock):
+    def test_load_modules_with_local_module(self):
         # module3 is installed locally
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -406,14 +342,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_local_module_as_dep(self, appssources_mock):
+    def test_load_modules_with_local_module_as_dep(self):
         # module3 is installed locally
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module3'], configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -426,14 +357,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cascading_deps(self, appssources_mock):
+    def test_load_modules_with_cascading_deps(self):
         # deps tree : module1 --> module2 --> module3
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -443,14 +369,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_cascading_deps_final_circular(self, appssources_mock):
+    def test_load_modules_with_cascading_deps_final_circular(self):
         # deps tree : module1 --> module2 --> module3 --> module1
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], mod3_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -460,15 +381,10 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps(self, appssources_mock):
+    def test_load_modules_with_tree_deps(self):
         # deps tree : module1 --> module2
         #                     --> module3
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -478,15 +394,10 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps_circular_first_leaf(self, appssources_mock):
+    def test_load_modules_with_tree_deps_circular_first_leaf(self):
         # deps tree : module1 --> module2 --> module1
         #                     --> module3 
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], mod2_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -496,15 +407,10 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_with_tree_deps_circular_other_leaf(self, appssources_mock):
+    def test_load_modules_with_tree_deps_circular_other_leaf(self):
         # deps tree : module1 --> module2
         #                     --> module3 --> module1
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
         self._init_context(mod1_deps=['module2', 'module3'], mod3_deps=['module1'], configured_modules=['module1'])
 
         self.i._load_modules()
@@ -514,13 +420,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_load_modules_load_again(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_load_again(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -529,13 +430,8 @@ class %(module_name)s(%(inherit)s):
             self.i._load_modules()
         self.assertEqual(str(cm.exception), 'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', ['module1'])
-    def test_load_modules_core_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_core_modules(self):
         self._init_context(configured_modules=['module2'])
 
         self.i._load_modules()
@@ -546,14 +442,9 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', ['module1'])
     @patch('cleep.core.CORE_MODULES', ['module1'])
-    def test_load_modules_core_modules_exception(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_load_modules_core_modules_exception(self):
         self._init_context(configured_modules=['module2'], mod1_startup_error='raise Exception("Startup exception")')
 
         self.i._load_modules()
@@ -565,135 +456,16 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module3'))
         self.assertTrue(self.crash_report.report_exception.called)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_reload_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.side_effect = [
-            {
-                'update': 1587168000,
-                'list': {'module1':{'version':'0.0.0'}, 'module2':{'version':'0.0.0'}}
-            },
-            {
-                'update': 1587254400,
-                'list': {'module1':{'version': '1.0.0'}, 'module2':{'version':'0.0.0'}, 'module4': {}}
-            },
-        ]
-        appssources_mock.return_value.exists.return_value = True
+    def test_reload_modules(self):
         self._init_context(configured_modules=['module1', 'module2'])
-
         self.i._load_modules()
-        logging.debug('Modules: %s' % self.i.modules)
-        self.assertEqual(len(self.i.modules), 3)
-
-        self.i.reload_modules()
-        logging.debug('Modules: %s' % self.i.modules)
-
-        self.assertEqual(len(self.i.modules), 4)
-        self.assertTrue('module1' in self.i.modules)
-        self.assertTrue('module2' in self.i.modules)
-        self.assertTrue('module3' in self.i.modules)
-        self.assertTrue('module4' in self.i.modules)
-        # new module gets compatibility computed
-        self.assertIn('compatible', self.i.modules['module4'])
-        # installed module keeps its MODULE_VERSION, not market version
-        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')
-
-    @patch('inventory.CLEEP_VERSION', '0.1.4')
-    @patch('inventory.AppsSources')
-    @patch('inventory.CORE_MODULES', [])
-    def test_reload_modules_refreshes_not_installed_market_metadata(self, appssources_mock):
-        appssources_mock.return_value.get_market.side_effect = [
-            {
-                'update': 1587168000,
-                'list': {
-                    'module1': {'version': '0.0.0'},
-                    'localmusic': {
-                        'version': '1.0.0',
-                        'compat': 'cleep<=0.1.0',
-                        'changelog': 'old',
-                        'deps': ['audioplayer'],
-                    },
-                },
-            },
-            {
-                'update': 1587254400,
-                'list': {
-                    'module1': {'version': '0.0.0'},
-                    'localmusic': {
-                        'version': '1.2.0',
-                        'compat': 'cleep<=0.1.4',
-                        'changelog': 'new',
-                        'deps': ['audioplayer'],
-                        'icon': 'folder-music-outline',
-                    },
-                },
-            },
-        ]
-        appssources_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1'])
-
-        self.i._load_modules()
-        self.assertEqual(self.i.modules['localmusic']['compat'], 'cleep<=0.1.0')
-        self.assertFalse(self.i.modules['localmusic']['compatible'])
-        self.assertFalse(self.i.modules['localmusic']['installed'])
+        self.i.apps_updated_event = Mock()
 
         self.i.reload_modules()
 
-        self.assertEqual(self.i.modules['localmusic']['compat'], 'cleep<=0.1.4')
-        self.assertEqual(self.i.modules['localmusic']['version'], '1.2.0')
-        self.assertEqual(self.i.modules['localmusic']['changelog'], 'new')
-        self.assertEqual(self.i.modules['localmusic']['deps'], ['audioplayer'])
-        self.assertEqual(self.i.modules['localmusic']['icon'], 'folder-music-outline')
-        self.assertTrue(self.i.modules['localmusic']['compatible'])
-        self.assertFalse(self.i.modules['localmusic']['installed'])
-
-    @patch('inventory.CLEEP_VERSION', '0.1.4')
-    @patch('inventory.AppsSources')
-    @patch('inventory.CORE_MODULES', [])
-    def test_reload_modules_refreshes_compat_for_installed_keeps_version(self, appssources_mock):
-        appssources_mock.return_value.get_market.side_effect = [
-            {
-                'update': 1587168000,
-                'list': {
-                    'module1': {
-                        'version': '9.9.9',
-                        'compat': 'cleep<=0.1.0',
-                        'changelog': 'old',
-                        'icon': 'old-icon',
-                    },
-                },
-            },
-            {
-                'update': 1587254400,
-                'list': {
-                    'module1': {
-                        'version': '9.9.9',
-                        'compat': 'cleep<=0.1.4',
-                        'changelog': 'new',
-                        'icon': 'new-icon',
-                        'download': 'https://example.com/app.zip',
-                    },
-                },
-            },
-        ]
-        appssources_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1'])
-
-        self.i._load_modules()
-        self.assertTrue(self.i.modules['module1']['installed'])
-        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')  # MODULE_VERSION
-        self.assertEqual(self.i.modules['module1']['compat'], 'cleep<=0.1.0')
-        self.assertFalse(self.i.modules['module1']['compatible'])
-
-        self.i.reload_modules()
-
-        self.assertEqual(self.i.modules['module1']['version'], '0.0.0')  # preserved
-        self.assertEqual(self.i.modules['module1']['compat'], 'cleep<=0.1.4')
-        self.assertEqual(self.i.modules['module1']['changelog'], 'new')
-        self.assertEqual(self.i.modules['module1']['icon'], 'new-icon')
-        self.assertEqual(self.i.modules['module1']['download'], 'https://example.com/app.zip')
-        self.assertTrue(self.i.modules['module1']['compatible'])
-        self.assertEqual(self.i.modules['module1']['label'], 'Module1')  # MODULE_LABEL preserved
+        self.assertTrue(self.i.apps_updated_event.send.called)
+        self.assertIn('compatible', self.i.modules['module1'])
 
     def test_wait_for_apps_started(self):
         core_join_event = Event()
@@ -720,13 +492,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertFalse(self.i.wait_for_apps_started())
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_unload_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{'version': '1.0.0' }, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_unload_modules(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -738,13 +505,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_devices(self):
         self._init_context(configured_modules=['module1', 'module2'])
 
         self.i._load_modules()
@@ -759,13 +521,8 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(devices['module1'], {'123-456-789': {}})
         self.assertEqual(devices['module2'], {'123-456-789': {}})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices_exception(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_devices_exception(self):
         self._init_context(configured_modules=['module1', 'module2'], mod2_exception=True)
 
         self.i._load_modules()
@@ -779,13 +536,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_devices_no_cleepmodule(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_devices_no_cleepmodule(self):
         self._init_context(configured_modules=['module1', 'module2'], mod2_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -799,13 +551,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_device(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_device(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -816,13 +563,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(module, 'module1')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_device_unknown_device(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_device_unknown_device(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -833,13 +575,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertIsNone(module)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_devices(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_devices(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -851,13 +588,8 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(devices), 1)
         self.assertTrue('123-456-789' in devices)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_devices_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}, 'module3': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_devices_unknown_module(self):
         self._init_context(configured_modules=['module1'])
 
         self.i._load_modules()
@@ -867,13 +599,8 @@ class %(module_name)s(%(inherit)s):
             self.i.get_module_devices('dummy')
         self.assertEqual(cm.exception.message, 'Application "dummy" doesn\'t exist')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_infos(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
 
@@ -901,13 +628,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertTrue('module1' in infos['loadedby'])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos_local_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_infos_local_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
@@ -935,13 +657,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertEqual(len(infos['loadedby']), 0)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_infos_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_infos_unknown_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
@@ -950,13 +667,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(infos, {})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_configs(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_configs(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         
@@ -965,13 +677,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}, 'module3': {'name': 'Module3', 'prop': 666}})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_configs_with_error(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_configs_with_error(self):
         self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
         self.i._load_modules()
         
@@ -980,37 +687,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}})
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_installable_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
-        self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
-        self.i._load_modules()
-
-        modules = self.i.get_installable_modules()
-        logging.debug('Modules: %s' % modules)
-
-        self.assertFalse('module1' in modules)
-        self.assertTrue('module2' in modules) # exists in list because lib is installable
-        self.assertFalse('module3' in modules)
-        self.assertTrue('module4' in modules)
-        self.assertTrue(modules['module2']['installed']) # its a lib so installed
-        self.assertFalse(modules['module4']['installed'])
-        self.assertFalse('config' in modules['module2'])
-        self.assertFalse('config' in modules['module4'])
-        self.assertFalse('started' in modules['module2'])
-        self.assertFalse('started' in modules['module4'])
-
-    @patch('inventory.AppsSources')
-    @patch('inventory.CORE_MODULES', [])
-    def test_get_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
 
@@ -1034,26 +712,16 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(modules['module2']['started'])
         self.assertTrue(modules['module3']['started'])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_module_failed(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_module_failed(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'], mod1_startup_error='raise Exception("Startup exception")')
         self.i._load_modules()
 
         modules = self.i.get_modules()
         logging.debug('Modules: %s' % modules)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_no_filter(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_no_filter(self):
         self._init_context(configured_modules=['module1', 'module3', 'module4'])
         self.i._load_modules()
 
@@ -1065,13 +733,8 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_invalid_filter(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_invalid_filter(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
 
@@ -1079,13 +742,8 @@ class %(module_name)s(%(inherit)s):
             self.i._get_modules('dummy')
         self.assertEqual(cm.exception.message, 'Parameter "module_filter" must be callable')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_with_filter(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module4': {}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_with_filter(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
     
@@ -1107,13 +765,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_commands(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_commands(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1124,13 +777,8 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(commands), 1)
         self.assertTrue('dummy' in commands)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_commands_for_all_modules(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_commands_for_all_modules(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1141,13 +789,8 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(commands), 2)
         self.assertListEqual(list(commands.keys()), ["module1", "module3"])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_commands_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_commands_unknown_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1157,13 +800,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(commands, [])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_documentation(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_documentation(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
         self.i._Inventory__modules_instances['module1'].get_documentation = Mock(return_value="module1 documentation")
@@ -1174,13 +812,8 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(doc, "module1 documentation")
         self.i._Inventory__modules_instances['module1'].get_documentation.assert_called_with(False)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_documentation_disable_cache(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_documentation_disable_cache(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
         self.i._Inventory__modules_instances['module1'].get_documentation = Mock(return_value="module1 documentation")
@@ -1190,13 +823,8 @@ class %(module_name)s(%(inherit)s):
 
         self.i._Inventory__modules_instances['module1'].get_documentation.assert_called_with(True)
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_module_documentation_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_module_documentation_unknown_module(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
 
@@ -1204,13 +832,8 @@ class %(module_name)s(%(inherit)s):
             self.i.get_module_documentation('dummy')
         self.assertEqual(str(cm.exception), 'Application "dummy" is not installed')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_check_module_documentation(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_check_module_documentation(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
         self.i._Inventory__modules_instances['module1'].check_documentation = Mock(return_value="module1 checked documentation")
@@ -1220,13 +843,8 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(check, "module1 checked documentation")
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_check_module_documentation_unknown_module(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_check_module_documentation_unknown_module(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
 
@@ -1234,13 +852,8 @@ class %(module_name)s(%(inherit)s):
             self.i.check_module_documentation('dummy')
         self.assertEqual(str(cm.exception), 'Application "dummy" is not installed')
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_debug(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_debug(self):
         self._init_context(configured_modules=['module1', 'module3'], debug_modules=['module3'])
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1258,13 +871,8 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(debugs['module1']['debug'])
         self.assertTrue(debugs['module3']['debug'])
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_get_modules_debug_exception(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2': {}, 'module3':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_get_modules_debug_exception(self):
         self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
         self.i._load_modules()
         logging.debug('Modules: %s' % self.i.modules)
@@ -1313,13 +921,8 @@ class %(module_name)s(%(inherit)s):
         self.i.get_used_events()
         self.events_broker.get_used_events.assert_called_with()
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_rpc_wrapper(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_rpc_wrapper(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
         self.i._load_modules()
@@ -1328,13 +931,8 @@ class %(module_name)s(%(inherit)s):
         self.i.rpc_wrapper('a_route', {})
         # can't perform some check call was a success. We add info log message on stdout
 
-    @patch('inventory.AppsSources')
     @patch('inventory.CORE_MODULES', [])
-    def test_rpc_wrapper_exception(self, appssources_mock):
-        appssources_mock.return_value.get_market.return_value = {
-            'list': {'module1':{}, 'module2':{}}
-        }
-        appssources_mock.return_value.exists.return_value = True
+    def test_rpc_wrapper_exception(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper', mod1_exception=True)
 
         self.i._load_modules()

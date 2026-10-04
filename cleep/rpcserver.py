@@ -348,21 +348,13 @@ def get_renderers_from_inventory():
     return inventory.get_renderers()
 
 
-def get_modules_from_inventory(installable=False):
+def get_modules_from_inventory():
     """
-    Return configurations for all loaded modules
+    Return configurations for all loaded (installed) modules.
 
-    Args:
-        installable (bool): If true returns all installable modules. If false (default) returns installed modules
-
-    Returns:
-        dict: map of modules with their configuration, devices, commands...
+    Market / installable catalog is owned by the update application.
     """
-    return (
-        inventory.get_modules()
-        if not installable
-        else inventory.get_installable_modules()
-    )
+    return inventory.get_modules()
 
 
 def get_devices_from_inventory():
@@ -669,26 +661,12 @@ def exec_command():
 @app.route("/modules", method="POST")
 def get_modules():
     """
-    Return modules with their configuration
+    Return installed modules with their configuration.
 
-    Args:
-        installable (bool): if True will return installable modules only. Otherwise returns installed modules
-
-    Returns:
-        MessageResponse: map of modules with their configuration, devices, commands...
+    Installable/market modules are served by the update application RPC.
     """
-    installable = False
-    params = dict(bottle.request.json or {})
-    if params and "installable" in params:
-        installable = params["installable"]
-
-    if not installable:
-        modules = get_modules_from_inventory()
-        logger.debug("Modules: %s", modules)
-    else:
-        modules = get_modules_from_inventory(installable=installable)
-        logger.debug("Installable modules: %s", modules)
-
+    modules = get_modules_from_inventory()
+    logger.debug("Modules: %s", modules)
     resp = MessageResponse(data=modules)
     return resp.to_dict()
 

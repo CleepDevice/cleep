@@ -1,5 +1,9 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Breaking: move all install/update for apps, os and Cleep in cleepapp-update
+- Updated ui: Apps toolbar / back links use update applications page
+- Added ui: pages desc.json "core" flag hides default page toolbar for CORE_MODULES apps
+- Fixed ui: use correct cl-loading-bar tag in shell (was cleep-loading-bar)
 - Added ui: optional action button on config-section (label, icon, click)
 - Added ui: add config-collapse panel component
 - Updated ui: remove unused AngularJS dependency injections

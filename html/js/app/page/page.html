@@ -1,7 +1,13 @@
 <div layout="column" id="pageContainer">
 
-    <!-- toolbar -->
-    <div md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+    <!-- toolbar (default pages chrome; hidden for authorized core pages) -->
+    <div
+        ng-if="pageCtl.showDefaultToolbar"
+        md-colors="{background: 'primary-300'}"
+        class="toolbar-content"
+        layout="row"
+        layout-align="start center"
+    >
         <div>
             <md-button hide="" show-gt-xs="" ng-href="#!module/{{pageCtl.module}}" class="md-raised">
                 <cl-icon cl-icon="arrow-left"></cl-icon>
@@ -29,6 +35,17 @@
         </div>
     </div>
 
+    <!-- unauthorized core page flag -->
+    <div ng-if="pageCtl.corePageUnauthorized" layout="row" layout-padding>
+        <div flex>
+            <config-note
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="This application is not a mandatory (core) application. The pages <code>core</code> flag is not authorized and has been ignored."
+            ></config-note>
+        </div>
+    </div>
+
     <!-- error -->
     <div ng-if="pageCtl.error" layout="row" layout-align="center center" layout-padding="15px">
         <div>
@@ -42,4 +59,3 @@
     <!-- page content will be appended here -->
 
 </div>
-

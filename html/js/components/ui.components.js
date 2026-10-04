@@ -398,7 +398,7 @@ angular.module('Cleep').service('cleepToolbarService', function() {
     };
     self.appsButton = {
         icon: 'apps',
-        href: '#!modules',
+        href: '#!/module/update/applications',
         label: 'Apps',
     };
     self.buttons = [self.dashboardButton, self.appsButton];

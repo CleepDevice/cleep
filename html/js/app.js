@@ -189,7 +189,8 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
      * Init main controller
      */
     self.init = function() {
-        // After app install/update/uninstall batch, hard-reload UI assets
+        // System lifecycle only: hard-reload UI after needrestart (emitted by update/system).
+        // Shell must not listen to update.* events.
         $rootScope.$on('system.cleep.needrestart', function() {
             if (self.uiReloadScheduled) {
                 return;

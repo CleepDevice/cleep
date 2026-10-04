@@ -22,12 +22,6 @@ Cleep.config([
             .when('/dashboard', {
                 template: '<div dashboard-directive></div>',
             })
-            .when('/modules', {
-                template: '<div modules-directive></div>',
-            })
-            .when('/install', {
-                template: '<div install-directive></div>',
-            })
             .when('/module/:name', {
                 template: '<div module-directive></div>',
             })

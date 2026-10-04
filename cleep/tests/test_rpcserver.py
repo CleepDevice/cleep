@@ -137,7 +137,6 @@ class RpcServerTests(unittest.TestCase):
             self.inventory.get_drivers.side_effect = get_drivers_side_effect
         self.inventory.get_used_events.return_value = self.EVENTS
         self.inventory.get_modules.return_value = self.MODULES
-        self.inventory.get_installable_modules.return_value = self.MODULES
         self.inventory.get_devices.return_value = self.DEVICES
         self.inventory.get_modules_configs.return_value = self.MODULES_CONFIGS
 
@@ -523,36 +522,9 @@ class RpcServerTests(unittest.TestCase):
                 'message': '',
                 'data': self.MODULES
             })
-            self.assertFalse(self.inventory.get_installable_modules.called)
             self.assertTrue(self.inventory.get_modules.called)
 
-    def test_modules_with_installable_true(self):
-        self._init_context()
 
-        with boddle(json={'installable': True}):
-            m = rpcserver.get_modules()
-            logging.debug('Modules: %s' % m)
-            self.assertEqual(m, {
-                'error': False,
-                'message': '',
-                'data': self.MODULES,
-                })
-            self.assertTrue(self.inventory.get_installable_modules.called)
-            self.assertFalse(self.inventory.get_modules.called)
-
-    def test_modules_with_installable_false(self):
-        self._init_context()
-
-        with boddle(json={'installable': False}):
-            m = rpcserver.get_modules()
-            logging.debug('Modules: %s' % m)
-            self.assertEqual(m, {
-                'error': False,
-                'message': '',
-                'data': self.MODULES
-            })
-            self.assertFalse(self.inventory.get_installable_modules.called)
-            self.assertTrue(self.inventory.get_modules.called)
 
     def test_devices(self):
         self._init_context()

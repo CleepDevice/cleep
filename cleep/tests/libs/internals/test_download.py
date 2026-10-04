@@ -5,7 +5,7 @@ from cleep.libs.tests.lib import TestLib
 import os
 import sys
 import time
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
 from download import Download
 import unittest
 import logging

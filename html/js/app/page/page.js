@@ -11,6 +11,10 @@ function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState
         self.module = '';
         self.page = '';
         self.error = false;
+        // Default pages chrome (Back to <module>). Hidden only for authorized core pages.
+        self.showDefaultToolbar = true;
+        // True when desc marks pages.<name>.core but the app is not a CORE_MODULES app
+        self.corePageUnauthorized = false;
         // custom settings that page can update
         self.title = null;
         self.tools = []; // must contains item with { label:string, click:function, icon:mdi icon string }
@@ -60,6 +64,9 @@ function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState
                 return null;
             }
 
+            // pages.<name>.core: system page chrome (CORE_MODULES apps only)
+            self.__applyCorePageChrome(pageDesc);
+
             for (const type of types) {
                 if (pageDesc[type]) {
                     const typeFiles = [];
@@ -78,6 +85,27 @@ function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState
             }
 
             return files;
+        };
+
+        /**
+         * Apply pages.<name>.core chrome rules.
+         * - core true + app in CORE_MODULES (module.core): hide default toolbar
+         * - core true + app not core: keep default toolbar + warning banner
+         * - core false/empty: keep default toolbar
+         * @param pageDesc: page descriptor from desc.json
+         */
+        self.__applyCorePageChrome = function(pageDesc) {
+            self.showDefaultToolbar = true;
+            self.corePageUnauthorized = false;
+            if (!pageDesc || !pageDesc.core) {
+                return;
+            }
+            const moduleMeta = cleepService.modules[self.module] || {};
+            if (moduleMeta.core) {
+                self.showDefaultToolbar = false;
+            } else {
+                self.corePageUnauthorized = true;
+            }
         };
 
         /**

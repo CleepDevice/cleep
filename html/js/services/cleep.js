@@ -19,8 +19,6 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
     self.devices = [];
     self.devicesRevision = 0;
     self.modules = {};
-    self.installableModules = {};
-    self.modulesUpdates = {};
     self.renderers = {};
     self.events = {};
     self.drivers = {};
@@ -126,29 +124,13 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         return rpcService.getConfig()
             .then(function(resp) {
                 config = resp.data;
-                return self.refreshModulesUpdates();
+                return self._setModules(config.modules);
             })
             .then(function() {
-                return self._setModules(config.modules);
-            })  
-            .then(function() {
-                // set other stuff
                 self._setDevices(config.devices);
                 self._setRenderers(config.renderers);
                 self._setEvents(config.events);
                 self._setDrivers(config.drivers);
-
-                // load installable modules if necessary
-                if(Object.keys(self.installableModules).length>0) {
-                    return self.getInstallableModules();
-                } else {
-                    return $q.resolve(null);
-                }
-            })
-            .then(function(installableModules) {
-                if(installableModules) {
-                    self.installableModules = installableModules;
-                }
             });
     };
 
@@ -279,11 +261,6 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         let desc = null;
         const d = $q.defer();
         let files = null;
-
-        // do not load data of modules with pending status
-        if (self.modulesUpdates[module] && self.modulesUpdates[module].pending) {
-            return;
-        }
 
         // load desc.json file from module folder
         self.httpGetWithRetry(url)
@@ -506,68 +483,6 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         return deferred.promise;
     };
 
-    /**
-     * Get list of installable modules
-     */
-    self.getInstallableModules = function(forceRefresh=false) {
-        const deferred = $q.defer();
-
-        if (Object.keys(self.installableModules).length > 0 && !forceRefresh) {
-            deferred.resolve(self.installableModules);
-        } else {
-            // installable modules not loaded, load it
-            rpcService.getModules(true)
-                .then(function(resp) {
-                    self.installableModules = resp.data || {};
-                    deferred.resolve(self.installableModules);
-                }, function() {
-                    deferred.reject();
-                });
-        }
-
-        return deferred.promise;
-    };
-
-    /**
-     * Refresh modules updates infos
-     * Use cleepService.modulesUpdates to follow changes
-     */
-    self.refreshModulesUpdates = function() {
-        return rpcService.sendCommand('get_modules_updates', 'update')
-            .then(function(resp) {
-                if(!resp.error) {
-                    // New object reference so Angular watchers detect the refresh
-                    self.modulesUpdates = Object.assign({}, resp.data || {});
-                }
-            });
-    };
-
-    /**
-     * Apply a module install/update/uninstall event.
-     * Terminal statuses (DONE/ERROR) re-fetch full state so processing/pending/failed
-     * match the backend (events only carry {module, status}).
-     */
-    self.applyModulesUpdateEvent = function(params) {
-        if (!params || !params.module) {
-            return self.refreshModulesUpdates();
-        }
-        // Install.STATUS_DONE = 2, STATUS_ERROR = 3
-        const status = Number(params.status);
-        if (status === 2 || status === 3) {
-            return self.refreshModulesUpdates();
-        }
-        const moduleName = params.module;
-        const current = self.modulesUpdates[moduleName] || {};
-        const next = Object.assign({}, current, params);
-        // Install.STATUS_PROCESSING = 1 — events omit processing flag
-        if (status === 1) {
-            next.processing = true;
-        }
-        self.modulesUpdates = Object.assign({}, self.modulesUpdates, {
-            [moduleName]: next,
-        });
-        return $q.resolve(self.modulesUpdates);
-    };
 
     /**
      * Set devices
@@ -843,59 +758,6 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         return rpcService.sendCommand('restart_cleep', 'system', {'delay': delay});
     };
 
-    /**
-     * Install module
-     * This function calls system module function to avoid adhesion of update service from angular app
-     */
-    self.installModule = function(module) {
-        return rpcService.sendCommand('install_module', 'update', {
-            'module_name': module
-        });
-    };
-
-    /**
-     * Uninstall module
-     * This function calls system module function to avoid adhesion of update service from angular app
-     */
-    self.uninstallModule = function(module) {
-        return rpcService.sendCommand('uninstall_module', 'update', {
-            'module_name': module
-        });
-    };
-
-    /**
-     * Force uninstall module
-     * This function calls system module function to avoid adhesion of update service from angular app
-     */
-    self.forceUninstallModule = function(module) {
-        return rpcService.sendCommand('uninstall_module', 'update', {
-            'module_name': module,
-            'force':true
-        });
-    };
-
-    /**
-     * Update module
-     * This function calls system module function to avoid adhesion of update service from angular app
-     */
-    self.updateModule = function(module) {
-        return rpcService.sendCommand('update_module', 'update', {
-            'module_name': module
-        });
-    };
-
-    /**
-     * Catch apps updated event
-     */
-    $rootScope.$on('core.apps.updated', function(event, uuid, params) {
-		// refresh list of installable apps
-        rpcService.getModules(true)
-            .then(function(resp) {
-                self.installableModules = resp.data;
-            }, function() {
-                deferred.reject();
-            });
-    });
 
     self.__storeWidgetConfig = function(deviceType, config) {
         if (self.widgetConfigs[deviceType]) {

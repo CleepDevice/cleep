@@ -11,9 +11,7 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 from cleep.core import Cleep, CleepModule, CleepRenderer, CleepRpcWrapper
-from cleep.libs.configs.appssources import AppsSources
 from cleep.exception import CommandError, MissingParameter, InvalidParameter
-from cleep.libs.internals.install import Install
 import cleep.libs.internals.tools as Tools
 from cleep.common import CORE_MODULES, ExecutionStep
 from cleep.libs.internals.task import Task
@@ -23,10 +21,12 @@ __all__ = ['Inventory']
 
 class Inventory(Cleep):
     """
-    Inventory handles inventory of:
-     - existing devices: knows all devices and module that handles it
-     - loaded modules and their commands
-     - existing renderers (sms, email, sound...)
+    Inventory is the core glue that:
+     - loads installed applications from disk and bridges them to the bus
+     - tracks devices, renderers, drivers and module commands
+
+    Market catalog, install/update/uninstall and installable apps listing are
+    owned by the update application.
     """
 
     MODULE_AUTHOR = 'Cleep'
@@ -37,18 +37,6 @@ class Inventory(Cleep):
     MODULES_SYNC_TIMEOUT = 60.0
     PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
     PYTHON_CLEEP_MODULES_PATH = 'modules'
-    # Market-only fields refreshed for installed apps (MODULE_* fields stay untouched)
-    __MARKET_ONLY_FIELDS = (
-        'compat',
-        'changelog',
-        'download',
-        'sha256',
-        'confidence',
-        'quality',
-        'price',
-        'icon',
-        'longdescription',
-    )
 
     def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
         """
@@ -254,23 +242,6 @@ class Inventory(Cleep):
         # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
-    def _get_market(self):
-        """
-        Get content of market
-
-        Returns:
-            dict: market content::
-
-            {
-                update (int): last update timestamp
-                list (dict): list of applications
-            }
-
-        """
-        apps_sources = AppsSources(self.cleep_filesystem, self.task_factory)
-        market = apps_sources.get_market()
-        return market
-
     def __recompute_compatibility(self):
         """
         Recompute compat/compatible flags for all modules using installed versions and CLEEP_VERSION
@@ -287,79 +258,28 @@ class Inventory(Cleep):
                 'compatible': Tools.compare_compat_string(compat, modules_versions),
             })
 
-    def __apply_not_installed_market_metadata(self, module_name, module_data, local=False):
-        """
-        Apply fresh market data for a not-installed application
-
-        Args:
-            module_name (string): application name
-            module_data (dict): market entry
-            local (bool): True if application is locally installed (dev)
-        """
-        self.modules[module_name] = copy.deepcopy(module_data)
-        self.modules[module_name].update({
-            'name': module_name,
-            'installed': False,
-            'library': False,
-            'local': local,
-            'core': False,
-            'screenshots': [],
-            'loadedby': [],
-            'version': module_data.get('version', '0.0.0'),
-            'deps': module_data.get('deps', []),
-        })
-
     def reload_modules(self):
         """
-        Reload modules from market: add new apps and refresh market metadata for existing ones
+        Refresh runtime module metadata.
+
+        Market catalog ownership lives in the update application; inventory only
+        recomputes compatibility for modules already known at runtime.
         """
-        self.logger.info('Reloading modules')
-        # get list of all available modules (from remote list)
-        modules_json_content = self._get_market()
-        modules_json = modules_json_content['list']
-        self.logger.trace('modules.json: %s', modules_json)
-
-        # iterates over new modules.json
-        for module_name, module_data in modules_json.items():
-            if module_name not in self.modules:
-                # new module, add new entry in existing modules list
-                self.logger.debug('Add new application "%s" to list of available applications', module_name)
-                self.__apply_not_installed_market_metadata(module_name, module_data)
-            elif not self.modules[module_name].get('installed'):
-                # refresh market metadata for not-installed apps (compat, version, changelog...)
-                self.logger.debug('Refresh market metadata for application "%s"', module_name)
-                self.__apply_not_installed_market_metadata(
-                    module_name,
-                    module_data,
-                    local=self.modules[module_name].get('local', False),
-                )
-            else:
-                # installed apps: refresh market-only fields (keeps MODULE_* values)
-                for field in self.__MARKET_ONLY_FIELDS:
-                    if field in module_data:
-                        self.modules[module_name][field] = module_data[field]
-
-        # recompute compatibility after market refresh
+        self.logger.info('Reloading modules metadata')
         self.__recompute_compatibility()
-
-        # trigger modules update event
         self.apps_updated_event.send()
 
     def _load_modules(self):
         """
-        Load all modules
+        Load all modules from disk + configured list (no market download).
         """
         # init
         if self.__modules_loaded:
             raise Exception('Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
         local_modules = []
-                
-        # get list of all available modules (from remote list)
-        modules_json_content = self._get_market()
-        self.modules = modules_json_content['list']
-        self.logger.trace('Modules.json: %s', self.modules)
+        self.modules = {}
 
-        # append manually installed modules (surely app in development)
+        # Discover applications available on disk
         local_modules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.PYTHON_CLEEP_MODULES_PATH))
         self.logger.debug('Local modules path: %s', local_modules_path)
         if not os.path.exists(local_modules_path): # pragma: no cover
@@ -373,11 +293,17 @@ class Inventory(Cleep):
             module_ = importlib.import_module(module_path)
             app_filename = getattr(module_, 'APP_FILENAME', module_name)
             module_py = os.path.join(fpath, '%s.py' % app_filename)
-            if os.path.isdir(fpath) and os.path.exists(module_py) and module_name not in self.modules:
-                self.logger.debug('Found application "%s" installed manually', module_name)
-                local_modules.append(module_name)
+            if os.path.isdir(fpath) and os.path.exists(module_py):
                 self.modules[module_name] = {}
+                if module_name not in CORE_MODULES and module_name not in self.configured_modules:
+                    self.logger.debug('Found application "%s" installed manually', module_name)
+                    local_modules.append(module_name)
         self.logger.debug('Local applications: %s', local_modules)
+
+        # Ensure core and configured modules exist in the map even if scan missed them
+        for module_name in list(CORE_MODULES) + list(self.configured_modules):
+            if module_name not in self.modules:
+                self.modules[module_name] = {}
 
         # add default metadata
         for module_name, module in self.modules.items():
@@ -662,25 +588,6 @@ class Inventory(Cleep):
         # also check if thread is running
         return self.__modules_instances[module_name].is_alive() if started and module_name in self.__modules_instances else False
 
-
-    def get_installable_modules(self):
-        """
-        Returns dict of installable modules. It also returns modules installed as library.
-
-        Returns:
-            dict: dict of modules::
-
-                {
-                    module name: {
-                        name: '',
-                        version: '',
-                        ...
-                    },
-                    ...
-                }
-
-        """
-        return self._get_modules(lambda name,module,modules: name in modules and (modules[name]['library'] or not modules[name]['installed']))
 
     def get_modules(self):
         """

@@ -7,7 +7,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
 from cleepconf import CleepConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
-from cleep.libs.internals.download import Download
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 import unittest
 import logging

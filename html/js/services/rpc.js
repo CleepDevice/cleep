@@ -87,15 +87,13 @@ function($http, $q, toast, $httpParamSerializer, $window) {
     /**
      * Get loaded modules server side
      */
-    self.getModules = function(installable) {
+    self.getModules = function() {
         var d = $q.defer();
 
         $http({
             method: 'POST',
             url: self.uriModules,
-            data: {
-                installable: installable===undefined ? false : installable
-            },
+            data: { },
             responseType: 'json'
         })
         .then(function(resp) {
@@ -212,7 +210,7 @@ function($http, $q, toast, $httpParamSerializer, $window) {
         if (resp?.data?.error) {
             if (resp.data.message.match(self.invalidApplicationRegexp)) {
                 // specific case with invalid app loaded, redirect to apps list
-                $window.location.href = '#!/modules';
+                $window.location.href = '#!/module/update/applications';
             }
 
             console.error('Request failed: ' + resp.data.message);
