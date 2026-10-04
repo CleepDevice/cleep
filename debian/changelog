@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Updated ui: remove unused AngularJS dependency injections
 - Updated ui: fatal module toast during config/page panel load; milder error toast at runtime
 - Updated ui: hard reload interface after Cleep restart reconnect and after app updates
 - Fixed ui: unlock installed apps card after failed update

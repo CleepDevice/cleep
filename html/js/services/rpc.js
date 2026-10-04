@@ -8,8 +8,8 @@
  */
 angular
 .module('Cleep')
-.service('rpcService', ['$http', '$q', 'toastService', '$base64', '$httpParamSerializer', '$window',
-function($http, $q, toast, $base64, $httpParamSerializer, $window) {
+.service('rpcService', ['$http', '$q', 'toastService', '$httpParamSerializer', '$window',
+function($http, $q, toast, $httpParamSerializer, $window) {
     var self = this;
     self.uriCommand = window.location.protocol + '//' + window.location.host + '/command';
     self.uriUpload = window.location.protocol + '//' + window.location.host + '/upload';

@@ -2,8 +2,8 @@
 
 angular
 .module('Cleep')
-.directive('pageDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', 'moduleUiState',
-function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http, moduleUiState) {
+.directive('pageDirective', ['$q', 'cleepService', '$compile', '$routeParams', '$templateCache', 'moduleUiState',
+function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState) {
 
     const pageController = ['$scope','$element', function($scope, $element) {
         const self = this;

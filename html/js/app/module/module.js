@@ -6,8 +6,8 @@
  */
 angular
 .module('Cleep')
-.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$timeout', '$routeParams', '$ocLazyLoad', '$templateCache', '$http', 'moduleUiState',
-function($q, cleepService, $compile, $timeout, $routeParams, $ocLazyLoad, $templateCache, $http, moduleUiState) {
+.directive('moduleDirective', ['$q', 'cleepService', '$compile', '$routeParams', '$templateCache', 'moduleUiState',
+function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState) {
 
     const moduleController = ['$scope','$element', function($scope, $element) {
         const self = this;

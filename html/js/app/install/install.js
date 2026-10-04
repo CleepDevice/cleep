@@ -6,10 +6,10 @@
  */
 angular
 .module('Cleep')
-.directive('installDirective', ['$q', 'cleepService', 'toastService', '$mdDialog', '$sce',
-function($q, cleepService, toast, $mdDialog, $sce) {
+.directive('installDirective', ['cleepService', '$mdDialog', '$sce',
+function(cleepService, $mdDialog, $sce) {
 
-    var installController = ['$scope','$element', '$window', function($scope, $element, $window) {
+    var installController = ['$scope', '$window', function($scope, $window) {
         var self = this;
         self.cleepService = cleepService;
         self.search = {'$': ''};

@@ -9,7 +9,7 @@ angular
 .service('dialogService', ['$mdDialog', function($mdDialog) {
     var self = this;
 
-    self.dialogController = ['$scope', '$mdDialog', function($scope, $mdDialog) {
+    self.dialogController = ['$mdDialog', function($mdDialog) {
         var self = this;
         self.cancel = function() {
             $mdDialog.cancel();

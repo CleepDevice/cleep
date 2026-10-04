@@ -6,10 +6,10 @@
  */
 angular
 .module('Cleep')
-.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'toastService', 'confirmService', '$mdDialog', '$location', '$anchorScroll',
-function($rootScope, cleepService, $window, toast, confirm, $mdDialog, $location, $anchorScroll) {
+.directive('modulesDirective', ['$rootScope', 'cleepService', '$window', 'confirmService', '$mdDialog', '$location', '$anchorScroll',
+function($rootScope, cleepService, $window, confirm, $mdDialog, $location, $anchorScroll) {
 
-    var modulesController = ['$scope','$element', function($scope, $element) {
+    var modulesController = ['$scope', function($scope) {
         var self = this;
         self.cleepService = cleepService;
         self.search = {'$': ''};

@@ -60,114 +60,96 @@ Cleep.filter('filterDeviceByModule', [
 /**
  * Timestamp to human readable string
  */
-Cleep.filter('hrDatetime', [
-    '$filter',
-    function($filter) {
-        return function(ts, shortYear) {
-            if (angular.isUndefined(ts) || !ts) {
-                return '-';
-            }
-            if (angular.isUndefined(shortYear)) {
-                return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
-            }
-            return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
-        };
-    },
-]);
+Cleep.filter('hrDatetime', function() {
+    return function(ts, shortYear) {
+        if (angular.isUndefined(ts) || !ts) {
+            return '-';
+        }
+        if (angular.isUndefined(shortYear)) {
+            return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+        }
+        return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
+    };
+});
 
 /**
  * Time to human readable string
  */
-Cleep.filter('hrTime', [
-    '$filter',
-    function($filter) {
-        return function(ts, withSeconds) {
-            if (angular.isUndefined(ts) || !ts) {
-                return '-';
-            }
-            if( !angular.isUndefined(withSeconds) ) {
-                return moment.unix(ts).format('HH:mm:ss');
-            }
-            return moment.unix(ts).format('HH:mm');
-        };
-    },
-]);
+Cleep.filter('hrTime', function() {
+    return function(ts, withSeconds) {
+        if (angular.isUndefined(ts) || !ts) {
+            return '-';
+        }
+        if( !angular.isUndefined(withSeconds) ) {
+            return moment.unix(ts).format('HH:mm:ss');
+        }
+        return moment.unix(ts).format('HH:mm');
+    };
+});
 
 /**
  * Timestamp in milliseconds to human readable string
  */
-Cleep.filter('hrMilliseconds', [
-    '$filter',
-    function($filter) {
-        return function(ts) {
-            if (angular.isUndefined(ts) || !ts) {
-                return '-';
-            }
-            return moment.unix(ts).format('HH:mm:ss.SSS');
-        };
-    },
-]);
+Cleep.filter('hrMilliseconds', function() {
+    return function(ts) {
+        if (angular.isUndefined(ts) || !ts) {
+            return '-';
+        }
+        return moment.unix(ts).format('HH:mm:ss.SSS');
+    };
+});
 
 /**
  * Temperature to string (with unit)
  */
-Cleep.filter('hrTemperature', [
-    '$filter',
-    function($filter) {
-        return function(temperature, unit) {
-            result = '';
+Cleep.filter('hrTemperature', function() {
+    return function(temperature, unit) {
+        result = '';
 
-            if (angular.isUndefined(temperature) || temperature===null) {
-                result = '-';
-            } else {
-                result = Number(temperature).toFixed(1);
-            }
+        if (angular.isUndefined(temperature) || temperature===null) {
+            result = '-';
+        } else {
+            result = Number(temperature).toFixed(1);
+        }
 
-            if (angular.isUndefined(unit) || unit===null) {
-                result += '?';
-            } else if (unit == 'celsius') {
-                result += '°C';
-            } else if (unit == 'fahrenheit') {
-                result += '°F';
-            } else {
+        if (angular.isUndefined(unit) || unit===null) {
             result += '?';
-            }
+        } else if (unit == 'celsius') {
+            result += '°C';
+        } else if (unit == 'fahrenheit') {
+            result += '°F';
+        } else {
+        result += '?';
+        }
 
-            return result;
-        };
-    },
-]);
+        return result;
+    };
+});
 
 /**
  * Return graph dialog title
  */
-Cleep.filter('graphDialogTitle', [
-    '$filter',
-    function($filter) {
-        return function(device) {
-            if (angular.isUndefined(device) || device===null) {
-                return 'Sensor graph';
-            }
-            result = device.type + ' chart of ' + device.name;
-            return result.firstUpperCase();
-        };
-    },
-]);
+Cleep.filter('graphDialogTitle', function() {
+    return function(device) {
+        if (angular.isUndefined(device) || device===null) {
+            return 'Sensor graph';
+        }
+        result = device.type + ' chart of ' + device.name;
+        return result.firstUpperCase();
+    };
+});
 
 /**
  * Return string lowered with first char in upper case
  */
-Cleep.filter('firstUpper', [
-    '$filter',
-    function($filter) {
-        return function(string) {
-            if (angular.isUndefined(string) || string===null) {
-                return '';
-            }
-            return string.firstUpperCase();
-        };
-    },
-]);
+Cleep.filter('firstUpper', function() {
+    return function(string) {
+        if (angular.isUndefined(string) || string===null) {
+            return '';
+        }
+        return string.firstUpperCase();
+    };
+});
 
 /**
  * Order specified object by member key
@@ -188,12 +170,9 @@ Cleep.filter('orderObjByKey', function() {
 /**
  * Add leading zero
  */
-Cleep.filter('padzero', [
-    '$filter',
-    function($filter) {
-        return function(value, length, max) {
-            return ('0'.repeat(max || 2)+value).slice(-length || -2);
-        };
-    },
-]);
+Cleep.filter('padzero', function() {
+    return function(value, length, max) {
+        return ('0'.repeat(max || 2)+value).slice(-length || -2);
+    };
+});
 

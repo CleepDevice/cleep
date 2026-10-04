@@ -53,8 +53,8 @@ function ($rootScope, cleepService, $timeout) {
 
 angular
 .module('Cleep')
-.directive('dashboardWidget', ['$compile', '$injector', 'cleepService',
-function($compile, $injector, cleepService) {
+.directive('dashboardWidget', ['$compile', 'cleepService',
+function($compile, cleepService) {
     var dashboardWidgetLink = function(scope, element, attr) {
         cleepService.getModuleDescription(scope.device.module)
             .then((conf) => {
