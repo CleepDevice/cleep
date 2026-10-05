@@ -5,12 +5,16 @@ from cleep.libs.tests.lib import TestLib
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-from bus import MessageBus, BusClient, deque, inspect
+import inspect
+from queue import Empty, Queue
+
+from bus import MessageBus, BusClient
 from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage, NotReady
 from cleep.libs.internals.taskfactory import TaskFactory
 import unittest
 import logging
+import time
 from unittest.mock import Mock, patch
 from gevent import sleep
 from threading import Event, Thread
@@ -58,9 +62,13 @@ class DummyModule(Thread):
     def __pull(self, timeout=0.5):
         msg = self.internal_bus.pull(self.name, timeout)
         self._pulled_messages += 1
+        if msg.get('cancelled'):
+            logging.debug('DummyModule ignored cancelled message %s' % msg)
+            return
         msg['response'] = self.response.to_dict() if self.response is not None else None
         logging.debug('DummyModule pulled %s' % msg)
-        msg['event'].set()
+        if msg['event']:
+            msg['event'].set()
 
     def run(self):
         while self.running:
@@ -105,7 +113,6 @@ class MessageBusTests(unittest.TestCase):
 
     def tearDown(self):
         if self.b:
-            self.b.STARTUP_TIMEOUT = self.STARTUP_TIMEOUT
             self.b.SUBSCRIPTION_LIFETIME = self.SUBSCRIPTION_LIFETIME
             self.b.stop()
         if self.mod1:
@@ -116,7 +123,6 @@ class MessageBusTests(unittest.TestCase):
     def _init_context(self):
         self.crash_report = Mock()
         self.b = MessageBus(self.crash_report, debug_enabled=False)
-        self.STARTUP_TIMEOUT = self.b.STARTUP_TIMEOUT
         self.SUBSCRIPTION_LIFETIME = self.b.SUBSCRIPTION_LIFETIME
         self.task_factory = TaskFactory({
             "app_stop_event": Event()
@@ -151,15 +157,19 @@ class MessageBusTests(unittest.TestCase):
             self.b.remove_subscription('otherdummy')
         self.assertEqual(str(cm.exception), 'Invalid application "otherdummy" (not loaded or unknown)')
 
+        # Modules are never auto-purged
         self.b.SUBSCRIPTION_LIFETIME = 0
         self.b.add_subscription('dummy')
         self.b.add_subscription('otherdummy')
+        self.b.add_subscription('rpc-stale')
+        self.b.add_subscription('rpc-fresh')
+        sleep(1)
+        self.b._touch_activity('rpc-fresh')
+        self.b.purge_subscriptions()
         self.assertTrue(self.b.is_subscribed('dummy'))
         self.assertTrue(self.b.is_subscribed('otherdummy'))
-        sleep(1)
-        self.b.purge_subscriptions()
-        self.assertFalse(self.b.is_subscribed('dummy'))
-        self.assertFalse(self.b.is_subscribed('otherdummy'))
+        self.assertFalse(self.b.is_subscribed('rpc-stale'))
+        self.assertTrue(self.b.is_subscribed('rpc-fresh'))
 
     def test_push_to_recipient(self):
         self._init_context()
@@ -203,9 +213,9 @@ class MessageBusTests(unittest.TestCase):
 
         try:
             # 2 messages should be in queue
-            self.b._queues['dummy'].pop()
-            self.b._queues['dummy'].pop()
-        except:
+            self.b._queues['dummy'].get_nowait()
+            self.b._queues['dummy'].get_nowait()
+        except Empty:
             self.fail('Should not trigger exception')
 
     def test_push_broadcast_do_not_send_to_myself(self):
@@ -227,17 +237,21 @@ class MessageBusTests(unittest.TestCase):
 
     def test_push_to_myself(self):
         self._init_context()
-        
+
         self.mod1 = DummyModule(self.b, name='myself')
         self.mod1.start()
         self.b.add_subscription(self.mod1.name)
         self.b.app_configured(self.task_factory)
 
         self.mod1.push(self._get_message_request(to='myself'))
-        
-        with self.assertRaises(Exception) as cm:
-            self.b._queues['myself'].pop()
+        sleep(0.5)
+
         self.assertEqual(self.mod1.pulled_messages(), 0)
+        last_exception = self.mod1.last_exception()
+        self.assertTrue(isinstance(last_exception, InvalidParameter))
+        self.assertEqual(str(last_exception), 'Unable to send message to same module')
+        with self.assertRaises(Empty):
+            self.b._queues['myself'].get_nowait()
 
     def test_push_timeout(self):
         self._init_context()
@@ -275,7 +289,6 @@ class MessageBusTests(unittest.TestCase):
 
     def test_push_to_unsubscribed_module_before_app_configured_timeout(self):
         self._init_context()
-        self.b.STARTUP_TIMEOUT = 0.1
 
         self.mod1 = DummyModule(self.b, name='dummy')
         self.mod1.start()
@@ -295,7 +308,7 @@ class MessageBusTests(unittest.TestCase):
         self.assertEqual(last_response, None)
         last_exception = self.mod1.last_exception()
         logging.debug('Last exception: "%s"' % last_exception)
-        self.assertTrue(isinstance(last_exception, Exception))
+        self.assertTrue(isinstance(last_exception, NotReady))
         self.assertEqual(
             str(last_exception),
             'Pushing messages to internal bus is possible only when application is running. If this message appears during Cleep startup it means you try to send a message from module constructor or _configure method, if that is the case prefer using _on_start method.'
@@ -309,12 +322,12 @@ class MessageBusTests(unittest.TestCase):
         self.b.stop()
         
         # broadcast message
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(BusError) as cm:
             self.b.push(self._get_message_request())
         self.assertEqual(str(cm.exception), 'Bus stopped')
 
         # message with recipient
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(BusError) as cm:
             self.b.push(self._get_message_request(to='dummy'))
         self.assertEqual(str(cm.exception), 'Bus stopped')
 
@@ -349,8 +362,8 @@ class MessageBusTests(unittest.TestCase):
         sleep(0.25)
         self.b.stop()
 
-        with self.assertRaises(IndexError) as cm:
-            self.b._queues['dummy'].pop()
+        with self.assertRaises(Empty) as cm:
+            self.b._queues['dummy'].get_nowait()
 
     def test_pull_with_timeout(self):
         self._init_context()
@@ -369,9 +382,13 @@ class MessageBusTests(unittest.TestCase):
         self.assertEqual(self.mod1.pulled_messages(), 0)
         self.assertEqual(self.mod2.pulled_messages(), 1)
 
-    @patch('bus.deque')
-    def test_pull_with_timeout_exception(self, deque_mock):
-        deque_mock.return_value.pop = Mock(side_effect=Exception('Test exception'))
+    @patch('cleep.message_bus.Queue')
+    def test_pull_with_timeout_exception(self, queue_mock):
+        queue_instance = Mock()
+        queue_instance.put_nowait = Mock()
+        queue_instance.get = Mock(side_effect=Exception('Test exception'))
+        queue_instance.get_nowait = Mock(side_effect=Exception('Test exception'))
+        queue_mock.return_value = queue_instance
         self._init_context()
 
         self.mod1 = DummyModule(self.b, name='dummy')
@@ -384,7 +401,7 @@ class MessageBusTests(unittest.TestCase):
 
         self.mod1.push(self._get_message_request(to=self.mod2.name))
         sleep(0.25)
-        
+
         with self.assertRaises(BusError) as cm:
             self.mod2.pull(None)
 
@@ -439,9 +456,13 @@ class MessageBusTests(unittest.TestCase):
         with self.assertRaises(NoMessageAvailable) as cm:
             self.mod2.pull(0.0)
 
-    @patch('bus.deque')
-    def test_pull_without_timeout_exception(self, deque_mock):
-        deque_mock.return_value.pop = Mock(side_effect=Exception('Test exception'))
+    @patch('cleep.message_bus.Queue')
+    def test_pull_without_timeout_exception(self, queue_mock):
+        queue_instance = Mock()
+        queue_instance.put_nowait = Mock()
+        queue_instance.get = Mock(side_effect=Exception('Test exception'))
+        queue_instance.get_nowait = Mock(side_effect=Exception('Test exception'))
+        queue_mock.return_value = queue_instance
         self._init_context()
 
         self.mod1 = DummyModule(self.b, name='dummy')
@@ -455,6 +476,75 @@ class MessageBusTests(unittest.TestCase):
         with self.assertRaises(BusError) as cm:
             self.mod2.pull(None)
 
+    def test_pull_latency_wake(self):
+        """Waitable queue should deliver without the old 100ms busy-wait step."""
+        self._init_context()
+        self.b.add_subscription('dummy')
+        self.b.app_configured(self.task_factory)
+
+        def delayed_push():
+            sleep(0.05)
+            request = self._get_message_request(to='dummy')
+            request.sender = 'tester'
+            # fire-and-forget so this thread is not blocked
+            self.b.push(request, timeout=0)
+
+        Thread(target=delayed_push, daemon=True).start()
+        started = time.monotonic()
+        msg = self.b.pull('dummy', timeout=1.0)
+        elapsed = time.monotonic() - started
+
+        self.assertIsNotNone(msg)
+        self.assertLess(elapsed, 0.35)
+
+    def test_push_timeout_cancels_message(self):
+        self._init_context()
+        self.b.add_subscription('dummy')
+        self.b.app_configured(self.task_factory)
+
+        with self.assertRaises(NoResponse):
+            self.b.push(self._get_message_request(to='dummy'), timeout=0.2)
+
+        envelope = self.b.pull('dummy', timeout=0.5)
+        self.assertTrue(envelope.cancelled)
+
+    def test_push_overflow_directed(self):
+        self._init_context()
+        self.b.QUEUE_MAX_LEN = 2
+        self.b.add_subscription('dummy')
+        self.b.app_configured(self.task_factory)
+
+        self.b.push(self._get_message_request(to='dummy'), timeout=0)
+        self.b.push(self._get_message_request(to='dummy'), timeout=0)
+        with self.assertRaises(BusError) as cm:
+            self.b.push(self._get_message_request(to='dummy'), timeout=0)
+        self.assertIn('Queue full', str(cm.exception))
+        self.assertEqual(self.b.overflow_count, 1)
+
+    def test_push_overflow_broadcast_skips(self):
+        self._init_context()
+        self.b.QUEUE_MAX_LEN = 1
+        self.b.add_subscription('dummy')
+        self.b.add_subscription('other')
+        self.b.app_configured(self.task_factory)
+
+        self.b.push(self._get_message_request(to='dummy'), timeout=0)
+        # broadcast must not raise when one recipient is full
+        resp = self.b.push(self._get_message_request())
+        self.assertTrue(isinstance(resp, MessageResponse))
+        self.assertGreaterEqual(self.b.overflow_count, 1)
+
+    def test_rpc_fanout_does_not_hit_modules(self):
+        self._init_context()
+        self.b.add_subscription('dummy')
+        self.b.add_subscription('rpc-aaa')
+        self.b.app_configured(self.task_factory)
+
+        self.b.push(self._get_message_request(to='rpc'), timeout=0)
+        with self.assertRaises(NoMessageAvailable):
+            self.b.pull('dummy', timeout=0)
+        msg = self.b.pull('rpc-aaa', timeout=0.5)
+        self.assertIsNotNone(msg)
 
 
 
@@ -534,7 +624,7 @@ class TestProcess2(BusClient):
 
     def command_timeout(self):
         self.__command_call('command_timeout')
-        sleep(3.5)
+        sleep(0.8)
         return 'command_timeout'
 
     def command_broadcast(self, param):
@@ -861,6 +951,23 @@ class BusClientTests(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             self.p1.push(self._get_message_request(to='testprocess1'))
         self.assertEqual(str(cm.exception), 'Unable to send message to same module')
+
+    def test_send_command_timeout_cancels_late_execution(self):
+        """After NoResponse, a late in-flight handler must not reply to the caller."""
+        self._init_context()
+
+        resp1 = self.p1.send_command(command='command_timeout', to='testprocess2', timeout=0.2)
+        self.assertTrue(resp1.error)
+        self.assertTrue(resp1.message.startswith('No response from testprocess2'))
+
+        # Let the cancelled in-flight handler finish without poisoning later calls
+        sleep(1.0)
+        self.assertEqual(self.p2._get_command_calls('command_timeout'), 1)
+
+        resp2 = self.p1.send_command(command='command_timeout', to='testprocess2', timeout=2.0)
+        self.assertFalse(resp2.error)
+        self.assertEqual(resp2.data, 'command_timeout')
+        self.assertEqual(self.p2._get_command_calls('command_timeout'), 2)
 
     def test_command_sender_specified(self):
         self._init_context()
