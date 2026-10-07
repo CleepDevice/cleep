@@ -267,6 +267,11 @@ class Inventory(Cleep):
         """
         self.logger.info('Reloading modules metadata')
         self.__recompute_compatibility()
+        try:
+            from cleep.rpcserver import invalidate_config_cache
+            invalidate_config_cache()
+        except Exception:
+            self.logger.debug('Unable to invalidate RPC config cache', exc_info=True)
         self.apps_updated_event.send()
 
     def _load_modules(self):

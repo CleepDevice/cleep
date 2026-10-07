@@ -16,14 +16,18 @@ Rpcserver implements:
 
 """
 
+from __future__ import annotations
+
 from contextlib import contextmanager
 import copy
 import functools
-import io
 import json
 import logging
 import os
+import re
 import uuid
+from typing import Any
+
 import uptime
 from passlib.hash import sha256_crypt
 from gevent import pywsgi, pool, sleep
@@ -32,20 +36,24 @@ from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
 from cleep.libs.configs.cleepconf import CleepConf
 
-__all__ = ["app"]
+__all__ = ["app", "invalidate_config_cache"]
 
 # constants
 BASE_DIR = "/opt/cleep/"
 HTML_DIR = os.path.join(BASE_DIR, "html")
+UPLOAD_DIR = "/tmp"
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
-CLEEP_CACHE = None
-LOCAL_ADDRS = ["127.0.0.1", "localhost"]
+CLEEP_CACHE: dict[str, Any] | None = None
+# Only REMOTE_ADDR is trusted for localhost bypass (never X-Forwarded-For)
+LOCAL_ADDRS = ["127.0.0.1", "localhost", "::1"]
+_SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
 try:
     import socket
+
     device_ip = socket.gethostbyname(socket.gethostname())
     LOCAL_ADDRS.append(device_ip)
-except:
+except Exception:
     # surely in docker env
     pass
 
@@ -240,35 +248,42 @@ def stop():
     server.close()
     server.stop()
 
-def check_auth(account, password):
+def _prune_expired_sessions(now: float | None = None) -> None:
+    """Drop expired auth sessions to avoid unbounded growth."""
+    if len(sessions) < 64:
+        return
+    current = now if now is not None else uptime.uptime()
+    for key in [k for k, expires in sessions.items() if expires < current]:
+        del sessions[key]
+
+
+def check_auth(account: str, password: str) -> bool:
     """
     Check auth
 
     Args:
-        account (str): account name
-        password (str): account password
+        account: account name
+        password: account password
     """
-    # check session
     client_ip = bottle.request.environ.get("REMOTE_ADDR")
     logger.trace("Client ip: %s", client_ip)
     session_key = f"{client_ip}-{account}"
-    if session_key in sessions and sessions[session_key] >= uptime.uptime():
-        # user still logged, update session timeout
-        sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
+    now = uptime.uptime()
+    _prune_expired_sessions(now)
+
+    if session_key in sessions and sessions[session_key] >= now:
+        sessions[session_key] = now + SESSION_TIMEOUT
         return True
 
-    # check account exists
     if account not in auth_accounts:
         logger.warning('Invalid auth account "%s"', account)
         return False
 
     try:
         if sha256_crypt.verify(password, auth_accounts[account]):
-            # auth is valid, save session
-            sessions[session_key] = uptime.uptime() + SESSION_TIMEOUT
+            sessions[session_key] = now + SESSION_TIMEOUT
             return True
 
-        # invalid password
         logger.warning('Invalid password for account "%s"', account)
         return False
     except Exception:
@@ -280,17 +295,18 @@ def check_auth(account, password):
 
 def authenticate():
     """
-    Authenticate decorator
-    If authentication is enabled, check credentials
+    Authenticate decorator.
+    If authentication is enabled, check credentials for non-local REMOTE_ADDR.
     """
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            remote_addr = bottle.request.environ.get('HTTP_X_FORWARDED_FOR') or bottle.request.environ.get('REMOTE_ADDR')
+            # Trust only REMOTE_ADDR — client-supplied X-Forwarded-For is spoofable
+            remote_addr = bottle.request.environ.get("REMOTE_ADDR")
             if auth_enabled and remote_addr not in LOCAL_ADDRS:
                 account, password = bottle.request.auth or (None, None)
-                logger.debug("account=%s password=%s", account, password)
+                logger.debug("Auth check for account=%s from %s", account, remote_addr)
                 if account is None or not check_auth(account, password):
                     err = bottle.HTTPError(401, "Access denied")
                     err.add_header("WWW-Authenticate", 'Basic realm="private"')
@@ -300,6 +316,45 @@ def authenticate():
         return wrapper
 
     return decorator
+
+
+def invalidate_config_cache() -> None:
+    """Drop cached /config snapshot (call after inventory reload / app install)."""
+    global CLEEP_CACHE
+    CLEEP_CACHE = None
+    if logger:
+        logger.debug("RPC config cache invalidated")
+
+
+def _safe_upload_filename(filename: str | None) -> str:
+    """Return a safe basename under UPLOAD_DIR (no path traversal)."""
+    if not filename:
+        raise ValueError("Missing upload filename")
+    name = os.path.basename(filename.replace("\\", "/"))
+    name = _SAFE_FILENAME_RE.sub("_", name).strip("._")
+    if not name:
+        raise ValueError("Invalid upload filename")
+    return f"{uuid.uuid4().hex[:8]}_{name}"
+
+
+def _parse_upload_params(forms: dict[str, Any]) -> dict[str, Any]:
+    """Build command params from multipart form fields."""
+    forms = dict(forms)
+    forms.pop("command", None)
+    forms.pop("to", None)
+    forms.pop("filename", None)
+    params_raw = forms.pop("params", None)
+    if params_raw is not None:
+        if isinstance(params_raw, str):
+            try:
+                parsed = json.loads(params_raw) if params_raw else {}
+            except Exception:
+                parsed = {}
+            return parsed if isinstance(parsed, dict) else {}
+        if isinstance(params_raw, dict):
+            return params_raw
+        return {}
+    return forms
 
 
 def send_command(command, to, params, timeout=None):
@@ -393,6 +448,7 @@ def get_drivers_from_inventory():
 
 
 @app.route("/reloadauth", method="POST")
+@authenticate()
 def reload_auth():
     """
     Reload auth configuration
@@ -419,46 +475,39 @@ def exec_upload():
     """
     path = ""
     try:
-        # get form fields
         forms = dict(bottle.request.forms or {})
         command = forms.get("command")
         to = forms.get("to")
-        params = forms.get("params") or {}
+        params = _parse_upload_params(forms)
         logger.debug("Form content: command=%s to=%s params=%s", command, to, params)
 
-        # check params
         if command is None or to is None:
-            # not allowed, missing parameters
             raise Exception("Missing parameters")
 
-        else:
-            # get file
-            logger.debug("Upload %s", bottle.request.files)
-            files = dict(bottle.request.files or {})
-            upload = files.get("file")
-            path = os.path.join("/tmp", upload.filename)
+        logger.debug("Upload %s", bottle.request.files)
+        files = dict(bottle.request.files or {})
+        upload = files.get("file")
+        if upload is None:
+            raise Exception("Missing upload file")
 
-            # remove file if already exists
-            if os.path.exists(path):
-                os.remove(path)
-                sleep(0.25)
+        safe_name = _safe_upload_filename(getattr(upload, "filename", None))
+        path = os.path.join(UPLOAD_DIR, safe_name)
 
-            # save file locally
-            upload.save(path)
+        if os.path.exists(path):
+            os.remove(path)
+            sleep(0.25)
 
-            # add filepath in params
-            params["filepath"] = path
+        upload.save(path)
+        params["filepath"] = path
 
-            # execute specified command
-            logger.debug("Upload command:%s to:%s params:%s", command, to, params)
-            resp = send_command(command, to, params, 10.0)
+        logger.debug("Upload command:%s to:%s params:%s", command, to, params)
+        resp = send_command(command, to, params, 10.0)
 
     except Exception as error:
         logger.exception("Exception during file upload:")
         resp = MessageResponse(error=True, message=str(error))
 
-        # delete uploaded file if possible
-        if os.path.exists(path):
+        if path and os.path.exists(path):
             logger.debug("Delete uploaded file")
             os.remove(path)
 
@@ -659,6 +708,7 @@ def exec_command():
 
 
 @app.route("/modules", method="POST")
+@authenticate()
 def get_modules():
     """
     Return installed modules with their configuration.
@@ -672,6 +722,7 @@ def get_modules():
 
 
 @app.route("/devices", method="POST")
+@authenticate()
 def get_devices():
     """
     Return all devices
@@ -687,6 +738,7 @@ def get_devices():
 
 
 @app.route("/renderers", method="POST")
+@authenticate()
 def get_renderers():
     """
     Returns all renderers
@@ -702,6 +754,7 @@ def get_renderers():
 
 
 @app.route("/drivers", method="POST")
+@authenticate()
 def get_drivers():
     """
     Returns all drivers
@@ -717,6 +770,7 @@ def get_drivers():
 
 
 @app.route("/events", method="POST")
+@authenticate()
 def get_events():
     """
     Return all used events
@@ -730,7 +784,9 @@ def get_events():
     resp = MessageResponse(data=events)
     return resp.to_dict()
 
+
 @app.route("/commands", method="POST")
+@authenticate()
 def get_commands():
     """
     Return all commands
@@ -814,7 +870,6 @@ def get_config():
     """
     global CLEEP_CACHE
 
-    # handle cleep cache
     if not CLEEP_CACHE:
         logger.debug("Init cache")
         CLEEP_CACHE = {
@@ -826,10 +881,9 @@ def get_config():
 
     resp = MessageResponse()
     try:
-        # update volatile data
         modules_configs = inventory.get_modules_configs()
         for module_name, module in CLEEP_CACHE["modules"].items():
-            module["config"] = modules_configs[module_name]
+            module["config"] = modules_configs.get(module_name)
 
         resp.data = {
             "modules": CLEEP_CACHE["modules"],
@@ -861,24 +915,23 @@ def get_remote_access_urls():
             }
 
     """
-    return inventory.get_remote_access_urls()
+    return MessageResponse(data=inventory.get_remote_access_urls()).to_dict()
 
 
 @app.route("/registerpoll", method="POST")
+@authenticate()
 def registerpoll():
     """
     Register poll
 
     Returns:
-        dict: {'pollkey':''}
+        dict: {'pollKey':''}
     """
-    # subscribe to bus
     poll_key = str(uuid.uuid4())
     if bus:
         logger.trace("Subscribe to bus %s", poll_key)
         bus.add_subscription(f"rpc-{poll_key}")
 
-    # return response
     bottle.response.content_type = "application/json"
     return json.dumps({"pollKey": poll_key})
 
@@ -890,8 +943,10 @@ def pollcounter():
     """
     global polling
     polling += 1
-    yield
-    polling -= 1
+    try:
+        yield
+    finally:
+        polling -= 1
 
 
 @app.route("/poll", method="POST")
@@ -908,57 +963,47 @@ def poll():
         logger.trace("Poll params: %s", params)
         bottle.response.content_type = "application/json"
 
-        # process poll
         resp = MessageResponse(error=True, data=None, message="")
         if not bus:
-            # bus not available yet
             logger.debug("polling: bus not available")
             resp.message = "Bus not available"
-            sleep(1.0)
 
         elif "pollKey" not in params:
-            # rpc client no registered yet
             logger.debug("polling: registration key must be sent to poll request")
             resp.message = "Polling key is missing"
-            sleep(1.0)
 
         elif not bus.is_subscribed(f'rpc-{params["pollKey"]}'):
-            # rpc client no registered yet
             logger.debug("polling: rpc client must be registered before polling")
             resp.message = "Client not registered"
-            sleep(1.0)
 
         else:
-            # wait for event (blocking by default) until end of timeout
             try:
-                # wait for message
                 poll_key = f'rpc-{params["pollKey"]}'
                 msg = bus.pull(poll_key, POLL_TIMEOUT)
 
-                # prepare output
                 resp.error = False
                 resp.data = msg["message"]
                 logger.debug("polling received %s", resp)
 
             except NoMessageAvailable:
                 resp.message = "No message available"
-                sleep(1.0)
 
             except Exception:
                 logger.exception("Poll exception")
                 crash_report.report_exception({"message": "Poll exception"})
                 resp.message = "Internal error"
-                sleep(5.0)
 
     return resp.to_dict()
 
 
 @app.route("/<route:re:.*>", method="POST")
-# TODO add auth to external request ?
 def rpc_wrapper(route):
     """
-    Custom rpc route used to implement wrappers (ie REST=>RPC)
-    This route is intended to be used with external services like alexa
+    Custom rpc route used to implement wrappers (ie REST=>RPC).
+
+    Intentionally unauthenticated: external services (Alexa, webhooks) call this
+    catch-all. Wrapper modules must validate their own tokens/signatures.
+    Prefer named authenticated routes for new integrations.
     """
     return inventory.rpc_wrapper(route, bottle.request)
 

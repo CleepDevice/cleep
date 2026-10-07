@@ -228,12 +228,17 @@ angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function(
                 return cached;
             };
 
+            function isLoadingBarDisabled(httpConfig) {
+                if (!httpConfig) {
+                    return false;
+                }
+                return !!(httpConfig.ignoreLoadingBar ||
+                    (httpConfig.config && httpConfig.config.ignoreLoadingBar));
+            }
+
             return {
                 'request': function(config) {
-                    var disabled = false;
-                    if (config.config) {
-                        disabled = config.config.ignoreLoadingBar;
-                    }
+                    var disabled = isLoadingBarDisabled(config);
                     if (!disabled && !isCached(config)) {
                         if (reqsTotal === 0) {
                             startTimeout = $timeout(function() {
@@ -250,10 +255,7 @@ angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function(
                         return response;
                     }
     
-                    var disabled = false;
-                    if (response.config) {
-                        disabled = response.config.ignoreLoadingBar;
-                    }
+                    var disabled = isLoadingBarDisabled(response.config);
                     if (!disabled && !isCached(response.config)) {
                         reqsCompleted++;
                         if (reqsCompleted >= reqsTotal) {
@@ -269,10 +271,7 @@ angular.module('Cleep').service('cleepLoadingBarService', ['$timeout', function(
                         return $q.reject(rejection);
                     }
 
-                    var disabled = false;
-                    if (rejection.config) {
-                        disabled = rejection.config.ignoreLoadingBar;
-                    }
+                    var disabled = isLoadingBarDisabled(rejection.config);
                     if (!disabled && !isCached(rejection.config)) {
                         reqsCompleted++;
                         if (reqsCompleted >= reqsTotal) {

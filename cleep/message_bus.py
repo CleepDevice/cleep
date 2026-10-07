@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass
 from queue import Empty, Full, Queue
 from threading import Event
-from typing import Any, Protocol, TypeAlias
+from typing import Any, Dict, Protocol, Union
 
 import uptime
 
@@ -29,8 +29,8 @@ __all__ = ["BusEnvelope", "MessageBus"]
 
 # Response stored on an envelope / returned by push after a wait.
 # Production BusClient sets MessageResponse; some tests still store a dict.
-BusResponse: TypeAlias = MessageResponse | dict[str, Any]
-RequestDict: TypeAlias = dict[str, Any]
+BusResponse = Union[MessageResponse, Dict[str, Any]]
+RequestDict = Dict[str, Any]
 
 
 class CrashReportLike(Protocol):

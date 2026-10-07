@@ -98,10 +98,7 @@ class RpcServerTests(unittest.TestCase):
     def tearDown(self):
         if rpcserver:
             rpcserver.sessions.clear()
-            if isinstance(rpcserver.CLEEP_CACHE, dict):
-                rpcserver.CLEEP_CACHE.clear()
-            #if rpcserver.logger:
-            #    rpcserver.logger.setLevel(logging.getLogger().getEffectiveLevel())
+            rpcserver.CLEEP_CACHE = None
 
     def _init_context(self, push_return_value=None, push_side_effect=None, no_bus=False, is_subscribed_return_value=None, is_subscribed_side_effect=None,
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False,
@@ -397,7 +394,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             # with timeout
             r = rpcserver.send_command(command='cmd', to='module', params={}, timeout=3.0)
-            self.assertTrue(self.internal_bus.push.called_once)
+            self.internal_bus.push.assert_called_once()
             args = self.internal_bus.push.call_args
             logging.debug('Args: %s' % str(args))
             self.assertTrue(isinstance(args[0][0], MessageRequest))
@@ -405,8 +402,9 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(args[0][1], 3.0)
 
             # without timeout
+            self.internal_bus.push.reset_mock()
             r = rpcserver.send_command(command='cmd', to='module', params={})
-            self.assertTrue(self.internal_bus.push.called_once)
+            self.internal_bus.push.assert_called_once()
             args = self.internal_bus.push.call_args
             logging.debug('Args: %s' % str(args))
             self.assertTrue(isinstance(args[0][0], MessageRequest))
@@ -586,7 +584,10 @@ class RpcServerTests(unittest.TestCase):
         }
         self._init_context(get_drivers_gpio_exception=True)
 
-        rpcserver.reload_auth()
+        # Bypass auth decorator gate so reload body runs (configure already loaded once)
+        rpcserver.auth_enabled = False
+        with boddle():
+            rpcserver.reload_auth()
 
         self.assertEqual(is_auth_enabled_mock.call_count, 2)
 
@@ -609,8 +610,12 @@ class RpcServerTests(unittest.TestCase):
         try:
             resp = rpcserver.exec_upload()
 
-            mock_fileupload.save.assert_called_with('/tmp/myfilename')
-            rpcserver.send_command.assert_called_with('upload_command', 'dummymodule', {'filepath': '/tmp/myfilename'}, 10.0)
+            saved_path = mock_fileupload.save.call_args[0][0]
+            self.assertTrue(saved_path.startswith('/tmp/'))
+            self.assertTrue(saved_path.endswith('_myfilename'))
+            rpcserver.send_command.assert_called_with(
+                'upload_command', 'dummymodule', {'filepath': saved_path}, 10.0
+            )
         finally:
             rpcserver.send_command = original_sendcommand
 
@@ -633,8 +638,15 @@ class RpcServerTests(unittest.TestCase):
         try:
             resp = rpcserver.exec_upload()
 
-            mock_fileupload.save.assert_called_with('/tmp/myfilename')
-            rpcserver.send_command.assert_called_with('upload_command', 'dummymodule', {'filepath': '/tmp/myfilename', 'key': 'value'}, 10.0)
+            saved_path = mock_fileupload.save.call_args[0][0]
+            self.assertTrue(saved_path.startswith('/tmp/'))
+            self.assertTrue(saved_path.endswith('_myfilename'))
+            rpcserver.send_command.assert_called_with(
+                'upload_command',
+                'dummymodule',
+                {'filepath': saved_path, 'key': 'value'},
+                10.0,
+            )
         finally:
             rpcserver.send_command = original_sendcommand
 
@@ -669,7 +681,9 @@ class RpcServerTests(unittest.TestCase):
         try:
             resp = rpcserver.exec_upload()
 
-            mock_osremove.assert_called_with('/tmp/myfilename')
+            removed_path = mock_osremove.call_args[0][0]
+            self.assertTrue(removed_path.startswith('/tmp/'))
+            self.assertTrue(removed_path.endswith('_myfilename'))
         finally:
             rpcserver.send_command = original_sendcommand
 
@@ -720,7 +734,9 @@ class RpcServerTests(unittest.TestCase):
 
             self.assertEqual(resp['error'], True)
             self.assertEqual(resp['message'], 'Test exception')
-            mock_osremove.assert_called_with('/tmp/myfilename')
+            removed_path = mock_osremove.call_args[0][0]
+            self.assertTrue(removed_path.startswith('/tmp/'))
+            self.assertTrue(removed_path.endswith('_myfilename'))
         finally:
             rpcserver.send_command = original_sendcommand
 
@@ -918,7 +934,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertTrue('pollKey' in resp)
             self.assertIsNotNone(resp['pollKey'])
-            self.assertTrue(self.internal_bus.add_subscription.called_once)
+            self.internal_bus.add_subscription.assert_called_once()
 
     def test_poll_no_pollkey(self):
         self._init_context()
@@ -988,8 +1004,10 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.rpc_wrapper('')
             self.assertTrue(self.inventory.rpc_wrapper.called)
 
-    def test_default(self):
+    @patch('rpcserver.bottle.static_file')
+    def test_default(self, static_file_mock):
         self._init_context()
+        static_file_mock.return_value = HTTPResponse(body='ok', status=200)
 
         with boddle():
             d = rpcserver.default('index.html')
@@ -997,9 +1015,12 @@ class RpcServerTests(unittest.TestCase):
             self.assertTrue(isinstance(d, HTTPResponse))
             logging.debug('%s' % d.status)
             self.assertEqual(d.status, '200 OK')
+            static_file_mock.assert_called_with('index.html', rpcserver.HTML_DIR)
 
-    def test_index(self):
+    @patch('rpcserver.bottle.static_file')
+    def test_index(self, static_file_mock):
         self._init_context()
+        static_file_mock.return_value = HTTPResponse(body='ok', status=200)
 
         with boddle():
             i = rpcserver.index()
@@ -1007,6 +1028,7 @@ class RpcServerTests(unittest.TestCase):
             self.assertTrue(isinstance(i, HTTPResponse))
             logging.debug('%s' % i.status)
             self.assertEqual(i.status, '200 OK')
+            static_file_mock.assert_called_with('index.html', rpcserver.HTML_DIR)
 
     def test_logs(self):
         self._init_context()
@@ -1033,6 +1055,50 @@ class RpcServerTests(unittest.TestCase):
                 logging.debug('%s' % c.status)
                 self.assertEqual(c.status, '401 Unauthorized')
 
+        finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_authenticate_ignores_x_forwarded_for(self):
+        """Spoofed X-Forwarded-For must not bypass auth."""
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        try:
+            rpcserver.auth_enabled = True
+            with boddle(headers={'X-Forwarded-For': '127.0.0.1'}):
+                # boddle sets REMOTE_ADDR to a non-local default
+                resp = rpcserver.get_config()
+                self.assertTrue(isinstance(resp, HTTPError))
+                self.assertEqual(resp.status, '401 Unauthorized')
+        finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_safe_upload_filename_strips_path(self):
+        self._init_context()
+        name = rpcserver._safe_upload_filename('../../etc/passwd')
+        self.assertFalse(name.startswith('.'))
+        self.assertNotIn('/', name)
+        self.assertNotIn('..', name)
+        self.assertTrue(name.endswith('_passwd'))
+
+    def test_invalidate_config_cache(self):
+        self._init_context()
+        with boddle():
+            rpcserver.get_config()
+            self.assertIsNotNone(rpcserver.CLEEP_CACHE)
+            rpcserver.invalidate_config_cache()
+            self.assertIsNone(rpcserver.CLEEP_CACHE)
+            rpcserver.get_config()
+            self.assertEqual(self.inventory.get_modules.call_count, 2)
+
+    def test_registerpoll_requires_auth_when_enabled(self):
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        try:
+            rpcserver.auth_enabled = True
+            with boddle():
+                resp = rpcserver.registerpoll()
+                self.assertTrue(isinstance(resp, HTTPError))
+                self.assertEqual(resp.status, '401 Unauthorized')
         finally:
             rpcserver.auth_enabled = auth_enabled_restore
             

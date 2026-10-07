@@ -171,7 +171,7 @@ function($http, $q, toast, $httpParamSerializer, $window) {
             }
         }, function(err) {
             console.error('Request failed: '+err);
-            deferred.reject('request failed');
+            d.reject('request failed');
         });
 
         return d.promise;
@@ -330,7 +330,7 @@ function($http, $q, toast, $httpParamSerializer, $window) {
                     // reset poll key
                     self.pollKey = null;
                 }
-                d.reject(resp.message);
+                d.reject(resp.data.message);
             } else {
                 d.resolve(resp.data);
             }

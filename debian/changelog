@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Updated core: harden RPC server (auth on inventory/poll register/reloadauth, safe uploads, no XFF bypass)
 - Updated core: modernize internal message bus (waitable queues, timeout cancel, RPC registry, split modules)
 - Breaking: move all install/update for apps, os and Cleep in cleepapp-update
 - Updated ui: Apps toolbar / back links use update applications page
