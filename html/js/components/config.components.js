@@ -1308,6 +1308,8 @@ angular.module('Cleep').component('configFile', {
  *
  * config-tab is a marker element. Its markup is moved into md-tab so Material
  * can compile the panels itself. cl-selected is the id of the active tab.
+ * The tab opened on load is the query parameter "tab" when it matches a
+ * config-tab id. Otherwise the first tab is shown.
  *
  *   <config-tabs cl-selected="$ctrl.tab">
  *       <config-tab cl-id="general" cl-label="General" cl-icon="cog">
@@ -1315,7 +1317,7 @@ angular.module('Cleep').component('configFile', {
  *       </config-tab>
  *   </config-tabs>
  */
-angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', function ($compile, $interpolate) {
+angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$location', function ($compile, $interpolate, $location) {
     return {
         restrict: 'E',
         terminal: true,
@@ -1348,8 +1350,13 @@ angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', fun
             }
 
             const viewScope = pageScope.$new();
-            const initialIndex = Math.max(0, tabs.findIndex((tab) => tab.id === scope.clSelected));
+            const requested = $location.search().tab;
+            const requestedIndex = typeof requested === 'string'
+                ? tabs.findIndex((tab) => tab.id === requested)
+                : -1;
+            const initialIndex = requestedIndex >= 0 ? requestedIndex : 0;
             viewScope.selectedIndex = initialIndex;
+            scope.clSelected = tabs[initialIndex].id;
 
             const tabsEl = angular.element(
                 '<md-tabs md-dynamic-height md-border-bottom md-selected="selectedIndex"></md-tabs>'
