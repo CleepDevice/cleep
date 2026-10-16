@@ -428,3 +428,23 @@ a.md-button.cl-button-sm {
     border-top: 1px solid rgb(226, 227, 229);
 }
 
+/********** config-tabs ***********/
+.config-tabs {
+    display: block;
+    margin: 8px 0 16px;
+}
+
+.config-tabs md-tab-item md-icon {
+    margin-right: 6px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    font-size: 18px;
+    vertical-align: middle;
+}
+
+.config-tabs md-tab-content {
+    padding-top: 8px;
+}
+

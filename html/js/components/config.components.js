@@ -1303,76 +1303,92 @@ angular.module('Cleep').component('configFile', {
     },
 });
 
-angular.module('Cleep').component('configTabs', {
-    transclude: true,
-    template: `
-        <md-nav-bar md-selected-nav-item="$ctrl.selectedTab">
-            <md-nav-item ng-repeat="tab in $ctrl.tabs track by $index" name="{{ tab.id }}" md-nav-sref="{{ tab.id }}">
-                {{ tab.label }}
-            </md-nav-item>
-        </md-nav-bar>
-        <ng-transclude id="clTabContent"></ng-transclude>
-    `,
-    bindings: {
-        clTabs: '<',
-        clSelectedTab: '@',
-    },
-    controller: function ($compile) {
-        const ctrl = this;
-        ctrl.selectedTab = undefined;
-        ctrl.tabs = [];
-        ctrl.tabContentDivs = [];
+/**
+ * Tab group rendered with Angular Material md-tabs.
+ *
+ * config-tab is a marker element. Its markup is moved into md-tab so Material
+ * can compile the panels itself. cl-selected is the id of the active tab.
+ *
+ *   <config-tabs cl-selected="$ctrl.tab">
+ *       <config-tab cl-id="general" cl-label="General" cl-icon="cog">
+ *           <config-text cl-title="Name" cl-model="$ctrl.name"></config-text>
+ *       </config-tab>
+ *   </config-tabs>
+ */
+angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', function ($compile, $interpolate) {
+    return {
+        restrict: 'E',
+        terminal: true,
+        priority: 1000,
+        scope: {
+            clSelected: '=?',
+        },
+        link: function (scope, element) {
+            const pageScope = scope.$parent;
+            const tabs = [];
 
-        ctrl.$postLink = function () {
-            const tabContentDivs = document.getElementById('clTabContent');
-            for (const tabContentDiv of tabContentDivs.children) {
-                const div = angular.element(tabContentDiv);
-
-                const tabId = div.attr('id');
-                const tabData = ctrl.getTabDataById(tabId);
-                if (!tabData) {
-                    console.warn(`Tab with id ${tabId} has no data. Please check specified clTabs data`);
-                    continue;
+            angular.forEach(element.children(), function (node) {
+                const el = angular.element(node);
+                if (el[0].tagName.toLowerCase() !== 'config-tab') {
+                    return;
                 }
+                const id = $interpolate(el.attr('cl-id') || '')(pageScope) || String(tabs.length);
+                tabs.push({
+                    id: id,
+                    label: $interpolate(el.attr('cl-label') || '')(pageScope) || id,
+                    icon: $interpolate(el.attr('cl-icon') || '')(pageScope),
+                    html: el.html(),
+                });
+            });
 
-                const divScope = div.scope();
-                div.attr('ng-show', `$parent.$ctrl.selectedTab === '${tabId}'`);
-                $compile(div)(divScope);
-            }
-        };
-
-        ctrl.$onChanges = function (changes) {
-            if (changes.clTabs?.currentValue !== undefined) {
-                ctrl.updateTabs(changes.clTabs.currentValue);
-            }
-            if (changes.clSelectedTab?.currentValue !== undefined) {
-                const tabData = ctrl.getTabDataById(changes.clSelectedTab.currentValue);
-                if (tabData) {
-                    ctrl.selectedTab = tabData.id;
-                }
-            }
-        };
-
-        ctrl.getTabDataById = function(tabId) {
-            return ctrl.tabs.find((tab) => tab.id === tabId);
-        };
-
-        ctrl.updateTabs = function(tabs) {
-            if (!tabs?.length) {
-                console.error('Please fill clTabs in configTab component');
+            element.empty();
+            element.addClass('config-tabs');
+            if (!tabs.length) {
                 return;
             }
 
-            ctrl.tabs.splice(0, ctrl.tabs.length);
-            for (const tab of tabs) {
-                ctrl.tabs.push(tab);
-            }
-            ctrl.selectedTab = ctrl.tabs[0].id;
-        };
-    },
+            const viewScope = pageScope.$new();
+            const initialIndex = Math.max(0, tabs.findIndex((tab) => tab.id === scope.clSelected));
+            viewScope.selectedIndex = initialIndex;
 
+            const tabsEl = angular.element(
+                '<md-tabs md-dynamic-height md-border-bottom md-selected="selectedIndex"></md-tabs>'
+            );
+            tabs.forEach(function (tab) {
+                const mdTab = angular.element('<md-tab></md-tab>');
+                const label = angular.element('<md-tab-label></md-tab-label>');
+                if (tab.icon) {
+                    const icon = angular.element('<cl-icon></cl-icon>');
+                    icon.attr('cl-icon', tab.icon);
+                    label.append(icon);
+                }
+                label.append(angular.element('<span></span>').text(tab.label));
+                const body = angular.element('<md-tab-body></md-tab-body>');
+                body.html(tab.html);
+                mdTab.append(label).append(body);
+                tabsEl.append(mdTab);
+            });
 
-});
+            element.append($compile(tabsEl)(viewScope));
+
+            scope.$watch('clSelected', function (id) {
+                const index = tabs.findIndex((tab) => tab.id === id);
+                if (index >= 0 && viewScope.selectedIndex !== index) {
+                    viewScope.selectedIndex = index;
+                }
+            });
+            viewScope.$watch('selectedIndex', function (index) {
+                const tab = tabs[index];
+                if (tab && scope.clSelected !== tab.id) {
+                    scope.clSelected = tab.id;
+                }
+            });
+            scope.$on('$destroy', function () {
+                viewScope.$destroy();
+            });
+        },
+    };
+}]);
 
 /**
  * Collapsible panel for grouping config items.
