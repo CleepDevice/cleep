@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: add CleepRemoteAccessModule to publish remote access url
 - Added core: add config-tabs in design system
 - Updated core: harden RPC server making mandatory all RPC routes. Start local socket for cleep-cli usage
 - Updated core: harden RPC server (auth on inventory/poll register/reloadauth, safe uploads, no XFF bypass)

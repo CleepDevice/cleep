@@ -20,7 +20,14 @@ from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.cleepdoc import CleepDoc
 
-__all__ = ["Cleep", "CleepRpcWrapper", "CleepModule", "CleepResources", "CleepRenderer"]
+__all__ = [
+    "Cleep",
+    "CleepRpcWrapper",
+    "CleepModule",
+    "CleepRemoteAccessModule",
+    "CleepResources",
+    "CleepRenderer",
+]
 
 
 class Cleep(BusClient):
@@ -767,67 +774,6 @@ class Cleep(BusClient):
             },
             3.0,
         )
-
-    def register_remote_access_url(self, url):
-        """
-        Register remote access url
-
-        Args:
-            url (str): remote access url
-
-        Returns:
-            bool: True if url added
-        """
-        try:
-            resp = self.send_command(
-                "register_remote_access_url", "inventory", {"url": url}
-            )
-            if resp.error:
-                self.logger.error(
-                    "Unable to request inventory register_remote_access_url: %s",
-                    resp.message,
-                )
-                return False
-
-            return True
-
-        except:
-            self.logger.exception("Unable to register remote access url:")
-            self.crash_report.report_exception(
-                {
-                    "message": "Unable register remote access url",
-                    "url": url,
-                }
-            )
-            return False
-
-    def unregister_remote_access_url(self):
-        """
-        Register remote access url
-
-        Returns:
-            bool: True if url added
-        """
-        try:
-            resp = self.send_command("unregister_remote_access_url", "inventory")
-            if resp.error:
-                self.logger.error(
-                    "Unable to request inventory unregister_remote_access_url: %s",
-                    resp.message,
-                )
-                return False
-
-            return True
-
-        except:
-            self.logger.exception("Unable to unregister remote access url:")
-            self.crash_report.report_exception(
-                {
-                    "message": "Unable unregister remote access url",
-                }
-            )
-            return False
-
 
 class CleepRpcWrapper(Cleep):
     """
@@ -1672,3 +1618,85 @@ class CleepExternalBus(CleepModule):
             '_send_event_to_peer function must be implemented in "%s"'
             % self.__class__.__name__
         )
+
+
+class CleepRemoteAccessModule(CleepModule):
+    """
+    Base class for an application that publishes a public address.
+
+    The subclass reports the address when the tunnel is open and clears it when
+    the tunnel closes. A later revision of this class will proxy the other
+    devices of the house through that address.
+    """
+
+    def __init__(self, bootstrap, debug_enabled):
+        """
+        Constructor
+
+        Args:
+            bootstrap (dict): bootstrap objects.
+            debug_enabled (bool): flag to set debug level to logger.
+        """
+        CleepModule.__init__(self, bootstrap, debug_enabled)
+
+    def register_remote_access_url(self, url):
+        """
+        Register this application's public address.
+
+        One address is kept per application.
+
+        Args:
+            url (str): public address
+
+        Returns:
+            bool: True when the address is registered
+        """
+        try:
+            resp = self.send_command(
+                "register_remote_access_url", "inventory", {"url": url}
+            )
+            if resp.error:
+                self.logger.error(
+                    "Unable to request inventory register_remote_access_url: %s",
+                    resp.message,
+                )
+                return False
+
+            return True
+
+        except Exception:
+            self.logger.exception("Unable to register remote access url:")
+            self.crash_report.report_exception(
+                {
+                    "message": "Unable register remote access url",
+                    "url": url,
+                }
+            )
+            return False
+
+    def unregister_remote_access_url(self):
+        """
+        Remove this application's public address.
+
+        Returns:
+            bool: True when the address is removed
+        """
+        try:
+            resp = self.send_command("unregister_remote_access_url", "inventory")
+            if resp.error:
+                self.logger.error(
+                    "Unable to request inventory unregister_remote_access_url: %s",
+                    resp.message,
+                )
+                return False
+
+            return True
+
+        except Exception:
+            self.logger.exception("Unable to unregister remote access url:")
+            self.crash_report.report_exception(
+                {
+                    "message": "Unable unregister remote access url",
+                }
+            )
+            return False
