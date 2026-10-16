@@ -133,9 +133,7 @@ class MessageBus:
         )
         self.__purge.start()
 
-    def push(
-        self, request: MessageRequest, timeout: float | None = 3.0
-    ) -> BusResponse:
+    def push(self, request: MessageRequest, timeout: float | None = 3.0) -> BusResponse:
         """
         Push a message and optionally wait for a response.
 
@@ -163,7 +161,9 @@ class MessageBus:
                 "constructor or _configure method, if that is the case prefer using _on_start method."
             )
         if not isinstance(request, MessageRequest):
-            raise InvalidParameter('Parameter "request" must be MessageRequest instance')
+            raise InvalidParameter(
+                'Parameter "request" must be MessageRequest instance'
+            )
 
         if (
             request.to is not None
@@ -240,7 +240,11 @@ class MessageBus:
         self.logger.trace("Push wait for response (%s seconds)...", timeout)
         if envelope.event.wait(timeout):
             self.logger.debug("Response received %s", envelope.response)
-            return envelope.response if envelope.response is not None else MessageResponse()
+            return (
+                envelope.response
+                if envelope.response is not None
+                else MessageResponse()
+            )
 
         envelope.cancelled = True
         self.logger.debug("Command has timed out")

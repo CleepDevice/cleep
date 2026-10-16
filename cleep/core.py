@@ -20,8 +20,7 @@ from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.cleepdoc import CleepDoc
 
-
-__all__ = ['Cleep', 'CleepRpcWrapper', 'CleepModule', 'CleepResources', 'CleepRenderer']
+__all__ = ["Cleep", "CleepRpcWrapper", "CleepModule", "CleepResources", "CleepRenderer"]
 
 
 class Cleep(BusClient):
@@ -36,7 +35,8 @@ class Cleep(BusClient):
         * custom crash report
         * driver registration
     """
-    CONFIG_DIR = '/etc/cleep/'
+
+    CONFIG_DIR = "/etc/cleep/"
     MODULE_DEPS = []
     DEFAULT_CONFIG = None
     MODULE_CONFIG_FILE = None
@@ -59,53 +59,67 @@ class Cleep(BusClient):
         self.debug_enabled = debug_enabled
 
         # members
-        self.__execution_step = bootstrap['execution_step']
-        self.events_broker = bootstrap['events_broker']
-        self.cleep_filesystem = bootstrap['cleep_filesystem']
+        self.__execution_step = bootstrap["execution_step"]
+        self.events_broker = bootstrap["events_broker"]
+        self.cleep_filesystem = bootstrap["cleep_filesystem"]
         self.task_factory = bootstrap["task_factory"]
-        self.drivers = bootstrap['drivers']
-        self._external_bus_name = bootstrap['external_bus']
+        self.drivers = bootstrap["drivers"]
+        self._external_bus_name = bootstrap["external_bus"]
         self.app_stop_event = bootstrap["app_stop_event"]
 
         # load and check configuration
         self.__config_lock = Lock()
         self.__config = self.__load_config()
-        if getattr(self, 'DEFAULT_CONFIG', None) is not None:
+        if getattr(self, "DEFAULT_CONFIG", None) is not None:
             self.__check_config(self.DEFAULT_CONFIG)
 
         # crash report
-        if getattr(self, 'MODULE_SENTRY_DSN', None) is not None and self.MODULE_SENTRY_DSN:
+        if (
+            getattr(self, "MODULE_SENTRY_DSN", None) is not None
+            and self.MODULE_SENTRY_DSN
+        ):
             # create custom crash report instance for this module with specified DSN
-            self.logger.debug('Sentry DSN found in module, create dedicated crash report for this module.')
+            self.logger.debug(
+                "Sentry DSN found in module, create dedicated crash report for this module."
+            )
 
             # get libs from main crash report instance and append current module version
-            infos = bootstrap['crash_report'].get_infos()
-            infos['libsversion'][self._get_module_name()] = self.MODULE_VERSION if hasattr(self, 'MODULE_VERSION') else '0.0.0'
+            infos = bootstrap["crash_report"].get_infos()
+            infos["libsversion"][self._get_module_name()] = (
+                self.MODULE_VERSION if hasattr(self, "MODULE_VERSION") else "0.0.0"
+            )
 
             self.crash_report = CrashReport(
                 self.MODULE_SENTRY_DSN,
-                infos['product'],
-                infos['productversion'],
-                infos['libsversion'],
-                disabled_by_core=bootstrap['crash_report'].is_enabled()
+                infos["product"],
+                infos["productversion"],
+                infos["libsversion"],
+                disabled_by_core=bootstrap["crash_report"].is_enabled(),
             )
 
-        elif self._get_module_name() in CORE_MODULES or self._get_module_name() == 'inventory':
+        elif (
+            self._get_module_name() in CORE_MODULES
+            or self._get_module_name() == "inventory"
+        ):
             # set default crash report for core module
-            self.logger.debug('Default crash report used for mandatory apps')
-            self.crash_report = bootstrap['crash_report']
+            self.logger.debug("Default crash report used for mandatory apps")
+            self.crash_report = bootstrap["crash_report"]
 
             # add core module version to libs version
-            module_version = getattr(self, 'MODULE_VERSION', '0.0.0')
-            self.crash_report.add_module_version(self.__class__.__name__, module_version)
+            module_version = getattr(self, "MODULE_VERSION", "0.0.0")
+            self.crash_report.add_module_version(
+                self.__class__.__name__, module_version
+            )
 
-        elif bootstrap['test_mode']: # pragma: no cover
-            self.logger.debug('Test mode: do not set crash report to module')
+        elif bootstrap["test_mode"]:  # pragma: no cover
+            self.logger.debug("Test mode: do not set crash report to module")
 
         else:
             # no crash report specified, set dummy one (no dsn provided)
-            self.logger.debug('Initialize empty crashreport')
-            self.crash_report = CrashReport(None, 'CleepDevice', '0.0.0', {}, False, True)
+            self.logger.debug("Initialize empty crashreport")
+            self.crash_report = CrashReport(
+                None, "CleepDevice", "0.0.0", {}, False, True
+            )
 
     @staticmethod
     def _file_is_empty(path):
@@ -127,7 +141,7 @@ class Cleep(BusClient):
         Returns:
             bool: True if module has config file, False otherwise.
         """
-        if getattr(self, 'MODULE_CONFIG_FILE', None) is None:
+        if getattr(self, "MODULE_CONFIG_FILE", None) is None:
             return False
 
         return True
@@ -141,7 +155,10 @@ class Cleep(BusClient):
         """
         # check if module have config file
         if not self._has_config_file():
-            self.logger.debug('Module "%s" has no configuration file configured', self.__class__.__name__)
+            self.logger.debug(
+                'Module "%s" has no configuration file configured',
+                self.__class__.__name__,
+            )
             return None
 
         out = {}
@@ -151,18 +168,18 @@ class Cleep(BusClient):
             self.logger.debug('Loading conf file from path "%s"', os.path.abspath(path))
             if os.path.exists(path) and not self._file_is_empty(path):
                 out = self.cleep_filesystem.read_json(path)
-                if out is None: # pragma: no cover
+                if out is None:  # pragma: no cover
                     # should not happen but handle it
                     out = {}
             else:
                 # no conf file yet. Create default one
-                self.logger.debug('No config file found, create default one')
+                self.logger.debug("No config file found, create default one")
                 out = {}
                 self.cleep_filesystem.write_json(path, out)
                 sleep(0.25)
 
         except:
-            self.logger.exception('Unable to load config file %s:', path)
+            self.logger.exception("Unable to load config file %s:", path)
         self.__config_lock.release()
 
         return out
@@ -189,7 +206,7 @@ class Cleep(BusClient):
             out = True
 
         except:
-            self.logger.exception('Unable to write config file %s:', path)
+            self.logger.exception("Unable to write config file %s:", path)
 
         # release lock
         self.__config_lock.release()
@@ -213,7 +230,10 @@ class Cleep(BusClient):
         if not isinstance(config, dict):
             raise InvalidParameter('Parameter "config" must be a dict')
         if not self._has_config_file():
-            raise Exception('Module %s has no configuration file configured' % self.__class__.__name__)
+            raise Exception(
+                "Module %s has no configuration file configured"
+                % self.__class__.__name__
+            )
 
         # get lock
         self.__config_lock.acquire(True)
@@ -247,7 +267,10 @@ class Cleep(BusClient):
         """
         # check if module have config file
         if not self._has_config_file():
-            self.logger.debug('Module "%s" has no configuration file configured', self.__class__.__name__)
+            self.logger.debug(
+                'Module "%s" has no configuration file configured',
+                self.__class__.__name__,
+            )
             return {}
 
         # get lock
@@ -326,18 +349,20 @@ class Cleep(BusClient):
 
         # check config is a dict, only supported format for config file
         if not isinstance(config, dict):
-            self.logger.warning('Invalid configuration file content, only dict content are supported. Reset its content.')
+            self.logger.warning(
+                "Invalid configuration file content, only dict content are supported. Reset its content."
+            )
             config = {}
 
         fixed = False
         for key in keys:
             if key not in config:
-                #fix missing key
+                # fix missing key
                 self.logger.trace('Add missing key "%s" in config file', key)
                 config[key] = keys[key]
                 fixed = True
         if fixed:
-            self.logger.debug('Config file fixed')
+            self.logger.debug("Config file fixed")
             self.__save_config(config)
 
     def _register_driver(self, driver):
@@ -351,16 +376,20 @@ class Cleep(BusClient):
             InvalidParameter: if driver has invalid base class
         """
         if self.__execution_step.step != ExecutionStep.INIT:
-            self.logger.warning('Driver registration must be done during INIT step (in application constructor)')
+            self.logger.warning(
+                "Driver registration must be done during INIT step (in application constructor)"
+            )
         # check driver
         if not isinstance(driver, Driver):
-            raise InvalidParameter('Driver must be instance of base Driver class')
+            raise InvalidParameter("Driver must be instance of base Driver class")
 
-        # set members and register driver
-        driver.configure({
-            "cleep_filesystem": self.cleep_filesystem,
-            "task_factory": self.task_factory,
-        })
+        # set members and register driver
+        driver.configure(
+            {
+                "cleep_filesystem": self.cleep_filesystem,
+                "task_factory": self.task_factory,
+            }
+        )
         self.drivers.register(driver)
         driver._on_registered()
 
@@ -453,21 +482,45 @@ class Cleep(BusClient):
             if not callable(getattr(self, member)):
                 # filter module members
                 members.remove(member)
-            elif member.startswith('_'):
+            elif member.startswith("_"):
                 # filter protected or private commands
                 members.remove(member)
             elif member in (
-                    'send_command', 'send_event', 'send_command_to_peer', 'send_event_to_peer',
-                    'get_module_commands', 'get_module_commands', 'get_module_config',
-                    'is_debug_enabled', 'set_debug', 'is_module_loaded',
-                    'start', 'stop', 'push', 'on_event', 'get_env',
-                    'send_command_from_request', 'send_event_from_request', 'send_command_advanced',
-                    'get_documentation', 'check_documentation', 'register_remote_access_url',
-                    'unregister_remote_access_url',
-                ):
+                "send_command",
+                "send_event",
+                "send_command_to_peer",
+                "send_event_to_peer",
+                "get_module_commands",
+                "get_module_commands",
+                "get_module_config",
+                "is_debug_enabled",
+                "set_debug",
+                "is_module_loaded",
+                "start",
+                "stop",
+                "push",
+                "on_event",
+                "get_env",
+                "send_command_from_request",
+                "send_event_from_request",
+                "send_command_advanced",
+                "get_documentation",
+                "check_documentation",
+                "register_remote_access_url",
+                "unregister_remote_access_url",
+            ):
                 # filter bus commands
                 members.remove(member)
-            elif member in ('getName', 'isAlive', 'isDaemon', 'is_alive', 'join', 'run', 'setDaemon', 'setName'):
+            elif member in (
+                "getName",
+                "isAlive",
+                "isDaemon",
+                "is_alive",
+                "join",
+                "run",
+                "setDaemon",
+                "setName",
+            ):
                 # filter Thread functions
                 members.remove(member)
             elif isinstance(getattr(self, member, None), Mock):
@@ -500,19 +553,20 @@ class Cleep(BusClient):
             bool: True if module is loaded, False otherwise.
         """
         try:
-            resp = self.send_command('is_module_loaded', 'inventory', {'module': module})
+            resp = self.send_command(
+                "is_module_loaded", "inventory", {"module": module}
+            )
             if resp.error:
-                self.logger.error('Unable to request inventory: %s', resp.message)
+                self.logger.error("Unable to request inventory: %s", resp.message)
                 return False
 
             return resp.data
 
         except:
-            self.logger.exception('Unable to know if module is loaded:')
-            self.crash_report.report_exception({
-                'message': 'Unable to know if module is loaded',
-                'module': module
-            })
+            self.logger.exception("Unable to know if module is loaded:")
+            self.crash_report.report_exception(
+                {"message": "Unable to know if module is loaded", "module": module}
+            )
             return False
 
     def _on_event(self, event):
@@ -533,7 +587,7 @@ class Cleep(BusClient):
         """
         self.on_event(event)
 
-    def on_event(self, event): # pragma: no cover
+    def on_event(self, event):  # pragma: no cover
         """
         Event message received
 
@@ -588,47 +642,64 @@ class Cleep(BusClient):
             InvalidParameter if one parameter has invalid type or value
         """
         for parameter in parameters:
-            self.logger.trace('Check parameter %s', parameter)
+            self.logger.trace("Check parameter %s", parameter)
             # none
-            if ('none' not in parameter or ('none' in parameter and not parameter['none'])) and parameter['value'] is None:
-                raise MissingParameter('Parameter "%s" is missing' % parameter['name'])
-            if parameter['value'] is None:
+            if (
+                "none" not in parameter
+                or ("none" in parameter and not parameter["none"])
+            ) and parameter["value"] is None:
+                raise MissingParameter('Parameter "%s" is missing' % parameter["name"])
+            if parameter["value"] is None:
                 # nothing else to check, parameter value is allowed as None
                 continue
 
             # type
-            if not isinstance(parameter['value'], parameter.get('type', str)):
+            if not isinstance(parameter["value"], parameter.get("type", str)):
                 raise InvalidParameter(
-                    'Parameter "%s" must be of type "%s"' % (
-                        parameter['name'],
-                        parameter.get('type', str).__name__,
+                    'Parameter "%s" must be of type "%s"'
+                    % (
+                        parameter["name"],
+                        parameter.get("type", str).__name__,
                     )
                 )
 
             # empty
-            if (('empty' not in parameter or ('empty' in parameter and not parameter['empty'])) and
-                    parameter.get('type', str) is str and
-                    len(parameter['value']) == 0):
+            if (
+                (
+                    "empty" not in parameter
+                    or ("empty" in parameter and not parameter["empty"])
+                )
+                and parameter.get("type", str) is str
+                and len(parameter["value"]) == 0
+            ):
                 raise InvalidParameter(
-                    'Parameter "%s" is invalid (specified="%s")' % (
-                        parameter['name'],
-                        parameter['value'],
+                    'Parameter "%s" is invalid (specified="%s")'
+                    % (
+                        parameter["name"],
+                        parameter["value"],
                     )
                 )
 
             # validators
-            validators = parameter.get('validators', [])
-            if 'validator' in parameter:
-                validators.append({
-                    'validator': parameter['validator'],
-                    'message': parameter.get('message', None),
-                })
+            validators = parameter.get("validators", [])
+            if "validator" in parameter:
+                validators.append(
+                    {
+                        "validator": parameter["validator"],
+                        "message": parameter.get("message", None),
+                    }
+                )
             for validator in validators:
-                if 'validator' in validator and not validator['validator'](parameter['value']):
+                if "validator" in validator and not validator["validator"](
+                    parameter["value"]
+                ):
                     raise InvalidParameter(
-                        validator['message'] if validator.get('message') else 'Parameter "%s" is invalid (specified="%s")' % (
-                            parameter['name'],
-                            parameter['value'],
+                        validator["message"]
+                        if validator.get("message")
+                        else 'Parameter "%s" is invalid (specified="%s")'
+                        % (
+                            parameter["name"],
+                            parameter["value"],
                         )
                     )
 
@@ -647,21 +718,25 @@ class Cleep(BusClient):
             MessageResponse: message response instance
         """
         if not self._external_bus_name:
-            self.logger.warning('Unable to send message to peer because there is no external bus application installed')
-            return MessageResponse(error=True, message='No external bus application installed')
+            self.logger.warning(
+                "Unable to send message to peer because there is no external bus application installed"
+            )
+            return MessageResponse(
+                error=True, message="No external bus application installed"
+            )
 
         # send command to internal message bus
         return self.send_command(
-            'send_command_to_peer',
+            "send_command_to_peer",
             self._external_bus_name,
             {
-                'command': command,
-                'to': to,
-                'params': params,
-                'peer_uuid': peer_uuid,
-                'timeout': timeout,
+                "command": command,
+                "to": to,
+                "params": params,
+                "peer_uuid": peer_uuid,
+                "timeout": timeout,
             },
-            timeout
+            timeout,
         )
 
     def send_event_to_peer(self, event, peer_uuid, params=None):
@@ -674,17 +749,21 @@ class Cleep(BusClient):
             params (dict): event parameters. Default None
         """
         if not self._external_bus_name:
-            self.logger.warning('Unable to send message to peer because there is no external bus application installed')
-            return MessageResponse(error=True, message='No external bus application installed')
+            self.logger.warning(
+                "Unable to send message to peer because there is no external bus application installed"
+            )
+            return MessageResponse(
+                error=True, message="No external bus application installed"
+            )
 
         # send command to internal message bus
         return self.send_command(
-            'send_event_to_peer',
+            "send_event_to_peer",
             self._external_bus_name,
             {
-                'event': event,
-                'peer_uuid': peer_uuid,
-                'params': params,
+                "event": event,
+                "peer_uuid": peer_uuid,
+                "params": params,
             },
             3.0,
         )
@@ -700,19 +779,26 @@ class Cleep(BusClient):
             bool: True if url added
         """
         try:
-            resp = self.send_command('register_remote_access_url', 'inventory', {'url': url})
+            resp = self.send_command(
+                "register_remote_access_url", "inventory", {"url": url}
+            )
             if resp.error:
-                self.logger.error('Unable to request inventory register_remote_access_url: %s', resp.message)
+                self.logger.error(
+                    "Unable to request inventory register_remote_access_url: %s",
+                    resp.message,
+                )
                 return False
 
             return True
 
         except:
-            self.logger.exception('Unable to register remote access url:')
-            self.crash_report.report_exception({
-                'message': 'Unable register remote access url',
-                'url': url,
-            })
+            self.logger.exception("Unable to register remote access url:")
+            self.crash_report.report_exception(
+                {
+                    "message": "Unable register remote access url",
+                    "url": url,
+                }
+            )
             return False
 
     def unregister_remote_access_url(self):
@@ -723,28 +809,31 @@ class Cleep(BusClient):
             bool: True if url added
         """
         try:
-            resp = self.send_command('unregister_remote_access_url', 'inventory')
+            resp = self.send_command("unregister_remote_access_url", "inventory")
             if resp.error:
-                self.logger.error('Unable to request inventory unregister_remote_access_url: %s', resp.message)
+                self.logger.error(
+                    "Unable to request inventory unregister_remote_access_url: %s",
+                    resp.message,
+                )
                 return False
 
             return True
 
         except:
-            self.logger.exception('Unable to unregister remote access url:')
-            self.crash_report.report_exception({
-                'message': 'Unable unregister remote access url',
-            })
+            self.logger.exception("Unable to unregister remote access url:")
+            self.crash_report.report_exception(
+                {
+                    "message": "Unable unregister remote access url",
+                }
+            )
             return False
-
-
-
 
 
 class CleepRpcWrapper(Cleep):
     """
     Base Cleep class for RPC request wrapping
     """
+
     def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
@@ -753,10 +842,10 @@ class CleepRpcWrapper(Cleep):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        #init cleep
+        # init cleep
         Cleep.__init__(self, bootstrap, debug_enabled)
 
-    def _wrap_request(self, route, request): # pragma: no cover
+    def _wrap_request(self, route, request):  # pragma: no cover
         """
         Function called when web request from / in POST is called.
 
@@ -773,11 +862,9 @@ class CleepRpcWrapper(Cleep):
             returns any data
         """
         raise NotImplementedError(
-            'wrap_request function must be implemented in "%s"' % self.__class__.__name__
+            'wrap_request function must be implemented in "%s"'
+            % self.__class__.__name__
         )
-
-
-
 
 
 class CleepModule(Cleep):
@@ -808,7 +895,7 @@ class CleepModule(Cleep):
             bootstrap (dict): bootstrap objects.
             debug_enabled (bool): flag to set debug level to logger.
         """
-        # init cleep 
+        # init cleep
         Cleep.__init__(self, bootstrap, debug_enabled)
 
         # members
@@ -816,21 +903,28 @@ class CleepModule(Cleep):
 
         # define app paths
         class_name = self.__class__.__name__.lower()
-        self.__set_path('APP_STORAGE_PATH', os.path.join('/var/opt/cleep/modules/storage', class_name))
-        self.__set_path('APP_TMP_PATH', os.path.join('/tmp/cleep/modules', class_name))
-        self.__set_path('APP_ASSET_PATH', os.path.join('/var/opt/cleep/modules/asset/', class_name))
-        self.__set_path('APP_BIN_PATH', os.path.join('/var/opt/cleep/modules/bin/', class_name))
+        self.__set_path(
+            "APP_STORAGE_PATH",
+            os.path.join("/var/opt/cleep/modules/storage", class_name),
+        )
+        self.__set_path("APP_TMP_PATH", os.path.join("/tmp/cleep/modules", class_name))
+        self.__set_path(
+            "APP_ASSET_PATH", os.path.join("/var/opt/cleep/modules/asset/", class_name)
+        )
+        self.__set_path(
+            "APP_BIN_PATH", os.path.join("/var/opt/cleep/modules/bin/", class_name)
+        )
 
         # add devices section if missing
-        if self._has_config_file() and not self._has_config_field('devices'):
-            self._update_config({
-                'devices': {}
-            })
+        if self._has_config_file() and not self._has_config_field("devices"):
+            self._update_config({"devices": {}})
 
         # events
         self.deleted_device_event = None
         try:
-            self.deleted_device_event = self.events_broker.get_event_instance('core.device.deleted')
+            self.deleted_device_event = self.events_broker.get_event_instance(
+                "core.device.deleted"
+            )
         except:
             pass
 
@@ -864,10 +958,10 @@ class CleepModule(Cleep):
 
         """
         return {
-            'APP_STORAGE_PATH': self.APP_STORAGE_PATH,
-            'APP_TMP_PATH': self.APP_TMP_PATH,
-            'APP_ASSET_PATH': self.APP_ASSET_PATH,
-            'APP_BIN_PATH': self.APP_BIN_PATH,
+            "APP_STORAGE_PATH": self.APP_STORAGE_PATH,
+            "APP_TMP_PATH": self.APP_TMP_PATH,
+            "APP_ASSET_PATH": self.APP_ASSET_PATH,
+            "APP_BIN_PATH": self.APP_BIN_PATH,
         }
 
     def _add_device(self, data):
@@ -889,20 +983,20 @@ class CleepModule(Cleep):
 
         # prepare config file
         devices = {}
-        if self._has_config_field('devices'):
-            devices = self._get_config_field('devices')
+        if self._has_config_field("devices"):
+            devices = self._get_config_field("devices")
 
         # prepare data
         device_uuid = self._get_unique_id()
-        data['uuid'] = device_uuid
-        if 'name' not in data:
-            data['name'] = 'noname'
+        data["uuid"] = device_uuid
+        if "name" not in data:
+            data["name"] = "noname"
         devices[device_uuid] = data
-        data['update'] = int(time.time())
-        self.logger.trace('devices: %s', devices)
+        data["update"] = int(time.time())
+        self.logger.trace("devices: %s", devices)
 
         # save data
-        if not self._update_config({'devices': devices}):
+        if not self._update_config({"devices": devices}):
             # error occured
             return None
 
@@ -919,16 +1013,16 @@ class CleepModule(Cleep):
             bool: True if device was deleted, False otherwise.
         """
         # check values
-        devices = self._get_config_field('devices')
+        devices = self._get_config_field("devices")
         if device_uuid not in devices:
-            self.logger.error('Trying to delete unknown device')
+            self.logger.error("Trying to delete unknown device")
             return False
 
         # delete device entry
         del devices[device_uuid]
 
         # save config
-        conf_result = self._set_config_field('devices', devices)
+        conf_result = self._set_config_field("devices", devices)
 
         # send device deleted event
         if conf_result and self.deleted_device_event:
@@ -955,20 +1049,22 @@ class CleepModule(Cleep):
         data_ = copy.deepcopy(data)
 
         # check values
-        devices = self._get_config_field('devices')
+        devices = self._get_config_field("devices")
         if device_uuid not in devices:
             self.logger.warning('Trying to update unknown device "%s"', device_uuid)
             return False
 
         # always force uuid to make sure data is always valid
-        data_['uuid'] = device_uuid
-        data_['update'] = int(time.time())
+        data_["uuid"] = device_uuid
+        data_["update"] = int(time.time())
 
         # update data
-        devices[device_uuid].update({k: v for k, v in data_.items() if k in devices[device_uuid].keys()})
+        devices[device_uuid].update(
+            {k: v for k, v in data_.items() if k in devices[device_uuid].keys()}
+        )
 
         # save data
-        return self._set_config_field('devices', devices)
+        return self._set_config_field("devices", devices)
 
     def _search_device(self, key, value):
         """
@@ -982,7 +1078,7 @@ class CleepModule(Cleep):
         Returns
             dict: the device data if key-value found, or None otherwise.
         """
-        devices = self._get_config_field('devices')
+        devices = self._get_config_field("devices")
         if len(devices) == 0:
             # no device in dict, return no match
             return None
@@ -1010,7 +1106,7 @@ class CleepModule(Cleep):
         output = []
 
         # check values
-        devices = self._get_config_field('devices')
+        devices = self._get_config_field("devices")
         if len(devices) == 0:
             # no device in dict, return no match
             return output
@@ -1033,7 +1129,7 @@ class CleepModule(Cleep):
         Returns:
             dict: None if device not found, device data otherwise.
         """
-        devices = self._get_config_field('devices')
+        devices = self._get_config_field("devices")
         return devices[device_uuid] if device_uuid in devices else None
 
     def get_module_devices(self):
@@ -1049,7 +1145,7 @@ class CleepModule(Cleep):
                 }
 
         """
-        return self._get_config()['devices'] if self._has_config_file() else {}
+        return self._get_config()["devices"] if self._has_config_file() else {}
 
     def _get_devices(self):
         """
@@ -1073,7 +1169,7 @@ class CleepModule(Cleep):
         Returns:
             int: number of saved devices.
         """
-        return len(self._get_config_field('devices')) if self._has_config_file() else 0
+        return len(self._get_config_field("devices")) if self._has_config_file() else 0
 
     def get_module_config(self):
         """
@@ -1085,8 +1181,8 @@ class CleepModule(Cleep):
         config = self._get_config()
 
         # remove devices from config
-        if 'devices' in config:
-            del config['devices']
+        if "devices" in config:
+            del config["devices"]
 
         return config
 
@@ -1098,7 +1194,7 @@ class CleepModule(Cleep):
             list: list of command names.
         """
         members = Cleep.get_module_commands(self)
-        members.remove('get_module_devices')
+        members.remove("get_module_devices")
         return members
 
     def get_documentation(self, no_cache=False):
@@ -1210,7 +1306,9 @@ class CleepModule(Cleep):
             )
             return self.__class__
 
-    def send_command_advanced(self, command, to, params=None, timeout=3.0, raise_exc=False):
+    def send_command_advanced(
+        self, command, to, params=None, timeout=3.0, raise_exc=False
+    ):
         """
         Send command as default send_command function but handle errors logging them and return data
         It also can throw exception if requested
@@ -1227,15 +1325,17 @@ class CleepModule(Cleep):
         """
         resp = self.send_command(command, to, params, timeout)
         if resp.error:
-            self.logger.error('Error occured executing command %s to %s: %s', command, to, resp.message)
+            self.logger.error(
+                "Error occured executing command %s to %s: %s",
+                command,
+                to,
+                resp.message,
+            )
             if raise_exc:
                 raise Exception(resp.message)
             return None
 
         return resp.data
-
-
-
 
 
 class CleepResources(CleepModule):
@@ -1278,7 +1378,7 @@ class CleepResources(CleepModule):
         CleepModule.__init__(self, bootstrap, debug_enabled)
 
         # members
-        self.__critical_resources = bootstrap['critical_resources']
+        self.__critical_resources = bootstrap["critical_resources"]
 
         # register resources
         self.__register_resources()
@@ -1293,7 +1393,7 @@ class CleepResources(CleepModule):
                 resource_name,
                 self._resource_acquired,
                 self._resource_needs_to_be_released,
-                resource['permanent'] if 'permanent' in resource else False
+                resource["permanent"] if "permanent" in resource else False,
             )
 
     def _resource_acquired(self, resource_name):
@@ -1310,7 +1410,8 @@ class CleepResources(CleepModule):
             NotImplementedError: if function is not implemented
         """
         raise NotImplementedError(
-            'Method "_resource_acquired" must be implemented in "%s"' % self.__class__.__name__
+            'Method "_resource_acquired" must be implemented in "%s"'
+            % self.__class__.__name__
         )
 
     def _resource_needs_to_be_released(self, resource_name):
@@ -1327,7 +1428,8 @@ class CleepResources(CleepModule):
             NotImplementedError: if function is not implemented
         """
         raise NotImplementedError(
-            'Method "_resource_needs_to_be_released" must be implemented in "%s"' % self.__class__.__name__
+            'Method "_resource_needs_to_be_released" must be implemented in "%s"'
+            % self.__class__.__name__
         )
 
     def _need_resource(self, resource_name):
@@ -1340,7 +1442,9 @@ class CleepResources(CleepModule):
         Args:
             resource_name (string): Existing resource name (see resources core directory content)
         """
-        self.__critical_resources.acquire_resource(self.__class__.__name__, resource_name)
+        self.__critical_resources.acquire_resource(
+            self.__class__.__name__, resource_name
+        )
 
     def _release_resource(self, resource_name):
         """
@@ -1349,7 +1453,9 @@ class CleepResources(CleepModule):
         Args:
             resource_name (string): Existing resource name (see resources core directory content)
         """
-        return self.__critical_resources.release_resource(self.__class__.__name__, resource_name)
+        return self.__critical_resources.release_resource(
+            self.__class__.__name__, resource_name
+        )
 
     def _get_resources(self):
         """
@@ -1359,9 +1465,6 @@ class CleepResources(CleepModule):
             list: list of available resources
         """
         return self.__critical_resources.get_resources()
-
-
-
 
 
 class CleepRenderer(CleepModule):
@@ -1411,18 +1514,20 @@ class CleepRenderer(CleepModule):
         Raises:
             Exception: if RENDERER_PROFILES member is not defined
         """
-        if getattr(self, 'RENDERER_PROFILES', None) is None:
-            raise Exception('RENDERER_PROFILES is not defined in "%s"' % self.__class__.__name__)
+        if getattr(self, "RENDERER_PROFILES", None) is None:
+            raise Exception(
+                'RENDERER_PROFILES is not defined in "%s"' % self.__class__.__name__
+            )
         if not isinstance(self.RENDERER_PROFILES, list):
-            raise Exception('RENDERER_PROFILES must be a list in "%s"' % self.__class__.__name__)
+            raise Exception(
+                'RENDERER_PROFILES must be a list in "%s"' % self.__class__.__name__
+            )
 
         # cache profile types as string
         for profile in self.RENDERER_PROFILES:
             self.profiles_types.append(profile.__name__)
 
-        return {
-            'profiles': self.RENDERER_PROFILES
-        }
+        return {"profiles": self.RENDERER_PROFILES}
 
     def render(self, profile_name, profile_values):
         """
@@ -1442,10 +1547,12 @@ class CleepRenderer(CleepModule):
         except NotImplementedError:
             raise
         except:
-            self.logger.exception('Rendering profile "%s" failed (%s):', profile_name, profile_values)
+            self.logger.exception(
+                'Rendering profile "%s" failed (%s):', profile_name, profile_values
+            )
             return False
 
-    def on_render(self, profile_name, profile_values): # pragma: no cover
+    def on_render(self, profile_name, profile_values):  # pragma: no cover
         """
         Use specified profile values to render them
 
@@ -1459,7 +1566,9 @@ class CleepRenderer(CleepModule):
         Raises:
             NotImplementedError: if not implemented
         """
-        raise NotImplementedError('Method "on_render" must be implemented in "%s"' % self.__class__.__name__)
+        raise NotImplementedError(
+            'Method "on_render" must be implemented in "%s"' % self.__class__.__name__
+        )
 
     def get_module_commands(self):
         """
@@ -1469,16 +1578,16 @@ class CleepRenderer(CleepModule):
             list: list of command names.
         """
         members = CleepModule.get_module_commands(self)
-        members.remove('render')
-        members.remove('on_render')
+        members.remove("render")
+        members.remove("on_render")
         return members
-
 
 
 class CleepExternalBus(CleepModule):
     """
     Base Cleep class for external bus implementation
     """
+
     def __init__(self, bootstrap, debug_enabled):
         """
         Constructor
@@ -1491,9 +1600,11 @@ class CleepExternalBus(CleepModule):
         CleepModule.__init__(self, bootstrap, debug_enabled)
 
         # store rpc config
-        self.rpc_config = bootstrap.get('rpc_config', {})
+        self.rpc_config = bootstrap.get("rpc_config", {})
 
-    def send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
+    def send_command_to_peer(
+        self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None
+    ):
         """
         Helper function to send command message to specified peer through external bus.
 
@@ -1507,9 +1618,13 @@ class CleepExternalBus(CleepModule):
                                         filled by internal bus or is None if function is called from the module itself.
         """
         # overwrite super function to call directly internal function
-        self._send_command_to_peer(command, to, peer_uuid, params, timeout, manual_response)
+        self._send_command_to_peer(
+            command, to, peer_uuid, params, timeout, manual_response
+        )
 
-    def _send_command_to_peer(self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None):
+    def _send_command_to_peer(
+        self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None
+    ):
         """
         Send command to peer implementation
 
@@ -1525,7 +1640,8 @@ class CleepExternalBus(CleepModule):
             Must be implemented
         """
         raise NotImplementedError(
-            '_send_command_to_peer function must be implemented in "%s"' % self.__class__.__name__
+            '_send_command_to_peer function must be implemented in "%s"'
+            % self.__class__.__name__
         )
 
     def send_event_to_peer(self, event_name, peer_uuid, params=None):
@@ -1553,6 +1669,6 @@ class CleepExternalBus(CleepModule):
             Must be implemented
         """
         raise NotImplementedError(
-            '_send_event_to_peer function must be implemented in "%s"' % self.__class__.__name__
+            '_send_event_to_peer function must be implemented in "%s"'
+            % self.__class__.__name__
         )
-

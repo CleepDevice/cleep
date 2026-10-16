@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-    
+
 import os
 import logging
 import importlib
@@ -17,7 +17,8 @@ from cleep.common import CORE_MODULES, ExecutionStep
 from cleep.libs.internals.task import Task
 from cleep import __version__ as CLEEP_VERSION
 
-__all__ = ['Inventory']
+__all__ = ["Inventory"]
+
 
 class Inventory(Cleep):
     """
@@ -29,16 +30,18 @@ class Inventory(Cleep):
     owned by the update application.
     """
 
-    MODULE_AUTHOR = 'Cleep'
-    MODULE_VERSION = '0.0.0'
+    MODULE_AUTHOR = "Cleep"
+    MODULE_VERSION = "0.0.0"
     MODULE_CORE = True
-    MODULE_NAME = 'inventory'
+    MODULE_NAME = "inventory"
 
     MODULES_SYNC_TIMEOUT = 60.0
-    PYTHON_CLEEP_IMPORT_PATH = 'cleep.modules.'
-    PYTHON_CLEEP_MODULES_PATH = 'modules'
+    PYTHON_CLEEP_IMPORT_PATH = "cleep.modules."
+    PYTHON_CLEEP_MODULES_PATH = "modules"
 
-    def __init__(self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config):
+    def __init__(
+        self, bootstrap, rpcserver, debug_enabled, configured_modules, debug_config
+    ):
         """
         Constructor
 
@@ -69,8 +72,8 @@ class Inventory(Cleep):
         self.configured_modules = configured_modules
         self.debug_config = debug_config
         self.bootstrap = bootstrap
-        self.events_broker = bootstrap['events_broker']
-        self.formatters_broker = bootstrap['formatters_broker']
+        self.events_broker = bootstrap["events_broker"]
+        self.formatters_broker = bootstrap["formatters_broker"]
         self.task_factory = bootstrap["task_factory"]
         # dict to store event to synchronize module startups
         self.__module_join_events = []
@@ -96,7 +99,7 @@ class Inventory(Cleep):
         self.__remote_access_urls = {}
 
         # events
-        self.apps_updated_event = self._get_event('core.apps.updated')
+        self.apps_updated_event = self._get_event("core.apps.updated")
 
     def _configure(self):
         """
@@ -104,9 +107,11 @@ class Inventory(Cleep):
         """
         self._load_modules()
 
-        if os.getenv('MEMORY_MONITORING'): # pragma: no cover
-            self.logger.info('Starting memory monitoring task')
-            self.__memory_monitoring_task = Task(21600, self.__memory_monitoring, self.logger)
+        if os.getenv("MEMORY_MONITORING"):  # pragma: no cover
+            self.logger.info("Starting memory monitoring task")
+            self.__memory_monitoring_task = Task(
+                21600, self.__memory_monitoring, self.logger
+            )
             self.__memory_monitoring_task.start()
 
     def __get_bootstrap(self):
@@ -115,20 +120,15 @@ class Inventory(Cleep):
         This function instanciate a new Event for module synchronization and pass all other attributes
         """
         bootstrap = copy.copy(self.bootstrap)
-        bootstrap['module_join_event'] = Event()
+        bootstrap["module_join_event"] = Event()
 
         return bootstrap
 
     def __fix_country(self, country):
-        return '' if not country else country.lower()
+        return "" if not country else country.lower()
 
     def __fix_urls(self, site_url, bugs_url, info_url, help_url):
-        return {
-            'site': site_url,
-            'bugs': bugs_url,
-            'info': info_url,
-            'help': help_url
-        }
+        return {"site": site_url, "bugs": bugs_url, "info": info_url, "help": help_url}
 
     def __load_module(self, module_name, local_modules, is_dependency=False):
         """
@@ -146,50 +146,69 @@ class Inventory(Cleep):
 
         # handle circular dependency
         if module_name in self.__module_loading_tree:
-            self.logger.warning('Circular dependency detected')
+            self.logger.warning("Circular dependency detected")
             return
         self.__module_loading_tree.append(module_name)
-        self.logger.trace('Application tree: %s', self.__module_loading_tree)
+        self.logger.trace("Application tree: %s", self.__module_loading_tree)
 
         # handle already loaded dependency
         if module_name in self.__modules_loaded_as_dependency:
-            self.logger.trace('Loading dependency "%s" as an app after it has been loaded as dependency', module_name)
+            self.logger.trace(
+                'Loading dependency "%s" as an app after it has been loaded as dependency',
+                module_name,
+            )
             self.__modules_loaded_as_dependency[module_name] = False
             return
 
         # set module is installed
         if module_name not in self.modules and module_name not in local_modules:
-            raise Exception('Application "%s" doesn\'t exist. Parent app and app dependencies won\'t be loaded.' % module_name)
-        self.modules[module_name]['installed'] = True
+            raise Exception(
+                "Application \"%s\" doesn't exist. Parent app and app dependencies won't be loaded."
+                % module_name
+            )
+        self.modules[module_name]["installed"] = True
 
         # import module file and get module class
-        module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
+        module_path = "%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
         module_ = importlib.import_module(module_path)
-        app_filename = getattr(module_, 'APP_FILENAME', module_name)
+        app_filename = getattr(module_, "APP_FILENAME", module_name)
         del module_
-        class_path = '%s%s.%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name, app_filename)
+        class_path = "%s%s.%s" % (
+            self.PYTHON_CLEEP_IMPORT_PATH,
+            module_name,
+            app_filename,
+        )
         self.logger.trace('Importing application "%s"', class_path)
         module_ = importlib.import_module(class_path)
         module_class_ = getattr(module_, app_filename.capitalize())
-        setattr(module_class_, 'MODULE_NAME', module_name)
-                    
+        setattr(module_class_, "MODULE_NAME", module_name)
+
         # enable or not debug
         debug = False
-        if self.debug_config['trace_enabled'] or module_name in self.debug_config['debug_modules']:
+        if (
+            self.debug_config["trace_enabled"]
+            or module_name in self.debug_config["debug_modules"]
+        ):
             self.logger.debug('Debug enabled for application "%s"', module_name)
             debug = True
 
         # load module dependencies
-        self.logger.trace('Application "%s" dependencies: %s', module_name, module_class_.MODULE_DEPS)
+        self.logger.trace(
+            'Application "%s" dependencies: %s', module_name, module_class_.MODULE_DEPS
+        )
         if module_class_.MODULE_DEPS:
             for dependency in module_class_.MODULE_DEPS:
-                self.logger.trace('Processing "%s" application dependency "%s"', module_name, dependency)
+                self.logger.trace(
+                    'Processing "%s" application dependency "%s"',
+                    module_name,
+                    dependency,
+                )
                 # update dependencies list
                 if dependency not in self.__dependencies:
                     self.__dependencies[dependency] = []
                 self.__dependencies[dependency].append(module_name)
-                self.logger.trace('Dependencies list: %s', self.__dependencies)
-                
+                self.logger.trace("Dependencies list: %s", self.__dependencies)
+
                 if dependency not in self.__modules_instances:
                     # load dependency
                     self.logger.trace('Load dependency "%s"', dependency)
@@ -198,14 +217,14 @@ class Inventory(Cleep):
 
                     # flag module is loaded as dependency and not module
                     self.__modules_loaded_as_dependency[dependency] = True
-            
+
                 else:
                     # dependency is already loaded, nothing else to do
                     self.logger.trace('Dependency "%s" already loaded', dependency)
 
         # is module external bus implementation
-        if 'CleepExternalBus' in [c.__name__ for c in module_class_.__bases__]:
-            self.bootstrap['external_bus'] = module_name
+        if "CleepExternalBus" in [c.__name__ for c in module_class_.__bases__]:
+            self.bootstrap["external_bus"] = module_name
 
         # instanciate module
         self.logger.trace('Instanciating application "%s"', module_name)
@@ -213,31 +232,37 @@ class Inventory(Cleep):
         self.__modules_instances[module_name] = module_class_(bootstrap, debug)
 
         # append module join event to make sure all modules are loaded
-        self.__module_join_events.append(bootstrap['module_join_event'])
+        self.__module_join_events.append(bootstrap["module_join_event"])
 
         # fix some metadata
         fixed_urls = self.__fix_urls(
-            getattr(module_class_, 'MODULE_URLSITE', None),
-            getattr(module_class_, 'MODULE_URLBUGS', None),
-            getattr(module_class_, 'MODULE_URLINFO', None),
-            getattr(module_class_, 'MODULE_URLHELP', None)
+            getattr(module_class_, "MODULE_URLSITE", None),
+            getattr(module_class_, "MODULE_URLBUGS", None),
+            getattr(module_class_, "MODULE_URLINFO", None),
+            getattr(module_class_, "MODULE_URLHELP", None),
         )
-        fixed_country = self.__fix_country(getattr(module_class_, 'MODULE_COUNTRY', None))
+        fixed_country = self.__fix_country(
+            getattr(module_class_, "MODULE_COUNTRY", None)
+        )
 
         # update metadata with module values
-        self.modules[module_name].update({
-            'label': getattr(module_class_, 'MODULE_LABEL', module_name.capitalize()),
-            'description': module_class_.MODULE_DESCRIPTION,
-            'author': getattr(module_class_, 'MODULE_AUTHOR', ''),
-            'core': module_name in CORE_MODULES,
-            'tags': getattr(module_class_, 'MODULE_TAGS', []),
-            'country': fixed_country,
-            'urls': fixed_urls,
-            'category': getattr(module_class_, 'MODULE_CATEGORY', ''),
-            'screenshots': getattr(module_class_, 'MODULE_SCREENSHOTS', []),
-            'deps': getattr(module_class_, 'MODULE_DEPS', []),
-            'version': getattr(module_class_, 'MODULE_VERSION', '0.0.0'),
-        })
+        self.modules[module_name].update(
+            {
+                "label": getattr(
+                    module_class_, "MODULE_LABEL", module_name.capitalize()
+                ),
+                "description": module_class_.MODULE_DESCRIPTION,
+                "author": getattr(module_class_, "MODULE_AUTHOR", ""),
+                "core": module_name in CORE_MODULES,
+                "tags": getattr(module_class_, "MODULE_TAGS", []),
+                "country": fixed_country,
+                "urls": fixed_urls,
+                "category": getattr(module_class_, "MODULE_CATEGORY", ""),
+                "screenshots": getattr(module_class_, "MODULE_SCREENSHOTS", []),
+                "deps": getattr(module_class_, "MODULE_DEPS", []),
+                "version": getattr(module_class_, "MODULE_VERSION", "0.0.0"),
+            }
+        )
 
         # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
@@ -247,16 +272,18 @@ class Inventory(Cleep):
         Recompute compat/compatible flags for all modules using installed versions and CLEEP_VERSION
         """
         modules_versions = {
-            module_name: module.get('version', '0.0.0')
+            module_name: module.get("version", "0.0.0")
             for module_name, module in self.modules.items()
         }
-        modules_versions['cleep'] = CLEEP_VERSION
+        modules_versions["cleep"] = CLEEP_VERSION
         for module in self.modules.values():
-            compat = module.get('compat', '')
-            module.update({
-                'compat': compat,
-                'compatible': Tools.compare_compat_string(compat, modules_versions),
-            })
+            compat = module.get("compat", "")
+            module.update(
+                {
+                    "compat": compat,
+                    "compatible": Tools.compare_compat_string(compat, modules_versions),
+                }
+            )
 
     def reload_modules(self):
         """
@@ -265,13 +292,14 @@ class Inventory(Cleep):
         Market catalog ownership lives in the update application; inventory only
         recomputes compatibility for modules already known at runtime.
         """
-        self.logger.info('Reloading modules metadata')
+        self.logger.info("Reloading modules metadata")
         self.__recompute_compatibility()
         try:
             from cleep.rpcserver import invalidate_config_cache
+
             invalidate_config_cache()
         except Exception:
-            self.logger.debug('Unable to invalidate RPC config cache', exc_info=True)
+            self.logger.debug("Unable to invalidate RPC config cache", exc_info=True)
         self.apps_updated_event.send()
 
     def _load_modules(self):
@@ -280,30 +308,39 @@ class Inventory(Cleep):
         """
         # init
         if self.__modules_loaded:
-            raise Exception('Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
+            raise Exception(
+                "Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead"
+            )
         local_modules = []
         self.modules = {}
 
         # Discover applications available on disk
-        local_modules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), self.PYTHON_CLEEP_MODULES_PATH))
-        self.logger.debug('Local modules path: %s', local_modules_path)
-        if not os.path.exists(local_modules_path): # pragma: no cover
-            raise CommandError('Invalid modules path')
+        local_modules_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), self.PYTHON_CLEEP_MODULES_PATH)
+        )
+        self.logger.debug("Local modules path: %s", local_modules_path)
+        if not os.path.exists(local_modules_path):  # pragma: no cover
+            raise CommandError("Invalid modules path")
         for f in os.listdir(local_modules_path):
             fpath = os.path.join(local_modules_path, f)
             module_name = os.path.split(fpath)[-1]
-            if module_name.startswith('__'):
+            if module_name.startswith("__"):
                 continue
-            module_path = '%s%s' % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
+            module_path = "%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
             module_ = importlib.import_module(module_path)
-            app_filename = getattr(module_, 'APP_FILENAME', module_name)
-            module_py = os.path.join(fpath, '%s.py' % app_filename)
+            app_filename = getattr(module_, "APP_FILENAME", module_name)
+            module_py = os.path.join(fpath, "%s.py" % app_filename)
             if os.path.isdir(fpath) and os.path.exists(module_py):
                 self.modules[module_name] = {}
-                if module_name not in CORE_MODULES and module_name not in self.configured_modules:
-                    self.logger.debug('Found application "%s" installed manually', module_name)
+                if (
+                    module_name not in CORE_MODULES
+                    and module_name not in self.configured_modules
+                ):
+                    self.logger.debug(
+                        'Found application "%s" installed manually', module_name
+                    )
                     local_modules.append(module_name)
-        self.logger.debug('Local applications: %s', local_modules)
+        self.logger.debug("Local applications: %s", local_modules)
 
         # Ensure core and configured modules exist in the map even if scan missed them
         for module_name in list(CORE_MODULES) + list(self.configured_modules):
@@ -312,23 +349,25 @@ class Inventory(Cleep):
 
         # add default metadata
         for module_name, module in self.modules.items():
-            module.update({
-                'name': module_name,
-                'installed': False,
-                'library': False,
-                'local': module_name in local_modules,
-                'core': False,
-                'screenshots': [],
-                'deps': [],
-                'loadedby': [],
-                'version': module.get('version', '0.0.0'),
-            })
+            module.update(
+                {
+                    "name": module_name,
+                    "installed": False,
+                    "library": False,
+                    "local": module_name in local_modules,
+                    "core": False,
+                    "screenshots": [],
+                    "deps": [],
+                    "loadedby": [],
+                    "version": module.get("version", "0.0.0"),
+                }
+            )
 
         # execution step: BOOT->INIT
-        self.bootstrap['execution_step'].step = ExecutionStep.INIT
+        self.bootstrap["execution_step"].step = ExecutionStep.INIT
 
         # load core modules
-        self.logger.trace('CORE_MODULES: %s', CORE_MODULES)
+        self.logger.trace("CORE_MODULES: %s", CORE_MODULES)
         for module_name in CORE_MODULES:
             try:
                 # load module
@@ -337,13 +376,20 @@ class Inventory(Cleep):
             except Exception as error:
                 # failed to load mandatory module
                 self.__modules_in_error[module_name] = str(error)
-                if self.CLEEP_ENV != 'ci':
-                    self.logger.exception('Core application "%s" exception:', module_name)
-                    self.logger.error('Unable to load core application "%s". System will be instable', module_name)
-                    self.crash_report.report_exception({
-                        'message': f'Unable to load core application "{module_name}". System will be instable',
-                        'module_name': module_name
-                    })
+                if self.CLEEP_ENV != "ci":
+                    self.logger.exception(
+                        'Core application "%s" exception:', module_name
+                    )
+                    self.logger.error(
+                        'Unable to load core application "%s". System will be instable',
+                        module_name,
+                    )
+                    self.crash_report.report_exception(
+                        {
+                            "message": f'Unable to load core application "{module_name}". System will be instable',
+                            "module_name": module_name,
+                        }
+                    )
 
             finally:
                 # clear module loading tree (replace it with clear() available in python3)
@@ -356,19 +402,30 @@ class Inventory(Cleep):
                 self.__load_module(module_name, local_modules)
 
                 # register renderers
-                if module_name in self.__modules_instances and isinstance(self.__modules_instances[module_name], CleepRenderer):
-                    config = self.__modules_instances[module_name]._get_renderer_config()
-                    self.formatters_broker.register_renderer(module_name, config['profiles'])
+                if module_name in self.__modules_instances and isinstance(
+                    self.__modules_instances[module_name], CleepRenderer
+                ):
+                    config = self.__modules_instances[
+                        module_name
+                    ]._get_renderer_config()
+                    self.formatters_broker.register_renderer(
+                        module_name, config["profiles"]
+                    )
 
                 # store rpc wrappers
-                if module_name in self.__modules_instances and isinstance(self.__modules_instances[module_name], CleepRpcWrapper):
+                if module_name in self.__modules_instances and isinstance(
+                    self.__modules_instances[module_name], CleepRpcWrapper
+                ):
                     self.logger.debug('Store RpcWrapper instance "%s"', module_name)
                     self.__rpc_wrappers.append(module_name)
 
             except Exception as e:
                 # flag modules has in error
                 self.__modules_in_error[module_name] = str(e)
-                self.logger.exception('Unable to load application "%s" or one of its dependencies:', module_name)
+                self.logger.exception(
+                    'Unable to load application "%s" or one of its dependencies:',
+                    module_name,
+                )
                 # TODO report error if not locally installed module
 
             finally:
@@ -379,37 +436,39 @@ class Inventory(Cleep):
         self.__recompute_compatibility()
 
         # execution step: INIT->CONFIG
-        self.bootstrap['execution_step'].step = ExecutionStep.CONFIG
+        self.bootstrap["execution_step"].step = ExecutionStep.CONFIG
 
         # finalize loading process
         for module_name in self.modules:
             # fix final library status
             if module_name in self.__modules_loaded_as_dependency:
-                self.modules[module_name]['library'] = self.__modules_loaded_as_dependency[module_name]
+                self.modules[module_name]["library"] = (
+                    self.__modules_loaded_as_dependency[module_name]
+                )
 
         # start installed modules
         for module_name, module_ in self.__modules_instances.items():
             module_.start()
 
         # wait for all modules to be completely loaded
-        self.logger.info('Waiting for end of modules configuration...')
+        self.logger.info("Waiting for end of modules configuration...")
         for module_join_event in self.__module_join_events:
             module_join_event.wait()
-        self.logger.info('All applications are configured.')
-        self.bootstrap['core_join_event'].set()
+        self.logger.info("All applications are configured.")
+        self.bootstrap["core_join_event"].set()
 
         # check if modules are properly configured and started
         # OBSOLETE seems to be obsolete code !
-        #for module_name, module_ in self.__modules_instances.items():
+        # for module_name, module_ in self.__modules_instances.items():
         #    if not module_.is_alive():
         #        self.__modules_in_error[module_name] = 'Application "%s" configuration failed' % module_name
         #        # TODO report error if not locally installed module
 
         # execution step: CONFIG->RUN
-        self.bootstrap['execution_step'].step = ExecutionStep.RUN
+        self.bootstrap["execution_step"].step = ExecutionStep.RUN
 
         self.__modules_loaded = True
-        self.logger.debug('All modules are loaded')
+        self.logger.debug("All modules are loaded")
 
     def wait_for_apps_started(self):
         """
@@ -421,12 +480,16 @@ class Inventory(Cleep):
         Returns:
             bool: True if everything is started, False if an app is blocked or if one of app startup failed
         """
-        if not self.bootstrap['core_join_event'].wait(self.MODULES_SYNC_TIMEOUT):
-            self.logger.fatal('Startup takes too much time. An app may be blocked. Cleep may not run properly')
+        if not self.bootstrap["core_join_event"].wait(self.MODULES_SYNC_TIMEOUT):
+            self.logger.fatal(
+                "Startup takes too much time. An app may be blocked. Cleep may not run properly"
+            )
             return False
 
         if len(self.__modules_in_error.keys()) > 0:
-            self.logger.error('Following apps are in error: %s', self.__modules_in_error)
+            self.logger.error(
+                "Following apps are in error: %s", self.__modules_in_error
+            )
             return False
 
         return True
@@ -462,10 +525,10 @@ class Inventory(Cleep):
     def get_module_devices(self, module_name):
         """
         Return module devices
-        
+
         Args:
             module_name (string): module name
-        
+
         Returns:
             list: list of devices::
 
@@ -492,7 +555,7 @@ class Inventory(Cleep):
             dict: dict of devices by module::
 
                 {
-                    module1: 
+                    module1:
                         device uuid: {
                             device properties,
                             ...
@@ -507,9 +570,13 @@ class Inventory(Cleep):
         for module_name in self.__modules_instances:
             try:
                 if isinstance(self.__modules_instances[module_name], CleepModule):
-                    devices[module_name] = self.__modules_instances[module_name].get_module_devices()
+                    devices[module_name] = self.__modules_instances[
+                        module_name
+                    ].get_module_devices()
             except Exception:
-                self.logger.exception('Unable to get devices of application "%s"', module_name)
+                self.logger.exception(
+                    'Unable to get devices of application "%s"', module_name
+                )
 
         return devices
 
@@ -522,7 +589,7 @@ class Inventory(Cleep):
 
         Returns:
             dict: module infos or empty dict if module not found::
-                
+
                 {
                     name: str
                     version: str
@@ -538,19 +605,29 @@ class Inventory(Cleep):
 
         # add module config
         try:
-            module['config'] = self.__modules_instances[module_name].get_module_config() if module_name in self.__modules_instances else {}
+            module["config"] = (
+                self.__modules_instances[module_name].get_module_config()
+                if module_name in self.__modules_instances
+                else {}
+            )
         except:
-            self.logger.exception('Unable to retrieve "%s" app config. Return empty config', module_name)
-            module['config'] = {};
-            
+            self.logger.exception(
+                'Unable to retrieve "%s" app config. Return empty config', module_name
+            )
+            module["config"] = {}
+
         # add module events
-        module['events'] = events[module_name] if module_name in events else []
-    
+        module["events"] = events[module_name] if module_name in events else []
+
         # started flag
-        module['started'] = self.__is_module_started(module_name)
+        module["started"] = self.__is_module_started(module_name)
 
         # add library is loaded by
-        module['loadedby'] = self.__dependencies[module_name] if module_name in self.__dependencies else []
+        module["loadedby"] = (
+            self.__dependencies[module_name]
+            if module_name in self.__dependencies
+            else []
+        )
 
         return module
 
@@ -569,10 +646,16 @@ class Inventory(Cleep):
         """
         configs = {}
 
-        installed_apps = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        installed_apps = self._get_modules(
+            lambda name, module, modules: name in modules and modules[name]["installed"]
+        )
         for app_name, app in installed_apps.items():
             try:
-                configs[app_name] = self.__modules_instances[app_name].get_module_config() if app_name in self.__modules_instances else {}
+                configs[app_name] = (
+                    self.__modules_instances[app_name].get_module_config()
+                    if app_name in self.__modules_instances
+                    else {}
+                )
             except:
                 self.logger.exception('Unable to get app "%s" config', app_name)
 
@@ -591,8 +674,11 @@ class Inventory(Cleep):
             return False
 
         # also check if thread is running
-        return self.__modules_instances[module_name].is_alive() if started and module_name in self.__modules_instances else False
-
+        return (
+            self.__modules_instances[module_name].is_alive()
+            if started and module_name in self.__modules_instances
+            else False
+        )
 
     def get_modules(self):
         """
@@ -611,19 +697,23 @@ class Inventory(Cleep):
                 }
 
         """
-        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        installed_modules = self._get_modules(
+            lambda name, module, modules: name in modules and modules[name]["installed"]
+        )
         modules = {}
 
         for module_name, module in installed_modules.items():
             try:
                 # drop not launched modules
-                #if module_name not in self.__modules_instances:
+                # if module_name not in self.__modules_instances:
                 #    self.logger.trace('Drop not started module "%s"', module_name)
                 #    continue
                 modules[module_name] = self.get_module_infos(module_name)
 
-            except: # pragma: no cover
-                self.logger.exception('Unable to get data from application "%s"', module_name)
+            except:  # pragma: no cover
+                self.logger.exception(
+                    'Unable to get data from application "%s"', module_name
+                )
 
         return modules
 
@@ -633,7 +723,7 @@ class Inventory(Cleep):
 
         Args:
             module_filter (function): filtering function. Params: module name, module data, all modules
-        
+
         Returns:
             dict: dict of modules::
 
@@ -654,14 +744,16 @@ class Inventory(Cleep):
         # fix module_filter
         if module_filter is None:
             module_filter = lambda mod_name, mod_data, all_mods: True
-        
+
         all_modules = copy.deepcopy(self.modules)
         filtered_modules = {}
-        for module_name, module in {k:v for k,v in all_modules.items() if module_filter(k,v,all_modules)}.items():
+        for module_name, module in {
+            k: v for k, v in all_modules.items() if module_filter(k, v, all_modules)
+        }.items():
             filtered_modules[module_name] = module
 
         return filtered_modules
-            
+
     def get_module_commands(self, module):
         """
         Returns list of module commands
@@ -676,9 +768,16 @@ class Inventory(Cleep):
 
         """
         if module is not None:
-            return self.__modules_instances[module].get_module_commands() if module in self.__modules_instances else []
+            return (
+                self.__modules_instances[module].get_module_commands()
+                if module in self.__modules_instances
+                else []
+            )
 
-        return {module_name:module_instance.get_module_commands() for (module_name, module_instance) in self.__modules_instances.items()}
+        return {
+            module_name: module_instance.get_module_commands()
+            for (module_name, module_instance) in self.__modules_instances.items()
+        }
 
     def get_module_documentation(self, module_name, no_cache=False):
         """
@@ -727,7 +826,7 @@ class Inventory(Cleep):
     def is_module_loaded(self, module):
         """
         Simply returns True if specified module is loaded
-        
+
         Args:
             module (string): module name
 
@@ -742,7 +841,7 @@ class Inventory(Cleep):
 
         Returns:
             dict: dict of modules/libraries debug flag::
-            
+
                 {
                     modulename (bool): debug flag
                     ...
@@ -752,30 +851,28 @@ class Inventory(Cleep):
         debugs = {}
         for module in self.modules:
             # only get debug value of installed modules
-            if not self.modules[module]['installed']:
+            if not self.modules[module]["installed"]:
                 continue
 
             # get debug status
             try:
                 debugs[module] = {
-                    'debug': self.__modules_instances[module].is_debug_enabled()
+                    "debug": self.__modules_instances[module].is_debug_enabled()
                 }
 
             except:
-                self.logger.exception('Unable to get application %s debug status:', module)
-                debugs[module] = {
-                    'debug': False
-                }
+                self.logger.exception(
+                    "Unable to get application %s debug status:", module
+                )
+                debugs[module] = {"debug": False}
 
         # append core modules
-        debugs.update({
-            'inventory': {
-                'debug': self.is_debug_enabled()
-            },
-            'rpc': {
-                'debug': self.__rpcserver.is_debug_enabled()
+        debugs.update(
+            {
+                "inventory": {"debug": self.is_debug_enabled()},
+                "rpc": {"debug": self.__rpcserver.is_debug_enabled()},
             }
-        })
+        )
 
         return debugs
 
@@ -841,15 +938,15 @@ class Inventory(Cleep):
             try:
                 self.__modules_instances[module_name]._wrap_request(route, request)
             except:
-                self.logger.exception('RpcWrapper wrap_request function failed:')
+                self.logger.exception("RpcWrapper wrap_request function failed:")
 
     def get_drivers(self):
         """
         Return drivers
         """
-        return self.bootstrap['drivers'].get_all_drivers()
+        return self.bootstrap["drivers"].get_all_drivers()
 
-    def __get_object_size(self, obj): # pragma: no cover
+    def __get_object_size(self, obj):  # pragma: no cover
         """
         Return memory size of specified object instance. Useful to monitor module instance size
 
@@ -881,13 +978,15 @@ class Inventory(Cleep):
 
         return size
 
-    def __memory_monitoring(self): # pragma: no cover
+    def __memory_monitoring(self):  # pragma: no cover
         """
         Memory monitoring task
         """
-        self.logger.info('========== MEMORY STATUS ==========')
+        self.logger.info("========== MEMORY STATUS ==========")
         for module_name, module_instance in self.__modules_instances.items():
-            self.logger.info(' - %s: %d', (module_name, self.__get_object_size(module_instance)))
+            self.logger.info(
+                " - %s: %d", (module_name, self.__get_object_size(module_instance))
+            )
 
     def get_apps_health(self):
         """
@@ -897,7 +996,9 @@ class Inventory(Cleep):
             list: list of not started application names
         """
         health = {}
-        installed_modules = self._get_modules(lambda name,module,modules: name in modules and modules[name]['installed'])
+        installed_modules = self._get_modules(
+            lambda name, module, modules: name in modules and modules[name]["installed"]
+        )
         for module_name in installed_modules:
             health[module_name] = self.__is_module_started(module_name)
 

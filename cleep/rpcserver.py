@@ -117,7 +117,7 @@ def get_ssl_options(rpc_config):
     return {
         "keyfile": rpc_config.get("ssl_key"),
         "certfile": rpc_config.get("ssl_cert"),
-        "do_handshake_on_connect": False, # suppress SSLV3_ALERT_CERTIFICATE_UNKNOWN SSL errors
+        "do_handshake_on_connect": False,  # suppress SSLV3_ALERT_CERTIFICATE_UNKNOWN SSL errors
     }
 
 
@@ -170,7 +170,12 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
     workers = pool.Pool(20)
     server = pywsgi.WSGIServer(
-        (host, port), app, log=logger_requests, error_log=logger, spawn=workers, **ssl_options
+        (host, port),
+        app,
+        log=logger_requests,
+        error_log=logger,
+        spawn=workers,
+        **ssl_options,
     )
 
 
@@ -301,6 +306,7 @@ def start():
             server.close()
             server.stop()
 
+
 def stop():
     """
     Stop RPC server
@@ -308,6 +314,7 @@ def stop():
     _stop_local_socket()
     server.close()
     server.stop()
+
 
 def _prune_expired_sessions(now: float | None = None) -> None:
     """Drop expired auth sessions to avoid unbounded growth."""
@@ -864,6 +871,7 @@ def get_commands():
     resp = MessageResponse(data=commands)
     return resp.to_dict()
 
+
 @app.route("/doc/check/<app>", method="GET")
 @authenticate()
 def check_app_documentation(app):
@@ -879,7 +887,9 @@ def check_app_documentation(app):
     resp = MessageResponse()
     try:
         resp.data = inventory.check_module_documentation(app, with_details)
-        has_error = any([command_doc["valid"] is False for command_doc in resp.data.values()])
+        has_error = any(
+            [command_doc["valid"] is False for command_doc in resp.data.values()]
+        )
         if has_error:
             resp.error = True
             resp.message = "Invalid application documentation"
@@ -889,6 +899,7 @@ def check_app_documentation(app):
         resp.message = str(error)
 
     return resp.to_dict()
+
 
 @app.route("/doc/<app>", method="GET")
 @authenticate()
@@ -916,6 +927,7 @@ def get_app_documentation(app):
         resp.message = str(error)
 
     return resp.to_dict()
+
 
 @app.route("/config", method="POST")
 @authenticate()
@@ -1102,7 +1114,7 @@ def index():
 
 @app.route("/logs", method="GET")
 @authenticate()
-def logs(): # pragma: no cover
+def logs():  # pragma: no cover
     """
     Serve log file
     """

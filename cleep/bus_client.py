@@ -232,7 +232,7 @@ class BusClient(threading.Thread):
         try:
             module_function: CommandHandler = getattr(self, command)
             if module_function is not None:
-                (params_ok, args) = self.__check_command_parameters(
+                params_ok, args = self.__check_command_parameters(
                     module_function, params, self.__module_name
                 )
                 if params_ok and args is not None:
@@ -391,7 +391,9 @@ class BusClient(threading.Thread):
                     )
 
                 try:
-                    msg = self.__bus.pull(self.__module_name, timeout=_PULL_LOOP_TIMEOUT)
+                    msg = self.__bus.pull(
+                        self.__module_name, timeout=_PULL_LOOP_TIMEOUT
+                    )
                 except NoMessageAvailable:
                     continue
 
@@ -467,7 +469,7 @@ class BusClient(threading.Thread):
             )
 
             if command is not None:
-                (params_ok, args) = self.__check_command_parameters(
+                params_ok, args = self.__check_command_parameters(
                     command,
                     msg["message"]["params"],
                     msg["message"]["sender"],
