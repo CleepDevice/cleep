@@ -251,7 +251,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server:
+        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
             rpcserver.start()
 
             self.assertTrue(mock_server.serve_forever.called)
@@ -261,7 +261,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start_already_started(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server:
+        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = OSError()
             with patch('rpcserver.logger.fatal') as mock_logger_fatal:
                 rpcserver.start()
@@ -274,7 +274,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start_ctrl_c(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server:
+        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = KeyboardInterrupt()
             rpcserver.start()
 
@@ -285,7 +285,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start_exception(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server:
+        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = Exception('Test error')
             with patch('rpcserver.logger.exception') as mock_logger_exception:
                 rpcserver.start()
@@ -1065,11 +1065,100 @@ class RpcServerTests(unittest.TestCase):
         try:
             rpcserver.auth_enabled = True
             with boddle(headers={'X-Forwarded-For': '127.0.0.1'}):
-                # boddle sets REMOTE_ADDR to a non-local default
+                rpcserver.bottle.request.environ['REMOTE_ADDR'] = '10.0.0.8'
                 resp = rpcserver.get_config()
                 self.assertTrue(isinstance(resp, HTTPError))
                 self.assertEqual(resp.status, '401 Unauthorized')
         finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_authenticate_requires_auth_from_localhost(self):
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        try:
+            rpcserver.auth_enabled = True
+            with boddle():
+                rpcserver.bottle.request.environ['REMOTE_ADDR'] = '127.0.0.1'
+                resp = rpcserver.get_config()
+                self.assertTrue(isinstance(resp, HTTPError))
+                self.assertEqual(resp.status, '401 Unauthorized')
+        finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_authenticate_trusts_local_socket(self):
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        try:
+            rpcserver.auth_enabled = True
+            with boddle():
+                rpcserver.bottle.request.environ['cleep.local_socket'] = True
+                rpcserver.bottle.request.environ['REMOTE_ADDR'] = ''
+                resp = rpcserver.get_config()
+                self.assertFalse(isinstance(resp, HTTPError))
+                self.assertFalse(resp['error'])
+        finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_doc_routes_require_auth(self):
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        try:
+            rpcserver.auth_enabled = True
+            with boddle():
+                resp = rpcserver.get_app_documentation('app')
+                self.assertTrue(isinstance(resp, HTTPError))
+                self.assertEqual(resp.status, '401 Unauthorized')
+            with boddle():
+                resp = rpcserver.check_app_documentation('app')
+                self.assertTrue(isinstance(resp, HTTPError))
+                self.assertEqual(resp.status, '401 Unauthorized')
+        finally:
+            rpcserver.auth_enabled = auth_enabled_restore
+
+    def test_local_socket_serves_without_password(self):
+        self._init_context()
+        auth_enabled_restore = rpcserver.auth_enabled
+        socket_path = os.path.join('/tmp', 'cleep-rpc-test-%s.sock' % os.getpid())
+        path_restore = rpcserver.LOCAL_SOCKET_PATH
+        rpcserver.LOCAL_SOCKET_PATH = socket_path
+        rpcserver.auth_enabled = True
+        self.inventory.get_apps_health.return_value = {}
+        self.inventory.get_module_documentation.return_value = 'documentation'
+        try:
+            rpcserver._start_local_socket()
+            mode = os.stat(socket_path).st_mode & 0o777
+            self.assertEqual(mode, 0o600)
+
+            def _get(path):
+                from gevent import socket as gsocket
+                client = gsocket.socket(gsocket.AF_UNIX, gsocket.SOCK_STREAM)
+                client.connect(socket_path)
+                client.sendall(
+                    ('GET %s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' % path).encode()
+                )
+                data = b''
+                while True:
+                    chunk = client.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                client.close()
+                return data
+
+            from gevent import spawn
+            health = spawn(_get, '/health')
+            health.join(timeout=5)
+            self.assertFalse(health.exception)
+            self.assertIn(b'200', health.value.split(b'\r\n', 1)[0])
+
+            doc = spawn(_get, '/doc/app')
+            doc.join(timeout=5)
+            self.assertFalse(doc.exception)
+            self.assertIn(b'200', doc.value.split(b'\r\n', 1)[0])
+            self.assertIn(b'documentation', doc.value)
+        finally:
+            rpcserver._stop_local_socket()
+            rpcserver.LOCAL_SOCKET_PATH = path_restore
             rpcserver.auth_enabled = auth_enabled_restore
 
     def test_safe_upload_filename_strips_path(self):

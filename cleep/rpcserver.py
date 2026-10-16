@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import re
+import socket
 import uuid
 from typing import Any
 
@@ -45,17 +46,9 @@ UPLOAD_DIR = "/tmp"
 POLL_TIMEOUT = 60
 SESSION_TIMEOUT = 900  # 15mins
 CLEEP_CACHE: dict[str, Any] | None = None
-# Only REMOTE_ADDR is trusted for localhost bypass (never X-Forwarded-For)
-LOCAL_ADDRS = ["127.0.0.1", "localhost", "::1"]
+# Plain HTTP, only reachable by a local process. A tunnel cannot open it.
+LOCAL_SOCKET_PATH = "/run/cleep/rpc.sock"
 _SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
-try:
-    import socket
-
-    device_ip = socket.gethostbyname(socket.gethostname())
-    LOCAL_ADDRS.append(device_ip)
-except Exception:
-    # surely in docker env
-    pass
 
 # globals
 polling = 0
@@ -67,6 +60,7 @@ logger = None
 debug_enabled = False
 app = bottle.app()
 server = None
+local_socket_server = None
 cleep_filesystem = None
 inventory = None
 bus = None
@@ -180,6 +174,70 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     )
 
 
+def _local_socket_app(environ, start_response):
+    """
+    Mark requests that arrived on the Unix socket.
+
+    The flag lives in the WSGI environ of this server only. A TCP client
+    cannot set it, and a tunnel cannot open the socket.
+    """
+    environ["cleep.local_socket"] = True
+    return app(environ, start_response)
+
+
+def _start_local_socket():
+    """
+    Listen on the local Unix socket, in HTTP, with the same Bottle application.
+    """
+    global local_socket_server
+
+    directory = os.path.dirname(LOCAL_SOCKET_PATH)
+    os.makedirs(directory, mode=0o755, exist_ok=True)
+    if os.path.exists(LOCAL_SOCKET_PATH):
+        os.remove(LOCAL_SOCKET_PATH)
+
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        listener.bind(LOCAL_SOCKET_PATH)
+        os.chmod(LOCAL_SOCKET_PATH, 0o600)
+        listener.listen(50)
+        listener.setblocking(False)
+    except Exception:
+        listener.close()
+        raise
+
+    logger.info("Running local RPC socket %s", LOCAL_SOCKET_PATH)
+    local_socket_server = pywsgi.WSGIServer(
+        listener,
+        _local_socket_app,
+        log=logging.getLogger("RpcRequests"),
+        error_log=logger,
+        spawn=pool.Pool(5),
+    )
+    local_socket_server.start()
+
+
+def _stop_local_socket():
+    """
+    Stop the Unix socket server and remove its socket file.
+    """
+    global local_socket_server
+
+    if not local_socket_server:
+        return
+
+    try:
+        local_socket_server.close()
+        local_socket_server.stop()
+    finally:
+        local_socket_server = None
+        if os.path.exists(LOCAL_SOCKET_PATH):
+            try:
+                os.remove(LOCAL_SOCKET_PATH)
+            except OSError:
+                logger.exception("Unable to remove local RPC socket")
+
+
 def set_cache_control(cache_enabled_):
     """
     Set cache control
@@ -223,6 +281,7 @@ def start():
     """
     try:
         logger.debug("Starting RPC server")
+        _start_local_socket()
         server.serve_forever()
 
     except KeyboardInterrupt:
@@ -237,6 +296,7 @@ def start():
         crash_report.report_exception({"message": "Fatal error starting rpcserver"})
 
     finally:
+        _stop_local_socket()
         if server:
             server.close()
             server.stop()
@@ -245,6 +305,7 @@ def stop():
     """
     Stop RPC server
     """
+    _stop_local_socket()
     server.close()
     server.stop()
 
@@ -296,16 +357,19 @@ def check_auth(account: str, password: str) -> bool:
 def authenticate():
     """
     Authenticate decorator.
-    If authentication is enabled, check credentials for non-local REMOTE_ADDR.
+
+    When authentication is enabled, every TCP request must present Cleep
+    basic auth. Requests that arrived on the local Unix socket are trusted.
     """
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Trust only REMOTE_ADDR — client-supplied X-Forwarded-For is spoofable
-            remote_addr = bottle.request.environ.get("REMOTE_ADDR")
-            if auth_enabled and remote_addr not in LOCAL_ADDRS:
+            if bottle.request.environ.get("cleep.local_socket"):
+                return func(*args, **kwargs)
+            if auth_enabled:
                 account, password = bottle.request.auth or (None, None)
+                remote_addr = bottle.request.environ.get("REMOTE_ADDR")
                 logger.debug("Auth check for account=%s from %s", account, remote_addr)
                 if account is None or not check_auth(account, password):
                     err = bottle.HTTPError(401, "Access denied")
@@ -801,6 +865,7 @@ def get_commands():
     return resp.to_dict()
 
 @app.route("/doc/check/<app>", method="GET")
+@authenticate()
 def check_app_documentation(app):
     """
     Check application documentation
@@ -826,6 +891,7 @@ def check_app_documentation(app):
     return resp.to_dict()
 
 @app.route("/doc/<app>", method="GET")
+@authenticate()
 def get_app_documentation(app):
     """
     Return documentation for specified application
