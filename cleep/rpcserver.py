@@ -21,6 +21,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import copy
 import functools
+import ipaddress
 import json
 import logging
 import os
@@ -29,6 +30,7 @@ import socket
 import uuid
 from typing import Any
 
+import netifaces
 import uptime
 from passlib.hash import sha256_crypt
 from gevent import pywsgi, pool, sleep
@@ -66,6 +68,151 @@ inventory = None
 bus = None
 crash_report = None
 cache_enabled = True
+
+
+def _prefix_length(mask):
+    """
+    Prefix length of a netmask.
+
+    Accepts a prefix (``24``), a prefixed mask (``ffff::/64``) and the
+    dotted or colon form returned by netifaces (``255.255.255.0``,
+    ``ffff:ffff:ffff:ffff::``).
+
+    Args:
+        mask (str): netmask
+
+    Returns:
+        int: prefix length, or None
+    """
+    mask = str(mask).split("%", 1)[0]
+    if mask.isdigit():
+        return int(mask)
+    if "/" in mask:
+        prefix = mask.rsplit("/", 1)[-1]
+        if prefix.isdigit():
+            return int(prefix)
+        mask = mask.split("/", 1)[0]
+    try:
+        if ":" in mask:
+            bits = int.from_bytes(ipaddress.IPv6Address(mask).packed, "big")
+            width = 128
+        else:
+            bits = int.from_bytes(ipaddress.IPv4Address(mask).packed, "big")
+            width = 32
+    except ValueError:
+        return None
+    if bits == 0:
+        return 0
+    return width - (bits & -bits).bit_length() + 1
+
+
+def _network_from_address(entry):
+    """
+    Build the network of one interface address.
+
+    Args:
+        entry (dict): netifaces address entry
+
+    Returns:
+        ipaddress.IPv4Network or ipaddress.IPv6Network, or None when the entry has no usable mask
+    """
+    addr = entry.get("addr")
+    mask = entry.get("mask") or entry.get("netmask")
+    if not addr or not mask:
+        return None
+
+    addr = str(addr).split("%", 1)[0]
+    prefix = _prefix_length(mask)
+    if prefix is None:
+        return None
+    try:
+        if ":" in addr:
+            return ipaddress.IPv6Interface(f"{addr}/{prefix}").network
+        return ipaddress.IPv4Interface(f"{addr}/{prefix}").network
+    except (ValueError, TypeError):
+        return None
+
+
+def _interface_networks():
+    """
+    Networks currently configured on the device interfaces.
+
+    Returns:
+        list: ipaddress networks. Interfaces without a mask are ignored.
+    """
+    networks = []
+    try:
+        interfaces = netifaces.interfaces()
+    except Exception:
+        if logger:
+            logger.exception("Unable to list network interfaces")
+        return networks
+
+    for interface in interfaces:
+        try:
+            addresses = netifaces.ifaddresses(interface)
+        except Exception:
+            if logger:
+                logger.exception("Unable to read addresses of %s", interface)
+            continue
+        for family in (netifaces.AF_INET, netifaces.AF_INET6):
+            for entry in addresses.get(family, []):
+                network = _network_from_address(entry)
+                if network is not None:
+                    networks.append(network)
+    return networks
+
+
+def _parse_source_ip(remote_addr):
+    """
+    Parse the TCP peer address.
+
+    Args:
+        remote_addr (str): REMOTE_ADDR value
+
+    Returns:
+        ipaddress.IPv4Address or ipaddress.IPv6Address, or None
+    """
+    if not remote_addr:
+        return None
+    try:
+        ip = ipaddress.ip_address(str(remote_addr).strip().split("%", 1)[0])
+    except ValueError:
+        return None
+    mapped = getattr(ip, "ipv4_mapped", None)
+    return mapped or ip
+
+
+def source_is_on_local_network(remote_addr):
+    """
+    Return True when the TCP peer is loopback or belongs to a network of this device.
+
+    Args:
+        remote_addr (str): REMOTE_ADDR value
+    """
+    ip = _parse_source_ip(remote_addr)
+    if ip is None:
+        return False
+    if ip.is_loopback:
+        return True
+    return any(ip in network for network in _interface_networks())
+
+
+@app.hook("before_request")
+def restrict_to_local_network():
+    """
+    Refuse TCP clients that are not on a network of this device.
+
+    The Unix socket is already local. Loopback stays open for the tunnel agent.
+    """
+    if bottle.request.environ.get("cleep.local_socket"):
+        return
+    remote_addr = bottle.request.environ.get("REMOTE_ADDR")
+    if source_is_on_local_network(remote_addr):
+        return
+    if logger:
+        logger.warning("Rejected request from %s", remote_addr)
+    bottle.abort(403, "Access denied")
 
 
 def load_auth():

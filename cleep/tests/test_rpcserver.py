@@ -1190,7 +1190,117 @@ class RpcServerTests(unittest.TestCase):
                 self.assertEqual(resp.status, '401 Unauthorized')
         finally:
             rpcserver.auth_enabled = auth_enabled_restore
-            
+
+    def _request(self, path, remote_addr, local_socket=False):
+        from io import BytesIO
+
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'PATH_INFO': path,
+            'QUERY_STRING': '',
+            'SERVER_NAME': 'localhost',
+            'SERVER_PORT': '80',
+            'SERVER_PROTOCOL': 'HTTP/1.1',
+            'wsgi.version': (1, 0),
+            'wsgi.url_scheme': 'http',
+            'wsgi.input': BytesIO(),
+            'wsgi.errors': BytesIO(),
+            'wsgi.multithread': False,
+            'wsgi.multiprocess': False,
+            'wsgi.run_once': False,
+            'REMOTE_ADDR': remote_addr,
+            'CONTENT_LENGTH': '0',
+        }
+        if local_socket:
+            environ['cleep.local_socket'] = True
+        captured = {}
+
+        def start_response(status, headers, exc_info=None):
+            captured['status'] = status
+            captured['headers'] = headers
+
+        body = b''.join(rpcserver.app(environ, start_response))
+        return captured['status'], body
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_restrict_allows_loopback(self, interfaces_mock, ifaddresses_mock):
+        self._init_context()
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+        self.inventory.get_apps_health.return_value = {}
+
+        with boddle():
+            rpcserver.bottle.request.environ['REMOTE_ADDR'] = '127.0.0.1'
+            self.assertIsNone(rpcserver.restrict_to_local_network())
+            rpcserver.bottle.request.environ['REMOTE_ADDR'] = '::1'
+            self.assertIsNone(rpcserver.restrict_to_local_network())
+
+        status, body = self._request('/health', '127.0.0.1')
+        self.assertTrue(status.startswith('200'))
+        self.assertIn(b'core_ok', body)
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_restrict_allows_lan_address(self, interfaces_mock, ifaddresses_mock):
+        self._init_context()
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [
+                {'addr': '192.168.1.10', 'mask': '255.255.255.0'},
+                {'addr': '10.1.1.1'},
+            ],
+            rpcserver.netifaces.AF_INET6: [{
+                'addr': 'fe80::1%eth0',
+                'mask': 'ffff:ffff:ffff:ffff::',
+            }],
+        }
+
+        self.assertTrue(rpcserver.source_is_on_local_network('192.168.1.50'))
+        self.assertTrue(rpcserver.source_is_on_local_network('fe80::abcd'))
+        self.assertFalse(rpcserver.source_is_on_local_network('10.1.1.5'))
+
+        with boddle():
+            rpcserver.bottle.request.environ['REMOTE_ADDR'] = '192.168.1.50'
+            self.assertIsNone(rpcserver.restrict_to_local_network())
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_restrict_rejects_external_address(self, interfaces_mock, ifaddresses_mock):
+        self._init_context()
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+        self.inventory.get_apps_health.return_value = {}
+
+        with boddle():
+            rpcserver.bottle.request.environ['REMOTE_ADDR'] = '8.8.8.8'
+            with self.assertRaises(HTTPError) as cm:
+                rpcserver.restrict_to_local_network()
+            self.assertEqual(cm.exception.status, '403 Forbidden')
+
+        status, body = self._request('/health', '8.8.8.8')
+        self.assertTrue(status.startswith('403'))
+        self.assertNotIn(b'core_ok', body)
+        self.assertFalse(self.inventory.get_apps_health.called)
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_restrict_allows_unix_socket(self, interfaces_mock, ifaddresses_mock):
+        self._init_context()
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+        self.inventory.get_apps_health.return_value = {}
+
+        with boddle():
+            rpcserver.bottle.request.environ['cleep.local_socket'] = True
+            rpcserver.bottle.request.environ['REMOTE_ADDR'] = '8.8.8.8'
+            self.assertIsNone(rpcserver.restrict_to_local_network())
+
+        status, body = self._request('/health', '', local_socket=True)
+        self.assertTrue(status.startswith('200'))
+        self.assertIn(b'core_ok', body)
 
 
 
