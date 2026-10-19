@@ -19,6 +19,9 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
     var self = this;
     self.rebooting = false;
     self.restarting = false;
+    self.syncing = false;
+    // True once polling failed while syncing (expected drop during Cleep restart)
+    self.syncDisconnectSeen = false;
     self.notConnected = false;
     self.reloadConfig = false;
     self.uiReloadScheduled = false;
@@ -75,17 +78,23 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
             .then(function(response) {
                 message = '';
 
-                if (self.rebooting || self.restarting) {
+                // Sync keeps the connection up during the quiet period; only treat
+                // success as "back online" after a disconnect was seen while syncing.
+                if (self.rebooting || self.restarting || (self.syncing && self.syncDisconnectSeen)) {
                     // toast message
                     if (self.rebooting) {
                         message = 'Device has rebooted';
+                    } else if (self.syncing) {
+                        message = 'Sources synchronized';
                     } else if (self.restarting) {
                         message = 'Application has restarted';
                     }
-                    
+
                     // system has started
                     self.rebooting = false;
                     self.restarting = false;
+                    self.syncing = false;
+                    self.syncDisconnectSeen = false;
 
                     // reload application config
                     self.reloadConfig = true;
@@ -114,7 +123,10 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
                         blockUI.start({message:'Device is rebooting...', submessage:'Please wait, it might take some time.', spinner:true, icon:null});
                     } else if (response.data.event=='system.cleep.restart') {
                         self.restarting = true;
-                        blockUI.start({message:'Cleep is restarting...', submessage:'Please wait few seconds.', spinner:true, icon:null});
+                        // Keep "Synchronizing sources..." when restart is caused by cleep-cli watch
+                        if (!self.syncing) {
+                            blockUI.start({message:'Cleep is restarting...', submessage:'Please wait few seconds.', spinner:true, icon:null});
+                        }
                     } else if (response.data.event === 'system.device.poweroff') {
                         blockUI.start({message:'Device is powering off.', submessage:'Device will disconnect in few seconds.', spinner:true, icon:null});
                     } else {
@@ -133,7 +145,7 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
                 $timeout(self.polling, 0);
             }, 
             function(err) {
-                if (!self.rebooting && !self.restarting) {
+                if (!self.rebooting && !self.restarting && !self.syncing) {
                     // error occured, differ next polling
                     /*self.nextPollingTimeout *= 2;
                     if (self.nextPollingTimeout>300) {
@@ -148,7 +160,10 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
                         self.notConnected = true;
                     }
                 } else {
-                    // during reboot try every seconds
+                    // during reboot / restart / source sync keep polling frequently
+                    if (self.syncing) {
+                        self.syncDisconnectSeen = true;
+                    }
                     self.nextPollingTimeout = 1;
                 }
                 $timeout(self.polling, self.nextPollingTimeout*1000);
@@ -200,6 +215,21 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
             $timeout(function() {
                 $window.location.reload();
             }, 700);
+        });
+
+        // cleep-cli watch sync: expected short disconnect while Cleep restarts.
+        // Keep "Synchronizing sources..." and skip "Connection lost...".
+        $rootScope.$on('developer.sync.started', function() {
+            self.syncing = true;
+            self.syncDisconnectSeen = false;
+        });
+        $rootScope.$on('developer.sync.done', function() {
+            self.syncing = false;
+            self.syncDisconnectSeen = false;
+        });
+        $rootScope.$on('developer.sync.failed', function() {
+            self.syncing = false;
+            self.syncDisconnectSeen = false;
         });
 
         // launch polling

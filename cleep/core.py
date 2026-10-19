@@ -776,6 +776,7 @@ class Cleep(BusClient):
             3.0,
         )
 
+
 class CleepRpcWrapper(Cleep):
     """
     Base Cleep class for RPC request wrapping
