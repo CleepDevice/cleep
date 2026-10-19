@@ -6,7 +6,6 @@ import os
 import importlib
 from cleep.exception import MissingParameter, InvalidParameter
 from cleep.common import CORE_MODULES
-from cleep.libs.internals.tools import full_split_path
 
 __all__ = ["ProfileFormattersBroker"]
 
@@ -33,6 +32,9 @@ class ProfileFormattersBroker:
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.events_broker = None
+        self.crash_report = None
+        self.__allowed_modules = None
+        self.__loaded_modules = set()
         # list of renderer module names with format::
         #
         #   [
@@ -101,13 +103,16 @@ class ProfileFormattersBroker:
         Configure broker
 
         Args:
-            bootstrap (dict): bootstrap objects
+            bootstrap (dict): bootstrap objects. Optional key ``installed_modules``
+                limits the initial modules-dir scan.
         """
         # set members
         self.events_broker = bootstrap["events_broker"]
 
         # configure crash report
         self.crash_report = bootstrap["crash_report"]
+        installed = bootstrap.get("installed_modules")
+        self.__allowed_modules = set(installed) if installed is not None else None
 
         # load formatters
         self.__load_formatters()
@@ -138,25 +143,42 @@ class ProfileFormattersBroker:
                 {"message": "Invalid module path", "path": modules_path}
             )
             raise Exception("Invalid modules path")
-        self.__load_formatters_from_path(modules_path, False)
+
+        if self.__allowed_modules is not None:
+            module_names = sorted(self.__allowed_modules)
+        else:
+            module_names = sorted(
+                name
+                for name in os.listdir(modules_path)
+                if not name.startswith("__")
+                and os.path.isdir(os.path.join(modules_path, name))
+            )
+
+        for module_name in module_names:
+            self.load_module_formatters(module_name)
 
         self.__dump_existing_formatters()
 
-    def __load_formatters_from_path(self, path, is_core):
+    def load_module_formatters(self, module_name):
         """
-        Load formatters from specified path
+        Load formatters from a single application directory (idempotent).
 
         Args:
-            path (str): path to walk through
+            module_name (str): application name
         """
+        if module_name in self.__loaded_modules:
+            return
+
+        path = os.path.join(os.path.dirname(__file__), self.MODULES_DIR, module_name)
+        if not os.path.isdir(path):
+            self.__loaded_modules.add(module_name)
+            return
+
         self.logger.trace(" Searching formatters from %s", os.path.normpath(path))
         for root, _, filenames in sorted(os.walk(path)):
             for filename in filenames:
                 try:
-                    fullpath = os.path.join(root, filename)
                     (formatter, ext) = os.path.splitext(filename)
-                    parts = full_split_path(fullpath)
-                    module_name = parts[-2]
                     if ext == ".py" and formatter.lower().endswith("formatter"):
                         self.__load_formatter(module_name, formatter)
 
@@ -171,6 +193,8 @@ class ProfileFormattersBroker:
                         'Formatter "%s" was not loaded: it has some problem from inside. Please check code.',
                         formatter,
                     )
+
+        self.__loaded_modules.add(module_name)
 
 
     def __load_formatter(self, module_name, formatter):

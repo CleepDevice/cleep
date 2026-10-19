@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import logging
 import importlib
 import inspect
 import copy
+import time
 from threading import Event, Timer
 import sys
 from types import ModuleType, FunctionType
@@ -18,6 +20,45 @@ from cleep.libs.internals.task import Task
 from cleep import __version__ as CLEEP_VERSION
 
 __all__ = ["Inventory"]
+
+_APP_FILENAME_RE = re.compile(
+    r"""^\s*APP_FILENAME\s*=\s*['\"]([^'\"]+)['\"]""", re.MULTILINE
+)
+
+
+def resolve_app_filename(module_dir, module_name):
+    """
+    Resolve the app Python filename without importing the package.
+
+    Prefers ``{module_name}.py``. If missing, reads ``APP_FILENAME`` from
+    ``__init__.py`` when present.
+
+    Args:
+        module_dir (str): absolute path to the module directory
+        module_name (str): module directory / package name
+
+    Returns:
+        str|None: filename without ``.py``, or None if no app file found
+    """
+    conventional = os.path.join(module_dir, "%s.py" % module_name)
+    init_path = os.path.join(module_dir, "__init__.py")
+    app_filename = module_name
+
+    if os.path.exists(init_path):
+        try:
+            with open(init_path, "r", encoding="utf-8") as fdesc:
+                match = _APP_FILENAME_RE.search(fdesc.read(8192))
+            if match:
+                app_filename = match.group(1)
+        except OSError:
+            pass
+
+    app_path = os.path.join(module_dir, "%s.py" % app_filename)
+    if os.path.exists(app_path):
+        return app_filename
+    if app_filename != module_name and os.path.exists(conventional):
+        return module_name
+    return None
 
 
 class Inventory(Cleep):
@@ -117,6 +158,16 @@ class Inventory(Cleep):
             )
             self.__memory_monitoring_task.start()
 
+    def _waits_for_core_join(self):
+        """Inventory owns core_join_event; do not wait for it."""
+        return False
+
+    def _on_bus_ready(self):
+        """
+        Signal other modules only once inventory is about to pull bus messages.
+        """
+        self.bootstrap["core_join_event"].set()
+
     def __get_bootstrap(self):
         """
         Get a copy of bootstrap object to pass to module to load
@@ -171,11 +222,12 @@ class Inventory(Cleep):
             )
         self.modules[module_name]["installed"] = True
 
-        # import module file and get module class
-        module_path = "%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
-        module_ = importlib.import_module(module_path)
-        app_filename = getattr(module_, "APP_FILENAME", module_name)
-        del module_
+        # import module file and get module class (single importlib call)
+        local_modules_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), self.PYTHON_CLEEP_MODULES_PATH)
+        )
+        module_dir = os.path.join(local_modules_path, module_name)
+        app_filename = resolve_app_filename(module_dir, module_name) or module_name
         class_path = "%s%s.%s" % (
             self.PYTHON_CLEEP_IMPORT_PATH,
             module_name,
@@ -185,6 +237,9 @@ class Inventory(Cleep):
         module_ = importlib.import_module(class_path)
         module_class_ = getattr(module_, app_filename.capitalize())
         setattr(module_class_, "MODULE_NAME", module_name)
+
+        # Ensure events/formatters for this app (and deps) are registered
+        self.__ensure_module_brokers(module_name)
 
         # enable or not debug
         debug = False
@@ -270,6 +325,28 @@ class Inventory(Cleep):
         # flag module is loaded as module and not dependency
         self.__modules_loaded_as_dependency[module_name] = False
 
+    def __ensure_module_brokers(self, module_name):
+        """
+        Lazily load events/formatters for a module when brokers were filtered at bootstrap.
+        """
+        events_broker = self.bootstrap.get("events_broker")
+        if events_broker and hasattr(events_broker, "load_module_events"):
+            try:
+                events_broker.load_module_events(module_name)
+            except Exception:
+                self.logger.exception(
+                    'Unable to load events for application "%s"', module_name
+                )
+
+        formatters_broker = self.bootstrap.get("formatters_broker")
+        if formatters_broker and hasattr(formatters_broker, "load_module_formatters"):
+            try:
+                formatters_broker.load_module_formatters(module_name)
+            except Exception:
+                self.logger.exception(
+                    'Unable to load formatters for application "%s"', module_name
+                )
+
     def __recompute_compatibility(self):
         """
         Recompute compat/compatible flags for all modules using installed versions and CLEEP_VERSION
@@ -327,22 +404,19 @@ class Inventory(Cleep):
         for f in os.listdir(local_modules_path):
             fpath = os.path.join(local_modules_path, f)
             module_name = os.path.split(fpath)[-1]
-            if module_name.startswith("__"):
+            if module_name.startswith("__") or not os.path.isdir(fpath):
                 continue
-            module_path = "%s%s" % (self.PYTHON_CLEEP_IMPORT_PATH, module_name)
-            module_ = importlib.import_module(module_path)
-            app_filename = getattr(module_, "APP_FILENAME", module_name)
-            module_py = os.path.join(fpath, "%s.py" % app_filename)
-            if os.path.isdir(fpath) and os.path.exists(module_py):
-                self.modules[module_name] = {}
-                if (
-                    module_name not in CORE_MODULES
-                    and module_name not in self.configured_modules
-                ):
-                    self.logger.debug(
-                        'Found application "%s" installed manually', module_name
-                    )
-                    local_modules.append(module_name)
+            if not resolve_app_filename(fpath, module_name):
+                continue
+            self.modules[module_name] = {}
+            if (
+                module_name not in CORE_MODULES
+                and module_name not in self.configured_modules
+            ):
+                self.logger.debug(
+                    'Found application "%s" installed manually', module_name
+                )
+                local_modules.append(module_name)
         self.logger.debug("Local applications: %s", local_modules)
 
         # Ensure core and configured modules exist in the map even if scan missed them
@@ -453,12 +527,23 @@ class Inventory(Cleep):
         for module_name, module_ in self.__modules_instances.items():
             module_.start()
 
-        # wait for all modules to be completely loaded
+        # wait for all modules to be completely loaded (bounded like wait_for_apps_started)
         self.logger.info("Waiting for end of modules configuration...")
+        deadline = time.perf_counter() + self.MODULES_SYNC_TIMEOUT
+        join_timed_out = False
         for module_join_event in self.__module_join_events:
-            module_join_event.wait()
-        self.logger.info("All applications are configured.")
-        self.bootstrap["core_join_event"].set()
+            remaining = deadline - time.perf_counter()
+            if remaining <= 0 or not module_join_event.wait(remaining):
+                join_timed_out = True
+                break
+        if join_timed_out:
+            self.logger.error(
+                "Module configuration join timed out after %.1fs; continuing startup",
+                self.MODULES_SYNC_TIMEOUT,
+            )
+        else:
+            self.logger.info("All applications are configured.")
+        # core_join_event is set in _on_bus_ready once inventory pulls messages
 
         # check if modules are properly configured and started
         # OBSOLETE seems to be obsolete code !
@@ -583,12 +668,16 @@ class Inventory(Cleep):
 
         return devices
 
-    def get_module_infos(self, module_name):
+    def get_module_infos(self, module_name, with_config=True):
         """
         Returns infos of specified module
 
         Args:
             module_name (string): module name
+            with_config (bool): if True, call ``get_module_config()`` (can be slow:
+                network probes interfaces). Prefer False from ``get_modules`` at
+                boot; use ``get_modules_configs`` / ``get_module_infos`` when the
+                live config is needed.
 
         Returns:
             dict: module infos or empty dict if module not found::
@@ -606,17 +695,21 @@ class Inventory(Cleep):
         events = self.events_broker.get_modules_events()
         module = copy.deepcopy(self.modules[module_name])
 
-        # add module config
-        try:
-            module["config"] = (
-                self.__modules_instances[module_name].get_module_config()
-                if module_name in self.__modules_instances
-                else {}
-            )
-        except:
-            self.logger.exception(
-                'Unable to retrieve "%s" app config. Return empty config', module_name
-            )
+        # add module config (optional — live config can block the inventory bus)
+        if with_config:
+            try:
+                module["config"] = (
+                    self.__modules_instances[module_name].get_module_config()
+                    if module_name in self.__modules_instances
+                    else {}
+                )
+            except Exception:
+                self.logger.exception(
+                    'Unable to retrieve "%s" app config. Return empty config',
+                    module_name,
+                )
+                module["config"] = {}
+        else:
             module["config"] = {}
 
         # add module events
@@ -685,7 +778,12 @@ class Inventory(Cleep):
 
     def get_modules(self):
         """
-        Returns dict of installed modules. It also returned modules installed as library.
+        Returns dict of installed modules (metadata only, no live ``get_module_config``).
+
+        Live configs are expensive (e.g. network ifconfig) and would block the
+        inventory message loop for every bus caller. Use ``get_modules_configs``
+        or ``get_module_infos(..., with_config=True)`` when configs are needed.
+        The RPC ``/config`` endpoint already fills configs separately.
 
         Returns:
             dict: dict of modules::
@@ -707,13 +805,11 @@ class Inventory(Cleep):
 
         for module_name, module in installed_modules.items():
             try:
-                # drop not launched modules
-                # if module_name not in self.__modules_instances:
-                #    self.logger.trace('Drop not started module "%s"', module_name)
-                #    continue
-                modules[module_name] = self.get_module_infos(module_name)
+                modules[module_name] = self.get_module_infos(
+                    module_name, with_config=False
+                )
 
-            except:  # pragma: no cover
+            except Exception:  # pragma: no cover
                 self.logger.exception(
                     'Unable to get data from application "%s"', module_name
                 )

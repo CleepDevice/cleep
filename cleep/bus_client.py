@@ -21,7 +21,6 @@ from cleep.exception import (
     InvalidParameter,
     NoMessageAvailable,
 )
-
 if TYPE_CHECKING:
     from cleep.message_bus import BusEnvelope, MessageBus
 
@@ -314,6 +313,22 @@ class BusClient(threading.Thread):
         """Called once after all modules are configured (async)."""
         pass
 
+    def _waits_for_core_join(self) -> bool:
+        """
+        Whether this module waits for ``core_join_event`` before its message loop.
+
+        Inventory overrides this to False: it owns the event and must enter its
+        pull loop before signalling other modules.
+        """
+        return True
+
+    def _on_bus_ready(self) -> None:
+        """
+        Called once the message loop is about to start (after ``_on_start`` task
+        is scheduled). Inventory uses this to set ``core_join_event``.
+        """
+        pass
+
     def _on_stop(self) -> None:
         """Called once when the module stops."""
         pass
@@ -368,12 +383,17 @@ class BusClient(threading.Thread):
         finally:
             self.__module_join_event.set()
 
-        self.__core_join_event.wait(self.CORE_SYNC_TIMEOUT)
+        if self._waits_for_core_join():
+            self.__core_join_event.wait(self.CORE_SYNC_TIMEOUT)
 
         start_task = self.__task_factory.create_task(
             None, self._on_start, end_callback=self.__started_callback
         )
         start_task.start()
+
+        # Inventory sets core_join here so other modules' _on_start can push
+        # commands only after this module is already pulling from the bus.
+        self._on_bus_ready()
 
         while self.__continue:
             try:

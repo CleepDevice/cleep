@@ -7,7 +7,6 @@ Core implements all kind of cleep modules/apps
 
 import logging
 import os
-from gevent import sleep
 import copy
 import uuid
 import time
@@ -184,7 +183,6 @@ class Cleep(BusClient):
                 self.logger.debug("No config file found, create default one")
                 out = {}
                 self.cleep_filesystem.write_json(path, out)
-                sleep(0.25)
 
         except:
             self.logger.exception("Unable to load config file %s:", path)

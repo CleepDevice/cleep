@@ -39,7 +39,17 @@ from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
 from cleep.libs.configs.cleepconf import CleepConf
 
-__all__ = ["app", "invalidate_config_cache"]
+__all__ = [
+    "app",
+    "configure",
+    "invalidate_config_cache",
+    "is_apps_ready",
+    "set_apps_ready",
+    "start",
+    "start_listening",
+    "stop",
+    "wait_forever",
+]
 
 # constants
 BASE_DIR = "/opt/cleep/"
@@ -68,6 +78,11 @@ inventory = None
 bus = None
 crash_report = None
 cache_enabled = True
+# False until inventory join + internal bus app_configured
+apps_ready = False
+
+# GET paths that must not be served before apps are ready (need inventory/bus)
+_EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/logs", "/download")
 
 
 def _prefix_length(mask):
@@ -288,6 +303,7 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
         debug_enabled_ (bool): debug status
     """
     global cleep_filesystem, inventory, bus, logger, crash_report, debug_enabled, server
+    global apps_ready
 
     # configure logger
     logger = logging.getLogger("RpcServer")
@@ -304,6 +320,7 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     bus = bootstrap["internal_bus"]
     inventory = inventory_
     crash_report = bootstrap["crash_report"]
+    apps_ready = False
 
     # load auth
     load_auth()
@@ -313,7 +330,7 @@ def configure(rpc_config, bootstrap, inventory_, debug_enabled_):
     protocol = "https" if rpc_config.get("ssl", False) else "http"
     host = rpc_config.get("host", "0.0.0.0")
     port = rpc_config.get("port", 80)
-    logger.info("Running RPC server %s://%s:%s", protocol, host, port)
+    logger.info("RPC server configured %s://%s:%s", protocol, host, port)
     logger.debug("rpc_config=%s ssl_options=%s", rpc_config, ssl_options)
     workers = pool.Pool(20)
     server = pywsgi.WSGIServer(
@@ -427,17 +444,86 @@ def is_debug_enabled():
     return debug_enabled
 
 
-def start():
+def set_apps_ready(ready: bool = True) -> None:
     """
-    Start RPC server. This function is blocking.
+    Mark application modules as ready for RPC that needs the bus/inventory.
+
+    Args:
+        ready (bool): True when inventory join is done and the internal bus
+            accepts messages (``app_configured``).
+    """
+    global apps_ready
+    apps_ready = bool(ready)
+    if logger:
+        logger.info("RPC apps_ready=%s", apps_ready)
+
+
+def is_apps_ready() -> bool:
+    """Return whether app-dependent RPC may run."""
+    return apps_ready
+
+
+def _request_allowed_while_starting() -> bool:
+    """
+    Static UI assets and /health may be served before apps are ready.
+    All POST APIs and some GET endpoints stay gated.
+    """
+    method = bottle.request.method
+    path = bottle.request.path or "/"
+    if method == "GET" and path == "/health":
+        return True
+    if method != "GET":
+        return False
+    for prefix in _EARLY_BLOCKED_GET_PREFIXES:
+        if path == prefix or path.startswith(prefix + "/"):
+            return False
+    return True
+
+
+@app.hook("before_request")
+def _enforce_apps_ready():
+    """
+    Reject app-dependent RPC with 503 while Cleep is still starting.
+    """
+    if apps_ready:
+        return
+    if _request_allowed_while_starting():
+        return
+    raise bottle.HTTPResponse(
+        status=503,
+        body=json.dumps(
+            MessageResponse(
+                error=True,
+                message="Cleep is starting",
+                data={"starting": True},
+            ).to_dict()
+        ),
+        headers={"Content-Type": "application/json"},
+    )
+
+
+def start_listening():
+    """
+    Start accepting HTTP and local-socket connections (non-blocking).
+
+    Call :func:`set_apps_ready` after inventory join, then :func:`wait_forever`.
+    """
+    if not server:
+        raise RuntimeError("RPC server is not configured")
+    logger.debug("Starting RPC server listening")
+    _start_local_socket()
+    server.start()
+    logger.info("RPC server listening (static UI available, apps not ready yet)")
+
+
+def wait_forever():
+    """
+    Block until the RPC server is stopped (after :func:`start_listening`).
     """
     try:
-        logger.debug("Starting RPC server")
-        _start_local_socket()
         server.serve_forever()
 
     except KeyboardInterrupt:
-        # user stops Cleep, close server properly
         pass
 
     except OSError:
@@ -445,7 +531,8 @@ def start():
 
     except Exception:
         logger.exception("Fatal error starting rpcserver:")
-        crash_report.report_exception({"message": "Fatal error starting rpcserver"})
+        if crash_report:
+            crash_report.report_exception({"message": "Fatal error starting rpcserver"})
 
     finally:
         _stop_local_socket()
@@ -454,13 +541,29 @@ def start():
             server.stop()
 
 
+def start():
+    """
+    Start RPC server and block (legacy / tests).
+
+    Marks apps ready immediately then listens. Prefer
+    :func:`start_listening` + :func:`set_apps_ready` + :func:`wait_forever`
+    for boot so the UI can load while modules configure.
+    """
+    set_apps_ready(True)
+    start_listening()
+    wait_forever()
+
+
 def stop():
     """
     Stop RPC server
     """
+    global apps_ready
+    apps_ready = False
     _stop_local_socket()
-    server.close()
-    server.stop()
+    if server:
+        server.close()
+        server.stop()
 
 
 def _prune_expired_sessions(now: float | None = None) -> None:
@@ -1296,12 +1399,28 @@ def health():  # pragma: no cover
         dict: cleep health::
 
         {
-            details (dict): health status per app (True if started)
+            starting (bool): True while modules are still configuring
+            ready (bool): True when apps_ready (bus + inventory join done)
+            started (dict): health status per app (True if started)
             core_ok (bool): True if all core apps are healthy
             apps_ok (bool): True if all user apps are healthy
         }
 
     """
+    bottle.response.content_type = "application/json"
+
+    if not apps_ready or not inventory:
+        bottle.response.status = 503
+        return json.dumps(
+            {
+                "starting": True,
+                "ready": False,
+                "started": {},
+                "core_ok": False,
+                "apps_ok": False,
+            }
+        )
+
     status_code = 200
     core_ok = True
     apps_ok = True
@@ -1315,10 +1434,11 @@ def health():  # pragma: no cover
                 apps_ok = False
 
     data = {
+        "starting": False,
+        "ready": True,
         "started": apps_health,
         "core_ok": core_ok,
         "apps_ok": apps_ok,
     }
-    bottle.response.content_type = "application/json"
     bottle.response.status = status_code
     return json.dumps(data)

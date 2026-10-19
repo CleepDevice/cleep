@@ -99,10 +99,11 @@ class RpcServerTests(unittest.TestCase):
         if rpcserver:
             rpcserver.sessions.clear()
             rpcserver.CLEEP_CACHE = None
+            rpcserver.apps_ready = False
 
     def _init_context(self, push_return_value=None, push_side_effect=None, no_bus=False, is_subscribed_return_value=None, is_subscribed_side_effect=None,
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False,
-            host='0.0.0.0', port=80, ssl_key=None, ssl_cert=None, exec_configure=True):
+            host='0.0.0.0', port=80, ssl_key=None, ssl_cert=None, exec_configure=True, apps_ready=True):
         self.crash_report = Mock()
         self.cleep_filesystem = Mock()
         self.internal_bus = Mock()
@@ -147,6 +148,7 @@ class RpcServerTests(unittest.TestCase):
 
         if exec_configure:
             rpcserver.configure(rpc_config, self.bootstrap, self.inventory, debug_enabled)
+            rpcserver.set_apps_ready(apps_ready)
 
     @patch('rpcserver.CleepConf')
     def test_load_auth_with_no_accounts_and_enabled(self, cleep_conf_mock):
@@ -249,14 +251,42 @@ class RpcServerTests(unittest.TestCase):
             self.assertFalse(rpcserver.check_auth('dummy', 'test'))
 
     def test_start(self):
-        self._init_context()
+        self._init_context(apps_ready=False)
 
         with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
             rpcserver.start()
 
+            self.assertTrue(rpcserver.is_apps_ready())
+            mock_server.start.assert_called()
             self.assertTrue(mock_server.serve_forever.called)
             mock_server.close.assert_called()
             mock_server.stop.assert_called()
+
+    def test_start_listening_without_apps_ready(self):
+        self._init_context(apps_ready=False)
+
+        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket') as mock_local:
+            rpcserver.start_listening()
+
+            self.assertFalse(rpcserver.is_apps_ready())
+            mock_local.assert_called()
+            mock_server.start.assert_called()
+            mock_server.serve_forever.assert_not_called()
+
+    def test_start_listening_not_configured(self):
+        self._init_context(exec_configure=False)
+        rpcserver.server = None
+
+        with self.assertRaises(RuntimeError):
+            rpcserver.start_listening()
+
+    def test_set_apps_ready(self):
+        self._init_context(apps_ready=False)
+        self.assertFalse(rpcserver.is_apps_ready())
+        rpcserver.set_apps_ready(True)
+        self.assertTrue(rpcserver.is_apps_ready())
+        rpcserver.set_apps_ready(False)
+        self.assertFalse(rpcserver.is_apps_ready())
 
     def test_start_already_started(self):
         self._init_context()
@@ -1191,11 +1221,11 @@ class RpcServerTests(unittest.TestCase):
         finally:
             rpcserver.auth_enabled = auth_enabled_restore
 
-    def _request(self, path, remote_addr, local_socket=False):
+    def _request(self, path, remote_addr, local_socket=False, method='GET'):
         from io import BytesIO
 
         environ = {
-            'REQUEST_METHOD': 'GET',
+            'REQUEST_METHOD': method,
             'PATH_INFO': path,
             'QUERY_STRING': '',
             'SERVER_NAME': 'localhost',
@@ -1302,6 +1332,62 @@ class RpcServerTests(unittest.TestCase):
         self.assertTrue(status.startswith('200'))
         self.assertIn(b'core_ok', body)
 
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_health_while_starting(self, interfaces_mock, ifaddresses_mock):
+        self._init_context(apps_ready=False)
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+
+        status, body = self._request('/health', '127.0.0.1')
+        self.assertTrue(status.startswith('503'))
+        data = json.loads(body)
+        self.assertTrue(data['starting'])
+        self.assertFalse(data['ready'])
+        self.assertFalse(self.inventory.get_apps_health.called)
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_api_gated_while_starting(self, interfaces_mock, ifaddresses_mock):
+        self._init_context(apps_ready=False)
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+
+        status, body = self._request('/modules', '127.0.0.1', method='POST')
+        self.assertTrue(status.startswith('503'))
+        data = json.loads(body)
+        self.assertTrue(data['error'])
+        self.assertEqual(data['message'], 'Cleep is starting')
+        self.assertTrue(data['data']['starting'])
+        self.assertFalse(self.inventory.get_modules.called)
+
+    @patch('rpcserver.netifaces.ifaddresses')
+    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    def test_static_allowed_while_starting(self, interfaces_mock, ifaddresses_mock):
+        self._init_context(apps_ready=False)
+        ifaddresses_mock.return_value = {
+            rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
+        }
+
+        with patch('rpcserver.bottle.static_file', return_value='index') as static_file_mock:
+            status, body = self._request('/', '127.0.0.1')
+            self.assertTrue(status.startswith('200'))
+            static_file_mock.assert_called()
+
+    def test_request_allowed_while_starting_helpers(self):
+        self._init_context(apps_ready=False)
+        with boddle(method='GET', path='/health'):
+            self.assertTrue(rpcserver._request_allowed_while_starting())
+        with boddle(method='GET', path='/js/app.js'):
+            self.assertTrue(rpcserver._request_allowed_while_starting())
+        with boddle(method='GET', path='/doc/app'):
+            self.assertFalse(rpcserver._request_allowed_while_starting())
+        with boddle(method='GET', path='/logs'):
+            self.assertFalse(rpcserver._request_allowed_while_starting())
+        with boddle(method='POST', path='/command'):
+            self.assertFalse(rpcserver._request_allowed_while_starting())
 
 
 if __name__ == '__main__':

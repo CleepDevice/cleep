@@ -6,7 +6,6 @@ import os
 import importlib
 import inspect
 from cleep.libs.internals.profileformatter import ProfileFormatter
-from cleep.libs.internals.tools import full_split_path
 
 __all__ = ["EventsBroker"]
 
@@ -41,19 +40,25 @@ class EventsBroker:
         self.formatters_broker = None
         self.crash_report = None
         self.bootstrap = {}
+        # When set, only these app dirs are scanned at bootstrap; others load on demand
+        self.__allowed_modules = None
+        self.__loaded_modules = set()
 
     def configure(self, bootstrap):
         """
         Configure broker loading needed objects (formatters, events...)
 
         Args:
-            bootstrap (dict): bootstrap objects
+            bootstrap (dict): bootstrap objects. Optional key ``installed_modules``
+                (iterable of names) limits the initial modules-dir scan.
         """
         # set members
         self.bootstrap = bootstrap
         self.internal_bus = bootstrap["internal_bus"]
         self.formatters_broker = bootstrap["formatters_broker"]
         self.crash_report = bootstrap["crash_report"]
+        installed = bootstrap.get("installed_modules")
+        self.__allowed_modules = set(installed) if installed is not None else None
 
         # load events
         self.__load_events()
@@ -88,7 +93,8 @@ class EventsBroker:
 
         self.logger.debug(
             "Found %d events: %s",
-            len(self.events_by_event), self.events_by_event.keys()
+            len(self.events_by_event),
+            self.events_by_event.keys(),
         )
 
     def __save_event(self, class_):
@@ -126,12 +132,12 @@ class EventsBroker:
                 self.logger.trace('Analyzing file "%s"', filename)
                 try:
                     fullpath = os.path.join(root, filename)
-                    (event, ext) = os.path.splitext(filename)
+                    event, ext = os.path.splitext(filename)
                     if filename.lower().find("event") >= 0 and ext == ".py":
                         self.logger.trace(
                             'Loading "%s%s"',
                             self.PYTHON_CLEEP_CORE_EVENTS_IMPORT_PATH,
-                            event
+                            event,
                         )
                         mod_ = importlib.import_module(
                             f"{self.PYTHON_CLEEP_CORE_EVENTS_IMPORT_PATH}{event}"
@@ -149,20 +155,20 @@ class EventsBroker:
                         else:
                             self.logger.error(
                                 'Event class must have the same name than the filename "%s"',
-                                fullpath
+                                fullpath,
                             )
 
                 except AttributeError:  # pragma: no cover
                     self.logger.exception(
                         'Event "%s" has surely invalid name, please refer to coding rules:',
-                        event
+                        event,
                     )
                     continue
 
                 except Exception:
                     self.logger.exception(
                         'Event "%s" wasn\'t imported successfully. Please check event source code.',
-                        event
+                        event,
                     )
                     continue
 
@@ -181,52 +187,75 @@ class EventsBroker:
             )
             raise Exception(f'Invalid modules path "{path}"')
 
+        if self.__allowed_modules is not None:
+            module_names = sorted(self.__allowed_modules)
+        else:
+            module_names = sorted(
+                name
+                for name in os.listdir(path)
+                if not name.startswith("__") and os.path.isdir(os.path.join(path, name))
+            )
+
+        for module_name in module_names:
+            self.load_module_events(module_name)
+
+    def load_module_events(self, module_name):
+        """
+        Load events from a single application directory (idempotent).
+
+        Args:
+            module_name (str): application name
+        """
+        if module_name in self.__loaded_modules:
+            return
+
+        path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), self.MODULES_DIR, module_name)
+        )
+        if not os.path.isdir(path):
+            self.__loaded_modules.add(module_name)
+            return
+
         for root, _, filenames in os.walk(path):
             for filename in filenames:
-                self.logger.trace('Analyzing file "%s"', filename)
-                try:
-                    fullpath = os.path.join(root, filename)
-                    (event, ext) = os.path.splitext(filename)
-                    parts = full_split_path(fullpath)
-                    if filename.lower().find("event") >= 0 and ext == ".py":
-                        self.logger.debug(
-                            'Loading "%s%s.%s"',
-                            self.PYTHON_CLEEP_APPS_IMPORT_PATH,
-                            parts[-2],
-                            event
-                        )
-                        mod_ = importlib.import_module(
-                            f"{self.PYTHON_CLEEP_APPS_IMPORT_PATH}{parts[-2]}.{event}"
-                        )
-                        event_class_name = self.__get_event_class_name(event, mod_)
-                        self.logger.trace(
-                            "Found event class name: %s", event_class_name
-                        )
-                        if event_class_name:
-                            class_ = getattr(mod_, event_class_name)
-                            self.__save_event(class_)
-                            self.logger.debug(
-                                'Module event "%s" registered', event_class_name
-                            )
-                        else:
-                            self.logger.error(
-                                'Event class must have the same name than the filename "%s"',
-                                fullpath
-                            )
-
-                except AttributeError:  # pragma: no cover
-                    self.logger.exception(
-                        'Event "%s" has surely invalid name, please refer to coding rules:',
-                        event
-                    )
+                event, ext = os.path.splitext(filename)
+                if "event" not in filename.lower() or ext != ".py":
                     continue
-
+                fullpath = os.path.join(root, filename)
+                try:
+                    self.__import_module_event(module_name, event, fullpath)
                 except Exception:
                     self.logger.exception(
                         'Event "%s" wasn\'t imported successfully. Please check event source code.',
-                        event
+                        event,
                     )
-                    continue
+
+        self.__loaded_modules.add(module_name)
+
+    def __import_module_event(self, module_name, event, fullpath):
+        """
+        Import one app event module and register its class.
+        """
+        self.logger.debug(
+            'Loading "%s%s.%s"',
+            self.PYTHON_CLEEP_APPS_IMPORT_PATH,
+            module_name,
+            event,
+        )
+        mod_ = importlib.import_module(
+            f"{self.PYTHON_CLEEP_APPS_IMPORT_PATH}{module_name}.{event}"
+        )
+        event_class_name = self.__get_event_class_name(event, mod_)
+        self.logger.trace("Found event class name: %s", event_class_name)
+        if event_class_name:
+            class_ = getattr(mod_, event_class_name)
+            self.__save_event(class_)
+            self.logger.debug('Module event "%s" registered', event_class_name)
+        else:
+            self.logger.error(
+                'Event class must have the same name than the filename "%s"',
+                fullpath,
+            )
 
     def get_event_instance(self, event_name):
         """
@@ -252,12 +281,12 @@ class EventsBroker:
                 # formatter registers event
                 formatter = caller.__class__.__name__.lower()
                 self.logger.debug(
-                    "Formatter %s registers event %s",formatter, event_name
+                    "Formatter %s registers event %s", formatter, event_name
                 )
             else:
                 # module registers event
                 module = caller.__class__.__name__.lower()
-                self.logger.debug("Module %s registers event %s",module, event_name)
+                self.logger.debug("Module %s registers event %s", module, event_name)
 
             # update events by event dict
             self.events_by_event[event_name]["used"] = True

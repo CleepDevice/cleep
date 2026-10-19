@@ -3,7 +3,6 @@
 
 import ast
 import os
-from gevent import sleep
 import logging
 from passlib.hash import sha256_crypt
 from configparser import ConfigParser
@@ -57,7 +56,6 @@ class CleepConf:
             fdesc = self.cleep_filesystem.open(self.CONF, "w")
             fdesc.write("")
             self.cleep_filesystem.close(fdesc)
-            sleep(0.10)
 
         # load conf content
         fdesc = self.cleep_filesystem.open(self.CONF, "r")
@@ -88,14 +86,14 @@ class CleepConf:
             config = self.__open()
 
             # merge with default config
-            for (section, section_keys) in self.DEFAULT_CONFIG.items():
+            for section, section_keys in self.DEFAULT_CONFIG.items():
                 # fix missing section
                 if not config.has_section(section):
                     config.add_section(section)
                     updated = True
 
                 # fix missing section keys
-                for (key, value) in section_keys.items():
+                for key, value in section_keys.items():
                     if not config.has_option(section, key):
                         config.set(section, key, str(value))
                         updated = True
