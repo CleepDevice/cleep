@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: inventory stores effective HTTP auth status for cleepbus peer headers
 - Added core: harden RPC server to resolve only requests from the same network
 - Added core: add CleepRemoteAccessModule to publish remote access url
 - Added core: add config-tabs in design system

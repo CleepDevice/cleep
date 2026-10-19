@@ -97,6 +97,9 @@ class Inventory(Cleep):
         # current module loading tree
         self.__module_loading_tree = []
         self.__remote_access_urls = {}
+        # Effective HTTP basic auth (enabled flag and at least one account).
+        # Updated by parameters when the user changes auth settings.
+        self.__auth_enabled = False
 
         # events
         self.apps_updated_event = self._get_event("core.apps.updated")
@@ -1037,3 +1040,24 @@ class Inventory(Cleep):
                 }
         """
         return self.__remote_access_urls
+
+    def set_auth_enabled(self, enabled):
+        """
+        Store whether device HTTP authentication is effectively enabled.
+
+        Called by parameters after auth is turned on/off or accounts change.
+
+        Args:
+            enabled (bool): True when auth is on and at least one account exists
+        """
+        self.__auth_enabled = bool(enabled)
+        self.logger.debug("Device auth enabled=%s", self.__auth_enabled)
+
+    def get_auth_enabled(self):
+        """
+        Return whether device HTTP authentication is effectively enabled.
+
+        Returns:
+            bool: True when clients must send basic auth credentials
+        """
+        return self.__auth_enabled

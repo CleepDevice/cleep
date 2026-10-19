@@ -988,6 +988,15 @@ class %(module_name)s(%(inherit)s):
         urls = self.i.get_remote_access_urls()
         self.assertEqual(urls, {})
 
+    def test_set_auth_enabled(self):
+        self._init_context()
+
+        self.assertFalse(self.i.get_auth_enabled())
+        self.i.set_auth_enabled(True)
+        self.assertTrue(self.i.get_auth_enabled())
+        self.i.set_auth_enabled(False)
+        self.assertFalse(self.i.get_auth_enabled())
+
 
 if __name__ == '__main__':
     # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
