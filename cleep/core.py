@@ -27,6 +27,7 @@ __all__ = [
     "CleepRemoteAccessModule",
     "CleepResources",
     "CleepRenderer",
+    "CleepExternalBus",
 ]
 
 
@@ -1531,8 +1532,15 @@ class CleepRenderer(CleepModule):
 
 class CleepExternalBus(CleepModule):
     """
-    Base Cleep class for external bus implementation
+    Base Cleep class for external bus implementation.
+
+    Provides inventory-backed device attributes (auth, remote access URLs,
+    and future fields) as a plain dict. Subclasses decide how to publish
+    that data on their transport — core has no notion of headers or ZRE.
     """
+
+    # Timeout for inventory lookups when collecting device info
+    PEER_DEVICE_INFO_TIMEOUT = 3.0
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -1547,6 +1555,65 @@ class CleepExternalBus(CleepModule):
 
         # store rpc config
         self.rpc_config = bootstrap.get("rpc_config", {})
+
+    def _get_peer_device_info(self):
+        """
+        Collect device attributes any external bus may need to advertise.
+
+        Inventory knowledge stays in core: subclasses must not call inventory
+        for these fields. Add new keys here when core exposes more data.
+        How (or whether) they are published is left to the subclass.
+
+        Returns:
+            dict: typed values::
+
+                {
+                    auth (bool): HTTP basic auth effectively enabled
+                    remoteaccess (dict): {application_name: url}
+                }
+        """
+        return {
+            "auth": self.__get_auth_enabled(),
+            "remoteaccess": self.__get_remote_access_urls(),
+        }
+
+    def __get_auth_enabled(self):
+        """
+        Whether HTTP basic auth is effectively enabled (from inventory).
+
+        Returns:
+            bool: True when clients must send credentials
+        """
+        try:
+            resp = self.send_command(
+                "get_auth_enabled",
+                "inventory",
+                timeout=self.PEER_DEVICE_INFO_TIMEOUT,
+            )
+            if resp and not resp.error:
+                return bool(resp.data)
+        except Exception:
+            self.logger.exception("Unable to read auth status from inventory")
+        return False
+
+    def __get_remote_access_urls(self):
+        """
+        Public addresses registered on this device (from inventory).
+
+        Returns:
+            dict: ``{application_name: url}``
+        """
+        try:
+            resp = self.send_command(
+                "get_remote_access_urls",
+                "inventory",
+                timeout=self.PEER_DEVICE_INFO_TIMEOUT,
+            )
+            if resp and not resp.error and isinstance(resp.data, dict):
+                return resp.data
+        except Exception:
+            self.logger.exception("Unable to read remote access urls from inventory")
+        return {}
 
     def send_command_to_peer(
         self, command, to, peer_uuid, params=None, timeout=5.0, manual_response=None

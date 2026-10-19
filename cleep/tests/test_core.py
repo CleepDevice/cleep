@@ -1472,6 +1472,37 @@ class TestsCleepExternalBus(unittest.TestCase):
             self.c.send_event_to_peer('my.dummy.event', '123-456-789', {'param': 'value'})
         self.assertEqual(str(cm.exception), '_send_event_to_peer function must be implemented in "DummyCleepExternalBus"')
 
+    def test_get_peer_device_info(self):
+        self._init_context()
+        self.c.send_command = Mock(side_effect=[
+            MessageResponse(error=False, data=True),
+            MessageResponse(error=False, data={'ngrok': 'https://dummy.ngrok.app'}),
+        ])
+
+        info = self.c._get_peer_device_info()
+
+        self.assertEqual(
+            info,
+            {
+                'auth': True,
+                'remoteaccess': {'ngrok': 'https://dummy.ngrok.app'},
+            },
+        )
+        self.c.send_command.assert_any_call(
+            'get_auth_enabled', 'inventory', timeout=self.c.PEER_DEVICE_INFO_TIMEOUT
+        )
+        self.c.send_command.assert_any_call(
+            'get_remote_access_urls', 'inventory', timeout=self.c.PEER_DEVICE_INFO_TIMEOUT
+        )
+
+    def test_get_peer_device_info_defaults_on_error(self):
+        self._init_context()
+        self.c.send_command = Mock(side_effect=Exception('Test exception'))
+
+        info = self.c._get_peer_device_info()
+
+        self.assertEqual(info, {'auth': False, 'remoteaccess': {}})
+
 
 class DummyCleepRemoteAccessModule(CleepRemoteAccessModule):
     CONFIG_DIR = ''
