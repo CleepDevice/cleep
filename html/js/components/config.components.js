@@ -1309,7 +1309,8 @@ angular.module('Cleep').component('configFile', {
  * config-tab is a marker element. Its markup is moved into md-tab so Material
  * can compile the panels itself. cl-selected is the id of the active tab.
  * The tab opened on load is the query parameter "tab" when it matches a
- * config-tab id. Otherwise the first tab is shown.
+ * config-tab id. Otherwise the first tab is shown. Changing tab updates
+ * that query parameter so the URL stays shareable / reloadable.
  *
  *   <config-tabs cl-selected="$ctrl.tab">
  *       <config-tab cl-id="general" cl-label="General" cl-icon="cog">
@@ -1317,7 +1318,8 @@ angular.module('Cleep').component('configFile', {
  *       </config-tab>
  *   </config-tabs>
  */
-angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$location', function ($compile, $interpolate, $location) {
+angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$location', '$timeout', '$rootScope',
+function ($compile, $interpolate, $location, $timeout, $rootScope) {
     return {
         restrict: 'E',
         terminal: true,
@@ -1358,6 +1360,21 @@ angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$l
             viewScope.selectedIndex = initialIndex;
             scope.clSelected = tabs[initialIndex].id;
 
+            // Leaflet and similar widgets init while the panel is hidden; tell them
+            // when a tab is actually shown so they can recalculate their size.
+            const notifyTabShown = function (tabId) {
+                $timeout(function () {
+                    $rootScope.$broadcast('config-tabs:shown', tabId);
+                }, 50);
+            };
+
+            const syncTabInUrl = function (tabId) {
+                if (!tabId || $location.search().tab === tabId) {
+                    return;
+                }
+                $location.search('tab', tabId).replace();
+            };
+
             const tabsEl = angular.element(
                 '<md-tabs md-dynamic-height md-border-bottom md-selected="selectedIndex"></md-tabs>'
             );
@@ -1377,6 +1394,8 @@ angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$l
             });
 
             element.append($compile(tabsEl)(viewScope));
+            notifyTabShown(tabs[initialIndex].id);
+            syncTabInUrl(tabs[initialIndex].id);
 
             scope.$watch('clSelected', function (id) {
                 const index = tabs.findIndex((tab) => tab.id === id);
@@ -1384,10 +1403,14 @@ angular.module('Cleep').directive('configTabs', ['$compile', '$interpolate', '$l
                     viewScope.selectedIndex = index;
                 }
             });
-            viewScope.$watch('selectedIndex', function (index) {
+            viewScope.$watch('selectedIndex', function (index, previous) {
                 const tab = tabs[index];
                 if (tab && scope.clSelected !== tab.id) {
                     scope.clSelected = tab.id;
+                }
+                if (tab && index !== previous) {
+                    notifyTabShown(tab.id);
+                    syncTabInUrl(tab.id);
                 }
             });
             scope.$on('$destroy', function () {
