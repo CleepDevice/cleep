@@ -1479,3 +1479,261 @@ angular.module('Cleep').component('configCollapse', {
         };
     },
 });
+
+/**
+ * Data table for config pages (same left title/icon layout as other config items).
+ *
+ * Columns (cl-columns), any of:
+ *   - [{id: 'name', label: 'Name'}, ...]
+ *   - {name: 'Name', age: 'Age'}
+ *   - omitted / empty → no header row
+ *
+ * Rows (cl-rows), any of:
+ *   - [{name: 'Alice', age: 30}, ...]
+ *   - {name: 'Alice', age: 30}  (single row)
+ *   - [['Alice', 30], ...]     (order matches columns)
+ *   - [{colId: 'name', value: 'Alice'}, ...]  (single row as cells)
+ *   - [[{colId: 'name', value: 'Alice'}, ...], ...]
+ *
+ *   <config-table
+ *       cl-title="Devices"
+ *       cl-subtitle="Online peers"
+ *       cl-icon="table"
+ *       cl-columns="$ctrl.columns"
+ *       cl-rows="$ctrl.rows"
+ *       cl-border="true"
+ *       cl-header-color="#EEEEEE">
+ *   </config-table>
+ */
+angular.module('Cleep').component('configTable', {
+    template: `
+        <div
+            id="{{ $ctrl.clId }}"
+            class="config-item config-table-item"
+            layout="column"
+            layout-align="start stretch"
+            layout-gt-xs="row"
+            layout-align-gt-xs="start start"
+        >
+            <config-item-desc
+                flex="none"
+                layout="row"
+                layout-align="start center"
+                cl-icon="$ctrl.clIcon"
+                cl-icon-style="$ctrl.clIconStyle"
+                cl-title="$ctrl.clTitle"
+                cl-subtitle="$ctrl.clSubtitle"
+            ></config-item-desc>
+            <div
+                flex
+                class="config-table"
+                ng-class="{ 'config-table-bordered': $ctrl.border }"
+                ng-if="$ctrl.hasRows"
+            >
+                <table>
+                    <thead ng-if="$ctrl.showHeader">
+                        <tr>
+                            <th
+                                ng-repeat="col in $ctrl.columns track by col.id"
+                                ng-style="{ 'background-color': $ctrl.headerColor }"
+                            >{{ col.label }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="row in $ctrl.rows track by $index">
+                            <td ng-repeat="col in $ctrl.columns track by col.id">{{ row[col.id] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `,
+    bindings: {
+        clId: '@',
+        clTitle: '@',
+        clSubtitle: '@',
+        clIcon: '@',
+        clIconStyle: '@',
+        clColumns: '<?',
+        clRows: '<?',
+        clBorder: '<?',
+        clHeaderColor: '@?',
+    },
+    controller: function () {
+        const ctrl = this;
+        // Same light grey as .widget-bg-color in cleep.css
+        ctrl.DEFAULT_HEADER_COLOR = '#EEEEEE';
+        ctrl.columns = [];
+        ctrl.rows = [];
+        ctrl.showHeader = false;
+        ctrl.hasRows = false;
+        ctrl.border = true;
+        ctrl.headerColor = ctrl.DEFAULT_HEADER_COLOR;
+
+        ctrl.$onInit = function () {
+            ctrl.refresh();
+        };
+
+        ctrl.$onChanges = function () {
+            ctrl.refresh();
+        };
+
+        ctrl.refresh = function () {
+            const columns = ctrl.normalizeColumns(ctrl.clColumns);
+            const rows = ctrl.normalizeRows(ctrl.clRows, columns);
+            ctrl.showHeader = columns.length > 0 && ctrl.hasExplicitColumns(ctrl.clColumns);
+            ctrl.columns = columns.length
+                ? columns
+                : ctrl.inferColumnsFromRows(rows);
+            ctrl.rows = rows;
+            ctrl.hasRows = rows.length > 0;
+            ctrl.border = ctrl.parseBorder(ctrl.clBorder);
+            ctrl.headerColor = ctrl.clHeaderColor || ctrl.DEFAULT_HEADER_COLOR;
+        };
+
+        ctrl.parseBorder = function (value) {
+            if (value === undefined || value === null || value === '') {
+                return true;
+            }
+            if (value === false || value === 0 || value === 'false' || value === '0') {
+                return false;
+            }
+            return true;
+        };
+
+        ctrl.hasExplicitColumns = function (raw) {
+            if (raw === undefined || raw === null) {
+                return false;
+            }
+            if (angular.isArray(raw)) {
+                return raw.length > 0;
+            }
+            if (angular.isObject(raw)) {
+                return Object.keys(raw).length > 0;
+            }
+            return false;
+        };
+
+        ctrl.normalizeColumns = function (raw) {
+            if (!ctrl.hasExplicitColumns(raw)) {
+                return [];
+            }
+            if (angular.isArray(raw)) {
+                return raw
+                    .map(function (col, index) {
+                        if (angular.isString(col)) {
+                            return { id: col, label: col };
+                        }
+                        if (!angular.isObject(col)) {
+                            return null;
+                        }
+                        const id = col.id != null ? String(col.id) : String(index);
+                        return {
+                            id: id,
+                            label: col.label != null ? String(col.label) : id,
+                        };
+                    })
+                    .filter(Boolean);
+            }
+            return Object.keys(raw).map(function (id) {
+                return { id: id, label: String(raw[id]) };
+            });
+        };
+
+        ctrl.inferColumnsFromRows = function (rows) {
+            if (!rows.length) {
+                return [];
+            }
+            return Object.keys(rows[0]).map(function (id) {
+                return { id: id, label: id };
+            });
+        };
+
+        ctrl.formatCell = function (value) {
+            if (value === undefined || value === null) {
+                return '';
+            }
+            if (angular.isObject(value)) {
+                try {
+                    return JSON.stringify(value);
+                } catch (e) {
+                    return String(value);
+                }
+            }
+            return value;
+        };
+
+        ctrl.rowFromCells = function (cells) {
+            const row = {};
+            if (!angular.isArray(cells)) {
+                return row;
+            }
+            cells.forEach(function (cell) {
+                if (!angular.isObject(cell) || cell.colId === undefined) {
+                    return;
+                }
+                row[String(cell.colId)] = ctrl.formatCell(cell.value);
+            });
+            return row;
+        };
+
+        ctrl.isCellDescriptorList = function (value) {
+            return (
+                angular.isArray(value) &&
+                value.length > 0 &&
+                angular.isObject(value[0]) &&
+                value[0].colId !== undefined
+            );
+        };
+
+        ctrl.normalizeRows = function (raw, columns) {
+            if (raw === undefined || raw === null) {
+                return [];
+            }
+
+            // Single row as cell descriptors: [{colId, value}, ...]
+            if (ctrl.isCellDescriptorList(raw)) {
+                return [ctrl.rowFromCells(raw)];
+            }
+
+            // Single row object: {colId: value, ...}
+            if (angular.isObject(raw) && !angular.isArray(raw)) {
+                const row = {};
+                Object.keys(raw).forEach(function (key) {
+                    row[key] = ctrl.formatCell(raw[key]);
+                });
+                return [row];
+            }
+
+            if (!angular.isArray(raw)) {
+                return [];
+            }
+
+            return raw
+                .map(function (entry) {
+                    if (ctrl.isCellDescriptorList(entry)) {
+                        return ctrl.rowFromCells(entry);
+                    }
+                    if (angular.isArray(entry)) {
+                        const row = {};
+                        entry.forEach(function (value, index) {
+                            const id = columns[index]
+                                ? columns[index].id
+                                : String(index);
+                            row[id] = ctrl.formatCell(value);
+                        });
+                        return row;
+                    }
+                    if (angular.isObject(entry)) {
+                        const row = {};
+                        Object.keys(entry).forEach(function (key) {
+                            row[key] = ctrl.formatCell(entry[key]);
+                        });
+                        return row;
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+        };
+    },
+});

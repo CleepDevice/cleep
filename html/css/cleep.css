@@ -467,3 +467,54 @@ a.md-button.cl-button-sm {
     padding-top: 8px;
 }
 
+/********** config-table ***********/
+.config-table-item {
+    align-items: flex-start;
+}
+
+.config-table-item > config-item-desc {
+    min-width: 160px;
+    max-width: 280px;
+    margin-right: 12px;
+}
+
+.config-table {
+    display: block;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.config-table-bordered {
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 8px;
+}
+
+.config-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.config-table th,
+.config-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgb(226, 227, 229);
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.config-table thead th {
+    color: rgba(0, 0, 0, 0.54);
+    font-weight: 500;
+    border-bottom: 1px solid rgb(196, 200, 203);
+}
+
+.config-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.config-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+

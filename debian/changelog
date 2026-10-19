@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added ui: config-table component for tabular config data (optional header)
 - Fixed ui: do not show "Connection lost" while cleep-cli source sync is in progress
 - Added core: CleepExternalBus exposes inventory-backed peer device info (auth, remoteaccess) as a dict for any external bus
 - Added core: inventory stores effective HTTP auth status for cleepbus peer headers
