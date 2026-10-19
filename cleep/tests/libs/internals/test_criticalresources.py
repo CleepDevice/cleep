@@ -4,271 +4,342 @@
 from cleep.libs.tests.lib import TestLib
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from cleep.libs.internals.task import Task
-from criticalresources import CriticalResources
-from cleep.libs.internals.taskfactory import TaskFactory
-from threading import Event
 import unittest
 import logging
 import time
+from threading import Event
 from unittest.mock import Mock
-import io
-import shutil
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
+from cleep.libs.internals.criticalresources import CriticalResources
+from cleep.libs.internals.resource_catalog import (
+    AUDIO_CAPTURE,
+    AUDIO_PLAYBACK,
+    ResourceDenyReason,
+    ResourcePriority,
+    make_session,
+)
+from cleep.libs.internals.taskfactory import TaskFactory
 from cleep.libs.tests.common import get_log_level
 
 LOG_LEVEL = get_log_level()
 
+
+class SyncTaskFactory:
+    """Run create_task callbacks immediately; timers fire on demand."""
+
+    def __init__(self):
+        self.timers = []
+
+    def create_task(
+        self, interval, task, task_args=None, task_kwargs=None, end_callback=None
+    ):
+        task_args = task_args or []
+        task_kwargs = task_kwargs or {}
+        mock = Mock()
+
+        def start():
+            task(*task_args, **task_kwargs)
+            if end_callback:
+                end_callback()
+
+        mock.start = start
+        mock.wait = Mock()
+        return mock
+
+    def create_timer(self, interval, task, task_args=None, task_kwargs=None):
+        task_args = task_args or []
+        task_kwargs = task_kwargs or {}
+        mock = Mock()
+        mock.interval = interval
+        mock.task = task
+        mock.task_args = task_args
+        mock.cancelled = False
+
+        def start():
+            pass
+
+        def cancel():
+            mock.cancelled = True
+
+        def fire():
+            if not mock.cancelled:
+                task(*task_args, **task_kwargs)
+
+        mock.start = start
+        mock.cancel = cancel
+        mock.fire = fire
+        self.timers.append(mock)
+        return mock
+
+
 class CriticalResourcesTests(unittest.TestCase):
+    def setUp(self):
+        TestLib()
+        logging.basicConfig(
+            level=LOG_LEVEL,
+            format="%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s",
+        )
+        self.tf = SyncTaskFactory()
+        self.c = CriticalResources({"task_factory": self.tf}, False)
+        self.events = []
+
+    def _handlers(self, module):
+        return {
+            "on_granted": lambda session: self.events.append(
+                ("granted", module, session)
+            ),
+            "on_revoke_requested": lambda session: self.events.append(
+                ("revoke_requested", module, session)
+            ),
+            "on_revoked": lambda session, forced=False: self.events.append(
+                ("revoked", module, session, forced)
+            ),
+            "on_denied": lambda session, reason="": self.events.append(
+                ("denied", module, session, reason)
+            ),
+        }
+
+    def test_catalogue_loaded(self):
+        resources = list(self.c.get_resources())
+        self.assertIn(AUDIO_PLAYBACK, resources)
+        self.assertIn(AUDIO_CAPTURE, resources)
+
+    def test_register_and_acquire(self):
+        self.c.register("player", self._handlers("player"))
+        session = make_session("player", AUDIO_PLAYBACK)
+        self.c.acquire(session)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "player")
+        self.assertEqual(self.events[-1][0], "granted")
+
+    def test_register_unknown_resource(self):
+        with self.assertRaises(Exception) as cm:
+            self.c.register(
+                "player", self._handlers("player"), permanent_resources=("nope",)
+            )
+        self.assertIn("does not exists", str(cm.exception))
+
+    def test_register_invalid_handlers(self):
+        with self.assertRaises(Exception):
+            self.c.register("player", {"on_granted": None})
+
+    def test_permanent_exclusive_first_wins(self):
+        self.c.register(
+            "mic", self._handlers("mic"), permanent_resources=(AUDIO_CAPTURE,)
+        )
+        self.assertTrue(self.c.is_resource_permanently_acquired(AUDIO_CAPTURE))
+        with self.assertRaises(Exception) as cm:
+            self.c.register(
+                "other",
+                self._handlers("other"),
+                permanent_resources=(AUDIO_CAPTURE,),
+            )
+        self.assertIn("already has permanent module", str(cm.exception))
+        self.assertIn("first registered wins", str(cm.exception))
+        # First claimant still permanent; second never registered handlers
+        self.assertEqual(
+            self.c.resources[AUDIO_CAPTURE]["reclaim_module"], "mic"
+        )
+        self.assertNotIn("other", self.c.handlers)
+
+    def test_waiter_then_release(self):
+        self.c.register("a", self._handlers("a"))
+        self.c.register("b", self._handlers("b"))
+        s1 = make_session("a", AUDIO_PLAYBACK)
+        s2 = make_session("b", AUDIO_PLAYBACK)
+        self.c.acquire(s1)
+        self.c.acquire(s2)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "a")
+        self.assertTrue(
+            any(e[0] == "revoke_requested" and e[1] == "a" for e in self.events)
+        )
+        self.c.release(s1)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "b")
+        grants = [e for e in self.events if e[0] == "granted"]
+        self.assertEqual(grants[-1][1], "b")
+
+    def test_deny_higher_priority(self):
+        self.c.register("high", self._handlers("high"))
+        self.c.register("low", self._handlers("low"))
+        s_high = make_session(
+            "high", AUDIO_PLAYBACK, priority=ResourcePriority.HIGH
+        )
+        s_low = make_session(
+            "low", AUDIO_PLAYBACK, priority=ResourcePriority.NORMAL
+        )
+        self.c.acquire(s_high)
+        self.c.acquire(s_low)
+        denied = [e for e in self.events if e[0] == "denied"]
+        self.assertTrue(denied)
+        self.assertEqual(denied[-1][3], ResourceDenyReason.HIGHER_PRIORITY)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "high")
+
+    def test_steal_after_timeout(self):
+        self.c.register("a", self._handlers("a"))
+        self.c.register("b", self._handlers("b"))
+        s1 = make_session("a", AUDIO_PLAYBACK, timeout_s=1.0)
+        s2 = make_session("b", AUDIO_PLAYBACK, timeout_s=1.0)
+        self.c.acquire(s1)
+        self.c.acquire(s2)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "a")
+        self.assertTrue(self.tf.timers)
+        self.tf.timers[-1].fire()
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "b")
+        revoked = [e for e in self.events if e[0] == "revoked"]
+        self.assertTrue(revoked)
+        self.assertTrue(revoked[-1][3])
+
+    def test_multi_resource_atomic(self):
+        self.c.register("voice", self._handlers("voice"))
+        self.c.register("music", self._handlers("music"))
+        music = make_session("music", AUDIO_PLAYBACK)
+        self.c.acquire(music)
+        voice = make_session(
+            "voice",
+            (AUDIO_PLAYBACK, AUDIO_CAPTURE),
+            priority=ResourcePriority.HIGH,
+        )
+        self.c.acquire(voice)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "music")
+        self.c.release(music)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "voice")
+        self.assertEqual(self.c.resources[AUDIO_CAPTURE]["holder"], "voice")
+
+    def test_reclaim_after_idle(self):
+        self.c.register(
+            "player",
+            self._handlers("player"),
+            permanent_resources=(AUDIO_PLAYBACK,),
+        )
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "player")
+        self.c.register("voice", self._handlers("voice"))
+        voice = make_session(
+            "voice", AUDIO_PLAYBACK, priority=ResourcePriority.HIGH
+        )
+        self.c.acquire(voice)
+        # steal so voice gets it
+        self.tf.timers[-1].fire()
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "voice")
+        voice_hold = None
+        for e in self.events:
+            if e[0] == "granted" and e[1] == "voice":
+                voice_hold = e[2]
+        self.c.release(voice_hold)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "player")
+
+    def test_double_acquire_same_module(self):
+        self.c.register("a", self._handlers("a"))
+        s1 = make_session("a", AUDIO_PLAYBACK)
+        self.c.acquire(s1)
+        before = len(self.events)
+        s2 = make_session("a", AUDIO_PLAYBACK)
+        self.c.acquire(s2)
+        self.assertEqual(len([e for e in self.events[before:] if e[0] == "granted"]), 0)
+
+    def test_get_status(self):
+        self.c.register("a", self._handlers("a"))
+        self.c.acquire(make_session("a", AUDIO_PLAYBACK))
+        status = self.c.get_status()
+        self.assertEqual(status[AUDIO_PLAYBACK]["holder"], "a")
+
+    def test_legacy_register_acquire_release(self):
+        acquired = []
+        need = []
+        self.c.register_resource(
+            "test", AUDIO_PLAYBACK, acquired.append, need.append, False
+        )
+        self.c.acquire_resource("test", AUDIO_PLAYBACK)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "test")
+        self.assertEqual(acquired, [AUDIO_PLAYBACK])
+        self.assertTrue(self.c.release_resource("test", AUDIO_PLAYBACK))
+        self.assertIsNone(self.c.resources[AUDIO_PLAYBACK]["holder"])
+
+    def test_legacy_permanent_conflict(self):
+        self.c.register_resource(
+            "test1", AUDIO_CAPTURE, Mock(), Mock(), True
+        )
+        with self.assertRaises(Exception):
+            self.c.register_resource(
+                "test2", AUDIO_CAPTURE, Mock(), Mock(), True
+            )
+
+    def test_legacy_acquire_unknown(self):
+        self.c.register_resource("test", AUDIO_PLAYBACK, Mock(), Mock())
+        with self.assertRaises(Exception):
+            self.c.acquire_resource("test", "a.resource")
+
+    def test_legacy_acquire_unregistered(self):
+        with self.assertRaises(Exception):
+            self.c.acquire_resource("test", AUDIO_CAPTURE)
+
+    def test_release_not_holder(self):
+        self.c.register("a", self._handlers("a"))
+        self.c.register("b", self._handlers("b"))
+        self.c.acquire(make_session("a", AUDIO_PLAYBACK))
+        self.assertFalse(self.c.release_by_module("b", AUDIO_PLAYBACK))
+
+    def test_crash_report_on_dispatch_error(self):
+        crash = Mock()
+        self.c.set_crash_report(crash)
+
+        def boom(session):
+            raise RuntimeError("boom")
+
+        self.c.register(
+            "a",
+            {
+                "on_granted": boom,
+                "on_revoke_requested": Mock(),
+                "on_revoked": Mock(),
+                "on_denied": Mock(),
+            },
+        )
+        # SyncTaskFactory runs inline — exception is caught in _dispatch
+        # Override create_task to raise on start
+        def bad_create_task(interval, task, task_args=None, task_kwargs=None, end_callback=None):
+            mock = Mock()
+            mock.start.side_effect = Exception("fail start")
+            return mock
+
+        self.tf.create_task = bad_create_task
+        self.c.acquire(make_session("a", AUDIO_PLAYBACK))
+        self.assertTrue(crash.report_exception.called)
+
+
+class CriticalResourcesRealTaskFactoryTests(unittest.TestCase):
+    """Smoke test with real TaskFactory (async callbacks)."""
 
     def setUp(self):
         TestLib()
-        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-        enable_log = True if logging.getLogger().getEffectiveLevel()==logging.DEBUG else False
-
-        app_stop_event = Event()
-        task_factory = TaskFactory({ "app_stop_event": app_stop_event })
-
-        bootstrap = {
-            "task_factory": task_factory,
-        }
-
-        self.c = CriticalResources(bootstrap, enable_log)
-        self.acquired_cb_count = 0
-        self.need_release_cb_count = 0
-        self.acquired_cb_last_resource = None
-        self.need_release_cb_last_resource = None
+        self.app_stop = Event()
+        self.tf = TaskFactory({"app_stop_event": self.app_stop})
+        self.c = CriticalResources({"task_factory": self.tf}, False)
 
     def tearDown(self):
-        self.acquired_cb_count = 0
-        self.need_release_cb_count = 0
+        self.app_stop.set()
 
-    def _fake_task(self, interval, task, args, kwargs):
-        pass
+    def test_acquire_async(self):
+        granted = []
 
-    def _acquired_cb(self, resource_name):
-        self.acquired_cb_count += 1
-        self.acquired_cb_last_resource = resource_name
+        def on_granted(session):
+            granted.append(session)
 
-    def _need_release_cb(self, resource_name):
-        self.need_release_cb_count += 1
-        self.need_release_cb_last_resource = resource_name
-
-    def test_register_resource_ok(self):
-        self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.assertIsNone(self.c.resources['audio.playback']['permanent'], 'Permanent value should be None')
-        self.c.register_resource('test', 'audio.capture', self._acquired_cb, self._need_release_cb)
-        self.assertIsNone(self.c.resources['audio.capture']['permanent'], 'Permanent value should be None')
-
-        self.c.register_resource('test', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
-        self.assertIsNotNone(self.c.resources['audio.capture']['permanent'], 'Permanent value should not be None')
-
-    def test_register_unkown_resource(self):
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test', 'a.resource', self._acquired_cb, self._need_release_cb)
-        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
-
-    def test_register_with_invalid_params(self):
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test', 'audio.playback', None, self._need_release_cb)
-        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test', 'audio.playback', self._acquired_cb, None)
-        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test', 'audio.playback', 'test', self._need_release_cb)
-        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test', 'audio.playback', self._acquired_cb, 'test')
-        self.assertEqual(str(cm.exception), 'Callbacks must be functions', 'Should raise exception while registering with invalid acquire_callback param')
-
-    def test_resource_permanently_acquired_ok(self):
-        self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, False)
-        self.assertFalse(self.c.is_resource_permanently_acquired('audio.playback'), 'Resource should not be permanently acquired')
-
-        self.c.register_resource('test', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
-        self.assertTrue(self.c.is_resource_permanently_acquired('audio.capture'), 'Resource should be permanently acquired')
-
-    def test_resource_permanently_acquired_ko(self):
-        self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, True)
-        with self.assertRaises(Exception) as cm:
-            self.c.is_resource_permanently_acquired('a.resource')
-        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while registering unkown resource')
-
-    def test_resource_cannot_be_acquired_permanently_by_two_modules(self):
-        self.c.register_resource('test1', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
-        with self.assertRaises(Exception) as cm:
-            self.c.register_resource('test2', 'audio.capture', self._acquired_cb, self._need_release_cb, True)
-        self.assertEqual(str(cm.exception), 'Resource "audio.capture" already has permanent module "test1" configured. Only one allowed', 'Should raise exception when 2 modules try to permanently acquire a resource')
-
-    def test_acquire_resource(self):
-        self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, False)
-
-        self.c.acquire_resource('test', 'audio.playback')
-        self.assertEqual(self.c.resources['audio.playback']['using'], 'test', 'Resource should be acquired')
-        self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 0, 'No module should wait for resource')
-        self.assertIsNone(self.c.resources['audio.playback']['permanent'], 'Resource should not have permanent acquirer')
-        self.assertIsNone(self.c.resources['audio.capture']['using'], 'Resource should not be acquired')
-
-    def test_acquire_resource_already_acquired(self):
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.c.register_resource('test2', 'audio.playback', self._acquired_cb, self._need_release_cb)
-
-        t = self.c.acquire_resource('test1', 'audio.playback')
-        t = self.c.acquire_resource('test2', 'audio.playback')
-        t.wait()
-        self.assertEqual(self.c.resources['audio.playback']['using'], 'test1', 'Module test1 should using resource')
-        self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 1, 'Resource should have 1 waiting module')
-        self.assertEqual(self.need_release_cb_count, 1, 'need_release callback should be called once')
-        self.assertEqual(self.acquired_cb_count, 1, 'acquired_release callback should be called once')
-        
-        t = self.c.release_resource('test1', 'audio.playback')
-        t.wait()
-        self.assertEqual(self.acquired_cb_count, 2, 'acquired_release callback should be called once')
-        self.assertEqual(self.c.resources['audio.playback']['using'], 'test2', 'Module test2 should use the resource')
-        self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 0, 'Resource should have no waiting module')
-
-    def test_acquire_module_with_permanent(self): # FAILED
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb, True)
-        self.c.register_resource('test2', 'audio.playback', self._acquired_cb, self._need_release_cb)
-
-        self.c.acquire_resource('test1', 'audio.playback')
-        self.c.acquire_resource('test2', 'audio.playback')
-        #test2 should acquire resource
-        t = self.c.release_resource('test1', 'audio.playback')
-        t.wait()
-        self.assertEqual(self.c.resources['audio.playback']['using'], 'test2', 'Module test2 should use the resource')
-        #test1 should acquire again resource
-        self.assertTrue(self.c.release_resource('test2', 'audio.playback'), 'Resource release should succeed')
-        self.assertEqual(self.c.resources['audio.playback']['using'], 'test1', 'Module test1 should uses the resource')
-        self.assertEqual(len(self.c.resources['audio.playback']['waiting']), 0, 'Resource should have no waiting module')
-
-    def test_acquire_resource_ko(self):
-        self.c.register_resource('test', 'audio.playback', self._acquired_cb, self._need_release_cb, True)
-        with self.assertRaises(Exception) as cm:
-            self.c.acquire_resource('test', 'a.resource')
-        self.assertEqual(str(cm.exception), 'Resource "a.resource" does not exists', 'Should raise exception while acquiring unknown resource')
-
-    def test_acquire_unregistered_resource(self):
-        with self.assertRaises(Exception) as cm:
-            self.c.acquire_resource('test', 'audio.capture')
-        self.assertEqual(str(cm.exception), 'Module "test" try to acquire resource "audio.capture" which it is not registered on', 'Should raise exception while acquiring unregistered resource')
-
-    def test_release_resource_unacquired_resource(self):
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.assertFalse(self.c.release_resource('test1', 'audio.playback'), 'Resource release should failed')
-
-    def test_release_resource_unreferenced_resource(self):
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        with self.assertRaises(Exception) as cm:
-            self.c.release_resource('test1', 'audio.dummy')
-        self.assertEqual(str(cm.exception), 'Resource "audio.dummy" does not exists')
-
-    def test_release_resource_not_using_it(self):
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.c.register_resource('test2', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.c.acquire_resource('test1', 'audio.playback')
-        self.assertFalse(self.c.release_resource('test2', 'audio.playback'))
-
-    def test_release_resource_exception_occured(self):
-        self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.c.register_resource('test2', 'audio.playback', self._acquired_cb, self._need_release_cb)
-        self.c.acquire_resource('test1', 'audio.playback')
-        self.c.acquire_resource('test2', 'audio.playback')
-        task_start_restore = Task.start
-        try:
-            Task.start = Mock(side_effect=Exception)
-            self.assertFalse(self.c.release_resource('test1', 'audio.playback'))
-        finally:
-            Task.start = task_start_restore
-
-    def test_get_resources(self):
-        resources = self.c.get_resources()
-        self.assertGreater(len(resources), 0)
-        self.assertEqual(len([resource for resource in resources if resource=='audio.playback']), 1, 'Resources should contain audio.playback')
-        self.assertEqual(len([resource for resource in resources if resource=='audio.capture']), 1, 'Resources should contain audio.capture')
-
-    def test_crash_report(self):
-        task_start_restore = Task.start
-        try:
-            Task.start = Mock(side_effect=Exception)
-            crash_report = Mock()
-            crash_report.report_exception = Mock()
-            self.c.set_crash_report(crash_report)
-
-            self.c.register_resource('test1', 'audio.playback', self._acquired_cb, self._need_release_cb)
-            self.c.acquire_resource('test1', 'audio.playback')
-            self.assertTrue(crash_report.report_exception.called)
-        finally:
-            Task.start = task_start_restore
+        self.c.register(
+            "a",
+            {
+                "on_granted": on_granted,
+                "on_revoke_requested": Mock(),
+                "on_revoked": Mock(),
+                "on_denied": Mock(),
+            },
+        )
+        self.c.acquire(make_session("a", AUDIO_PLAYBACK))
+        deadline = time.time() + 2
+        while not granted and time.time() < deadline:
+            time.sleep(0.05)
+        self.assertTrue(granted)
+        self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "a")
 
 
-class CriticalResourcesTestsInvalidResourcePath(unittest.TestCase):
-
-    CONTENT = u"""#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-class Mydummyresource():
-    RESOURCE_NAME = u'dummy.res'"""
-
-    def setUp(self):
-        TestLib()
-        logging.basicConfig(level=LOG_LEVEL, format=u'%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
-
-        self.resources_dir = '/tmp/resources'
-        self.bootstrap = {
-            "task_factory": Mock(),
-        }
-
-    def test_load_resources_invalid_path(self):
-        c = CriticalResources
-        c.RESOURCES_DIR = self.resources_dir
-        c.PYTHON_CLEEP_IMPORT_PATH = ''
-        with self.assertRaises(Exception) as cm:
-            c(self.bootstrap, False)
-        self.assertEqual(str(cm.exception), 'Invalid resources path "%s"' % c.RESOURCES_DIR)
-
-    def test_load_resources_invalid_resource_path(self):
-        try:
-            os.mkdir(self.resources_dir)
-            dummy_file = os.path.join(self.resources_dir, 'dummyResource.py')
-            with io.open(dummy_file, 'w') as fp:
-                fp.write(self.CONTENT)
-
-            time.sleep(1.0)
-            c = CriticalResources
-            c.RESOURCES_DIR = self.resources_dir
-            c.PYTHON_CLEEP_IMPORT_PATH = 'resources'
-            with self.assertRaises(Exception) as cm:
-                c(self.bootstrap, False)
-            self.assertEqual(str(cm.exception), 'Error occured trying to load resource "dummyResource"')
-        finally:
-            if os.path.exists(self.resources_dir):
-                shutil.rmtree(self.resources_dir)
-
-    def test_load_resources_invalid_resource_class_name(self):
-        try:
-            os.mkdir(self.resources_dir)
-            
-            dummy_file = os.path.join(self.resources_dir, 'dummyResource.py')
-            with io.open(dummy_file, 'w') as fp:
-                fp.write(self.CONTENT)
-
-            # make dummy dir content importable
-            sys.path.append(self.resources_dir)
-
-            c = CriticalResources
-            c.RESOURCES_DIR = self.resources_dir
-            c.PYTHON_CLEEP_IMPORT_PATH = ''
-            with self.assertRaises(Exception) as cm:
-                c(self.bootstrap, False)
-            self.assertEqual(str(cm.exception), 'Invalid resource "dummyResource" tryed to be loaded')
-        finally:
-            if os.path.exists(self.resources_dir):
-                shutil.rmtree(self.resources_dir)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_criticalresources.py; coverage report -m -i
+if __name__ == "__main__":
     unittest.main()
-

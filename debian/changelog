@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Updated core: critical resources redesign (static catalogue, sessions, priorities, timeout steal, MODULE_NAME identity); permanent conflict = first wins, second app stays on-demand
 - Updated core: RPC listens for static UI while apps configure; app APIs return 503 until ready (/health reports starting)
 - Updated core: lighter module discovery (filesystem scan, single import, filtered events/formatters bootstrap) and bounded configure join
 - Fixed core: inventory sets core_join only after its bus pull loop starts (avoids NoResponse on early _on_start commands)

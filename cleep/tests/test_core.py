@@ -1193,16 +1193,21 @@ class TestsCleepResources(unittest.TestCase):
     def test_need_resource(self):
         self._init_context()
 
-        self.r._need_resource('dummy')
+        self.r._need_resource('audio.playback')
 
-        self.critical_resources.acquire_resource.assert_called_with('DummyCleepResources', 'dummy')
+        self.assertTrue(self.critical_resources.acquire.called)
+        session = self.critical_resources.acquire.call_args[0][0]
+        self.assertEqual(session.module_name, 'dummycleepresources')
+        self.assertEqual(session.resource_names, ('audio.playback',))
 
     def test_release_resource(self):
         self._init_context()
 
-        self.r._release_resource('dummy')
+        self.r._release_resource('audio.playback')
 
-        self.critical_resources.release_resource.assert_called_with('DummyCleepResources', 'dummy')
+        self.critical_resources.release_by_module.assert_called_with(
+            'dummycleepresources', 'audio.playback'
+        )
 
     def test_get_resources(self):
         self._init_context()

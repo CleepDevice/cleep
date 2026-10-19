@@ -1286,30 +1286,28 @@ class CleepModule(Cleep):
 
 class CleepResources(CleepModule):
     """
-    Base cleep class to handle critical resources such as audio capture and make sure
-    loaded application using the same resource are not using it at the same time.
+    Base class for apps that share exclusive peripherals via CriticalResources.
 
-    It implements:
+    Declare catalogue names in ``MODULE_RESOURCES``::
 
-        * a mechanism of acquire/release a resoure
-        * an auto resource acquisition (aka permanent)
+        MODULE_RESOURCES = {
+            "audio.playback": {"permanent": False},  # acquire on demand
+            "audio.capture": {"permanent": True},   # hold at boot, yield, reclaim when idle
+        }
+
+    Only one app may set ``permanent: True`` per resource. The first module
+    that registers wins; a second permanent claim is refused (handlers still
+    register so the app can acquire on demand). Load order = inventory order.
+
+    Then implement the ``_on_resource_*`` handlers. Use ``_need_resource`` /
+    ``_need_resources`` to acquire and ``_release_resource_session`` (or
+    ``_release_resource`` for a single name) to release.
+
+    See :mod:`cleep.libs.internals.resource_catalog` for the contract and
+    ReSpeaker remigration notes.
     """
 
-    # module resources:
-    # list of resource identifer. The identifier is important and must be unique
-    # The identifier can be for example the physical audio device name::
-    #
-    #   {
-    #       resource_name (string): xxx.xxx (eg "audio.playback" for audio)
-    #       [
-    #           {
-    #               permanent (bool): acquire permanently the resource
-    #           },
-    #           ...
-    #       ],
-    #       ...
-    #   }
-    #
+    # resource_name -> {"permanent": bool}
     MODULE_RESOURCES = {}
 
     def __init__(self, bootstrap, debug_enabled):
@@ -1320,40 +1318,112 @@ class CleepResources(CleepModule):
             bootstrap (dict): bootstrap objects
             debug_enabled (bool): flag to set debug level to logger
         """
-        # init cleep
         CleepModule.__init__(self, bootstrap, debug_enabled)
 
-        # members
         self.__critical_resources = bootstrap["critical_resources"]
-
-        # register resources
+        self.__resource_sessions = {}
         self.__register_resources()
 
     def __register_resources(self):
-        """
-        Register module resources
-        """
-        for resource_name, resource in self.MODULE_RESOURCES.items():
-            self.__critical_resources.register_resource(
-                self.__class__.__name__,
-                resource_name,
-                self._resource_acquired,
-                self._resource_needs_to_be_released,
-                resource["permanent"] if "permanent" in resource else False,
+        """Register handlers and optional permanent resources with the arbitrator."""
+        handlers = {
+            "on_granted": self._on_resource_granted,
+            "on_revoke_requested": self._on_resource_revoke_requested,
+            "on_revoked": self._on_resource_revoked,
+            "on_denied": self._on_resource_denied,
+        }
+        permanent = []
+        for resource_name, conf in (self.MODULE_RESOURCES or {}).items():
+            conf = conf or {}
+            if conf.get("permanent"):
+                permanent.append(resource_name)
+
+        try:
+            self.__critical_resources.register(
+                self.MODULE_NAME,
+                handlers,
+                permanent_resources=tuple(permanent),
             )
+        except Exception as exc:
+            # Two apps claimed permanent on the same resource: keep handlers,
+            # drop permanent so the module still works on demand.
+            if "already has permanent module" not in str(exc):
+                raise
+            self.logger.error(
+                'Permanent resource conflict for module "%s": %s. '
+                "Registering without permanent hold (first claimant wins).",
+                self.MODULE_NAME,
+                exc,
+            )
+            if self.crash_report:
+                self.crash_report.manual_report(
+                    "Critical resource permanent conflict",
+                    {
+                        "module": self.MODULE_NAME,
+                        "permanent_resources": permanent,
+                        "error": str(exc),
+                    },
+                )
+            self.__critical_resources.register(
+                self.MODULE_NAME,
+                handlers,
+                permanent_resources=(),
+            )
+
+    def _on_resource_granted(self, session):
+        """
+        Resource session granted.
+
+        Args:
+            session (ResourceSession): granted session
+        """
+        self.__resource_sessions[session.session_id] = session
+        # Compatibility shim for apps still overriding _resource_acquired
+        for name in session.resource_names:
+            self._resource_acquired(name)
+
+    def _on_resource_revoke_requested(self, session):
+        """
+        Another module needs resources you hold — release soon.
+
+        Args:
+            session (ResourceSession): requester session (not your hold)
+        """
+        for name in session.resource_names:
+            self._resource_needs_to_be_released(name)
+
+    def _on_resource_revoked(self, session, forced=False):
+        """
+        Your hold was revoked (after timeout steal when ``forced``).
+
+        Args:
+            session (ResourceSession): your former session
+            forced (bool): True if stolen after timeout
+        """
+        self.__resource_sessions.pop(session.session_id, None)
+        for name in session.resource_names:
+            self._resource_needs_to_be_released(name)
+
+    def _on_resource_denied(self, session, reason=""):
+        """
+        Acquire was denied (e.g. higher-priority holder).
+
+        Args:
+            session (ResourceSession): denied session
+            reason (str): deny reason
+        """
+        self.logger.warning(
+            'Resource acquire denied for %s (%s)',
+            session.resource_names,
+            reason,
+        )
 
     def _resource_acquired(self, resource_name):
         """
-        Function called when resource is acquired.
+        Compatibility hook called per resource name after grant.
 
-        Warning:
-            Must be implemented
-
-        Args:
-            resource_name (string): acquired resource name
-
-        Raises:
-            NotImplementedError: if function is not implemented
+        Override `_on_resource_granted` for session-aware handling, or this
+        method for simple single-name apps.
         """
         raise NotImplementedError(
             'Method "_resource_acquired" must be implemented in "%s"'
@@ -1362,53 +1432,91 @@ class CleepResources(CleepModule):
 
     def _resource_needs_to_be_released(self, resource_name):
         """
-        Function called when resource is acquired by other module and needs to be released.
+        Compatibility hook when release is requested or forced.
 
-        Warning:
-            Must be implemented
-
-        Args:
-            resource_name (string): acquired resource name
-
-        Raises:
-            NotImplementedError: if function is not implemented
+        Override `_on_resource_revoke_requested` / `_on_resource_revoked` for
+        session-aware handling.
         """
         raise NotImplementedError(
             'Method "_resource_needs_to_be_released" must be implemented in "%s"'
             % self.__class__.__name__
         )
 
-    def _need_resource(self, resource_name):
+    def _need_resource(
+        self,
+        resource_name,
+        priority=None,
+        timeout_s=None,
+    ):
         """
-        Need to acquire specified resource. The resource is really acquired after _resource_acquired
-        function execution. A delay could occurs if resource is not available at this time.
-        This function call does not guarantee to have resource access if current acquirer still needs
-        to use it.
+        Request a single catalogue resource.
 
         Args:
-            resource_name (string): Existing resource name (see resources core directory content)
+            resource_name (str): catalogue name (e.g. ``audio.playback``)
+            priority (ResourcePriority|None): defaults to NORMAL
+            timeout_s (float|None): steal timeout seconds
         """
-        self.__critical_resources.acquire_resource(
-            self.__class__.__name__, resource_name
+        return self._need_resources(
+            (resource_name,), priority=priority, timeout_s=timeout_s
         )
+
+    def _need_resources(self, resource_names, priority=None, timeout_s=None):
+        """
+        Request one or more catalogue resources atomically.
+
+        Args:
+            resource_names (list|tuple): catalogue names
+            priority (ResourcePriority|None): defaults to NORMAL
+            timeout_s (float|None): steal timeout seconds
+
+        Returns:
+            ResourceSession: the session submitted for acquisition
+        """
+        from cleep.libs.internals.resource_catalog import (
+            DEFAULT_ACQUIRE_TIMEOUT_S,
+            ResourcePriority,
+            make_session,
+        )
+
+        if priority is None:
+            priority = ResourcePriority.NORMAL
+        if timeout_s is None:
+            timeout_s = DEFAULT_ACQUIRE_TIMEOUT_S
+        session = make_session(
+            self.MODULE_NAME,
+            resource_names,
+            priority=priority,
+            timeout_s=timeout_s,
+        )
+        self.__critical_resources.acquire(session)
+        return session
 
     def _release_resource(self, resource_name):
         """
-        Release specified resource
+        Release the resource currently held by this module (single name).
 
         Args:
-            resource_name (string): Existing resource name (see resources core directory content)
+            resource_name (str): catalogue name
         """
-        return self.__critical_resources.release_resource(
-            self.__class__.__name__, resource_name
+        return self.__critical_resources.release_by_module(
+            self.MODULE_NAME, resource_name
         )
+
+    def _release_resource_session(self, session):
+        """
+        Release a specific session returned by ``_need_resources``.
+
+        Args:
+            session (ResourceSession): session to release
+        """
+        return self.__critical_resources.release(session)
 
     def _get_resources(self):
         """
-        Return loaded resources with extra data
+        Return catalogue resource names.
 
         Returns:
-            list: list of available resources
+            list: available resource names
         """
         return self.__critical_resources.get_resources()
 

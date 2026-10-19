@@ -85,8 +85,8 @@ class NoMessageAvailable(Exception):
 
 class ResourceNotAvailable(Exception):
     """
-    Exception raised when no requested Cleep resource is not available.
-    See CleepResource for more information.
+    Exception raised when a requested Cleep critical resource is not available.
+    See CriticalResources / resource_catalog for more information.
     """
 
     def __init__(self, resource):
