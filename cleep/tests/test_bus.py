@@ -3,12 +3,10 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
 import inspect
 from queue import Empty, Queue
 
-from bus import MessageBus, BusClient
+from cleep.bus import MessageBus, BusClient
 from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoResponse, InvalidParameter, InvalidModule, NoMessageAvailable, BusError, CommandInfo, CommandError, InvalidMessage, NotReady
 from cleep.libs.internals.taskfactory import TaskFactory

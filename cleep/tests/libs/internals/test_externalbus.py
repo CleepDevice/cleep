@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from externalbus import ExternalBus
+from cleep.libs.internals.externalbus import ExternalBus
 from cleep.libs.tests.lib import TestLib
 from cleep.exception import MissingParameter, InvalidParameter
 from cleep.common import MessageRequest, MessageResponse, PeerInfos

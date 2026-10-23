@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from ifupdown import Ifupdown
+from cleep.libs.commands.ifupdown import Ifupdown
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging

@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from wpasupplicantconf import WpaSupplicantConf
+from cleep.libs.configs.wpasupplicantconf import WpaSupplicantConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.internals.console import Console
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
@@ -76,7 +74,7 @@ GD      Grenada"""
     def tearDown(self):
         pass
 
-    @patch('wpasupplicantconf.os.path.exists')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.exists')
     def test_load_country_codes(self, mock_ospathexists):
         mock_ospathexists.return_value = True
         self.fs.read_data.return_value = self.COUNTRY_SAMPLE.split('\n')
@@ -94,7 +92,7 @@ GD      Grenada"""
             'korea (north)': 'KP',
         })
 
-    @patch('wpasupplicantconf.os.path.exists')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.exists')
     def test_load_country_codes_no_file(self, mock_ospathexists):
         mock_ospathexists.return_value = False
         self.fs.read_data.return_value = self.COUNTRY_SAMPLE.split('\n')
@@ -113,24 +111,24 @@ GD      Grenada"""
 
         self.fs.write_data.assert_called_with('/etc/wpa_supplicant/wpa_supplicant.conf', ANY)
 
-    @patch('wpasupplicantconf.os.path.exists')
-    @patch('wpasupplicantconf.os.path.join')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.exists')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.join')
     def test_has_config(self, mock_ospathjoin, mock_ospathexists):
         mock_ospathexists.return_value = True
 
         self.assertTrue(self.w.has_config('wlan0'))
         mock_ospathjoin.assert_called_with('/etc/wpa_supplicant', 'wpa_supplicant-wlan0.conf')
 
-    @patch('wpasupplicantconf.os.path.exists')
-    @patch('wpasupplicantconf.os.path.join')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.exists')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.join')
     def test_has_config_no_interface(self, mock_ospathjoin, mock_ospathexists):
         mock_ospathexists.return_value = True
 
         self.assertTrue(self.w.has_config(None))
         mock_ospathjoin.assert_called_with('/etc/wpa_supplicant', 'wpa_supplicant.conf')
 
-    @patch('wpasupplicantconf.os.listdir')
-    @patch('wpasupplicantconf.os.path.isfile')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.listdir')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.isfile')
     def test_has_country(self, mock_ospathisfile, mock_oslistdir):
         mock_ospathisfile.return_value = True
         mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
@@ -140,8 +138,8 @@ GD      Grenada"""
 
         self.fs.read_data.assert_called_with('/etc/wpa_supplicant/wpa_supplicant-wlan0.conf')
 
-    @patch('wpasupplicantconf.os.listdir')
-    @patch('wpasupplicantconf.os.path.isfile')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.listdir')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.isfile')
     def test_has_country_without_country(self, mock_ospathisfile, mock_oslistdir):
         mock_ospathisfile.return_value = True
         mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
@@ -149,8 +147,8 @@ GD      Grenada"""
 
         self.assertFalse(self.w.has_country('wlan0'))
 
-    @patch('wpasupplicantconf.os.listdir')
-    @patch('wpasupplicantconf.os.path.isfile')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.listdir')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.isfile')
     def test_has_country_invalid_interface(self, mock_ospathisfile, mock_oslistdir):
         mock_ospathisfile.return_value = True
         mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
@@ -158,8 +156,8 @@ GD      Grenada"""
 
         self.assertFalse(self.w.has_country('wlan3'))
 
-    @patch('wpasupplicantconf.os.listdir')
-    @patch('wpasupplicantconf.os.path.isfile')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.listdir')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.isfile')
     def test_has_country_no_interface_specified(self, mock_ospathisfile, mock_oslistdir):
         mock_ospathisfile.return_value = True
         mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
@@ -256,7 +254,7 @@ GD      Grenada"""
             self.w.encrypt_password('mynetwork', 'azertyuiopqsdfghjklmwxcvbnazertyuiopqsdfghjklmwxcvbnazertyuiopqsdfghjklmwxcvbn')
         self.assertEqual(str(cm.exception), 'Parameter "password" must be 8..63 string length')
 
-    @patch('wpasupplicantconf.Console')
+    @patch('cleep.libs.configs.wpasupplicantconf.Console')
     def test_encrypt_password_invalid_command(self, mock_console):
         mock_console.return_value.command.return_value = {
             'error': True,
@@ -296,7 +294,7 @@ GD      Grenada"""
             self.w.encrypt_password('mynetwork', 'mypassword')
         self.assertEqual(str(cm.exception), 'No password generated by wpa_passphrase command')
 
-    @patch('wpasupplicantconf.Console')
+    @patch('cleep.libs.configs.wpasupplicantconf.Console')
     def test_wpa_passphrase(self, mock_console):
         mock_console.return_value.command.return_value = {
             'error': False,
@@ -316,7 +314,7 @@ GD      Grenada"""
 
         self.assertListEqual(output, ['network={\n', '    ssid="dummy"\n', '    psk=1234567890\n', '}\n'])
 
-    @patch('wpasupplicantconf.Console')
+    @patch('cleep.libs.configs.wpasupplicantconf.Console')
     def test_wpa_passphrase_invalid_command_output(self, mock_console):
         mock_console.return_value.command.return_value = {
             'error': False,
@@ -333,7 +331,7 @@ GD      Grenada"""
             output = self.w.wpa_passphrase('dummy', 'password')
         self.assertEqual(str(cm.exception), 'Error with wpa_passphrase: invalid command output')
 
-    @patch('wpasupplicantconf.Console')
+    @patch('cleep.libs.configs.wpasupplicantconf.Console')
     def test_wpa_passphrase_command_failed(self, mock_console):
         mock_console.return_value.command.return_value = {
             'error': True,
@@ -361,8 +359,8 @@ GD      Grenada"""
             self.w.wpa_passphrase('dummy', 'azerty')
         self.assertEqual(str(cm.exception), 'Parameter "password" must be 8..63 string length')
 
-    @patch('wpasupplicantconf.os.listdir')
-    @patch('wpasupplicantconf.os.path.isfile')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.listdir')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.isfile')
     def test_get_configuration_files(self, mock_ospathisfile, mock_oslistdir):
         mock_ospathisfile.return_value = True
         mock_oslistdir.return_value = ['wpa_supplicant-wlan0.conf', 'wpa_supplicant-wlan1.conf', 'wpa_supplicant.conf']
@@ -377,7 +375,7 @@ GD      Grenada"""
             'default': '/etc/wpa_supplicant/wpa_supplicant.conf',
         })
 
-    @patch('wpasupplicantconf.os.path.exists')
+    @patch('cleep.libs.configs.wpasupplicantconf.os.path.exists')
     def test_private_get_configuration(self, mock_ospathexists):
         mock_ospathexists.return_value = True
         self.fs.open = mock_open(read_data=self.CONTENT_WITH_COUNTRY)

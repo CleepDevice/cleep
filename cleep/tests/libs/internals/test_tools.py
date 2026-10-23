@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-import tools
+import cleep.libs.internals.tools as tools
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -47,7 +45,7 @@ class ToolsTests(unittest.TestCase):
         self.assertTrue(isinstance(infos['wireless'], bool))
         self.assertTrue(isinstance(infos['audio'], bool))
 
-    @patch('tools.platform')
+    @patch('cleep.libs.internals.tools.platform')
     def testraspberry_pi_infos_invalid_platform(self, mock_platform):
         mock_platform.machine.return_value = 'amd64'
         with self.assertRaises(Exception) as cm:

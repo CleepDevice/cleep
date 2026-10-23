@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from sun import Sun
+from cleep.libs.internals.sun import Sun
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -25,7 +23,7 @@ class MockedTimezone:
         return gettz("Europe/Paris")
 
 
-@patch("sun.tz", MockedTimezone())
+@patch("cleep.libs.internals.sun.tz", MockedTimezone())
 class SunTests(unittest.TestCase):
     def setUp(self):
         TestLib()

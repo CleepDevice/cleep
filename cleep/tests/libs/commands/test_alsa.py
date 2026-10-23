@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from alsa import Alsa
+from cleep.libs.commands.alsa import Alsa
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib
 import unittest
@@ -304,7 +302,7 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
             self.a.amixer_control(Alsa.CSET, 3, ['ced'])
         self.assertEqual(cm.exception.message, 'Parameter "value" is invalid. Int or str awaited')
 
-    @patch('alsa.os.path.exists')
+    @patch('cleep.libs.commands.alsa.os.path.exists')
     def test_play_sound(self, exists_mock):
         exists_mock.return_value = True
         self.a.command = Mock()

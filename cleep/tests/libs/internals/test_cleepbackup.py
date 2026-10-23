@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from cleepbackup import CleepBackup
+from cleep.libs.internals.cleepbackup import CleepBackup
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging

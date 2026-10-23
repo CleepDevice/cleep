@@ -5,8 +5,7 @@ from cleep.libs.tests.lib import TestLib
 import warnings
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-from inventory import Inventory
+from cleep.inventory import Inventory
 from cleep.exception import InvalidParameter
 from cleep.libs.internals.taskfactory import TaskFactory
 import unittest
@@ -176,7 +175,7 @@ class %(module_name)s(%(inherit)s):
         Inventory.MODULES_SYNC_TIMEOUT = 2.0
 
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules(self):
         self._init_context(configured_modules=['module1', 'module2'])
 
@@ -227,7 +226,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('deps' in self.i.modules['module3'])
         self.assertTrue('local' in self.i.modules['module3'])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_cleeprenderer_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRenderer')
 
@@ -239,7 +238,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_cleepexternalbus_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepExternalBus')
 
@@ -253,7 +252,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(self.bootstrap['external_bus'], 'module1')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_rpcwrapper_module(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
@@ -265,7 +264,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in self.i.modules)
         self.assertTrue('module3' in self.i.modules)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_unknown_module(self):
         self._init_context(configured_modules=['module1', 'dummy'])
 
@@ -276,7 +275,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_deps(self):
         self._init_context(mod1_deps=['module2'], configured_modules=['module1'])
 
@@ -289,7 +288,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_unknown_dep(self):
         self._init_context(configured_modules=['module1'], mod1_deps=['dummy'])
 
@@ -300,7 +299,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_circular_deps(self):
         self._init_context(mod1_deps=['module2'], mod2_deps=['module1'], configured_modules=['module1', 'module2'])
 
@@ -313,7 +312,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_dep_already_loaded(self):
         self._init_context(mod1_deps=['module3'], mod2_deps=['module3'], configured_modules=['module1', 'module2'])
 
@@ -327,7 +326,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_local_module(self):
         # module3 is installed locally
         self._init_context(configured_modules=['module1', 'module2'])
@@ -342,7 +341,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_local_module_as_dep(self):
         # module3 is installed locally
         self._init_context(mod1_deps=['module3'], configured_modules=['module1', 'module2'])
@@ -357,7 +356,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_cascading_deps(self):
         # deps tree : module1 --> module2 --> module3
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], configured_modules=['module1'])
@@ -369,7 +368,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_cascading_deps_final_circular(self):
         # deps tree : module1 --> module2 --> module3 --> module1
         self._init_context(mod1_deps=['module2'], mod2_deps=['module3'], mod3_deps=['module1'], configured_modules=['module1'])
@@ -381,7 +380,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_tree_deps(self):
         # deps tree : module1 --> module2
         #                     --> module3
@@ -394,7 +393,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_tree_deps_circular_first_leaf(self):
         # deps tree : module1 --> module2 --> module1
         #                     --> module3 
@@ -407,7 +406,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_with_tree_deps_circular_other_leaf(self):
         # deps tree : module1 --> module2
         #                     --> module3 --> module1
@@ -420,7 +419,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertTrue(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_load_modules_load_again(self):
         self._init_context(configured_modules=['module1'])
 
@@ -430,7 +429,7 @@ class %(module_name)s(%(inherit)s):
             self.i._load_modules()
         self.assertEqual(str(cm.exception), 'Modules loading must be performed only once. If you want to refresh modules list, use reload_modules instead')
 
-    @patch('inventory.CORE_MODULES', ['module1'])
+    @patch('cleep.inventory.CORE_MODULES', ['module1'])
     def test_load_modules_core_modules(self):
         self._init_context(configured_modules=['module2'])
 
@@ -442,7 +441,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', ['module1'])
+    @patch('cleep.inventory.CORE_MODULES', ['module1'])
     @patch('cleep.core.CORE_MODULES', ['module1'])
     def test_load_modules_core_modules_exception(self):
         self._init_context(configured_modules=['module2'], mod1_startup_error='raise Exception("Startup exception")')
@@ -456,7 +455,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module3'))
         self.assertTrue(self.crash_report.report_exception.called)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_reload_modules(self):
         self._init_context(configured_modules=['module1', 'module2'])
         self.i._load_modules()
@@ -492,7 +491,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertFalse(self.i.wait_for_apps_started())
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_unload_modules(self):
         self._init_context(configured_modules=['module1'])
 
@@ -505,7 +504,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(self.i.is_module_loaded('module2'))
         self.assertFalse(self.i.is_module_loaded('module3'))
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_devices(self):
         self._init_context(configured_modules=['module1', 'module2'])
 
@@ -521,7 +520,7 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(devices['module1'], {'123-456-789': {}})
         self.assertEqual(devices['module2'], {'123-456-789': {}})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_devices_exception(self):
         self._init_context(configured_modules=['module1', 'module2'], mod2_exception=True)
 
@@ -536,7 +535,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_devices_no_cleepmodule(self):
         self._init_context(configured_modules=['module1', 'module2'], mod2_inherit='CleepRpcWrapper')
 
@@ -551,7 +550,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in devices)
         self.assertEqual(devices['module1'], {'123-456-789': {}})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_device(self):
         self._init_context(configured_modules=['module1'])
 
@@ -563,7 +562,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(module, 'module1')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_device_unknown_device(self):
         self._init_context(configured_modules=['module1'])
 
@@ -575,7 +574,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertIsNone(module)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_devices(self):
         self._init_context(configured_modules=['module1'])
 
@@ -588,7 +587,7 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(devices), 1)
         self.assertTrue('123-456-789' in devices)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_devices_unknown_module(self):
         self._init_context(configured_modules=['module1'])
 
@@ -599,7 +598,7 @@ class %(module_name)s(%(inherit)s):
             self.i.get_module_devices('dummy')
         self.assertEqual(cm.exception.message, 'Application "dummy" doesn\'t exist')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_infos(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
@@ -628,7 +627,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertTrue('module1' in infos['loadedby'])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_infos_local_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -657,7 +656,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('config' in infos)
         self.assertEqual(len(infos['loadedby']), 0)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_infos_unknown_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -667,7 +666,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(infos, {})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_configs(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -677,7 +676,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}, 'module3': {'name': 'Module3', 'prop': 666}})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_configs_with_error(self):
         self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
         self.i._load_modules()
@@ -687,7 +686,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertDictEqual(configs, {'module1': {'name': 'Module1', 'prop': 666}})
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
@@ -712,7 +711,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(modules['module2']['started'])
         self.assertTrue(modules['module3']['started'])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_module_failed(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'], mod1_startup_error='raise Exception("Startup exception")')
         self.i._load_modules()
@@ -720,7 +719,7 @@ class %(module_name)s(%(inherit)s):
         modules = self.i.get_modules()
         logging.debug('Modules: %s' % modules)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_no_filter(self):
         self._init_context(configured_modules=['module1', 'module3', 'module4'])
         self.i._load_modules()
@@ -733,7 +732,7 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_invalid_filter(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -742,7 +741,7 @@ class %(module_name)s(%(inherit)s):
             self.i._get_modules('dummy')
         self.assertEqual(cm.exception.message, 'Parameter "module_filter" must be callable')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_with_filter(self):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
@@ -765,7 +764,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse('module2' in modules)
         self.assertTrue('module3' in modules)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_commands(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -777,7 +776,7 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(commands), 1)
         self.assertTrue('dummy' in commands)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_commands_for_all_modules(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -789,7 +788,7 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(len(commands), 2)
         self.assertListEqual(list(commands.keys()), ["module1", "module3"])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_commands_unknown_module(self):
         self._init_context(configured_modules=['module1', 'module3'])
         self.i._load_modules()
@@ -800,7 +799,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(commands, [])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_documentation(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
@@ -812,7 +811,7 @@ class %(module_name)s(%(inherit)s):
         self.assertEqual(doc, "module1 documentation")
         self.i._Inventory__modules_instances['module1'].get_documentation.assert_called_with(False)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_documentation_disable_cache(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
@@ -823,7 +822,7 @@ class %(module_name)s(%(inherit)s):
 
         self.i._Inventory__modules_instances['module1'].get_documentation.assert_called_with(True)
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_documentation_unknown_module(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
@@ -832,7 +831,7 @@ class %(module_name)s(%(inherit)s):
             self.i.get_module_documentation('dummy')
         self.assertEqual(str(cm.exception), 'Application "dummy" is not installed')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_check_module_documentation(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
@@ -843,7 +842,7 @@ class %(module_name)s(%(inherit)s):
 
         self.assertEqual(check, "module1 checked documentation")
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_check_module_documentation_unknown_module(self):
         self._init_context(configured_modules=['module1'])
         self.i._load_modules()
@@ -852,7 +851,7 @@ class %(module_name)s(%(inherit)s):
             self.i.check_module_documentation('dummy')
         self.assertEqual(str(cm.exception), 'Application "dummy" is not installed')
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_debug(self):
         self._init_context(configured_modules=['module1', 'module3'], debug_modules=['module3'])
         self.i._load_modules()
@@ -871,7 +870,7 @@ class %(module_name)s(%(inherit)s):
         self.assertFalse(debugs['module1']['debug'])
         self.assertTrue(debugs['module3']['debug'])
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_modules_debug_exception(self):
         self._init_context(configured_modules=['module1', 'module3'], mod3_exception=True)
         self.i._load_modules()
@@ -921,7 +920,7 @@ class %(module_name)s(%(inherit)s):
         self.i.get_used_events()
         self.events_broker.get_used_events.assert_called_with()
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_rpc_wrapper(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper')
 
@@ -931,7 +930,7 @@ class %(module_name)s(%(inherit)s):
         self.i.rpc_wrapper('a_route', {})
         # can't perform some check call was a success. We add info log message on stdout
 
-    @patch('inventory.CORE_MODULES', [])
+    @patch('cleep.inventory.CORE_MODULES', [])
     def test_rpc_wrapper_exception(self):
         self._init_context(configured_modules=['module1', 'module2'], mod1_inherit='CleepRpcWrapper', mod1_exception=True)
 

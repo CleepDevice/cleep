@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from rendererprofile import RendererProfile
+from cleep.libs.internals.rendererprofile import RendererProfile
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging

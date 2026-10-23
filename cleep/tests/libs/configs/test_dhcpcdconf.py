@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from dhcpcdconf import DhcpcdConf
+from cleep.libs.configs.dhcpcdconf import DhcpcdConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib, FileDescriptorMock
@@ -134,8 +132,8 @@ class dhcpcdConfTests_validConf(unittest.TestCase):
         self.fs.open.return_value = FileDescriptorMock(content=VALID_CONF)
         self.d = DhcpcdConf(self.fs, backup=False)
 
-    @patch("dhcpcdconf.os.path.exists")
-    @patch("dhcpcdconf.Console")
+    @patch("cleep.libs.configs.dhcpcdconf.os.path.exists")
+    @patch("cleep.libs.configs.dhcpcdconf.Console")
     def test_is_installed(self, console_mock, os_path_exists_mock):
         os_path_exists_mock.return_value = True
         console_mock.return_value.command.return_value = {

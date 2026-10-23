@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from coredevicedeletedevent import CoreDeviceDeletedEvent
+from cleep.events.coredevicedeletedevent import CoreDeviceDeletedEvent
 import logging
 import unittest
 from unittest.mock import Mock

@@ -3,9 +3,7 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-import rpcserver
+import cleep.rpcserver as rpcserver
 from cleep.libs.drivers.driver import Driver
 from cleep.common import MessageRequest, MessageResponse
 from cleep.exception import NoMessageAvailable
@@ -150,7 +148,7 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.configure(rpc_config, self.bootstrap, self.inventory, debug_enabled)
             rpcserver.set_apps_ready(apps_ready)
 
-    @patch('rpcserver.CleepConf')
+    @patch('cleep.rpcserver.CleepConf')
     def test_load_auth_with_no_accounts_and_enabled(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {}
@@ -159,7 +157,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertFalse(rpcserver.auth_enabled)
 
-    @patch('rpcserver.CleepConf')
+    @patch('cleep.rpcserver.CleepConf')
     def test_load_auth_with_accounts_and_disabled(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = False
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -170,7 +168,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertFalse(rpcserver.auth_enabled)
 
-    @patch('rpcserver.CleepConf')
+    @patch('cleep.rpcserver.CleepConf')
     def test_load_auth_with_accounts_and_enabled(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -183,8 +181,8 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(len(rpcserver.auth_accounts), 1)
             self.assertTrue('test' in rpcserver.auth_accounts)
 
-    @patch("rpcserver.CleepConf")
-    @patch("rpcserver.logging")
+    @patch("cleep.rpcserver.CleepConf")
+    @patch("cleep.rpcserver.logging")
     def test_load_auth_failed(self, logging_mock, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.side_effect = Exception('Test exception')
         logger_mock = Mock()
@@ -195,7 +193,7 @@ class RpcServerTests(unittest.TestCase):
             # self.assertTrue(self.crash_report.report_exception.called)
             rpcserver.logger.exception.assert_called_with("Unable to load auth file. Auth disabled:")
 
-    @patch("rpcserver.CleepConf")
+    @patch("cleep.rpcserver.CleepConf")
     def test_check_auth(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -217,7 +215,7 @@ class RpcServerTests(unittest.TestCase):
             new_time = rpcserver.sessions[session_key]
             self.assertNotEqual(new_time, old_time)
 
-    @patch("rpcserver.CleepConf")
+    @patch("cleep.rpcserver.CleepConf")
     def test_check_auth_bad_password(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -228,7 +226,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('rpcserver.CleepConf')
+    @patch('cleep.rpcserver.CleepConf')
     def test_check_auth_invalid_password(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -239,7 +237,7 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             self.assertFalse(rpcserver.check_auth('test', 'test'))
 
-    @patch('rpcserver.CleepConf')
+    @patch('cleep.rpcserver.CleepConf')
     def test_check_auth_invalid_user(self, cleep_conf_mock):
         cleep_conf_mock.return_value.is_auth_enabled.return_value = True
         cleep_conf_mock.return_value.get_auth_accounts.return_value = {
@@ -253,7 +251,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start(self):
         self._init_context(apps_ready=False)
 
-        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
+        with patch('cleep.rpcserver.server') as mock_server, patch('cleep.rpcserver._start_local_socket'):
             rpcserver.start()
 
             self.assertTrue(rpcserver.is_apps_ready())
@@ -265,7 +263,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start_listening_without_apps_ready(self):
         self._init_context(apps_ready=False)
 
-        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket') as mock_local:
+        with patch('cleep.rpcserver.server') as mock_server, patch('cleep.rpcserver._start_local_socket') as mock_local:
             rpcserver.start_listening()
 
             self.assertFalse(rpcserver.is_apps_ready())
@@ -291,9 +289,9 @@ class RpcServerTests(unittest.TestCase):
     def test_start_already_started(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
+        with patch('cleep.rpcserver.server') as mock_server, patch('cleep.rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = OSError()
-            with patch('rpcserver.logger.fatal') as mock_logger_fatal:
+            with patch('cleep.rpcserver.logger.fatal') as mock_logger_fatal:
                 rpcserver.start()
 
                 mock_logger_fatal.assert_called_with('Cleep instance is already running')
@@ -304,7 +302,7 @@ class RpcServerTests(unittest.TestCase):
     def test_start_ctrl_c(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
+        with patch('cleep.rpcserver.server') as mock_server, patch('cleep.rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = KeyboardInterrupt()
             rpcserver.start()
 
@@ -315,9 +313,9 @@ class RpcServerTests(unittest.TestCase):
     def test_start_exception(self):
         self._init_context()
 
-        with patch('rpcserver.server') as mock_server, patch('rpcserver._start_local_socket'):
+        with patch('cleep.rpcserver.server') as mock_server, patch('cleep.rpcserver._start_local_socket'):
             mock_server.serve_forever.side_effect = Exception('Test error')
-            with patch('rpcserver.logger.exception') as mock_logger_exception:
+            with patch('cleep.rpcserver.logger.exception') as mock_logger_exception:
                 rpcserver.start()
 
                 mock_logger_exception.assert_called()
@@ -349,7 +347,7 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(rpcserver.logger.getEffectiveLevel(), logging.getLogger().getEffectiveLevel())
             self.assertFalse(rpcserver.is_debug_enabled())
 
-    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('cleep.rpcserver.pywsgi.WSGIServer')
     def test_configure(self, mock_wsgi):
         self._init_context(exec_configure=False)
         rpc_config = {
@@ -361,7 +359,7 @@ class RpcServerTests(unittest.TestCase):
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
-    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('cleep.rpcserver.pywsgi.WSGIServer')
     def test_configure_with_default_config(self, mock_wsgi):
         self._init_context(exec_configure=False)
 
@@ -369,7 +367,7 @@ class RpcServerTests(unittest.TestCase):
 
         mock_wsgi.assert_called_with(('0.0.0.0', 80), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
-    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('cleep.rpcserver.pywsgi.WSGIServer')
     def test_configure_with_valid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
         rpc_config = {
@@ -384,7 +382,7 @@ class RpcServerTests(unittest.TestCase):
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY, keyfile='mykey', certfile='mycert', do_handshake_on_connect=False)
 
-    @patch('rpcserver.pywsgi.WSGIServer')
+    @patch('cleep.rpcserver.pywsgi.WSGIServer')
     def test_configure_with_invalid_ssl(self, mock_wsgi):
         self._init_context(exec_configure=False)
         rpc_config = {
@@ -399,7 +397,7 @@ class RpcServerTests(unittest.TestCase):
 
         mock_wsgi.assert_called_with(('1.2.3.4', 123), ANY, error_log=ANY, log=ANY, spawn=ANY)
 
-    @patch("rpcserver.logging")
+    @patch("cleep.rpcserver.logging")
     def test_configure_debug_enabled(self, logging_mock):
         logger_mock = Mock()
         logging_mock.getLogger.return_value = logger_mock
@@ -605,7 +603,7 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Resp: %s' % resp)
             self.assertEqual(len(resp['data']), 2)
 
-    @patch("rpcserver.CleepConf")
+    @patch("cleep.rpcserver.CleepConf")
     def test_reload_auth(self, cleep_conf_mock):
         is_auth_enabled_mock = Mock(return_value=True)
         cleep_conf_mock.return_value.is_auth_enabled = is_auth_enabled_mock
@@ -621,7 +619,7 @@ class RpcServerTests(unittest.TestCase):
 
         self.assertEqual(is_auth_enabled_mock.call_count, 2)
 
-    @patch('rpcserver.bottle')
+    @patch('cleep.rpcserver.bottle')
     def test_upload(self, mock_bottle):
         mock_bottle.request = Mock()
         mock_bottle.request.forms = {
@@ -649,7 +647,7 @@ class RpcServerTests(unittest.TestCase):
         finally:
             rpcserver.send_command = original_sendcommand
 
-    @patch('rpcserver.bottle')
+    @patch('cleep.rpcserver.bottle')
     def test_upload_with_params(self, mock_bottle):
         mock_bottle.request = Mock()
         mock_bottle.request.forms = {
@@ -688,9 +686,9 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('Response: %s' % r)
             self.assertEqual(r, {'message': 'Missing parameters', 'data': None, 'error': True})
 
-    @patch('rpcserver.bottle')
-    @patch('rpcserver.os.path.exists')
-    @patch('rpcserver.os.remove')
+    @patch('cleep.rpcserver.bottle')
+    @patch('cleep.rpcserver.os.path.exists')
+    @patch('cleep.rpcserver.os.remove')
     def test_upload_file_already_exists(self, mock_osremove, mock_ospathexists, mock_bottle):
         mock_ospathexists.return_value = True
         mock_bottle.request = Mock()
@@ -717,8 +715,8 @@ class RpcServerTests(unittest.TestCase):
         finally:
             rpcserver.send_command = original_sendcommand
 
-    @patch('rpcserver.bottle')
-    @patch('rpcserver.os.remove')
+    @patch('cleep.rpcserver.bottle')
+    @patch('cleep.rpcserver.os.remove')
     def test_upload_missing_parameters(self, mock_osremove, mock_bottle):
         mock_bottle.request = Mock()
         mock_bottle.request.forms = {
@@ -738,9 +736,9 @@ class RpcServerTests(unittest.TestCase):
         finally:
             rpcserver.send_command = original_sendcommand
 
-    @patch('rpcserver.bottle')
-    @patch('rpcserver.os.path.exists')
-    @patch('rpcserver.os.remove')
+    @patch('cleep.rpcserver.bottle')
+    @patch('cleep.rpcserver.os.path.exists')
+    @patch('cleep.rpcserver.os.remove')
     def test_upload_exception_with_file_deletion(self, mock_osremove, mock_ospathexists, mock_bottle):
         mock_ospathexists.return_value = True
         mock_bottle.request = Mock()
@@ -1034,7 +1032,7 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.rpc_wrapper('')
             self.assertTrue(self.inventory.rpc_wrapper.called)
 
-    @patch('rpcserver.bottle.static_file')
+    @patch('cleep.rpcserver.bottle.static_file')
     def test_default(self, static_file_mock):
         self._init_context()
         static_file_mock.return_value = HTTPResponse(body='ok', status=200)
@@ -1047,7 +1045,7 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(d.status, '200 OK')
             static_file_mock.assert_called_with('index.html', rpcserver.HTML_DIR)
 
-    @patch('rpcserver.bottle.static_file')
+    @patch('cleep.rpcserver.bottle.static_file')
     def test_index(self, static_file_mock):
         self._init_context()
         static_file_mock.return_value = HTTPResponse(body='ok', status=200)
@@ -1252,8 +1250,8 @@ class RpcServerTests(unittest.TestCase):
         body = b''.join(rpcserver.app(environ, start_response))
         return captured['status'], body
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_restrict_allows_loopback(self, interfaces_mock, ifaddresses_mock):
         self._init_context()
         ifaddresses_mock.return_value = {
@@ -1271,8 +1269,8 @@ class RpcServerTests(unittest.TestCase):
         self.assertTrue(status.startswith('200'))
         self.assertIn(b'core_ok', body)
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_restrict_allows_lan_address(self, interfaces_mock, ifaddresses_mock):
         self._init_context()
         ifaddresses_mock.return_value = {
@@ -1294,8 +1292,8 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.bottle.request.environ['REMOTE_ADDR'] = '192.168.1.50'
             self.assertIsNone(rpcserver.restrict_to_local_network())
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_restrict_rejects_external_address(self, interfaces_mock, ifaddresses_mock):
         self._init_context()
         ifaddresses_mock.return_value = {
@@ -1314,8 +1312,8 @@ class RpcServerTests(unittest.TestCase):
         self.assertNotIn(b'core_ok', body)
         self.assertFalse(self.inventory.get_apps_health.called)
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_restrict_allows_unix_socket(self, interfaces_mock, ifaddresses_mock):
         self._init_context()
         ifaddresses_mock.return_value = {
@@ -1332,8 +1330,8 @@ class RpcServerTests(unittest.TestCase):
         self.assertTrue(status.startswith('200'))
         self.assertIn(b'core_ok', body)
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_health_while_starting(self, interfaces_mock, ifaddresses_mock):
         self._init_context(apps_ready=False)
         ifaddresses_mock.return_value = {
@@ -1347,8 +1345,8 @@ class RpcServerTests(unittest.TestCase):
         self.assertFalse(data['ready'])
         self.assertFalse(self.inventory.get_apps_health.called)
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_api_gated_while_starting(self, interfaces_mock, ifaddresses_mock):
         self._init_context(apps_ready=False)
         ifaddresses_mock.return_value = {
@@ -1363,15 +1361,15 @@ class RpcServerTests(unittest.TestCase):
         self.assertTrue(data['data']['starting'])
         self.assertFalse(self.inventory.get_modules.called)
 
-    @patch('rpcserver.netifaces.ifaddresses')
-    @patch('rpcserver.netifaces.interfaces', return_value=['eth0'])
+    @patch('cleep.rpcserver.netifaces.ifaddresses')
+    @patch('cleep.rpcserver.netifaces.interfaces', return_value=['eth0'])
     def test_static_allowed_while_starting(self, interfaces_mock, ifaddresses_mock):
         self._init_context(apps_ready=False)
         ifaddresses_mock.return_value = {
             rpcserver.netifaces.AF_INET: [{'addr': '192.168.1.10', 'mask': '255.255.255.0'}],
         }
 
-        with patch('rpcserver.bottle.static_file', return_value='index') as static_file_mock:
+        with patch('cleep.rpcserver.bottle.static_file', return_value='index') as static_file_mock:
             status, body = self._request('/', '127.0.0.1')
             self.assertTrue(status.startswith('200'))
             static_file_mock.assert_called()

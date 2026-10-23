@@ -3,10 +3,8 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
 import time
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from download import Download
+from cleep.libs.internals.download import Download
 import unittest
 import logging
 from unittest.mock import Mock

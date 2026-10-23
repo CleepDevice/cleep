@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from fstab import Fstab
+from cleep.libs.configs.fstab import Fstab
 from cleep.exception import MissingParameter
 from cleep.libs.tests.lib import TestLib, FileDescriptorMock
 import unittest

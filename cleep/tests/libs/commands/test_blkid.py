@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from blkid import Blkid
+from cleep.libs.commands.blkid import Blkid
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib

@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from timerangedmessageprofile import TimeRangedMessageProfile
+from cleep.profiles.timerangedmessageprofile import TimeRangedMessageProfile
 import logging
 import unittest
 from cleep.libs.tests.common import get_log_level

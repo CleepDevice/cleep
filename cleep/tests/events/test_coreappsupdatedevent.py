@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from coreappsupdatedevent import CoreAppsUpdatedEvent
+from cleep.events.coreappsupdatedevent import CoreAppsUpdatedEvent
 import logging
 import unittest
 from unittest.mock import Mock

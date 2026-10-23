@@ -3,14 +3,12 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
 import unittest
 import logging
 import time
 from threading import Event
 from unittest.mock import Mock
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
 from cleep.libs.internals.criticalresources import CriticalResources
 from cleep.libs.internals.resource_catalog import (
     AUDIO_CAPTURE,

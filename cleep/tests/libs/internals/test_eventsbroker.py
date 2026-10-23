@@ -4,8 +4,7 @@
 import os, io, shutil
 import sys, time
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from eventsbroker import EventsBroker
+from cleep.libs.internals.eventsbroker import EventsBroker
 from cleep.libs.tests.lib import TestLib
 from cleep.libs.internals.profileformatter import ProfileFormatter
 from cleep.libs.internals.rendererprofile import RendererProfile

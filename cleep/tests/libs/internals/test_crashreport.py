@@ -3,10 +3,8 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-import crashreport
+import cleep.libs.internals.crashreport as crashreport
 import unittest
 import logging
 from unittest.mock import Mock

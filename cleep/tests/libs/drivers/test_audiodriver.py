@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from audiodriver import AudioDriver
+from cleep.libs.drivers.audiodriver import AudioDriver
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
 from cleep.libs.tests.lib import TestLib
@@ -50,8 +48,8 @@ class TestAudioDriver(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch('audiodriver.CleepAudio')
-    @patch('audiodriver.Alsa')
+    @patch('cleep.libs.drivers.audiodriver.CleepAudio')
+    @patch('cleep.libs.drivers.audiodriver.Alsa')
     def test__on_registered(self, alsa_mock, cleepaudio_mock):
         self.a._on_audio_registered = Mock()
         self.a._get_card_name = Mock(return_value='dummy-card')

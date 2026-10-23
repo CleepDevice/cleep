@@ -3,9 +3,7 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from task import Task, CountTask
+from cleep.libs.internals.task import Task, CountTask
 import unittest
 import logging
 from unittest.mock import Mock

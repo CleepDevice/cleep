@@ -4,8 +4,7 @@
 import os, io, shutil
 import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-import profileformattersbroker
+import cleep.libs.internals.profileformattersbroker as profileformattersbroker
 from cleep.libs.tests.lib import TestLib
 from cleep.libs.internals.profileformatter import ProfileFormatter
 from cleep.libs.internals.rendererprofile import RendererProfile
@@ -275,7 +274,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         logging.debug("Formatters: %s" % formatters)
         self.assertEqual(len(formatters), 1)
 
-    @patch("profileformattersbroker.CORE_MODULES", ["app1"])
+    @patch("cleep.libs.internals.profileformattersbroker.CORE_MODULES", ["app1"])
     def test_register_renderer_best_in_app(self):
         self._init_context(
             event_name="test.event.test", add_apps=["app1", "app2", "app3"]
@@ -291,7 +290,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
             "app2Formatter",
         )
 
-    @patch("profileformattersbroker.CORE_MODULES", ["app1"])
+    @patch("cleep.libs.internals.profileformattersbroker.CORE_MODULES", ["app1"])
     def test_register_renderer_best_in_core(self):
         self._init_context(event_name="test.event.test", add_apps=["app1", "app3"])
         self.p.configure(self.bootstrap)
@@ -306,7 +305,7 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
             "app1Formatter",
         )
 
-    @patch("profileformattersbroker.CORE_MODULES", [])
+    @patch("cleep.libs.internals.profileformattersbroker.CORE_MODULES", [])
     def test_register_renderer_best_in_other(self):
         self._init_context(event_name="test.event.test", add_apps=["app1", "app3"])
         self.p.configure(self.bootstrap)

@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests/', ''))
-from event import Event
+from cleep.libs.internals.event import Event
 from cleep.libs.tests.lib import TestLib
 from cleep.common import MessageResponse
 import unittest

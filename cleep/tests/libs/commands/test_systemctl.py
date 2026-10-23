@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from systemctl import Systemctl
+from cleep.libs.commands.systemctl import Systemctl
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
@@ -283,7 +281,7 @@ class SystemctlTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch("systemctl.datetime")
+    @patch("cleep.libs.commands.systemctl.datetime")
     def test_get_service_status_active(self, datetime_mock):
         datetime_mock.utcnow.return_value = datetime.datetime(2025, 3, 11, 14, 9, 35, 0)
         self.lib.command = Mock(
@@ -309,7 +307,7 @@ class SystemctlTests(unittest.TestCase):
         )
         self.lib.command.assert_called_with([AnyArg(), "show", "service"])
 
-    @patch("systemctl.datetime")
+    @patch("cleep.libs.commands.systemctl.datetime")
     def test_get_service_status_inactive(self, datetime_mock):
         datetime_mock.utcnow.return_value = datetime.datetime(2025, 3, 11, 14, 9, 35, 0)
         systemctl_show_output = deepcopy(SYSTEMCTL_SHOW_OUTPUT)

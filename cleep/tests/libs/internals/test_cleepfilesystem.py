@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from cleepfilesystem import CleepFilesystem
+from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.libs.tests.lib import TestLib
 from cleep.exception import InvalidParameter
 import unittest
@@ -608,18 +606,18 @@ class CleepFilesystemTests(unittest.TestCase):
                 shutil.rmtree("test")
 
     def test_exists_path_exists(self):
-        with patch("cleepfilesystem.os.path.exists") as exists_mock:
+        with patch("cleep.libs.internals.cleepfilesystem.os.path.exists") as exists_mock:
             exists_mock.return_value = True
             res = self.c.exists("a/path")
             self.assertTrue(res)
 
     def test_exists_path_not_exists(self):
-        with patch("cleepfilesystem.os.path.exists") as exists_mock:
+        with patch("cleep.libs.internals.cleepfilesystem.os.path.exists") as exists_mock:
             exists_mock.return_value = False
             res = self.c.exists("a/path")
             self.assertFalse(res)
 
-    @patch("cleepfilesystem.Console")
+    @patch("cleep.libs.internals.cleepfilesystem.Console")
     def test_rsync(self, mock_console):
         self.c._CleepFilesystem__enable_write = Mock()
         self.c._CleepFilesystem__disable_write = Mock()
@@ -632,7 +630,7 @@ class CleepFilesystemTests(unittest.TestCase):
             '/usr/bin/rsync -ah --delete --exclude=".*" src dst'
         )
 
-    @patch("cleepfilesystem.Console")
+    @patch("cleep.libs.internals.cleepfilesystem.Console")
     def test_rsync_command_failed(self, mock_console):
         self.c._CleepFilesystem__enable_write = Mock()
         self.c._CleepFilesystem__disable_write = Mock()
@@ -648,7 +646,7 @@ class CleepFilesystemTests(unittest.TestCase):
 
         self.assertFalse(res)
 
-    @patch("cleepfilesystem.Console")
+    @patch("cleep.libs.internals.cleepfilesystem.Console")
     def test_rsync_enable_disable_writings(self, mock_console):
         self.c._CleepFilesystem__enable_write = Mock()
         self.c._CleepFilesystem__disable_write = Mock()
@@ -661,7 +659,7 @@ class CleepFilesystemTests(unittest.TestCase):
         self.c._CleepFilesystem__enable_write.assert_called()
         self.c._CleepFilesystem__disable_write.assert_called()
 
-    @patch("cleepfilesystem.Console")
+    @patch("cleep.libs.internals.cleepfilesystem.Console")
     def test_rsync_exception(self, mock_console):
         self.c._CleepFilesystem__enable_write = Mock()
         self.c._CleepFilesystem__disable_write = Mock()

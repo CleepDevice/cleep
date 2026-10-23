@@ -3,9 +3,7 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace('tests', ''))
-from core import Cleep, CleepRpcWrapper, CleepModule, CleepRemoteAccessModule, CleepResources, CleepRenderer, CleepExternalBus
+from cleep.core import Cleep, CleepRpcWrapper, CleepModule, CleepRemoteAccessModule, CleepResources, CleepRenderer, CleepExternalBus
 from cleep.libs.tests.common import get_log_level
 from cleep.exception import InvalidParameter, MissingParameter, NoMessageAvailable
 from cleep.libs.drivers.driver import Driver
@@ -331,7 +329,7 @@ class TestsCleep(unittest.TestCase):
         self.assertEqual(infos['product'], 'CleepDevice')
         self.assertEqual(infos['productversion'], '0.0.0')
 
-    @patch('core.CORE_MODULES', ['dummycleep'])
+    @patch('cleep.core.CORE_MODULES', ['dummycleep'])
     def test_sentry_core_module(self):
         self._init_context()
 
@@ -406,22 +404,22 @@ class TestsCleep(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertTrue('my_command' in commands)
 
-    @patch('core.Cleep.send_command')
+    @patch('cleep.core.Cleep.send_command')
     def test_is_module_loaded_return_true(self, send_command_mock):
         self._init_context()
         send_command_mock.return_value = MessageResponse(error=False, data=True, message='')
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), True)
 
-    @patch('core.Cleep.send_command')
+    @patch('cleep.core.Cleep.send_command')
     def test_is_module_loaded_return_false(self, send_command_mock):
         self._init_context()
         send_command_mock.return_value = MessageResponse(error=True, data=True, message='')
 
         self.assertEqual(self.r.is_module_loaded('otherdummy'), False)
 
-    @patch('core.CORE_MODULES', ['dummycleep'])
-    @patch('core.Cleep.send_command')
+    @patch('cleep.core.CORE_MODULES', ['dummycleep'])
+    @patch('cleep.core.Cleep.send_command')
     def test_is_module_loaded_exception(self, send_command_mock):
         self._init_context()
         send_command_mock.side_effect = Exception('Test exception')
@@ -704,7 +702,7 @@ class TestsCleepModule(unittest.TestCase):
         roots = self.r.cleep_filesystem.allowed_roots
         self.assertTrue(any(r.endswith("storage/dummycleepmodule") for r in roots))
 
-    @patch("core.CORE_MODULES", ["dummycleepmodule"])
+    @patch("cleep.core.CORE_MODULES", ["dummycleepmodule"])
     def test_core_module_keeps_unrestricted_filesystem(self):
         from cleep.libs.internals.cleepfilesystem import ScopedCleepFilesystem
 
@@ -957,7 +955,7 @@ class TestsCleepModule(unittest.TestCase):
     def test_get_documentation(self):
         self._init_context()
 
-        with patch('core.CleepDoc') as cleepdoc_mock:
+        with patch('cleep.core.CleepDoc') as cleepdoc_mock:
             cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
 
             result = self.r.get_documentation()
@@ -977,7 +975,7 @@ class TestsCleepModule(unittest.TestCase):
         self._init_context()
         self.r._CleepModule__app_doc = "cached doc"
 
-        with patch('core.CleepDoc') as cleepdoc_mock:
+        with patch('cleep.core.CleepDoc') as cleepdoc_mock:
             cleepdoc_mock.return_value.get_command_doc.return_value = "command doc"
 
             result = self.r.get_documentation(no_cache=True)
@@ -988,7 +986,7 @@ class TestsCleepModule(unittest.TestCase):
     def test_check_documentation(self):
         self._init_context()
 
-        with patch('core.CleepDoc') as cleepdoc_mock:
+        with patch('cleep.core.CleepDoc') as cleepdoc_mock:
             cleepdoc_mock.return_value.is_command_doc_valid.return_value = "command validity"
 
             result = self.r.check_documentation()

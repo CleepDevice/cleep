@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)).replace("tests/", ""))
-from udevadm import Udevadm
+from cleep.libs.commands.udevadm import Udevadm
 from cleep.libs.tests.lib import TestLib
 import unittest
 import logging
