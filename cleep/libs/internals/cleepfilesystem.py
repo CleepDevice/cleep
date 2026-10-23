@@ -18,10 +18,21 @@ class CleepFilesystem:
     """
     Filesystem helper with read/write filesystem support (uses readwrite lib)
     A debounce function waits to switch to readonly mode to reduce number of switches
+
+    Path policy (optional)
+    ---------------------
+    Call :meth:`scoped` to get a view limited to given directory roots. Writes
+    outside those roots are logged (``warn``) or refused (``deny``). The root
+    instance stays unrestricted and owns remount bookkeeping shared by views.
     """
 
     # read/write debounce duration
     DEBOUNCE_DURATION = 10.0
+
+    # Path restriction policies for :meth:`scoped` views
+    POLICY_OFF = "off"
+    POLICY_WARN = "warn"
+    POLICY_DENY = "deny"
 
     def __init__(self):
         """
@@ -39,8 +50,113 @@ class CleepFilesystem:
         self.__debounce_timer_root = None
         self.__debounce_timer_boot = None
 
+        # path policy (unrestricted on root instance)
+        self._path_policy = self.POLICY_OFF
+        self._path_module_name = None
+        self._allowed_roots = ()
+
         # check if os is in readonly mode
         self.is_readonly_fs = self.__is_readonly_filesystem()
+
+    def scoped(self, module_name, allowed_roots=(), policy=POLICY_WARN):
+        """
+        Return a filesystem view restricted to ``allowed_roots``.
+
+        Remount / RO-RW state stays on this (root) instance. The view only adds
+        path checks before delegating writes.
+
+        Args:
+            module_name (str): module name for log messages
+            allowed_roots (list|tuple): directories or files the module may mutate
+            policy (str): ``warn`` (log + allow) or ``deny`` (raise PermissionError)
+
+        Returns:
+            ScopedCleepFilesystem: restricted view
+        """
+        return ScopedCleepFilesystem(self, module_name, allowed_roots, policy)
+
+    @property
+    def path_policy(self):
+        """Current path policy (``off``, ``warn`` or ``deny``)."""
+        return self._path_policy
+
+    @property
+    def allowed_roots(self):
+        """Normalized allowed roots for path policy (empty if unrestricted)."""
+        return self._allowed_roots
+
+    @staticmethod
+    def is_path_under(path, root):
+        """
+        Return True if ``path`` is ``root`` or a descendant of ``root``.
+
+        Args:
+            path (str): candidate path
+            root (str): allowed directory or file
+
+        Returns:
+            bool: True if path is under root
+        """
+        path = os.path.realpath(os.path.abspath(path))
+        root = os.path.realpath(os.path.abspath(root))
+        if path == root:
+            return True
+        prefix = root if root.endswith(os.sep) else root + os.sep
+        return path.startswith(prefix)
+
+    def is_path_allowed(self, path):
+        """
+        Return True if ``path`` may be mutated under current path policy.
+
+        Args:
+            path (str): path to check
+
+        Returns:
+            bool: True if allowed
+        """
+        if self._path_policy == self.POLICY_OFF or not self._allowed_roots:
+            return True
+        return any(
+            self.is_path_under(path, root) for root in self._allowed_roots
+        )
+
+    def _check_write_path(self, path, action):
+        """Warn or deny when ``path`` is outside allowed roots."""
+        if self._path_policy == self.POLICY_OFF or not self._allowed_roots:
+            return
+        if self.is_path_allowed(path):
+            return
+
+        message = (
+            'Module "%s" %s path outside allowed dirs: "%s" (allowed=%s)'
+            % (
+                self._path_module_name or "?",
+                action,
+                path,
+                list(self._allowed_roots),
+            )
+        )
+        if self._path_policy == self.POLICY_DENY:
+            self.logger.error(message)
+            raise PermissionError(message)
+        self.logger.warning(message)
+
+    @staticmethod
+    def _is_write_mode(mode):
+        """Return True if open mode can mutate the file."""
+        return not (mode.find("r") >= 0 and mode.find("+") < 0)
+
+    def _configure_path_policy(self, module_name, allowed_roots, policy):
+        """Configure path restriction on this instance."""
+        if policy not in (self.POLICY_OFF, self.POLICY_WARN, self.POLICY_DENY):
+            raise ValueError('Invalid filesystem policy "%s"' % policy)
+        self._path_policy = policy
+        self._path_module_name = module_name
+        self._allowed_roots = tuple(
+            os.path.realpath(os.path.abspath(root))
+            for root in (allowed_roots or ())
+            if root
+        )
 
     def _get_counters(self):  # pragma: no cover
         """
@@ -935,3 +1051,132 @@ class CleepFilesystem:
                 context.boot = boot
                 context.is_readonly_fs = self.is_readonly_fs
                 self.__disable_write(context, root, boot)
+
+
+class ScopedCleepFilesystem(CleepFilesystem):
+    """
+    Path-restricted view of a root :class:`CleepFilesystem`.
+
+    Created via :meth:`CleepFilesystem.scoped`. Remount state stays on the
+    parent; this view only enforces ``allowed_roots`` then delegates.
+    """
+
+    def __init__(self, parent, module_name, allowed_roots=(), policy=None):
+        """
+        Args:
+            parent (CleepFilesystem): unrestricted root instance (duck-typed in tests)
+            module_name (str): module name for logs
+            allowed_roots (list|tuple): allowed path roots
+            policy (str): ``warn`` or ``deny`` (default ``warn``)
+        """
+        if isinstance(parent, ScopedCleepFilesystem):
+            parent = parent.underlying
+
+        self.logger = logging.getLogger(CleepFilesystem.__name__)
+        self.crash_report = getattr(parent, "crash_report", None)
+        self.rw = getattr(parent, "rw", None)
+        self.is_readonly_fs = getattr(parent, "is_readonly_fs", False)
+        self._parent = parent
+        self._configure_path_policy(
+            module_name,
+            allowed_roots,
+            policy if policy is not None else self.POLICY_WARN,
+        )
+
+    @property
+    def underlying(self):
+        """Root unrestricted :class:`CleepFilesystem`."""
+        return self._parent
+
+    def set_crash_report(self, crash_report):
+        self._parent.set_crash_report(crash_report)
+        self.crash_report = crash_report
+
+    def enable_write(self, root=True, boot=False):
+        return self._parent.enable_write(root=root, boot=boot)
+
+    def disable_write(self, root=True, boot=False):
+        return self._parent.disable_write(root=root, boot=boot)
+
+    def open(self, path, mode, encoding=None):
+        if self._is_write_mode(mode):
+            self._check_write_path(path, "open-write")
+        return self._parent.open(path, mode, encoding)
+
+    def close(self, fd):
+        return self._parent.close(fd)
+
+    def write_data(self, path, data, encoding=None):
+        self._check_write_path(path, "write_data")
+        return self._parent.write_data(path, data, encoding)
+
+    def write_json(self, path, data, encoding=None):
+        self._check_write_path(path, "write_json")
+        return self._parent.write_json(path, data, encoding)
+
+    def read_data(self, path, encoding=None):
+        return self._parent.read_data(path, encoding)
+
+    def read_json(self, path, encoding=None):
+        return self._parent.read_json(path, encoding)
+
+    def rename(self, src, dst):
+        self._check_write_path(dst, "rename")
+        return self._parent.rename(src, dst)
+
+    def move(self, src, dst):
+        self._check_write_path(dst, "move")
+        return self._parent.move(src, dst)
+
+    def copy(self, src, dst):
+        self._check_write_path(dst, "copy")
+        return self._parent.copy(src, dst)
+
+    def copy_dir(self, src, dst):
+        self._check_write_path(dst, "copy_dir")
+        return self._parent.copy_dir(src, dst)
+
+    def ln(self, src, link, force=False):
+        self._check_write_path(link, "ln")
+        return self._parent.ln(src, link, force=force)
+
+    def remove(self, path):
+        self._check_write_path(path, "remove")
+        return self._parent.remove(path)
+
+    def rm(self, path):
+        self._check_write_path(path, "rm")
+        return self._parent.rm(path)
+
+    def rmdir(self, path):
+        self._check_write_path(path, "rmdir")
+        return self._parent.rmdir(path)
+
+    def mkdir(self, path, recursive=False):
+        self._check_write_path(path, "mkdir")
+        return self._parent.mkdir(path, recursive=recursive)
+
+    def mkdirs(self, path):
+        self._check_write_path(path, "mkdirs")
+        return self._parent.mkdirs(path)
+
+    def exists(self, path):
+        return self._parent.exists(path)
+
+    def rsync(self, src, dst, options='-ah --delete --exclude=".*"'):
+        self._check_write_path(dst, "rsync")
+        return self._parent.rsync(src, dst, options=options)
+
+    def scoped(self, module_name, allowed_roots=(), policy=None):
+        """Scope from the root parent (avoid nested wrappers)."""
+        return self._parent.scoped(
+            module_name,
+            allowed_roots,
+            policy if policy is not None else self.POLICY_WARN,
+        )
+
+    def get_default_encoding(self):
+        return self._parent.get_default_encoding()
+
+    def _get_counters(self):  # pragma: no cover
+        return self._parent._get_counters()

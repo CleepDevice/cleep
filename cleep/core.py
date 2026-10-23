@@ -822,6 +822,15 @@ class CleepModule(Cleep):
         * device helpers
         * default directories (storage, tmp, asset, bin)
 
+    Filesystem contract
+    -------------------
+    Non-core apps must persist data only under their ``APP_*`` directories
+    (and their config file under ``CONFIG_DIR``), using ``self.cleep_filesystem``.
+    At init, that attribute is replaced by ``cleep_filesystem.scoped(...)``:
+    writes outside allowed dirs are refused (deny). Raw ``open()`` / ``os.*``
+    are not intercepted — CI covers that.
+
+    Core modules (``CORE_MODULES``) keep the unrestricted bootstrap instance.
     """
 
     # Storage path to save app files (database, music, ...)
@@ -832,6 +841,33 @@ class CleepModule(Cleep):
     APP_ASSET_PATH = None
     # Binary path where binaries are stored during installation
     APP_BIN_PATH = None
+    # Path policy for non-core apps
+    APP_FS_POLICY = "deny"
+
+    # Shared roots for app data (also used by update InstallModule)
+    APP_STORAGE_ROOT = "/var/opt/cleep/modules/storage"
+    APP_TMP_ROOT = "/tmp/cleep/modules"
+    APP_ASSET_ROOT = "/var/opt/cleep/modules/asset"
+    APP_BIN_ROOT = "/var/opt/cleep/modules/bin"
+
+    @staticmethod
+    def app_paths_for(module_name):
+        """
+        Build APP_* paths for a module name (single source of truth).
+
+        Args:
+            module_name (str): module / app name (case-insensitive)
+
+        Returns:
+            dict: APP_STORAGE_PATH / APP_TMP_PATH / APP_ASSET_PATH / APP_BIN_PATH
+        """
+        name = module_name.lower()
+        return {
+            "APP_STORAGE_PATH": os.path.join(CleepModule.APP_STORAGE_ROOT, name),
+            "APP_TMP_PATH": os.path.join(CleepModule.APP_TMP_ROOT, name),
+            "APP_ASSET_PATH": os.path.join(CleepModule.APP_ASSET_ROOT, name),
+            "APP_BIN_PATH": os.path.join(CleepModule.APP_BIN_ROOT, name),
+        }
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -847,19 +883,13 @@ class CleepModule(Cleep):
         # members
         self.__app_doc = None
 
-        # define app paths
-        class_name = self.__class__.__name__.lower()
-        self.__set_path(
-            "APP_STORAGE_PATH",
-            os.path.join("/var/opt/cleep/modules/storage", class_name),
-        )
-        self.__set_path("APP_TMP_PATH", os.path.join("/tmp/cleep/modules", class_name))
-        self.__set_path(
-            "APP_ASSET_PATH", os.path.join("/var/opt/cleep/modules/asset/", class_name)
-        )
-        self.__set_path(
-            "APP_BIN_PATH", os.path.join("/var/opt/cleep/modules/bin/", class_name)
-        )
+        # define app paths (created via unrestricted bootstrap filesystem)
+        for variable_name, path in self.app_paths_for(
+            self.__class__.__name__
+        ).items():
+            self.__set_path(variable_name, path)
+
+        self.__apply_module_filesystem_scope()
 
         # add devices section if missing
         if self._has_config_file() and not self._has_config_field("devices"):
@@ -887,6 +917,47 @@ class CleepModule(Cleep):
         setattr(self.__class__, variable_name, path)
         self.__dict__[variable_name] = path
 
+    def _is_filesystem_privileged(self):
+        """
+        Return True if this module may write anywhere via cleep_filesystem.
+
+        Returns:
+            bool: True for CORE_MODULES (unrestricted)
+        """
+        return self._get_module_name() in CORE_MODULES
+
+    def _get_filesystem_allowed_roots(self):
+        """
+        Paths this module is allowed to mutate via cleep_filesystem.
+
+        Returns:
+            list: absolute path roots (dirs and optional config file)
+        """
+        roots = [
+            self.APP_STORAGE_PATH,
+            self.APP_TMP_PATH,
+            self.APP_ASSET_PATH,
+            self.APP_BIN_PATH,
+        ]
+        config_file = getattr(self, "MODULE_CONFIG_FILE", None)
+        if config_file:
+            roots.append(os.path.join(self.CONFIG_DIR, config_file))
+        return [r for r in roots if r]
+
+    def __apply_module_filesystem_scope(self):
+        """Replace cleep_filesystem with a scoped view for non-core modules."""
+        if self._is_filesystem_privileged():
+            return
+
+        from cleep.libs.internals.cleepfilesystem import CleepFilesystem
+
+        policy = getattr(self, "APP_FS_POLICY", CleepFilesystem.POLICY_WARN)
+        self.cleep_filesystem = self.cleep_filesystem.scoped(
+            self._get_module_name(),
+            allowed_roots=self._get_filesystem_allowed_roots(),
+            policy=policy,
+        )
+
     def get_env(self):
         """
         Return module environment variables
@@ -903,12 +974,7 @@ class CleepModule(Cleep):
                 }
 
         """
-        return {
-            "APP_STORAGE_PATH": self.APP_STORAGE_PATH,
-            "APP_TMP_PATH": self.APP_TMP_PATH,
-            "APP_ASSET_PATH": self.APP_ASSET_PATH,
-            "APP_BIN_PATH": self.APP_BIN_PATH,
-        }
+        return self.app_paths_for(self.__class__.__name__)
 
     def _add_device(self, data):
         """
@@ -1413,7 +1479,7 @@ class CleepResources(CleepModule):
             reason (str): deny reason
         """
         self.logger.warning(
-            'Resource acquire denied for %s (%s)',
+            "Resource acquire denied for %s (%s)",
             session.resource_names,
             reason,
         )

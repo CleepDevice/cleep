@@ -23,6 +23,23 @@ import time
 
 LOG_LEVEL = get_log_level()
 
+
+def _attach_filesystem_scoped(mock_fs):
+    """Make a Mock cleep_filesystem support CleepFilesystem.scoped()."""
+    from cleep.libs.internals.cleepfilesystem import (
+        CleepFilesystem,
+        ScopedCleepFilesystem,
+    )
+
+    def _scoped(module_name, allowed_roots=(), policy=CleepFilesystem.POLICY_WARN):
+        return ScopedCleepFilesystem(
+            mock_fs, module_name, allowed_roots, policy
+        )
+
+    mock_fs.scoped = _scoped
+    return mock_fs
+
+
 class DummyCleep(Cleep):
     CONFIG_DIR = ''
     MODULE_VERSION = '6.6.6'
@@ -595,6 +612,7 @@ class TestsCleepModule(unittest.TestCase):
         }
 
         self.cleep_filesystem = Mock()
+        _attach_filesystem_scoped(self.cleep_filesystem)
         if current_config is not None:
             self.config_file = os.path.abspath('test.conf')
             with io.open(self.config_file, 'w') as fd:
@@ -656,6 +674,44 @@ class TestsCleepModule(unittest.TestCase):
         self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/dummycleepmodule")
         self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/dummycleepmodule")
         self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/dummycleepmodule")
+
+    def test_app_paths_for(self):
+        from cleep.core import CleepModule
+
+        self.assertDictEqual(
+            CleepModule.app_paths_for("Ngrok"),
+            {
+                "APP_STORAGE_PATH": "/var/opt/cleep/modules/storage/ngrok",
+                "APP_TMP_PATH": "/tmp/cleep/modules/ngrok",
+                "APP_ASSET_PATH": "/var/opt/cleep/modules/asset/ngrok",
+                "APP_BIN_PATH": "/var/opt/cleep/modules/bin/ngrok",
+            },
+        )
+
+    def test_non_core_module_gets_scoped_filesystem(self):
+        from cleep.libs.internals.cleepfilesystem import (
+            CleepFilesystem,
+            ScopedCleepFilesystem,
+        )
+
+        self._init_context()
+
+        self.assertIsInstance(self.r.cleep_filesystem, ScopedCleepFilesystem)
+        self.assertEqual(
+            self.r.cleep_filesystem.path_policy, CleepFilesystem.POLICY_DENY
+        )
+        self.assertTrue(self.r.cleep_filesystem.underlying is self.cleep_filesystem)
+        roots = self.r.cleep_filesystem.allowed_roots
+        self.assertTrue(any(r.endswith("storage/dummycleepmodule") for r in roots))
+
+    @patch("core.CORE_MODULES", ["dummycleepmodule"])
+    def test_core_module_keeps_unrestricted_filesystem(self):
+        from cleep.libs.internals.cleepfilesystem import ScopedCleepFilesystem
+
+        self._init_context()
+
+        self.assertFalse(isinstance(self.r.cleep_filesystem, ScopedCleepFilesystem))
+        self.assertTrue(self.r.cleep_filesystem is self.cleep_filesystem)
 
     def test_devices_section_exists(self):
         self._init_context()
@@ -1133,6 +1189,7 @@ class TestsCleepResources(unittest.TestCase):
         }
 
         self.cleep_filesystem = Mock()
+        _attach_filesystem_scoped(self.cleep_filesystem)
         self.events_broker = Mock()
         self.drivers = Mock()
 
@@ -1270,6 +1327,7 @@ class TestsCleepRenderer(unittest.TestCase):
         }
 
         self.cleep_filesystem = Mock()
+        _attach_filesystem_scoped(self.cleep_filesystem)
         self.events_broker = Mock()
         self.drivers = Mock()
 
@@ -1407,6 +1465,7 @@ class TestsCleepExternalBus(unittest.TestCase):
         }
 
         self.cleep_filesystem = Mock()
+        _attach_filesystem_scoped(self.cleep_filesystem)
         self.events_broker = Mock()
         self.drivers = Mock()
 
@@ -1549,7 +1608,7 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
             'module_join_event': Mock(),
             'core_join_event': Mock(),
             'drivers': Mock(),
-            'cleep_filesystem': Mock(),
+            'cleep_filesystem': _attach_filesystem_scoped(Mock()),
             'execution_step': Mock(),
             'events_broker': Mock(),
             'crash_report': self.crash_report,
