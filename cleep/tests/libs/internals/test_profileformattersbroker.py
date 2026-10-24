@@ -366,8 +366,3 @@ class ProfileFormattersBrokerTests(unittest.TestCase):
         self.assertEqual(len(renderers), 2)
         self.assertTrue("app1" in renderers)
         self.assertTrue("app2" in renderers)
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_profileformattersbroker.py; coverage report -m -i
-    unittest.main()

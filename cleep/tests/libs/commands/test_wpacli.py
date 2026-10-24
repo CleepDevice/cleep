@@ -67,8 +67,3 @@ class WpacliTests(unittest.TestCase):
                 'status': 1
             }
         })
-        
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_wpacli.py; coverage report -m -i
-    unittest.main()

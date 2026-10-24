@@ -283,8 +283,3 @@ dtparam=audio=on
         self.assertTrue(self.c.is_onewire_enabled())
         self.assertTrue(self.c.disable_onewire())
         self.assertFalse(self.c.is_onewire_enabled())
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_configtxt.py; coverage report -m -i
-    unittest.main()
-

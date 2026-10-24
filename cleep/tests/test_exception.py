@@ -80,9 +80,3 @@ class ExceptionTests(unittest.TestCase):
         e = NotReady('message')
         self.assertNotEqual(e.message, 0)
         self.assertEqual('%s' % e, 'message')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_exception.py; coverage report -m -i
-    unittest.main()
-

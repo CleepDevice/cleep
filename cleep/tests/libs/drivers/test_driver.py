@@ -161,9 +161,3 @@ class DriverTests(unittest.TestCase):
         t.wait()
         self.assertTrue(self.fs.enable_write.called)
         self.assertTrue(self.fs.disable_write.called)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_driver.py; coverage report -m -i
-    unittest.main()
-

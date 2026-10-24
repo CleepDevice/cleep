@@ -163,9 +163,3 @@ class DriversTests(unittest.TestCase):
         with self.assertRaises(MissingParameter) as cm:
             self.d.get_driver('electronic', '')
         self.assertEqual(cm.exception.message, 'Parameter "driver_name" is missing')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_drivers.py; coverage report -m -i
-    unittest.main()
-

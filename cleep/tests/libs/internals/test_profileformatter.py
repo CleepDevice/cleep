@@ -51,9 +51,3 @@ class ProfileFormatterTests(unittest.TestCase):
             p = ProfileFormatter({'events_broker': Mock()}, 'dummy.event', DummyProfile())
             p.format({'test':'test'})
         self.assertEqual(str(cm.exception), '_fill_profile method must be implemented in "ProfileFormatter"')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_profileformatter.py; coverage report -m -i
-    unittest.main()
-

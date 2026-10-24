@@ -167,10 +167,3 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(mock_endcb.call_count, 1)
         self.assertEqual(task.call_count, 4)
-
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
-    unittest.main()
-

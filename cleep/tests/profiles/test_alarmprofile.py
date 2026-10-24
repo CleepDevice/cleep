@@ -22,7 +22,3 @@ class AlertProfileTests(unittest.TestCase):
     def test_members(self):
         for attr in ['hour', 'minute', 'timeout', 'volume', 'count', 'status', 'repeat', 'shuffle']:
             self.assertTrue(hasattr(self.p, attr))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_alarmprofile.py; coverage report -m -i
-    unittest.main()

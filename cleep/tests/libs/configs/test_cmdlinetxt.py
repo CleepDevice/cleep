@@ -106,9 +106,3 @@ class CmdlineTxtTestAllEnabled(unittest.TestCase):
 
     def test_is_console_enabled(self):
         self.assertTrue(self.c.is_console_enabled(), 'Console should be disabled')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cmdlinetxt.py; coverage report -m -i
-    unittest.main()
-

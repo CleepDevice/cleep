@@ -1386,9 +1386,3 @@ class RpcServerTests(unittest.TestCase):
             self.assertFalse(rpcserver._request_allowed_while_starting())
         with boddle(method='POST', path='/command'):
             self.assertFalse(rpcserver._request_allowed_while_starting())
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_rpcserver.py; coverage report -m -i
-    unittest.main()
-

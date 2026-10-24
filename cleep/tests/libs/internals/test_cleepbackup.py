@@ -52,8 +52,3 @@ class CleepBackupTests(unittest.TestCase):
         finally:
             if archive and os.path.exists(archive):
                 os.remove(archive)
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepbackup.py; coverage report -m -i
-    unittest.main()
-

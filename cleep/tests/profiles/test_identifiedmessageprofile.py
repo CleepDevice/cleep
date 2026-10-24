@@ -22,8 +22,3 @@ class IdentifiedMessageProfileTests(unittest.TestCase):
     def test_members(self):
         for attr in ['message', 'id']:
             self.assertTrue(hasattr(self.p, attr))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_identifiedmessageprofile.py; coverage report -m -i
-    unittest.main()
-

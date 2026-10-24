@@ -232,7 +232,3 @@ class CleepConfTests(unittest.TestCase):
         result = self.rc.is_auth_enabled()
 
         self.assertTrue(result)
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepconf.py; coverage report -m -i
-    unittest.main()

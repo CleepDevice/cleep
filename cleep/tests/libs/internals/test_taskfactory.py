@@ -189,9 +189,3 @@ class TaskFactoryTests(unittest.TestCase):
 
         self.assertEqual(result, mock_task.return_value)
         mock_task.assert_called_with(1.0, task_fn, self.logger, self.stop_event, None, None, None)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_task.py; coverage report -m -i
-    unittest.main()
-

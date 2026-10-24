@@ -1,5 +1,14 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Fixed tests: drop leftover `if __name__ == "__main__": unittest.main()` from core tests (pytest-only entry)
+- Fixed tests: mark TestLib / TestProcess stubs with __test__ = False; silence passlib DeprecationWarning in pytest.ini
+- Fixed tests: stop leaking MockFd onto io.open (was cascading most suite failures under single pytest session)
+- Fixed tests: inventory fixtures create modules under cleep/tests/modules (cwd-independent for pytest from repo root)
+- Fixed core: exclude app_paths_for from RPC command list; fix get_app_documentation exception log format
+- Updated tests: migrate core suite to pytest (package imports, pytest.ini)
+- Updated tests: TestSession works without unittest.TestCase; add cleep_session fixture
+- Fixed core: EndlessConsole always reaps its process group (avoids orphaned children after Ctrl-C)
+- Fixed tests: BusClient pull mock yields under gevent (suite freeze around test_start_stop on RPi)
 - Added core: improve security limiting application to access on some scoped dirs
 - Updated core: critical resources redesign (static catalogue, sessions, priorities, timeout steal, MODULE_NAME identity); permanent conflict = first wins, second app stays on-demand
 - Updated core: RPC listens for static UI while apps configure; app APIs return 503 until ready (/health reports starting)

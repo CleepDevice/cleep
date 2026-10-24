@@ -94,9 +94,3 @@ ctl.!default {
         self.assertEqual(config['type'], 'hw')
         self.assertEqual(config['cardid'], 1)
         self.assertEqual(config['deviceid'], 2)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_asoundrc.py; coverage report -m -i
-    unittest.main()
-

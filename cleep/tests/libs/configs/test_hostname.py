@@ -65,7 +65,3 @@ class HostnameTests(unittest.TestCase):
         self.h.cleep_filesystem = Mock()
         self.h.cleep_filesystem.open.side_effect = Exception
         self.assertFalse(self.h.set_hostname('helloworld'))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_hostname.py; coverage report -m -i
-    unittest.main()

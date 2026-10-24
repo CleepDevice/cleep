@@ -153,8 +153,3 @@ class CrashReportTests(unittest.TestCase):
         logging.debug("Tags: %s" % self.configure_scope.tags)
         self.assertTrue("Mymodule" in self.configure_scope.tags)
         self.assertEqual(self.configure_scope.tags["Mymodule"], "1.1.1")
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_crashreport.py; coverage report -m -i
-    unittest.main()

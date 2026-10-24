@@ -231,9 +231,3 @@ class EtcAsoundConfTestNoCtlSection(unittest.TestCase):
         ctl = self.e.get_default_ctl_section()
         self.assertEqual(ctl['card'], 666)
         self.assertEqual(ctl['device'], 999)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_etcasoundconf.py; coverage report -m -i
-    unittest.main()
-

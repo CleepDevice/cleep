@@ -179,9 +179,3 @@ class TestAudioDriver(unittest.TestCase):
         numid = self.a.get_control_numid('dummy')
 
         self.assertIsNone(numid)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_audiodriver.py; coverage report -m -i
-    unittest.main()
-

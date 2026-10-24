@@ -69,7 +69,3 @@ class IwgetidTests(unittest.TestCase):
         logging.debug(connections)
 
         self.assertEqual(len(connections), 0, 'Connections list should be empty when command fails')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_iwgetid.py; coverage report -m -i
-    unittest.main()

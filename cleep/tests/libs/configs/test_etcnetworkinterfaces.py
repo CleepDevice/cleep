@@ -57,11 +57,15 @@ iface wlan1 inet dhcp
             f.write(self.CONTENT)
 
         e = EtcNetworkInterfaces
+        self._original_cache_duration = e.CACHE_DURATION
+        self._original_conf = e.CONF
         e.CACHE_DURATION = 0
         e.CONF = self.FILE_NAME
         self.e = e(self.fs, False)
 
     def tearDown(self):
+        EtcNetworkInterfaces.CACHE_DURATION = self._original_cache_duration
+        EtcNetworkInterfaces.CONF = self._original_conf
         if os.path.exists('%s' % self.FILE_NAME):
             os.remove('%s' % self.FILE_NAME)
 
@@ -410,10 +414,15 @@ iface eth3 inet static
             f.write(self.CONTENT)
 
         e = EtcNetworkInterfaces
+        self._original_cache_duration = e.CACHE_DURATION
+        self._original_conf = e.CONF
+        e.CACHE_DURATION = 5.0
         e.CONF = self.FILE_NAME
         self.e = e(self.fs, False)
 
     def tearDown(self):
+        EtcNetworkInterfaces.CACHE_DURATION = self._original_cache_duration
+        EtcNetworkInterfaces.CONF = self._original_conf
         if os.path.exists('%s' % self.FILE_NAME):
             os.remove('%s' % self.FILE_NAME)
 
@@ -423,9 +432,3 @@ iface eth3 inet static
             cm.write(u'')
         new_configs = self.e.get_configurations()
         self.assertEqual(old_configs, new_configs, 'Lib should returns cached content')
-    
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_etcnetworkinterfaces.py; coverage report -m -i
-    unittest.main()

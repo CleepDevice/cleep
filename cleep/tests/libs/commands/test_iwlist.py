@@ -461,7 +461,3 @@ class IwlistTests(unittest.TestCase):
 
     def test_has_error(self):
         self.assertTrue(isinstance(self.i.has_error(), bool))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_iwlist.py; coverage report -m -i
-    unittest.main()

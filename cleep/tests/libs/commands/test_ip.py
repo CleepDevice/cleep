@@ -99,7 +99,3 @@ valid_lft forever preferred_lft forever"""
         })
 
         self.assertFalse(self.i.restart_interface('interface1'))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_ip.py; coverage report -m -i
-    unittest.main()

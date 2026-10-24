@@ -1253,8 +1253,3 @@ class CleepDocTests(unittest.TestCase):
                 }
             },
         )
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepdoc.py; coverage report -m -i
-    unittest.main()

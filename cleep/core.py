@@ -514,8 +514,9 @@ class Cleep(BusClient):
                 "check_documentation",
                 "register_remote_access_url",
                 "unregister_remote_access_url",
+                "app_paths_for",
             ):
-                # filter bus commands
+                # filter bus commands / helpers (not RPC commands)
                 members.remove(member)
             elif member in (
                 "getName",

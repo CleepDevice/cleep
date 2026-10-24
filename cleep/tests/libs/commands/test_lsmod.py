@@ -40,7 +40,3 @@ class LsmodTests(unittest.TestCase):
         self.l.is_module_loaded('hci-uart')
         with_cache_duration = time.time() - tick
         self.assertLess(with_cache_duration, without_cache_duration, 'Cache seems to not be used')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_lsmod.py; coverage report -m -i
-    unittest.main()

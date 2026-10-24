@@ -337,7 +337,3 @@ class CriticalResourcesRealTaskFactoryTests(unittest.TestCase):
             time.sleep(0.05)
         self.assertTrue(granted)
         self.assertEqual(self.c.resources[AUDIO_PLAYBACK]["holder"], "a")
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -22,6 +22,26 @@ import time
 LOG_LEVEL = get_log_level()
 
 
+def _pull_no_message(*_args, **_kwargs):
+    """
+    Bus pull stub that yields under gevent.
+
+    Raising NoMessageAvailable immediately turns BusClient.run into a tight
+    loop and starves the main greenlet (freeze around test_start_stop on RPi).
+    """
+    sleep(0.05)
+    raise NoMessageAvailable()
+
+
+def _stop_module(module, timeout=2.0):
+    """Stop a BusClient module and wait for its thread/greenlet to exit."""
+    if not module:
+        return
+    module.stop()
+    if module.is_alive():
+        module.join(timeout=timeout)
+
+
 def _attach_filesystem_scoped(mock_fs):
     """Make a Mock cleep_filesystem support CleepFilesystem.scoped()."""
     from cleep.libs.internals.cleepfilesystem import (
@@ -92,8 +112,7 @@ class TestsCleep(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(self.r)
         if self.config_file and os.path.exists(self.config_file):
             os.remove(self.config_file)
 
@@ -124,7 +143,7 @@ class TestsCleep(unittest.TestCase):
         self.task_factory = TaskFactory({ 'app_stop_event': self.app_stop_event })
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -431,13 +450,15 @@ class TestsCleep(unittest.TestCase):
 
     def test_start_stop(self):
         self._init_context()
-        
+
         self.r.start()
-        sleep(1.0)
+        sleep(0.5)
         self.r.stop()
-        sleep(1.0)
+        self.r.join(timeout=2.0)
+        sleep(0.2)
 
         self.assertTrue(self.r.stop_called)
+        self.assertFalse(self.r.is_alive())
 
     def test_on_event(self):
         self._init_context()
@@ -595,9 +616,8 @@ class TestsCleepModule(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
-        if self.config_file and os.path.exists(self.config_file):
+        _stop_module(getattr(self, "r", None))
+        if getattr(self, "config_file", None) and os.path.exists(self.config_file):
             os.remove(self.config_file)
 
     def _init_context(self, with_sentry=False, default_config=None, current_config=None, with_config=True, read_json_side_effect=None, write_json_side_effect=None, with_delete_event=True):
@@ -634,7 +654,7 @@ class TestsCleepModule(unittest.TestCase):
         self.app_stop_event.set()
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -1069,8 +1089,7 @@ class TestsCleepRpcWrapper(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(getattr(self, "r", None))
 
     def _init_context(self):
         self.crash_report = Mock()
@@ -1089,7 +1108,7 @@ class TestsCleepRpcWrapper(unittest.TestCase):
         self.app_stop_event.set()
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -1174,8 +1193,7 @@ class TestsCleepResources(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(getattr(self, "r", None))
 
     def _init_context(self):
         self.crash_report = Mock()
@@ -1197,7 +1215,7 @@ class TestsCleepResources(unittest.TestCase):
         self.app_stop_event.set()
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -1312,8 +1330,7 @@ class TestsCleepRenderer(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(getattr(self, "r", None))
 
     def _init_context(self):
         self.crash_report = Mock()
@@ -1335,7 +1352,7 @@ class TestsCleepRenderer(unittest.TestCase):
         self.app_stop_event.set()
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -1396,10 +1413,16 @@ class TestsCleepRenderer(unittest.TestCase):
 
         _r = CleepRenderer
         _r.MODULE_NAME = 'cleeprenderer'
-        r = _r(self.bootstrap, False)
-        with self.assertRaises(Exception) as cm:
-            r._get_renderer_config()
-        self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "CleepRenderer"')
+        original_profiles = _r.RENDERER_PROFILES
+        try:
+            # Class default is []; None simulates a subclass that omitted the member
+            _r.RENDERER_PROFILES = None
+            r = _r(self.bootstrap, False)
+            with self.assertRaises(Exception) as cm:
+                r._get_renderer_config()
+            self.assertEqual(str(cm.exception), 'RENDERER_PROFILES is not defined in "CleepRenderer"')
+        finally:
+            _r.RENDERER_PROFILES = original_profiles
 
     def test_render(self):
         self._init_context()
@@ -1450,8 +1473,7 @@ class TestsCleepExternalBus(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(getattr(self, "r", None))
 
     def _init_context(self):
         self.crash_report = Mock()
@@ -1473,7 +1495,7 @@ class TestsCleepExternalBus(unittest.TestCase):
         self.app_stop_event.set()
 
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
 
         self.bootstrap = {
             'internal_bus': internal_bus,
@@ -1585,8 +1607,7 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
         self.r = None
 
     def tearDown(self):
-        if self.r:
-            self.r.stop()
+        _stop_module(getattr(self, "r", None))
 
     def _init_context(self):
         self.crash_report = Mock()
@@ -1600,7 +1621,7 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
         self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
         self.app_stop_event.set()
         internal_bus = MagicMock()
-        internal_bus.pull = Mock(side_effect=NoMessageAvailable)
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
         self.bootstrap = {
             'internal_bus': internal_bus,
             'module_join_event': Mock(),
@@ -1684,10 +1705,3 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
 
         self.assertFalse(res)
         self.crash_report.report_exception.assert_called()
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_core.py; coverage report -m -i
-    unittest.main()
-
-

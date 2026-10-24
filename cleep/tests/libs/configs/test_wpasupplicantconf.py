@@ -1321,9 +1321,3 @@ GD      Grenada"""
         self.w.disable_network('network')
 
         self.w._WpaSupplicantConf__update_network_disabled_flag.assert_called_with('network', True, interface=None)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_wpasupplicantconf.py; coverage report -m -i
-    unittest.main()
-

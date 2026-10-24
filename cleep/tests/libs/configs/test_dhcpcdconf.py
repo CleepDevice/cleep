@@ -542,8 +542,3 @@ class dhcpcdConfTests_profileConf(unittest.TestCase):
     #    self.assertEqual(len(configurations), 5)
     #    self.assertTrue(self.d.delete_interface("eth6"))
     #    self.assertEqual(len(self.d.get_configurations()), 3)
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_dhcpcdconf.py; coverage report -m -i
-    unittest.main()

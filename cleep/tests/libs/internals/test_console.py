@@ -160,9 +160,3 @@ class ConsoleTests(unittest.TestCase):
         res = c.find('echo tick; exit 2', r'(t.ck)')
         logging.debug('Result: %s' % res)
         self.assertEqual(len(res), 0)
-        
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_console.py; coverage report -m -i
-    unittest.main()
-

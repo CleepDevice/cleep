@@ -50,19 +50,20 @@ class CleepFilesystemTestsReadonly(unittest.TestCase):
             format="%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s",
         )
         TestLib()
-        io = Mock()
 
     def tearDown(self):
         pass
 
-    def test_is_readonly_filesystem_true(self):
-        io.open = Mock(return_value=MockFd(self.FSTAB % {"value": "ro"}))
+    @patch("cleep.libs.internals.cleepfilesystem.io.open")
+    def test_is_readonly_filesystem_true(self, mock_open):
+        mock_open.return_value = MockFd(self.FSTAB % {"value": "ro"})
 
         c = CleepFilesystem()
         self.assertTrue(c.is_readonly_fs)
 
-    def test_is_readonly_filesystem_false(self):
-        io.open = Mock(return_value=MockFd(self.FSTAB % {"value": "rw"}))
+    @patch("cleep.libs.internals.cleepfilesystem.io.open")
+    def test_is_readonly_filesystem_false(self, mock_open):
+        mock_open.return_value = MockFd(self.FSTAB % {"value": "rw"})
 
         c = CleepFilesystem()
         self.assertFalse(c.is_readonly_fs)
@@ -110,7 +111,7 @@ class CleepFilesystemTests(unittest.TestCase):
         self.c.enable_write()
         self.c.enable_write()
 
-        self.assertTrue(self.c.rw.enable_write_on_root.called_once)
+        self.c.rw.enable_write_on_root.assert_called_once()
         self.assertFalse(self.c.rw.disable_write_on_root.called)
         self.assertFalse(self.c.rw.enable_write_on_boot.called)
         self.assertFalse(self.c.rw.disable_write_on_boot.called)
@@ -157,9 +158,9 @@ class CleepFilesystemTests(unittest.TestCase):
         time.sleep(self.c.DEBOUNCE_DURATION + 1)
 
         self.assertTrue(self.c.rw.enable_write_on_root.called)
-        self.assertTrue(self.c.rw.disable_write_on_root.called_once)
+        self.c.rw.disable_write_on_root.assert_called_once()
         self.assertTrue(self.c.rw.enable_write_on_boot.called)
-        self.assertTrue(self.c.rw.disable_write_on_boot.called_once)
+        self.c.rw.disable_write_on_boot.assert_called_once()
 
     def test_disable_write_only_root(self):
         self.c.enable_write(True, False)
@@ -681,8 +682,3 @@ class CleepFilesystemTests(unittest.TestCase):
                 "dst": "dst",
             }
         )
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cleepfilesystem.py; coverage report -m -i
-    unittest.main()

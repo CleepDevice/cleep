@@ -172,8 +172,3 @@ class CmdlineWithUuidTest(unittest.TestCase):
 
     def test_get_root_partition(self):
         self.assertEqual(self.c.get_root_partition(), '/', 'Invalid returned root partition')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_cmdline.py; coverage report -m -i
-    unittest.main()
-

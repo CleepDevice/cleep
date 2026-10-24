@@ -448,9 +448,3 @@ class TestMessageRequest(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             c.fill_from_request({})
         self.assertEqual(str(cm.exception), 'Parameter "request" must be a MessageRequest instance')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_common.py; coverage report -m -i
-    unittest.main()
-

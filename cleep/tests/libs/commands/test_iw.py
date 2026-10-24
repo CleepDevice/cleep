@@ -52,8 +52,3 @@ class IwTests(unittest.TestCase):
         for adapter, values in adapters.items():
             self.assertTrue("interface" in values)
             self.assertTrue("network" in values)
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_iw.py; coverage report -m -i
-    unittest.main()

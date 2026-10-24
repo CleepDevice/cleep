@@ -1172,7 +1172,7 @@ def get_app_documentation(app):
         logger.debug("%s documentation: %s", app, doc)
         resp.data = doc
     except Exception as error:
-        logger.exception("Unable to get application '%s' documentation: %s", app)
+        logger.exception("Unable to get application '%s' documentation: %s", app, error)
         resp.error = True
         resp.message = str(error)
 

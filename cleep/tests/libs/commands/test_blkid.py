@@ -71,8 +71,3 @@ class BlkidTests(unittest.TestCase):
 
     def test_get_device_invalid_device(self):
         self.assertEqual(self.b.get_device("mountpoint"), None)
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_blkid.py; coverage report -m -i
-    unittest.main()

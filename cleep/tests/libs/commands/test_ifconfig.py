@@ -34,7 +34,3 @@ class IfconfigTests(unittest.TestCase):
         self.assertTrue('ipv6' in interfaces[interface].keys())
         self.assertTrue('gateway_ipv6' in interfaces[interface].keys())
         self.assertTrue('netmask_ipv6' in interfaces[interface].keys())
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_ifconfig.py; coverage report -m -i
-    unittest.main()

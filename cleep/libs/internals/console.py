@@ -4,6 +4,7 @@
 import sys
 import subprocess
 import time
+import atexit
 from gevent import sleep
 from threading import Timer, Thread, Event
 
@@ -122,12 +123,40 @@ class EndlessConsole(Thread):
         self.__stdout_thread = None
         self.__stderr_thread = None
         self.__opts = set_opts(opts, self.DEFAULT_OPTS)
+        self.__proc = None
+        self.__pid = None
+        # Child runs in its own session (setsid). Reap it if the parent exits
+        # (e.g. Ctrl-C) before kill() — otherwise the subprocess can orphan.
+        atexit.register(self.__reap_child)
 
     def __del__(self):
         """
         Destructor
         """
         self.__stop()
+        self.__reap_child()
+
+    def __reap_child(self):
+        """Kill leftover process group if the subprocess is still running."""
+        pid = self.__pid
+        proc = self.__proc
+        if not pid or pid == 1:
+            return
+        try:
+            if proc is not None and proc.poll() is None:
+                self.logger.debug("Reaping leftover process group pid=%s", pid)
+                if ON_POSIX:
+                    os.killpg(os.getpgid(pid), SIGKILL)
+                else:  # pragma: no cover
+                    proc.kill()
+                self.killed = True
+        except Exception:  # pragma: no cover
+            pass
+        finally:
+            try:
+                atexit.unregister(self.__reap_child)
+            except Exception:  # pragma: no cover
+                pass
 
     def __enqueue_output(self, output, queue):
         for line in iter(output.readline, b""):
@@ -167,6 +196,7 @@ class EndlessConsole(Thread):
         self.logger.debug("Process killed manually")
         self.killed = True
         self.__stop()
+        self.__reap_child()
 
     def __send_stds(self):
         """
@@ -226,7 +256,9 @@ class EndlessConsole(Thread):
             cwd=self.__opts.get('exec_dir'),
             env=get_env(self.__opts.get('env')),
         )
-        pid = proc.pid
+        self.__proc = proc
+        self.__pid = proc.pid
+        pid = self.__pid
         self.logger.trace("PID=%d", pid)
 
         if self.callback:
@@ -286,20 +318,27 @@ class EndlessConsole(Thread):
         except Exception:  # pragma: no cover
             pass
 
-        # make sure process (and child processes) is really killed
-        if self.killed and pid != 1:
+        # Always reap the process group if still alive (setsid orphans otherwise).
+        if pid != 1:
             try:
-                if ON_POSIX:
-                    os.killpg(os.getpgid(pid), SIGKILL)
-                else:  # pragma: no cover
-                    proc.kill()
+                if proc.poll() is None:
+                    self.logger.debug("Terminating leftover process group pid=%s", pid)
+                    if ON_POSIX:
+                        os.killpg(os.getpgid(pid), SIGKILL)
+                    else:  # pragma: no cover
+                        proc.kill()
+                    self.killed = True
+                else:
+                    try:
+                        proc.wait(timeout=2.0)
+                    except Exception:  # pragma: no cover
+                        pass
             except Exception:  # pragma: no cover
                 pass
-        else:
-            try:
-                proc.wait(timeout=2.0)
-            except Exception:  # pragma: no cover
-                os.kill(pid, SIGKILL)
+        try:
+            atexit.unregister(self.__reap_child)
+        except Exception:  # pragma: no cover
+            pass
 
         # process is over
         self.stopped.set()

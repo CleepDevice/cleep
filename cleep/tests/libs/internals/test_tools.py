@@ -221,8 +221,3 @@ class ToolsTestsLogLevelTrace(unittest.TestCase):
             logging.trace('trace message')
         except:
             self.fail('logging.TRACE not installed')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_tools.py; coverage report -m -i
-    unittest.main()
-

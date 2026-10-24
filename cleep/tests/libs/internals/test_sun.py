@@ -149,8 +149,3 @@ class SunTests(unittest.TestCase):
         # with self.assertRaises(Exception) as cm:
         #    self.s.sunrise()
         # self.assertEqual(str(cm.exception), 'The sun never rises on this location (on the specified date)')
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_sun.py; coverage report -m -i
-    unittest.main()

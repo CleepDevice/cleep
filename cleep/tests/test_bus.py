@@ -548,6 +548,8 @@ class MessageBusTests(unittest.TestCase):
 
 
 class TestProcess1(BusClient):
+    __test__ = False  # BusClient stub for MessageBus tests, not a pytest class
+
     def __init__(self, bootstrap, on_process=None, on_configure=None, on_stop=None, on_start=None):
         BusClient.__init__(self, 'testprocess1', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -605,6 +607,8 @@ class TestProcess1(BusClient):
 
 
 class TestProcess2(BusClient):
+    __test__ = False  # BusClient stub for MessageBus tests, not a pytest class
+
     def __init__(self, bootstrap):
         BusClient.__init__(self, 'testprocess2', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -658,6 +662,8 @@ class TestProcess2(BusClient):
         self.logger.debug('Event received: %s' % event)
 
 class TestProcess3(BusClient):
+    __test__ = False  # BusClient stub for MessageBus tests, not a pytest class
+
     def __init__(self, bootstrap):
         BusClient.__init__(self, 'testprocess3', bootstrap)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -1169,10 +1175,3 @@ class BusClientTests(unittest.TestCase):
         sleep(1.0)
 
         self.assertFalse(self.crash_report.report_exception.called)
-
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_bus.py; coverage report -m -i
-    unittest.main()
-

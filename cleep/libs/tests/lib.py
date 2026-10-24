@@ -90,6 +90,8 @@ class TestLib():
     Instanciate TestLib to enable some features to be able to run tests on a library for Cleep
     """
 
+    __test__ = False  # helper, not a pytest test class
+
     def __init__(self, test_case=None):
         """
         Constructor

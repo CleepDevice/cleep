@@ -167,8 +167,3 @@ class TestsRfkill(unittest.TestCase):
 
         self.assertTrue(self.r.unblock_device(None))
         self.r._Rfkill__block_device.assert_called_with(None, False)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*lib/python*/*","*test_*.py" --concurrency=thread test_rfkill.py; coverage report -m -i
-    unittest.main()

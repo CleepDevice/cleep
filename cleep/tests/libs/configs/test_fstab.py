@@ -199,8 +199,3 @@ desktop:/data/stuff       /media/stuff       nfs     soft,rw,nfsvers=3,rsize=327
             "returncode": 1,
         }
         self.assertFalse(self.f.reload_fstab())
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_fstab.py; coverage report -m -i
-    unittest.main()

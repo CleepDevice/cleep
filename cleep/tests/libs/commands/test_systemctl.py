@@ -504,8 +504,3 @@ class SystemctlTests(unittest.TestCase):
             "error": error,
             "killed": killed,
         }
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_systemctl.py; coverage report -m -i
-    unittest.main()

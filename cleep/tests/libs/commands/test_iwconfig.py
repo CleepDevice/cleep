@@ -58,7 +58,3 @@ class IwconfigTests(unittest.TestCase):
         if len(interfaces)>0:
             interface = interfaces[list(interfaces.keys())[0]]
             self.assertTrue('network' in list(interface.keys()))
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_iwconfig.py; coverage report -m -i
-    unittest.main()

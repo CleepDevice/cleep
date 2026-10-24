@@ -294,8 +294,3 @@ class ReadWriteTests(unittest.TestCase):
 
         context = ReadWriteContext()
         self.assertFalse(self.r.disable_write_on_boot(context))
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_readwrite.py; coverage report -m -i
-    unittest.main()

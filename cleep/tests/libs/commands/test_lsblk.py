@@ -94,7 +94,3 @@ class LsblkTests(unittest.TestCase):
         self.l.get_devices_infos()
         with_cache_duration = time.time() - tick
         self.assertLess(with_cache_duration, without_cache_duration, 'Cache seems to not be used')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_lsblk.py; coverage report -m -i
-    unittest.main()

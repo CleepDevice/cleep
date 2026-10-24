@@ -388,7 +388,3 @@ numid=4,iface=PCM,name='IEC958 Playback Default'"""
         self.a.command.assert_called_with('/usr/sbin/alsactl store')
         self.a.cleep_filesystem.enable_write.assert_called()
         self.a.cleep_filesystem.disable_write.assert_called()
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_alsa.py; coverage report -m -i
-    unittest.main()

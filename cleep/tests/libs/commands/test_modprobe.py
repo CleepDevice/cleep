@@ -46,8 +46,3 @@ class ModprobeTests(unittest.TestCase):
         self.m.get_last_return_code = Mock(return_value=1)
         self.assertFalse(self.m.unload_module('dummy'))
         self.assertTrue(self.m.command.called)
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_modprobe.py; coverage report -m -i
-    unittest.main()

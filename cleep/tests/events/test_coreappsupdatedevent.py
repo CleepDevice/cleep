@@ -23,8 +23,3 @@ class CoreAppsUpdatedEventTests(unittest.TestCase):
 
     def test_event_params(self):
         self.assertEqual(self.event.EVENT_PARAMS, [])
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_coreappsupdatedevent.py; coverage report -m -i
-    unittest.main()
-

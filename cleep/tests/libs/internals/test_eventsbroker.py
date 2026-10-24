@@ -376,8 +376,3 @@ class EventsBrokerTests(unittest.TestCase):
         self.assertTrue(self.e.is_event_renderable("test.event.app1", "renderer"))
         self.e.set_event_renderable("test.event.app1", "renderer", False)
         self.assertFalse(self.e.is_event_renderable("test.event.app1", "renderer"))
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_eventsbroker.py; coverage report -m -i
-    unittest.main()

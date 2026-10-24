@@ -234,10 +234,3 @@ class ExternalBusTests(unittest.TestCase):
         with self.assertRaises(NotImplementedError) as cm:
             self.bus._send_message(MessageRequest())
         self.assertEqual(str(cm.exception), 'send_message function is not implemented "ExternalBus"')
-        
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_externalbus.py; coverage report -m -i
-    unittest.main()
-

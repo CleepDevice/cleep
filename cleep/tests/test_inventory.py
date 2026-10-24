@@ -23,6 +23,10 @@ warnings.filterwarnings("ignore", message="No source for code:")
 
 class InventoryTests(unittest.TestCase):
 
+    _ORIGINAL_IMPORT_PATH = Inventory.PYTHON_CLEEP_IMPORT_PATH
+    _ORIGINAL_MODULES_PATH = Inventory.PYTHON_CLEEP_MODULES_PATH
+    _ORIGINAL_SYNC_TIMEOUT = Inventory.MODULES_SYNC_TIMEOUT
+
     MODULE = """
 from cleep.core import CleepModule, CleepRpcWrapper, CleepRenderer, CleepExternalBus
 
@@ -89,6 +93,11 @@ class %(module_name)s(%(inherit)s):
         logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(name)s:%(lineno)d %(levelname)s : %(message)s')
         self.i = None
 
+    def _modules_dir(self):
+        # Must match Inventory.PYTHON_CLEEP_MODULES_PATH relative to inventory.py
+        # (cleep/tests/modules), independent of pytest cwd (repo root).
+        return os.path.join(os.path.dirname(__file__), 'modules')
+
     def tearDown(self):
         if self.i:
             self.i.unload_modules()
@@ -96,34 +105,48 @@ class %(module_name)s(%(inherit)s):
         #del sys.modules['modules']
         for to_unload in [mod for mod in sys.modules if mod.startswith('modules')]:
             del sys.modules[to_unload]
-        if os.path.exists('modules'):
-            shutil.rmtree('modules')
+        modules_dir = self._modules_dir()
+        if os.path.exists(modules_dir):
+            shutil.rmtree(modules_dir)
+        tests_dir = os.path.dirname(__file__)
+        if tests_dir in sys.path:
+            sys.path.remove(tests_dir)
+        Inventory.PYTHON_CLEEP_IMPORT_PATH = self._ORIGINAL_IMPORT_PATH
+        Inventory.PYTHON_CLEEP_MODULES_PATH = self._ORIGINAL_MODULES_PATH
+        Inventory.MODULES_SYNC_TIMEOUT = self._ORIGINAL_SYNC_TIMEOUT
 
     def _init_context(self, debug_enabled=False, configured_modules=[], debug_modules=[],
             mod1_deps=[], mod2_deps=[], mod3_deps=[],
             mod1_exception=False, mod2_exception=False, mod3_exception=False,
             mod1_inherit='CleepModule', mod2_inherit='CleepModule', mod3_inherit='CleepModule',
             mod1_startup_error='', core_join_event=None):
-        os.mkdir('modules')
-        with io.open(os.path.join('modules', '__init__.py'), 'w') as fd:
+        modules_dir = self._modules_dir()
+        if os.path.exists(modules_dir):
+            shutil.rmtree(modules_dir)
+        os.mkdir(modules_dir)
+        # Import path 'modules.*' resolves from cleep/tests/ regardless of cwd
+        tests_dir = os.path.dirname(__file__)
+        if tests_dir not in sys.path:
+            sys.path.insert(0, tests_dir)
+        with io.open(os.path.join(modules_dir, '__init__.py'), 'w') as fd:
             fd.write('')
         # module1
-        os.mkdir(os.path.join('modules', 'module1'))
-        with io.open(os.path.join('modules', 'module1', 'module1.py'), 'w') as fd:
+        os.mkdir(os.path.join(modules_dir, 'module1'))
+        with io.open(os.path.join(modules_dir, 'module1', 'module1.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module1', 'module_deps': mod1_deps, 'exception':mod1_exception, 'inherit':mod1_inherit, 'startup_error':mod1_startup_error})
-        with io.open(os.path.join('modules', 'module1', '__init__.py'), 'w') as fd:
+        with io.open(os.path.join(modules_dir, 'module1', '__init__.py'), 'w') as fd:
             fd.write('')
         # module2
-        os.mkdir(os.path.join('modules', 'module2'))
-        with io.open(os.path.join('modules', 'module2', 'module2.py'), 'w') as fd:
+        os.mkdir(os.path.join(modules_dir, 'module2'))
+        with io.open(os.path.join(modules_dir, 'module2', 'module2.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module2', 'module_deps': mod2_deps, 'exception':mod2_exception, 'inherit':mod2_inherit, 'startup_error':''})
-        with io.open(os.path.join('modules', 'module2', '__init__.py'), 'w') as fd:
+        with io.open(os.path.join(modules_dir, 'module2', '__init__.py'), 'w') as fd:
             fd.write('')
         # module3
-        os.mkdir(os.path.join('modules', 'module3'))
-        with io.open(os.path.join('modules', 'module3', 'module3.py'), 'w') as fd:
+        os.mkdir(os.path.join(modules_dir, 'module3'))
+        with io.open(os.path.join(modules_dir, 'module3', 'module3.py'), 'w') as fd:
             fd.write(self.MODULE % {'module_name': 'Module3', 'module_deps': mod3_deps, 'exception':mod3_exception, 'inherit':mod3_inherit, 'startup_error':''})
-        with io.open(os.path.join('modules', 'module3', '__init__.py'), 'w') as fd:
+        with io.open(os.path.join(modules_dir, 'module3', '__init__.py'), 'w') as fd:
             fd.write('')
 
         self.rpcserver = Mock()
@@ -746,23 +769,23 @@ class %(module_name)s(%(inherit)s):
         self._init_context(configured_modules=['module1', 'module3'], mod1_deps=['module2'])
         self.i._load_modules()
     
-        # exclude library
+        # exclude library (module2 is a dependency → library=True)
         mod_filter = lambda mod_name, mod_data, all_mods: not mod_data['library']
         modules = self.i._get_modules(mod_filter)
         logging.debug('Modules: %s' % modules)
-        self.assertEqual(len(modules), 3)
+        self.assertEqual(len(modules), 2)
         self.assertTrue('module1' in modules)
         self.assertFalse('module2' in modules)
         self.assertTrue('module3' in modules)
 
-        # get only local modules
+        # get only local modules (on disk, not in configured_modules → module2)
         mod_filter = lambda mod_name, mod_data, all_mods: mod_data['local']
         modules = self.i._get_modules(mod_filter)
         logging.debug('Modules: %s' % modules)
         self.assertEqual(len(modules), 1)
         self.assertFalse('module1' in modules)
-        self.assertFalse('module2' in modules)
-        self.assertTrue('module3' in modules)
+        self.assertTrue('module2' in modules)
+        self.assertFalse('module3' in modules)
 
     @patch('cleep.inventory.CORE_MODULES', [])
     def test_get_module_commands(self):
@@ -995,9 +1018,3 @@ class %(module_name)s(%(inherit)s):
         self.assertTrue(self.i.get_auth_enabled())
         self.i.set_auth_enabled(False)
         self.assertFalse(self.i.get_auth_enabled())
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_inventory.py; coverage report -i -m
-    unittest.main()
-

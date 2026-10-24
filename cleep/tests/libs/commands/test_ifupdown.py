@@ -54,7 +54,3 @@ class IfupdownTests(unittest.TestCase):
         self.i.stop_interface = Mock(return_value=True)
         self.i.start_interface = Mock(return_value=False)
         self.assertFalse(self.i.restart_interface('test'), 'Restart interface should return False')
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_ifupdown.py; coverage report -m -i
-    unittest.main()

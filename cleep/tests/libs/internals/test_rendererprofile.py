@@ -70,9 +70,3 @@ class RendererProfileTests(unittest.TestCase):
         self.assertTrue('l2' in d['dummy_list'])
         self.assertFalse('_invisible' in d)
         self.assertFalse('__very_invisible' in d)
-    
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_rendererprofile.py; coverage report -m -i
-    unittest.main()
-

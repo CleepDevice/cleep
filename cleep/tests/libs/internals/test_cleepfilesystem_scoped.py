@@ -130,8 +130,3 @@ class CleepFilesystemScopedTests(unittest.TestCase):
             policy=CleepFilesystem.POLICY_WARN,
         )
         self.assertTrue(nested.underlying is self.root)
-
-
-if __name__ == "__main__":
-    # pragma: no cover
-    unittest.main()

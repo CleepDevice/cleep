@@ -288,9 +288,3 @@ class EventTests(unittest.TestCase):
         self.assertFalse('param2' in values_as_dict.keys())
         self.assertEqual(values_as_dict['param1'], 'value1')
         self.assertEqual(values_as_dict['param3'], 'value3')
-
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_event.py; coverage report -m -i
-    unittest.main()
-

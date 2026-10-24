@@ -586,8 +586,3 @@ class DownloadTestsFileDownloadCancel(unittest.TestCase):
             self.d.cancel()
         except:
             self.fail("Should not failed")
-
-
-if __name__ == "__main__":
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_download.py; coverage report -m -i
-    unittest.main()

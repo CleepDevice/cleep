@@ -63,15 +63,25 @@ class CommandFailure(object):
 
 class TestSession:
     """
-    Create session to be able to run tests on a Cleep module
+    Create a session to run tests on a Cleep module.
+
+    Works with both stacks:
+    - unittest.TestCase: ``TestSession(self)`` in setUp (legacy / hybrid)
+    - pytest: ``TestSession()`` or the ``cleep_session`` fixture (no TestCase needed)
+
+    Assert helpers raise ``AssertionError`` so they work under unittest and pytest.
     """
 
-    def __init__(self, testcase):
+    # Not a test class (name matches pytest collection pattern).
+    __test__ = False
+
+    def __init__(self, testcase=None):
         """
         Constructor
 
         Args:
-            testcase (unittest.TestCase): current unit test
+            testcase (unittest.TestCase|None): optional current unit test. Kept for
+                backward compatibility and debug labels; asserts no longer require it.
         """
         tools.install_trace_logging_level()
 
@@ -82,9 +92,24 @@ class TestSession:
         self.cleep_filesystem = None
         self.task_factory = None
         self.__module_class = None
+        self.__module_instance = None
         self.__bus_command_handlers = {}
         self.__event_handlers = {}
         self.__app_stop_event = None
+
+    def __test_id(self):
+        """Return a label for the current test (TestCase id or stack-derived name)."""
+        if self.testcase is not None and hasattr(self.testcase, "id"):
+            try:
+                return self.testcase.id()
+            except Exception:
+                pass
+        return self.__get_test_case_name()
+
+    @staticmethod
+    def _fail(message):
+        """Fail the current test (unittest and pytest compatible)."""
+        raise AssertionError(message)
 
     def __build_bootstrap_objects(self, debug):
         """
@@ -181,7 +206,7 @@ class TestSession:
             True if logging.getLogger().getEffectiveLevel() <= logging.DEBUG else False
         )
         self.test_case_name = self.__get_test_case_name()
-        self.logger.debug("==> Running %s", self.testcase.id())
+        self.logger.debug("==> Running %s", self.__test_id())
 
         # bootstrap object
         self.bootstrap = self.__build_bootstrap_objects(self.__debug_enabled)
@@ -256,12 +281,10 @@ class TestSession:
         """
         Clean all session stuff.
         Can be called during test tear down.
+        Safe to call even if setup() was never run.
         """
-        if not self.__setup_executed:
-            return
-
-        # initiate Cleep shutdown
-        self.__app_stop_event.set()
+        if self.__app_stop_event is not None:
+            self.__app_stop_event.set()
 
         # process
         if self.__module_instance and self.__module_instance.is_alive():
@@ -274,7 +297,9 @@ class TestSession:
                 ) from error
 
         # config
-        if hasattr(self.__module_instance, "MODULE_CONFIG_FILE"):
+        if self.__module_instance and hasattr(
+            self.__module_instance, "MODULE_CONFIG_FILE"
+        ):
             path = os.path.join(
                 self.__module_instance.CONFIG_DIR,
                 self.__module_instance.MODULE_CONFIG_FILE,
@@ -285,6 +310,8 @@ class TestSession:
         if self.__module_instance:
             del self.__module_instance
             self.__module_instance = None
+
+        self.__setup_executed = False
 
     def setup_event(self, event):
         """
@@ -549,13 +576,11 @@ class TestSession:
         """
         # check command is registered
         if command_name not in self.__bus_command_handlers:
-            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+            self._fail('Command mock "%s" was not registered' % command_name)
 
         # check command was called
         if self.__bus_command_handlers[command_name]["calls"] != 0:
-            self.testcase.fail(
-                'Command "%s" was called while it should not' % command_name
-            )
+            self._fail('Command "%s" was called while it should not' % command_name)
 
     def assert_command_called(self, command_name, to=None):
         """
@@ -564,18 +589,16 @@ class TestSession:
         """
         # check command is registered
         if command_name not in self.__bus_command_handlers:
-            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+            self._fail('Command mock "%s" was not registered' % command_name)
 
         # check command was called
         if self.__bus_command_handlers[command_name]["calls"] == 0:
-            self.testcase.fail('Command "%s" was not called' % command_name)
+            self._fail('Command "%s" was not called' % command_name)
 
         # check command recipient
         if to is not None:
-            self.testcase.assertEqual(
-                self.__bus_command_handlers[command_name]["lastto"],
-                to,
-                'Command "%s" recipient is different' % command_name,
+            assert self.__bus_command_handlers[command_name]["lastto"] == to, (
+                'Command "%s" recipient is different' % command_name
             )
 
     def assert_command_called_with(self, command_name, params, to=None):
@@ -584,18 +607,18 @@ class TestSession:
         """
         # check command is registered
         if command_name not in self.__bus_command_handlers:
-            self.testcase.fail('Command mock "%s" was not registered' % command_name)
+            self._fail('Command mock "%s" was not registered' % command_name)
 
         # check command was called
         if self.__bus_command_handlers[command_name]["calls"] == 0:
-            self.testcase.fail('Command "%s" was not called' % command_name)
+            self._fail('Command "%s" was not called' % command_name)
 
         # check command params
         if len(self.__bus_command_handlers[command_name]["params"]) == 1:
             if type(params) is not type(
                 self.__bus_command_handlers[command_name]["params"][0]
             ):
-                self.testcase.fail(
+                self._fail(
                     'Command "%s" parameters differs: %s is not %s (%s)'
                     % (
                         command_name,
@@ -607,22 +630,19 @@ class TestSession:
                     )
                 )
             elif isinstance(params, dict):
-                self.testcase.assertDictEqual(
-                    self.__bus_command_handlers[command_name]["params"][0],
-                    params,
-                    'Command "%s" parameters are differents' % command_name,
+                assert self.__bus_command_handlers[command_name]["params"][0] == params, (
+                    'Command "%s" parameters are differents' % command_name
                 )
             elif params is None:
-                self.testcase.assertIsNone(
-                    self.__bus_command_handlers[command_name]["params"][0],
-                    'Command "%s" parameters are not None' % command_name,
+                assert self.__bus_command_handlers[command_name]["params"][0] is None, (
+                    'Command "%s" parameters are not None' % command_name
                 )
         else:
             params_check = self.__check_command_called_with_params(
                 self.__bus_command_handlers[command_name], params
             )
             if not params_check:
-                self.testcase.fail(
+                self._fail(
                     'Command "%s" was not called with awaited parameters\n  Expected params: %s\n  Received params: %s'
                     % (
                         command_name,
@@ -633,10 +653,8 @@ class TestSession:
 
         # check command recipient
         if to is not None:
-            self.testcase.assertEqual(
-                self.__bus_command_handlers[command_name]["lastto"],
-                to,
-                'Command "%s" recipient is different' % command_name,
+            assert self.__bus_command_handlers[command_name]["lastto"] == to, (
+                'Command "%s" recipient is different' % command_name
             )
 
     def event_called(self, event_name):
@@ -655,18 +673,16 @@ class TestSession:
         """
         Assert specified event was not called
         """
-        self.testcase.assertTrue(
-            self.event_call_count(event_name) == 0,
-            'Event "%s" was called while it should' % event_name,
+        assert self.event_call_count(event_name) == 0, (
+            'Event "%s" was called while it should not' % event_name
         )
 
     def assert_event_called(self, event_name):
         """
         Same as event_called with assertion
         """
-        self.testcase.assertTrue(
-            self.event_call_count(event_name) > 0,
-            'Event "%s" was not called while it should' % event_name,
+        assert self.event_call_count(event_name) > 0, (
+            'Event "%s" was not called while it should' % event_name
         )
 
     def event_call_count(self, event_name):
@@ -710,17 +726,16 @@ class TestSession:
             params (dict): event parameters
             device_id (string): device id
         """
-        self.testcase.assertTrue(
-            self.event_call_count(event_name) > 0,
-            'Event "%s" was not called' % event_name,
+        assert self.event_call_count(event_name) > 0, (
+            'Event "%s" was not called' % event_name
         )
         last_params = self.get_last_event_params(event_name)
-        self.testcase.assertDictEqual(
-            params, last_params, 'Event "%s" parameters are differents' % event_name
+        assert params == last_params, (
+            'Event "%s" parameters are differents' % event_name
         )
         if device_id is not None:
             last_deviceid = self.get_last_event_device_id(event_name)
-            self.testcase.assertEqual(device_id, last_deviceid)
+            assert device_id == last_deviceid
 
     def get_last_event_params(self, event_name):
         """

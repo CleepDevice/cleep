@@ -319,9 +319,3 @@ key2=value2"""
     def test_add_file_not_found(self):
         os.remove(self.path)
         self.assertFalse(self.c.add(u'test'), 'Should returns false if file not found')
-        
-
-if __name__ == '__main__':
-    # coverage run --omit="*/lib/python*/*","*test_*.py" --concurrency=thread test_config.py; coverage report -m -i
-    unittest.main()
-
