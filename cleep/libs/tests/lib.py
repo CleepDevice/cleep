@@ -9,7 +9,7 @@ import logging
 from unittest.mock import Mock
 
 TRACE = tools.TRACE
-KEY_FUNCTIONAL_TEST = 'UNITTEST_FUNC'
+KEY_FUNCTIONAL_TEST = 'CLEEP_FUNCTIONAL_TESTS'
 
 
 class FileDescriptorMock():
@@ -108,6 +108,17 @@ class TestLib():
             return
         if KEY_FUNCTIONAL_TEST not in os.environ:
             self.test_case.skipTest('Functional tests are skipped')
+
+    @staticmethod
+    def require_binary(path):
+        """
+        Assert that a system binary exists. Missing binaries must fail hard
+        (OS migration signal), not skip.
+        """
+        if not os.path.exists(path):
+            raise AssertionError(
+                'Required binary missing (OS migration signal): %s' % path
+            )
 
     @staticmethod
     def mock_urllib3(request_response, request_side_effect=None):

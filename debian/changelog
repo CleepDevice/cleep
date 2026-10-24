@@ -1,5 +1,7 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added tests: functional command suites (real OS binaries) behind CLEEP_FUNCTIONAL_TESTS / pytest marker `functional`
+- Changed tests: rename UNITTEST_FUNC gate to CLEEP_FUNCTIONAL_TESTS; lsblk/lsmod/ifconfig unit tests are mocked (no longer depend on hardware)
 - Fixed tests: drop leftover `if __name__ == "__main__": unittest.main()` from core tests (pytest-only entry)
 - Fixed tests: mark TestLib / TestProcess stubs with __test__ = False; silence passlib DeprecationWarning in pytest.ini
 - Fixed tests: stop leaking MockFd onto io.open (was cascading most suite failures under single pytest session)
