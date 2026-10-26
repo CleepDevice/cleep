@@ -4,6 +4,7 @@
 import ast
 import os
 import logging
+import uuid
 from passlib.hash import sha256_crypt
 from configparser import ConfigParser
 from cleep.common import CORE_MODULES
@@ -78,6 +79,9 @@ class CleepConf:
         """
         Check configuration file content, adding missing section or options
 
+        Also ensures ``general.uuid`` (device identity) exists, generating a
+        uuid4 on first run when missing.
+
         Returns:
             bool: True if updated
         """
@@ -97,7 +101,72 @@ class CleepConf:
                     if not config.has_option(section, key):
                         config.set(section, key, str(value))
                         updated = True
+
+            if self.__ensure_device_uuid(config):
+                updated = True
             return updated
+        finally:
+            self.__close(updated)
+
+    @staticmethod
+    def __normalize_uuid(raw):
+        """
+        Normalize a stored uuid value to a non-empty string or None.
+        """
+        if raw is None:
+            return None
+        value = str(raw).strip()
+        if not value or value in ("None", "null", '""', "''"):
+            return None
+        try:
+            evaluated = ast.literal_eval(value)
+            if evaluated is None:
+                return None
+            value = str(evaluated).strip()
+        except Exception:
+            pass
+        return value or None
+
+    def __ensure_device_uuid(self, config):
+        """
+        Ensure ``general.uuid`` exists on the open ConfigParser.
+
+        Args:
+            config (ConfigParser): opened configuration
+
+        Returns:
+            bool: True if a new uuid was generated
+        """
+        if not config.has_section("general"):
+            config.add_section("general")
+
+        existing = None
+        if config.has_option("general", "uuid"):
+            existing = self.__normalize_uuid(config.get("general", "uuid"))
+        if existing:
+            return False
+
+        new_uuid = str(uuid.uuid4())
+        self.logger.debug("Generating device uuid")
+        config.set("general", "uuid", new_uuid)
+        return True
+
+    def get_device_uuid(self):
+        """
+        Return persistent Cleep instance uuid (box identity).
+
+        Generates the uuid if missing (same rules as ``check()``).
+
+        Returns:
+            str|None: device uuid
+        """
+        updated = False
+        try:
+            conf = self.__open()
+            updated = self.__ensure_device_uuid(conf)
+            if not conf.has_option("general", "uuid"):
+                return None
+            return self.__normalize_uuid(conf.get("general", "uuid"))
         finally:
             self.__close(updated)
 

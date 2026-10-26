@@ -18,6 +18,7 @@ from cleep.common import ExecutionStep, CORE_MODULES, MessageResponse, RENDERERS
 from cleep.libs.internals.crashreport import CrashReport
 from cleep.libs.drivers.driver import Driver
 from cleep.libs.internals.cleepdoc import CleepDoc
+from cleep.libs.configs.cleepconf import CleepConf
 
 __all__ = [
     "Cleep",
@@ -420,6 +421,18 @@ class Cleep(BusClient):
             string: new unique id (uuid4 format).
         """
         return str(uuid.uuid4())
+
+    def get_device_uuid(self):
+        """
+        Return persistent Cleep instance uuid (box identity in cleep.conf).
+
+        Distinct from module device uuids created by ``_add_device`` /
+        ``_get_unique_id``. Generated once at first boot.
+
+        Returns:
+            str|None: device uuid
+        """
+        return CleepConf(self.cleep_filesystem).get_device_uuid()
 
     def is_debug_enabled(self):
         """
@@ -1742,11 +1755,13 @@ class CleepExternalBus(CleepModule):
             dict: typed values::
 
                 {
+                    uuid (str|None): persistent Cleep instance uuid
                     auth (bool): HTTP basic auth effectively enabled
                     remoteaccess (dict): {application_name: url}
                 }
         """
         return {
+            "uuid": self.get_device_uuid(),
             "auth": self.__get_auth_enabled(),
             "remoteaccess": self.__get_remote_access_urls(),
         }

@@ -3,6 +3,7 @@
 
 from cleep.libs.tests.lib import TestLib
 import os
+from uuid import UUID
 from cleep.libs.configs.cleepconf import CleepConf
 from cleep.libs.internals.cleepfilesystem import CleepFilesystem
 from cleep.exception import MissingParameter, InvalidParameter, CommandError
@@ -38,6 +39,7 @@ class CleepConfTests(unittest.TestCase):
         conf.add_section("general")
         conf.set("general", "modules", str([]))
         conf.set("general", "updated", str([]))
+        conf.set("general", "uuid", "11111111-2222-3333-4444-555555555555")
         conf.add_section("rpc")
         conf.set("rpc", "rpc_host", "0.0.0.0")
         conf.set("rpc", "rpc_port", "80")
@@ -232,3 +234,20 @@ class CleepConfTests(unittest.TestCase):
         result = self.rc.is_auth_enabled()
 
         self.assertTrue(result)
+
+    def test_get_device_uuid(self):
+        self.assertEqual(
+            self.rc.get_device_uuid(), "11111111-2222-3333-4444-555555555555"
+        )
+
+    def test_check_generates_device_uuid_when_missing(self):
+        conf = ConfigParser()
+        conf.read(self.FILE_NAME)
+        conf.remove_option("general", "uuid")
+        with open(self.FILE_NAME, "w") as fp:
+            conf.write(fp)
+
+        self.assertTrue(self.rc.check())
+        device_uuid = self.rc.get_device_uuid()
+        self.assertIsNotNone(device_uuid)
+        UUID(device_uuid)

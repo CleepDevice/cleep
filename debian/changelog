@@ -1,11 +1,8 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: persistent device uuid in cleep.conf (CleepConf / Cleep.get_device_uuid); exposed on CleepExternalBus peer device info
 - Added tests: functional command suites per wrapper as `test_*_functional.py` (real OS binaries, API contract) behind CLEEP_FUNCTIONAL_TESTS / pytest marker `functional`
 - Changed tests: rename UNITTEST_FUNC gate to CLEEP_FUNCTIONAL_TESTS; lsblk/lsmod/ifconfig unit tests are mocked (no longer depend on hardware)
-- Fixed tests: drop leftover `if __name__ == "__main__": unittest.main()` from core tests (pytest-only entry)
-- Fixed tests: mark TestLib / TestProcess stubs with __test__ = False; silence passlib DeprecationWarning in pytest.ini
-- Fixed tests: stop leaking MockFd onto io.open (was cascading most suite failures under single pytest session)
-- Fixed tests: inventory fixtures create modules under cleep/tests/modules (cwd-independent for pytest from repo root)
 - Fixed core: exclude app_paths_for from RPC command list; fix get_app_documentation exception log format
 - Updated tests: migrate core suite to pytest (package imports, pytest.ini)
 - Updated tests: TestSession works without unittest.TestCase; add cleep_session fixture

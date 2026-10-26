@@ -1558,6 +1558,7 @@ class TestsCleepExternalBus(unittest.TestCase):
 
     def test_get_peer_device_info(self):
         self._init_context()
+        self.c.get_device_uuid = Mock(return_value='11111111-2222-3333-4444-555555555555')
         self.c.send_command = Mock(side_effect=[
             MessageResponse(error=False, data=True),
             MessageResponse(error=False, data={'ngrok': 'https://dummy.ngrok.app'}),
@@ -1568,6 +1569,7 @@ class TestsCleepExternalBus(unittest.TestCase):
         self.assertEqual(
             info,
             {
+                'uuid': '11111111-2222-3333-4444-555555555555',
                 'auth': True,
                 'remoteaccess': {'ngrok': 'https://dummy.ngrok.app'},
             },
@@ -1581,11 +1583,12 @@ class TestsCleepExternalBus(unittest.TestCase):
 
     def test_get_peer_device_info_defaults_on_error(self):
         self._init_context()
+        self.c.get_device_uuid = Mock(return_value=None)
         self.c.send_command = Mock(side_effect=Exception('Test exception'))
 
         info = self.c._get_peer_device_info()
 
-        self.assertEqual(info, {'auth': False, 'remoteaccess': {}})
+        self.assertEqual(info, {'uuid': None, 'auth': False, 'remoteaccess': {}})
 
 
 class DummyCleepRemoteAccessModule(CleepRemoteAccessModule):
