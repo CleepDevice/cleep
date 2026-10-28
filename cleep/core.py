@@ -898,9 +898,7 @@ class CleepModule(Cleep):
         self.__app_doc = None
 
         # define app paths (created via unrestricted bootstrap filesystem)
-        for variable_name, path in self.app_paths_for(
-            self.__class__.__name__
-        ).items():
+        for variable_name, path in self.app_paths_for(self.__class__.__name__).items():
             self.__set_path(variable_name, path)
 
         self.__apply_module_filesystem_scope()
@@ -1881,8 +1879,10 @@ class CleepRemoteAccessModule(CleepModule):
     Base class for an application that publishes a public address.
 
     The subclass reports the address when the tunnel is open and clears it when
-    the tunnel closes. A later revision of this class will proxy the other
-    devices of the house through that address.
+    the tunnel closes. After a successful register/unregister, this base class
+    emits ``core.remoteaccess.update`` (propagated) so peers can refresh without
+    waiting for a new ZRE HELLO. A later revision of this class will proxy the
+    other devices of the house through that address.
     """
 
     def __init__(self, bootstrap, debug_enabled):
@@ -1894,12 +1894,51 @@ class CleepRemoteAccessModule(CleepModule):
             debug_enabled (bool): flag to set debug level to logger.
         """
         CleepModule.__init__(self, bootstrap, debug_enabled)
+        self.remote_access_update_event = self._get_event("core.remoteaccess.update")
+
+    def get_remote_url_refresh(self):
+        """
+        Describe how a peer (e.g. CleepDesktop) can re-resolve this app's public URL
+        by calling the provider API directly (no Cleep cloud).
+
+        Subclasses **must** implement this. Return ``None`` when the provider cannot
+        be queried from outside the device (no API, missing credentials, …).
+        CleepDesktop treats ``None`` as refresh unsupported (UI action disabled).
+
+        When supported, return::
+
+            {
+                "descriptor": {
+                    "version": 1,
+                    "method": "GET",
+                    "url": "https://api.example.com/...",
+                    "query": {},
+                    "headers": {"Authorization": "Bearer {{secret}}"},
+                    "extract": {"list": "items", "url": "url"},
+                },
+                "secret": "<token>",
+            }
+
+        ``{{secret}}`` is the only secret placeholder. Never put the raw token in
+        the descriptor fields themselves.
+
+        Returns:
+            dict|None: refresh payload, or None when unsupported
+
+        Raises:
+            NotImplementedError: if the subclass did not override this method
+        """
+        raise NotImplementedError(
+            'Method "get_remote_url_refresh" must be implemented in "%s"'
+            % self.__class__.__name__
+        )
 
     def register_remote_access_url(self, url):
         """
         Register this application's public address.
 
-        One address is kept per application.
+        One address is kept per application. On success, broadcasts the full
+        remote-access map via ``core.remoteaccess.update`` only when it changed.
 
         Args:
             url (str): public address
@@ -1918,6 +1957,7 @@ class CleepRemoteAccessModule(CleepModule):
                 )
                 return False
 
+            self.__emit_remote_access_update(resp.data)
             return True
 
         except Exception:
@@ -1934,6 +1974,9 @@ class CleepRemoteAccessModule(CleepModule):
         """
         Remove this application's public address.
 
+        On success, broadcasts the full remote-access map via
+        ``core.remoteaccess.update`` only when it changed.
+
         Returns:
             bool: True when the address is removed
         """
@@ -1946,6 +1989,7 @@ class CleepRemoteAccessModule(CleepModule):
                 )
                 return False
 
+            self.__emit_remote_access_update(resp.data)
             return True
 
         except Exception:
@@ -1956,3 +2000,38 @@ class CleepRemoteAccessModule(CleepModule):
                 }
             )
             return False
+
+    def __emit_remote_access_update(self, data):
+        """
+        Emit propagated remote-access map for peers (e.g. cleep-desktop).
+
+        Args:
+            data (dict|None): inventory payload ``{"urls": {...}, "changed": bool}``
+                or legacy bare ``{application_name: url}`` map
+        """
+        urls, changed = self.__parse_remote_access_payload(data)
+        if not changed:
+            return
+        try:
+            self.remote_access_update_event.send(params={"urls": urls})
+        except Exception:
+            self.logger.exception("Unable to emit core.remoteaccess.update")
+
+    def __parse_remote_access_payload(self, data):
+        """
+        Normalize inventory register/unregister response.
+
+        Args:
+            data (dict|None): inventory payload
+
+        Returns:
+            tuple: ``(urls dict, changed bool)``
+        """
+        if not isinstance(data, dict):
+            return {}, True
+        if "urls" in data and "changed" in data:
+            urls = data.get("urls")
+            if not isinstance(urls, dict):
+                urls = {}
+            return dict(urls), bool(data.get("changed"))
+        return dict(data), True

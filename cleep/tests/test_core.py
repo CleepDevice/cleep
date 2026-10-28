@@ -1601,6 +1601,9 @@ class DummyCleepRemoteAccessModule(CleepRemoteAccessModule):
             setattr(self, 'MODULE_SENTRY_DSN', sentry_dsn)
         CleepRemoteAccessModule.__init__(self, bootstrap, debug_enabled)
 
+    def get_remote_url_refresh(self):
+        return None
+
 
 class TestsCleepRemoteAccessModule(unittest.TestCase):
 
@@ -1642,10 +1645,62 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
         }
         self.r = DummyCleepRemoteAccessModule(self.bootstrap, debug_enabled=False)
 
+    def test_get_remote_url_refresh_default_none(self):
+        self._init_context()
+
+        self.assertIsNone(self.r.get_remote_url_refresh())
+
+    def test_get_remote_url_refresh_must_be_implemented(self):
+        class IncompleteRemoteAccess(CleepRemoteAccessModule):
+            CONFIG_DIR = ''
+            MODULE_VERSION = '0.0.0'
+            MODULE_NAME = 'incomplete'
+
+            def __init__(self, bootstrap):
+                CleepRemoteAccessModule.__init__(self, bootstrap, False)
+
+        self.crash_report = Mock()
+        self.crash_report.is_enabled.return_value = False
+        self.crash_report.get_infos.return_value = {
+            'libsversion': {},
+            'product': 'DummyCleep',
+            'productversion': '0.0.0'
+        }
+        self.app_stop_event = Event()
+        self.task_factory = TaskFactory({ "app_stop_event": self.app_stop_event })
+        self.app_stop_event.set()
+        internal_bus = MagicMock()
+        internal_bus.pull = Mock(side_effect=_pull_no_message)
+        bootstrap = {
+            'internal_bus': internal_bus,
+            'module_join_event': Mock(),
+            'core_join_event': Mock(),
+            'drivers': Mock(),
+            'cleep_filesystem': _attach_filesystem_scoped(Mock()),
+            'execution_step': Mock(),
+            'events_broker': Mock(),
+            'crash_report': self.crash_report,
+            'test_mode': False,
+            'critical_resources': Mock(),
+            'external_bus': 'testbusapp',
+            'app_stop_event': self.app_stop_event,
+            'task_factory': self.task_factory,
+        }
+        module = IncompleteRemoteAccess(bootstrap)
+
+        with self.assertRaises(NotImplementedError):
+            module.get_remote_url_refresh()
+
     def test_register_remote_access_url(self):
         self._init_context()
-        resp = MessageResponse(error=False, data="response string", message="")
+        urls = {'dummycleepremoteaccess': 'http://remote.url'}
+        resp = MessageResponse(
+            error=False,
+            data={'urls': urls, 'changed': True},
+            message="",
+        )
         self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.register_remote_access_url('http://remote.url')
 
@@ -1657,30 +1712,58 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
                 'url': 'http://remote.url',
             },
         )
+        self.r.remote_access_update_event.send.assert_called_once_with(
+            params={'urls': urls}
+        )
+
+    def test_register_remote_access_url_unchanged_skips_event(self):
+        self._init_context()
+        urls = {'dummycleepremoteaccess': 'http://remote.url'}
+        resp = MessageResponse(
+            error=False,
+            data={'urls': urls, 'changed': False},
+            message="",
+        )
+        self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
+
+        res = self.r.register_remote_access_url('http://remote.url')
+
+        self.assertTrue(res)
+        self.assertFalse(self.r.remote_access_update_event.send.called)
 
     def test_register_remote_access_url_failure(self):
         self._init_context()
         resp = MessageResponse(error=True, data="response string", message="error")
         self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.register_remote_access_url('http://remote.url')
 
         self.assertFalse(res)
+        self.assertFalse(self.r.remote_access_update_event.send.called)
 
     def test_register_remote_access_url_exception(self):
         self._init_context()
         self.r.crash_report = self.crash_report
         self.r.send_command = Mock(side_effect=Exception('Test exception'))
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.register_remote_access_url('http://remote.url')
 
         self.assertFalse(res)
         self.crash_report.report_exception.assert_called()
+        self.assertFalse(self.r.remote_access_update_event.send.called)
 
     def test_unregister_remote_access_url(self):
         self._init_context()
-        resp = MessageResponse(error=False, data="response string", message="")
+        resp = MessageResponse(
+            error=False,
+            data={'urls': {}, 'changed': True},
+            message="",
+        )
         self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.unregister_remote_access_url()
 
@@ -1689,22 +1772,44 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
             'unregister_remote_access_url',
             'inventory',
         )
+        self.r.remote_access_update_event.send.assert_called_once_with(
+            params={'urls': {}}
+        )
+
+    def test_unregister_remote_access_url_unchanged_skips_event(self):
+        self._init_context()
+        resp = MessageResponse(
+            error=False,
+            data={'urls': {}, 'changed': False},
+            message="",
+        )
+        self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
+
+        res = self.r.unregister_remote_access_url()
+
+        self.assertTrue(res)
+        self.assertFalse(self.r.remote_access_update_event.send.called)
 
     def test_unregister_remote_access_url_failure(self):
         self._init_context()
         resp = MessageResponse(error=True, data="response string", message="error")
         self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.unregister_remote_access_url()
 
         self.assertFalse(res)
+        self.assertFalse(self.r.remote_access_update_event.send.called)
 
     def test_unregister_remote_access_url_exception(self):
         self._init_context()
         self.r.crash_report = self.crash_report
         self.r.send_command = Mock(side_effect=Exception('Test exception'))
+        self.r.remote_access_update_event = Mock()
 
         res = self.r.unregister_remote_access_url()
 
         self.assertFalse(res)
         self.crash_report.report_exception.assert_called()
+        self.assertFalse(self.r.remote_access_update_event.send.called)

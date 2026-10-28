@@ -1,6 +1,7 @@
 cleep (0.2.0) unstable; urgency=low
 
 - Added core: persistent device uuid in cleep.conf (CleepConf / Cleep.get_device_uuid); exposed on CleepExternalBus peer device info
+- Added core: implement way to retrieve updated remote url from cleep-desktop
 - Added tests: functional command suites per wrapper as `test_*_functional.py` (real OS binaries, API contract) behind CLEEP_FUNCTIONAL_TESTS / pytest marker `functional`
 - Changed tests: rename UNITTEST_FUNC gate to CLEEP_FUNCTIONAL_TESTS; lsblk/lsmod/ifconfig unit tests are mocked (no longer depend on hardware)
 - Fixed core: exclude app_paths_for from RPC command list; fix get_app_documentation exception log format

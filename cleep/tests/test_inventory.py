@@ -986,29 +986,41 @@ class %(module_name)s(%(inherit)s):
     def test_register_remote_access_url(self):
         self._init_context()
 
-        self.i.register_remote_access_url("http://test.com", "test")
+        result = self.i.register_remote_access_url("http://test.com", "test")
 
-        urls = self.i.get_remote_access_urls()
-        self.assertEqual(urls, {
-            "test": "http://test.com"
-        })
+        self.assertEqual(
+            result,
+            {"urls": {"test": "http://test.com"}, "changed": True},
+        )
+        self.assertEqual(self.i.get_remote_access_urls(), {"test": "http://test.com"})
+
+    def test_register_remote_access_url_unchanged(self):
+        self._init_context()
+
+        self.i.register_remote_access_url("http://test.com", "test")
+        result = self.i.register_remote_access_url("http://test.com", "test")
+
+        self.assertEqual(
+            result,
+            {"urls": {"test": "http://test.com"}, "changed": False},
+        )
 
     def test_unregister_remote_access_url(self):
         self._init_context()
 
         self.i.register_remote_access_url("http://test.com", "test")
-        self.i.unregister_remote_access_url("test")
+        result = self.i.unregister_remote_access_url("test")
 
-        urls = self.i.get_remote_access_urls()
-        self.assertEqual(urls, {})
+        self.assertEqual(result, {"urls": {}, "changed": True})
+        self.assertEqual(self.i.get_remote_access_urls(), {})
 
     def test_unregister_remote_access_url_non_exists(self):
         self._init_context()
 
-        self.i.unregister_remote_access_url("test")
+        result = self.i.unregister_remote_access_url("test")
 
-        urls = self.i.get_remote_access_urls()
-        self.assertEqual(urls, {})
+        self.assertEqual(result, {"urls": {}, "changed": False})
+        self.assertEqual(self.i.get_remote_access_urls(), {})
 
     def test_set_auth_enabled(self):
         self._init_context()

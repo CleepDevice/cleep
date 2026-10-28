@@ -1110,8 +1110,17 @@ class Inventory(Cleep):
         Args:
             url (str): url of remote access
             command_sender (str): name of caller
+
+        Returns:
+            dict: ``{"urls": {app name: url}, "changed": bool}``
         """
-        self.__remote_access_urls[command_sender] = url
+        changed = self.__remote_access_urls.get(command_sender) != url
+        if changed:
+            self.__remote_access_urls[command_sender] = url
+        return {
+            "urls": dict(self.__remote_access_urls),
+            "changed": changed,
+        }
 
     def unregister_remote_access_url(self, command_sender):
         """
@@ -1119,9 +1128,17 @@ class Inventory(Cleep):
 
         Args:
             command_sender (str): name of caller
+
+        Returns:
+            dict: ``{"urls": {app name: url}, "changed": bool}``
         """
-        if command_sender in self.__remote_access_urls:
+        changed = command_sender in self.__remote_access_urls
+        if changed:
             del self.__remote_access_urls[command_sender]
+        return {
+            "urls": dict(self.__remote_access_urls),
+            "changed": changed,
+        }
 
     def get_remote_access_urls(self):
         """
