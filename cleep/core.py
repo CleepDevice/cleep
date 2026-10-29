@@ -1881,9 +1881,23 @@ class CleepRemoteAccessModule(CleepModule):
     The subclass reports the address when the tunnel is open and clears it when
     the tunnel closes. After a successful register/unregister, this base class
     emits ``core.remoteaccess.update`` (propagated) so peers can refresh without
-    waiting for a new ZRE HELLO. A later revision of this class will proxy the
-    other devices of the house through that address.
+    waiting for a new ZRE HELLO.
+
+    This base also owns the **Desktop-only LAN gateway**: when a public URL is
+    published, loopback traffic (tunnel → localhost) requires a vaulted Desktop
+    token and can reverse-proxy to other bus peers via ``X-Cleep-Gateway-Target``.
+    Tunnel providers (ngrok, Tailscale, …) only open/close the tunnel and
+    implement ``get_remote_url_refresh``.
+
+    Call ``_setup_lan_gateway()`` from the subclass ``_on_start`` (and rely on
+    ``_on_stop`` / ``_teardown_lan_gateway`` for cleanup). Include
+    ``gatewaytoken`` in ``DEFAULT_CONFIG`` or it is injected automatically.
     """
+
+    GATEWAY_AUTH_HEADER = "X-Cleep-Gateway-Auth"
+    GATEWAY_TARGET_HEADER = "X-Cleep-Gateway-Target"
+    GATEWAY_PEERS_PATH = "/gw/_peers"
+    GATEWAY_TOKEN_CONFIG_KEY = "gatewaytoken"
 
     def __init__(self, bootstrap, debug_enabled):
         """
@@ -1895,6 +1909,13 @@ class CleepRemoteAccessModule(CleepModule):
         """
         CleepModule.__init__(self, bootstrap, debug_enabled)
         self.remote_access_update_event = self._get_event("core.remoteaccess.update")
+        self.__published_public_url = None
+        self.__gateway_handler = None
+        # Ensure gateway token field exists even if the provider omitted it
+        if self._has_config_file():
+            CleepModule._CleepModule__check_config(  # pylint: disable=protected-access
+                self, {self.GATEWAY_TOKEN_CONFIG_KEY: None}
+            )
 
     def get_remote_url_refresh(self):
         """
@@ -1917,10 +1938,17 @@ class CleepRemoteAccessModule(CleepModule):
                     "extract": {"list": "items", "url": "url"},
                 },
                 "secret": "<token>",
+                "gateway": {  # filled by providers via get_gateway_access()
+                    "token": "<gateway-token>",
+                    "header_auth": "X-Cleep-Gateway-Auth",
+                    "header_target": "X-Cleep-Gateway-Target",
+                    "peers_path": "/gw/_peers",
+                },
             }
 
         ``{{secret}}`` is the only secret placeholder. Never put the raw token in
-        the descriptor fields themselves.
+        the descriptor fields themselves. Prefer attaching
+        ``get_gateway_access()`` onto the provider payload.
 
         Returns:
             dict|None: refresh payload, or None when unsupported
@@ -1933,12 +1961,147 @@ class CleepRemoteAccessModule(CleepModule):
             % self.__class__.__name__
         )
 
+    def get_gateway_access(self):
+        """
+        Return Desktop-only gateway credentials (token + header names).
+
+        Returns:
+            dict|None: ``{"token", "header_auth", "header_target", "peers_path"}``
+            or ``None`` if the token could not be created
+        """
+        token = self.__ensure_gateway_token()
+        if not token:
+            return None
+        return {
+            "token": token,
+            "header_auth": self.GATEWAY_AUTH_HEADER,
+            "header_target": self.GATEWAY_TARGET_HEADER,
+            "peers_path": self.GATEWAY_PEERS_PATH,
+        }
+
+    def get_gateway_peers(self):
+        """
+        Return LAN peers reachable through this gateway (excludes Desktop / self).
+
+        Returns:
+            list: peer catalogue entries (may be empty)
+        """
+        return self._list_gateway_peers()
+
+    def get_published_public_url(self):
+        """
+        Return the last successfully registered public URL, or None.
+        """
+        return self.__published_public_url
+
+    def _setup_lan_gateway(self):
+        """
+        Register the Desktop-only loopback gateway handler.
+
+        Call from the provider ``_on_start``. Safe to call more than once.
+        """
+        if self.__gateway_handler is not None:
+            return
+        from cleep import rpcserver
+        from cleep.libs.internals.gateway_proxy import build_gateway_handler
+
+        self.__ensure_gateway_token()
+        self.__gateway_handler = build_gateway_handler(
+            is_tunnel_open=lambda: bool(self.__published_public_url),
+            get_token=lambda: self._get_config_field(self.GATEWAY_TOKEN_CONFIG_KEY)
+            if self._has_config_field(self.GATEWAY_TOKEN_CONFIG_KEY)
+            else None,
+            list_peers=self._list_gateway_peers,
+            get_self_uuid=self.get_device_uuid,
+            auth_header=self.GATEWAY_AUTH_HEADER,
+            target_header=self.GATEWAY_TARGET_HEADER,
+            peers_path=self.GATEWAY_PEERS_PATH,
+            logger=self.logger,
+        )
+        rpcserver.register_gateway_handler(self.__gateway_handler)
+        self.logger.debug("LAN gateway handler registered")
+
+    def _teardown_lan_gateway(self):
+        """Unregister the loopback gateway handler (call from ``_on_stop``)."""
+        if self.__gateway_handler is None:
+            return
+        from cleep import rpcserver
+
+        rpcserver.unregister_gateway_handler(self.__gateway_handler)
+        self.__gateway_handler = None
+        self.logger.debug("LAN gateway handler unregistered")
+
+    def _on_stop(self):
+        """
+        Default stop: tear down the LAN gateway.
+
+        Subclasses that override ``_on_stop`` must call ``super()._on_stop()``
+        (or ``_teardown_lan_gateway()``) so the handler is unregistered.
+        """
+        self._teardown_lan_gateway()
+        super()._on_stop()
+
+    def __ensure_gateway_token(self):
+        """Generate and persist a Desktop-only gateway token if missing."""
+        import secrets
+
+        if not self._has_config_field(self.GATEWAY_TOKEN_CONFIG_KEY):
+            self.logger.error(
+                'Config field "%s" missing on %s',
+                self.GATEWAY_TOKEN_CONFIG_KEY,
+                self.__class__.__name__,
+            )
+            return None
+        token = self._get_config_field(self.GATEWAY_TOKEN_CONFIG_KEY)
+        if token:
+            return token
+        token = secrets.token_urlsafe(32)
+        if not self._set_config_field(self.GATEWAY_TOKEN_CONFIG_KEY, token):
+            self.logger.error("Unable to persist gateway token")
+            return None
+        self.logger.info("Generated Desktop-only gateway token")
+        return token
+
+    def _list_gateway_peers(self):
+        """
+        Build the gateway peer catalogue from cleepbus.
+
+        Returns:
+            list[dict]
+        """
+        self_uuid = self.get_device_uuid()
+        resp = self.send_command("get_peers", "cleepbus")
+        if not resp or resp.error or not isinstance(resp.data, dict):
+            return []
+        peers = []
+        for peer_uuid, info in resp.data.items():
+            if not isinstance(info, dict):
+                continue
+            if info.get("cleepdesktop"):
+                continue
+            if self_uuid and peer_uuid == self_uuid:
+                continue
+            peers.append(
+                {
+                    "uuid": peer_uuid,
+                    "hostname": info.get("hostname"),
+                    "ip": info.get("ip"),
+                    "port": info.get("port"),
+                    "ssl": bool(info.get("ssl")),
+                    "auth": bool(info.get("auth")),
+                    "online": bool(info.get("online")),
+                    "cleepdesktop": False,
+                }
+            )
+        return peers
+
     def register_remote_access_url(self, url):
         """
         Register this application's public address.
 
         One address is kept per application. On success, broadcasts the full
-        remote-access map via ``core.remoteaccess.update`` only when it changed.
+        remote-access map via ``core.remoteaccess.update`` only when it changed,
+        and marks the LAN gateway as open for loopback Desktop traffic.
 
         Args:
             url (str): public address
@@ -1957,6 +2120,8 @@ class CleepRemoteAccessModule(CleepModule):
                 )
                 return False
 
+            self.__published_public_url = url
+            self.__ensure_gateway_token()
             self.__emit_remote_access_update(resp.data)
             return True
 
@@ -1975,7 +2140,8 @@ class CleepRemoteAccessModule(CleepModule):
         Remove this application's public address.
 
         On success, broadcasts the full remote-access map via
-        ``core.remoteaccess.update`` only when it changed.
+        ``core.remoteaccess.update`` only when it changed, and closes the
+        LAN gateway gate (loopback no longer requires Desktop token).
 
         Returns:
             bool: True when the address is removed
@@ -1989,6 +2155,7 @@ class CleepRemoteAccessModule(CleepModule):
                 )
                 return False
 
+            self.__published_public_url = None
             self.__emit_remote_access_update(resp.data)
             return True
 
@@ -2012,8 +2179,15 @@ class CleepRemoteAccessModule(CleepModule):
         urls, changed = self.__parse_remote_access_payload(data)
         if not changed:
             return
+        params = {"urls": urls}
         try:
-            self.remote_access_update_event.send(params={"urls": urls})
+            peers = self.get_gateway_peers()
+            if peers is not None:
+                params["peers"] = peers
+        except Exception:
+            self.logger.exception("Unable to collect gateway peers for remoteaccess update")
+        try:
+            self.remote_access_update_event.send(params=params)
         except Exception:
             self.logger.exception("Unable to emit core.remoteaccess.update")
 

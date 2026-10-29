@@ -1650,6 +1650,40 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
 
         self.assertIsNone(self.r.get_remote_url_refresh())
 
+    def test_get_gateway_access_without_config_returns_none(self):
+        # Dummy has no config file / gatewaytoken field
+        self._init_context()
+        self.assertIsNone(self.r.get_gateway_access())
+
+    def test_get_gateway_peers_empty_without_cleepbus(self):
+        self._init_context()
+        self.r.send_command = Mock(return_value=MessageResponse(error=True, data=None, message="err"))
+        self.assertEqual(self.r.get_gateway_peers(), [])
+
+    def test_get_published_public_url_tracks_register(self):
+        self._init_context()
+        self.assertIsNone(self.r.get_published_public_url())
+        urls = {'dummycleepremoteaccess': 'http://remote.url'}
+        resp = MessageResponse(
+            error=False,
+            data={'urls': urls, 'changed': True},
+            message="",
+        )
+        self.r.send_command = Mock(return_value=resp)
+        self.r.remote_access_update_event = Mock()
+
+        self.assertTrue(self.r.register_remote_access_url('http://remote.url'))
+        self.assertEqual(self.r.get_published_public_url(), 'http://remote.url')
+
+        resp2 = MessageResponse(
+            error=False,
+            data={'urls': {}, 'changed': True},
+            message="",
+        )
+        self.r.send_command = Mock(return_value=resp2)
+        self.assertTrue(self.r.unregister_remote_access_url())
+        self.assertIsNone(self.r.get_published_public_url())
+
     def test_get_remote_url_refresh_must_be_implemented(self):
         class IncompleteRemoteAccess(CleepRemoteAccessModule):
             CONFIG_DIR = ''

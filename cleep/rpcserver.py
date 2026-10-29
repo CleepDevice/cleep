@@ -44,10 +44,12 @@ __all__ = [
     "configure",
     "invalidate_config_cache",
     "is_apps_ready",
+    "register_gateway_handler",
     "set_apps_ready",
     "start",
     "start_listening",
     "stop",
+    "unregister_gateway_handler",
     "wait_forever",
 ]
 
@@ -83,6 +85,33 @@ apps_ready = False
 
 # GET paths that must not be served before apps are ready (need inventory/bus)
 _EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/logs", "/download")
+
+# Optional Desktop-only LAN gateway (ngrok tunnel → loopback). See CleepRemoteAccessModule.
+_gateway_handler = None
+
+
+def register_gateway_handler(handler):
+    """
+    Register the loopback gateway gate/proxy callback.
+
+    Args:
+        handler (callable): ``handler(bottle.request) -> bottle.HTTPResponse|None``.
+            ``None`` continues normal routing; an ``HTTPResponse`` short-circuits.
+    """
+    global _gateway_handler
+    _gateway_handler = handler
+
+
+def unregister_gateway_handler(handler=None):
+    """
+    Clear the gateway handler.
+
+    Args:
+        handler (callable|None): if set, clear only when it matches the current handler
+    """
+    global _gateway_handler
+    if handler is None or _gateway_handler is handler:
+        _gateway_handler = None
 
 
 def _prefix_length(mask):
@@ -228,6 +257,36 @@ def restrict_to_local_network():
     if logger:
         logger.warning("Rejected request from %s", remote_addr)
     bottle.abort(403, "Access denied")
+
+
+@app.hook("before_request")
+def _gateway_loopback_gate():
+    """
+    Desktop-only gateway: ngrok hits Cleep on loopback.
+
+    When a gateway handler is registered, it may require a Desktop token and/or
+    reverse-proxy to another LAN peer. LAN clients (non-loopback) are unchanged.
+    """
+    if bottle.request.environ.get("cleep.local_socket"):
+        return
+    if _gateway_handler is None:
+        return
+    remote_addr = bottle.request.environ.get("REMOTE_ADDR")
+    ip = _parse_source_ip(remote_addr)
+    if ip is None or not ip.is_loopback:
+        return
+    # Allow unauthenticated health probes on loopback
+    path = bottle.request.path or "/"
+    if bottle.request.method == "GET" and path == "/health":
+        return
+    try:
+        response = _gateway_handler(bottle.request)
+    except Exception:
+        if logger:
+            logger.exception("Gateway handler failed")
+        raise bottle.HTTPResponse(status=502, body="Gateway error")
+    if response is not None:
+        raise response
 
 
 def load_auth():

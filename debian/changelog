@@ -1,5 +1,7 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: Desktop-only LAN gateway (rpcserver loopback hook + gateway_proxy + CleepRemoteAccessModule owns token/proxy/peers; providers only open the tunnel)
+- Changed core: move LAN gateway ownership into CleepRemoteAccessModule (_setup_lan_gateway / get_gateway_*) so ngrok/Tailscale stay tunnel-only
 - Added core: persistent device uuid in cleep.conf (CleepConf / Cleep.get_device_uuid); exposed on CleepExternalBus peer device info
 - Added core: implement way to retrieve updated remote url from cleep-desktop
 - Added tests: functional command suites per wrapper as `test_*_functional.py` (real OS binaries, API contract) behind CLEEP_FUNCTIONAL_TESTS / pytest marker `functional`
