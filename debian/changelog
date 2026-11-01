@@ -1,5 +1,11 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Updated core: Raspberry Pi revision codes (2B a02042, Pi5 1GB, CM5/CM5 Lite 16GB, Pi 500+)
+- Fixed ui: config-basic read-only values align to the right (noForm side no longer flexes)
+- Fixed ui: overlay cl-loading-bar on the title bar (64px shell) so it no longer adds height under the header
+- Fixed ui: config-select empty option uses ng-value so Automatic/None label stays selected
+- Fixed ui: show config-select empty option (cl-empty) even when the list has entries
+- Fixed ui: clamp config-select md-select menus that overflow the right viewport edge
 - Added core: Desktop-only LAN gateway (rpcserver loopback hook + gateway_proxy + CleepRemoteAccessModule owns token/proxy/peers; providers only open the tunnel)
 - Changed core: move LAN gateway ownership into CleepRemoteAccessModule (_setup_lan_gateway / get_gateway_*) so ngrok/Tailscale stay tunnel-only
 - Added core: persistent device uuid in cleep.conf (CleepConf / Cleep.get_device_uuid); exposed on CleepExternalBus peer device info

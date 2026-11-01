@@ -145,8 +145,8 @@ angular.module('Cleep').component('configBasic', {
                     </div>
                 </form>
             </div>
-            <div ng-if="$ctrl.noForm" flex layout="row" layout-align="end center" style="padding-right: 15px;">
-                <ng-transclude flex layout="row" layout-align="end center"></ng-transclude>
+            <div ng-if="$ctrl.noForm" layout="row" layout-align="end center" style="padding-right: 15px; flex: none;">
+                <ng-transclude layout="row" layout-align="end center"></ng-transclude>
 
                 <config-item-save-button
                     cl-btn-icon="$ctrl.clBtnIcon" cl-btn-style="$ctrl.clBtnStyle" cl-btn-click="$ctrl.clClick" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.clBtnDisabled"
@@ -687,13 +687,14 @@ angular.module('Cleep').component('configSelect', {
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
             <md-input-container class="config-input-container-no-margin">
-                <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()">
+                <md-select ng-if="$ctrl.isMultiple" name="inputField" multiple ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()" md-on-open="$ctrl.clampSelectMenu()" md-container-class="config-select-menu">
                     <md-option ng-repeat="option in $ctrl.options track by $index" ng-value="option.value" ng-disabled="option.disabled">
                         {{ option.label }}
                     </md-option>
                 </md-select>
-                <md-select ng-if="!$ctrl.isMultiple" name="inputField" ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()">
-                    <md-option ng-if="$ctrl.displayEmpty" value="">
+                <md-select ng-if="!$ctrl.isMultiple" name="inputField" ng-required="$ctrl.clRequired" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled" ng-change="$ctrl.onChange()" md-on-open="$ctrl.clampSelectMenu()" md-container-class="config-select-menu">
+                    <!-- ng-value="''" (not value="") so Material shows the label when model is empty string -->
+                    <md-option ng-if="$ctrl.displayEmpty" ng-value="''">
                         <em>{{ $ctrl.empty }}</em>
                     </md-option>
                     <md-option ng-repeat="option in $ctrl.options track by $index" ng-value="option.value" ng-disabled="option.disabled">
@@ -726,7 +727,7 @@ angular.module('Cleep').component('configSelect', {
         clEmpty: '@?',
         clChange: '&?',
     },
-    controller: function () {
+    controller: ['$timeout', function ($timeout) {
         const ctrl = this;
         ctrl.options = [];
         ctrl.isMultiple = false;
@@ -780,8 +781,15 @@ angular.module('Cleep').component('configSelect', {
         };
 
         ctrl.setDisplayEmpty = function () {
-            ctrl.empty = ctrl.clEmpty ?? 'No item in list';
-            ctrl.displayEmpty = ctrl.empty.length !== 0 && ctrl.options.length === 0;
+            // Explicit cl-empty → always offer a blank value (Automatic / None), even
+            // when the list has entries. Otherwise only show a placeholder if empty.
+            if (ctrl.clEmpty !== undefined && ctrl.clEmpty !== null) {
+                ctrl.empty = ctrl.clEmpty;
+                ctrl.displayEmpty = true;
+            } else {
+                ctrl.empty = 'No item in list';
+                ctrl.displayEmpty = ctrl.options.length === 0;
+            }
         };
 
         ctrl.selectAll = function () {
@@ -793,6 +801,23 @@ angular.module('Cleep').component('configSelect', {
             }
         };
 
+        // AngularJS Material often anchors the menu on the trigger and does not
+        // flip horizontally when the select sits on the right of a config row.
+        ctrl.clampSelectMenu = function () {
+            $timeout(function () {
+                const el = document.querySelector('.md-select-menu-container.config-select-menu.md-active');
+                if (!el) {
+                    return;
+                }
+                const margin = 8;
+                const rect = el.getBoundingClientRect();
+                const overflowRight = rect.right - (window.innerWidth - margin);
+                if (overflowRight > 0) {
+                    el.style.left = Math.max(margin, rect.left - overflowRight) + 'px';
+                }
+            }, 50);
+        };
+
         ctrl.onChange = function() {
             const data = {
                 ...(ctrl.isMultiple && { values: ctrl.clModel }),
@@ -801,7 +826,7 @@ angular.module('Cleep').component('configSelect', {
             };
             (ctrl.clChange || angular.noop)(data);
         };
-    },
+    }],
 });
 
 angular.module('Cleep').component('configDate', {
@@ -944,7 +969,8 @@ angular.module('Cleep').component('configProgress', {
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-click="$ctrl.clCancel" cl-no-form="true"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip" cl-btn-disabled="$ctrl.disabled"
         >
-            <md-progress-linear ng-class="$ctrl.style" flex="50" md-mode="{{ $ctrl.mode }}" value="{{ $ctrl.clModel }}"></md-progress-linear>
+            <span ng-if="$ctrl.showPercent" class="config-progress-percent">{{ $ctrl.percentLabel }}</span>
+            <md-progress-linear class="config-progress-bar {{ $ctrl.style }}" md-mode="{{ $ctrl.mode }}" value="{{ $ctrl.clModel }}"></md-progress-linear>
         </config-basic>
     `,
     bindings: {
@@ -955,6 +981,7 @@ angular.module('Cleep').component('configProgress', {
         clIconStyle: '@',
         clModel: '<',
         clInfinite: '<?',
+        clShowPercent: '<?',
         clBtnStyle: '@',
         clBtnIcon: '@',
         clBtnTooltip: '@',
@@ -965,6 +992,8 @@ angular.module('Cleep').component('configProgress', {
     controller: function () {
         const ctrl = this;
         ctrl.disabled = false;
+        ctrl.showPercent = false;
+        ctrl.percentLabel = '0%';
 
         ctrl.$onInit = function () {
             ctrl.buttonStyle = ctrl.clBtnStyle ?? 'md-primary md-raised';
@@ -972,11 +1001,20 @@ angular.module('Cleep').component('configProgress', {
             ctrl.buttonTooltip = ctrl.clBtnTooltip ?? 'cancel';
             ctrl.mode = !!ctrl.clInfinite ? 'indeterminate' : 'determinate';
             ctrl.style = ctrl.clStyle ?? 'md-primary';
+            ctrl.refreshPercent();
         };
 
         ctrl.$onChanges = function (changes) {
             const value = changes.clModel?.currentValue;
             ctrl.disabled = value <= 0 || value >= 100;
+            ctrl.refreshPercent();
+        };
+
+        ctrl.refreshPercent = function () {
+            ctrl.showPercent = !!ctrl.clShowPercent && !ctrl.clInfinite;
+            const value = Number(ctrl.clModel);
+            const percent = Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 0;
+            ctrl.percentLabel = percent + '%';
         };
     },
 });
@@ -1352,11 +1390,17 @@ function ($compile, $interpolate, $location, $timeout, $rootScope) {
             }
 
             const viewScope = pageScope.$new();
+            // Prefer bound cl-selected, then ?tab= URL, then first tab.
+            const fromBinding = typeof scope.clSelected === 'string'
+                ? tabs.findIndex((tab) => tab.id === scope.clSelected)
+                : -1;
             const requested = $location.search().tab;
             const requestedIndex = typeof requested === 'string'
                 ? tabs.findIndex((tab) => tab.id === requested)
                 : -1;
-            const initialIndex = requestedIndex >= 0 ? requestedIndex : 0;
+            const initialIndex = fromBinding >= 0
+                ? fromBinding
+                : (requestedIndex >= 0 ? requestedIndex : 0);
             viewScope.selectedIndex = initialIndex;
             scope.clSelected = tabs[initialIndex].id;
 

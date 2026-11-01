@@ -22,23 +22,25 @@
     <md-content flex="100">
         <div ng-controller="mainController as mainCtl" layout="column">
 
-            <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
-                <div class="toolbar-spacer"></div>
-                <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
-                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
-                    <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
+            <div class="toolbar-shell">
+                <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
+                    <div class="toolbar-spacer"></div>
+                    <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">
+                        <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
+                        <h1 style="padding-left:5px;" class="md-title">Cleep</h1>
+                    </div>
+                    <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
+                        <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
+                        <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
+                    </div>
+                    <div flex></div>
+                    <div layout="row" layout-align="end center">
+                        <cl-toolbar></cl-toolbar>
+                    </div>
+                    <div class="toolbar-spacer"></div>
                 </div>
-                <div ng-if="mainCtl.hostname.length>0" layout="row" layout-align="left center">
-                    <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
-                    <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
-                </div>
-                <div flex></div>
-                <div layout="row" layout-align="end center">
-                    <cl-toolbar></cl-toolbar>
-                </div>
-                <div class="toolbar-spacer"></div>
+                <cl-loading-bar></cl-loading-bar>
             </div>
-            <cl-loading-bar></cl-loading-bar>
 
             <!-- page content -->
             <div ng-view></div>

@@ -236,9 +236,34 @@ a.md-button.cl-button-sm {
 }
 
 /********* toolbar **********/
+/* Shell keeps title + loading bar at 64px (bar overlays bottom, no layout shift) */
+.toolbar-shell {
+    position: relative;
+    height: 64px;
+    flex: none;
+}
+
 .toolbar-content {
     height: 64px;
     overflow-y: hidden;
+}
+
+.toolbar-shell > cl-loading-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 5px;
+    z-index: 2;
+    display: block;
+    line-height: 0;
+    pointer-events: none;
+}
+
+.toolbar-shell > cl-loading-bar > div,
+.toolbar-shell > cl-loading-bar md-progress-linear {
+    margin: 0 !important;
+    height: 5px;
 }
 
 .toolbar-spacer {
@@ -301,6 +326,12 @@ a.md-button.cl-button-sm {
 .config-input-container-no-margin {
     margin: 0px 0px !important;
 }
+
+/* Keep md-select menus inside the viewport (Material anchors on the trigger) */
+.md-select-menu-container.config-select-menu {
+    max-width: calc(100vw - 16px);
+}
+
 /**
 .config-item:hover {
     background-color: rgba(0,0,0,0.1);
@@ -380,6 +411,21 @@ a.md-button.cl-button-sm {
 .config-item-section .config-section-action {
     margin: 0 0 0 8px;
     flex: none;
+}
+
+/* Right-side control in config-progress (next to optional cancel). */
+.config-progress-bar {
+    min-width: 260px;
+    width: 300px;
+    margin-right: 8px;
+}
+
+.config-progress-percent {
+    min-width: 3.25em;
+    margin-right: 8px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: rgba(0, 0, 0, 0.54);
 }
 
 .config-list-item {
