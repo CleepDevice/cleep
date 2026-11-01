@@ -22,7 +22,8 @@
     <md-content flex="100">
         <div ng-controller="mainController as mainCtl" layout="column">
 
-            <div class="toolbar-shell">
+            <!-- Hidden when embedded in CleepDesktop (X-Cleep-Desktop → window.__CLEEP_DESKTOP__). -->
+            <div class="toolbar-shell" ng-if="!mainCtl.embeddedInDesktop">
                 <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
                     <div class="toolbar-spacer"></div>
                     <div ng-if="!mainCtl.hostname" layout="row" layout-align="left center">

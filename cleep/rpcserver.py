@@ -1401,11 +1401,37 @@ def default(path):
     """
     Servers static files from HTML_DIR.
     """
+    if path in ("", "index.html"):
+        return _serve_index_html()
     bottle.response.set_header(
         "Cache-Control",
         "no-cache, no-store, must-revalidate" if not cache_enabled else "max-age=3600",
     )
     return bottle.static_file(path, HTML_DIR)
+
+
+def _serve_index_html():
+    """
+    Serve the SPA shell. When opened from CleepDesktop (``X-Cleep-Desktop``),
+    inject a window flag so the UI can hide its primary hostname toolbar.
+    """
+    bottle.response.set_header(
+        "Cache-Control",
+        "no-cache, no-store, must-revalidate" if not cache_enabled else "max-age=3600",
+    )
+    embed_header = (bottle.request.get_header("X-Cleep-Desktop") or "").strip().lower()
+    embed_query = (bottle.request.query.get("cleepdesktop") or "").strip().lower()
+    if embed_header in ("1", "true", "yes") or embed_query in ("1", "true", "yes"):
+        index_path = os.path.join(HTML_DIR, "index.html")
+        with open(index_path, "r", encoding="utf-8") as handle:
+            html = handle.read()
+        marker = "<head>"
+        inject = '<head><script>window.__CLEEP_DESKTOP__=1;</script>'
+        if marker in html and "window.__CLEEP_DESKTOP__" not in html:
+            html = html.replace(marker, inject, 1)
+        bottle.response.content_type = "text/html; charset=UTF-8"
+        return html
+    return bottle.static_file("index.html", HTML_DIR)
 
 
 @app.route("/", method="GET")
@@ -1414,11 +1440,7 @@ def index():
     """
     Return a default document if no path was specified.
     """
-    bottle.response.set_header(
-        "Cache-Control",
-        "no-cache, no-store, must-revalidate" if not cache_enabled else "max-age=3600",
-    )
-    return bottle.static_file("index.html", HTML_DIR)
+    return _serve_index_html()
 
 
 @app.route("/logs", method="GET")

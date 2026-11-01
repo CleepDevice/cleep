@@ -28,6 +28,17 @@ function($rootScope, $scope, rpcService, cleepService, blockUI, toast, $mdDialog
     self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
+    // CleepDesktop webview: rpcserver inject, query flag, or host insertCSS/JS.
+    self.embeddedInDesktop = Boolean($window.__CLEEP_DESKTOP__)
+        || ($window.document && $window.document.documentElement
+            && $window.document.documentElement.classList.contains('cleep-desktop-embed'))
+        || /(?:^|[?&])cleepdesktop=1(?:&|$)/.test($window.location.search || '');
+    if (self.embeddedInDesktop && $window.document && $window.document.documentElement) {
+        $window.document.documentElement.classList.add('cleep-desktop-embed');
+        if ($window.document.body) {
+            $window.document.body.classList.add('cleep-desktop-embed');
+        }
+    }
 
     /**
      * Hard-reload the UI once (resets Angular injector / ocLazyLoad singletons).
