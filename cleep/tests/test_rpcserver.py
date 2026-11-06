@@ -1058,18 +1058,6 @@ class RpcServerTests(unittest.TestCase):
             self.assertEqual(i.status, '200 OK')
             static_file_mock.assert_called_with('index.html', rpcserver.HTML_DIR)
 
-    def test_logs(self):
-        self._init_context()
-        message = 'cleep log file content'
-        self.cleep_filesystem.read_data.return_value = message
-
-        with boddle():
-            resp = rpcserver.logs()
-            logging.debug('Resp: %s' % resp)
-            self.assertTrue(message in resp)
-
-        self.cleep_filesystem.read_data.assert_called_with('/var/log/cleep.log')
-
     def test_authenticate(self):
         self._init_context()
         
@@ -1382,7 +1370,7 @@ class RpcServerTests(unittest.TestCase):
             self.assertTrue(rpcserver._request_allowed_while_starting())
         with boddle(method='GET', path='/doc/app'):
             self.assertFalse(rpcserver._request_allowed_while_starting())
-        with boddle(method='GET', path='/logs'):
+        with boddle(method='GET', path='/download/x'):
             self.assertFalse(rpcserver._request_allowed_while_starting())
         with boddle(method='POST', path='/command'):
             self.assertFalse(rpcserver._request_allowed_while_starting())

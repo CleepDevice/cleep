@@ -84,7 +84,7 @@ cache_enabled = True
 apps_ready = False
 
 # GET paths that must not be served before apps are ready (need inventory/bus)
-_EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/logs", "/download")
+_EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/download")
 
 # Optional Desktop-only LAN gateway (ngrok tunnel → loopback). See CleepRemoteAccessModule.
 _gateway_handler = None
@@ -1441,34 +1441,6 @@ def index():
     Return a default document if no path was specified.
     """
     return _serve_index_html()
-
-
-@app.route("/logs", method="GET")
-@authenticate()
-def logs():  # pragma: no cover
-    """
-    Serve log file
-    """
-    script = """<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
-    <script type="text/javascript">
-    function scrollBottom() {
-        setTimeout(function(){
-            window.scrollTo(0, document.body.scrollHeight);
-        }, 500);
-    }
-    </script>"""
-    content = '<pre class="prettyprint" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;">%s</pre>'
-
-    lines = cleep_filesystem.read_data("/var/log/cleep.log")
-    lines = "" if not lines else lines
-
-    return (
-        "<html>\n<head>\n"
-        + script
-        + '\n</head>\n<body onload="scrollBottom()">\n'
-        + content % "".join(lines)
-        + "\n</body>\n</html>"
-    )
 
 
 @app.route("/health", method="GET")
