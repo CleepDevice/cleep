@@ -372,6 +372,15 @@ class Cleep(BusClient):
             self.logger.debug("Config file fixed")
             self.__save_config(config)
 
+    def _ensure_config_keys(self, keys):
+        """
+        Subclass-friendly wrapper around private config key checks.
+
+        Args:
+            keys (dict): keys to ensure with default values.
+        """
+        self.__check_config(keys)
+
     def _register_driver(self, driver):
         """
         Register driver
@@ -1913,9 +1922,7 @@ class CleepRemoteAccessModule(CleepModule):
         self.__gateway_handler = None
         # Ensure gateway token field exists even if the provider omitted it
         if self._has_config_file():
-            CleepModule._CleepModule__check_config(  # pylint: disable=protected-access
-                self, {self.GATEWAY_TOKEN_CONFIG_KEY: None}
-            )
+            self._ensure_config_keys({self.GATEWAY_TOKEN_CONFIG_KEY: None})
 
     def get_remote_url_refresh(self):
         """
