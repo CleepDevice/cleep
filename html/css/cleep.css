@@ -321,6 +321,33 @@ html.cleep-desktop-embed cl-app-fab md-fab-speed-dial {
     width: 15px;
 }
 
+/********* action footer (reboot/restart, …) **********/
+/* Host reserves layout space; bar is fixed so it stays visible while scrolling. */
+.action-footer-host {
+    flex: none;
+    height: 0;
+}
+
+.action-footer-host--visible {
+    height: 56px;
+}
+
+.action-footer-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 38;
+    height: 56px;
+    gap: 8px;
+    padding: 0 12px;
+    box-shadow: 0 -2px 10px rgb(0 0 0 / 18%);
+}
+
+.dashboard-nav-actions {
+    gap: 4px;
+}
+
 .toolbar-white-icon {
     color: white !important;
     fill: white !important;

@@ -34,10 +34,6 @@
                         <cl-icon cl-icon="cellphone" cl-class="icon-white"></cl-icon>
                         <h1 style="padding-left:5px;" class="md-title">{{ mainCtl.hostname }}</h1>
                     </div>
-                    <div flex></div>
-                    <div layout="row" layout-align="end center">
-                        <cl-toolbar></cl-toolbar>
-                    </div>
                     <div class="toolbar-spacer"></div>
                 </div>
                 <cl-loading-bar></cl-loading-bar>
@@ -45,6 +41,9 @@
 
             <!-- page content -->
             <div ng-view></div>
+
+            <!-- Global actions (reboot/restart, …); hidden when empty. Outside toolbar-shell so Desktop embed keeps it. -->
+            <cl-action-footer></cl-action-footer>
 
             <!-- action button -->
             <cl-app-fab></cl-app-fab>

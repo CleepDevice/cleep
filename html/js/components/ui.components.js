@@ -388,19 +388,14 @@ angular.module('Cleep').directive('clAppUpload', ['rpcService', function(rpcServ
     };
 }]);
 
+/**
+ * Global action buttons (reboot/restart, …).
+ * Navigation (Dashboard/Apps) lives on the dashboard page toolbar, not here.
+ * addButton/removeButton keep working for apps (system, …).
+ */
 angular.module('Cleep').service('cleepToolbarService', function() {
     var self = this;
-    self.dashboardButton = {
-        icon: 'view-dashboard',
-        href: '#!dashboard',
-        label: 'Dashboard',
-    };
-    self.appsButton = {
-        icon: 'apps',
-        href: '#!/module/update/applications',
-        label: 'Apps',
-    };
-    self.buttons = [self.dashboardButton, self.appsButton];
+    self.buttons = [];
 
     self.__getId = function() {
          return '' + Math.random().toString(36).substring(2, 11);
@@ -434,25 +429,54 @@ angular.module('Cleep').service('cleepToolbarService', function() {
         // button not found
         return false;
     };
-}).component('clToolbar', {
+
+    self.hasButtons = function() {
+        return self.buttons.length > 0;
+    };
+}).component('clActionFooter', {
     template: `
-    <md-button ng-repeat="btn in $ctrl.toolbar.buttons" hide="" show-gt-xs="" ng-href="{{ btn.href }}" ng-click="$ctrl.onToolbarClick(btn)" ng-class="['md-raised', btn.color]">
-        <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
-        {{ btn.label }}
-    </md-button>
-    <md-button ng-repeat="btn in $ctrl.toolbar.buttons" hide-gt-xs="" ng-href="{{ btn.href }}" ng-click="$ctrl.onToolbarClick(btn)" ng-class="['md-raised', 'cl-button-sm', btn.color]">
-        <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
-    </md-button>
+    <div
+        class="action-footer-host"
+        ng-class="{'action-footer-host--visible': $ctrl.toolbar.hasButtons()}"
+    >
+        <div
+            ng-if="$ctrl.toolbar.hasButtons()"
+            md-colors="{background: 'primary-500'}"
+            class="action-footer-bar"
+            layout="row"
+            layout-align="center center"
+        >
+            <md-button
+                ng-repeat="btn in $ctrl.toolbar.buttons"
+                hide=""
+                show-gt-xs=""
+                ng-href="{{ btn.href }}"
+                ng-click="$ctrl.onClick(btn)"
+                ng-class="['md-raised', btn.color]"
+            >
+                <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
+                {{ btn.label }}
+            </md-button>
+            <md-button
+                ng-repeat="btn in $ctrl.toolbar.buttons"
+                hide-gt-xs=""
+                ng-href="{{ btn.href }}"
+                ng-click="$ctrl.onClick(btn)"
+                ng-class="['md-raised', 'cl-button-sm', btn.color]"
+            >
+                <cl-icon cl-icon="{{ btn.icon }}"></cl-icon>
+            </md-button>
+        </div>
+    </div>
     `,
     controller: ['cleepToolbarService', function(cleepToolbarService) {
         const ctrl = this;
         ctrl.toolbar = cleepToolbarService;
 
-        ctrl.onToolbarClick = function(button) {
+        ctrl.onClick = function(button) {
             if (button.href) {
                 return;
             }
-    
             if (angular.isFunction(button.click)) {
                 button.click();
             }
