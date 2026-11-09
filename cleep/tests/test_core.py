@@ -1728,12 +1728,14 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
     def test_register_remote_access_url(self):
         self._init_context()
         urls = {'dummycleepremoteaccess': 'http://remote.url'}
+        peers = [{'uuid': 'peer-1', 'hostname': 'pi', 'online': True}]
         resp = MessageResponse(
             error=False,
             data={'urls': urls, 'changed': True},
             message="",
         )
         self.r.send_command = Mock(return_value=resp)
+        self.r.get_gateway_peers = Mock(return_value=peers)
         self.r.remote_access_update_event = Mock()
 
         res = self.r.register_remote_access_url('http://remote.url')
@@ -1747,7 +1749,7 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
             },
         )
         self.r.remote_access_update_event.send.assert_called_once_with(
-            params={'urls': urls}
+            params={'urls': urls, 'peers': peers}
         )
 
     def test_register_remote_access_url_unchanged_skips_event(self):
@@ -1791,12 +1793,14 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
 
     def test_unregister_remote_access_url(self):
         self._init_context()
+        peers = [{'uuid': 'peer-1', 'hostname': 'pi', 'online': True}]
         resp = MessageResponse(
             error=False,
             data={'urls': {}, 'changed': True},
             message="",
         )
         self.r.send_command = Mock(return_value=resp)
+        self.r.get_gateway_peers = Mock(return_value=peers)
         self.r.remote_access_update_event = Mock()
 
         res = self.r.unregister_remote_access_url()
@@ -1807,7 +1811,7 @@ class TestsCleepRemoteAccessModule(unittest.TestCase):
             'inventory',
         )
         self.r.remote_access_update_event.send.assert_called_once_with(
-            params={'urls': {}}
+            params={'urls': {}, 'peers': peers}
         )
 
     def test_unregister_remote_access_url_unchanged_skips_event(self):

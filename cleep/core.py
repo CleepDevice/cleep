@@ -2182,6 +2182,10 @@ class CleepRemoteAccessModule(CleepModule):
         Args:
             data (dict|None): inventory payload ``{"urls": {...}, "changed": bool}``
                 or legacy bare ``{application_name: url}`` map
+
+        Event params:
+            urls (dict): application name → public URL
+            peers (list, optional): LAN peers reachable through this gateway
         """
         urls, changed = self.__parse_remote_access_payload(data)
         if not changed:

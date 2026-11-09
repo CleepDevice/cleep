@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Remove /logs endpoint
 - Updated core: Raspberry Pi revision codes (2B a02042, Pi5 1GB, CM5/CM5 Lite 16GB, Pi 500+)
 - Fixed ui: config-basic read-only values align to the right (noForm side no longer flexes)
 - Fixed ui: overlay cl-loading-bar on the title bar (64px shell) so it no longer adds height under the header
