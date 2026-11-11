@@ -1372,5 +1372,53 @@ class RpcServerTests(unittest.TestCase):
             self.assertFalse(rpcserver._request_allowed_while_starting())
         with boddle(method='GET', path='/download/x'):
             self.assertFalse(rpcserver._request_allowed_while_starting())
+        with boddle(method='GET', path='/firmware/demo/x.zip'):
+            self.assertFalse(rpcserver._request_allowed_while_starting())
         with boddle(method='POST', path='/command'):
             self.assertFalse(rpcserver._request_allowed_while_starting())
+
+    @patch('cleep.rpcserver.bottle.static_file')
+    @patch('cleep.rpcserver.os.path.isfile')
+    @patch('cleep.rpcserver.os.path.realpath')
+    def test_get_firmware(self, realpath_mock, isfile_mock, static_file_mock):
+        self._init_context()
+        root = '/var/opt/cleep/modules/firmwares/demo'
+        full = root + '/demo_pico_w_v1.0.0.zip'
+        realpath_mock.side_effect = [root, full]
+        isfile_mock.return_value = True
+        static_file_mock.return_value = 'file-body'
+
+        with boddle(method='GET', path='/firmware/demo/demo_pico_w_v1.0.0.zip'):
+            resp = rpcserver.get_firmware('demo', 'demo_pico_w_v1.0.0.zip')
+
+        self.assertEqual(resp, 'file-body')
+        static_file_mock.assert_called_once_with(
+            filename='demo_pico_w_v1.0.0.zip',
+            root=root,
+            download=True,
+        )
+
+    def test_get_firmware_rejects_bad_app_name(self):
+        self._init_context()
+        with boddle(method='GET', path='/firmware/BadApp/x.zip'):
+            with self.assertRaises(HTTPError):
+                rpcserver.get_firmware('BadApp', 'x.zip')
+
+    def test_get_firmware_rejects_bad_filename(self):
+        self._init_context()
+        with boddle(method='GET', path='/firmware/demo/evil.txt'):
+            with self.assertRaises(HTTPError):
+                rpcserver.get_firmware('demo', 'evil.txt')
+
+    @patch('cleep.rpcserver.os.path.isfile')
+    @patch('cleep.rpcserver.os.path.realpath')
+    def test_get_firmware_missing_file(self, realpath_mock, isfile_mock):
+        self._init_context()
+        root = '/var/opt/cleep/modules/firmwares/demo'
+        full = root + '/missing.zip'
+        realpath_mock.side_effect = [root, full]
+        isfile_mock.return_value = False
+
+        with boddle(method='GET', path='/firmware/demo/missing.zip'):
+            with self.assertRaises(HTTPError):
+                rpcserver.get_firmware('demo', 'missing.zip')

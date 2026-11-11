@@ -1,5 +1,7 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: authenticated GET /firmware/<app>/<file> for installed Pico packages (path-safe)
+- Added core: Pico firmware package contract (zip + sidecar .manifest) and APP_FIRMWARE_PATH
 - Remove /logs endpoint
 - Updated core: Raspberry Pi revision codes (2B a02042, Pi5 1GB, CM5/CM5 Lite 16GB, Pi 500+)
 - Fixed ui: config-basic read-only values align to the right (noForm side no longer flexes)

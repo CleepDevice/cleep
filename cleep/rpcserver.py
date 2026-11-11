@@ -37,6 +37,7 @@ from gevent import pywsgi, pool, sleep
 import bottle
 from cleep.exception import NoMessageAvailable
 from cleep.common import MessageResponse, MessageRequest, CORE_MODULES
+from cleep.core import CleepModule
 from cleep.libs.configs.cleepconf import CleepConf
 
 __all__ = [
@@ -84,7 +85,13 @@ cache_enabled = True
 apps_ready = False
 
 # GET paths that must not be served before apps are ready (need inventory/bus)
-_EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/download")
+_EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/download", "/firmware")
+
+# Pico firmware download path segments (match firmware_manifest id/app rules)
+_FIRMWARE_APP_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+_FIRMWARE_FILE_RE = re.compile(
+    r"^[a-z0-9][a-z0-9_.-]{0,127}\.(?:zip|manifest)$"
+)
 
 # Optional Desktop-only LAN gateway (ngrok tunnel → loopback). See CleepRemoteAccessModule.
 _gateway_handler = None
@@ -953,6 +960,32 @@ def exec_download():
         # something went wrong
         resp = MessageResponse(error=True, message=str(error))
         return resp.to_dict()
+
+
+@app.route("/firmware/<app_name>/<filename>", method="GET")
+@authenticate()
+def get_firmware(app_name, filename):
+    """
+    Download an installed Pico firmware package file (zip or sidecar .manifest).
+
+    Path must stay under ``APP_FIRMWARE_ROOT/<app>/``. Invalid names and missing
+    files return 404 (no path disclosure).
+    """
+    if not _FIRMWARE_APP_RE.match(app_name) or not _FIRMWARE_FILE_RE.match(filename):
+        bottle.abort(404, "Not found")
+
+    root = os.path.realpath(
+        os.path.join(CleepModule.APP_FIRMWARE_ROOT, app_name)
+    )
+    fullpath = os.path.realpath(os.path.join(root, filename))
+    if not fullpath.startswith(root + os.sep):
+        bottle.abort(404, "Not found")
+    if not os.path.isfile(fullpath):
+        bottle.abort(404, "Not found")
+
+    logger.info("Firmware download app=%s filename=%s", app_name, filename)
+    bottle.response.set_header("Cache-Control", "max-age=3600")
+    return bottle.static_file(filename=filename, root=root, download=True)
 
 
 def handle_get_command():

@@ -864,6 +864,8 @@ class CleepModule(Cleep):
     APP_ASSET_PATH = None
     # Binary path where binaries are stored during installation
     APP_BIN_PATH = None
+    # Firmware path where Pico firmware zip+manifest pairs are stored
+    APP_FIRMWARE_PATH = None
     # Path policy for non-core apps
     APP_FS_POLICY = "deny"
 
@@ -872,6 +874,7 @@ class CleepModule(Cleep):
     APP_TMP_ROOT = "/tmp/cleep/modules"
     APP_ASSET_ROOT = "/var/opt/cleep/modules/asset"
     APP_BIN_ROOT = "/var/opt/cleep/modules/bin"
+    APP_FIRMWARE_ROOT = "/var/opt/cleep/modules/firmwares"
 
     @staticmethod
     def app_paths_for(module_name):
@@ -882,7 +885,8 @@ class CleepModule(Cleep):
             module_name (str): module / app name (case-insensitive)
 
         Returns:
-            dict: APP_STORAGE_PATH / APP_TMP_PATH / APP_ASSET_PATH / APP_BIN_PATH
+            dict: APP_STORAGE_PATH / APP_TMP_PATH / APP_ASSET_PATH / APP_BIN_PATH /
+                APP_FIRMWARE_PATH
         """
         name = module_name.lower()
         return {
@@ -890,6 +894,7 @@ class CleepModule(Cleep):
             "APP_TMP_PATH": os.path.join(CleepModule.APP_TMP_ROOT, name),
             "APP_ASSET_PATH": os.path.join(CleepModule.APP_ASSET_ROOT, name),
             "APP_BIN_PATH": os.path.join(CleepModule.APP_BIN_ROOT, name),
+            "APP_FIRMWARE_PATH": os.path.join(CleepModule.APP_FIRMWARE_ROOT, name),
         }
 
     def __init__(self, bootstrap, debug_enabled):
@@ -959,6 +964,7 @@ class CleepModule(Cleep):
             self.APP_TMP_PATH,
             self.APP_ASSET_PATH,
             self.APP_BIN_PATH,
+            self.APP_FIRMWARE_PATH,
         ]
         config_file = getattr(self, "MODULE_CONFIG_FILE", None)
         if config_file:
@@ -992,6 +998,7 @@ class CleepModule(Cleep):
                     APP_TMP_PATH (str): app tmp path,
                     APP_ASSET_PATH (str): app asset path,
                     APP_BIN_PATH (str): app binary path,
+                    APP_FIRMWARE_PATH (str): app firmware packages path,
                 }
 
         """

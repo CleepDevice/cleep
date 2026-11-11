@@ -687,11 +687,16 @@ class TestsCleepModule(unittest.TestCase):
         logging.debug(self.r.APP_TMP_PATH)
         logging.debug(self.r.APP_ASSET_PATH)
         logging.debug(self.r.APP_BIN_PATH)
+        logging.debug(self.r.APP_FIRMWARE_PATH)
 
         self.assertEqual(self.r.APP_STORAGE_PATH, "/var/opt/cleep/modules/storage/dummycleepmodule")
         self.assertEqual(self.r.APP_TMP_PATH, "/tmp/cleep/modules/dummycleepmodule")
         self.assertEqual(self.r.APP_ASSET_PATH, "/var/opt/cleep/modules/asset/dummycleepmodule")
         self.assertEqual(self.r.APP_BIN_PATH, "/var/opt/cleep/modules/bin/dummycleepmodule")
+        self.assertEqual(
+            self.r.APP_FIRMWARE_PATH,
+            "/var/opt/cleep/modules/firmwares/dummycleepmodule",
+        )
 
     def test_app_paths_for(self):
         from cleep.core import CleepModule
@@ -703,6 +708,7 @@ class TestsCleepModule(unittest.TestCase):
                 "APP_TMP_PATH": "/tmp/cleep/modules/ngrok",
                 "APP_ASSET_PATH": "/var/opt/cleep/modules/asset/ngrok",
                 "APP_BIN_PATH": "/var/opt/cleep/modules/bin/ngrok",
+                "APP_FIRMWARE_PATH": "/var/opt/cleep/modules/firmwares/ngrok",
             },
         )
 
@@ -783,7 +789,8 @@ class TestsCleepModule(unittest.TestCase):
             'APP_STORAGE_PATH': '/var/opt/cleep/modules/storage/dummycleepmodule',
             'APP_TMP_PATH': '/tmp/cleep/modules/dummycleepmodule',
             'APP_ASSET_PATH': '/var/opt/cleep/modules/asset/dummycleepmodule',
-            'APP_BIN_PATH': '/var/opt/cleep/modules/bin/dummycleepmodule'
+            'APP_BIN_PATH': '/var/opt/cleep/modules/bin/dummycleepmodule',
+            'APP_FIRMWARE_PATH': '/var/opt/cleep/modules/firmwares/dummycleepmodule',
         })
 
     def test_add_device(self):
