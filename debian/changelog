@@ -1,5 +1,6 @@
 cleep (0.2.0) unstable; urgency=low
 
+- Added core: improve cache disabling when needed (cleepapp-developer)
 - Added core: authenticated GET /firmware/<app>/<file> for installed Pico packages (path-safe)
 - Added core: Pico firmware package contract (zip + sidecar .manifest) and APP_FIRMWARE_PATH
 - Remove /logs endpoint

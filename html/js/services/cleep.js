@@ -154,17 +154,17 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
         // get global files
         if (desc.global && desc.global.js) {
             for (const globalJs of desc.global.js) {
-                files.js.push(self.modulesPath + module + '/' + globalJs);
+                files.js.push(cleepAssetUrl(self.modulesPath + module + '/' + globalJs));
             }
         }
         if (desc.global && desc.global.html) {
             for (const globalHtml of desc.global.html) {
-                files.html.push(self.modulesPath + module + '/' + globalHtml);
+                files.html.push(cleepAssetUrl(self.modulesPath + module + '/' + globalHtml));
             }
         }
         if (desc.global && desc.global.css) {
             for (const globalCss of desc.global.css) {
-                files.css.push(self.modulesPath + module + '/' + globalCss);
+                files.css.push(cleepAssetUrl(self.modulesPath + module + '/' + globalCss));
             }
         }
 
@@ -257,7 +257,7 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
      */
     self.__loadModule = function(module) {
         const modulePath = self.modulesPath + module + '/';
-        const url = modulePath + 'desc.json';
+        const url = cleepAssetUrl(modulePath + 'desc.json');
         let desc = null;
         const d = $q.defer();
         let files = null;
@@ -320,9 +320,9 @@ function($injector, $q, toast, rpcService, $http, $ocLazyLoad, $templateCache, $
                 // force getting service from injector to make them executed as soon as possible
                 for (const fileJs of files.js) {
                     if (fileJs.indexOf('service') >= 0) {
-                        // guess service name from filename
+                        // guess service name from filename (strip cache-bust query)
                         serviceName = fileJs.replace(/^.*[\\\/]/, '');
-                        serviceName = serviceName.replace('.js', '');
+                        serviceName = serviceName.split('?')[0].replace(/\.js$/, '');
                         serviceName = self.__camelize(serviceName);
 
                         // make sure

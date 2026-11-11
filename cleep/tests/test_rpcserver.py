@@ -98,6 +98,8 @@ class RpcServerTests(unittest.TestCase):
             rpcserver.sessions.clear()
             rpcserver.CLEEP_CACHE = None
             rpcserver.apps_ready = False
+            rpcserver.cache_enabled = True
+            rpcserver.asset_cache_bust = None
 
     def _init_context(self, push_return_value=None, push_side_effect=None, no_bus=False, is_subscribed_return_value=None, is_subscribed_side_effect=None,
             pull_return_value=None, pull_side_effect=None, get_drivers_side_effect=None, get_drivers_gpio_exception=False, debug_enabled=False,
@@ -329,9 +331,21 @@ class RpcServerTests(unittest.TestCase):
         with boddle():
             rpcserver.set_cache_control(True)
             self.assertTrue(rpcserver.cache_enabled)
+            self.assertIsNone(rpcserver.asset_cache_bust)
 
             rpcserver.set_cache_control(False)
             self.assertFalse(rpcserver.cache_enabled)
+            self.assertIsNotNone(rpcserver.asset_cache_bust)
+
+            previous_bust = rpcserver.asset_cache_bust
+            with patch("cleep.rpcserver.time.time", return_value=time.time() + 1):
+                rpcserver.bump_asset_cache()
+            self.assertFalse(rpcserver.cache_enabled)
+            self.assertNotEqual(rpcserver.asset_cache_bust, previous_bust)
+
+            rpcserver.set_cache_control(True)
+            self.assertTrue(rpcserver.cache_enabled)
+            self.assertIsNone(rpcserver.asset_cache_bust)
 
     def test_set_debug(self):
         self._init_context()
@@ -1057,6 +1071,28 @@ class RpcServerTests(unittest.TestCase):
             logging.debug('%s' % i.status)
             self.assertEqual(i.status, '200 OK')
             static_file_mock.assert_called_with('index.html', rpcserver.HTML_DIR)
+
+    def test_index_busts_assets_when_cache_disabled(self):
+        self._init_context()
+        html = (
+            "<html><head></head><body>"
+            '<script src="js/app.js?cleepversion"></script>'
+            '<link rel="stylesheet" href="css/cleep.css?v1.2.3"/>'
+            "</body></html>"
+        )
+        rpcserver.set_cache_control(False)
+        bust = rpcserver.asset_cache_bust
+
+        with patch(
+            "builtins.open", mock_open(read_data=html)
+        ), patch("cleep.rpcserver.bottle.static_file") as static_file_mock, boddle():
+            body = rpcserver.index()
+
+        static_file_mock.assert_not_called()
+        self.assertIn('window.__CLEEP_ASSET_BUST__="%s"' % bust, body)
+        self.assertIn("js/app.js?_=%s" % bust, body)
+        self.assertIn("css/cleep.css?_=%s" % bust, body)
+        self.assertNotIn("cleepversion", body)
 
     def test_authenticate(self):
         self._init_context()

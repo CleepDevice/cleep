@@ -2,6 +2,20 @@
  * This file contains javascript helpers
  */
 
+/**
+ * Append developer asset bust when the RPC shell injected __CLEEP_ASSET_BUST__.
+ * Keeps lazy-loaded module URLs unique after each frontend sync.
+ * @param {string} path
+ * @returns {string}
+ */
+function cleepAssetUrl(path) {
+    var bust = typeof window !== 'undefined' ? window.__CLEEP_ASSET_BUST__ : null;
+    if (!bust || !path) {
+        return path;
+    }
+    return path + (path.indexOf('?') >= 0 ? '&' : '?') + '_=' + encodeURIComponent(bust);
+}
+
 String.prototype.parseBool = function() {
     return (/^true$/i).test(this);
 };

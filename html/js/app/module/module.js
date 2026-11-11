@@ -41,9 +41,9 @@ function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState
                 if (desc.config[types[j]]) {
                     for (let i=0; i<desc.config[types[j]].length; i++) {
                         if (types[j]=='html') {
-                            files['html'].push(url + desc.config[types[j]][i]);
+                            files['html'].push(cleepAssetUrl(url + desc.config[types[j]][i]));
                         } else {
-                            files['jscss'].push(url + desc.config[types[j]][i]);
+                            files['jscss'].push(cleepAssetUrl(url + desc.config[types[j]][i]));
                         }
                     }
                 }

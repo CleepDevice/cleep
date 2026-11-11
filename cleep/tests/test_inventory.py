@@ -925,6 +925,13 @@ class %(module_name)s(%(inherit)s):
         self.i.set_rpc_cache_control(False)
         self.rpcserver.set_cache_control.assert_called_with(False)
 
+    def test_bump_rpc_asset_cache(self):
+        self._init_context()
+        self.rpcserver.bump_asset_cache.return_value = "123"
+
+        self.assertEqual(self.i.bump_rpc_asset_cache(), "123")
+        self.rpcserver.bump_asset_cache.assert_called_once_with()
+
     def test_get_renderers(self):
         self._init_context()
 

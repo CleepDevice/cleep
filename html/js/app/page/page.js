@@ -77,9 +77,9 @@ function($q, cleepService, $compile, $routeParams, $templateCache, moduleUiState
                     }
 
                     if (type === 'html') {
-                        files.html.push(...typeFiles.map((file) => url + file));
+                        files.html.push(...typeFiles.map((file) => cleepAssetUrl(url + file)));
                     } else {
-                        files.jscss.push(...typeFiles.map((file) => url + file));
+                        files.jscss.push(...typeFiles.map((file) => cleepAssetUrl(url + file)));
                     }
                 }
             }

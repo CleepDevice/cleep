@@ -27,6 +27,7 @@ import logging
 import os
 import re
 import socket
+import time
 import uuid
 from typing import Any
 
@@ -81,8 +82,17 @@ inventory = None
 bus = None
 crash_report = None
 cache_enabled = True
+# When cache is off (developer mode), replace ?cleepversion / ?vX.Y.Z on index assets
+# and expose the same token to the SPA for lazy-loaded module URLs.
+asset_cache_bust = None
 # False until inventory join + internal bus app_configured
 apps_ready = False
+
+# Match packaged (?v1.2.3) or source (?cleepversion) cache-busters on js/css URLs
+_ASSET_QUERY_RE = re.compile(
+    r"(\.(?:js|css))\?(?:cleepversion|v[\w.\-]+|_=[\w.\-]+)",
+    re.IGNORECASE,
+)
 
 # GET paths that must not be served before apps are ready (need inventory/bus)
 _EARLY_BLOCKED_GET_PREFIXES = ("/doc", "/download", "/firmware")
@@ -475,13 +485,48 @@ def _stop_local_socket():
 
 def set_cache_control(cache_enabled_):
     """
-    Set cache control
+    Set cache control for static frontend assets.
+
+    When disabled (developer mode), also mint a fresh asset_cache_bust token so
+    browsers cannot reuse previously cached ?cleepversion / ?vX.Y.Z URLs.
 
     Args:
         cache_enabled_ (bool): True to enable cache
     """
-    global cache_enabled
-    cache_enabled = cache_enabled_
+    global cache_enabled, asset_cache_bust
+    cache_enabled = bool(cache_enabled_)
+    if cache_enabled:
+        asset_cache_bust = None
+    else:
+        asset_cache_bust = str(int(time.time() * 1000))
+
+
+def bump_asset_cache():
+    """
+    Disable static cache and mint a new bust token (call after frontend sync).
+
+    Returns:
+        str: new asset_cache_bust value
+    """
+    global cache_enabled, asset_cache_bust
+    cache_enabled = False
+    asset_cache_bust = str(int(time.time() * 1000))
+    return asset_cache_bust
+
+
+def _cache_control_header():
+    """Return Cache-Control value for static responses."""
+    if cache_enabled:
+        return "max-age=3600"
+    return "no-cache, no-store, must-revalidate"
+
+
+def _apply_no_cache_headers():
+    """Set Pragma/Expires when static cache is disabled."""
+    if cache_enabled:
+        return
+    bottle.response.set_header("Pragma", "no-cache")
+    bottle.response.set_header("Expires", "0")
 
 
 def set_debug(debug_enabled_):
@@ -1436,35 +1481,56 @@ def default(path):
     """
     if path in ("", "index.html"):
         return _serve_index_html()
-    bottle.response.set_header(
-        "Cache-Control",
-        "no-cache, no-store, must-revalidate" if not cache_enabled else "max-age=3600",
-    )
+    bottle.response.set_header("Cache-Control", _cache_control_header())
+    _apply_no_cache_headers()
     return bottle.static_file(path, HTML_DIR)
 
 
 def _serve_index_html():
     """
-    Serve the SPA shell. When opened from CleepDesktop (``X-Cleep-Desktop``),
-    inject a window flag so the UI can hide its primary hostname toolbar.
+    Serve the SPA shell.
+
+    - CleepDesktop (``X-Cleep-Desktop``): inject ``window.__CLEEP_DESKTOP__``.
+    - Developer / cache-off: rewrite asset query strings + inject
+      ``window.__CLEEP_ASSET_BUST__`` so core and lazy-loaded module URLs miss
+      any browser/Electron HTTP cache.
     """
-    bottle.response.set_header(
-        "Cache-Control",
-        "no-cache, no-store, must-revalidate" if not cache_enabled else "max-age=3600",
-    )
+    bottle.response.set_header("Cache-Control", _cache_control_header())
+    _apply_no_cache_headers()
+
     embed_header = (bottle.request.get_header("X-Cleep-Desktop") or "").strip().lower()
     embed_query = (bottle.request.query.get("cleepdesktop") or "").strip().lower()
-    if embed_header in ("1", "true", "yes") or embed_query in ("1", "true", "yes"):
-        index_path = os.path.join(HTML_DIR, "index.html")
-        with open(index_path, "r", encoding="utf-8") as handle:
-            html = handle.read()
+    is_desktop = embed_header in ("1", "true", "yes") or embed_query in (
+        "1",
+        "true",
+        "yes",
+    )
+    need_rewrite = is_desktop or not cache_enabled
+
+    if not need_rewrite:
+        return bottle.static_file("index.html", HTML_DIR)
+
+    index_path = os.path.join(HTML_DIR, "index.html")
+    with open(index_path, "r", encoding="utf-8") as handle:
+        html = handle.read()
+
+    inject_js = []
+    if is_desktop and "window.__CLEEP_DESKTOP__" not in html:
+        inject_js.append("window.__CLEEP_DESKTOP__=1;")
+    if not cache_enabled and asset_cache_bust:
+        inject_js.append(
+            'window.__CLEEP_ASSET_BUST__="%s";' % asset_cache_bust
+        )
+        html = _ASSET_QUERY_RE.sub(r"\1?_=%s" % asset_cache_bust, html)
+
+    if inject_js:
         marker = "<head>"
-        inject = '<head><script>window.__CLEEP_DESKTOP__=1;</script>'
-        if marker in html and "window.__CLEEP_DESKTOP__" not in html:
+        inject = "<head><script>%s</script>" % "".join(inject_js)
+        if marker in html:
             html = html.replace(marker, inject, 1)
-        bottle.response.content_type = "text/html; charset=UTF-8"
-        return html
-    return bottle.static_file("index.html", HTML_DIR)
+
+    bottle.response.content_type = "text/html; charset=UTF-8"
+    return html
 
 
 @app.route("/", method="GET")

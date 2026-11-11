@@ -21,12 +21,16 @@ Cleep.config([
         $routeProvider
             .when('/dashboard', {
                 template: '<div dashboard-directive></div>',
+                reloadOnSearch: false,
             })
             .when('/module/:name', {
                 template: '<div module-directive></div>',
+                // Keep module page mounted when config-tabs updates ?tab=
+                reloadOnSearch: false,
             })
             .when('/module/:name/:page', {
                 template: '<div page-directive></div>',
+                reloadOnSearch: false,
             })
             .otherwise({
                 redirectTo: '/dashboard',

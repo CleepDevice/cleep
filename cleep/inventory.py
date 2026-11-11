@@ -993,6 +993,15 @@ class Inventory(Cleep):
         """
         self.__rpcserver.set_cache_control(cache_enabled)
 
+    def bump_rpc_asset_cache(self):
+        """
+        Disable static cache and mint a new bust token (developer sync path).
+
+        Returns:
+            str: new asset cache bust token
+        """
+        return self.__rpcserver.bump_asset_cache()
+
     def get_renderers(self):
         """
         Return renderers from events broker
