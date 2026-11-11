@@ -1390,17 +1390,17 @@ function ($compile, $interpolate, $location, $timeout, $rootScope) {
             }
 
             const viewScope = pageScope.$new();
-            // Prefer bound cl-selected, then ?tab= URL, then first tab.
-            const fromBinding = typeof scope.clSelected === 'string'
-                ? tabs.findIndex((tab) => tab.id === scope.clSelected)
-                : -1;
+            // Prefer ?tab= URL (shareable), then bound cl-selected, then first tab.
             const requested = $location.search().tab;
             const requestedIndex = typeof requested === 'string'
                 ? tabs.findIndex((tab) => tab.id === requested)
                 : -1;
-            const initialIndex = fromBinding >= 0
-                ? fromBinding
-                : (requestedIndex >= 0 ? requestedIndex : 0);
+            const fromBinding = typeof scope.clSelected === 'string'
+                ? tabs.findIndex((tab) => tab.id === scope.clSelected)
+                : -1;
+            const initialIndex = requestedIndex >= 0
+                ? requestedIndex
+                : (fromBinding >= 0 ? fromBinding : 0);
             viewScope.selectedIndex = initialIndex;
             scope.clSelected = tabs[initialIndex].id;
 
